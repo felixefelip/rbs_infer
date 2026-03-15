@@ -6,6 +6,17 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   let(:source_files) { Dir["app/**/*.rb"] }
   let(:expectations_dir) { Pathname.new(File.expand_path("../expectations", __dir__)) }
 
+  # Generate sig/rbs_rails/ types once before running snapshot tests
+  before(:all) do
+    Dir.chdir(DUMMY_APP_ROOT) do
+      Bundler.with_unbundled_env do
+        system("bundle", "install", "--quiet", exception: true)
+        system("bundle", "exec", "rake", "db:create", "db:migrate", "RAILS_ENV=development", exception: true, out: File::NULL, err: File::NULL)
+        system("bundle", "exec", "rake", "rbs_rails:all", exception: true, out: File::NULL, err: File::NULL)
+      end
+    end
+  end
+
   def generate_rbs(target_class:, target_file:)
     RbsInfer::Analyzer.new(
       target_class: target_class,
