@@ -2,6 +2,8 @@
 
 require "rbs_infer"
 
+DUMMY_APP_ROOT = File.expand_path("dummy", __dir__)
+
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
     expectations.include_chain_clauses_in_custom_matcher_descriptions = true
@@ -18,8 +20,7 @@ RSpec.configure do |config|
   config.order = :random
   Kernel.srand config.seed
 
-  # Integration tests require PROJECT_ROOT pointing to a Rails project
-  # Run with: PROJECT_ROOT=/path/to/project bundle exec rspec --tag integration
+  # Integration tests requiring a real external project (PROJECT_ROOT env var)
   config.filter_run_excluding :integration unless ENV["PROJECT_ROOT"]
 
   config.around(:each, :integration) do |example|
@@ -29,5 +30,10 @@ RSpec.configure do |config|
     else
       skip "Set PROJECT_ROOT to run integration tests"
     end
+  end
+
+  # Dummy Rails app integration tests (always run)
+  config.around(:each, :dummy_app) do |example|
+    Dir.chdir(DUMMY_APP_ROOT) { example.run }
   end
 end

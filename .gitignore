@@ -4,3 +4,12 @@
 /tmp/
 /coverage/
 *.gem
+
+# Dummy Rails app secrets & runtime files
+spec/dummy/config/master.key
+spec/dummy/config/credentials.yml.enc
+spec/dummy/db/*.sqlite3
+spec/dummy/db/*.sqlite3-*
+spec/dummy/log/*.log
+spec/dummy/storage/
+spec/dummy/tmp/
