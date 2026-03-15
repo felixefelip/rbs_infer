@@ -1,0 +1,85 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "rbs_infer"
+require "fileutils"
+require "optparse"
+
+output = false
+output_dir = "sig/generated"
+files = []
+
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: rbs_infer [options] FILE_OR_DIR [...]"
+
+  opts.on("--output", "Write RBS to sig/generated/ (based on source file path)") do
+    output = true
+  end
+
+  opts.on("--output-dir DIR", "Output directory (default: sig/generated)") do |dir|
+    output = true
+    output_dir = dir
+  end
+
+  opts.on("-v", "--version", "Show version") do
+    puts "rbs_infer #{RbsInfer::VERSION}"
+    exit
+  end
+
+  opts.on("-h", "--help", "Show this help") do
+    puts opts
+    exit
+  end
+end
+
+parser.parse!
+inputs = ARGV
+
+if inputs.empty?
+  puts parser
+  exit 1
+end
+
+# Expandir diretórios para todos os .rb contidos neles (recursivamente)
+files = inputs.flat_map do |input|
+  if File.directory?(input)
+    Dir[File.join(input, "**/*.rb")]
+  else
+    [input]
+  end
+end
+
+if files.empty?
+  warn "No .rb files found in: #{inputs.join(', ')}"
+  exit 1
+end
+
+source_files = Dir["app/**/*.rb", "engines/**/*.rb", "lib/**/*.rb"]
+
+files.each do |input|
+  is_path = input.include?("/") || input.end_with?(".rb")
+  args = if is_path
+           { target_file: input, source_files: source_files }
+         else
+           { target_class: input, source_files: source_files }
+         end
+
+  analyzer = RbsInfer::Analyzer.new(**args)
+  rbs = analyzer.generate_rbs
+
+  unless rbs
+    warn "#{input}: class not found or no members detected."
+    next
+  end
+
+  if output
+    source_path = analyzer.target_file || input
+    output_path = File.join(output_dir, source_path.sub(/\.rb$/, ".rbs"))
+
+    FileUtils.mkdir_p(File.dirname(output_path))
+    File.write(output_path, rbs + "\n")
+    puts output_path
+  else
+    puts rbs
+  end
+end
