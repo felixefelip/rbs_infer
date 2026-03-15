@@ -1,7 +1,7 @@
 class User < ApplicationRecord
   attr_accessor session_token: untyped
   def full_name: () -> String
-  def active?: () -> untyped
+  def active?: () -> bool?
   def posts_count: () -> untyped
   def recent_posts: (?untyped) -> untyped
 end

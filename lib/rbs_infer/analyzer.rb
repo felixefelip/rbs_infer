@@ -281,7 +281,7 @@ module RbsInfer
   end
 
   def type_merger
-    @type_merger ||= TypeMerger.new(target_file: @target_file)
+    @type_merger ||= TypeMerger.new(target_file: @target_file, target_class: @target_class)
   end
 
   # ─── Resolver quais namespaces da classe-alvo são class (não module) ──

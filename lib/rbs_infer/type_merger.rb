@@ -4,8 +4,9 @@ module RbsInfer
     # Métodos de Array que retornam self (o próprio array)
     ARRAY_SELF_RETURN_METHODS = %i[<< push append unshift prepend insert concat].to_set
 
-    def initialize(target_file:)
+    def initialize(target_file:, target_class: nil)
       @target_file = target_file
+      @target_class = target_class
     end
 
     # ─── Unificar tipos de múltiplos call-sites ────────────────────────
@@ -60,6 +61,12 @@ module RbsInfer
             known_return_types[m.name] = type unless type == "untyped"
           end
         end
+      end
+
+      # Incluir tipos cross-class do MethodTypeResolver (ex: associações AR via sig/rbs_rails)
+      if method_type_resolver
+        resolver_types = method_type_resolver.resolve_all(@target_class)
+        resolver_types.each { |name, type| known_return_types[name] ||= type }
       end
 
       # Coletar mapeamento: method_name -> última expressão do body

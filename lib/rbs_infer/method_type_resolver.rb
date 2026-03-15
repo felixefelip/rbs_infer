@@ -139,6 +139,20 @@ module RbsInfer
           end
         end
 
+        # 1b. Inferir return types de literais/Klass.new na última expressão do método
+        def_collector = RbsInfer::Analyzer::DefCollector.new
+        result.value.accept(def_collector)
+        def_collector.defs.each do |defn|
+          next if types[defn.name.to_s] && types[defn.name.to_s] != "untyped"
+          body = defn.body
+          next unless body
+          last_stmt = body.is_a?(Prism::StatementsNode) ? body.body.last : body
+          next unless last_stmt
+
+          inferred = infer_literal_return_type(last_stmt)
+          types[defn.name.to_s] = inferred if inferred
+        end
+
         # 2. Tipos inferidos via keyword defaults do initialize
         init_visitor = RbsInfer::Analyzer::InitializeBodyAnalyzer.new
         result.value.accept(init_visitor)
@@ -280,6 +294,24 @@ module RbsInfer
     def find_class_file(class_name)
       class_path = class_name.sub(/\A::/, "").gsub("::", "/").gsub(/([a-z])([A-Z])/, '\1_\2').downcase
       @source_files.find { |f| f.end_with?("#{class_path}.rb") }
+    end
+
+    # Inferir return type a partir de literais ou Klass.new na última expressão
+    def infer_literal_return_type(node)
+      case node
+      when Prism::StringNode, Prism::InterpolatedStringNode then "String"
+      when Prism::IntegerNode then "Integer"
+      when Prism::FloatNode then "Float"
+      when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
+      when Prism::TrueNode, Prism::FalseNode then "bool"
+      when Prism::NilNode then "nil"
+      when Prism::ArrayNode then "Array[untyped]"
+      when Prism::HashNode then "Hash[untyped, untyped]"
+      when Prism::CallNode
+        if node.name == :new && node.receiver
+          RbsInfer::Analyzer.extract_constant_path(node.receiver)
+        end
+      end
     end
 
     # Extrai nomes de módulos incluídos via `include Foo::Bar` no source

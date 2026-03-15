@@ -16,6 +16,10 @@ class Post < ApplicationRecord
     body.to_s.truncate(length)
   end
 
+  def creator
+    user
+  end
+
   def author_name
     user.full_name
   end
