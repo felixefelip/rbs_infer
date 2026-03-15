@@ -1,0 +1,4 @@
+class Comment < ApplicationRecord
+  def author_name: () -> untyped
+  def short_body: (?untyped) -> untyped
+end

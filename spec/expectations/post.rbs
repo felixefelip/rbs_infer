@@ -1,0 +1,7 @@
+class Post < ApplicationRecord
+  def summary: (?untyped) -> untyped
+  def author_name: () -> untyped
+  def publish!: () -> untyped
+  def comments_count: () -> untyped
+  def add_comment: (author: untyped, body: untyped) -> untyped
+end

@@ -1,0 +1,3 @@
+class Tag < ApplicationRecord
+  def popular: (?untyped) -> untyped
+end
