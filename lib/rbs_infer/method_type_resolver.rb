@@ -596,8 +596,6 @@ module RbsInfer
           return resolved if resolved
 
           infer_block_return_type(node.block, class_name)
-        else
-          infer_block_return_type(node.block, class_name)
         end
       end
     end

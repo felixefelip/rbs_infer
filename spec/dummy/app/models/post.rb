@@ -57,4 +57,11 @@ class Post < ApplicationRecord
       self
     end
   end
+
+  def iterate_tags
+    my_tags = tags.order(:name)
+    my_tags.each do |tag|
+      puts tag.name
+    end
+  end
 end

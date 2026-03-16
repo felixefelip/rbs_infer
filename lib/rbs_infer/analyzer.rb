@@ -453,11 +453,29 @@ module RbsInfer
                   end
       next unless last_stmt
 
-      resolved = infer_ivar_value_type(last_stmt, known_return_types)
+      # Coletar tipos de variáveis locais do corpo do método
+      method_known_types = known_return_types.dup
+      if body.is_a?(Prism::StatementsNode)
+        body.body[0...-1].each do |stmt|
+          collect_local_var_type(stmt, method_known_types)
+        end
+      end
+
+      resolved = infer_ivar_value_type(last_stmt, method_known_types)
       next unless resolved && resolved != "untyped"
 
       member = untyped_methods.find { |m| m.name == defn.name.to_s }
       member.signature = member.signature.sub(/-> untyped$/, "-> #{resolved}")
+    end
+  end
+
+  # ─── Coletar tipos de variáveis locais do corpo do método ──────
+
+  def collect_local_var_type(node, known_types)
+    case node
+    when Prism::LocalVariableWriteNode
+      type = infer_ivar_value_type(node.value, known_types)
+      known_types[node.name.to_s] = type if type && type != "untyped"
     end
   end
 
@@ -571,10 +589,11 @@ module RbsInfer
                      else resolved
                      end
           return resolved if resolved
-        end
 
-        # Fallback: inferir tipo do bloco (ex: transaction { ... })
-        infer_block_return_type(node.block, known_return_types)
+          # Fallback: inferir tipo do bloco apenas quando o método foi encontrado
+          # mas retornou nil (tipo genérico como transaction { ... })
+          infer_block_return_type(node.block, known_return_types)
+        end
       end
     end
   end
@@ -625,10 +644,11 @@ module RbsInfer
                      else resolved
                      end
           return resolved if resolved
-        end
 
-        # Fallback: inferir tipo do bloco (ex: transaction { ... })
-        infer_block_return_type(node.block, known_return_types)
+          # Fallback: inferir tipo do bloco apenas quando o método foi encontrado
+          # mas retornou nil (tipo genérico como transaction { ... })
+          infer_block_return_type(node.block, known_return_types)
+        end
       end
     when Prism::SelfNode
       nil
@@ -636,6 +656,8 @@ module RbsInfer
       Analyzer.extract_constant_path(node)
     when Prism::InstanceVariableReadNode
       known_return_types[node.name.to_s.sub(/\A@/, "")]
+    when Prism::LocalVariableReadNode
+      known_return_types[node.name.to_s]
     end
   end
 
