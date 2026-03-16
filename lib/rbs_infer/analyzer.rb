@@ -80,12 +80,15 @@ module RbsInfer
     # Inferir tipos de parâmetros de métodos via chamadas intra-classe
     method_param_types = infer_method_param_types(attr_types)
 
+    # Inferir tipos de instance variables (@post, @posts, etc.)
+    ivar_types = infer_ivar_types(target_members, attr_types)
+
     # Identificar parâmetros opcionais do initialize
     optional_params = extract_optional_init_params
 
     namespace_classes = resolve_namespace_classes
     rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes)
-    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types)
+    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types)
   end
 
   def self.extract_constant_path(node)
@@ -305,6 +308,149 @@ module RbsInfer
     end
 
     classes
+  end
+
+  # ─── Inferir tipos de instance variables (@post, @posts, etc.) ──
+
+  def infer_ivar_types(members, attr_types)
+    return {} unless @target_file && File.exist?(@target_file)
+
+    source = File.read(@target_file)
+    result = Prism.parse(source)
+
+    # Montar known_return_types com tudo que já sabemos
+    known_return_types = {}
+    attr_types.each { |name, type| known_return_types[name] = type }
+    members.each do |m|
+      case m.kind
+      when :method
+        if m.signature =~ /->\s*(.+)$/ && $1.strip != "untyped" && $1.strip != "void"
+          known_return_types[m.name] = $1.strip
+        end
+      when :attr_accessor, :attr_reader
+        if m.signature =~ /\w+:\s*(.+)/
+          type = $1.strip
+          known_return_types[m.name] = type unless type == "untyped"
+        end
+      end
+    end
+
+    if method_type_resolver
+      resolver_types = method_type_resolver.resolve_all(@target_class)
+      resolver_types.each { |name, type| known_return_types[name] ||= type }
+    end
+
+    # Nomes de attrs já declarados (attr_accessor, attr_reader) → pular
+    attr_names = members.select { |m| [:attr_accessor, :attr_reader, :attr_writer].include?(m.kind) }
+                        .map(&:name).to_set
+
+    ivar_types = {}
+
+    # Coletar todos os InstanceVariableWriteNode
+    collector = DefCollector.new
+    result.value.accept(collector)
+
+    # Dois passes: o segundo resolve ivars que dependem de outros (@comments depende de @post)
+    2.times do
+      collector.defs.each do |defn|
+        collect_ivar_writes(defn, known_return_types, ivar_types, attr_names)
+      end
+    end
+
+    ivar_types
+  end
+
+  def collect_ivar_writes(node, known_return_types, ivar_types, attr_names)
+    queue = [node]
+    while (current = queue.shift)
+      if current.is_a?(Prism::InstanceVariableWriteNode)
+        name = current.name.to_s.sub(/\A@/, "")
+        next if attr_names.include?(name)
+        next if ivar_types[name] && ivar_types[name] != "untyped"
+
+        inferred = infer_ivar_value_type(current.value, known_return_types)
+        if inferred && inferred != "untyped"
+          ivar_types[name] = inferred
+          known_return_types[name] = inferred
+        end
+      end
+      queue.concat(current.compact_child_nodes)
+    end
+  end
+
+  def infer_ivar_value_type(node, known_return_types)
+    case node
+    when Prism::StringNode, Prism::InterpolatedStringNode then "String"
+    when Prism::IntegerNode then "Integer"
+    when Prism::FloatNode then "Float"
+    when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
+    when Prism::TrueNode, Prism::FalseNode then "bool"
+    when Prism::ArrayNode then "Array[untyped]"
+    when Prism::HashNode then "Hash[untyped, untyped]"
+    when Prism::CallNode
+      if node.name == :new && node.receiver
+        Analyzer.extract_constant_path(node.receiver)
+      elsif node.receiver.nil?
+        # Chamada sem receiver (self implícito): ex. posts, comments
+        known_return_types[node.name.to_s]
+      else
+        # Verificar se receiver é uma constante (chamada de classe)
+        if node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
+          class_name = Analyzer.extract_constant_path(node.receiver)
+          if class_name
+            # AR finders: Post.find(...) → Post
+            return class_name if AR_FINDER_METHODS.include?(node.name)
+            # Métodos de classe: Post.published → via RBS def self.published
+            if method_type_resolver
+              resolved = method_type_resolver.resolve_class_method(class_name, node.name.to_s)
+              return (resolved == "self" ? class_name : resolved) if resolved
+            end
+          end
+        end
+
+        # Chain: receiver.method → resolver tipo do receiver, depois do method
+        receiver_type = resolve_chain_type(node.receiver, known_return_types)
+        if receiver_type && receiver_type != "untyped" && method_type_resolver
+          resolved = method_type_resolver.resolve(receiver_type, node.name.to_s)
+          resolved == "self" ? receiver_type : resolved
+        end
+      end
+    end
+  end
+
+  def resolve_chain_type(node, known_return_types)
+    case node
+    when Prism::CallNode
+      if node.receiver.nil?
+        known_return_types[node.name.to_s]
+      elsif node.name == :new && node.receiver
+        Analyzer.extract_constant_path(node.receiver)
+      else
+        # Verificar se receiver é uma constante (chamada de classe)
+        if node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
+          class_name = Analyzer.extract_constant_path(node.receiver)
+          if class_name
+            return class_name if AR_FINDER_METHODS.include?(node.name)
+            if method_type_resolver
+              resolved = method_type_resolver.resolve_class_method(class_name, node.name.to_s)
+              return (resolved == "self" ? class_name : resolved) if resolved
+            end
+          end
+        end
+
+        parent_type = resolve_chain_type(node.receiver, known_return_types)
+        if parent_type && parent_type != "untyped" && method_type_resolver
+          resolved = method_type_resolver.resolve(parent_type, node.name.to_s)
+          resolved == "self" ? parent_type : resolved
+        end
+      end
+    when Prism::SelfNode
+      nil
+    when Prism::ConstantReadNode, Prism::ConstantPathNode
+      Analyzer.extract_constant_path(node)
+    when Prism::InstanceVariableReadNode
+      known_return_types[node.name.to_s.sub(/\A@/, "")]
+    end
   end
 
   # ─── Inferir tipos de parâmetros de métodos via chamadas intra-classe ──

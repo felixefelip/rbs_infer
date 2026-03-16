@@ -1,4 +1,6 @@
 class UsersController < ApplicationController
+  @users: ::User::ActiveRecord_Relation
+  @user: User
   def index: () -> void
   def show: () -> void
 end

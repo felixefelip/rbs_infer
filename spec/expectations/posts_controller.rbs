@@ -1,4 +1,7 @@
 class PostsController < ApplicationController
+  @posts: ::Post::ActiveRecord_Relation
+  @post: Post
+  @comments: ::Comment::ActiveRecord_Relation
   def index: () -> void
   def show: () -> void
   def new: () -> void

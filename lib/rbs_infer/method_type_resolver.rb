@@ -19,6 +19,14 @@ module RbsInfer
       class_types[method_name] || class_types[method_name.chomp("!").chomp("?")]
     end
 
+    # Resolve um método de classe (def self.xxx) via RBS
+    def resolve_class_method(class_name, method_name)
+      return nil unless class_name && class_name != "untyped"
+
+      class_methods = lookup_class_methods(class_name)
+      class_methods[method_name]
+    end
+
     def resolve_all(class_name)
       return {} unless class_name && class_name != "untyped"
       @cache[class_name] ||= build_class_types(class_name)
@@ -217,6 +225,25 @@ module RbsInfer
       types
     end
 
+    # Busca métodos de classe (def self.xxx) em arquivos RBS
+    def lookup_class_methods(class_name)
+      @class_method_cache ||= {}
+      return @class_method_cache[class_name] if @class_method_cache.key?(class_name)
+
+      types = {}
+      normalized = class_name.sub(/\A::/, "")
+
+      Dir["sig/rbs_rails/**/*.rbs"].each do |rbs_file|
+        content = File.read(rbs_file)
+        next unless content.include?(normalized.split("::").last)
+        _, _, _, class_ts = parse_rbs_class_block(content, normalized)
+        class_ts.each { |name, type| types[name] ||= type }
+      end
+
+      @class_method_cache[class_name] = types
+      types
+    end
+
     # Escaneia source files para encontrar ClassName.new(key: val)
     # e inferir os tipos dos kwargs → attrs
     def infer_attrs_from_call_sites(class_name, types, param_to_attr)
@@ -307,12 +334,12 @@ module RbsInfer
       end
 
       # 2. Buscar inner classes dentro de todos os rbs_rails files
-      if types.empty?
+      if types.empty? && superclass.nil?
         Dir["sig/rbs_rails/**/*.rbs"].each do |rbs_file|
           content = File.read(rbs_file)
           next unless content.include?(normalized.split("::").last)
           sc, ts, incs = parse_rbs_class_block(content, normalized)
-          next if ts.empty?
+          next if ts.empty? && sc.nil? && incs.empty?
           superclass ||= sc
           ts.each { |name, type| types[name] ||= type }
           all_includes.concat(incs)
@@ -328,6 +355,7 @@ module RbsInfer
     # Retorna [superclass, types, includes]
     def parse_rbs_class_block(content, class_name)
       types = {}
+      class_method_types = {}
       superclass = nil
       includes = []
       normalized = class_name.sub(/\A::/, "")
@@ -386,7 +414,14 @@ module RbsInfer
           end
         elsif in_target && nesting.size == target_depth
           # Extrair definições de método dentro da classe alvo
-          if stripped =~ /\Adef (\w+[\?\!]?)\s*:/
+          if stripped =~ /\Adef self\.(\w+[\?\!]?)\s*:/
+            method_name = $1
+            if stripped =~ /\)\s*->\s*(\S+)\s*$/
+              class_method_types[method_name] ||= $1.strip
+            elsif stripped =~ /->\s*(\S+)\s*$/
+              class_method_types[method_name] ||= $1.strip
+            end
+          elsif stripped =~ /\Adef (\w+[\?\!]?)\s*:/
             method_name = $1
             # Extrair return type: último -> na linha (ignora blocos como { () -> untyped })
             if stripped =~ /\)\s*->\s*(\S+)\s*$/
@@ -395,7 +430,7 @@ module RbsInfer
               types[method_name] ||= $1.strip
             end
           elsif stripped =~ /\Ainclude\s+(\S+)/
-            mod_name = $1
+            mod_name = $1.sub(/\[.*\z/, "") # Strip type parameters
             # Qualificar nome relativo usando o namespace da classe
             if mod_name !~ /::/
               parent_ns = normalized.split("::")[0..-2]
@@ -408,7 +443,7 @@ module RbsInfer
         end
       end
 
-      [superclass, types, includes]
+      [superclass, types, includes, class_method_types]
     end
 
     # Resolve tipos herdados percorrendo a cadeia de superclasses via RBS

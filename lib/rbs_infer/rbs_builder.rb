@@ -7,7 +7,7 @@ module RbsInfer
       @namespace_classes = namespace_classes
     end
 
-    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {})
+    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {})
       parts = @target_class.split("::")
       class_name = parts.pop
       modules = parts
@@ -22,6 +22,11 @@ module RbsInfer
         lines << "#{"  " * i}#{keyword} #{mod}"
       end
       lines << "#{base_indent}class #{class_name}#{@superclass_name ? " < #{@superclass_name}" : ""}"
+
+      # Emitir instance variables tipadas (@post: Post, @posts: ...)
+      ivar_types.each do |name, type|
+        lines << "#{member_indent}@#{name}: #{type}"
+      end
 
       # Emitir include/extend para módulos incluídos (concerns)
       includes = members.select { |m| m.kind == :include }
