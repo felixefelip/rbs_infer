@@ -558,13 +558,11 @@ module RbsInfer
     end
   end
 
-  AR_COLLECTION_FINDER_METHODS = %i[find find_by find_by! first first! last last! take take! find_sole_by].to_set
-
   # Resolve método chamado sobre um tipo conhecido
   # Trata coleções AR (Post::CollectionProxy.last → Post)
   def resolve_on_type(receiver_type, method_name)
     # AR collection/relation finders: Post::ActiveRecord_Relation.last → Post
-    if AR_COLLECTION_FINDER_METHODS.include?(method_name.to_sym) &&
+    if AR_FINDER_METHODS.include?(method_name.to_sym) &&
        receiver_type =~ /\A(::)?(.+?)::(ActiveRecord_Associations_CollectionProxy|ActiveRecord_Relation)\z/
       return $2
     end
