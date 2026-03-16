@@ -233,7 +233,7 @@ module RbsInfer
       types = {}
       normalized = class_name.sub(/\A::/, "")
 
-      Dir["sig/rbs_rails/**/*.rbs"].each do |rbs_file|
+      Dir["sig/**/*.rbs"].each do |rbs_file|
         content = File.read(rbs_file)
         next unless content.include?(normalized.split("::").last)
         _, _, _, class_ts = parse_rbs_class_block(content, normalized)
@@ -324,7 +324,7 @@ module RbsInfer
 
       # 1. Tentar match por nome de arquivo (caso simples: uma classe por arquivo)
       class_path = normalized.gsub("::", "/").gsub(/([a-z])([A-Z])/, '\1_\2').downcase
-      Dir["sig/rbs_rails/**/*.rbs"].each do |rbs_file|
+      Dir["sig/**/*.rbs"].each do |rbs_file|
         next unless rbs_file.end_with?("#{class_path}.rbs")
         content = File.read(rbs_file)
         sc, ts, incs = parse_rbs_class_block(content, normalized)
@@ -333,9 +333,9 @@ module RbsInfer
         all_includes.concat(incs)
       end
 
-      # 2. Buscar inner classes dentro de todos os rbs_rails files
+      # 2. Buscar inner classes dentro de todos os rbs files
       if types.empty? && superclass.nil?
-        Dir["sig/rbs_rails/**/*.rbs"].each do |rbs_file|
+        Dir["sig/**/*.rbs"].each do |rbs_file|
           content = File.read(rbs_file)
           next unless content.include?(normalized.split("::").last)
           sc, ts, incs = parse_rbs_class_block(content, normalized)
@@ -439,6 +439,10 @@ module RbsInfer
               mod_name = mod_name.sub(/\A::/, "")
             end
             includes << mod_name
+          elsif stripped =~ /\Aattr_(reader|accessor|writer)\s+(\w+)\s*:\s*(.+)/
+            attr_name = $2
+            attr_type = $3.strip
+            types[attr_name] ||= attr_type unless attr_type == "untyped"
           end
         end
       end

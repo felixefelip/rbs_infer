@@ -80,6 +80,15 @@ module RbsInfer
     # Inferir tipos de parâmetros de métodos via chamadas intra-classe
     method_param_types = infer_method_param_types(attr_types)
 
+    # Inferir tipos de parâmetros de métodos via chamadas cross-class
+    cross_class_param_types = infer_method_param_types_from_callers
+    cross_class_param_types.each do |method_name, param_types|
+      method_param_types[method_name] ||= {}
+      param_types.each do |param_name, type|
+        method_param_types[method_name][param_name] ||= type
+      end
+    end
+
     # Inferir tipos de instance variables (@post, @posts, etc.)
     ivar_types = infer_ivar_types(target_members, attr_types)
 
@@ -276,8 +285,57 @@ module RbsInfer
 
   def find_new_calls
     positional_params = extract_init_positional_params
-    analyzer = CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, init_positional_params: positional_params)
+    target_methods = extract_target_method_params
+    analyzer = CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, init_positional_params: positional_params, target_methods: target_methods)
     @source_files.flat_map { |file| analyzer.analyze(file) }
+  end
+
+  # Inferir tipos de parâmetros de métodos via chamadas cross-class
+  # Ex: PostPublisher chama notifier.notify(post.user, "msg") → user: User, message: String
+  def infer_method_param_types_from_callers
+    target_methods = extract_target_method_params
+    return {} if target_methods.empty?
+
+    positional_params = extract_init_positional_params
+    analyzer = CallerFileAnalyzer.new(
+      target_class: @target_class,
+      method_type_resolver: method_type_resolver,
+      init_positional_params: positional_params,
+      target_methods: target_methods
+    )
+    @source_files.each { |file| analyzer.analyze(file) }
+
+    result = {}
+    analyzer.method_call_usages.each do |method_name, usages|
+      merged = type_merger.merge_argument_types(usages)
+      merged.reject! { |_, t| t == "untyped" }
+      result[method_name] = merged unless merged.empty?
+    end
+    result
+  end
+
+  # Extrai nomes dos parâmetros posicionais de cada método da classe-alvo
+  # Retorna { "notify" => ["user", "message"], ... }
+  def extract_target_method_params
+    return {} unless @target_file && File.exist?(@target_file)
+
+    source = File.read(@target_file)
+    result = Prism.parse(source)
+    collector = DefCollector.new
+    result.value.accept(collector)
+
+    methods = {}
+    collector.defs.each do |defn|
+      next if defn.name == :initialize
+      params = defn.parameters
+      next unless params
+
+      names = []
+      params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
+      params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
+      methods[defn.name.to_s] = names unless names.empty?
+    end
+    methods
   end
 
   # Extrai nomes dos parâmetros positional do initialize da classe-alvo

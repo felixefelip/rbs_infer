@@ -102,9 +102,14 @@ module RbsInfer
     # Substitui parâmetros `untyped` na assinatura por tipos inferidos
     # Ex: "publicar_evento: (aluno: untyped) -> untyped" com {aluno: "Entity"}
     #   → "publicar_evento: (aluno: Entity) -> untyped"
+    # Também suporta positional: "notify: (untyped user, untyped message) -> ..."
+    #   → "notify: (User user, String message) -> ..."
     def apply_inferred_param_types(signature, param_types)
       param_types.each do |param_name, type|
+        # Keyword: ?param_name: untyped → ?param_name: Type
         signature = signature.gsub(/(\??)#{Regexp.escape(param_name)}:\s*untyped/, "\\1#{param_name}: #{type}")
+        # Positional: untyped param_name → Type param_name
+        signature = signature.gsub(/\buntyped\s+#{Regexp.escape(param_name)}\b/, "#{type} #{param_name}")
       end
       signature
     end

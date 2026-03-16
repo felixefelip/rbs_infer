@@ -1,10 +1,14 @@
 module RbsInfer
   class Analyzer
   class CallerFileAnalyzer
-    def initialize(target_class:, method_type_resolver:, init_positional_params: [])
+    attr_reader :method_call_usages
+
+    def initialize(target_class:, method_type_resolver:, init_positional_params: [], target_methods: {})
       @target_class = target_class
       @method_type_resolver = method_type_resolver
       @init_positional_params = init_positional_params
+      @target_methods = target_methods
+      @method_call_usages = Hash.new { |h, k| h[k] = [] }
     end
 
     def analyze(file)
@@ -38,9 +42,15 @@ module RbsInfer
         local_var_types: local_var_types,
         method_type_resolver: @method_type_resolver,
         caller_class_name: caller_visitor.class_name,
-        init_positional_params: @init_positional_params
+        init_positional_params: @init_positional_params,
+        target_methods: @target_methods
       )
       result.value.accept(visitor)
+
+      visitor.method_call_usages.each do |method_name, usages|
+        @method_call_usages[method_name].concat(usages)
+      end
+
       visitor.usages
     end
 
