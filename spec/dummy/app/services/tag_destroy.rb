@@ -37,4 +37,10 @@ class TagDestroy
 	    puts post.title
 	  end
   end
+
+  def iterate_tag_posts_with_transaction
+		ActiveRecord::Base.transaction do
+			iterate_tag_posts
+		end
+  end
 end

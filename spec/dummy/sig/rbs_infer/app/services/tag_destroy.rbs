@@ -11,4 +11,5 @@ class TagDestroy
   def user_name: () -> String
   def iterate_tags: () -> Tag::ActiveRecord_Associations_CollectionProxy?
   def iterate_tag_posts: () -> Post::ActiveRecord_Associations_CollectionProxy
+  def iterate_tag_posts_with_transaction: () -> Post::ActiveRecord_Associations_CollectionProxy
 end
