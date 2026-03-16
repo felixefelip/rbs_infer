@@ -7,4 +7,5 @@ class Post < ApplicationRecord
   def publish!: () -> self
   def comments_count: () -> Integer
   def add_comment: (author: untyped, body: untyped) -> Comment
+  def was_priority_high: () -> bool?
 end

@@ -554,8 +554,14 @@ module RbsInfer
         # Chain: receiver.method → resolver tipo do receiver, depois do method
         receiver_type = resolve_chain_type(node.receiver, known_return_types)
         if receiver_type && receiver_type != "untyped"
-          resolved = resolve_on_type(receiver_type, node.name.to_s)
-          resolved == "self" ? receiver_type : resolved
+          safe_nav = node.call_operator == "&."
+          base_type = safe_nav ? receiver_type.chomp("?") : receiver_type
+          resolved = resolve_on_type(base_type, node.name.to_s)
+          resolved = if resolved == "self" then receiver_type
+                     elsif resolved && safe_nav && !resolved.end_with?("?") then "#{resolved}?"
+                     else resolved
+                     end
+          resolved
         end
       end
     end
@@ -586,8 +592,14 @@ module RbsInfer
 
         parent_type = resolve_chain_type(node.receiver, known_return_types)
         if parent_type && parent_type != "untyped"
-          resolved = resolve_on_type(parent_type, node.name.to_s)
-          resolved == "self" ? parent_type : resolved
+          safe_nav = node.call_operator == "&."
+          base_type = safe_nav ? parent_type.chomp("?") : parent_type
+          resolved = resolve_on_type(base_type, node.name.to_s)
+          resolved = if resolved == "self" then parent_type
+                     elsif resolved && safe_nav && !resolved.end_with?("?") then "#{resolved}?"
+                     else resolved
+                     end
+          resolved
         end
       end
     when Prism::SelfNode
