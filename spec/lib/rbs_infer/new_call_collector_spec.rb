@@ -1,7 +1,12 @@
 require "spec_helper"
 require "rbs_infer"
+require "tmpdir"
+require "fileutils"
+require_relative "../../support/temp_file_helpers"
 
 RSpec.describe RbsInfer::Analyzer::NewCallCollector do
+  include TempFileHelpers
+
   def collect_usages(source, target_class:, method_return_types: {}, local_var_types: {})
     result = Prism.parse(source)
     visitor = described_class.new(
@@ -51,29 +56,35 @@ RSpec.describe RbsInfer::Analyzer::NewCallCollector do
   end
 
   it "resolve class method via resolver como tipo da variável local" do
-    source = <<~RUBY
-      def test
-        record = Record.find_by!(email: "x")
-        Target.new(record: record)
+    files = {
+      "sig/record.rbs" => <<~RBS,
+        class Record
+          def self.find_by!: (String email) -> Record
+        end
+      RBS
+      "caller.rb" => <<~RUBY
+        def test
+          record = Record.find_by!(email: "x")
+          Target.new(record: record)
+        end
+      RUBY
+    }
+
+    with_temp_files(files) do |dir, paths|
+      Dir.chdir(dir) do
+        resolver = RbsInfer::Analyzer::MethodTypeResolver.new(paths)
+        source = File.read(paths.last)
+        result = Prism.parse(source)
+        visitor = described_class.new(
+          target_class: "Target",
+          method_return_types: {},
+          local_var_types: {},
+          method_type_resolver: resolver
+        )
+        result.value.accept(visitor)
+        expect(visitor.usages.first["record"]).to eq("Record")
       end
-    RUBY
-
-    resolver = double("MethodTypeResolver")
-    allow(resolver).to receive(:resolve_class_method) do |cls, meth|
-      (cls == "Record" && meth == "find_by!") ? "Record" : nil
     end
-    allow(resolver).to receive(:resolve_init_param_types).and_return({})
-
-    result = Prism.parse(source)
-    visitor = described_class.new(
-      target_class: "Target",
-      method_return_types: {},
-      local_var_types: {},
-      method_type_resolver: resolver
-    )
-    result.value.accept(visitor)
-    usages = visitor.usages
-    expect(usages.first["record"]).to eq("Record")
   end
 
   it "match relativo: Email == Academico::Aluno::Email" do
