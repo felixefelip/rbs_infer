@@ -1,5 +1,11 @@
 class TagDestroy
   attr_reader tag: Tag
-  def initialize: (untyped tag_id) -> Tag
+  attr_reader user: User
+  def initialize: (untyped tag_id, untyped user_id) -> User
   def call: () -> bool
+
+  private
+
+  def atribui_user: (untyped user_id) -> User
+  def user_name: () -> String
 end

@@ -52,6 +52,17 @@ module RbsInfer
       super
     end
 
+    def visit_instance_variable_write_node(node)
+      if @in_method
+        name = node.name.to_s.sub(/\A@/, "")
+        if @attr_names.include?(name) && !@attr_types[name]
+          type = infer_type_from_node(node.value)
+          @attr_types[name] = type if type
+        end
+      end
+      super
+    end
+
     # Métodos que adicionam elementos diretamente: todos os args são elementos
     ELEMENT_ADD_METHODS = %i[<< push append unshift prepend].to_set
     # insert: primeiro arg é índice, demais são elementos
@@ -106,6 +117,9 @@ module RbsInfer
       case node
       when Prism::CallNode
         if node.name == :new && node.receiver
+          RbsInfer::Analyzer.extract_constant_path(node.receiver)
+        elsif node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
+          # Klass.find(...) etc. → assume return type is the class
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
         end
       when Prism::ConstantReadNode, Prism::ConstantPathNode
