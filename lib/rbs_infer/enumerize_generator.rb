@@ -137,6 +137,8 @@ module RbsInfer
         case node
         when Prism::ArrayNode
           node.elements.filter_map { |el| extract_symbol_value(el) }
+        when Prism::HashNode
+          node.elements.filter_map { |el| extract_symbol_value(el.key) if el.is_a?(Prism::AssocNode) }
         else
           []
         end
