@@ -580,16 +580,39 @@ module RbsInfer
       when Prism::NilNode then "nil"
       when Prism::ArrayNode then "Array[untyped]"
       when Prism::HashNode then "Hash[untyped, untyped]"
+      when Prism::SelfNode
+        class_name
       when Prism::CallNode
         if node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
         elsif node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
           cn = RbsInfer::Analyzer.extract_constant_path(node.receiver)
-          resolve_class_method(cn, node.name.to_s) if cn
+          resolved = resolve_class_method(cn, node.name.to_s) if cn
+          return resolved if resolved
+
+          infer_block_return_type(node.block, class_name)
         elsif node.receiver.nil? && class_name
-          resolve_via_rbs_builder(:instance, class_name, node.name.to_s)
+          resolved = resolve_via_rbs_builder(:instance, class_name, node.name.to_s)
+          return resolved if resolved
+
+          infer_block_return_type(node.block, class_name)
+        else
+          infer_block_return_type(node.block, class_name)
         end
       end
+    end
+
+    def infer_block_return_type(block_node, class_name)
+      return nil unless block_node.is_a?(Prism::BlockNode)
+
+      body = block_node.body
+      last_stmt = case body
+                  when Prism::StatementsNode then body.body.last
+                  else body
+                  end
+      return nil unless last_stmt
+
+      infer_literal_return_type(last_stmt, class_name)
     end
 
     # Extrai nomes de módulos incluídos via `include Foo::Bar` no source
@@ -746,6 +769,8 @@ module RbsInfer
         "nil"
       when RBS::Types::Bases::Any
         "untyped"
+      when RBS::Types::Variable
+        nil
       else
         # Remover :: prefix de nomes de tipos qualificados
         rbs_type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }

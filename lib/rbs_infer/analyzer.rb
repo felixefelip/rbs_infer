@@ -533,6 +533,7 @@ module RbsInfer
     when Prism::TrueNode, Prism::FalseNode then "bool"
     when Prism::ArrayNode then "Array[untyped]"
     when Prism::HashNode then "Hash[untyped, untyped]"
+    when Prism::SelfNode then @target_class
     when Prism::InstanceVariableWriteNode, Prism::LocalVariableWriteNode
       infer_ivar_value_type(node.value, known_return_types)
     when Prism::CallNode
@@ -540,7 +541,10 @@ module RbsInfer
         Analyzer.extract_constant_path(node.receiver)
       elsif node.receiver.nil?
         # Chamada sem receiver (self implícito): ex. posts, comments
-        known_return_types[node.name.to_s]
+        resolved = known_return_types[node.name.to_s]
+        return resolved if resolved
+
+        infer_block_return_type(node.block, known_return_types)
       else
         # Verificar se receiver é uma constante (chamada de classe)
         if node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
@@ -561,10 +565,26 @@ module RbsInfer
                      elsif resolved && safe_nav && !resolved.end_with?("?") then "#{resolved}?"
                      else resolved
                      end
-          resolved
+          return resolved if resolved
         end
+
+        # Fallback: inferir tipo do bloco (ex: transaction { ... })
+        infer_block_return_type(node.block, known_return_types)
       end
     end
+  end
+
+  def infer_block_return_type(block_node, known_return_types)
+    return nil unless block_node.is_a?(Prism::BlockNode)
+
+    body = block_node.body
+    last_stmt = case body
+                when Prism::StatementsNode then body.body.last
+                else body
+                end
+    return nil unless last_stmt
+
+    infer_ivar_value_type(last_stmt, known_return_types)
   end
 
   # Resolve método chamado sobre um tipo conhecido
@@ -599,8 +619,11 @@ module RbsInfer
                      elsif resolved && safe_nav && !resolved.end_with?("?") then "#{resolved}?"
                      else resolved
                      end
-          resolved
+          return resolved if resolved
         end
+
+        # Fallback: inferir tipo do bloco (ex: transaction { ... })
+        infer_block_return_type(node.block, known_return_types)
       end
     when Prism::SelfNode
       nil

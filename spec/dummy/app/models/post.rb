@@ -50,4 +50,11 @@ class Post < ApplicationRecord
   def was_priority_high
 	  priority&.high?
   end
+
+  def publish_in_transaction
+    ActiveRecord::Base.transaction do
+      publish!
+      self
+    end
+  end
 end
