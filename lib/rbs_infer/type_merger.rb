@@ -168,7 +168,8 @@ module RbsInfer
         # receiver.method → resolver tipo do receiver, depois do method
         receiver_type = resolve_receiver_type(call_node.receiver, known_return_types, method_type_resolver)
         if receiver_type && receiver_type != "untyped"
-          method_type_resolver.resolve(receiver_type, call_node.name.to_s)
+          resolved = method_type_resolver.resolve(receiver_type, call_node.name.to_s)
+          resolved == "self" ? receiver_type : resolved
         end
       end
     end
@@ -183,7 +184,9 @@ module RbsInfer
         else
           parent_type = resolve_receiver_type(node.receiver, known_return_types, method_type_resolver)
           if parent_type && parent_type != "untyped"
-            method_type_resolver.resolve(parent_type, node.name.to_s)
+            resolved = method_type_resolver.resolve(parent_type, node.name.to_s)
+            # "self" means the method returns the same type as the receiver
+            resolved == "self" ? parent_type : resolved
           end
         end
       when Prism::SelfNode
