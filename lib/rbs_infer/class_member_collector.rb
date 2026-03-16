@@ -234,10 +234,14 @@ module RbsInfer
       infer_type_from_node(last_stmt)
     end
 
+    AR_FINDER_METHODS = %i[find find_by find_by! first first! last last! take take! find_sole_by].freeze
+
     def infer_type_from_node(node)
       case node
       when Prism::CallNode
         if node.name == :new && node.receiver
+          RbsInfer::Analyzer.extract_constant_path(node.receiver)
+        elsif AR_FINDER_METHODS.include?(node.name) && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
         end
       when Prism::StringNode then "String"
@@ -251,6 +255,8 @@ module RbsInfer
       when Prism::HashNode then "Hash[untyped, untyped]"
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         RbsInfer::Analyzer.extract_constant_path(node)
+      when Prism::InstanceVariableWriteNode, Prism::LocalVariableWriteNode
+        infer_type_from_node(node.value)
       end
     end
   end

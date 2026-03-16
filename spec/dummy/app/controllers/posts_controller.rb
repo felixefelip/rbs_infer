@@ -52,6 +52,10 @@ class PostsController < ApplicationController
     @post = Post.find(params[:id])
   end
 
+  def set_test
+    @test = User.first!.posts.last
+  end
+
   def post_params
     params.require(:post).permit(:title, :body, :published)
   end
