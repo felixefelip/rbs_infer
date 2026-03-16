@@ -1,5 +1,4 @@
 class PostsController < ApplicationController
-  @posts: Post::ActiveRecord_Relation
   @post: Post
   @test: Post?
   @comments: Comment::ActiveRecord_Relation

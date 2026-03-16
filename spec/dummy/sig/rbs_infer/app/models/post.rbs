@@ -1,5 +1,7 @@
 class Post < ApplicationRecord
   def summary: (?Integer length) -> untyped
+  def test_status: () -> ::Integer
+  def was_archived?: () -> untyped
   def creator: () -> ::User
   def author_name: () -> String
   def publish!: () -> self

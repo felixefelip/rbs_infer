@@ -1,20 +1,29 @@
 # frozen_string_literal: true
 
 class Post < ApplicationRecord
+  extend Enumerize
+
   belongs_to :user
   has_many :comments, dependent: :destroy
   has_many :post_tags, dependent: :destroy
   has_many :tags, through: :post_tags
 
+  enumerize :status, in: [:draft, :published, :archived], default: :draft, predicates: true, scope: :shallow
+
   validates :title, presence: true
   validates :body, presence: true
-
-  scope :published, -> { where(published: true) }
-  scope :draft, -> { where(published: false) }
 
   def summary(length = 100)
     body.to_s.truncate(length)
   end
+
+  def test_status
+    status
+  end
+
+	def was_archived?
+		status.archived?
+	end
 
   def creator
     user
