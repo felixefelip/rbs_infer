@@ -1,9 +1,10 @@
 module RbsInfer
   class Analyzer
   class CallerFileAnalyzer
-    def initialize(target_class:, method_type_resolver:)
+    def initialize(target_class:, method_type_resolver:, init_positional_params: [])
       @target_class = target_class
       @method_type_resolver = method_type_resolver
+      @init_positional_params = init_positional_params
     end
 
     def analyze(file)
@@ -36,7 +37,8 @@ module RbsInfer
         method_return_types: method_return_types,
         local_var_types: local_var_types,
         method_type_resolver: @method_type_resolver,
-        caller_class_name: caller_visitor.class_name
+        caller_class_name: caller_visitor.class_name,
+        init_positional_params: @init_positional_params
       )
       result.value.accept(visitor)
       visitor.usages

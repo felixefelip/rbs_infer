@@ -31,6 +31,14 @@ module RbsInfer
       super
     end
 
+    def visit_instance_variable_write_node(node)
+      if @in_initialize
+        attr_name = node.name.to_s.sub(/\A@/, "")
+        @self_assignments[attr_name] ||= resolve_assignment_value(node.value)
+      end
+      super
+    end
+
     private
 
     def extract_param_names(params)

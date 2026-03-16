@@ -58,11 +58,7 @@ module RbsInfer
             sig = member.signature
             # Substituir initialize com tipos inferidos dos call-sites
             if member.name == "initialize" && !init_arg_types.empty?
-              sig_args = init_arg_types.map { |name, type|
-                prefix = optional_params.include?(name) ? "?" : ""
-                "#{prefix}#{name}: #{type}"
-              }.join(", ")
-              sig = "initialize: (#{sig_args}) -> void"
+              sig = apply_inferred_init_types(sig, init_arg_types, optional_params)
             elsif method_param_types[member.name]
               sig = apply_inferred_param_types(sig, method_param_types[member.name])
             end
@@ -110,6 +106,21 @@ module RbsInfer
       param_types.each do |param_name, type|
         signature = signature.gsub(/(\??)#{Regexp.escape(param_name)}:\s*untyped/, "\\1#{param_name}: #{type}")
       end
+      signature
+    end
+
+    # Substitui tipos de parâmetros do initialize preservando posicional vs keyword
+    # Ex: "initialize: (untyped post, ?notifier: untyped) -> untyped" com {post: "Post"}
+    #   → "initialize: (Post post, ?notifier: untyped) -> void"
+    def apply_inferred_init_types(signature, init_arg_types, optional_params)
+      init_arg_types.each do |param_name, type|
+        # Keyword: ?param_name: untyped → ?param_name: Type
+        signature = signature.gsub(/(\??)#{Regexp.escape(param_name)}:\s*untyped/, "\\1#{param_name}: #{type}")
+        # Positional: untyped param_name → Type param_name
+        signature = signature.gsub(/\buntyped\s+#{Regexp.escape(param_name)}\b/, "#{type} #{param_name}")
+      end
+      # Normalizar return type do initialize para void
+      signature = signature.sub(/->\s*untyped\s*$/, "-> void")
       signature
     end
 

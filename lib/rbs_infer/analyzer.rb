@@ -275,8 +275,28 @@ module RbsInfer
   end
 
   def find_new_calls
-    analyzer = CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver)
+    positional_params = extract_init_positional_params
+    analyzer = CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, init_positional_params: positional_params)
     @source_files.flat_map { |file| analyzer.analyze(file) }
+  end
+
+  # Extrai nomes dos parâmetros positional do initialize da classe-alvo
+  def extract_init_positional_params
+    return [] unless @target_file && File.exist?(@target_file)
+
+    source = File.read(@target_file)
+    result = Prism.parse(source)
+    collector = DefCollector.new
+    result.value.accept(collector)
+
+    init_def = collector.defs.find { |d| d.name == :initialize }
+    return [] unless init_def&.parameters
+
+    params = init_def.parameters
+    names = []
+    params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
+    params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
+    names
   end
 
   def method_type_resolver

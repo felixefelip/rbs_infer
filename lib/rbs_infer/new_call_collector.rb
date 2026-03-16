@@ -5,13 +5,21 @@ module RbsInfer
 
     AR_FINDER_METHODS = %i[find find_by find_by! first first! last last! take take! create create! find_or_create_by find_or_create_by! find_sole_by].freeze
 
-    def initialize(target_class:, method_return_types:, local_var_types:, method_type_resolver: nil, caller_class_name: nil)
+    def initialize(target_class:, method_return_types:, local_var_types:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [])
       @target_class = target_class
       @method_return_types = method_return_types
       @local_var_types = local_var_types
       @method_type_resolver = method_type_resolver
       @caller_class_name = caller_class_name
+      @init_positional_params = init_positional_params
       @usages = []
+    end
+
+    def visit_class_node(node)
+      # Pré-coletar tipos de ivars de todos os métodos da classe
+      # para que @post definido em set_post esteja disponível em publish
+      collect_class_ivar_types(node)
+      super
     end
 
     def visit_def_node(node)
@@ -26,6 +34,7 @@ module RbsInfer
         receiver_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
         if receiver_name && match_class?(receiver_name)
           args = extract_keyword_args(node)
+          args.merge!(extract_positional_args(node))
           @usages << args unless args.empty?
         end
       end
@@ -33,6 +42,26 @@ module RbsInfer
     end
 
     private
+
+    def collect_class_ivar_types(class_node)
+      ivar_writes = RbsInfer::Analyzer.find_all_nodes(class_node) do |n|
+        n.is_a?(Prism::InstanceVariableWriteNode) && n.value.is_a?(Prism::CallNode)
+      end
+
+      ivar_writes.each do |ivar|
+        var_name = ivar.name.to_s.sub(/\A@/, "")
+        next if @local_var_types[var_name]
+
+        call = ivar.value
+        if call.name == :new && call.receiver
+          class_name = RbsInfer::Analyzer.extract_constant_path(call.receiver)
+          @local_var_types[var_name] = class_name if class_name
+        elsif AR_FINDER_METHODS.include?(call.name) && call.receiver
+          class_name = RbsInfer::Analyzer.extract_constant_path(call.receiver)
+          @local_var_types[var_name] = class_name if class_name
+        end
+      end
+    end
 
     def match_class?(name)
       normalized_target = @target_class.sub(/\A::/, "")
@@ -70,6 +99,17 @@ module RbsInfer
               @local_var_types[var_name] = class_name if class_name
             elsif AR_FINDER_METHODS.include?(stmt.value.name) && stmt.value.receiver
               # record = Record.find_by!(...) → type Record
+              class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
+              @local_var_types[var_name] = class_name if class_name
+            end
+          end
+        elsif stmt.is_a?(Prism::InstanceVariableWriteNode)
+          var_name = stmt.name.to_s.sub(/\A@/, "")
+          if stmt.value.is_a?(Prism::CallNode)
+            if stmt.value.name == :new && stmt.value.receiver
+              class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
+              @local_var_types[var_name] = class_name if class_name
+            elsif AR_FINDER_METHODS.include?(stmt.value.name) && stmt.value.receiver
               class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
               @local_var_types[var_name] = class_name if class_name
             end
@@ -131,6 +171,24 @@ module RbsInfer
       args
     end
 
+    def extract_positional_args(call_node)
+      args = {}
+      return args if @init_positional_params.empty?
+      return args unless call_node.arguments
+
+      index = 0
+      call_node.arguments.arguments.each do |arg|
+        break if index >= @init_positional_params.size
+        next if arg.is_a?(Prism::KeywordHashNode)
+
+        param_name = @init_positional_params[index]
+        args[param_name] = resolve_value_type(arg)
+        index += 1
+      end
+
+      args
+    end
+
     def extract_symbol_key(node)
       return node.unescaped if node.is_a?(Prism::SymbolNode)
       nil
@@ -140,6 +198,8 @@ module RbsInfer
       case node
       when Prism::LocalVariableReadNode
         @local_var_types[node.name.to_s] || "untyped"
+      when Prism::InstanceVariableReadNode
+        @local_var_types[node.name.to_s.sub(/\A@/, "")] || "untyped"
       when Prism::CallNode
         if node.receiver.nil?
           @method_return_types[node.name.to_s] || "untyped"
