@@ -13,6 +13,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
         system("bundle", "install", "--quiet", exception: true)
         system("bundle", "exec", "rake", "db:create", "db:migrate", "RAILS_ENV=development", exception: true, out: File::NULL, err: File::NULL)
         system("bundle", "exec", "rake", "rbs_rails:all", exception: true, out: File::NULL, err: File::NULL)
+        system("bundle", "exec", "rbs", "collection", "install", exception: true, out: File::NULL, err: File::NULL)
       end
     end
   end
