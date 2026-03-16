@@ -1,10 +1,11 @@
 # Example with a instance variable wifh attr_reader
 
 class TagDestroy
-  attr_reader :tag, :user
+  attr_reader :tag, :user, :posts
 
 	def initialize(tag_id, user_id)
 		@tag = Tag.find(tag_id)
+		@posts = []
     atribui_user(user_id)
 	end
 
@@ -20,5 +21,20 @@ class TagDestroy
 
   def user_name
 		user.name
+  end
+
+	def iterate_tags
+		my_tags = tag.posts.first&.tags&.order(:name)
+		my_tags&.each do |t|
+			t.save!
+		end
+	end
+
+	# Test when the local var has the same name as the attr_reader and different type
+  def iterate_tag_posts
+	  posts = tag.posts.order(:created_at)
+	  posts.where(status: :published).each do |post|
+	    puts post.title
+	  end
   end
 end

@@ -734,8 +734,15 @@ module RbsInfer
       method = defn&.methods&.[](method_name.to_sym)
       return nil unless method
 
-      rbs_type = method.defs.first.type.type.return_type
-      format_rbs_return_type(rbs_type, class_name)
+      # Iterar overloads para preferir tipos sem genéricos não resolvidos (ex: WhereChain[self])
+      best = nil
+      method.defs.each do |d|
+        formatted = format_rbs_return_type(d.type.type.return_type, class_name)
+        next unless formatted
+        return formatted unless formatted.include?("[self]")
+        best ||= formatted
+      end
+      best
     rescue => _e
       nil
     end

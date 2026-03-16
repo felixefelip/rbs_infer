@@ -77,4 +77,8 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   it "EmailNotifier service matches expected RBS" do
     assert_snapshot("email_notifier", target_class: "EmailNotifier", target_file: "app/services/email_notifier.rb")
   end
+
+  it "TagDestroy service matches expected RBS" do
+    assert_snapshot("tag_destroy", target_class: "TagDestroy", target_file: "app/services/tag_destroy.rb")
+  end
 end
