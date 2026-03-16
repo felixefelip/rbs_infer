@@ -669,7 +669,19 @@ module RbsInfer
     source = File.read(@target_file)
     result = Prism.parse(source)
 
-    visitor = IntraClassCallAnalyzer.new(attr_types: attr_types, method_type_resolver: method_type_resolver)
+    # Pré-coletar parâmetros posicionais de todos os métodos
+    collector = DefCollector.new
+    result.value.accept(collector)
+    positional_params = {}
+    collector.defs.each do |defn|
+      next unless defn.is_a?(Prism::DefNode) && defn.parameters
+      names = []
+      defn.parameters.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if defn.parameters.respond_to?(:requireds)
+      defn.parameters.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if defn.parameters.respond_to?(:optionals)
+      positional_params[defn.name.to_s] = names unless names.empty?
+    end
+
+    visitor = IntraClassCallAnalyzer.new(attr_types: attr_types, method_type_resolver: method_type_resolver, method_positional_params: positional_params)
     result.value.accept(visitor)
     inferred = visitor.inferred_param_types.dup
 

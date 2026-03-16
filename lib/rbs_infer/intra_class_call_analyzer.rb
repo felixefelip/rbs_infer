@@ -11,13 +11,14 @@ module RbsInfer
     # method_name → { param_name → type }
     attr_reader :inferred_param_types
 
-    def initialize(attr_types: {}, method_type_resolver: nil)
+    def initialize(attr_types: {}, method_type_resolver: nil, method_positional_params: {})
       @attr_types = attr_types
       @method_type_resolver = method_type_resolver
       @inferred_param_types = Hash.new { |h, k| h[k] = {} }
       @local_var_types = {}
       @current_method_name = nil
       @current_param_names = Set.new
+      @method_positional_params = method_positional_params
     end
 
     def visit_def_node(node)
@@ -40,11 +41,27 @@ module RbsInfer
     def visit_call_node(node)
       if node.receiver.nil? && node.arguments
         method_name = node.name.to_s
+
+        # Keyword args
         args = extract_keyword_arg_types(node)
         args.each do |param_name, type|
           next if type == "untyped"
           existing = @inferred_param_types[method_name][param_name]
           @inferred_param_types[method_name][param_name] = type unless existing
+        end
+
+        # Positional args: mapear por posição usando os nomes dos parâmetros do método-alvo
+        positional_params = @method_positional_params[method_name]
+        if positional_params
+          positional_args = node.arguments.arguments.reject { |a| a.is_a?(Prism::KeywordHashNode) }
+          positional_args.each_with_index do |arg, i|
+            param_name = positional_params[i]
+            next unless param_name
+            type = resolve_value_type(arg)
+            next if type == "untyped"
+            existing = @inferred_param_types[method_name][param_name]
+            @inferred_param_types[method_name][param_name] = type unless existing
+          end
         end
       end
 

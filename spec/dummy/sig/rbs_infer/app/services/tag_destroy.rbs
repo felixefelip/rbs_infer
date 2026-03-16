@@ -12,4 +12,6 @@ class TagDestroy
   def iterate_tags: () -> Tag::ActiveRecord_Associations_CollectionProxy?
   def iterate_tag_posts: () -> Post::ActiveRecord_Associations_CollectionProxy
   def iterate_tag_posts_with_transaction: () -> Post::ActiveRecord_Associations_CollectionProxy
+  def call_process_tag: () -> void
+  def process_tag: (Tag tag) -> void
 end

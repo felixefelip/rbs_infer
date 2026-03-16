@@ -43,4 +43,12 @@ class TagDestroy
 			iterate_tag_posts
 		end
   end
+
+  def call_process_tag
+	  process_tag(tag)
+  end
+
+  def process_tag(tag)
+	  tag.save!
+  end
 end
