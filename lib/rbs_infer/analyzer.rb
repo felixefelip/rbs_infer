@@ -69,7 +69,7 @@ module RbsInfer
 
     # Enriquecer init_arg_types com tipos inferidos (defaults, attrs)
     attr_types.each do |attr_name, type|
-      if init_arg_types[attr_name] == "untyped"
+      if init_arg_types[attr_name].nil? || init_arg_types[attr_name] == "untyped"
         init_arg_types[attr_name] = type
       end
     end
