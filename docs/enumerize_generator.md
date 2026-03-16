@@ -6,28 +6,13 @@ Instead of relying on the generic `Enumerize::Value` type from `gem_rbs_collecti
 
 ## Setup
 
-Add the rake task to your project. Create `lib/tasks/rbs_enumerize.rake`:
+Add `rbs_infer` to your `Gemfile`:
 
 ```ruby
-# frozen_string_literal: true
-
-require "rbs_infer/enumerize_generator"
-
-namespace :rbs_infer do
-  namespace :enumerize do
-    desc "Generate RBS files for enumerize attributes"
-    task :all do
-      app_dir = defined?(Rails) ? Rails.root.to_s : Dir.pwd
-      output_dir = File.join(app_dir, "sig/rbs_enumerize")
-
-      generator = RbsInfer::Enumerize::Generator.new(app_dir: app_dir, output_dir: output_dir)
-      generator.generate_all
-
-      puts "Generated enumerize RBS files in sig/rbs_enumerize/"
-    end
-  end
-end
+gem "rbs_infer"
 ```
+
+The rake task `rbs_infer:enumerize:all` is automatically available via Railtie — no manual file creation needed.
 
 ## Usage
 

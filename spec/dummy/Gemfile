@@ -12,6 +12,7 @@ gem "puma", ">= 5.0"
 gem "enumerize"
 
 # RBS type signatures
+gem "rbs_infer", path: "../.."
 gem "rbs_rails", path: "/home/felix/workspaces/ruby-workspace/rbs_rails", require: false
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem

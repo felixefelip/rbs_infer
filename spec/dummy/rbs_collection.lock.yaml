@@ -173,6 +173,10 @@ gems:
   version: '0'
   source:
     type: stdlib
+- name: json
+  version: '0'
+  source:
+    type: stdlib
 - name: logger
   version: '0'
   source:
@@ -237,6 +241,10 @@ gems:
   version: '0'
   source:
     type: stdlib
+- name: optparse
+  version: '0'
+  source:
+    type: stdlib
 - name: pp
   version: '0'
   source:
@@ -297,6 +305,10 @@ gems:
     revision: 9bf2eebb1c54b5d6f23f2acb65d4c36f195b4783
     remote: https://github.com/ruby/gem_rbs_collection.git
     repo_dir: gems
+- name: rbs
+  version: 3.10.3
+  source:
+    type: rubygems
 - name: rdoc
   version: '0'
   source:

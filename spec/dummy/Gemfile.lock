@@ -1,4 +1,11 @@
 PATH
+  remote: ../..
+  specs:
+    rbs_infer (0.1.0)
+      prism (>= 1.0)
+      rbs
+
+PATH
   remote: /home/felix/workspaces/ruby-workspace/rbs_rails
   specs:
     rbs_rails (0.12.1)
@@ -252,6 +259,7 @@ DEPENDENCIES
   propshaft
   puma (>= 5.0)
   rails (~> 8.0.3)
+  rbs_infer!
   rbs_rails!
   sqlite3 (>= 2.1)
   tzinfo-data
