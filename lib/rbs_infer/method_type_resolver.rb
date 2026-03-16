@@ -10,11 +10,18 @@ module RbsInfer
       @source_files = source_files
       @cache = {}
       @building = Set.new # guard contra recursão infinita
+      @rbs_builder = nil
+      @rbs_builder_loaded = false
     end
 
     def resolve(class_name, method_name)
       return nil unless class_name && class_name != "untyped"
 
+      # Tentar via RBS DefinitionBuilder primeiro (resolve genéricos corretamente)
+      rbs_result = resolve_via_rbs_builder(:instance, class_name, method_name)
+      return rbs_result if rbs_result && rbs_result != "untyped"
+
+      # Fallback: source + regex-based resolution
       class_types = resolve_all(class_name)
       class_types[method_name] || class_types[method_name.chomp("!").chomp("?")]
     end
@@ -23,6 +30,11 @@ module RbsInfer
     def resolve_class_method(class_name, method_name)
       return nil unless class_name && class_name != "untyped"
 
+      # Tentar via RBS DefinitionBuilder primeiro (resolve genéricos corretamente)
+      resolved = resolve_via_rbs_builder(:singleton, class_name, method_name)
+      return resolved if resolved
+
+      # Fallback: regex-based lookup
       class_methods = lookup_class_methods(class_name)
       class_methods[method_name]
     end
@@ -571,6 +583,9 @@ module RbsInfer
       when Prism::CallNode
         if node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
+        elsif node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
+          class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
+          resolve_class_method(class_name, node.name.to_s) if class_name
         end
       end
     end
@@ -650,6 +665,89 @@ module RbsInfer
       end
 
       types
+    end
+
+    # ─── RBS DefinitionBuilder ───────────────────────────────────────
+    # Usa a gem rbs para resolver tipos com suporte a genéricos/type parameters.
+    # Ex: Post.find(id) → Post (resolve ClassMethods[::Post, ...])
+    # Ex: Post::ActiveRecord_Relation.last → Post? (resolve genéricos)
+
+    def rbs_builder
+      return @rbs_builder if @rbs_builder_loaded
+      @rbs_builder_loaded = true
+      @rbs_builder = build_rbs_definition_builder
+    end
+
+    def build_rbs_definition_builder
+      require "rbs"
+
+      loader = RBS::EnvironmentLoader.new
+
+      # Carregar sig/ directories (rbs_rails, rbs_infer, etc.)
+      Dir["sig/*/"].each { |d| loader.add(path: Pathname(d)) }
+
+      # Carregar .gem_rbs_collection/
+      Dir[".gem_rbs_collection/*/"].each do |gem_dir|
+        Dir["#{gem_dir}/*/"].each { |ver_dir| loader.add(path: Pathname(ver_dir)) }
+      end
+
+      env = RBS::Environment.from_loader(loader).resolve_type_names
+      RBS::DefinitionBuilder.new(env: env)
+    rescue LoadError, StandardError => _e
+      nil
+    end
+
+    def resolve_via_rbs_builder(kind, class_name, method_name)
+      return nil unless rbs_builder
+
+      type_name = build_rbs_type_name(class_name)
+      return nil unless type_name
+
+      defn = case kind
+             when :singleton then rbs_builder.build_singleton(type_name)
+             when :instance then rbs_builder.build_instance(type_name)
+             end
+
+      method = defn&.methods&.[](method_name.to_sym)
+      return nil unless method
+
+      rbs_type = method.defs.first.type.type.return_type
+      format_rbs_return_type(rbs_type, class_name)
+    rescue => _e
+      nil
+    end
+
+    def build_rbs_type_name(class_name)
+      normalized = class_name.sub(/\A::/, "")
+      parts = normalized.split("::")
+      name_sym = parts.pop.to_sym
+      ns = if parts.empty?
+             RBS::Namespace.root
+           else
+             RBS::Namespace.new(path: parts.map(&:to_sym), absolute: true)
+           end
+      RBS::TypeName.new(name: name_sym, namespace: ns)
+    end
+
+    def format_rbs_return_type(rbs_type, context_class = nil)
+      case rbs_type
+      when RBS::Types::Bases::Instance
+        # "instance" → o nome da classe (ex: Post.create → Post)
+        context_class&.sub(/\A::/, "")
+      when RBS::Types::Bases::Self
+        "self"
+      when RBS::Types::Bases::Bool
+        "bool"
+      when RBS::Types::Bases::Void
+        "void"
+      when RBS::Types::Bases::Nil
+        "nil"
+      when RBS::Types::Bases::Any
+        "untyped"
+      else
+        # Remover :: prefix de nomes de tipos qualificados
+        rbs_type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }
+      end
     end
   end
   end

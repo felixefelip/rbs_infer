@@ -28,7 +28,6 @@ require "prism"
 #
 module RbsInfer
   class Analyzer
-  AR_FINDER_METHODS = %i[find find_by find_by! first first! last last! take take! find_sole_by].to_set
   ITERATOR_METHODS = %i[each map flat_map select reject filter find detect collect each_with_object].to_set
 
   attr_reader :target_class, :target_file, :source_files
@@ -537,14 +536,9 @@ module RbsInfer
         # Verificar se receiver é uma constante (chamada de classe)
         if node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
           class_name = Analyzer.extract_constant_path(node.receiver)
-          if class_name
-            # AR finders: Post.find(...) → Post
-            return class_name if AR_FINDER_METHODS.include?(node.name)
-            # Métodos de classe: Post.published → via RBS def self.published
-            if method_type_resolver
-              resolved = method_type_resolver.resolve_class_method(class_name, node.name.to_s)
-              return (resolved == "self" ? class_name : resolved) if resolved
-            end
+          if class_name && method_type_resolver
+            resolved = method_type_resolver.resolve_class_method(class_name, node.name.to_s)
+            return (resolved == "self" ? class_name : resolved) if resolved
           end
         end
 
@@ -559,14 +553,7 @@ module RbsInfer
   end
 
   # Resolve método chamado sobre um tipo conhecido
-  # Trata coleções AR (Post::CollectionProxy.last → Post)
   def resolve_on_type(receiver_type, method_name)
-    # AR collection/relation finders: Post::ActiveRecord_Relation.last → Post
-    if AR_FINDER_METHODS.include?(method_name.to_sym) &&
-       receiver_type =~ /\A(::)?(.+?)::(ActiveRecord_Associations_CollectionProxy|ActiveRecord_Relation)\z/
-      return $2
-    end
-
     return nil unless method_type_resolver
     method_type_resolver.resolve(receiver_type, method_name)
   end
@@ -582,12 +569,9 @@ module RbsInfer
         # Verificar se receiver é uma constante (chamada de classe)
         if node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
           class_name = Analyzer.extract_constant_path(node.receiver)
-          if class_name
-            return class_name if AR_FINDER_METHODS.include?(node.name)
-            if method_type_resolver
-              resolved = method_type_resolver.resolve_class_method(class_name, node.name.to_s)
-              return (resolved == "self" ? class_name : resolved) if resolved
-            end
+          if class_name && method_type_resolver
+            resolved = method_type_resolver.resolve_class_method(class_name, node.name.to_s)
+            return (resolved == "self" ? class_name : resolved) if resolved
           end
         end
 
@@ -881,18 +865,23 @@ module RbsInfer
           if class_name
             local_var_types[var_name] = resolve_constant_in_namespace(class_name, caller_class_name)
           end
-        elsif AR_FINDER_METHODS.include?(assign.value.name) && assign.value.receiver
-          # Record.find_by!(...) → tipo é o próprio Record
-          class_name = RbsInfer::Analyzer.extract_constant_path(assign.value.receiver)
-          if class_name
-            local_var_types[var_name] = resolve_constant_in_namespace(class_name, caller_class_name)
-          end
         else
           # receiver.method → tentar resolver tipo
-          receiver_type = resolve_arg_value_type(assign.value.receiver, local_var_types, method_return_types)
-          if receiver_type && receiver_type != "untyped"
-            resolved = method_type_resolver.resolve(receiver_type, assign.value.name.to_s)
-            local_var_types[var_name] = resolved if resolved && resolved != "untyped"
+          if assign.value.receiver.is_a?(Prism::ConstantReadNode) || assign.value.receiver.is_a?(Prism::ConstantPathNode)
+            # Chamada de classe: Record.find_by!(...) → resolver via RBS
+            class_name = RbsInfer::Analyzer.extract_constant_path(assign.value.receiver)
+            if class_name
+              resolved = method_type_resolver.resolve_class_method(class_name, assign.value.name.to_s)
+              if resolved && resolved != "untyped"
+                local_var_types[var_name] = resolve_constant_in_namespace(resolved, caller_class_name)
+              end
+            end
+          else
+            receiver_type = resolve_arg_value_type(assign.value.receiver, local_var_types, method_return_types)
+            if receiver_type && receiver_type != "untyped"
+              resolved = method_type_resolver.resolve(receiver_type, assign.value.name.to_s)
+              local_var_types[var_name] = resolved if resolved && resolved != "untyped"
+            end
           end
         end
       end

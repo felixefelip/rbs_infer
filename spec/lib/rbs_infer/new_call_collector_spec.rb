@@ -50,7 +50,7 @@ RSpec.describe RbsInfer::Analyzer::NewCallCollector do
     expect(usages.first["client"]).to eq("Client::Entity")
   end
 
-  it "resolve AR finder methods como tipo do receiver" do
+  it "resolve class method via resolver como tipo da variável local" do
     source = <<~RUBY
       def test
         record = Record.find_by!(email: "x")
@@ -58,7 +58,21 @@ RSpec.describe RbsInfer::Analyzer::NewCallCollector do
       end
     RUBY
 
-    usages = collect_usages(source, target_class: "Target")
+    resolver = double("MethodTypeResolver")
+    allow(resolver).to receive(:resolve_class_method) do |cls, meth|
+      (cls == "Record" && meth == "find_by!") ? "Record" : nil
+    end
+    allow(resolver).to receive(:resolve_init_param_types).and_return({})
+
+    result = Prism.parse(source)
+    visitor = described_class.new(
+      target_class: "Target",
+      method_return_types: {},
+      local_var_types: {},
+      method_type_resolver: resolver
+    )
+    result.value.accept(visitor)
+    usages = visitor.usages
     expect(usages.first["record"]).to eq("Record")
   end
 

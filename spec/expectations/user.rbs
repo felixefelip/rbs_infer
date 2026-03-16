@@ -2,6 +2,6 @@ class User < ApplicationRecord
   attr_accessor session_token: untyped
   def full_name: () -> String
   def active?: () -> bool?
-  def posts_count: () -> ::Integer
+  def posts_count: () -> Integer
   def recent_posts: (?Integer limit) -> ::Post::ActiveRecord_Associations_CollectionProxy
 end

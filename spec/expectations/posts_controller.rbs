@@ -1,8 +1,8 @@
 class PostsController < ApplicationController
-  @posts: ::Post::ActiveRecord_Relation
+  @posts: Post::ActiveRecord_Relation
   @post: Post
-  @test: Post
-  @comments: ::Comment::ActiveRecord_Relation
+  @test: Post?
+  @comments: Comment::ActiveRecord_Relation
   def index: () -> void
   def show: () -> void
   def new: () -> void
@@ -14,6 +14,6 @@ class PostsController < ApplicationController
   private
 
   def set_post: () -> Post
-  def set_test: () -> Post
+  def set_test: () -> Post?
   def post_params: () -> untyped
 end

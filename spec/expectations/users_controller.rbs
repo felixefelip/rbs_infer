@@ -1,6 +1,7 @@
 class UsersController < ApplicationController
-  @users: ::User::ActiveRecord_Relation
+  @users: User::ActiveRecord_Relation
   @user: User
+  @posts: Post::ActiveRecord_Associations_CollectionProxy
   def index: () -> void
   def show: () -> void
 end

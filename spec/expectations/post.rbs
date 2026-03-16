@@ -3,6 +3,6 @@ class Post < ApplicationRecord
   def creator: () -> ::User
   def author_name: () -> String
   def publish!: () -> untyped
-  def comments_count: () -> ::Integer
-  def add_comment: (author: untyped, body: untyped) -> ::Comment
+  def comments_count: () -> Integer
+  def add_comment: (author: untyped, body: untyped) -> Comment
 end

@@ -3,8 +3,6 @@ module RbsInfer
   class NewCallCollector < Prism::Visitor
     attr_reader :usages, :method_call_usages
 
-    AR_FINDER_METHODS = %i[find find_by find_by! first first! last last! take take! create create! find_or_create_by find_or_create_by! find_sole_by].freeze
-
     def initialize(target_class:, method_return_types:, local_var_types:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {})
       @target_class = target_class
       @method_return_types = method_return_types
@@ -71,9 +69,12 @@ module RbsInfer
         if call.name == :new && call.receiver
           class_name = RbsInfer::Analyzer.extract_constant_path(call.receiver)
           @local_var_types[var_name] = class_name if class_name
-        elsif AR_FINDER_METHODS.include?(call.name) && call.receiver
+        elsif (call.receiver.is_a?(Prism::ConstantReadNode) || call.receiver.is_a?(Prism::ConstantPathNode)) && @method_type_resolver
           class_name = RbsInfer::Analyzer.extract_constant_path(call.receiver)
-          @local_var_types[var_name] = class_name if class_name
+          if class_name
+            resolved = @method_type_resolver.resolve_class_method(class_name, call.name.to_s)
+            @local_var_types[var_name] = resolved.chomp("?") if resolved && resolved != "untyped"
+          end
         end
       end
     end
@@ -112,10 +113,12 @@ module RbsInfer
               # aluno_dto = Academico::Aluno::Matricular::Dto.new(...)
               class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
               @local_var_types[var_name] = class_name if class_name
-            elsif AR_FINDER_METHODS.include?(stmt.value.name) && stmt.value.receiver
-              # record = Record.find_by!(...) → type Record
+            elsif (stmt.value.receiver.is_a?(Prism::ConstantReadNode) || stmt.value.receiver.is_a?(Prism::ConstantPathNode)) && @method_type_resolver
               class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
-              @local_var_types[var_name] = class_name if class_name
+              if class_name
+                resolved = @method_type_resolver.resolve_class_method(class_name, stmt.value.name.to_s)
+                @local_var_types[var_name] = resolved.chomp("?") if resolved && resolved != "untyped"
+              end
             end
           end
         elsif stmt.is_a?(Prism::InstanceVariableWriteNode)
@@ -124,9 +127,12 @@ module RbsInfer
             if stmt.value.name == :new && stmt.value.receiver
               class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
               @local_var_types[var_name] = class_name if class_name
-            elsif AR_FINDER_METHODS.include?(stmt.value.name) && stmt.value.receiver
+            elsif (stmt.value.receiver.is_a?(Prism::ConstantReadNode) || stmt.value.receiver.is_a?(Prism::ConstantPathNode)) && @method_type_resolver
               class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
-              @local_var_types[var_name] = class_name if class_name
+              if class_name
+                resolved = @method_type_resolver.resolve_class_method(class_name, stmt.value.name.to_s)
+                @local_var_types[var_name] = resolved.chomp("?") if resolved && resolved != "untyped"
+              end
             end
           end
         end
