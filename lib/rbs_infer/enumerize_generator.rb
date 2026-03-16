@@ -201,6 +201,7 @@ module RbsInfer
 
         lines << ""
         lines << "class ::#{class_name}"
+        lines << "  extend Enumerize::ActiveRecordSupport"
 
         enumerize_calls.each do |call|
           lines.concat(build_instance_methods(call))

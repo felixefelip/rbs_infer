@@ -52,6 +52,8 @@ class ::Post::EnumerizePriorityValue < Enumerize::Value
 end
 
 class ::Post
+  extend Enumerize::ActiveRecordSupport
+
   def status: () -> Post::EnumerizeStatusValue
   def status=: (String | Symbol | nil) -> (String | Symbol | nil)
   def status_text: () -> String?
