@@ -10,6 +10,12 @@ class ::Post::EnumerizePriorityValue < Enumerize::Value
   def medium?: () -> bool
   def high?: () -> bool
 end
+class ::Post::EnumerizeCategoryValue < Enumerize::Value
+  def tech?: () -> bool
+  def lifestyle?: () -> bool
+  def travel?: () -> bool
+  def food?: () -> bool
+end
 
 class ::Post
   def status: () -> Post::EnumerizeStatusValue
@@ -32,5 +38,19 @@ class ::Post
   def priority=: (String | Symbol | nil) -> (String | Symbol | nil)
   def priority_text: () -> String?
   def priority_value: () -> String?
+
+  def category: () -> Post::EnumerizeCategoryValue
+  def category=: (String | Symbol | nil) -> (String | Symbol | nil)
+  def category_text: () -> String?
+  def category_value: () -> String?
+
+  def self.tech: () -> Post::ActiveRecord_Relation
+  def self.not_tech: () -> Post::ActiveRecord_Relation
+  def self.lifestyle: () -> Post::ActiveRecord_Relation
+  def self.not_lifestyle: () -> Post::ActiveRecord_Relation
+  def self.travel: () -> Post::ActiveRecord_Relation
+  def self.not_travel: () -> Post::ActiveRecord_Relation
+  def self.food: () -> Post::ActiveRecord_Relation
+  def self.not_food: () -> Post::ActiveRecord_Relation
 
 end

@@ -10,6 +10,7 @@ class Post < ApplicationRecord
 
   enumerize :status, in: [:draft, :published, :archived], default: :draft, predicates: true, scope: :shallow
   enumerize :priority, in: [:low, :medium, :high]
+  enumerize :category, in: { tech: 1, lifestyle: 2, travel: 3, food: 4 }, default: :tech, scope: :shallow
 
   validates :title, presence: true
   validates :body, presence: true
@@ -44,5 +45,9 @@ class Post < ApplicationRecord
 
   def add_comment(author:, body:)
     comments.create!(user: author, body: body)
+  end
+
+  def was_priority_high
+	  priority&.high?
   end
 end
