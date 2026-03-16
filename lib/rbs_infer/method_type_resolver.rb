@@ -169,7 +169,7 @@ module RbsInfer
           last_stmt = body.is_a?(Prism::StatementsNode) ? body.body.last : body
           next unless last_stmt
 
-          inferred = infer_literal_return_type(last_stmt)
+          inferred = infer_literal_return_type(last_stmt, class_name)
           types[defn.name.to_s] = inferred if inferred
         end
 
@@ -570,7 +570,7 @@ module RbsInfer
     end
 
     # Inferir return type a partir de literais ou Klass.new na última expressão
-    def infer_literal_return_type(node)
+    def infer_literal_return_type(node, class_name = nil)
       case node
       when Prism::StringNode, Prism::InterpolatedStringNode then "String"
       when Prism::IntegerNode then "Integer"
@@ -584,8 +584,10 @@ module RbsInfer
         if node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
         elsif node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
-          class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
-          resolve_class_method(class_name, node.name.to_s) if class_name
+          cn = RbsInfer::Analyzer.extract_constant_path(node.receiver)
+          resolve_class_method(cn, node.name.to_s) if cn
+        elsif node.receiver.nil? && class_name
+          resolve_via_rbs_builder(:instance, class_name, node.name.to_s)
         end
       end
     end

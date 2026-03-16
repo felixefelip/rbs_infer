@@ -423,6 +423,15 @@ module RbsInfer
       resolver_types.each { |name, type| known_return_types[name] ||= type }
     end
 
+    # Aplicar tipos já resolvidos pelo resolver (ex: chamadas a métodos herdados)
+    untyped_methods.each do |m|
+      resolved = known_return_types[m.name]
+      if resolved && resolved != "untyped"
+        m.signature = m.signature.sub(/-> untyped$/, "-> #{resolved}")
+      end
+    end
+    untyped_methods = members.select { |m| m.kind == :method && m.signature =~ /->\s*untyped$/ }
+
     untyped_names = untyped_methods.map(&:name).to_set
 
     collector = DefCollector.new
