@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class PostsController < ApplicationController
-  before_action :set_post, only: %i[show edit update destroy]
+  before_action :set_post, only: %i[show edit update destroy publish]
 
   def index
     @posts = Post.published.order(created_at: :desc)
@@ -35,6 +35,15 @@ class PostsController < ApplicationController
   def destroy
     @post.destroy
     redirect_to posts_path, notice: "Post deleted."
+  end
+
+  def publish
+    publisher = PostPublisher.new(@post)
+    if publisher.call
+      redirect_to @post, notice: "Post published."
+    else
+      redirect_to @post, alert: "Post could not be published."
+    end
   end
 
   private

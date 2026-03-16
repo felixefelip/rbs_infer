@@ -5,6 +5,7 @@ class PostsController < ApplicationController
   def create: () -> void
   def update: () -> void
   def destroy: () -> void
+  def publish: () -> void
 
   private
 
