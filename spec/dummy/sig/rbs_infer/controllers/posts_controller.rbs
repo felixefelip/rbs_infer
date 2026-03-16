@@ -1,0 +1,13 @@
+class PostsController < ApplicationController
+  def index: () -> void
+  def show: () -> void
+  def new: () -> void
+  def create: () -> void
+  def update: () -> void
+  def destroy: () -> void
+
+  private
+
+  def set_post: () -> untyped
+  def post_params: () -> untyped
+end

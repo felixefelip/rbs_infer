@@ -1,0 +1,7 @@
+class PostPublisher
+  attr_reader post: untyped
+  attr_reader notifier: untyped
+  def initialize: (untyped post, ?notifier: untyped) -> untyped
+  def call: () -> bool
+  def publish: (untyped post) -> untyped
+end

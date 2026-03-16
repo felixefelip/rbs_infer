@@ -1,0 +1,6 @@
+class EmailNotifier
+  attr_reader from_address: untyped
+  attr_reader delivery_method: untyped
+  def initialize: (?from_address: untyped, ?delivery_method: untyped) -> untyped
+  def notify: (untyped user, untyped message) -> Hash[untyped, untyped]
+end

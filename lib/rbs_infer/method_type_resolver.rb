@@ -199,8 +199,19 @@ module RbsInfer
       end
 
       # 6. Fallback: buscar em arquivos RBS (ex: rbs_rails para AR models)
-      rbs_types = lookup_rbs_types(class_name)
+      rbs_types, rbs_superclass, rbs_includes = lookup_rbs_types(class_name)
       rbs_types.each { |name, type| types[name] ||= type }
+
+      # 7. Resolver herança: buscar tipos da superclass e módulos incluídos
+      if rbs_superclass
+        inherited = lookup_inherited_types(rbs_superclass)
+        inherited.each { |name, type| types[name] ||= type }
+      end
+
+      rbs_includes.each do |mod_name|
+        mod_types = lookup_inherited_types(mod_name)
+        mod_types.each { |name, type| types[name] ||= type }
+      end if rbs_includes&.any?
 
       @building.delete(class_name)
       types
@@ -277,18 +288,229 @@ module RbsInfer
     end
 
     # Busca tipos em arquivos .rbs gerados (ex: rbs_rails para AR models)
+    # Retorna [types_hash, superclass_name, includes_array]
     def lookup_rbs_types(class_name)
       types = {}
-      class_path = class_name.sub(/\A::/, "").gsub("::", "/").gsub(/([a-z])([A-Z])/, '\1_\2').downcase
+      superclass = nil
+      all_includes = []
+      normalized = class_name.sub(/\A::/, "")
+
+      # 1. Tentar match por nome de arquivo (caso simples: uma classe por arquivo)
+      class_path = normalized.gsub("::", "/").gsub(/([a-z])([A-Z])/, '\1_\2').downcase
       Dir["sig/rbs_rails/**/*.rbs"].each do |rbs_file|
         next unless rbs_file.end_with?("#{class_path}.rbs")
         content = File.read(rbs_file)
-        content.scan(/^\s*def (\w+): \(\) -> (.+)$/) do
-          name, type = $1, $2
-          types[name] ||= type.strip
+        sc, ts, incs = parse_rbs_class_block(content, normalized)
+        superclass ||= sc
+        ts.each { |name, type| types[name] ||= type }
+        all_includes.concat(incs)
+      end
+
+      # 2. Buscar inner classes dentro de todos os rbs_rails files
+      if types.empty?
+        Dir["sig/rbs_rails/**/*.rbs"].each do |rbs_file|
+          content = File.read(rbs_file)
+          next unless content.include?(normalized.split("::").last)
+          sc, ts, incs = parse_rbs_class_block(content, normalized)
+          next if ts.empty?
+          superclass ||= sc
+          ts.each { |name, type| types[name] ||= type }
+          all_includes.concat(incs)
         end
       end
+
+      return types, superclass, all_includes
+    end
+
+    # Parseia um arquivo RBS e extrai métodos, superclass e includes de uma classe específica.
+    # Suporta nesting (module A / module B / class C) e nomes inline (class A::B::C).
+    # Nomes com :: prefix (class ::Foo::Bar) são absolutos e resetam o nesting.
+    # Retorna [superclass, types, includes]
+    def parse_rbs_class_block(content, class_name)
+      types = {}
+      superclass = nil
+      includes = []
+      normalized = class_name.sub(/\A::/, "")
+
+      nesting = []       # stack de nomes de namespace (fully-qualified)
+      nesting_sizes = [] # quantos segmentos cada module/class pusharam
+      in_target = false
+      target_depth = nil
+
+      content.lines.each do |line|
+        stripped = line.strip
+
+        if stripped =~ /\A(module|class)\s+(::)?([A-Za-z_]\w*(?:::[A-Za-z_]\w*)*)(?:\s*<\s*(\S+))?\s*$/
+          is_absolute = !!$2
+          name_parts = $3.split("::")
+          parent = $4
+
+          if is_absolute
+            # Nome absoluto: substituir todo o nesting
+            saved_nesting = nesting.dup
+            saved_sizes = nesting_sizes.dup
+            nesting.replace(name_parts)
+            nesting_sizes << { absolute: true, parts: name_parts.size, prev_nesting: saved_nesting, prev_sizes: saved_sizes }
+          else
+            nesting.concat(name_parts)
+            nesting_sizes << { absolute: false, parts: name_parts.size }
+          end
+
+          fqn = nesting.join("::")
+
+          if !in_target && fqn == normalized
+            in_target = true
+            target_depth = nesting.size
+            # Qualificar superclass relativa usando o namespace do nesting
+            if parent && !parent.start_with?("::")
+              ns = nesting[0..-2] # namespace sem a própria classe
+              superclass = parent.include?("::") ? parent : (ns + [parent]).join("::") if ns.any?
+              superclass ||= parent
+            else
+              superclass = parent&.sub(/\A::/, "")
+            end
+          end
+        elsif stripped == "end"
+          if in_target && nesting.size == target_depth
+            in_target = false
+            target_depth = nil
+          end
+          info = nesting_sizes.pop
+          if info
+            if info[:absolute]
+              nesting.replace(info[:prev_nesting])
+              nesting_sizes.replace(info[:prev_sizes])
+            else
+              info[:parts].times { nesting.pop }
+            end
+          end
+        elsif in_target && nesting.size == target_depth
+          # Extrair definições de método dentro da classe alvo
+          if stripped =~ /\Adef (\w+[\?\!]?)\s*:/
+            method_name = $1
+            # Extrair return type: último -> na linha (ignora blocos como { () -> untyped })
+            if stripped =~ /\)\s*->\s*(\S+)\s*$/
+              types[method_name] ||= $1.strip
+            elsif stripped =~ /->\s*(\S+)\s*$/
+              types[method_name] ||= $1.strip
+            end
+          elsif stripped =~ /\Ainclude\s+(\S+)/
+            mod_name = $1
+            # Qualificar nome relativo usando o namespace da classe
+            if mod_name !~ /::/
+              parent_ns = normalized.split("::")[0..-2]
+              mod_name = (parent_ns + [mod_name]).join("::") if parent_ns.any?
+            elsif mod_name.start_with?("::")
+              mod_name = mod_name.sub(/\A::/, "")
+            end
+            includes << mod_name
+          end
+        end
+      end
+
+      [superclass, types, includes]
+    end
+
+    # Resolve tipos herdados percorrendo a cadeia de superclasses via RBS
+    # Busca em sig/rbs_rails/ e .gem_rbs_collection/
+    # Suporta fallback de resolução de nomes (ex: ActiveRecord::Associations::Relation → ActiveRecord::Relation)
+    def lookup_inherited_types(superclass_name, visited = Set.new)
+      return {} unless superclass_name
+      normalized = superclass_name.sub(/\A::/, "")
+      return {} if visited.include?(normalized)
+      visited.add(normalized)
+
+      @inherited_cache ||= {}
+      return @inherited_cache[normalized] if @inherited_cache.key?(normalized)
+
+      types = {}
+      parent_superclass = nil
+
+      all_includes = []
+
+      # 1. Buscar em sig/rbs_rails/
+      Dir["sig/rbs_rails/**/*.rbs"].each do |rbs_file|
+        content = File.read(rbs_file)
+        sc, ts, incs = parse_rbs_class_block(content, normalized)
+        parent_superclass ||= sc
+        ts.each { |name, type| types[name] ||= type }
+        all_includes.concat(incs)
+      end
+
+      # 2. Buscar em .gem_rbs_collection/
+      gem_sc, gem_ts, gem_incs = lookup_gem_rbs_collection_class(normalized)
+      parent_superclass ||= gem_sc
+      gem_ts.each { |name, type| types[name] ||= type }
+      all_includes.concat(gem_incs) if gem_incs
+
+      # 2b. Fallback: se o nome pode ser um nome qualificado incorretamente,
+      #     tentar removendo segmentos intermediários do namespace
+      #     ex: ActiveRecord::Associations::Relation → ActiveRecord::Relation
+      if types.empty? && parent_superclass.nil?
+        parts = normalized.split("::")
+        if parts.size > 2
+          (parts.size - 2).downto(1) do |i|
+            candidate = (parts[0...i] + [parts.last]).join("::")
+            next if visited.include?(candidate)
+            gem_sc2, gem_ts2, gem_incs2 = lookup_gem_rbs_collection_class(candidate)
+            if gem_ts2.any? || gem_sc2
+              visited.add(candidate)
+              parent_superclass ||= gem_sc2
+              gem_ts2.each { |name, type| types[name] ||= type }
+              all_includes.concat(gem_incs2) if gem_incs2
+              break
+            end
+          end
+        end
+      end
+
+      # 3. Recursar na superclass
+      if parent_superclass
+        inherited = lookup_inherited_types(parent_superclass, visited)
+        inherited.each { |name, type| types[name] ||= type }
+      end
+
+      # 4. Resolver módulos incluídos
+      all_includes.each do |mod_name|
+        mod_types = lookup_inherited_types(mod_name, visited)
+        mod_types.each { |name, type| types[name] ||= type }
+      end
+
+      @inherited_cache[normalized] = types
       types
+    end
+
+    # Busca classe em .gem_rbs_collection/ (superclasses, modules incluídos)
+    def lookup_gem_rbs_collection_class(class_name)
+      types = {}
+      superclass = nil
+      normalized = class_name.sub(/\A::/, "")
+      parts = normalized.split("::")
+
+      # Derivar possíveis nomes de gem a partir do namespace
+      gem_hints = []
+      parts.first(2).each do |part|
+        gem_hints << part.downcase
+        gem_hints << part.gsub(/([a-z])([A-Z])/, '\1_\2').downcase
+        gem_hints << part.gsub(/([a-z])([A-Z])/, '\1-\2').downcase
+      end
+      gem_hints.uniq!
+
+      rbs_files = gem_hints.flat_map { |hint| Dir[".gem_rbs_collection/#{hint}/**/*.rbs"] }.uniq
+      return [nil, types] if rbs_files.empty?
+
+      all_includes = []
+      rbs_files.each do |rbs_file|
+        content = File.read(rbs_file)
+        next unless content.include?(parts.last)
+        sc, ts, incs = parse_rbs_class_block(content, normalized)
+        next if ts.empty? && sc.nil? && incs.empty?
+        superclass ||= sc
+        ts.each { |name, type| types[name] ||= type }
+        all_includes.concat(incs)
+      end
+
+      [superclass, types, all_includes]
     end
 
     def find_class_file(class_name)
