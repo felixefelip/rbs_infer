@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.3.0"
 
-  spec.files = Dir["lib/**/*.rb", "bin/*", "README.md", "LICENSE.txt"]
+  spec.files = Dir["lib/**/*.rb", "lib/**/*.rake", "bin/*", "README.md", "LICENSE.txt"]
   spec.bindir = "bin"
   spec.executables = ["rbs_infer"]
   spec.require_paths = ["lib"]
