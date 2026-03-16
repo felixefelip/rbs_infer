@@ -89,7 +89,7 @@ module RbsEnumerize
     def parse_enumerize_call(call_node)
       args = call_node.arguments&.arguments || []
 
-      info = { name: nil, values: [], predicates: false, scope: nil, multiple: false }
+      info = { name: nil, values: [], predicates: false, scope: nil, multiple: false, default: false }
 
       args.each do |arg|
         case arg
@@ -119,6 +119,8 @@ module RbsEnumerize
           info[:scope] = extract_scope_option(element.value)
         when "multiple"
           info[:multiple] = element.value.is_a?(Prism::TrueNode)
+        when "default"
+          info[:default] = true
         end
       end
     end
@@ -226,6 +228,8 @@ module RbsEnumerize
 
       if call[:multiple]
         lines << "  def #{attr_name}: () -> Enumerize::Set"
+      elsif call[:default]
+        lines << "  def #{attr_name}: () -> #{call[:value_type]}"
       else
         lines << "  def #{attr_name}: () -> #{call[:value_type]}?"
       end

@@ -5,9 +5,14 @@ class ::Post::EnumerizeStatusValue < Enumerize::Value
   def published?: () -> bool
   def archived?: () -> bool
 end
+class ::Post::EnumerizePriorityValue < Enumerize::Value
+  def low?: () -> bool
+  def medium?: () -> bool
+  def high?: () -> bool
+end
 
 class ::Post
-  def status: () -> Post::EnumerizeStatusValue?
+  def status: () -> Post::EnumerizeStatusValue
   def status=: (String | Symbol | nil) -> (String | Symbol | nil)
   def status_text: () -> String?
   def status_value: () -> String?
@@ -22,5 +27,10 @@ class ::Post
   def self.not_published: () -> Post::ActiveRecord_Relation
   def self.archived: () -> Post::ActiveRecord_Relation
   def self.not_archived: () -> Post::ActiveRecord_Relation
+
+  def priority: () -> Post::EnumerizePriorityValue?
+  def priority=: (String | Symbol | nil) -> (String | Symbol | nil)
+  def priority_text: () -> String?
+  def priority_value: () -> String?
 
 end

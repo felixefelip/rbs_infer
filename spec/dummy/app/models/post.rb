@@ -9,6 +9,7 @@ class Post < ApplicationRecord
   has_many :tags, through: :post_tags
 
   enumerize :status, in: [:draft, :published, :archived], default: :draft, predicates: true, scope: :shallow
+  enumerize :priority, in: [:low, :medium, :high]
 
   validates :title, presence: true
   validates :body, presence: true

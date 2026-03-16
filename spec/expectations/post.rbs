@@ -1,7 +1,7 @@
 class Post < ApplicationRecord
   def summary: (?Integer length) -> untyped
-  def test_status: () -> Post::EnumerizeStatusValue?
-  def was_archived?: () -> untyped
+  def test_status: () -> Post::EnumerizeStatusValue
+  def was_archived?: () -> bool
   def creator: () -> ::User
   def author_name: () -> String
   def publish!: () -> self
