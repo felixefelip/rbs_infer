@@ -219,8 +219,13 @@ module RbsInfer
                  method_type_resolver.resolve(param_type, expr_info[:method_name])
                end
              when :call
-               # self.x = algo.method → tentar resolver
-               expr_info[:type]
+               # self.x = algo.method → tentar resolver via RBS
+               if expr_info[:class_name] && expr_info[:method_name] && method_type_resolver
+                 resolved = method_type_resolver.resolve_class_method(expr_info[:class_name], expr_info[:method_name])
+                 resolved == "self" ? expr_info[:class_name] : resolved
+               else
+                 expr_info[:type]
+               end
              when :constant
                expr_info[:type]
              when :literal

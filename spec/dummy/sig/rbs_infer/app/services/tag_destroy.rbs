@@ -1,0 +1,5 @@
+class TagDestroy
+  attr_reader tag: Tag
+  def initialize: (untyped tag_id) -> Tag
+  def call: () -> bool
+end
