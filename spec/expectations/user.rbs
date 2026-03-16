@@ -3,5 +3,5 @@ class User < ApplicationRecord
   def full_name: () -> String
   def active?: () -> bool?
   def posts_count: () -> ::Integer
-  def recent_posts: (?untyped) -> ::Post::ActiveRecord_Associations_CollectionProxy
+  def recent_posts: (?Integer limit) -> ::Post::ActiveRecord_Associations_CollectionProxy
 end

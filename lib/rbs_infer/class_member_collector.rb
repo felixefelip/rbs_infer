@@ -179,7 +179,8 @@ module RbsInfer
 
       # Parâmetros opcionais
       params.optionals.each do |p|
-        parts << "?#{param_name(p)}"
+        type = infer_type_from_node(p.value) if p.respond_to?(:value)
+        parts << "?#{type || 'untyped'} #{p.name}"
       end if params.respond_to?(:optionals)
 
       # Rest param
