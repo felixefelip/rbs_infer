@@ -14,6 +14,40 @@ module RbsInfer
   # - Attr inference via initialize
   # - RBS generation
   class SteepBridge
+    # Shared RBS DefinitionBuilder, cached at the class level.
+    # Both SteepBridge and RbsDefinitionResolver use the same RBS environment,
+    # so we load it once and share it to avoid duplicating ~1s of loading.
+    class << self
+      def definition_builder
+        return @definition_builder if @definition_builder_loaded
+        @definition_builder_loaded = true
+        @definition_builder = build_definition_builder
+      end
+
+      def reset!
+        @definition_builder = nil
+        @definition_builder_loaded = false
+      end
+
+      private
+
+      def build_definition_builder
+        require "rbs"
+
+        loader = RBS::EnvironmentLoader.new
+
+        Dir["sig/*/"].each { |d| loader.add(path: Pathname(d)) }
+        Dir[".gem_rbs_collection/*/"].each do |gem_dir|
+          Dir["#{gem_dir}/*/"].each { |ver_dir| loader.add(path: Pathname(ver_dir)) }
+        end
+
+        env = RBS::Environment.from_loader(loader).resolve_type_names
+        RBS::DefinitionBuilder.new(env: env)
+      rescue LoadError, StandardError => _e
+        nil
+      end
+    end
+
     def initialize
       @subtyping = nil
       @constant_resolver = nil
@@ -70,6 +104,28 @@ module RbsInfer
       {}
     end
 
+    # Returns { "var_name" => "Type" } for all instance variable writes (@var = expr).
+    # The var name is without the leading @.
+    def ivar_write_types(source_code)
+      typing = type_check(source_code)
+      return {} unless typing
+
+      result = {}
+
+      typing.each_typing do |node, type|
+        next unless node.type == :ivasgn
+        var_name = node.children[0].to_s.sub(/\A@/, "")
+        type_str = format_type(type)
+        next if type_str == "untyped" || type_str == "nil" || type_str == "bot"
+
+        result[var_name] ||= type_str
+      end
+
+      result
+    rescue
+      {}
+    end
+
     # Returns the type of a specific node within the typing result.
     # Useful for resolving argument types in call sites.
     # Returns { node_id => "Type" } for all typed expressions.
@@ -114,15 +170,9 @@ module RbsInfer
       return if @initialized
       @initialized = true
 
-      loader = RBS::EnvironmentLoader.new
+      definition_builder = self.class.definition_builder
+      return unless definition_builder
 
-      Dir["sig/*/"].each { |d| loader.add(path: Pathname(d)) }
-      Dir[".gem_rbs_collection/*/"].each do |gem_dir|
-        Dir["#{gem_dir}/*/"].each { |ver_dir| loader.add(path: Pathname(ver_dir)) }
-      end
-
-      env = RBS::Environment.from_loader(loader).resolve_type_names
-      definition_builder = RBS::DefinitionBuilder.new(env: env)
       factory = Steep::AST::Types::Factory.new(builder: definition_builder)
       interface_builder = Steep::Interface::Builder.new(factory, implicitly_returns_nil: false)
       @subtyping = Steep::Subtyping::Check.new(builder: interface_builder)

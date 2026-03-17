@@ -71,23 +71,7 @@ module RbsInfer
     def rbs_builder
       return @rbs_builder if @rbs_builder_loaded
       @rbs_builder_loaded = true
-      @rbs_builder = build_rbs_definition_builder
-    end
-
-    def build_rbs_definition_builder
-      require "rbs"
-
-      loader = RBS::EnvironmentLoader.new
-
-      Dir["sig/*/"].each { |d| loader.add(path: Pathname(d)) }
-      Dir[".gem_rbs_collection/*/"].each do |gem_dir|
-        Dir["#{gem_dir}/*/"].each { |ver_dir| loader.add(path: Pathname(ver_dir)) }
-      end
-
-      env = RBS::Environment.from_loader(loader).resolve_type_names
-      RBS::DefinitionBuilder.new(env: env)
-    rescue LoadError, StandardError => _e
-      nil
+      @rbs_builder = SteepBridge.definition_builder
     end
 
     # Infere variáveis de tipo genérico a partir da assinatura do bloco.

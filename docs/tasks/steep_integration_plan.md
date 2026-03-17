@@ -121,15 +121,15 @@ Onde esses analyzers precisam do tipo de uma expressão para inferir o tipo de u
 
 ---
 
-## Fase 3 — Remover código manual redundante
+## Fase 3 — Remover código manual redundante ✅ CONCLUÍDA
 
-Após validar que o Steep cobre todos os casos, remover o código de inferência manual que se tornou redundante:
+Após validar que o Steep cobre todos os casos, código de inferência manual redundante foi removido/simplificado:
 
-1. **Remover** `NodeTypeInferrer` — toda inferência de literais, `Klass.new`, etc. já é feita pelo Steep.
-2. **Remover** `infer_expression_type` e `collect_local_assignments` do `IntraClassCallAnalyzer`.
-3. **Remover** `ReturnTypeResolver#infer_ivar_value_type` e o pipeline de resolução manual de chains/safe nav.
-4. **Remover** `resolve_receiver_type` / `resolve_chain_type` do `NewCallCollector`.
-5. **Simplificar** `RbsDefinitionResolver` — o Steep já encapsula `RBS::DefinitionBuilder` internamente, podemos delegar para ele.
+1. **`NodeTypeInferrer`** — NÃO removido (ainda usado por 7 classes: InitializeBodyAnalyzer, TypeMerger, ClassBodyAttrAnalyzer, ClassMemberCollector, MethodTypeResolver, etc.). Removido apenas dos analyzers que agora usam Steep diretamente.
+2. **`IntraClassCallAnalyzer`** — Removido `include NodeTypeInferrer` e `infer_expression_type`. `resolve_value_type` tornado autocontido (literais inline, Klass.new, attr_types). `collect_local_assignments` simplificado como fallback (não sobrescreve tipos do Steep).
+3. **`ReturnTypeResolver`** — Remoção massiva (~120 LOC): removidos `include NodeTypeInferrer`, `infer_ivar_value_type` (75+ linhas de resolução de chains), `resolve_chain_type`, `resolve_on_type`, `infer_block_return_type`, `collect_local_var_type`. Pipeline simplificado: known_return_types → Steep (sem análise manual do body). `infer_ivar_types` usa `SteepBridge#ivar_write_types` como primeiro recurso. Adicionado `basic_value_type` como fallback mínimo.
+4. **`NewCallCollector`** — MANTIDO como está. Opera em caller files (CallerFileAnalyzer) sem integração com Steep. Remover `resolve_receiver_type`/`resolve_chain_type` exigiria adicionar Steep ao CallerFileAnalyzer — seria adição de complexidade, não remoção.
+5. **`RbsDefinitionResolver`** — Simplificado: removido `build_rbs_definition_builder` (50 LOC de carregamento de RBS duplicado). Agora delega para `SteepBridge.definition_builder` (cache compartilhado class-level), eliminando ~1s de loading e ~50MB de memória duplicada.
 
 ### Critério para remoção
 

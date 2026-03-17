@@ -7,7 +7,6 @@ module RbsInfer
   #    `Telefone.new(ddd:, numero:)` → infere `ddd: String, numero: String`
   #    a partir da assinatura de Telefone#initialize
   class IntraClassCallAnalyzer < Prism::Visitor
-    include NodeTypeInferrer
     # method_name → { param_name → type }
     attr_reader :inferred_param_types
 
@@ -31,11 +30,13 @@ module RbsInfer
       @current_method_name = node.name.to_s
       @current_param_names = extract_param_names(node.parameters)
 
-      # Merge Steep-inferred types first, then overlay manual collection
+      # Use Steep-inferred types for local variables
       steep_vars = @steep_local_var_types[@current_method_name]
       @local_var_types.merge!(steep_vars) if steep_vars
 
+      # Fallback: collect basic assignment types for vars Steep didn't cover
       collect_local_assignments(node)
+
       super
 
       @local_var_types = old_vars
@@ -144,28 +145,11 @@ module RbsInfer
               end
 
       stmts.each do |stmt|
-        case stmt
-        when Prism::LocalVariableWriteNode
-          type = infer_expression_type(stmt.value)
-          @local_var_types[stmt.name.to_s] = type if type
-        end
-      end
-    end
-
-    def infer_expression_type(node)
-      basic = infer_node_type(node)
-      return basic if basic
-
-      case node
-      when Prism::CallNode
-        if node.receiver.nil?
-          @attr_types[node.name.to_s]
-        elsif node.receiver.is_a?(Prism::LocalVariableReadNode)
-          var_type = @local_var_types[node.receiver.name.to_s]
-          if var_type && @method_type_resolver
-            @method_type_resolver.resolve(var_type, node.name.to_s)
-          end
-        end
+        next unless stmt.is_a?(Prism::LocalVariableWriteNode)
+        var_name = stmt.name.to_s
+        next if @local_var_types[var_name] # Don't overwrite Steep types
+        type = resolve_value_type(stmt.value)
+        @local_var_types[var_name] = type if type && type != "untyped"
       end
     end
 
@@ -198,9 +182,32 @@ module RbsInfer
       when Prism::ImplicitNode
         resolve_value_type(node.value)
       when Prism::CallNode
-        infer_expression_type(node) || "untyped"
+        if node.name == :new && node.receiver
+          Analyzer.extract_constant_path(node.receiver) || "untyped"
+        elsif node.receiver.nil?
+          @attr_types[node.name.to_s] || "untyped"
+        elsif node.receiver.is_a?(Prism::LocalVariableReadNode)
+          var_type = @local_var_types[node.receiver.name.to_s]
+          if var_type && @method_type_resolver
+            @method_type_resolver.resolve(var_type, node.name.to_s) || "untyped"
+          else
+            "untyped"
+          end
+        else
+          "untyped"
+        end
+      when Prism::StringNode, Prism::InterpolatedStringNode then "String"
+      when Prism::IntegerNode then "Integer"
+      when Prism::FloatNode then "Float"
+      when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
+      when Prism::TrueNode, Prism::FalseNode then "bool"
+      when Prism::NilNode then "nil"
+      when Prism::ArrayNode then "Array[untyped]"
+      when Prism::HashNode then "Hash[untyped, untyped]"
+      when Prism::ConstantReadNode, Prism::ConstantPathNode
+        Analyzer.extract_constant_path(node) || "untyped"
       else
-        infer_node_type(node) || "untyped"
+        "untyped"
       end
     end
   end

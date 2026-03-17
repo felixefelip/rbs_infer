@@ -12,5 +12,5 @@ class Post < ApplicationRecord
   def add_comment: (author: untyped, body: untyped) -> Comment
   def was_priority_high: () -> bool?
   def publish_in_transaction: () -> Post
-  def iterate_tags: () -> ::Tag::ActiveRecord_Associations_CollectionProxy
+  def iterate_tags: () -> Tag::ActiveRecord_Associations_CollectionProxy
 end
