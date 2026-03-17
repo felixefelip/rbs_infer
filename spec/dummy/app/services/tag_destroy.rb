@@ -71,4 +71,28 @@ class TagDestroy
 	def test_hash(order)
 		{ order: order, date: order.date }
 	end
+
+	def verify_multiples_returns_with_void
+		if user_posts.any?
+			save_post
+		elsif user_name
+		 	user_name
+		else
+			nil
+		end
+	end
+
+	def verify_multiples_returns_with_void_and_rescue
+		user_posts.first!.save!
+	rescue StandardError
+		"error"
+	end
+
+	def save_post
+    user_posts.first!.save!
+	end
+
+	def user_posts
+    @user.posts
+	end
 end
