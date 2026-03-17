@@ -739,6 +739,13 @@ module RbsInfer
       method.defs.each do |d|
         formatted = format_rbs_return_type(d.type.type.return_type, class_name)
         next unless formatted
+        # Substituir variáveis de tipo genérico do método (ex: [U] map → Array[U] → Array[untyped])
+        if d.type.type_params.any?
+          d.type.type_params.each do |tp|
+            param_name = tp.respond_to?(:name) ? tp.name.to_s : tp.to_s
+            formatted = formatted.gsub(/\b#{Regexp.escape(param_name)}\b/, "untyped")
+          end
+        end
         return formatted unless formatted.include?("[self]")
         best ||= formatted
       end

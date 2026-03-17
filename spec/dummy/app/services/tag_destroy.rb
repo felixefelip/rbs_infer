@@ -55,4 +55,10 @@ class TagDestroy
 	def test_nokogiri
 		@xml = Nokogiri::XML("")
 	end
+
+  def parse_xml
+		xml.xpath("//Pedidos").map do |order|
+      order
+    end
+  end
 end
