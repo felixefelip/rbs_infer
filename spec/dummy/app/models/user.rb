@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class User < ApplicationRecord
+  include User::Recoverable
+  include User::Displayable
+
   has_many :posts, dependent: :destroy
   has_many :comments, dependent: :destroy
 

@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class Post < ApplicationRecord
+  include Post::Taggable
+  include Post::Notifiable
+
   extend Enumerize
 
   belongs_to :user
