@@ -1,11 +1,11 @@
 class User
   module Recoverable
     extend ActiveSupport::Concern
-    def deactivate!: () -> untyped
-    def reactivate!: () -> untyped
-    def toggle_active!: () -> untyped
+    def deactivate!: () -> self
+    def reactivate!: () -> self
+    def toggle_active!: () -> self
     def days_since_last_post: () -> untyped
-    def test_concern_created_at: () -> untyped
+    def test_concern_created_at: () -> ::ActiveSupport::TimeWithZone
     def dormant?: (?Integer threshold_days) -> untyped
   end
 end
