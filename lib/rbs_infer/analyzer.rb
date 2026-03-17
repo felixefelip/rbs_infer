@@ -253,7 +253,7 @@ module RbsInfer
     source = File.read(@target_file)
     result = Prism.parse(source)
 
-    visitor = ClassBodyAttrAnalyzer.new(attr_names: attr_names)
+    visitor = ClassBodyAttrAnalyzer.new(attr_names: attr_names, method_type_resolver: method_type_resolver)
     result.value.accept(visitor)
 
     [visitor.attr_types, visitor.collection_element_types]

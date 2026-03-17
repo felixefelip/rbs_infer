@@ -1,7 +1,7 @@
 # Example with a instance variable wifh attr_reader
 
 class TagDestroy
-  attr_reader :tag, :user, :posts
+  attr_reader :tag, :user, :posts, :xml
 
 	def initialize(tag_id, user_id)
 		@tag = Tag.find(tag_id)
@@ -51,4 +51,8 @@ class TagDestroy
   def process_tag(tag)
 	  tag.save!
   end
+
+	def test_nokogiri
+		@xml = Nokogiri::XML("")
+	end
 end

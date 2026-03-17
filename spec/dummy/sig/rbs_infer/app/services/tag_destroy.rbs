@@ -2,6 +2,7 @@ class TagDestroy
   attr_reader tag: Tag
   attr_reader user: User
   attr_reader posts: Array[untyped]
+  attr_reader xml: Nokogiri::XML::Document
   def initialize: (untyped tag_id, untyped user_id) -> User
   def call: () -> bool
 
@@ -14,4 +15,5 @@ class TagDestroy
   def iterate_tag_posts_with_transaction: () -> Post::ActiveRecord_Associations_CollectionProxy
   def call_process_tag: () -> void
   def process_tag: (Tag tag) -> void
+  def test_nokogiri: () -> Nokogiri::XML::Document
 end
