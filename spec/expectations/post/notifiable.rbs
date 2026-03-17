@@ -1,5 +1,6 @@
 class Post
   module Notifiable
+    extend ActiveSupport::Concern
     def notification_title: () -> String
     def notify_subscribers: (untyped subscribers) -> untyped
     def notification_excerpt: (?Integer length) -> untyped

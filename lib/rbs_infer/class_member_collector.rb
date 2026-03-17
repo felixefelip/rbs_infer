@@ -81,6 +81,8 @@ module RbsInfer
         extract_attrs(node)
       when :include
         extract_includes(node)
+      when :extend
+        extract_extends(node)
       end
 
       super
@@ -97,6 +99,22 @@ module RbsInfer
 
         @members << Member.new(
           kind: :include,
+          name: name,
+          signature: name,
+          visibility: :public
+        )
+      end
+    end
+
+    def extract_extends(node)
+      return unless node.arguments
+
+      node.arguments.arguments.each do |arg|
+        name = RbsInfer::Analyzer.extract_constant_path(arg)
+        next unless name
+
+        @members << Member.new(
+          kind: :extend,
           name: name,
           signature: name,
           visibility: :public

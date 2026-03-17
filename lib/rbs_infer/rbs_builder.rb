@@ -29,6 +29,12 @@ module RbsInfer
         lines << "#{member_indent}@#{name}: #{type}"
       end
 
+      # Emitir extend para módulos estendidos (e.g. ActiveSupport::Concern)
+      extends = members.select { |m| m.kind == :extend }
+      extends.each do |ext|
+        lines << "#{member_indent}extend #{ext.name}"
+      end
+
       # Emitir include/extend para módulos incluídos (concerns)
       includes = members.select { |m| m.kind == :include }
       includes.each do |inc|
@@ -44,7 +50,7 @@ module RbsInfer
 
       # Agrupar por visibilidade: public -> protected -> private
       [:public, :protected, :private].each do |vis|
-        vis_members = members.select { |m| m.visibility == vis && m.kind != :include }
+        vis_members = members.select { |m| m.visibility == vis && ![:include, :extend].include?(m.kind) }
         next if vis_members.empty?
 
         if vis != :public
