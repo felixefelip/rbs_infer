@@ -33,10 +33,6 @@ module Post::Notifiable
   private
 
   def deliver_notification(subscriber)
-    EmailNotifier.new(
-      to: subscriber.email,
-      subject: notification_title,
-      body: notification_excerpt
-    )
+    EmailNotifier.new.notify(user, "post_notification")
   end
 end
