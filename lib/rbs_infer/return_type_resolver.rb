@@ -28,6 +28,7 @@ module RbsInfer
 
       # Aplicar tipos já resolvidos pelo resolver (ex: chamadas a métodos herdados)
       untyped_methods.each do |m|
+        next if m.name == "initialize"
         resolved = known_return_types[m.name]
         if resolved && resolved != "untyped"
           m.signature = m.signature.sub(/-> untyped$/, "-> #{resolved}")

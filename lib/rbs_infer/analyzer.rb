@@ -108,8 +108,8 @@ module RbsInfer
     # Melhorar return types de métodos que retornam untyped usando chain resolution
     return_type_resolver.improve_method_return_types(target_members, attr_types, parsed_target: @parsed_target)
 
-    # Second TypeMerger pass: now benefits from Steep-resolved types
-    type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target)
+    # Second TypeMerger pass: now benefits from Steep-resolved types and inferred param types
+    type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target, method_param_types: method_param_types)
 
     # Identificar parâmetros opcionais do initialize
     optional_params = extract_optional_init_params

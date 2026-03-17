@@ -42,7 +42,7 @@ module RbsInfer
     # e substitui pelo tipo do attr se a última expressão do método
     # for uma chamada implícita a um attr conhecido.
 
-    def resolve_method_return_types_from_attrs(members, attr_types, method_type_resolver: nil, parsed_target: nil)
+    def resolve_method_return_types_from_attrs(members, attr_types, method_type_resolver: nil, parsed_target: nil, method_param_types: {})
       return unless parsed_target
 
       known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
@@ -66,6 +66,7 @@ module RbsInfer
         member = members.find { |m| m.kind == :method && m.name == method_name }
         next unless member
         next unless member.signature.end_with?("-> untyped")
+        next if method_name == "initialize"
 
         # 1. Literal na última expressão
         literal_type = infer_literal_type(last_stmt)
@@ -85,8 +86,8 @@ module RbsInfer
           end
         end
 
-        # 3. Chamada implícita a self (ex: `endereco` sem receiver)
-        if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver.nil? && last_stmt.arguments.nil?
+        # 3. Chamada implícita a self (ex: `endereco` ou `process(arg)` sem receiver)
+        if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver.nil?
           method_last_exprs[method_name] = last_stmt.name.to_s
         end
 
@@ -103,7 +104,8 @@ module RbsInfer
 
         # 5. receiver.method() na última expressão
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver && method_type_resolver
-          resolved = infer_call_return_type(last_stmt, known_return_types, method_type_resolver)
+          local_types = method_param_types[method_name] || {}
+          resolved = infer_call_return_type(last_stmt, known_return_types, method_type_resolver, local_types: local_types)
           if resolved
             member.signature = member.signature.sub("-> untyped", "-> #{resolved}")
             known_return_types[method_name] = resolved
@@ -144,7 +146,8 @@ module RbsInfer
         next unless member.signature.end_with?("-> untyped")
 
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver && method_type_resolver
-          resolved = infer_call_return_type(last_stmt, known_return_types, method_type_resolver)
+          local_types = method_param_types[method_name] || {}
+          resolved = infer_call_return_type(last_stmt, known_return_types, method_type_resolver, local_types: local_types)
           if resolved
             member.signature = member.signature.sub("-> untyped", "-> #{resolved}")
             known_return_types[method_name] = resolved
@@ -162,7 +165,7 @@ module RbsInfer
     end
 
     # Resolve return type de receiver.method() ou method() com args
-    def infer_call_return_type(call_node, known_return_types, method_type_resolver)
+    def infer_call_return_type(call_node, known_return_types, method_type_resolver, local_types: {})
       if call_node.receiver.nil?
         # Chamada sem receiver (self implícito) com argumentos
         known_return_types[call_node.name.to_s]
@@ -170,7 +173,7 @@ module RbsInfer
         RbsInfer::Analyzer.extract_constant_path(call_node.receiver)
       else
         # receiver.method → resolver tipo do receiver, depois do method
-        receiver_type = resolve_receiver_type(call_node.receiver, known_return_types, method_type_resolver)
+        receiver_type = resolve_receiver_type(call_node.receiver, known_return_types, method_type_resolver, local_types: local_types)
         if receiver_type && receiver_type != "untyped"
           block_body_type = infer_block_body_type(call_node.block, known_return_types) if call_node.block
           # Use singleton lookup for constant receivers (class method calls like ActiveRecord::Base.transaction)
@@ -185,7 +188,7 @@ module RbsInfer
       end
     end
 
-    def resolve_receiver_type(node, known_return_types, method_type_resolver)
+    def resolve_receiver_type(node, known_return_types, method_type_resolver, local_types: {})
       case node
       when Prism::CallNode
         if node.receiver.nil?
@@ -193,7 +196,7 @@ module RbsInfer
         elsif node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
         else
-          parent_type = resolve_receiver_type(node.receiver, known_return_types, method_type_resolver)
+          parent_type = resolve_receiver_type(node.receiver, known_return_types, method_type_resolver, local_types: local_types)
           if parent_type && parent_type != "untyped"
             resolved = method_type_resolver.resolve(parent_type, node.name.to_s)
             # "self" means the method returns the same type as the receiver
@@ -205,7 +208,7 @@ module RbsInfer
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         RbsInfer::Analyzer.extract_constant_path(node)
       when Prism::LocalVariableReadNode
-        known_return_types[node.name.to_s]
+        local_types[node.name.to_s] || known_return_types[node.name.to_s]
       end
     end
 

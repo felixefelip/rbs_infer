@@ -8,6 +8,6 @@ class Post
 
     private
 
-    def deliver_notification: (untyped subscriber) -> Hash[untyped, untyped]
+    def deliver_notification: (untyped subscriber) -> Hash[Symbol, untyped]
   end
 end

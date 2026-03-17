@@ -186,6 +186,13 @@ module RbsInfer
           Analyzer.extract_constant_path(node.receiver) || "untyped"
         elsif node.receiver.nil?
           @attr_types[node.name.to_s] || "untyped"
+        elsif (node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)) && @method_type_resolver
+          class_name = Analyzer.extract_constant_path(node.receiver)
+          if class_name
+            @method_type_resolver.resolve_class_method(class_name, node.name.to_s) || "untyped"
+          else
+            "untyped"
+          end
         elsif node.receiver.is_a?(Prism::LocalVariableReadNode)
           var_type = @local_var_types[node.receiver.name.to_s]
           if var_type && @method_type_resolver
