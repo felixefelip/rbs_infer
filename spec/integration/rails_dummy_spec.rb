@@ -81,4 +81,20 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   it "TagDestroy service matches expected RBS" do
     assert_snapshot("tag_destroy", target_class: "TagDestroy", target_file: "app/services/tag_destroy.rb")
   end
+
+  it "Post::Taggable concern matches expected RBS" do
+    assert_snapshot("post/taggable", target_class: "Post::Taggable", target_file: "app/models/post/taggable.rb")
+  end
+
+  it "Post::Notifiable concern matches expected RBS" do
+    assert_snapshot("post/notifiable", target_class: "Post::Notifiable", target_file: "app/models/post/notifiable.rb")
+  end
+
+  it "User::Recoverable concern matches expected RBS" do
+    assert_snapshot("user/recoverable", target_class: "User::Recoverable", target_file: "app/models/user/recoverable.rb")
+  end
+
+  it "User::Displayable concern matches expected RBS" do
+    assert_snapshot("user/displayable", target_class: "User::Displayable", target_file: "app/models/user/displayable.rb")
+  end
 end

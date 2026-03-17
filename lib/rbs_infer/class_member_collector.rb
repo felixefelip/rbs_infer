@@ -6,7 +6,7 @@ module RbsInfer
     include NodeTypeInferrer
     include RbsAnnotationParser
 
-    attr_reader :members, :superclass_name
+    attr_reader :members, :superclass_name, :is_module
 
     CONTROLLER_BASES = %w[ApplicationController ActionController::Base ActionController::API].freeze
 
@@ -17,9 +17,16 @@ module RbsInfer
       @current_visibility = :public
       @is_controller = false
       @superclass_name = nil
+      @is_module = false
+    end
+
+    def visit_module_node(node)
+      @is_module = true unless @superclass_name
+      super
     end
 
     def visit_class_node(node)
+      @is_module = false
       if node.superclass
         @superclass_name = RbsInfer::Analyzer.extract_constant_path(node.superclass)
         @is_controller = CONTROLLER_BASES.include?(@superclass_name)

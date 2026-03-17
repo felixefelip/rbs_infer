@@ -1,0 +1,9 @@
+class User
+  module Recoverable
+    def deactivate!: () -> untyped
+    def reactivate!: () -> untyped
+    def toggle_active!: () -> untyped
+    def days_since_last_post: () -> untyped
+    def dormant?: (?Integer threshold_days) -> untyped
+  end
+end

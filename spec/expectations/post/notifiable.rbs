@@ -1,0 +1,12 @@
+class Post
+  module Notifiable
+    def notification_title: () -> String
+    def notify_subscribers: (untyped subscribers) -> untyped
+    def notification_excerpt: (?Integer length) -> untyped
+    def notification_payload: () -> Hash[untyped, untyped]
+
+    private
+
+    def deliver_notification: (untyped subscriber) -> EmailNotifier
+  end
+end

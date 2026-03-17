@@ -1,0 +1,9 @@
+class Post
+  module Taggable
+    def tag_names: () -> untyped
+    def tag_with: (untyped name) -> untyped
+    def untag: (untyped name) -> untyped
+    def tagged_with?: (untyped name) -> untyped
+    def replace_tags: (untyped names) -> untyped
+  end
+end

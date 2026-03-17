@@ -1,9 +1,10 @@
 module RbsInfer
   class RbsBuilder
-    def initialize(target_class:, superclass_name:, namespace_classes: Set.new)
+    def initialize(target_class:, superclass_name:, namespace_classes: Set.new, is_module: false)
       @target_class = target_class
       @superclass_name = superclass_name
       @namespace_classes = namespace_classes
+      @is_module = is_module
     end
 
     def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {})
@@ -20,7 +21,8 @@ module RbsInfer
         keyword = @namespace_classes.include?(full_name) ? "class" : "module"
         lines << "#{"  " * i}#{keyword} #{mod}"
       end
-      lines << "#{base_indent}class #{class_name}#{@superclass_name ? " < #{@superclass_name}" : ""}"
+      keyword = @is_module ? "module" : "class"
+      lines << "#{base_indent}#{keyword} #{class_name}#{!@is_module && @superclass_name ? " < #{@superclass_name}" : ""}"
 
       # Emitir instance variables tipadas (@post: Post, @posts: ...)
       ivar_types.each do |name, type|

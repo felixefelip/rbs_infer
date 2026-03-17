@@ -1,0 +1,9 @@
+class User
+  module Displayable
+    def initials: () -> untyped
+    def display_name: () -> untyped
+    def gravatar_url: (?Integer size) -> String
+    def profile_summary: () -> Hash[untyped, untyped]
+    def short_bio: (?Integer max) -> String
+  end
+end

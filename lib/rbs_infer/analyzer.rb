@@ -109,7 +109,7 @@ module RbsInfer
     optional_params = extract_optional_init_params
 
     namespace_classes = resolve_namespace_classes
-    rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes)
+    rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module)
     rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types)
   end
 
@@ -174,6 +174,7 @@ module RbsInfer
     result = Prism.parse(File.read(file))
     visitor = ClassNameExtractor.new
     result.value.accept(visitor)
+    @is_module = visitor.is_module
     visitor.class_name
   end
 
@@ -183,6 +184,7 @@ module RbsInfer
     visitor = ClassMemberCollector.new(comments: @parsed_target.comments, lines: @parsed_target.lines)
     @parsed_target.tree.accept(visitor)
     @superclass_name = visitor.superclass_name
+    @is_module = visitor.is_module if @is_module.nil?
     visitor.members
   end
 
