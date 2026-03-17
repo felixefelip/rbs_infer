@@ -149,11 +149,19 @@ module RbsInfer
       target_depth = nil
 
       rbs_files.each do |file|
-        content = File.read(file)
-        info = RbsRbsParserUtil.class_info_from_content(content, module_name)
-        info_includes = info.includes
-        if info_includes.any? { |inc| inc.split("::").last == "ClassMethods" }
-          return true
+        File.foreach(file) do |line|
+          stripped = line.strip
+          if stripped =~ /\A(module|class)\s+(\S+)/
+            nesting << $2
+            if target_depth.nil? && nesting.join("::").end_with?(target_suffix)
+              target_depth = nesting.size
+            elsif target_depth && nesting.size == target_depth + 1 && $2 == "ClassMethods"
+              return true
+            end
+          elsif stripped == "end"
+            target_depth = nil if target_depth && nesting.size == target_depth
+            nesting.pop if nesting.any?
+          end
         end
       end
 
