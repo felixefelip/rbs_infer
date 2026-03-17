@@ -429,32 +429,3 @@ require_relative "type_merger"
 require_relative "return_type_resolver"
 require_relative "param_type_inferrer"
 require_relative "source_index"
-
-# Backward-compat aliases: RbsInfer::Analyzer::X → RbsInfer::X
-module RbsInfer
-  class Analyzer
-    ClassMemberCollector  = RbsInfer::ClassMemberCollector
-    ClassNameExtractor    = RbsInfer::ClassNameExtractor
-    ClassBodyAttrAnalyzer = RbsInfer::ClassBodyAttrAnalyzer
-    CallerFileAnalyzer    = RbsInfer::CallerFileAnalyzer
-    DefCollector          = RbsInfer::DefCollector
-    InitializeBodyAnalyzer = RbsInfer::InitializeBodyAnalyzer
-    IntraClassCallAnalyzer = RbsInfer::IntraClassCallAnalyzer
-    MethodTypeResolver    = RbsInfer::MethodTypeResolver
-    NewCallCollector      = RbsInfer::NewCallCollector
-    OptionalParamExtractor = RbsInfer::OptionalParamExtractor
-    ParamTypeInferrer     = RbsInfer::ParamTypeInferrer
-    ReturnTypeResolver    = RbsInfer::ReturnTypeResolver
-    RbsBuilder            = RbsInfer::RbsBuilder
-    RbsTypeLookup         = RbsInfer::RbsTypeLookup
-    RbsParserUtil         = RbsInfer::RbsParserUtil
-    RbsDefinitionResolver = RbsInfer::RbsDefinitionResolver
-    RbsClassInfo          = RbsInfer::RbsClassInfo
-    SourceIndex           = RbsInfer::SourceIndex
-    TypeMerger            = RbsInfer::TypeMerger
-    Member                = RbsInfer::Member
-    NodeTypeInferrer      = RbsInfer::NodeTypeInferrer
-    KnownReturnTypesBuilder = RbsInfer::KnownReturnTypesBuilder
-    RbsAnnotationParser   = RbsInfer::RbsAnnotationParser
-  end
-end
