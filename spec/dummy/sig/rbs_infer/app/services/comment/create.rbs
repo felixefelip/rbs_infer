@@ -4,6 +4,6 @@ class Comment
 
     private
 
-    def process_creation_response: (untyped comment, Symbol status) -> untyped
+    def process_creation_response: (Comment comment, Symbol status) -> untyped
   end
 end

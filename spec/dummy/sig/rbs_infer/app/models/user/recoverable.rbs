@@ -6,6 +6,6 @@ class User
     def toggle_active!: () -> self
     def days_since_last_post: () -> Integer?
     def test_concern_created_at: () -> ::ActiveSupport::TimeWithZone
-    def dormant?: (?Integer threshold_days) -> untyped
+    def dormant?: (?Integer threshold_days) -> bool
   end
 end
