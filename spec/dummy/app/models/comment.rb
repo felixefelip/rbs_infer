@@ -15,4 +15,8 @@ class Comment < ApplicationRecord
   def short_body(max = 50)
     body.truncate(max)
   end
+
+  def create_custom
+    Create.new.create(id)
+  end
 end

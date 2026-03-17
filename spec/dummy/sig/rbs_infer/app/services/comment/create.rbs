@@ -1,6 +1,6 @@
 class Comment
   class Create
-    def create: (untyped comment_id) -> untyped
+    def create: (Integer comment_id) -> untyped
 
     private
 
