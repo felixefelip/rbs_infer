@@ -14,15 +14,12 @@ module RbsInfer
       @method_type_resolver = method_type_resolver
     end
 
-    def improve_method_return_types(members, attr_types)
-      return unless @target_file && File.exist?(@target_file)
+    def improve_method_return_types(members, attr_types, parsed_target: nil)
+      return unless parsed_target
 
       # Métodos com return type untyped
-      untyped_methods = members.select { |m| m.kind == :method && m.signature =~ /->\s*untyped$/ }
+      untyped_methods = members.select { |m| m.kind == :method && m.signature =~ /->\ s*untyped$/ }
       return if untyped_methods.empty?
-
-      source = File.read(@target_file)
-      result = Prism.parse(source)
 
       known_return_types = {}
       attr_types.each { |name, type| known_return_types[name] = type }
@@ -57,7 +54,7 @@ module RbsInfer
       untyped_names = untyped_methods.map(&:name).to_set
 
       collector = DefCollector.new
-      result.value.accept(collector)
+      parsed_target.tree.accept(collector)
 
       collector.defs.each do |defn|
         next unless defn.is_a?(Prism::DefNode)
@@ -86,11 +83,8 @@ module RbsInfer
       end
     end
 
-    def infer_ivar_types(members, attr_types)
-      return {} unless @target_file && File.exist?(@target_file)
-
-      source = File.read(@target_file)
-      result = Prism.parse(source)
+    def infer_ivar_types(members, attr_types, parsed_target: nil)
+      return {} unless parsed_target
 
       # Montar known_return_types com tudo que já sabemos
       known_return_types = {}
@@ -122,7 +116,7 @@ module RbsInfer
 
       # Coletar todos os InstanceVariableWriteNode
       collector = DefCollector.new
-      result.value.accept(collector)
+      parsed_target.tree.accept(collector)
 
       # Dois passes: o segundo resolve ivars que dependem de outros (@comments depende de @post)
       2.times do

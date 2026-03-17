@@ -16,15 +16,12 @@ module RbsInfer
       @type_merger = type_merger
     end
 
-    def infer_method_param_types(attr_types)
-      return {} unless @target_file && File.exist?(@target_file)
-
-      source = File.read(@target_file)
-      result = Prism.parse(source)
+    def infer_method_param_types(attr_types, parsed_target: nil)
+      return {} unless parsed_target
 
       # Pré-coletar parâmetros posicionais de todos os métodos
       collector = DefCollector.new
-      result.value.accept(collector)
+      parsed_target.tree.accept(collector)
       positional_params = {}
       collector.defs.each do |defn|
         next unless defn.is_a?(Prism::DefNode) && defn.parameters
@@ -35,12 +32,12 @@ module RbsInfer
       end
 
       visitor = IntraClassCallAnalyzer.new(attr_types: attr_types, method_type_resolver: @method_type_resolver, method_positional_params: positional_params)
-      result.value.accept(visitor)
+      parsed_target.tree.accept(visitor)
       inferred = visitor.inferred_param_types.dup
 
       # Forwarding: detectar métodos que chamam Klass.new(param:, param:)
       # com parâmetros forwarded, e inferir tipos via call-sites do método wrapper
-      forwarding = detect_forwarding_methods(result)
+      forwarding = detect_forwarding_methods(parsed_target.result)
       forwarding.each do |method_name, param_names|
         # Pular se já temos tipos inferidos (não-untyped) para este método
         if inferred[method_name]

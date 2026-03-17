@@ -47,6 +47,16 @@ module RbsInfer
   def generate_rbs
     return nil unless @target_file && @target_class && File.exist?(@target_file)
 
+    # Parsear o arquivo-alvo uma única vez e reutilizar em todo o pipeline
+    source = File.read(@target_file)
+    result = Prism.parse(source)
+    @parsed_target = RbsInfer::ParsedFile.new(
+      result: result,
+      source: source,
+      comments: result.comments,
+      lines: source.lines
+    )
+
     # Parsear o arquivo-alvo para extrair todos os membros da classe
     target_members = parse_target_class
 
@@ -74,10 +84,10 @@ module RbsInfer
     end
 
     # Resolver return types de métodos que retornam attrs conhecidos
-    type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver)
+    type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target)
 
     # Inferir tipos de parâmetros de métodos via chamadas intra-classe
-    method_param_types = param_type_inferrer.infer_method_param_types(attr_types)
+    method_param_types = param_type_inferrer.infer_method_param_types(attr_types, parsed_target: @parsed_target)
 
     # Inferir tipos de parâmetros de métodos via chamadas cross-class
     cross_class_param_types = infer_method_param_types_from_callers
@@ -89,10 +99,10 @@ module RbsInfer
     end
 
     # Inferir tipos de instance variables (@post, @posts, etc.)
-    ivar_types = return_type_resolver.infer_ivar_types(target_members, attr_types)
+    ivar_types = return_type_resolver.infer_ivar_types(target_members, attr_types, parsed_target: @parsed_target)
 
     # Melhorar return types de métodos que retornam untyped usando chain resolution
-    return_type_resolver.improve_method_return_types(target_members, attr_types)
+    return_type_resolver.improve_method_return_types(target_members, attr_types, parsed_target: @parsed_target)
 
     # Identificar parâmetros opcionais do initialize
     optional_params = extract_optional_init_params
@@ -141,12 +151,10 @@ module RbsInfer
   # ─── Extrair nomes dos keyword params opcionais do initialize ─────
 
   def extract_optional_init_params
-    return Set.new unless @target_file && File.exist?(@target_file)
+    return Set.new unless @parsed_target
 
-    source = File.read(@target_file)
-    result = Prism.parse(source)
     visitor = OptionalParamExtractor.new
-    result.value.accept(visitor)
+    @parsed_target.tree.accept(visitor)
     visitor.optional_params
   end
 
@@ -171,13 +179,8 @@ module RbsInfer
   # ─── Parsear classe-alvo: métodos, attrs, visibilidade ─────────────
 
   def parse_target_class
-    source = File.read(@target_file)
-    result = Prism.parse(source)
-    comments = result.comments
-    lines = source.lines
-
-    visitor = ClassMemberCollector.new(comments: comments, lines: lines)
-    result.value.accept(visitor)
+    visitor = ClassMemberCollector.new(comments: @parsed_target.comments, lines: @parsed_target.lines)
+    @parsed_target.tree.accept(visitor)
     @superclass_name = visitor.superclass_name
     visitor.members
   end
@@ -188,13 +191,10 @@ module RbsInfer
   # ou do valor default do keyword argument.
 
   def infer_attr_types_from_initialize(init_arg_types)
-    return {} unless @target_file && File.exist?(@target_file)
-
-    source = File.read(@target_file)
-    result = Prism.parse(source)
+    return {} unless @parsed_target
 
     visitor = InitializeBodyAnalyzer.new
-    result.value.accept(visitor)
+    @parsed_target.tree.accept(visitor)
 
     attr_types = {}
 
@@ -243,18 +243,15 @@ module RbsInfer
   # e variáveis locais com mesmo nome de um attr_accessor.
 
   def infer_attr_types_from_class_body(members)
-    return [{}, {}] unless @target_file && File.exist?(@target_file)
+    return [{}, {}] unless @parsed_target
 
     attr_names = members.select { |m| [:attr_accessor, :attr_reader, :attr_writer].include?(m.kind) }
                         .map(&:name)
                         .to_set
     return [{}, {}] if attr_names.empty?
 
-    source = File.read(@target_file)
-    result = Prism.parse(source)
-
     visitor = ClassBodyAttrAnalyzer.new(attr_names: attr_names, method_type_resolver: method_type_resolver)
-    result.value.accept(visitor)
+    @parsed_target.tree.accept(visitor)
 
     [visitor.attr_types, visitor.collection_element_types]
   end
@@ -324,12 +321,10 @@ module RbsInfer
   # Extrai nomes dos parâmetros posicionais de cada método da classe-alvo
   # Retorna { "notify" => ["user", "message"], ... }
   def extract_target_method_params
-    return {} unless @target_file && File.exist?(@target_file)
+    return {} unless @parsed_target
 
-    source = File.read(@target_file)
-    result = Prism.parse(source)
     collector = DefCollector.new
-    result.value.accept(collector)
+    @parsed_target.tree.accept(collector)
 
     methods = {}
     collector.defs.each do |defn|
@@ -347,12 +342,10 @@ module RbsInfer
 
   # Extrai nomes dos parâmetros positional do initialize da classe-alvo
   def extract_init_positional_params
-    return [] unless @target_file && File.exist?(@target_file)
+    return [] unless @parsed_target
 
-    source = File.read(@target_file)
-    result = Prism.parse(source)
     collector = DefCollector.new
-    result.value.accept(collector)
+    @parsed_target.tree.accept(collector)
 
     init_def = collector.defs.find { |d| d.name == :initialize }
     return [] unless init_def&.parameters

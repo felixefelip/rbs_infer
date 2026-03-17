@@ -39,11 +39,8 @@ module RbsInfer
     # e substitui pelo tipo do attr se a última expressão do método
     # for uma chamada implícita a um attr conhecido.
 
-    def resolve_method_return_types_from_attrs(members, attr_types, method_type_resolver: nil)
-      return unless @target_file && File.exist?(@target_file)
-
-      source = File.read(@target_file)
-      result = Prism.parse(source)
+    def resolve_method_return_types_from_attrs(members, attr_types, method_type_resolver: nil, parsed_target: nil)
+      return unless parsed_target
 
       # Montar mapa de return types conhecidos dos métodos da própria classe
       # (inclui attrs e métodos já resolvidos)
@@ -72,7 +69,7 @@ module RbsInfer
       # Coletar mapeamento: method_name -> última expressão do body
       method_last_exprs = {}
       collector = DefCollector.new
-      result.value.accept(collector)
+      parsed_target.tree.accept(collector)
 
       collector.defs.each do |defn|
         body = defn.body
