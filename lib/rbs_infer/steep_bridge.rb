@@ -19,14 +19,19 @@ module RbsInfer
     # so we load it once and share it to avoid duplicating ~1s of loading.
     class << self
       def definition_builder
-        return @definition_builder if @definition_builder_loaded
+        current_dir = Dir.pwd
+        if @definition_builder_loaded && @definition_builder_dir == current_dir
+          return @definition_builder
+        end
         @definition_builder_loaded = true
+        @definition_builder_dir = current_dir
         @definition_builder = build_definition_builder
       end
 
       def reset!
         @definition_builder = nil
         @definition_builder_loaded = false
+        @definition_builder_dir = nil
       end
 
       private

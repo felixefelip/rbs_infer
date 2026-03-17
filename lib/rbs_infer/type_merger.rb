@@ -125,6 +125,32 @@ module RbsInfer
 
         member.signature = member.signature.sub("-> untyped", "-> #{resolved_type}")
       end
+
+      # Second pass: retry chain resolution for still-untyped methods
+      # (benefits from types resolved in the first pass, e.g. test_hash)
+      collector.defs.each do |defn|
+        body = defn.body
+        next unless body
+
+        last_stmt = case body
+                    when Prism::StatementsNode then body.body.last
+                    else body
+                    end
+        next unless last_stmt
+
+        method_name = defn.name.to_s
+        member = members.find { |m| m.kind == :method && m.name == method_name }
+        next unless member
+        next unless member.signature.end_with?("-> untyped")
+
+        if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver && method_type_resolver
+          resolved = infer_call_return_type(last_stmt, known_return_types, method_type_resolver)
+          if resolved
+            member.signature = member.signature.sub("-> untyped", "-> #{resolved}")
+            known_return_types[method_name] = resolved
+          end
+        end
+      end
     end
 
     private
@@ -147,7 +173,13 @@ module RbsInfer
         receiver_type = resolve_receiver_type(call_node.receiver, known_return_types, method_type_resolver)
         if receiver_type && receiver_type != "untyped"
           block_body_type = infer_block_body_type(call_node.block, known_return_types) if call_node.block
-          resolved = method_type_resolver.resolve(receiver_type, call_node.name.to_s, block_body_type: block_body_type)
+          # Use singleton lookup for constant receivers (class method calls like ActiveRecord::Base.transaction)
+          resolved = if call_node.receiver.is_a?(Prism::ConstantReadNode) || call_node.receiver.is_a?(Prism::ConstantPathNode)
+                       method_type_resolver.resolve_class_method(receiver_type, call_node.name.to_s, block_body_type: block_body_type) ||
+                         method_type_resolver.resolve(receiver_type, call_node.name.to_s, block_body_type: block_body_type)
+                     else
+                       method_type_resolver.resolve(receiver_type, call_node.name.to_s, block_body_type: block_body_type)
+                     end
           resolved == "self" ? receiver_type : resolved
         end
       end

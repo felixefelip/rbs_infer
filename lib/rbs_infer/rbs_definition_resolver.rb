@@ -28,6 +28,11 @@ module RbsInfer
       best = nil
       method.defs.each do |d|
         formatted = format_rbs_return_type(d.type.type.return_type, class_name)
+        # For type variables (e.g. T in [T] { -> T } -> T), use the variable name
+        # so it can be substituted by the type_params loop below
+        if formatted.nil? && d.type.type.return_type.is_a?(RBS::Types::Variable) && d.type.type_params.any?
+          formatted = d.type.type.return_type.name.to_s
+        end
         next unless formatted
         if d.type.type_params.any?
           type_var_map = infer_type_vars_from_block(d.type, block_body_type: block_body_type)

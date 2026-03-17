@@ -140,7 +140,7 @@ module RbsInfer
       when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then "Hash[untyped, untyped]"
+      when Prism::HashNode then NodeTypeInferrer.infer_hash_type(node)
       when Prism::SelfNode then @target_class
       when Prism::CallNode
         if node.name == :new && node.receiver

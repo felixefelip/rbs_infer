@@ -29,11 +29,11 @@ module RbsInfer
     end
 
     # Resolve um método de classe (def self.xxx) via RBS
-    def resolve_class_method(class_name, method_name)
+    def resolve_class_method(class_name, method_name, block_body_type: nil)
       return nil unless class_name && class_name != "untyped"
 
       # Tentar via RBS DefinitionBuilder primeiro (resolve genéricos corretamente)
-      resolved = @rbs_definition_resolver.resolve_via_rbs_builder(:singleton, class_name, method_name)
+      resolved = @rbs_definition_resolver.resolve_via_rbs_builder(:singleton, class_name, method_name, block_body_type: block_body_type)
       return resolved if resolved
 
       # Fallback: regex-based lookup

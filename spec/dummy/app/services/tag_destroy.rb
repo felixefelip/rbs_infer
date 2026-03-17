@@ -64,10 +64,11 @@ class TagDestroy
 
 	def parse_xml_as_hash
     xml.xpath("//Pedidos").map do |order|
-      {
-				child: order.child,
-				date: order.children
-			}
+      test_hash(order)
     end
+	end
+
+	def test_hash(order)
+		{ order: order, date: order.date }
 	end
 end

@@ -13,7 +13,7 @@ rbs-models:
 	cd $(DUMMY_DIR) && $(RBS_INFER) app/models/ --output --output-dir $(OUTPUT_DIR)
 
 rbs-services:
-	cd $(DUMMY_DIR) && $(RBS_INFER) app/services/ --output --output-dir $(OUTPUT_DIR)
+	cd $(DUMMY_DIR) && $(RBS_INFER) app/services/tag_destroy.rb --output --output-dir $(OUTPUT_DIR)
 
 ## Gerar RBS apenas para arquivo específico passado como argumento
 

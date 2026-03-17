@@ -3,7 +3,7 @@ class TagDestroy
   attr_reader user: User
   attr_reader posts: Array[untyped]
   attr_reader xml: Nokogiri::XML::Document
-  def initialize: (untyped tag_id, untyped user_id) -> User
+  def initialize: (untyped tag_id, untyped user_id) -> void
   def call: () -> bool
 
   private
@@ -17,5 +17,6 @@ class TagDestroy
   def process_tag: (Tag tag) -> void
   def test_nokogiri: () -> Nokogiri::XML::Document
   def parse_xml: () -> Array[Nokogiri::XML::Node]
-  def parse_xml_as_hash: () -> Array[Hash[untyped, untyped]]
+  def parse_xml_as_hash: () -> Array[Hash[Symbol, untyped]]
+  def test_hash: (untyped order) -> Hash[Symbol, untyped]
 end
