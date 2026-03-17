@@ -4,7 +4,7 @@ class User
     def deactivate!: () -> self
     def reactivate!: () -> self
     def toggle_active!: () -> self
-    def days_since_last_post: () -> Integer
+    def days_since_last_post: () -> Integer?
     def test_concern_created_at: () -> ::ActiveSupport::TimeWithZone
     def dormant?: (?Integer threshold_days) -> untyped
   end

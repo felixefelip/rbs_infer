@@ -62,6 +62,11 @@ module RbsInfer
         resolved = infer_ivar_value_type(last_stmt, method_known_types)
         next unless resolved && resolved != "untyped"
 
+        # Se há return nil no corpo, tornar nilable
+        if has_nil_return?(defn) && !resolved.end_with?("?")
+          resolved = "#{resolved}?"
+        end
+
         member = untyped_methods.find { |m| m.name == defn.name.to_s }
         member.signature = member.signature.sub(/-> untyped$/, "-> #{resolved}")
       end
@@ -95,6 +100,16 @@ module RbsInfer
     private
 
     attr_reader :method_type_resolver
+
+    # Verifica se o corpo do método contém `return nil` ou `return` (implícito nil)
+    def has_nil_return?(defn)
+      RbsInfer::Analyzer.find_all_nodes(defn) do |node|
+        next false unless node.is_a?(Prism::ReturnNode)
+        # return sem argumentos = return nil
+        node.arguments.nil? ||
+          node.arguments.arguments.any? { |arg| arg.is_a?(Prism::NilNode) }
+      end.any?
+    end
 
     def collect_local_var_type(node, known_types)
       case node

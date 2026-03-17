@@ -249,7 +249,23 @@ module RbsInfer
 
       return nil unless last_stmt
 
-      infer_node_type(last_stmt)
+      type = infer_node_type(last_stmt)
+      return nil unless type
+
+      # Se há return nil no corpo, tornar nilable
+      if has_nil_return?(defn) && !type.end_with?("?")
+        type = "#{type}?"
+      end
+
+      type
+    end
+
+    def has_nil_return?(defn)
+      RbsInfer::Analyzer.find_all_nodes(defn) do |node|
+        next false unless node.is_a?(Prism::ReturnNode)
+        node.arguments.nil? ||
+          node.arguments.arguments.any? { |arg| arg.is_a?(Prism::NilNode) }
+      end.any?
     end
   end
 end
