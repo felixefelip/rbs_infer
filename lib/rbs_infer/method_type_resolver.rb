@@ -10,15 +10,15 @@ module RbsInfer
       @source_files = source_files
       @cache = {}
       @building = Set.new # guard contra recursão infinita
-      @rbs_builder = nil
-      @rbs_builder_loaded = false
+      @rbs_type_lookup = RbsTypeLookup.new
+      @rbs_definition_resolver = RbsDefinitionResolver.new
     end
 
     def resolve(class_name, method_name)
       return nil unless class_name && class_name != "untyped"
 
       # Tentar via RBS DefinitionBuilder primeiro (resolve genéricos corretamente)
-      rbs_result = resolve_via_rbs_builder(:instance, class_name, method_name)
+      rbs_result = @rbs_definition_resolver.resolve_via_rbs_builder(:instance, class_name, method_name)
       return rbs_result if rbs_result && rbs_result != "untyped"
 
       # Fallback: source + regex-based resolution
@@ -31,7 +31,7 @@ module RbsInfer
       return nil unless class_name && class_name != "untyped"
 
       # Tentar via RBS DefinitionBuilder primeiro (resolve genéricos corretamente)
-      resolved = resolve_via_rbs_builder(:singleton, class_name, method_name)
+      resolved = @rbs_definition_resolver.resolve_via_rbs_builder(:singleton, class_name, method_name)
       return resolved if resolved
 
       # Fallback: regex-based lookup
@@ -211,25 +211,25 @@ module RbsInfer
 
       # 5. Tipos de módulos incluídos (via RBS collection)
       if file && File.exist?(file)
-        included_modules = extract_includes(File.read(file))
+        included_modules = @rbs_type_lookup.extract_includes(File.read(file))
         included_modules.each do |mod_name|
-          mod_types = lookup_rbs_collection_module_types(mod_name)
+          mod_types = @rbs_type_lookup.lookup_rbs_collection_module_types(mod_name)
           mod_types.each { |name, type| types[name] ||= type }
         end
       end
 
       # 6. Fallback: buscar em arquivos RBS (ex: rbs_rails para AR models)
-      rbs_types, rbs_superclass, rbs_includes = lookup_rbs_types(class_name)
+      rbs_types, rbs_superclass, rbs_includes = @rbs_type_lookup.lookup_rbs_types(class_name)
       rbs_types.each { |name, type| types[name] ||= type }
 
       # 7. Resolver herança: buscar tipos da superclass e módulos incluídos
       if rbs_superclass
-        inherited = lookup_inherited_types(rbs_superclass)
+        inherited = @rbs_type_lookup.lookup_inherited_types(rbs_superclass)
         inherited.each { |name, type| types[name] ||= type }
       end
 
       rbs_includes.each do |mod_name|
-        mod_types = lookup_inherited_types(mod_name)
+        mod_types = @rbs_type_lookup.lookup_inherited_types(mod_name)
         mod_types.each { |name, type| types[name] ||= type }
       end if rbs_includes&.any?
 
@@ -248,7 +248,7 @@ module RbsInfer
       Dir["sig/**/*.rbs"].each do |rbs_file|
         content = File.read(rbs_file)
         next unless content.include?(normalized.split("::").last)
-        _, _, _, class_ts = parse_rbs_class_block(content, normalized)
+        _, _, _, class_ts = @rbs_type_lookup.parse_rbs_class_block(content, normalized)
         class_ts.each { |name, type| types[name] ||= type }
       end
 
@@ -326,242 +326,9 @@ module RbsInfer
       end
     end
 
-    # Busca tipos em arquivos .rbs gerados (ex: rbs_rails para AR models)
-    # Retorna [types_hash, superclass_name, includes_array]
-    def lookup_rbs_types(class_name)
-      types = {}
-      superclass = nil
-      all_includes = []
-      normalized = class_name.sub(/\A::/, "")
-
-      # 1. Tentar match por nome de arquivo (caso simples: uma classe por arquivo)
-      class_path = normalized.gsub("::", "/").gsub(/([a-z])([A-Z])/, '\1_\2').downcase
-      Dir["sig/**/*.rbs"].each do |rbs_file|
-        next unless rbs_file.end_with?("#{class_path}.rbs")
-        content = File.read(rbs_file)
-        sc, ts, incs = parse_rbs_class_block(content, normalized)
-        superclass ||= sc
-        ts.each { |name, type| types[name] ||= type }
-        all_includes.concat(incs)
-      end
-
-      # 2. Buscar inner classes dentro de todos os rbs files
-      if types.empty? && superclass.nil?
-        Dir["sig/**/*.rbs"].each do |rbs_file|
-          content = File.read(rbs_file)
-          next unless content.include?(normalized.split("::").last)
-          sc, ts, incs = parse_rbs_class_block(content, normalized)
-          next if ts.empty? && sc.nil? && incs.empty?
-          superclass ||= sc
-          ts.each { |name, type| types[name] ||= type }
-          all_includes.concat(incs)
-        end
-      end
-
-      return types, superclass, all_includes
-    end
-
-    # Parseia um arquivo RBS e extrai métodos, superclass e includes de uma classe específica.
-    # Suporta nesting (module A / module B / class C) e nomes inline (class A::B::C).
-    # Nomes com :: prefix (class ::Foo::Bar) são absolutos e resetam o nesting.
-    # Retorna [superclass, types, includes]
-    def parse_rbs_class_block(content, class_name)
-      types = {}
-      class_method_types = {}
-      superclass = nil
-      includes = []
-      normalized = class_name.sub(/\A::/, "")
-
-      nesting = []       # stack de nomes de namespace (fully-qualified)
-      nesting_sizes = [] # quantos segmentos cada module/class pusharam
-      in_target = false
-      target_depth = nil
-
-      content.lines.each do |line|
-        stripped = line.strip
-
-        if stripped =~ /\A(module|class)\s+(::)?([A-Za-z_]\w*(?:::[A-Za-z_]\w*)*)(?:\s*<\s*(\S+))?\s*$/
-          is_absolute = !!$2
-          name_parts = $3.split("::")
-          parent = $4
-
-          if is_absolute
-            # Nome absoluto: substituir todo o nesting
-            saved_nesting = nesting.dup
-            saved_sizes = nesting_sizes.dup
-            nesting.replace(name_parts)
-            nesting_sizes << { absolute: true, parts: name_parts.size, prev_nesting: saved_nesting, prev_sizes: saved_sizes }
-          else
-            nesting.concat(name_parts)
-            nesting_sizes << { absolute: false, parts: name_parts.size }
-          end
-
-          fqn = nesting.join("::")
-
-          if !in_target && fqn == normalized
-            in_target = true
-            target_depth = nesting.size
-            # Qualificar superclass relativa usando o namespace do nesting
-            if parent && !parent.start_with?("::")
-              ns = nesting[0..-2] # namespace sem a própria classe
-              superclass = parent.include?("::") ? parent : (ns + [parent]).join("::") if ns.any?
-              superclass ||= parent
-            else
-              superclass = parent&.sub(/\A::/, "")
-            end
-          end
-        elsif stripped == "end"
-          if in_target && nesting.size == target_depth
-            in_target = false
-            target_depth = nil
-          end
-          info = nesting_sizes.pop
-          if info
-            if info[:absolute]
-              nesting.replace(info[:prev_nesting])
-              nesting_sizes.replace(info[:prev_sizes])
-            else
-              info[:parts].times { nesting.pop }
-            end
-          end
-        elsif in_target && nesting.size == target_depth
-          # Extrair definições de método dentro da classe alvo
-          if stripped =~ /\Adef self\.(\w+[\?\!]?)\s*:/
-            method_name = $1
-            if stripped =~ /\)\s*->\s*(\S+)\s*$/
-              class_method_types[method_name] ||= $1.strip
-            elsif stripped =~ /->\s*(\S+)\s*$/
-              class_method_types[method_name] ||= $1.strip
-            end
-          elsif stripped =~ /\Adef (\w+[\?\!]?)\s*:/
-            method_name = $1
-            # Extrair return type: último -> na linha (ignora blocos como { () -> untyped })
-            if stripped =~ /\)\s*->\s*(\S+)\s*$/
-              types[method_name] ||= $1.strip
-            elsif stripped =~ /->\s*(\S+)\s*$/
-              types[method_name] ||= $1.strip
-            end
-          elsif stripped =~ /\Ainclude\s+(\S+)/
-            mod_name = $1.sub(/\[.*\z/, "") # Strip type parameters
-            # Qualificar nome relativo usando o namespace da classe
-            if mod_name !~ /::/
-              parent_ns = normalized.split("::")[0..-2]
-              mod_name = (parent_ns + [mod_name]).join("::") if parent_ns.any?
-            elsif mod_name.start_with?("::")
-              mod_name = mod_name.sub(/\A::/, "")
-            end
-            includes << mod_name
-          elsif stripped =~ /\Aattr_(reader|accessor|writer)\s+(\w+)\s*:\s*(.+)/
-            attr_name = $2
-            attr_type = $3.strip
-            types[attr_name] ||= attr_type unless attr_type == "untyped"
-          end
-        end
-      end
-
-      [superclass, types, includes, class_method_types]
-    end
-
-    # Resolve tipos herdados percorrendo a cadeia de superclasses via RBS
-    # Busca em sig/rbs_rails/ e .gem_rbs_collection/
-    # Suporta fallback de resolução de nomes (ex: ActiveRecord::Associations::Relation → ActiveRecord::Relation)
-    def lookup_inherited_types(superclass_name, visited = Set.new)
-      return {} unless superclass_name
-      normalized = superclass_name.sub(/\A::/, "")
-      return {} if visited.include?(normalized)
-      visited.add(normalized)
-
-      @inherited_cache ||= {}
-      return @inherited_cache[normalized] if @inherited_cache.key?(normalized)
-
-      types = {}
-      parent_superclass = nil
-
-      all_includes = []
-
-      # 1. Buscar em sig/rbs_rails/
-      Dir["sig/rbs_rails/**/*.rbs"].each do |rbs_file|
-        content = File.read(rbs_file)
-        sc, ts, incs = parse_rbs_class_block(content, normalized)
-        parent_superclass ||= sc
-        ts.each { |name, type| types[name] ||= type }
-        all_includes.concat(incs)
-      end
-
-      # 2. Buscar em .gem_rbs_collection/
-      gem_sc, gem_ts, gem_incs = lookup_gem_rbs_collection_class(normalized)
-      parent_superclass ||= gem_sc
-      gem_ts.each { |name, type| types[name] ||= type }
-      all_includes.concat(gem_incs) if gem_incs
-
-      # 2b. Fallback: se o nome pode ser um nome qualificado incorretamente,
-      #     tentar removendo segmentos intermediários do namespace
-      #     ex: ActiveRecord::Associations::Relation → ActiveRecord::Relation
-      if types.empty? && parent_superclass.nil?
-        parts = normalized.split("::")
-        if parts.size > 2
-          (parts.size - 2).downto(1) do |i|
-            candidate = (parts[0...i] + [parts.last]).join("::")
-            next if visited.include?(candidate)
-            gem_sc2, gem_ts2, gem_incs2 = lookup_gem_rbs_collection_class(candidate)
-            if gem_ts2.any? || gem_sc2
-              visited.add(candidate)
-              parent_superclass ||= gem_sc2
-              gem_ts2.each { |name, type| types[name] ||= type }
-              all_includes.concat(gem_incs2) if gem_incs2
-              break
-            end
-          end
-        end
-      end
-
-      # 3. Recursar na superclass
-      if parent_superclass
-        inherited = lookup_inherited_types(parent_superclass, visited)
-        inherited.each { |name, type| types[name] ||= type }
-      end
-
-      # 4. Resolver módulos incluídos
-      all_includes.each do |mod_name|
-        mod_types = lookup_inherited_types(mod_name, visited)
-        mod_types.each { |name, type| types[name] ||= type }
-      end
-
-      @inherited_cache[normalized] = types
-      types
-    end
-
-    # Busca classe em .gem_rbs_collection/ (superclasses, modules incluídos)
-    def lookup_gem_rbs_collection_class(class_name)
-      types = {}
-      superclass = nil
-      normalized = class_name.sub(/\A::/, "")
-      parts = normalized.split("::")
-
-      # Derivar possíveis nomes de gem a partir do namespace
-      gem_hints = []
-      parts.first(2).each do |part|
-        gem_hints << part.downcase
-        gem_hints << part.gsub(/([a-z])([A-Z])/, '\1_\2').downcase
-        gem_hints << part.gsub(/([a-z])([A-Z])/, '\1-\2').downcase
-      end
-      gem_hints.uniq!
-
-      rbs_files = gem_hints.flat_map { |hint| Dir[".gem_rbs_collection/#{hint}/**/*.rbs"] }.uniq
-      return [nil, types] if rbs_files.empty?
-
-      all_includes = []
-      rbs_files.each do |rbs_file|
-        content = File.read(rbs_file)
-        next unless content.include?(parts.last)
-        sc, ts, incs = parse_rbs_class_block(content, normalized)
-        next if ts.empty? && sc.nil? && incs.empty?
-        superclass ||= sc
-        ts.each { |name, type| types[name] ||= type }
-        all_includes.concat(incs)
-      end
-
-      [superclass, types, all_includes]
+    # Extrai nomes de módulos incluídos via `include Foo::Bar` no source
+    def extract_includes(source)
+      @rbs_type_lookup.extract_includes(source)
     end
 
     def find_class_file(class_name)
@@ -592,7 +359,7 @@ module RbsInfer
 
           infer_block_return_type(node.block, class_name)
         elsif node.receiver.nil? && class_name
-          resolved = resolve_via_rbs_builder(:instance, class_name, node.name.to_s)
+          resolved = @rbs_definition_resolver.resolve_via_rbs_builder(:instance, class_name, node.name.to_s)
           return resolved if resolved
 
           infer_block_return_type(node.block, class_name)
@@ -612,204 +379,9 @@ module RbsInfer
 
       infer_literal_return_type(last_stmt, class_name)
     end
-
-    # Extrai nomes de módulos incluídos via `include Foo::Bar` no source
-    def extract_includes(source)
-      result = Prism.parse(source)
-      includes = []
-      extract_include_nodes(result.value, includes)
-      includes
-    end
-
-    def extract_include_nodes(node, includes)
-      case node
-      when Prism::CallNode
-        if node.name == :include && node.arguments
-          node.arguments.arguments.each do |arg|
-            name = RbsInfer::Analyzer.extract_constant_path(arg)
-            includes << name if name
-          end
-        end
-      end
-      node.child_nodes.compact.each { |child| extract_include_nodes(child, includes) }
-    end
-
-    # Busca tipos de métodos de um módulo nos arquivos RBS collection
-    def lookup_rbs_collection_module_types(module_name)
-      @rbs_collection_cache ||= {}
-      @rbs_collection_cache[module_name] ||= build_rbs_collection_module_types(module_name)
-    end
-
-    def build_rbs_collection_module_types(module_name)
-      types = {}
-      parts = module_name.split("::")
-      first = parts.first
-
-      # Tentar vários padrões de nome de gem
-      gem_hints = [
-        first.downcase,
-        first.gsub(/([a-z])([A-Z])/, '\1_\2').downcase,
-        first.gsub(/([a-z])([A-Z])/, '\1-\2').downcase,
-      ].uniq
-
-      rbs_files = gem_hints.flat_map { |hint| Dir[".gem_rbs_collection/#{hint}/**/*.rbs"] }.uniq
-      return types if rbs_files.empty?
-
-      content = rbs_files.map { |f| File.read(f) }.join("\n")
-      target_suffix = parts[1..].join("::")
-
-      nesting = []
-      target_depth = nil
-
-      content.lines.each do |line|
-        stripped = line.strip
-
-        if stripped =~ /\A(module|class)\s+(\S+)/
-          nesting << $2
-          if target_depth.nil? && nesting.join("::").end_with?(target_suffix)
-            target_depth = nesting.size
-          end
-        elsif stripped == "end"
-          target_depth = nil if target_depth && nesting.size == target_depth
-          nesting.pop if nesting.any?
-        elsif target_depth && nesting.size == target_depth && stripped =~ /\Adef (\w+[\?\!]?)\s*:\s*(.+)/
-          method_name = $1
-          signature = $2
-          if signature =~ /->\s*(.+)\z/
-            ret_type = $1.strip
-            # Qualificar tipos relativos (ex: Errors → ActiveModel::Errors)
-            parent_module = parts[0..-2].join("::")
-            if ret_type !~ /::/ && ret_type =~ /\A[A-Z]/
-              ret_type = "#{parent_module}::#{ret_type}"
-            end
-            types[method_name] = ret_type
-          end
-        end
-      end
-
-      types
-    end
-
-    # ─── RBS DefinitionBuilder ───────────────────────────────────────
-    # Usa a gem rbs para resolver tipos com suporte a genéricos/type parameters.
-    # Ex: Post.find(id) → Post (resolve ClassMethods[::Post, ...])
-    # Ex: Post::ActiveRecord_Relation.last → Post? (resolve genéricos)
-
-    def rbs_builder
-      return @rbs_builder if @rbs_builder_loaded
-      @rbs_builder_loaded = true
-      @rbs_builder = build_rbs_definition_builder
-    end
-
-    def build_rbs_definition_builder
-      require "rbs"
-
-      loader = RBS::EnvironmentLoader.new
-
-      # Carregar sig/ directories (rbs_rails, rbs_infer, etc.)
-      Dir["sig/*/"].each { |d| loader.add(path: Pathname(d)) }
-
-      # Carregar .gem_rbs_collection/
-      Dir[".gem_rbs_collection/*/"].each do |gem_dir|
-        Dir["#{gem_dir}/*/"].each { |ver_dir| loader.add(path: Pathname(ver_dir)) }
-      end
-
-      env = RBS::Environment.from_loader(loader).resolve_type_names
-      RBS::DefinitionBuilder.new(env: env)
-    rescue LoadError, StandardError => _e
-      nil
-    end
-
-    def resolve_via_rbs_builder(kind, class_name, method_name)
-      return nil unless rbs_builder
-
-      type_name = build_rbs_type_name(class_name)
-      return nil unless type_name
-
-      defn = case kind
-             when :singleton then rbs_builder.build_singleton(type_name)
-             when :instance then rbs_builder.build_instance(type_name)
-             end
-
-      method = defn&.methods&.[](method_name.to_sym)
-      return nil unless method
-
-      # Iterar overloads para preferir tipos sem genéricos não resolvidos (ex: WhereChain[self])
-      best = nil
-      method.defs.each do |d|
-        formatted = format_rbs_return_type(d.type.type.return_type, class_name)
-        next unless formatted
-        # Substituir variáveis de tipo genérico do método (ex: [U] map → Array[U])
-        if d.type.type_params.any?
-          type_var_map = infer_type_vars_from_block(d.type)
-          d.type.type_params.each do |tp|
-            param_name = tp.respond_to?(:name) ? tp.name.to_s : tp.to_s
-            replacement = type_var_map[param_name] || "untyped"
-            formatted = formatted.gsub(/\b#{Regexp.escape(param_name)}\b/, replacement)
-          end
-        end
-        return formatted unless formatted.include?("[self]")
-        best ||= formatted
-      end
-      best
-    rescue => _e
-      nil
-    end
-
-    # Infere variáveis de tipo genérico a partir da assinatura do bloco.
-    # Ex: [U] { (Nokogiri::XML::Node) -> U } → { "U" => "Nokogiri::XML::Node" }
-    def infer_type_vars_from_block(method_type)
-      block = method_type.block
-      return {} unless block
-
-      block_return = block.type.return_type
-      return {} unless block_return.is_a?(RBS::Types::Variable)
-
-      # O tipo de retorno do bloco é uma variável (ex: U).
-      # Inferir U a partir do primeiro parâmetro posicional do bloco.
-      first_param = block.type.required_positionals.first
-      return {} unless first_param
-
-      param_type = format_rbs_return_type(first_param.type)
-      return {} unless param_type && param_type != "untyped"
-
-      { block_return.name.to_s => param_type }
-    end
-
-    def build_rbs_type_name(class_name)
-      normalized = class_name.sub(/\A::/, "")
-      parts = normalized.split("::")
-      name_sym = parts.pop.to_sym
-      ns = if parts.empty?
-             RBS::Namespace.root
-           else
-             RBS::Namespace.new(path: parts.map(&:to_sym), absolute: true)
-           end
-      RBS::TypeName.new(name: name_sym, namespace: ns)
-    end
-
-    def format_rbs_return_type(rbs_type, context_class = nil)
-      case rbs_type
-      when RBS::Types::Bases::Instance
-        # "instance" → o nome da classe (ex: Post.create → Post)
-        context_class&.sub(/\A::/, "")
-      when RBS::Types::Bases::Self
-        "self"
-      when RBS::Types::Bases::Bool
-        "bool"
-      when RBS::Types::Bases::Void
-        "void"
-      when RBS::Types::Bases::Nil
-        "nil"
-      when RBS::Types::Bases::Any
-        "untyped"
-      when RBS::Types::Variable
-        nil
-      else
-        # Remover :: prefix de nomes de tipos qualificados
-        rbs_type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }
-      end
-    end
   end
   end
 end
+
+require_relative "rbs_type_lookup"
+require_relative "rbs_definition_resolver"
