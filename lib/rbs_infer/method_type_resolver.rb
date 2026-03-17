@@ -739,11 +739,13 @@ module RbsInfer
       method.defs.each do |d|
         formatted = format_rbs_return_type(d.type.type.return_type, class_name)
         next unless formatted
-        # Substituir variáveis de tipo genérico do método (ex: [U] map → Array[U] → Array[untyped])
+        # Substituir variáveis de tipo genérico do método (ex: [U] map → Array[U])
         if d.type.type_params.any?
+          type_var_map = infer_type_vars_from_block(d.type)
           d.type.type_params.each do |tp|
             param_name = tp.respond_to?(:name) ? tp.name.to_s : tp.to_s
-            formatted = formatted.gsub(/\b#{Regexp.escape(param_name)}\b/, "untyped")
+            replacement = type_var_map[param_name] || "untyped"
+            formatted = formatted.gsub(/\b#{Regexp.escape(param_name)}\b/, replacement)
           end
         end
         return formatted unless formatted.include?("[self]")
@@ -752,6 +754,26 @@ module RbsInfer
       best
     rescue => _e
       nil
+    end
+
+    # Infere variáveis de tipo genérico a partir da assinatura do bloco.
+    # Ex: [U] { (Nokogiri::XML::Node) -> U } → { "U" => "Nokogiri::XML::Node" }
+    def infer_type_vars_from_block(method_type)
+      block = method_type.block
+      return {} unless block
+
+      block_return = block.type.return_type
+      return {} unless block_return.is_a?(RBS::Types::Variable)
+
+      # O tipo de retorno do bloco é uma variável (ex: U).
+      # Inferir U a partir do primeiro parâmetro posicional do bloco.
+      first_param = block.type.required_positionals.first
+      return {} unless first_param
+
+      param_type = format_rbs_return_type(first_param.type)
+      return {} unless param_type && param_type != "untyped"
+
+      { block_return.name.to_s => param_type }
     end
 
     def build_rbs_type_name(class_name)

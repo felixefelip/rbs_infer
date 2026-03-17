@@ -16,5 +16,5 @@ class TagDestroy
   def call_process_tag: () -> void
   def process_tag: (Tag tag) -> void
   def test_nokogiri: () -> Nokogiri::XML::Document
-  def parse_xml: () -> Array[untyped]
+  def parse_xml: () -> Array[Nokogiri::XML::Node]
 end
