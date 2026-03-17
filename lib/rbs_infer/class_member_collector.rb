@@ -4,6 +4,9 @@ module RbsInfer
   Member = Struct.new(:kind, :name, :signature, :visibility, keyword_init: true)
 
   class ClassMemberCollector < Prism::Visitor
+    include NodeTypeInferrer
+    include RbsAnnotationParser
+
     attr_reader :members, :superclass_name
 
     CONTROLLER_BASES = %w[ApplicationController ActionController::Base ActionController::API].freeze
@@ -157,15 +160,6 @@ module RbsInfer
       nil
     end
 
-    def lines_between_are_blank_or_comments(lines, from_line, to_line)
-      ((from_line)...(to_line - 1)).all? do |i|
-        line = lines[i]
-        next true if line.nil?
-        stripped = line.strip
-        stripped.empty? || stripped.start_with?("#")
-      end
-    end
-
     def extract_params_signature(node)
       params = node.parameters
       return "()" unless params
@@ -179,7 +173,7 @@ module RbsInfer
 
       # Parâmetros opcionais
       params.optionals.each do |p|
-        type = infer_type_from_node(p.value) if p.respond_to?(:value)
+        type = infer_node_type(p.value) if p.respond_to?(:value)
         parts << "?#{type || 'untyped'} #{p.name}"
       end if params.respond_to?(:optionals)
 
@@ -231,29 +225,7 @@ module RbsInfer
 
       return nil unless last_stmt
 
-      infer_type_from_node(last_stmt)
-    end
-
-    def infer_type_from_node(node)
-      case node
-      when Prism::CallNode
-        if node.name == :new && node.receiver
-          RbsInfer::Analyzer.extract_constant_path(node.receiver)
-        end
-      when Prism::StringNode then "String"
-      when Prism::IntegerNode then "Integer"
-      when Prism::FloatNode then "Float"
-      when Prism::SymbolNode then "Symbol"
-      when Prism::TrueNode then "bool"
-      when Prism::FalseNode then "bool"
-      when Prism::NilNode then "nil"
-      when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then "Hash[untyped, untyped]"
-      when Prism::ConstantReadNode, Prism::ConstantPathNode
-        RbsInfer::Analyzer.extract_constant_path(node)
-      when Prism::InstanceVariableWriteNode, Prism::LocalVariableWriteNode
-        infer_type_from_node(node.value)
-      end
+      infer_node_type(last_stmt)
     end
   end
   end

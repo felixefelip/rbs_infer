@@ -1,6 +1,9 @@
 module RbsInfer
   class Analyzer
   class TypeMerger
+    include NodeTypeInferrer
+    include KnownReturnTypesBuilder
+
     # Métodos de Array que retornam self (o próprio array)
     ARRAY_SELF_RETURN_METHODS = %i[<< push append unshift prepend insert concat].to_set
 
@@ -42,29 +45,7 @@ module RbsInfer
     def resolve_method_return_types_from_attrs(members, attr_types, method_type_resolver: nil, parsed_target: nil)
       return unless parsed_target
 
-      # Montar mapa de return types conhecidos dos métodos da própria classe
-      # (inclui attrs e métodos já resolvidos)
-      known_return_types = {}
-      attr_types.each { |name, type| known_return_types[name] = type }
-      members.each do |m|
-        case m.kind
-        when :method
-          if m.signature =~ /->\s*(.+)$/ && $1.strip != "untyped" && $1.strip != "void"
-            known_return_types[m.name] = $1.strip
-          end
-        when :attr_accessor, :attr_reader
-          if m.signature =~ /\w+:\s*(.+)/
-            type = $1.strip
-            known_return_types[m.name] = type unless type == "untyped"
-          end
-        end
-      end
-
-      # Incluir tipos cross-class do MethodTypeResolver (ex: associações AR via sig/rbs_rails)
-      if method_type_resolver
-        resolver_types = method_type_resolver.resolve_all(@target_class)
-        resolver_types.each { |name, type| known_return_types[name] ||= type }
-      end
+      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class)
 
       # Coletar mapeamento: method_name -> última expressão do body
       method_last_exprs = {}
@@ -196,17 +177,7 @@ module RbsInfer
     end
 
     def infer_literal_type(node)
-      case node
-      when Prism::StringNode, Prism::InterpolatedStringNode then "String"
-      when Prism::IntegerNode then "Integer"
-      when Prism::FloatNode then "Float"
-      when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
-      when Prism::TrueNode, Prism::FalseNode then "bool"
-      when Prism::NilNode then "nil"
-      when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then "Hash[untyped, untyped]"
-      when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
-      end
+      infer_node_type(node)
     end
   end
   end

@@ -1,6 +1,8 @@
 module RbsInfer
   class Analyzer
   class InitializeBodyAnalyzer < Prism::Visitor
+    include NodeTypeInferrer
+
     attr_reader :self_assignments, :keyword_defaults
 
     def initialize
@@ -102,19 +104,9 @@ module RbsInfer
     end
 
     def infer_type_from_node(node)
-      case node
-      when Prism::CallNode
-        if node.name == :new && node.receiver
-          RbsInfer::Analyzer.extract_constant_path(node.receiver)
-        end
-      when Prism::ConstantReadNode, Prism::ConstantPathNode
-        RbsInfer::Analyzer.extract_constant_path(node)
-      when Prism::StringNode then "String"
-      when Prism::IntegerNode then "Integer"
-      when Prism::SymbolNode then "Symbol"
-      when Prism::TrueNode, Prism::FalseNode then "bool"
       # NilNode ignorado: default nil indica parâmetro opcional, não tipo nil
-      end
+      return nil if node.is_a?(Prism::NilNode)
+      infer_node_type(node)
     end
 
     def infer_collection_element_type(elements)

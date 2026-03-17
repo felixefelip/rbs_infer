@@ -5,6 +5,8 @@ module RbsInfer
   #
   # Extraído de MethodTypeResolver para manter responsabilidades separadas.
 
+  RbsClassInfo = Data.define(:superclass, :types, :includes, :class_method_types)
+
   class RbsTypeLookup
     def initialize
       @inherited_cache = {}
@@ -24,10 +26,10 @@ module RbsInfer
       Dir["sig/**/*.rbs"].each do |rbs_file|
         next unless rbs_file.end_with?("#{class_path}.rbs")
         content = File.read(rbs_file)
-        sc, ts, incs = parse_rbs_class_block(content, normalized)
-        superclass ||= sc
-        ts.each { |name, type| types[name] ||= type }
-        all_includes.concat(incs)
+        info = parse_rbs_class_block(content, normalized)
+        superclass ||= info.superclass
+        info.types.each { |name, type| types[name] ||= type }
+        all_includes.concat(info.includes)
       end
 
       # 2. Buscar inner classes dentro de todos os rbs files
@@ -35,11 +37,11 @@ module RbsInfer
         Dir["sig/**/*.rbs"].each do |rbs_file|
           content = File.read(rbs_file)
           next unless content.include?(normalized.split("::").last)
-          sc, ts, incs = parse_rbs_class_block(content, normalized)
-          next if ts.empty? && sc.nil? && incs.empty?
-          superclass ||= sc
-          ts.each { |name, type| types[name] ||= type }
-          all_includes.concat(incs)
+          info = parse_rbs_class_block(content, normalized)
+          next if info.types.empty? && info.superclass.nil? && info.includes.empty?
+          superclass ||= info.superclass
+          info.types.each { |name, type| types[name] ||= type }
+          all_includes.concat(info.includes)
         end
       end
 
@@ -139,7 +141,7 @@ module RbsInfer
         end
       end
 
-      [superclass, types, includes, class_method_types]
+      RbsClassInfo.new(superclass:, types:, includes:, class_method_types:)
     end
 
     # Resolve tipos herdados percorrendo a cadeia de superclasses via RBS
@@ -158,17 +160,17 @@ module RbsInfer
       # 1. Buscar em sig/rbs_rails/
       Dir["sig/rbs_rails/**/*.rbs"].each do |rbs_file|
         content = File.read(rbs_file)
-        sc, ts, incs = parse_rbs_class_block(content, normalized)
-        parent_superclass ||= sc
-        ts.each { |name, type| types[name] ||= type }
-        all_includes.concat(incs)
+        info = parse_rbs_class_block(content, normalized)
+        parent_superclass ||= info.superclass
+        info.types.each { |name, type| types[name] ||= type }
+        all_includes.concat(info.includes)
       end
 
       # 2. Buscar em .gem_rbs_collection/
-      gem_sc, gem_ts, gem_incs = lookup_gem_rbs_collection_class(normalized)
-      parent_superclass ||= gem_sc
-      gem_ts.each { |name, type| types[name] ||= type }
-      all_includes.concat(gem_incs) if gem_incs
+      gem_info = lookup_gem_rbs_collection_class(normalized)
+      parent_superclass ||= gem_info.superclass
+      gem_info.types.each { |name, type| types[name] ||= type }
+      all_includes.concat(gem_info.includes)
 
       # 2b. Fallback: tentar removendo segmentos intermediários do namespace
       if types.empty? && parent_superclass.nil?
@@ -177,12 +179,12 @@ module RbsInfer
           (parts.size - 2).downto(1) do |i|
             candidate = (parts[0...i] + [parts.last]).join("::")
             next if visited.include?(candidate)
-            gem_sc2, gem_ts2, gem_incs2 = lookup_gem_rbs_collection_class(candidate)
-            if gem_ts2.any? || gem_sc2
+            gem_info2 = lookup_gem_rbs_collection_class(candidate)
+            if gem_info2.types.any? || gem_info2.superclass
               visited.add(candidate)
-              parent_superclass ||= gem_sc2
-              gem_ts2.each { |name, type| types[name] ||= type }
-              all_includes.concat(gem_incs2) if gem_incs2
+              parent_superclass ||= gem_info2.superclass
+              gem_info2.types.each { |name, type| types[name] ||= type }
+              all_includes.concat(gem_info2.includes)
               break
             end
           end
@@ -221,20 +223,20 @@ module RbsInfer
       gem_hints.uniq!
 
       rbs_files = gem_hints.flat_map { |hint| Dir[".gem_rbs_collection/#{hint}/**/*.rbs"] }.uniq
-      return [nil, types] if rbs_files.empty?
+      return RbsClassInfo.new(superclass: nil, types:, includes: [], class_method_types: {}) if rbs_files.empty?
 
       all_includes = []
       rbs_files.each do |rbs_file|
         content = File.read(rbs_file)
         next unless content.include?(parts.last)
-        sc, ts, incs = parse_rbs_class_block(content, normalized)
-        next if ts.empty? && sc.nil? && incs.empty?
-        superclass ||= sc
-        ts.each { |name, type| types[name] ||= type }
-        all_includes.concat(incs)
+        info = parse_rbs_class_block(content, normalized)
+        next if info.types.empty? && info.superclass.nil? && info.includes.empty?
+        superclass ||= info.superclass
+        info.types.each { |name, type| types[name] ||= type }
+        all_includes.concat(info.includes)
       end
 
-      [superclass, types, all_includes]
+      RbsClassInfo.new(superclass:, types:, includes: all_includes, class_method_types: {})
     end
 
     # Extrai nomes de módulos incluídos via `include Foo::Bar` no source

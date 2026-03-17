@@ -1,6 +1,8 @@
 module RbsInfer
   class Analyzer
   class CallerFileAnalyzer
+    include RbsAnnotationParser
+
     attr_reader :method_call_usages
 
     def initialize(target_class:, method_type_resolver:, init_positional_params: [], target_methods: {})
@@ -110,15 +112,6 @@ module RbsInfer
         end
       end
       nil
-    end
-
-    def lines_between_are_blank_or_comments(lines, from_line, to_line)
-      ((from_line)...(to_line - 1)).all? do |i|
-        line = lines[i]
-        next true if line.nil?
-        stripped = line.strip
-        stripped.empty? || stripped.start_with?("#")
-      end
     end
 
     def infer_return_type_from_body(defn)

@@ -6,6 +6,8 @@ module RbsInfer
   # Também infere tipos de attrs via keyword defaults e call-sites.
 
   class MethodTypeResolver
+    include NodeTypeInferrer
+
     def initialize(source_files)
       @source_files = source_files
       @cache = {}
@@ -252,8 +254,8 @@ module RbsInfer
       Dir["sig/**/*.rbs"].each do |rbs_file|
         content = File.read(rbs_file)
         next unless content.include?(normalized.split("::").last)
-        _, _, _, class_ts = @rbs_type_lookup.parse_rbs_class_block(content, normalized)
-        class_ts.each { |name, type| types[name] ||= type }
+        info = @rbs_type_lookup.parse_rbs_class_block(content, normalized)
+        info.class_method_types.each { |name, type| types[name] ||= type }
       end
 
       @class_method_cache[class_name] = types
@@ -346,21 +348,12 @@ module RbsInfer
 
     # Inferir return type a partir de literais ou Klass.new na última expressão
     def infer_literal_return_type(node, class_name = nil)
+      basic = infer_node_type(node, context_class: class_name)
+      return basic if basic
+
       case node
-      when Prism::StringNode, Prism::InterpolatedStringNode then "String"
-      when Prism::IntegerNode then "Integer"
-      when Prism::FloatNode then "Float"
-      when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
-      when Prism::TrueNode, Prism::FalseNode then "bool"
-      when Prism::NilNode then "nil"
-      when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then "Hash[untyped, untyped]"
-      when Prism::SelfNode
-        class_name
       when Prism::CallNode
-        if node.name == :new && node.receiver
-          RbsInfer::Analyzer.extract_constant_path(node.receiver)
-        elsif node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
+        if node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
           cn = RbsInfer::Analyzer.extract_constant_path(node.receiver)
           resolved = resolve_class_method(cn, node.name.to_s) if cn
           return resolved if resolved

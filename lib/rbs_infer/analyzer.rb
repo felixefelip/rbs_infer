@@ -409,6 +409,9 @@ module RbsInfer
   end
 end
 
+require_relative "node_type_inferrer"
+require_relative "known_return_types_builder"
+require_relative "rbs_annotation_parser"
 require_relative "optional_param_extractor"
 require_relative "class_name_extractor"
 require_relative "class_body_attr_analyzer"

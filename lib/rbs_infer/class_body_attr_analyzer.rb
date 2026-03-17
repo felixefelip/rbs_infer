@@ -1,6 +1,8 @@
 module RbsInfer
   class Analyzer
   class ClassBodyAttrAnalyzer < Prism::Visitor
+    include NodeTypeInferrer
+
     attr_reader :attr_types, :collection_element_types
 
     def initialize(attr_names:, method_type_resolver: nil)
@@ -115,22 +117,19 @@ module RbsInfer
     end
 
     def infer_type_from_node(node)
-      case node
-      when Prism::CallNode
-        if node.name == :new && node.receiver
-          RbsInfer::Analyzer.extract_constant_path(node.receiver)
-        elsif node.receiver
-          class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
-          if class_name
-            if @method_type_resolver
-              resolved = @method_type_resolver.resolve_class_method(class_name, node.name.to_s)
-              return resolved if resolved && resolved != "untyped"
-            end
-            class_name
+      basic = infer_node_type(node)
+      return basic if basic
+
+      # Resolve class method calls: Klass.method → method_type_resolver
+      if node.is_a?(Prism::CallNode) && node.receiver
+        class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
+        if class_name
+          if @method_type_resolver
+            resolved = @method_type_resolver.resolve_class_method(class_name, node.name.to_s)
+            return resolved if resolved && resolved != "untyped"
           end
+          class_name
         end
-      when Prism::ConstantReadNode, Prism::ConstantPathNode
-        RbsInfer::Analyzer.extract_constant_path(node)
       end
     end
   end

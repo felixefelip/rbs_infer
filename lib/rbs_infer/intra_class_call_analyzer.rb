@@ -8,6 +8,7 @@ module RbsInfer
   #    `Telefone.new(ddd:, numero:)` → infere `ddd: String, numero: String`
   #    a partir da assinatura de Telefone#initialize
   class IntraClassCallAnalyzer < Prism::Visitor
+    include NodeTypeInferrer
     # method_name → { param_name → type }
     attr_reader :inferred_param_types
 
@@ -148,11 +149,12 @@ module RbsInfer
     end
 
     def infer_expression_type(node)
+      basic = infer_node_type(node)
+      return basic if basic
+
       case node
       when Prism::CallNode
-        if node.name == :new && node.receiver
-          RbsInfer::Analyzer.extract_constant_path(node.receiver)
-        elsif node.receiver.nil?
+        if node.receiver.nil?
           @attr_types[node.name.to_s]
         elsif node.receiver.is_a?(Prism::LocalVariableReadNode)
           var_type = @local_var_types[node.receiver.name.to_s]
@@ -160,12 +162,6 @@ module RbsInfer
             @method_type_resolver.resolve(var_type, node.name.to_s)
           end
         end
-      when Prism::ConstantReadNode, Prism::ConstantPathNode
-        RbsInfer::Analyzer.extract_constant_path(node)
-      when Prism::StringNode then "String"
-      when Prism::IntegerNode then "Integer"
-      when Prism::SymbolNode then "Symbol"
-      when Prism::TrueNode, Prism::FalseNode then "bool"
       end
     end
 
@@ -199,14 +195,8 @@ module RbsInfer
         resolve_value_type(node.value)
       when Prism::CallNode
         infer_expression_type(node) || "untyped"
-      when Prism::StringNode then "String"
-      when Prism::IntegerNode then "Integer"
-      when Prism::SymbolNode then "Symbol"
-      when Prism::TrueNode, Prism::FalseNode then "bool"
-      when Prism::ConstantReadNode, Prism::ConstantPathNode
-        RbsInfer::Analyzer.extract_constant_path(node) || "untyped"
       else
-        "untyped"
+        infer_node_type(node) || "untyped"
       end
     end
   end

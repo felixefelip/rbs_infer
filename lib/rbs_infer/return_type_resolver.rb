@@ -8,6 +8,9 @@ module RbsInfer
   # - infer_ivar_types: infere tipos de instance variables (@post, @posts, etc.)
 
   class ReturnTypeResolver
+    include NodeTypeInferrer
+    include KnownReturnTypesBuilder
+
     def initialize(target_file:, target_class:, method_type_resolver:)
       @target_file = target_file
       @target_class = target_class
@@ -21,26 +24,7 @@ module RbsInfer
       untyped_methods = members.select { |m| m.kind == :method && m.signature =~ /->\ s*untyped$/ }
       return if untyped_methods.empty?
 
-      known_return_types = {}
-      attr_types.each { |name, type| known_return_types[name] = type }
-      members.each do |m|
-        case m.kind
-        when :method
-          if m.signature =~ /->\s*(.+)$/ && $1.strip != "untyped" && $1.strip != "void"
-            known_return_types[m.name] = $1.strip
-          end
-        when :attr_accessor, :attr_reader
-          if m.signature =~ /\w+:\s*(.+)/
-            type = $1.strip
-            known_return_types[m.name] = type unless type == "untyped"
-          end
-        end
-      end
-
-      if method_type_resolver
-        resolver_types = method_type_resolver.resolve_all(@target_class)
-        resolver_types.each { |name, type| known_return_types[name] ||= type }
-      end
+      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class)
 
       # Aplicar tipos já resolvidos pelo resolver (ex: chamadas a métodos herdados)
       untyped_methods.each do |m|
@@ -86,27 +70,7 @@ module RbsInfer
     def infer_ivar_types(members, attr_types, parsed_target: nil)
       return {} unless parsed_target
 
-      # Montar known_return_types com tudo que já sabemos
-      known_return_types = {}
-      attr_types.each { |name, type| known_return_types[name] = type }
-      members.each do |m|
-        case m.kind
-        when :method
-          if m.signature =~ /->\s*(.+)$/ && $1.strip != "untyped" && $1.strip != "void"
-            known_return_types[m.name] = $1.strip
-          end
-        when :attr_accessor, :attr_reader
-          if m.signature =~ /\w+:\s*(.+)/
-            type = $1.strip
-            known_return_types[m.name] = type unless type == "untyped"
-          end
-        end
-      end
-
-      if method_type_resolver
-        resolver_types = method_type_resolver.resolve_all(@target_class)
-        resolver_types.each { |name, type| known_return_types[name] ||= type }
-      end
+      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class)
 
       # Nomes de attrs já declarados (attr_accessor, attr_reader) → pular
       attr_names = members.select { |m| [:attr_accessor, :attr_reader, :attr_writer].include?(m.kind) }
