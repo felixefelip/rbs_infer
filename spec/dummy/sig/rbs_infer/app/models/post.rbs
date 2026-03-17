@@ -1,4 +1,7 @@
 class Post < ApplicationRecord
+  extend Enumerize
+  include Post::Taggable
+  include Post::Notifiable
   def summary: (?Integer length) -> untyped
   def test_status: () -> Post::EnumerizeStatusValue
   def was_archived?: () -> bool

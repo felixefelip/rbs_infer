@@ -26,7 +26,7 @@ module User::Recoverable
     last_post = posts.order(created_at: :desc).first
     return nil unless last_post
 
-    ((Time.current - last_post.created_at) / 1.day).to_i
+    (Time.current - last_post.created_at).to_i
   end
 
   def dormant?(threshold_days = 90)
