@@ -132,6 +132,10 @@ module RbsInfer
       when Prism::ArrayNode then "Array[untyped]"
       when Prism::HashNode then "Hash[untyped, untyped]"
       when Prism::SelfNode then @target_class
+      when Prism::ParenthesesNode
+        body = node.body
+        inner = body.is_a?(Prism::StatementsNode) ? body.body.last : body
+        infer_ivar_value_type(inner, known_return_types) if inner
       when Prism::InstanceVariableWriteNode, Prism::LocalVariableWriteNode
         infer_ivar_value_type(node.value, known_return_types)
       when Prism::CallNode
@@ -218,6 +222,10 @@ module RbsInfer
         end
       when Prism::SelfNode
         nil
+      when Prism::ParenthesesNode
+        body = node.body
+        inner = body.is_a?(Prism::StatementsNode) ? body.body.last : body
+        resolve_chain_type(inner, known_return_types) if inner
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         Analyzer.extract_constant_path(node)
       when Prism::InstanceVariableReadNode
