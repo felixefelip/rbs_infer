@@ -34,6 +34,7 @@ module RbsInfer
 
   def initialize(target_class: nil, source_files:, target_file: nil)
     @source_files = source_files
+    @source_index = SourceIndex.new(source_files)
     @target_file = target_file
     @target_class = target_class
 
@@ -291,7 +292,7 @@ module RbsInfer
     positional_params = extract_init_positional_params
     target_methods = extract_target_method_params
     analyzer = CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, init_positional_params: positional_params, target_methods: target_methods)
-    @source_files.flat_map { |file| analyzer.analyze(file) }
+    @source_index.files_referencing(@target_class).flat_map { |file| analyzer.analyze(file) }
   end
 
   # Inferir tipos de parâmetros de métodos via chamadas cross-class
@@ -307,7 +308,7 @@ module RbsInfer
       init_positional_params: positional_params,
       target_methods: target_methods
     )
-    @source_files.each { |file| analyzer.analyze(file) }
+    @source_index.files_referencing(@target_class).each { |file| analyzer.analyze(file) }
 
     result = {}
     analyzer.method_call_usages.each do |method_name, usages|
@@ -358,7 +359,7 @@ module RbsInfer
   end
 
   def method_type_resolver
-    @method_type_resolver ||= MethodTypeResolver.new(@source_files)
+    @method_type_resolver ||= MethodTypeResolver.new(@source_files, source_index: @source_index)
   end
 
   def type_merger
@@ -378,6 +379,7 @@ module RbsInfer
       target_file: @target_file,
       target_class: @target_class,
       source_files: @source_files,
+      source_index: @source_index,
       method_type_resolver: method_type_resolver,
       type_merger: type_merger
     )
@@ -426,3 +428,4 @@ require_relative "rbs_builder"
 require_relative "type_merger"
 require_relative "return_type_resolver"
 require_relative "param_type_inferrer"
+require_relative "source_index"

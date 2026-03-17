@@ -8,10 +8,11 @@ module RbsInfer
   class ParamTypeInferrer
     ITERATOR_METHODS = RbsInfer::ITERATOR_METHODS
 
-    def initialize(target_file:, target_class:, source_files:, method_type_resolver:, type_merger:)
+    def initialize(target_file:, target_class:, source_files:, source_index: nil, method_type_resolver:, type_merger:)
       @target_file = target_file
       @target_class = target_class
       @source_files = source_files
+      @source_index = source_index
       @method_type_resolver = method_type_resolver
       @type_merger = type_merger
     end
@@ -60,7 +61,8 @@ module RbsInfer
       types = {}
       short_name = @target_class.split("::").last
 
-      @source_files.each do |file|
+      files = @source_index ? @source_index.files_referencing(@target_class) : @source_files
+      files.each do |file|
         begin
           source = File.read(file)
         rescue Errno::ENOENT, Errno::EACCES

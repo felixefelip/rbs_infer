@@ -8,8 +8,9 @@ module RbsInfer
   class MethodTypeResolver
     include NodeTypeInferrer
 
-    def initialize(source_files)
+    def initialize(source_files, source_index: nil)
       @source_files = source_files
+      @source_index = source_index
       @cache = {}
       @building = Set.new # guard contra recursão infinita
       @rbs_type_lookup = RbsTypeLookup.new
@@ -66,7 +67,8 @@ module RbsInfer
       short_name = class_name.split("::").last
       all_usages = []
 
-      @source_files.each do |file|
+      files = @source_index ? @source_index.files_referencing(class_name) : @source_files
+      files.each do |file|
         begin
           source = File.read(file)
         rescue Errno::ENOENT, Errno::EACCES
@@ -267,7 +269,8 @@ module RbsInfer
     def infer_attrs_from_call_sites(class_name, types, param_to_attr)
       short_name = class_name.split("::").last
 
-      @source_files.each do |file|
+      files = @source_index ? @source_index.files_referencing(class_name) : @source_files
+      files.each do |file|
         begin
           source = File.read(file)
         rescue Errno::ENOENT, Errno::EACCES
