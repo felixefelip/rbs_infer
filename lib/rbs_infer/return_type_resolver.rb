@@ -175,7 +175,8 @@ module RbsInfer
           if receiver_type && receiver_type != "untyped"
             safe_nav = node.call_operator == "&."
             base_type = safe_nav ? receiver_type.delete_suffix("?") : receiver_type
-            resolved = resolve_on_type(base_type, node.name.to_s)
+            block_body_type = node.block ? infer_block_return_type(node.block, known_return_types) : nil
+            resolved = resolve_on_type(base_type, node.name.to_s, block_body_type: block_body_type)
             resolved = if resolved == "self" then receiver_type
                        elsif resolved && safe_nav && !resolved.end_with?("?") then "#{resolved}?"
                        else resolved
@@ -201,9 +202,9 @@ module RbsInfer
       infer_ivar_value_type(last_stmt, known_return_types)
     end
 
-    def resolve_on_type(receiver_type, method_name)
+    def resolve_on_type(receiver_type, method_name, block_body_type: nil)
       return nil unless method_type_resolver
-      method_type_resolver.resolve(receiver_type, method_name)
+      method_type_resolver.resolve(receiver_type, method_name, block_body_type: block_body_type)
     end
 
     def resolve_chain_type(node, known_return_types)
@@ -225,7 +226,8 @@ module RbsInfer
           if parent_type && parent_type != "untyped"
             safe_nav = node.call_operator == "&."
             base_type = safe_nav ? parent_type.delete_suffix("?") : parent_type
-            resolved = resolve_on_type(base_type, node.name.to_s)
+            block_body_type = node.block ? infer_block_return_type(node.block, known_return_types) : nil
+            resolved = resolve_on_type(base_type, node.name.to_s, block_body_type: block_body_type)
             resolved = if resolved == "self" then parent_type
                        elsif resolved && safe_nav && !resolved.end_with?("?") then "#{resolved}?"
                        else resolved

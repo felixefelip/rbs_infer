@@ -16,11 +16,11 @@ module RbsInfer
       @rbs_definition_resolver = RbsDefinitionResolver.new
     end
 
-    def resolve(class_name, method_name)
+    def resolve(class_name, method_name, block_body_type: nil)
       return nil unless class_name && class_name != "untyped"
 
       # Tentar via RBS DefinitionBuilder primeiro (resolve genéricos corretamente)
-      rbs_result = @rbs_definition_resolver.resolve_via_rbs_builder(:instance, class_name, method_name)
+      rbs_result = @rbs_definition_resolver.resolve_via_rbs_builder(:instance, class_name, method_name, block_body_type: block_body_type)
       return rbs_result if rbs_result && rbs_result != "untyped"
 
       # Fallback: source + regex-based resolution

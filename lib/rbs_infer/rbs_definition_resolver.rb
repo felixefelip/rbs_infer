@@ -11,7 +11,7 @@ module RbsInfer
       @rbs_builder_loaded = false
     end
 
-    def resolve_via_rbs_builder(kind, class_name, method_name)
+    def resolve_via_rbs_builder(kind, class_name, method_name, block_body_type: nil)
       return nil unless rbs_builder
 
       type_name = build_rbs_type_name(class_name)
@@ -30,7 +30,7 @@ module RbsInfer
         formatted = format_rbs_return_type(d.type.type.return_type, class_name)
         next unless formatted
         if d.type.type_params.any?
-          type_var_map = infer_type_vars_from_block(d.type)
+          type_var_map = infer_type_vars_from_block(d.type, block_body_type: block_body_type)
           d.type.type_params.each do |tp|
             param_name = tp.respond_to?(:name) ? tp.name.to_s : tp.to_s
             replacement = type_var_map[param_name] || "untyped"
@@ -92,13 +92,21 @@ module RbsInfer
 
     # Infere variáveis de tipo genérico a partir da assinatura do bloco.
     # Ex: [U] { (Nokogiri::XML::Node) -> U } → { "U" => "Nokogiri::XML::Node" }
-    def infer_type_vars_from_block(method_type)
+    # Se block_body_type for fornecido (tipo real do corpo do bloco), usa-o
+    # em vez do tipo do parâmetro do bloco.
+    def infer_type_vars_from_block(method_type, block_body_type: nil)
       block = method_type.block
       return {} unless block
 
       block_return = block.type.return_type
       return {} unless block_return.is_a?(RBS::Types::Variable)
 
+      # Se temos o tipo real do corpo do bloco, usar ele
+      if block_body_type && block_body_type != "untyped"
+        return { block_return.name.to_s => block_body_type }
+      end
+
+      # Fallback: inferir a partir do tipo do parâmetro do bloco
       first_param = block.type.required_positionals.first
       return {} unless first_param
 

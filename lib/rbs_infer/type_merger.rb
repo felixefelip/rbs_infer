@@ -146,7 +146,8 @@ module RbsInfer
         # receiver.method → resolver tipo do receiver, depois do method
         receiver_type = resolve_receiver_type(call_node.receiver, known_return_types, method_type_resolver)
         if receiver_type && receiver_type != "untyped"
-          resolved = method_type_resolver.resolve(receiver_type, call_node.name.to_s)
+          block_body_type = infer_block_body_type(call_node.block, known_return_types) if call_node.block
+          resolved = method_type_resolver.resolve(receiver_type, call_node.name.to_s, block_body_type: block_body_type)
           resolved == "self" ? receiver_type : resolved
         end
       end
@@ -178,6 +179,19 @@ module RbsInfer
 
     def infer_literal_type(node)
       infer_node_type(node)
+    end
+
+    def infer_block_body_type(block_node, known_return_types)
+      return nil unless block_node.is_a?(Prism::BlockNode)
+
+      body = block_node.body
+      last_stmt = case body
+                  when Prism::StatementsNode then body.body.last
+                  else body
+                  end
+      return nil unless last_stmt
+
+      infer_node_type(last_stmt, known_types: known_return_types)
     end
   end
 end
