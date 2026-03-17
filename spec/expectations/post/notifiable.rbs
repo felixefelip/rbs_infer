@@ -8,6 +8,6 @@ class Post
 
     private
 
-    def deliver_notification: (untyped subscriber) -> EmailNotifier
+    def deliver_notification: (untyped subscriber) -> Hash[untyped, untyped]
   end
 end

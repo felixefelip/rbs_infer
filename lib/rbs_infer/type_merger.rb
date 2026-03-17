@@ -6,9 +6,10 @@ module RbsInfer
     # Métodos de Array que retornam self (o próprio array)
     ARRAY_SELF_RETURN_METHODS = %i[<< push append unshift prepend insert concat].to_set
 
-    def initialize(target_file:, target_class: nil)
+    def initialize(target_file:, target_class: nil, instance_types: [])
       @target_file = target_file
       @target_class = target_class
+      @instance_types = instance_types
     end
 
     # ─── Unificar tipos de múltiplos call-sites ────────────────────────
@@ -44,7 +45,7 @@ module RbsInfer
     def resolve_method_return_types_from_attrs(members, attr_types, method_type_resolver: nil, parsed_target: nil)
       return unless parsed_target
 
-      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class)
+      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
 
       # Coletar mapeamento: method_name -> última expressão do body
       method_last_exprs = {}

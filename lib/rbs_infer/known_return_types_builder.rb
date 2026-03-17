@@ -3,7 +3,7 @@ module RbsInfer
   # members, attr_types e method_type_resolver.
   # Padrão repetido em ReturnTypeResolver e TypeMerger.
   module KnownReturnTypesBuilder
-    def build_known_return_types(members, attr_types, method_type_resolver: nil, target_class: nil)
+    def build_known_return_types(members, attr_types, method_type_resolver: nil, target_class: nil, instance_types: [])
       types = {}
       attr_types.each { |name, type| types[name] = type }
 
@@ -24,6 +24,14 @@ module RbsInfer
       if method_type_resolver && target_class
         resolver_types = method_type_resolver.resolve_all(target_class)
         resolver_types.each { |name, type| types[name] ||= type }
+      end
+
+      # Resolver métodos das classes declaradas em @type instance
+      if method_type_resolver && instance_types.any?
+        instance_types.each do |inst_class|
+          inst_types = method_type_resolver.resolve_all(inst_class)
+          inst_types.each { |name, type| types[name] ||= type }
+        end
       end
 
       types

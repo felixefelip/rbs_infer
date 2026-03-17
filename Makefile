@@ -9,6 +9,12 @@ OUTPUT_DIR = sig/rbs_infer
 rbs:
 	cd $(DUMMY_DIR) && $(RBS_INFER) app/ --output --output-dir $(OUTPUT_DIR)
 
+rbs-models:
+	cd $(DUMMY_DIR) && $(RBS_INFER) app/models/ --output --output-dir $(OUTPUT_DIR)
+
+## Gerar RBS apenas para arquivo específico passado como argumento
+
+
 ## Rodar testes
 test:
 	bundle exec rspec

@@ -10,10 +10,11 @@ module RbsInfer
     include NodeTypeInferrer
     include KnownReturnTypesBuilder
 
-    def initialize(target_file:, target_class:, method_type_resolver:)
+    def initialize(target_file:, target_class:, method_type_resolver:, instance_types: [])
       @target_file = target_file
       @target_class = target_class
       @method_type_resolver = method_type_resolver
+      @instance_types = instance_types
     end
 
     def improve_method_return_types(members, attr_types, parsed_target: nil)
@@ -23,7 +24,7 @@ module RbsInfer
       untyped_methods = members.select { |m| m.kind == :method && m.signature =~ /->\ s*untyped$/ }
       return if untyped_methods.empty?
 
-      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class)
+      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
 
       # Aplicar tipos já resolvidos pelo resolver (ex: chamadas a métodos herdados)
       untyped_methods.each do |m|
@@ -69,7 +70,7 @@ module RbsInfer
     def infer_ivar_types(members, attr_types, parsed_target: nil)
       return {} unless parsed_target
 
-      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class)
+      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
 
       # Nomes de attrs já declarados (attr_accessor, attr_reader) → pular
       attr_names = members.select { |m| [:attr_accessor, :attr_reader, :attr_writer].include?(m.kind) }

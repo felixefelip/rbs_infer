@@ -29,6 +29,10 @@ module User::Recoverable
     (Time.current - last_post.created_at).to_i
   end
 
+  def test_concern_created_at
+    created_at
+  end
+
   def dormant?(threshold_days = 90)
     days = days_since_last_post
     return true if days.nil?

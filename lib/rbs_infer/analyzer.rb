@@ -61,6 +61,9 @@ module RbsInfer
     # Parsear o arquivo-alvo para extrair todos os membros da classe
     target_members = parse_target_class
 
+    # Extrair classes da anotação @type instance (para concerns)
+    @instance_types = extract_instance_types
+
     # Inferir tipos do initialize via call-sites
     init_arg_types = infer_initialize_types
 
@@ -186,6 +189,25 @@ module RbsInfer
     @superclass_name = visitor.superclass_name
     @is_module = visitor.is_module if @is_module.nil?
     visitor.members
+  end
+
+  # ─── Extrair classes da anotação @type instance ────────────────────
+  # Parseia comentários `# @type instance: User & User::Recoverable`
+  # e retorna as classes declaradas (excluindo a própria target_class).
+
+  def extract_instance_types
+    return [] unless @parsed_target
+
+    @parsed_target.comments.each do |comment|
+      text = comment.location.slice
+      if text =~ /#\s*@type\s+instance:\s*(.+)/
+        types_str = $1.strip
+        types = types_str.split(/\s*&\s*/).map(&:strip)
+        return types.reject { |t| t == @target_class }
+      end
+    end
+
+    []
   end
 
   # ─── Inferir tipos dos attrs via initialize ────────────────────────
@@ -365,14 +387,15 @@ module RbsInfer
   end
 
   def type_merger
-    @type_merger ||= TypeMerger.new(target_file: @target_file, target_class: @target_class)
+    @type_merger ||= TypeMerger.new(target_file: @target_file, target_class: @target_class, instance_types: @instance_types || [])
   end
 
   def return_type_resolver
     @return_type_resolver ||= ReturnTypeResolver.new(
       target_file: @target_file,
       target_class: @target_class,
-      method_type_resolver: method_type_resolver
+      method_type_resolver: method_type_resolver,
+      instance_types: @instance_types || []
     )
   end
 
