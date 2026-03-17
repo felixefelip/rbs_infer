@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::Analyzer::IntraClassCallAnalyzer do
+RSpec.describe RbsInfer::IntraClassCallAnalyzer do
   def analyze(source, attr_types: {}, method_type_resolver: nil)
     result = Prism.parse(source)
     visitor = described_class.new(attr_types: attr_types, method_type_resolver: method_type_resolver)
@@ -71,7 +71,7 @@ RSpec.describe RbsInfer::Analyzer::IntraClassCallAnalyzer do
 
   context "usage-side: infere tipos de params via Klass.new(param:) no corpo" do
     let(:resolver) do
-      instance_double(RbsInfer::Analyzer::MethodTypeResolver).tap do |r|
+      instance_double(RbsInfer::MethodTypeResolver).tap do |r|
         allow(r).to receive(:resolve_all).with("Telefone").and_return({
           "ddd" => "String",
           "numero" => "String"
@@ -102,7 +102,7 @@ RSpec.describe RbsInfer::Analyzer::IntraClassCallAnalyzer do
         end
       RUBY
 
-      resolver_local = instance_double(RbsInfer::Analyzer::MethodTypeResolver)
+      resolver_local = instance_double(RbsInfer::MethodTypeResolver)
       allow(resolver_local).to receive(:resolve_all).with("Telefone").and_return({
         "ddd" => "String",
         "numero" => "String"

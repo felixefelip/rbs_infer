@@ -2,7 +2,7 @@ require "spec_helper"
 require "rbs_infer"
 require "rbs"
 
-RSpec.describe RbsInfer::Analyzer::RbsParserUtil do
+RSpec.describe RbsInfer::RbsParserUtil do
   describe ".class_info_from_rbs" do
     it "extrai informações de classe simples" do
       rbs = <<~RBS
@@ -16,7 +16,7 @@ RSpec.describe RbsInfer::Analyzer::RbsParserUtil do
 
       info = described_class.class_info_from_rbs(rbs, "User")
 
-      expect(info).to be_a(RbsInfer::Analyzer::RbsClassInfo)
+      expect(info).to be_a(RbsInfer::RbsClassInfo)
       expect(info.types).to include("name" => "String")
       expect(info.class_method_types).to include("find" => "User")
       expect(info.includes).to include("Comparable")

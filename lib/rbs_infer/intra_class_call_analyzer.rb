@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   # Analisa chamadas intra-classe para inferir tipos de parâmetros de métodos privados.
   # Duas estratégias:
   # 1. Caller-side: em `call`, `publicar_evento(aluno:)` onde `aluno = Entity.new(...)` →
@@ -199,6 +198,5 @@ module RbsInfer
         infer_node_type(node) || "untyped"
       end
     end
-  end
   end
 end

@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::Analyzer::InitializeBodyAnalyzer do
+RSpec.describe RbsInfer::InitializeBodyAnalyzer do
   def analyze(source)
     result = Prism.parse(source)
     visitor = described_class.new

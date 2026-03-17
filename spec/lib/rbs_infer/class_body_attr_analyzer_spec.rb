@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::Analyzer::ClassBodyAttrAnalyzer do
+RSpec.describe RbsInfer::ClassBodyAttrAnalyzer do
   def analyze(source, attr_names)
     result = Prism.parse(source)
     visitor = described_class.new(attr_names: attr_names.to_set)

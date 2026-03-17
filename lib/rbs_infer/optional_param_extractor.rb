@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   class OptionalParamExtractor < Prism::Visitor
     attr_reader :optional_params
 
@@ -22,6 +21,5 @@ module RbsInfer
         @optional_params.add(p.name.to_s) if p.respond_to?(:name)
       end if params.respond_to?(:optionals)
     end
-  end
   end
 end

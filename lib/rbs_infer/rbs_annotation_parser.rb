@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   # Módulo com helpers compartilhados para parsing de anotações RBS
   # (rbs-inline e @rbs) em comentários próximos a definições.
   # Usado por ClassMemberCollector e CallerFileAnalyzer.
@@ -12,6 +11,5 @@ module RbsInfer
         stripped.empty? || stripped.start_with?("#")
       end
     end
-  end
   end
 end

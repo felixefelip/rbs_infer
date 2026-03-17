@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::Analyzer::ClassNameExtractor do
+RSpec.describe RbsInfer::ClassNameExtractor do
   def extract_class(source)
     result = Prism.parse(source)
     visitor = described_class.new

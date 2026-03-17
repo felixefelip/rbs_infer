@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   class TypeMerger
     include NodeTypeInferrer
     include KnownReturnTypesBuilder
@@ -179,6 +178,5 @@ module RbsInfer
     def infer_literal_type(node)
       infer_node_type(node)
     end
-  end
   end
 end

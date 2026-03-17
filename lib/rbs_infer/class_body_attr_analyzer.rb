@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   class ClassBodyAttrAnalyzer < Prism::Visitor
     include NodeTypeInferrer
 
@@ -132,6 +131,5 @@ module RbsInfer
         end
       end
     end
-  end
   end
 end

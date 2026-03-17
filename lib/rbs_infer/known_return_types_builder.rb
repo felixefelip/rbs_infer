@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   # Módulo que constrói o hash `known_return_types` a partir de
   # members, attr_types e method_type_resolver.
   # Padrão repetido em ReturnTypeResolver e TypeMerger.
@@ -29,6 +28,5 @@ module RbsInfer
 
       types
     end
-  end
   end
 end

@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   class ClassNameExtractor < Prism::Visitor
     attr_reader :class_name
 
@@ -27,6 +26,5 @@ module RbsInfer
     def extract_const_name(node)
       RbsInfer::Analyzer.extract_constant_path(node) || node.to_s
     end
-  end
   end
 end

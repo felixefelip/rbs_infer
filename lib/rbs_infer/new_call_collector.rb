@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   class NewCallCollector < Prism::Visitor
     attr_reader :usages, :method_call_usages
 
@@ -306,6 +305,5 @@ module RbsInfer
 
       args
     end
-  end
   end
 end

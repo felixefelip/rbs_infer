@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   class CallerFileAnalyzer
     include RbsAnnotationParser
 
@@ -132,6 +131,5 @@ module RbsInfer
 
       nil
     end
-  end
   end
 end

@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   # Estrutura que representa um membro da classe
   Member = Struct.new(:kind, :name, :signature, :visibility, keyword_init: true)
 
@@ -227,6 +226,5 @@ module RbsInfer
 
       infer_node_type(last_stmt)
     end
-  end
   end
 end

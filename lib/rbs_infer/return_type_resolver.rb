@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   # Resolve return types de métodos e tipos de instance variables
   # a partir de análise estática do corpo dos métodos.
   #
@@ -226,6 +225,5 @@ module RbsInfer
         known_return_types[node.name.to_s]
       end
     end
-  end
   end
 end

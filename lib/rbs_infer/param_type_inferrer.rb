@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   # Infere tipos de parâmetros de métodos via chamadas intra-classe,
   # detecção de forwarding wrappers e call-sites cross-class.
   #
@@ -391,6 +390,5 @@ module RbsInfer
 
       short_name
     end
-  end
   end
 end

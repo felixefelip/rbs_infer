@@ -2,7 +2,7 @@ require "spec_helper"
 require "rbs_infer"
 require "tmpdir"
 
-RSpec.describe RbsInfer::Analyzer::SourceIndex do
+RSpec.describe RbsInfer::SourceIndex do
   around do |example|
     Dir.mktmpdir do |dir|
       @dir = dir

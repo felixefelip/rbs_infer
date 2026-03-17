@@ -4,7 +4,7 @@ require "tmpdir"
 require "fileutils"
 require_relative "../../support/temp_file_helpers"
 
-RSpec.describe RbsInfer::Analyzer::MethodTypeResolver do
+RSpec.describe RbsInfer::MethodTypeResolver do
   include TempFileHelpers
 
   it "resolve tipo de método anotado com #:" do

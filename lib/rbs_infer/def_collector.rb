@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   class DefCollector < Prism::Visitor
     attr_reader :defs
 
@@ -11,6 +10,5 @@ module RbsInfer
       @defs << node
       super
     end
-  end
   end
 end

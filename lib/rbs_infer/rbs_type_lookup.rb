@@ -1,7 +1,6 @@
 require_relative "rbs_parser_util"
 
 module RbsInfer
-  class Analyzer
   # Busca e parseia arquivos RBS para resolver tipos de classes,
   # superclasses, módulos incluídos e herança.
   #
@@ -208,6 +207,5 @@ module RbsInfer
 
       types
     end
-  end
   end
 end

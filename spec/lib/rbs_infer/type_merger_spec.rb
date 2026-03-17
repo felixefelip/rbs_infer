@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::Analyzer::TypeMerger do
+RSpec.describe RbsInfer::TypeMerger do
   let(:merger) { described_class.new(target_file: nil) }
 
   it "prioriza tipos resolvidos sobre untyped" do

@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   # ─── Resolvedor de tipos inter-procedural ──────────────────────────
   # Dado um class_name e method_name, encontra o arquivo fonte da classe,
   # parseia e retorna o tipo de retorno do método.
@@ -82,7 +81,7 @@ module RbsInfer
 
         # Montar method_return_types do caller
         mrt = {}
-        member_collector = RbsInfer::Analyzer::ClassMemberCollector.new(comments: comments, lines: lines)
+        member_collector = RbsInfer::ClassMemberCollector.new(comments: comments, lines: lines)
         result.value.accept(member_collector)
         member_collector.members.each do |m|
           case m.kind
@@ -99,7 +98,7 @@ module RbsInfer
         end
 
         # Resolver caller class types
-        caller_ext = RbsInfer::Analyzer::ClassNameExtractor.new
+        caller_ext = RbsInfer::ClassNameExtractor.new
         result.value.accept(caller_ext)
         caller_class_name = caller_ext.class_name
         if caller_class_name
@@ -108,7 +107,7 @@ module RbsInfer
         end
 
         local_var_types = {}
-        visitor = RbsInfer::Analyzer::NewCallCollector.new(
+        visitor = RbsInfer::NewCallCollector.new(
           target_class: class_name,
           method_return_types: mrt,
           local_var_types: local_var_types,
@@ -148,7 +147,7 @@ module RbsInfer
         lines = source.lines
 
         # 1. Tipos anotados via ClassMemberCollector
-        collector = RbsInfer::Analyzer::ClassMemberCollector.new(comments: comments, lines: lines)
+        collector = RbsInfer::ClassMemberCollector.new(comments: comments, lines: lines)
         result.value.accept(collector)
 
         attr_names = Set.new
@@ -168,7 +167,7 @@ module RbsInfer
         end
 
         # 1b. Inferir return types de literais/Klass.new na última expressão do método
-        def_collector = RbsInfer::Analyzer::DefCollector.new
+        def_collector = RbsInfer::DefCollector.new
         result.value.accept(def_collector)
         def_collector.defs.each do |defn|
           next if types[defn.name.to_s] && types[defn.name.to_s] != "untyped"
@@ -182,7 +181,7 @@ module RbsInfer
         end
 
         # 2. Tipos inferidos via keyword defaults do initialize
-        init_visitor = RbsInfer::Analyzer::InitializeBodyAnalyzer.new
+        init_visitor = RbsInfer::InitializeBodyAnalyzer.new
         result.value.accept(init_visitor)
 
         init_visitor.keyword_defaults.each do |param_name, default_type|
@@ -284,7 +283,7 @@ module RbsInfer
 
         # Extrair tipos de métodos e attrs anotados do caller
         method_return_types = {}
-        def_visitor = RbsInfer::Analyzer::DefCollector.new
+        def_visitor = RbsInfer::DefCollector.new
         result.value.accept(def_visitor)
         def_visitor.defs.each do |defn|
           def_line = defn.location.start_line
@@ -299,7 +298,7 @@ module RbsInfer
         end
 
         # Incluir attr types anotados
-        member_collector = RbsInfer::Analyzer::ClassMemberCollector.new(comments: comments, lines: lines)
+        member_collector = RbsInfer::ClassMemberCollector.new(comments: comments, lines: lines)
         result.value.accept(member_collector)
         member_collector.members.each do |m|
           next unless [:attr_accessor, :attr_reader].include?(m.kind)
@@ -310,7 +309,7 @@ module RbsInfer
         end
 
         # Resolver caller class types via MethodTypeResolver
-        caller_ext = RbsInfer::Analyzer::ClassNameExtractor.new
+        caller_ext = RbsInfer::ClassNameExtractor.new
         result.value.accept(caller_ext)
         caller_class_name = caller_ext.class_name
         if caller_class_name
@@ -319,7 +318,7 @@ module RbsInfer
         end
 
         local_var_types = {}
-        visitor = RbsInfer::Analyzer::NewCallCollector.new(
+        visitor = RbsInfer::NewCallCollector.new(
           target_class: class_name,
           method_return_types: method_return_types,
           local_var_types: local_var_types,
@@ -383,7 +382,6 @@ module RbsInfer
 
       infer_literal_return_type(last_stmt, class_name)
     end
-  end
   end
 end
 

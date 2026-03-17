@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   class RbsBuilder
     def initialize(target_class:, superclass_name:, namespace_classes: Set.new)
       @target_class = target_class
@@ -151,6 +150,5 @@ module RbsInfer
 
       false
     end
-  end
   end
 end

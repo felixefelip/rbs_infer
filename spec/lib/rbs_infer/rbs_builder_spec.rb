@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::Analyzer::RbsBuilder do
+RSpec.describe RbsInfer::RbsBuilder do
   describe "#has_class_methods_module?", :dummy_app do
     let(:builder) do
       described_class.new(target_class: "Foo", superclass_name: nil)

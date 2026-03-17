@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   # Resolve tipos via RBS DefinitionBuilder, com suporte a genéricos/type parameters.
   # Ex: Post.find(id) → Post (resolve ClassMethods[::Post, ...])
   # Ex: Post::ActiveRecord_Relation.last → Post? (resolve genéricos)
@@ -120,6 +119,5 @@ module RbsInfer
            end
       RBS::TypeName.new(name: name_sym, namespace: ns)
     end
-  end
   end
 end

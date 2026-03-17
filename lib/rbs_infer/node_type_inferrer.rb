@@ -1,5 +1,4 @@
 module RbsInfer
-  class Analyzer
   # Módulo compartilhado que unifica a inferência básica de tipos
   # a partir de nós da AST Prism. Cobre literais, constantes,
   # Klass.new, ImplicitNode, write nodes e leitura de variáveis.
@@ -36,6 +35,5 @@ module RbsInfer
         known_types[node.name.to_s.sub(/\A@/, "")]
       end
     end
-  end
   end
 end
