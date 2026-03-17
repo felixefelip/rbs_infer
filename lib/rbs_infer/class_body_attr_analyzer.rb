@@ -119,13 +119,15 @@ module RbsInfer
       when Prism::CallNode
         if node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
-        elsif node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
+        elsif node.receiver
           class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
-          if class_name && @method_type_resolver
-            resolved = @method_type_resolver.resolve_class_method(class_name, node.name.to_s)
-            return resolved if resolved && resolved != "untyped"
+          if class_name
+            if @method_type_resolver
+              resolved = @method_type_resolver.resolve_class_method(class_name, node.name.to_s)
+              return resolved if resolved && resolved != "untyped"
+            end
+            class_name
           end
-          class_name
         end
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         RbsInfer::Analyzer.extract_constant_path(node)

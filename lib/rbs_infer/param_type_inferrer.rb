@@ -6,7 +6,7 @@ module RbsInfer
   # Extraído de Analyzer para manter responsabilidades separadas.
 
   class ParamTypeInferrer
-    ITERATOR_METHODS = Analyzer::ITERATOR_METHODS
+    ITERATOR_METHODS = RbsInfer::ITERATOR_METHODS
 
     def initialize(target_file:, target_class:, source_files:, method_type_resolver:, type_merger:)
       @target_file = target_file
@@ -64,7 +64,11 @@ module RbsInfer
       short_name = @target_class.split("::").last
 
       @source_files.each do |file|
-        source = File.read(file) rescue next
+        begin
+          source = File.read(file)
+        rescue Errno::ENOENT, Errno::EACCES
+          next
+        end
         next unless source.include?(short_name)
 
         result = Prism.parse(source)
@@ -148,7 +152,11 @@ module RbsInfer
       usages = []
 
       @source_files.each do |file|
-        file_source = File.read(file) rescue next
+        begin
+          file_source = File.read(file)
+        rescue Errno::ENOENT, Errno::EACCES
+          next
+        end
         next unless file_source.include?(method_name)
 
         file_result = Prism.parse(file_source)
@@ -304,13 +312,11 @@ module RbsInfer
             end
           else
             # receiver.method → tentar resolver tipo
-            if assign.value.receiver.is_a?(Prism::ConstantReadNode) || assign.value.receiver.is_a?(Prism::ConstantPathNode)
-              class_name = Analyzer.extract_constant_path(assign.value.receiver)
-              if class_name
-                resolved = @method_type_resolver.resolve_class_method(class_name, assign.value.name.to_s)
-                if resolved && resolved != "untyped"
-                  local_var_types[var_name] = resolve_constant_in_namespace(resolved, caller_class_name)
-                end
+            class_name = Analyzer.extract_constant_path(assign.value.receiver)
+            if class_name
+              resolved = @method_type_resolver.resolve_class_method(class_name, assign.value.name.to_s)
+              if resolved && resolved != "untyped"
+                local_var_types[var_name] = resolve_constant_in_namespace(resolved, caller_class_name)
               end
             else
               receiver_type = resolve_arg_value_type(assign.value.receiver, local_var_types, method_return_types)
@@ -380,7 +386,7 @@ module RbsInfer
       while parts.any?
         parts.pop
         candidate = (parts + [short_name]).join("::")
-        class_path = candidate.gsub("::", "/").gsub(/([a-z])([A-Z])/, '\1_\2').downcase
+        class_path = RbsInfer.class_name_to_path(candidate)
         return candidate if @source_files.any? { |f| f.end_with?("#{class_path}.rb") }
       end
 

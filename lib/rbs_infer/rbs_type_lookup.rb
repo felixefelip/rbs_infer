@@ -20,7 +20,7 @@ module RbsInfer
       normalized = class_name.sub(/\A::/, "")
 
       # 1. Tentar match por nome de arquivo (caso simples: uma classe por arquivo)
-      class_path = normalized.gsub("::", "/").gsub(/([a-z])([A-Z])/, '\1_\2').downcase
+      class_path = RbsInfer.class_name_to_path(normalized)
       Dir["sig/**/*.rbs"].each do |rbs_file|
         next unless rbs_file.end_with?("#{class_path}.rbs")
         content = File.read(rbs_file)

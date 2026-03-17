@@ -28,7 +28,7 @@ require "prism"
 #
 module RbsInfer
   class Analyzer
-  ITERATOR_METHODS = %i[each map flat_map select reject filter find detect collect each_with_object].to_set
+  ITERATOR_METHODS = RbsInfer::ITERATOR_METHODS
 
   attr_reader :target_class, :target_file, :source_files
 
@@ -153,7 +153,7 @@ module RbsInfer
   # ─── Localizar arquivo da classe-alvo ──────────────────────────────
 
   def find_target_file
-    class_path = @target_class.gsub("::", "/").gsub(/([a-z])([A-Z])/, '\1_\2').downcase
+    class_path = RbsInfer.class_name_to_path(@target_class)
     @source_files.find { |f| f.end_with?("#{class_path}.rb") }
   end
 
@@ -399,7 +399,7 @@ module RbsInfer
     classes = Set.new
     parts.each_index do |i|
       full_name = parts[0..i].join("::")
-      class_path = full_name.gsub("::", "/").gsub(/([a-z])([A-Z])/, '\1_\2').downcase
+      class_path = RbsInfer.class_name_to_path(full_name)
       source_file = @source_files.find { |f| f.end_with?("#{class_path}.rb") }
 
       next unless source_file && File.exist?(source_file)

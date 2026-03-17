@@ -80,11 +80,13 @@ module RbsInfer
         elsif node.name == :new && node.receiver
           class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
           { kind: :constant, type: class_name }
-        elsif node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
-          class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
-          { kind: :call, type: class_name, class_name: class_name, method_name: node.name.to_s }
         else
-          { kind: :unknown }
+          class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
+          if class_name
+            { kind: :call, type: class_name, class_name: class_name, method_name: node.name.to_s }
+          else
+            { kind: :unknown }
+          end
         end
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         { kind: :constant, type: RbsInfer::Analyzer.extract_constant_path(node) }

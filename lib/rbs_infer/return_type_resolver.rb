@@ -187,19 +187,17 @@ module RbsInfer
           infer_block_return_type(node.block, known_return_types)
         else
           # Verificar se receiver é uma constante (chamada de classe)
-          if node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
-            class_name = Analyzer.extract_constant_path(node.receiver)
-            if class_name && method_type_resolver
-              resolved = method_type_resolver.resolve_class_method(class_name, node.name.to_s)
-              return (resolved == "self" ? class_name : resolved) if resolved
-            end
+          class_name = Analyzer.extract_constant_path(node.receiver)
+          if class_name && method_type_resolver
+            resolved = method_type_resolver.resolve_class_method(class_name, node.name.to_s)
+            return (resolved == "self" ? class_name : resolved) if resolved
           end
 
           # Chain: receiver.method → resolver tipo do receiver, depois do method
           receiver_type = resolve_chain_type(node.receiver, known_return_types)
           if receiver_type && receiver_type != "untyped"
             safe_nav = node.call_operator == "&."
-            base_type = safe_nav ? receiver_type.chomp("?") : receiver_type
+            base_type = safe_nav ? receiver_type.delete_suffix("?") : receiver_type
             resolved = resolve_on_type(base_type, node.name.to_s)
             resolved = if resolved == "self" then receiver_type
                        elsif resolved && safe_nav && !resolved.end_with?("?") then "#{resolved}?"
@@ -240,18 +238,16 @@ module RbsInfer
           Analyzer.extract_constant_path(node.receiver)
         else
           # Verificar se receiver é uma constante (chamada de classe)
-          if node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
-            class_name = Analyzer.extract_constant_path(node.receiver)
-            if class_name && method_type_resolver
-              resolved = method_type_resolver.resolve_class_method(class_name, node.name.to_s)
-              return (resolved == "self" ? class_name : resolved) if resolved
-            end
+          class_name = Analyzer.extract_constant_path(node.receiver)
+          if class_name && method_type_resolver
+            resolved = method_type_resolver.resolve_class_method(class_name, node.name.to_s)
+            return (resolved == "self" ? class_name : resolved) if resolved
           end
 
           parent_type = resolve_chain_type(node.receiver, known_return_types)
           if parent_type && parent_type != "untyped"
             safe_nav = node.call_operator == "&."
-            base_type = safe_nav ? parent_type.chomp("?") : parent_type
+            base_type = safe_nav ? parent_type.delete_suffix("?") : parent_type
             resolved = resolve_on_type(base_type, node.name.to_s)
             resolved = if resolved == "self" then parent_type
                        elsif resolved && safe_nav && !resolved.end_with?("?") then "#{resolved}?"

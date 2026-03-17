@@ -23,7 +23,7 @@ module RbsInfer
 
       # Fallback: source + regex-based resolution
       class_types = resolve_all(class_name)
-      class_types[method_name] || class_types[method_name.chomp("!").chomp("?")]
+      class_types[method_name] || class_types[method_name.delete_suffix("!").delete_suffix("?")]
     end
 
     # Resolve um método de classe (def self.xxx) via RBS
@@ -65,7 +65,11 @@ module RbsInfer
       all_usages = []
 
       @source_files.each do |file|
-        source = File.read(file) rescue next
+        begin
+          source = File.read(file)
+        rescue Errno::ENOENT, Errno::EACCES
+          next
+        end
         next unless source.include?(short_name)
 
         result = Prism.parse(source)
@@ -262,7 +266,11 @@ module RbsInfer
       short_name = class_name.split("::").last
 
       @source_files.each do |file|
-        source = File.read(file) rescue next
+        begin
+          source = File.read(file)
+        rescue Errno::ENOENT, Errno::EACCES
+          next
+        end
         next unless source.include?(short_name)
 
         result = Prism.parse(source)
@@ -332,7 +340,7 @@ module RbsInfer
     end
 
     def find_class_file(class_name)
-      class_path = class_name.sub(/\A::/, "").gsub("::", "/").gsub(/([a-z])([A-Z])/, '\1_\2').downcase
+      class_path = RbsInfer.class_name_to_path(class_name)
       @source_files.find { |f| f.end_with?("#{class_path}.rb") }
     end
 

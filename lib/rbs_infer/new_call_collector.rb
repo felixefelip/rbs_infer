@@ -69,11 +69,11 @@ module RbsInfer
         if call.name == :new && call.receiver
           class_name = RbsInfer::Analyzer.extract_constant_path(call.receiver)
           @local_var_types[var_name] = class_name if class_name
-        elsif (call.receiver.is_a?(Prism::ConstantReadNode) || call.receiver.is_a?(Prism::ConstantPathNode)) && @method_type_resolver
+        elsif @method_type_resolver
           class_name = RbsInfer::Analyzer.extract_constant_path(call.receiver)
           if class_name
             resolved = @method_type_resolver.resolve_class_method(class_name, call.name.to_s)
-            @local_var_types[var_name] = resolved.chomp("?") if resolved && resolved != "untyped"
+            @local_var_types[var_name] = resolved.delete_suffix("?") if resolved && resolved != "untyped"
           end
         end
       end
@@ -113,11 +113,11 @@ module RbsInfer
               # aluno_dto = Academico::Aluno::Matricular::Dto.new(...)
               class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
               @local_var_types[var_name] = class_name if class_name
-            elsif (stmt.value.receiver.is_a?(Prism::ConstantReadNode) || stmt.value.receiver.is_a?(Prism::ConstantPathNode)) && @method_type_resolver
+            elsif @method_type_resolver
               class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
               if class_name
                 resolved = @method_type_resolver.resolve_class_method(class_name, stmt.value.name.to_s)
-                @local_var_types[var_name] = resolved.chomp("?") if resolved && resolved != "untyped"
+                @local_var_types[var_name] = resolved.delete_suffix("?") if resolved && resolved != "untyped"
               end
             end
           end
@@ -127,11 +127,11 @@ module RbsInfer
             if stmt.value.name == :new && stmt.value.receiver
               class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
               @local_var_types[var_name] = class_name if class_name
-            elsif (stmt.value.receiver.is_a?(Prism::ConstantReadNode) || stmt.value.receiver.is_a?(Prism::ConstantPathNode)) && @method_type_resolver
+            elsif @method_type_resolver
               class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
               if class_name
                 resolved = @method_type_resolver.resolve_class_method(class_name, stmt.value.name.to_s)
-                @local_var_types[var_name] = resolved.chomp("?") if resolved && resolved != "untyped"
+                @local_var_types[var_name] = resolved.delete_suffix("?") if resolved && resolved != "untyped"
               end
             end
           end
