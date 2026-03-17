@@ -1,3 +1,5 @@
+require_relative "rbs_parser_util"
+
 module RbsInfer
   class Analyzer
   # Busca e parseia arquivos RBS para resolver tipos de classes,
@@ -49,99 +51,9 @@ module RbsInfer
     end
 
     # Parseia um arquivo RBS e extrai métodos, superclass e includes de uma classe específica.
-    # Suporta nesting (module A / module B / class C) e nomes inline (class A::B::C).
-    # Nomes com :: prefix (class ::Foo::Bar) são absolutos e resetam o nesting.
-    # Retorna [superclass, types, includes, class_method_types]
+    # Usa RBS::Parser para parsing correto (suporta nesting, generics, interfaces, etc).
     def parse_rbs_class_block(content, class_name)
-      types = {}
-      class_method_types = {}
-      superclass = nil
-      includes = []
-      normalized = class_name.sub(/\A::/, "")
-
-      nesting = []       # stack de nomes de namespace (fully-qualified)
-      nesting_sizes = [] # quantos segmentos cada module/class pusharam
-      in_target = false
-      target_depth = nil
-
-      content.lines.each do |line|
-        stripped = line.strip
-
-        if stripped =~ /\A(module|class)\s+(::)?([A-Za-z_]\w*(?:::[A-Za-z_]\w*)*)(?:\s*<\s*(\S+))?\s*$/
-          is_absolute = !!$2
-          name_parts = $3.split("::")
-          parent = $4
-
-          if is_absolute
-            saved_nesting = nesting.dup
-            saved_sizes = nesting_sizes.dup
-            nesting.replace(name_parts)
-            nesting_sizes << { absolute: true, parts: name_parts.size, prev_nesting: saved_nesting, prev_sizes: saved_sizes }
-          else
-            nesting.concat(name_parts)
-            nesting_sizes << { absolute: false, parts: name_parts.size }
-          end
-
-          fqn = nesting.join("::")
-
-          if !in_target && fqn == normalized
-            in_target = true
-            target_depth = nesting.size
-            if parent && !parent.start_with?("::")
-              ns = nesting[0..-2]
-              superclass = parent.include?("::") ? parent : (ns + [parent]).join("::") if ns.any?
-              superclass ||= parent
-            else
-              superclass = parent&.sub(/\A::/, "")
-            end
-          end
-        elsif stripped == "end"
-          if in_target && nesting.size == target_depth
-            in_target = false
-            target_depth = nil
-          end
-          info = nesting_sizes.pop
-          if info
-            if info[:absolute]
-              nesting.replace(info[:prev_nesting])
-              nesting_sizes.replace(info[:prev_sizes])
-            else
-              info[:parts].times { nesting.pop }
-            end
-          end
-        elsif in_target && nesting.size == target_depth
-          if stripped =~ /\Adef self\.(\w+[\?\!]?)\s*:/
-            method_name = $1
-            if stripped =~ /\)\s*->\s*(\S+)\s*$/
-              class_method_types[method_name] ||= $1.strip
-            elsif stripped =~ /->\s*(\S+)\s*$/
-              class_method_types[method_name] ||= $1.strip
-            end
-          elsif stripped =~ /\Adef (\w+[\?\!]?)\s*:/
-            method_name = $1
-            if stripped =~ /\)\s*->\s*(\S+)\s*$/
-              types[method_name] ||= $1.strip
-            elsif stripped =~ /->\s*(\S+)\s*$/
-              types[method_name] ||= $1.strip
-            end
-          elsif stripped =~ /\Ainclude\s+(\S+)/
-            mod_name = $1.sub(/\[.*\z/, "")
-            if mod_name !~ /::/
-              parent_ns = normalized.split("::")[0..-2]
-              mod_name = (parent_ns + [mod_name]).join("::") if parent_ns.any?
-            elsif mod_name.start_with?("::")
-              mod_name = mod_name.sub(/\A::/, "")
-            end
-            includes << mod_name
-          elsif stripped =~ /\Aattr_(reader|accessor|writer)\s+(\w+)\s*:\s*(.+)/
-            attr_name = $2
-            attr_type = $3.strip
-            types[attr_name] ||= attr_type unless attr_type == "untyped"
-          end
-        end
-      end
-
-      RbsClassInfo.new(superclass:, types:, includes:, class_method_types:)
+      RbsParserUtil.class_info_from_rbs(content, class_name)
     end
 
     # Resolve tipos herdados percorrendo a cadeia de superclasses via RBS
@@ -268,7 +180,6 @@ module RbsInfer
     end
 
     def build_rbs_collection_module_types(module_name)
-      types = {}
       parts = module_name.split("::")
       first = parts.first
 
@@ -279,36 +190,19 @@ module RbsInfer
       ].uniq
 
       rbs_files = gem_hints.flat_map { |hint| Dir[".gem_rbs_collection/#{hint}/**/*.rbs"] }.uniq
-      return types if rbs_files.empty?
+      return {} if rbs_files.empty?
 
-      content = rbs_files.map { |f| File.read(f) }.join("\n")
-      target_suffix = parts[1..].join("::")
-
-      nesting = []
-      target_depth = nil
-
-      content.lines.each do |line|
-        stripped = line.strip
-
-        if stripped =~ /\A(module|class)\s+(\S+)/
-          nesting << $2
-          if target_depth.nil? && nesting.join("::").end_with?(target_suffix)
-            target_depth = nesting.size
+      types = {}
+      rbs_files.each do |rbs_file|
+        content = File.read(rbs_file)
+        next unless content.include?(parts.last)
+        info = RbsParserUtil.class_info_from_rbs(content, module_name)
+        info.types.each do |name, ret_type|
+          parent_module = parts[0..-2].join("::")
+          if ret_type !~ /::/ && ret_type =~ /\A[A-Z]/ && !parent_module.empty?
+            ret_type = "#{parent_module}::#{ret_type}"
           end
-        elsif stripped == "end"
-          target_depth = nil if target_depth && nesting.size == target_depth
-          nesting.pop if nesting.any?
-        elsif target_depth && nesting.size == target_depth && stripped =~ /\Adef (\w+[\?\!]?)\s*:\s*(.+)/
-          method_name = $1
-          signature = $2
-          if signature =~ /->\s*(.+)\z/
-            ret_type = $1.strip
-            parent_module = parts[0..-2].join("::")
-            if ret_type !~ /::/ && ret_type =~ /\A[A-Z]/
-              ret_type = "#{parent_module}::#{ret_type}"
-            end
-            types[method_name] = ret_type
-          end
+          types[name] ||= ret_type
         end
       end
 

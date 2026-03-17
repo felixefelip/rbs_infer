@@ -143,26 +143,10 @@ module RbsInfer
       rbs_files = gem_hints.flat_map { |hint| Dir[".gem_rbs_collection/#{hint}/**/*.rbs"] }.uniq
       return false if rbs_files.empty?
 
-      # Procurar "module ClassMethods" dentro do módulo alvo
-      target_suffix = parts[1..].join("::")
-      nesting = []
-      target_depth = nil
-
       rbs_files.each do |file|
-        File.foreach(file) do |line|
-          stripped = line.strip
-          if stripped =~ /\A(module|class)\s+(\S+)/
-            nesting << $2
-            if target_depth.nil? && nesting.join("::").end_with?(target_suffix)
-              target_depth = nesting.size
-            elsif target_depth && nesting.size == target_depth + 1 && $2 == "ClassMethods"
-              return true
-            end
-          elsif stripped == "end"
-            target_depth = nil if target_depth && nesting.size == target_depth
-            nesting.pop if nesting.any?
-          end
-        end
+        content = File.read(file)
+        next unless content.include?(parts.last)
+        return true if RbsParserUtil.has_class_methods_submodule?(content, module_name)
       end
 
       false
