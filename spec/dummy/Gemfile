@@ -14,6 +14,7 @@ gem "enumerize"
 # RBS type signatures
 gem "rbs_infer", path: "../.."
 gem "rbs_rails", path: "/home/felix/workspaces/ruby-workspace/rbs_rails", require: false
+gem "steep", path: "/home/felix/workspaces/ruby-workspace/steep_fork/steep", require: false
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]

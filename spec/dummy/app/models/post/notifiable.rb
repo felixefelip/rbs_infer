@@ -3,6 +3,9 @@
 module Post::Notifiable
   extend ActiveSupport::Concern
 
+	# @type self: singleton(Post) & singleton(Post::Notifiable)
+	# @type instance: Post & Post::Notifiable
+
   def notification_title
     "[#{status.text}] #{title}"
   end

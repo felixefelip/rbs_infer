@@ -3,6 +3,9 @@
 module Post::Taggable
   extend ActiveSupport::Concern
 
+	# @type self: singleton(Post) & singleton(Post::Taggable)
+	# @type instance: Post & Post::Taggable
+
   included do
     has_many :post_tags, dependent: :destroy
     has_many :tags, through: :post_tags

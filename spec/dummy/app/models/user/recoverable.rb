@@ -3,6 +3,9 @@
 module User::Recoverable
   extend ActiveSupport::Concern
 
+	# @type self: singleton(User) & singleton(User::Recoverable)
+  # @type instance: User & User::Recoverable
+
   included do
     scope :inactive, -> { where(active: false) }
   end
