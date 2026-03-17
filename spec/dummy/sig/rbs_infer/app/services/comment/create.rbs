@@ -1,0 +1,9 @@
+class Comment
+  class Create
+    def create: (untyped comment_id) -> untyped
+
+    private
+
+    def process_creation_response: (untyped comment, Symbol status) -> untyped
+  end
+end
