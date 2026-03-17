@@ -193,6 +193,21 @@ module RbsInfer
       # Remove leading :: from all type names
       str = str.gsub(/(^|[\[\(, |])::/) { $1 }
 
+      # Normalize void out of union types: (void | T) → T?
+      # void in a union means "return value not used in that branch", treat as nil
+      if str =~ /\A\(/ && str.include?("void")
+        parts = str.gsub(/\A\(|\)\z/, "").split(/\s*\|\s*/)
+        parts.reject! { |p| p == "void" }
+        parts.reject! { |p| p == "nil" }
+        if parts.empty?
+          return "void"
+        elsif parts.size == 1
+          return "#{parts.first}?"
+        else
+          return "(#{parts.join(" | ")})?"
+        end
+      end
+
       # Normalize (T | nil) to T?
       if str =~ /\A\((.+) \| nil\)\z/
         inner = $1.strip

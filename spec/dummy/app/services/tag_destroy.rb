@@ -88,6 +88,11 @@ class TagDestroy
 		"error"
 	end
 
+	# when returns two types
+	# def verify_multiples_returns
+	# 	user_posts.first!.save || user_name
+	# end
+
 	def save_post
     user_posts.first!.save!
 	end

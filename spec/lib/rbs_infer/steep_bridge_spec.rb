@@ -121,6 +121,23 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
       expect(result).not_to have_key("bar")
     end
 
+    it "normalizes void in union types to nilable" do
+      code = <<~RUBY
+        class TagDestroy
+          def verify_multiples_returns_with_void_and_rescue
+            User.find(1).save!
+          rescue StandardError => e
+            "error"
+          end
+        end
+      RUBY
+
+      result = bridge.method_return_types(code)
+      ret = result["verify_multiples_returns_with_void_and_rescue"]
+      expect(ret).to match(/String\??/)
+      expect(ret).not_to include("void")
+    end
+
     it "returns empty hash for unparseable code" do
       result = bridge.method_return_types("!!!invalid ruby")
       expect(result).to eq({})
