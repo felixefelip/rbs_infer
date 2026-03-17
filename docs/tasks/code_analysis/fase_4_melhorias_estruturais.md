@@ -137,8 +137,8 @@ end
 
 ## Checklist
 
-- [ ] 4.1 — Unificar parsers RBS com `RBS::Parser`
-- [ ] 4.2 — Criar `SourceIndex` para lookup eficiente
-- [ ] 4.3 — Desnesting de classes para `RbsInfer::`
-- [ ] Rodar `bundle exec rspec` — 0 failures
-- [ ] Commit por item (cada um é independente)
+- [x] 4.1 — Unificar parsers RBS com `RBS::Parser` (commit `e6bf512`)
+- [x] 4.2 — Criar `SourceIndex` para lookup eficiente (commit `bade607`)
+- [x] 4.3 — Desnesting de classes para `RbsInfer::` (commit `92b2c7b`)
+- [x] Rodar `bundle exec rspec` — 140 examples, 0 failures
+- [x] Commit por item (cada um é independente)
