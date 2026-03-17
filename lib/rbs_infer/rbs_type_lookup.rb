@@ -1,3 +1,5 @@
+require 'rbs'
+
 module RbsInfer
   class Analyzer
   # Busca e parseia arquivos RBS para resolver tipos de classes,
@@ -268,52 +270,46 @@ module RbsInfer
     end
 
     def build_rbs_collection_module_types(module_name)
-      types = {}
-      parts = module_name.split("::")
-      first = parts.first
-
-      gem_hints = [
-        first.downcase,
-        first.gsub(/([a-z])([A-Z])/, '\1_\2').downcase,
-        first.gsub(/([a-z])([A-Z])/, '\1-\2').downcase,
-      ].uniq
-
-      rbs_files = gem_hints.flat_map { |hint| Dir[".gem_rbs_collection/#{hint}/**/*.rbs"] }.uniq
-      return types if rbs_files.empty?
-
-      content = rbs_files.map { |f| File.read(f) }.join("\n")
-      target_suffix = parts[1..].join("::")
-
-      nesting = []
-      target_depth = nil
-
-      content.lines.each do |line|
-        stripped = line.strip
-
-        if stripped =~ /\A(module|class)\s+(\S+)/
-          nesting << $2
-          if target_depth.nil? && nesting.join("::").end_with?(target_suffix)
-            target_depth = nesting.size
-          end
-        elsif stripped == "end"
-          target_depth = nil if target_depth && nesting.size == target_depth
-          nesting.pop if nesting.any?
-        elsif target_depth && nesting.size == target_depth && stripped =~ /\Adef (\w+[\?\!]?)\s*:\s*(.+)/
-          method_name = $1
-          signature = $2
-          if signature =~ /->\s*(.+)\z/
-            ret_type = $1.strip
-            parent_module = parts[0..-2].join("::")
-            if ret_type !~ /::/ && ret_type =~ /\A[A-Z]/
-              ret_type = "#{parent_module}::#{ret_type}"
-            end
-            types[method_name] = ret_type
-          end
-        end
-      end
-
-      types
+      info = RbsRbsParserUtil.class_info_from_content(content, module_name)
+      info.types
     end
   end
+  end
+end
+
+# Utilitário para extrair informações de classes/módulos usando RBS::Parser
+module RbsRbsParserUtil
+  def self.class_info_from_content(content, class_name)
+    ast = RBS::Parser.parse_signature(content)
+    normalized = class_name.sub(/^::/, "")
+    superclass = nil
+    types = {}
+    includes = []
+    class_method_types = {}
+
+    ast.declarations.each do |decl|
+      case decl
+      when RBS::AST::Declarations::Class
+        fqn = decl.name.to_s
+        next unless fqn == normalized
+        superclass = decl.super_class&.name&.to_s
+        decl.members.each do |member|
+          case member
+          when RBS::AST::Members::MethodDefinition
+            name = member.name.to_s
+            if member.kind == :singleton
+              class_method_types[name] = member.types.first.type.return_type.to_s rescue nil
+            else
+              types[name] = member.types.first.type.return_type.to_s rescue nil
+            end
+          when RBS::AST::Members::Include
+            includes << member.name.to_s
+          end
+        end
+      when RBS::AST::Declarations::Module
+        # Pode ser útil para includes
+      end
+    end
+    RbsClassInfo.new(superclass:, types:, includes:, class_method_types:)
   end
 end
