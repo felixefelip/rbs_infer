@@ -34,7 +34,7 @@ O Steep precisa de RBS para tipar parâmetros de métodos. Sem assinatura RBS, p
 
 ---
 
-## Fase 1 — `SteepBridge`: adapter isolado (prioridade alta)
+## Fase 1 — `SteepBridge`: adapter isolado ✅ CONCLUÍDA
 
 Criar `lib/rbs_infer/steep_bridge.rb` que encapsula toda a interação com o Steep:
 
@@ -71,7 +71,7 @@ end
 
 ---
 
-## Fase 2 — Substituir `NodeTypeInferrer` + `infer_expression_type` no pipeline
+## Fase 2 — Substituir `NodeTypeInferrer` + `infer_expression_type` no pipeline ✅ CONCLUÍDA
 
 Integrar o `SteepBridge` como fonte primária de tipos de expressões, substituindo as implementações manuais.
 
@@ -137,7 +137,7 @@ Só remover código manual quando testes de integração confirmam que o Steep p
 
 ---
 
-## Fase 4 — Steep como dependência obrigatória
+## Fase 4 — Steep como dependência obrigatória ✅ CONCLUÍDA
 
 O Steep passa a ser dependência direta do rbs_infer. Não há modo "lite" sem Steep — isso evita duplicação de código e lógica de fallback.
 

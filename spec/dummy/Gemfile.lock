@@ -4,6 +4,7 @@ PATH
     rbs_infer (0.1.0)
       prism (>= 1.0)
       rbs
+      steep
 
 PATH
   remote: /home/felix/workspaces/ruby-workspace/rbs_rails

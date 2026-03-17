@@ -2,7 +2,7 @@ class Post
   module Taggable
     extend ActiveSupport::Concern
     def tag_names: () -> Array[untyped]
-    def tag_with: (untyped name) -> untyped
+    def tag_with: (untyped name) -> Tag
     def untag: (untyped name) -> untyped
     def tagged_with?: (untyped name) -> bool
     def replace_tags: (untyped names) -> untyped

@@ -395,7 +395,8 @@ module RbsInfer
       target_file: @target_file,
       target_class: @target_class,
       method_type_resolver: method_type_resolver,
-      instance_types: @instance_types || []
+      instance_types: @instance_types || [],
+      steep_bridge: steep_bridge
     )
   end
 
@@ -406,8 +407,13 @@ module RbsInfer
       source_files: @source_files,
       source_index: @source_index,
       method_type_resolver: method_type_resolver,
-      type_merger: type_merger
+      type_merger: type_merger,
+      steep_bridge: steep_bridge
     )
+  end
+
+  def steep_bridge
+    @steep_bridge ||= SteepBridge.new
   end
 
   # ─── Resolver quais namespaces da classe-alvo são class (não module) ──
@@ -454,3 +460,4 @@ require_relative "type_merger"
 require_relative "return_type_resolver"
 require_relative "param_type_inferrer"
 require_relative "source_index"
+require_relative "steep_bridge"

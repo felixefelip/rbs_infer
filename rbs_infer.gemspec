@@ -24,6 +24,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "prism", ">= 1.0"
   spec.add_dependency "rbs"
+  spec.add_dependency "steep"
 
   spec.add_development_dependency "rspec", "~> 3.0"
 end

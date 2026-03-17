@@ -10,11 +10,12 @@ module RbsInfer
     include NodeTypeInferrer
     include KnownReturnTypesBuilder
 
-    def initialize(target_file:, target_class:, method_type_resolver:, instance_types: [])
+    def initialize(target_file:, target_class:, method_type_resolver:, instance_types: [], steep_bridge: nil)
       @target_file = target_file
       @target_class = target_class
       @method_type_resolver = method_type_resolver
       @instance_types = instance_types
+      @steep_bridge = steep_bridge
     end
 
     def improve_method_return_types(members, attr_types, parsed_target: nil)
@@ -69,6 +70,20 @@ module RbsInfer
 
         member = untyped_methods.find { |m| m.name == defn.name.to_s }
         member.signature = member.signature.sub(/-> untyped$/, "-> #{resolved}")
+      end
+
+      # Final pass: use Steep for any remaining untyped methods
+      if @steep_bridge && parsed_target.source
+        still_untyped = members.select { |m| m.kind == :method && m.name != "initialize" && m.signature =~ /->\s*untyped$/ }
+        unless still_untyped.empty?
+          steep_returns = @steep_bridge.method_return_types(parsed_target.source)
+          still_untyped.each do |m|
+            steep_type = steep_returns[m.name]
+            if steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
+              m.signature = m.signature.sub(/-> untyped$/, "-> #{steep_type}")
+            end
+          end
+        end
       end
     end
 

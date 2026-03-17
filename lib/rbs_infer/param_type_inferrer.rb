@@ -7,13 +7,14 @@ module RbsInfer
   class ParamTypeInferrer
     ITERATOR_METHODS = RbsInfer::ITERATOR_METHODS
 
-    def initialize(target_file:, target_class:, source_files:, source_index: nil, method_type_resolver:, type_merger:)
+    def initialize(target_file:, target_class:, source_files:, source_index: nil, method_type_resolver:, type_merger:, steep_bridge: nil)
       @target_file = target_file
       @target_class = target_class
       @source_files = source_files
       @source_index = source_index
       @method_type_resolver = method_type_resolver
       @type_merger = type_merger
+      @steep_bridge = steep_bridge
     end
 
     def infer_method_param_types(attr_types, parsed_target: nil)
@@ -31,7 +32,13 @@ module RbsInfer
         positional_params[defn.name.to_s] = names unless names.empty?
       end
 
-      visitor = IntraClassCallAnalyzer.new(attr_types: attr_types, method_type_resolver: @method_type_resolver, method_positional_params: positional_params)
+      visitor = IntraClassCallAnalyzer.new(
+        attr_types: attr_types,
+        method_type_resolver: @method_type_resolver,
+        method_positional_params: positional_params,
+        steep_bridge: @steep_bridge,
+        source_code: parsed_target.source
+      )
       parsed_target.tree.accept(visitor)
       inferred = visitor.inferred_param_types.dup
 
@@ -191,7 +198,7 @@ module RbsInfer
         matching_calls = Analyzer.find_all_nodes(file_result.value) { |n| n.is_a?(Prism::CallNode) && n.name == method_name.to_sym && n.arguments }
         matching_calls.each do |node|
 
-          local_var_types = collect_local_var_types_for_scope(node, file_result, method_return_types, caller_ext.class_name)
+          local_var_types = collect_local_var_types_for_scope(node, file_result, method_return_types, caller_ext.class_name, source_code: file_source)
 
           usage = {}
           node.arguments.arguments.each do |arg|
@@ -251,7 +258,7 @@ module RbsInfer
     end
 
     # Coleta tipos de variáveis locais no escopo do nó
-    def collect_local_var_types_for_scope(target_node, parse_result, method_return_types, caller_class_name)
+    def collect_local_var_types_for_scope(target_node, parse_result, method_return_types, caller_class_name, source_code: nil)
       local_var_types = {}
 
       # Encontrar o def encapsulante
@@ -264,6 +271,14 @@ module RbsInfer
       end
 
       return local_var_types unless enclosing_def
+
+      # Use Steep to resolve local var types in the caller file
+      if @steep_bridge && source_code
+        method_name = enclosing_def.name.to_s
+        steep_vars = @steep_bridge.local_var_types_per_method(source_code)
+        steep_method_vars = steep_vars[method_name]
+        local_var_types.merge!(steep_method_vars) if steep_method_vars
+      end
 
       # Resolver tipos de params do método encapsulante via call-sites do caller class
       if caller_class_name

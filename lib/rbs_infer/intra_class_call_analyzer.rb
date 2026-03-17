@@ -11,7 +11,7 @@ module RbsInfer
     # method_name → { param_name → type }
     attr_reader :inferred_param_types
 
-    def initialize(attr_types: {}, method_type_resolver: nil, method_positional_params: {})
+    def initialize(attr_types: {}, method_type_resolver: nil, method_positional_params: {}, steep_bridge: nil, source_code: nil)
       @attr_types = attr_types
       @method_type_resolver = method_type_resolver
       @inferred_param_types = Hash.new { |h, k| h[k] = {} }
@@ -19,6 +19,7 @@ module RbsInfer
       @current_method_name = nil
       @current_param_names = Set.new
       @method_positional_params = method_positional_params
+      @steep_local_var_types = steep_bridge && source_code ? steep_bridge.local_var_types_per_method(source_code) : {}
     end
 
     def visit_def_node(node)
@@ -29,6 +30,10 @@ module RbsInfer
       @local_var_types = {}
       @current_method_name = node.name.to_s
       @current_param_names = extract_param_names(node.parameters)
+
+      # Merge Steep-inferred types first, then overlay manual collection
+      steep_vars = @steep_local_var_types[@current_method_name]
+      @local_var_types.merge!(steep_vars) if steep_vars
 
       collect_local_assignments(node)
       super
