@@ -138,7 +138,7 @@ RSpec.describe RbsInfer::InitializeBodyAnalyzer do
     expect(visitor.self_assignments["items"][:type]).to eq("Array[Integer]")
   end
 
-  it "detecta self.attr = { foo: 'bar', baz: 42 } como Hash[Symbol, String | Integer]" do
+  it "detecta self.attr = { foo: 'bar', baz: 42 } como record type" do
     source = <<~RUBY
       class Config
         def initialize
@@ -149,7 +149,7 @@ RSpec.describe RbsInfer::InitializeBodyAnalyzer do
 
     visitor = analyze(source)
     expect(visitor.self_assignments["options"][:kind]).to eq(:literal)
-    expect(visitor.self_assignments["options"][:type]).to eq("Hash[Symbol, String | Integer]")
+    expect(visitor.self_assignments["options"][:type]).to eq("{ foo: String, baz: Integer }")
   end
 
   it "detecta self.attr = ['a', 'b'] como Array[String]" do

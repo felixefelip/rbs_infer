@@ -43,9 +43,27 @@ module RbsInfer
     end
 
     def self.infer_hash_type(node)
-      elements = node.elements.select { |e| e.is_a?(Prism::AssocNode) }
-      if elements.any?
-        key_types = elements.filter_map { |e|
+      elements = node.elements
+      return "Hash[untyped, untyped]" if elements.empty?
+
+      # Splat present → can't determine full shape
+      return "Hash[Symbol, untyped]" if elements.any? { |e| e.is_a?(Prism::AssocSplatNode) }
+
+      assocs = elements.select { |e| e.is_a?(Prism::AssocNode) }
+      return "Hash[untyped, untyped]" if assocs.empty?
+
+      all_symbol_keys = assocs.all? { |e| e.key.is_a?(Prism::SymbolNode) }
+
+      if all_symbol_keys
+        # Record type: { key: Type, ... }
+        pairs = assocs.map { |e|
+          key_name = e.key.unescaped
+          value_type = infer_value_type(e.value)
+          "#{key_name}: #{value_type}"
+        }
+        "{ #{pairs.join(", ")} }"
+      else
+        key_types = assocs.filter_map { |e|
           case e.key
           when Prism::SymbolNode then "Symbol"
           when Prism::StringNode then "String"
@@ -54,8 +72,30 @@ module RbsInfer
         }.uniq
         key_type = key_types.size == 1 ? key_types.first : "untyped"
         "Hash[#{key_type}, untyped]"
+      end
+    end
+
+    def self.infer_value_type(node)
+      case node
+      when Prism::StringNode, Prism::InterpolatedStringNode then "String"
+      when Prism::IntegerNode then "Integer"
+      when Prism::FloatNode then "Float"
+      when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
+      when Prism::TrueNode, Prism::FalseNode then "bool"
+      when Prism::NilNode then "nil"
+      when Prism::ArrayNode then "Array[untyped]"
+      when Prism::HashNode then infer_hash_type(node)
+      when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
+      when Prism::ConstantReadNode, Prism::ConstantPathNode
+        Analyzer.extract_constant_path(node) || "untyped"
+      when Prism::CallNode
+        if node.name == :new && node.receiver
+          Analyzer.extract_constant_path(node.receiver) || "untyped"
+        else
+          "untyped"
+        end
       else
-        "Hash[untyped, untyped]"
+        "untyped"
       end
     end
   end

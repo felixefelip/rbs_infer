@@ -2,5 +2,5 @@ class EmailNotifier
   attr_reader from_address: String
   attr_reader delivery_method: Symbol
   def initialize: (?from_address: String, ?delivery_method: Symbol) -> void
-  def notify: (User user, String message) -> Hash[Symbol, untyped]
+  def notify: (User user, String message) -> { to: untyped, from: untyped, body: untyped, sent_at: untyped }
 end

@@ -95,8 +95,7 @@ module RbsInfer
         element_type = infer_collection_element_type(node.elements)
         { kind: :literal, type: "Array[#{element_type}]" }
       when Prism::HashNode
-        key_type, value_type = infer_hash_types(node.elements)
-        { kind: :literal, type: "Hash[#{key_type}, #{value_type}]" }
+        { kind: :literal, type: NodeTypeInferrer.infer_hash_type(node) }
       else
         { kind: :unknown }
       end
@@ -117,19 +116,5 @@ module RbsInfer
       types.join(" | ")
     end
 
-    def infer_hash_types(elements)
-      return ["untyped", "untyped"] if elements.empty?
-
-      assocs = elements.select { |el| el.is_a?(Prism::AssocNode) }
-      return ["untyped", "untyped"] if assocs.empty?
-
-      key_types = assocs.filter_map { |a| infer_type_from_node(a.key) }.uniq
-      value_types = assocs.filter_map { |a| infer_type_from_node(a.value) }.uniq
-
-      key_type = key_types.empty? ? "untyped" : key_types.join(" | ")
-      value_type = value_types.empty? ? "untyped" : value_types.join(" | ")
-
-      [key_type, value_type]
-    end
   end
 end

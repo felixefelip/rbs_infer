@@ -4,7 +4,7 @@ class User
     def initials: () -> String
     def display_name: () -> String
     def gravatar_url: (?Integer size) -> String
-    def profile_summary: () -> Hash[Symbol, untyped]
+    def profile_summary: () -> { name: untyped, initials: untyped, posts_count: untyped, member_since: untyped }
     def short_bio: (?Integer max) -> String
   end
 end
