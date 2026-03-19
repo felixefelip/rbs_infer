@@ -19,4 +19,5 @@ module RbsInfer
 end
 
 require_relative "rbs_infer/analyzer"
+require_relative "rbs_infer/dependency_sorter"
 require_relative "rbs_infer/railtie" if defined?(Rails::Railtie)

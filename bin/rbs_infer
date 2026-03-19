@@ -102,9 +102,19 @@ generate = lambda do |inputs_to_process, silent: false|
 end
 
 if output
-  changed = generate.call(files)
-  pass = 1
+  levels = RbsInfer::DependencySorter.sort(files)
 
+  all_changed = []
+  levels.each_with_index do |level_files, idx|
+    # Reset Steep cache between levels so it picks up RBS from prior levels
+    RbsInfer::SteepBridge.reset! if idx > 0
+    changed = generate.call(level_files)
+    all_changed.concat(changed)
+  end
+
+  # Stabilization: re-run any remaining changed files (handles cycles, indirect deps)
+  pass = 1
+  changed = all_changed.uniq
   while changed.any? && pass < max_passes
     pass += 1
     RbsInfer::SteepBridge.reset!
@@ -112,8 +122,8 @@ if output
   end
 
   if changed.any?
-    warn "Warning: types did not converge after #{max_passes} passes (#{changed.size} files still changing). " \
-         "Try increasing --max-passes."
+    warn "Warning: types did not converge after #{max_passes} stabilization passes " \
+         "(#{changed.size} files still changing). Try increasing --max-passes."
   end
 else
   generate.call(files)

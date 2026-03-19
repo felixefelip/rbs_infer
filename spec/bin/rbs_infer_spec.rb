@@ -232,7 +232,7 @@ RSpec.describe "bin/rbs_infer" do
       )
 
       expect(status).to be_success
-      expect(stderr).to include("Warning: types did not converge after 1 passes")
+      expect(stderr).to include("Warning: types did not converge after 1 stabilization passes")
       expect(stderr).to include("Try increasing --max-passes")
     end
 
