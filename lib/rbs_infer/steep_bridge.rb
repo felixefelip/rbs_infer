@@ -93,6 +93,13 @@ module RbsInfer
       typing = type_check(source_code)
       return {} unless typing
 
+      # Index BlockBodyTypeMismatch errors by block node identity
+      block_mismatches = {}
+      typing.errors.each do |err|
+        next unless err.is_a?(Steep::Diagnostic::Ruby::BlockBodyTypeMismatch)
+        block_mismatches[err.node.__id__] = err
+      end
+
       result = {}
 
       typing.each_typing do |node, _type|
@@ -103,6 +110,12 @@ module RbsInfer
 
         body_type = typing.type_of(node: body)
         type_str = format_type(body_type)
+
+        # When Steep can't resolve generic type params in block calls,
+        # resolve from the block body type or from BlockBodyTypeMismatch errors.
+        resolved = resolve_block_generic_type(typing, body, type_str, block_mismatches)
+        type_str = resolved if resolved
+
         next if type_str == "untyped"
 
         result[method_name] = type_str
@@ -111,6 +124,48 @@ module RbsInfer
       result
     rescue
       {}
+    end
+
+    BLOCK_GENERIC_METHODS = %w[map collect].freeze
+
+    # When Steep can't resolve generic type params bottom-up in block calls
+    # (e.g., `.map { |x| expr }` → Array[untyped]), extract the block body type
+    # that Steep already typed correctly and substitute it.
+    # Also corrects cases where bidirectional checking from a wrong RBS declaration
+    # produces BlockBodyTypeMismatch — uses the actual block body type.
+    def resolve_block_generic_type(typing, body, type_str, block_mismatches)
+      last_expr = body
+      last_expr = body.children.last if body.type == :begin
+
+      return nil unless last_expr&.type == :block
+
+      send_node = last_expr.children[0]
+      return nil unless send_node&.type == :send
+
+      called_method = send_node.children[1].to_s
+      return nil unless BLOCK_GENERIC_METHODS.include?(called_method)
+
+      # Check for BlockBodyTypeMismatch — the actual type is the correct block body type
+      mismatch = block_mismatches[last_expr.__id__]
+      if mismatch
+        actual_type = format_type(mismatch.actual)
+        if actual_type && actual_type != "untyped" && actual_type != "bot"
+          return "Array[#{actual_type}]"
+        end
+      end
+
+      # Fallback: extract block body type from Steep typing (for Array[untyped] case)
+      return nil unless type_str.include?("untyped")
+
+      block_body = last_expr.children[2]
+      block_body = block_body.children.last if block_body&.type == :begin
+      return nil unless block_body
+
+      block_body_type = format_type(typing.type_of(node: block_body))
+      return nil if !block_body_type || block_body_type == "untyped" || block_body_type == "bot"
+
+      resolved = type_str.gsub("Array[untyped]", "Array[#{block_body_type}]")
+      resolved == type_str ? nil : resolved
     end
 
     # Returns { "var_name" => "Type" } for all instance variable writes (@var = expr).

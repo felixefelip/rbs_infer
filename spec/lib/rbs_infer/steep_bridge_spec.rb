@@ -224,6 +224,26 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
     end
   end
 
+  describe "#method_return_types block generic resolution" do
+    it "resolves .map block body type when Steep returns Array[untyped]" do
+      code = File.read(File.join(__dir__, "../../dummy/app/services/tag_destroy.rb"))
+      result = bridge.method_return_types(code)
+      expect(result["parse_xml_as_hash_with_parse"]).to eq("Array[Hash[Symbol, untyped]]")
+    end
+
+    it "resolves .map block with self method call" do
+      code = File.read(File.join(__dir__, "../../dummy/app/services/tag_destroy.rb"))
+      result = bridge.method_return_types(code)
+      expect(result["parse_xml_as_hash"]).to eq("Array[Hash[Symbol, untyped]]")
+    end
+
+    it "does not modify non-map block calls" do
+      code = File.read(File.join(__dir__, "../../dummy/app/services/tag_destroy.rb"))
+      result = bridge.method_return_types(code)
+      expect(result["parse_xml"]).to eq("Array[Nokogiri::XML::Node]")
+    end
+  end
+
   describe "#all_expression_types" do
     it "maps line:column to type for all typed expressions" do
       code = <<~RUBY

@@ -4,6 +4,6 @@ class ParseXml
 	end
 
 	def parse
-    { order: }
+    { order: @xml.at_css("order") }
 	end
 end

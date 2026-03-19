@@ -35,12 +35,12 @@ module RbsInfer
         end
       end
 
-      # Use Steep for any remaining untyped methods
+      # Use Steep for any remaining untyped methods and to correct wrong block generic types
       if @steep_bridge && parsed_target.source
         still_untyped = members.select { |m| m.kind == :method && m.name != "initialize" && m.signature =~ /->\s*untyped$/ }
-        unless still_untyped.empty?
-          steep_returns = @steep_bridge.method_return_types(parsed_target.source)
+        steep_returns = @steep_bridge.method_return_types(parsed_target.source)
 
+        unless still_untyped.empty? || steep_returns.empty?
           # Build def map for nil-return detection
           collector = DefCollector.new
           parsed_target.tree.accept(collector)
@@ -63,6 +63,20 @@ module RbsInfer
 
               m.signature = m.signature.sub(/-> untyped$/, "-> #{steep_type}")
             end
+          end
+
+          # Correct already-typed methods where Steep detected BlockBodyTypeMismatch
+          # (existing RBS had wrong type from previous generation)
+          members.each do |m|
+            next if m.kind != :method || m.name == "initialize"
+            next if m.signature =~ /->\s*untyped$/
+            steep_type = steep_returns[m.name]
+            next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
+            current_type = m.signature[/->\s*(.+)$/, 1]&.strip
+            next if current_type == steep_type
+            # Only override Array types (block generic correction)
+            next unless current_type&.start_with?("Array[") && steep_type.start_with?("Array[")
+            m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> #{steep_type}")
           end
         end
       end

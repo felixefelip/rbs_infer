@@ -68,6 +68,12 @@ class TagDestroy
     end
 	end
 
+	def parse_xml_as_hash_with_parse
+		xml.xpath("//Pedidos").map do |order_xml|
+			ParseXml.new(order_xml).parse
+		end
+	end
+
 	def test_hash(order_xml)
 		{ order: order_xml, date: order_xml.at_css("date") }
 	end
