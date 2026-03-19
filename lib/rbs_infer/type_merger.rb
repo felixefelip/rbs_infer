@@ -166,7 +166,7 @@ module RbsInfer
 
     # Resolve return type de receiver.method() ou method() com args
     def infer_call_return_type(call_node, known_return_types, method_type_resolver, local_types: {})
-      if call_node.receiver.nil?
+      result = if call_node.receiver.nil?
         # Chamada sem receiver (self implícito) com argumentos
         known_return_types[call_node.name.to_s]
       elsif call_node.name == :new && call_node.receiver
@@ -186,6 +186,9 @@ module RbsInfer
           resolved == "self" ? receiver_type : resolved
         end
       end
+      # Normalize: instance methods returning their own class → self
+      result = "self" if result && @target_class && result == @target_class
+      result
     end
 
     def resolve_receiver_type(node, known_return_types, method_type_resolver, local_types: {})
@@ -226,7 +229,7 @@ module RbsInfer
                   end
       return nil unless last_stmt
 
-      infer_node_type(last_stmt, known_types: known_return_types)
+      infer_node_type(last_stmt, known_types: known_return_types, context_class: @target_class)
     end
   end
 end

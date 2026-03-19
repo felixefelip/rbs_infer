@@ -358,12 +358,12 @@ module RbsInfer
         if node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
           cn = RbsInfer::Analyzer.extract_constant_path(node.receiver)
           resolved = resolve_class_method(cn, node.name.to_s) if cn
-          return resolved if resolved
+          return resolved if resolved && resolved != "untyped"
 
           infer_block_return_type(node.block, class_name)
         elsif node.receiver.nil? && class_name
           resolved = @rbs_definition_resolver.resolve_via_rbs_builder(:instance, class_name, node.name.to_s)
-          return resolved if resolved
+          return resolved if resolved && resolved != "untyped"
 
           infer_block_return_type(node.block, class_name)
         end
