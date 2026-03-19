@@ -18,7 +18,7 @@ class TagDestroy
   def test_nokogiri: () -> Nokogiri::XML::Document
   def parse_xml: () -> Array[Nokogiri::XML::Node]
   def parse_xml_as_hash: () -> Array[Hash[Symbol, untyped]]
-  def test_hash: (untyped order) -> Hash[Symbol, untyped]
+  def test_hash: (untyped order_xml) -> Hash[Symbol, untyped]
   def verify_multiples_returns_with_void: () -> void
   def verify_multiples_returns_with_void_and_rescue: () -> String?
   def save_post: () -> void

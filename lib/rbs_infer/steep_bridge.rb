@@ -69,7 +69,11 @@ module RbsInfer
       result = Hash.new { |h, k| h[k] = {} }
 
       typing.each_typing do |node, type|
-        next unless node.type == :lvasgn
+        # :lvasgn = local variable assignment (x = expr)
+        # :procarg0 = single block parameter (|x|)
+        # :arg = block parameter in multi-param blocks (|x, y|);
+        #        also matches def params, but those are typically untyped and get filtered below
+        next unless node.type == :lvasgn || node.type == :procarg0 || node.type == :arg
         type_str = format_type(type)
         next if type_str == "untyped" || type_str == "nil" || type_str == "bot"
 

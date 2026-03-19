@@ -63,13 +63,13 @@ class TagDestroy
   end
 
 	def parse_xml_as_hash
-    xml.xpath("//Pedidos").map do |order|
-      test_hash(order)
+    xml.xpath("//Pedidos").map do |order_xml|
+      test_hash(order_xml)
     end
 	end
 
-	def test_hash(order)
-		{ order: order, date: order.date }
+	def test_hash(order_xml)
+		{ order: order_xml, date: order_xml.at_css("date") }
 	end
 
 	def verify_multiples_returns_with_void

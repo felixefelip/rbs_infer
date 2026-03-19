@@ -80,6 +80,86 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
       result = bridge.local_var_types_per_method("!!!invalid ruby")
       expect(result).to eq({})
     end
+
+    it "captures single block parameter (procarg0)" do
+      code = <<~RUBY
+        class Foo
+          def bar
+            [1, 2, 3].map do |num|
+              num
+            end
+          end
+        end
+      RUBY
+
+      result = bridge.local_var_types_per_method(code)
+      expect(result["bar"]["num"]).to eq("Integer")
+    end
+
+    it "captures multiple block parameters (arg)" do
+      code = <<~RUBY
+        class Foo
+          def bar
+            [1, 2, 3].each_with_index do |num, idx|
+              num + idx
+            end
+          end
+        end
+      RUBY
+
+      result = bridge.local_var_types_per_method(code)
+      expect(result["bar"]["num"]).to eq("Integer")
+      expect(result["bar"]["idx"]).to eq("Integer")
+    end
+
+    it "captures hash each block parameters" do
+      code = <<~RUBY
+        class Foo
+          def bar
+            { a: 1, b: 2 }.each do |key, val|
+              puts key
+            end
+          end
+        end
+      RUBY
+
+      result = bridge.local_var_types_per_method(code)
+      expect(result["bar"]["key"]).to eq("Symbol")
+      expect(result["bar"]["val"]).to eq("Integer")
+    end
+
+    it "does not capture def params as typed (they are untyped without RBS)" do
+      code = <<~RUBY
+        class Foo
+          def bar(x, y)
+            z = 42
+          end
+        end
+      RUBY
+
+      result = bridge.local_var_types_per_method(code)
+      expect(result["bar"]).not_to have_key("x")
+      expect(result["bar"]).not_to have_key("y")
+      expect(result["bar"]["z"]).to eq("Integer")
+    end
+
+    it "captures block params alongside local var assignments" do
+      code = <<~RUBY
+        class Foo
+          def bar
+            total = 0
+            [1, 2, 3].each do |num|
+              total += num
+            end
+            total
+          end
+        end
+      RUBY
+
+      result = bridge.local_var_types_per_method(code)
+      expect(result["bar"]["num"]).to eq("Integer")
+      expect(result["bar"]["total"]).to eq("Integer")
+    end
   end
 
   describe "#method_return_types" do
