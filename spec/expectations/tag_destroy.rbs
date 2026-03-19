@@ -17,10 +17,10 @@ class TagDestroy
   def process_tag: (Tag tag) -> void
   def test_nokogiri: () -> Nokogiri::XML::Document
   def parse_xml: () -> Array[Nokogiri::XML::Node]
-  def parse_xml_as_hash: () -> Array[{ date: untyped, order: Nokogiri::XML::Node }]
-  def parse_xml_as_hash_with_parse: () -> Array[{ order: untyped }]
-  def test_hash: (Nokogiri::XML::Node order_xml) -> { date: untyped, order: Nokogiri::XML::Node }
-  def test_array_with_array: () -> Array[Array[untyped]]
+  def parse_xml_as_hash: () -> Array[{ date: Nokogiri::XML::Node?, order: Nokogiri::XML::Node }]
+  def parse_xml_as_hash_with_parse: () -> Array[{ order: Nokogiri::XML::Node? }]
+  def test_hash: (Nokogiri::XML::Node order_xml) -> { date: Nokogiri::XML::Node?, order: Nokogiri::XML::Node }
+  def test_array_with_array: () -> Array[Array[Nokogiri::XML::Node?]]
   def test_array_with_array_with_elements_untyped: () -> Array[Array[untyped]]
   def verify_multiples_returns_with_void: () -> void
   def verify_multiples_returns_with_void_and_rescue: () -> String?
