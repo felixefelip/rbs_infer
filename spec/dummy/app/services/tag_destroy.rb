@@ -78,6 +78,18 @@ class TagDestroy
 		{ order: order_xml, date: order_xml.at_css("date") }
 	end
 
+	def test_array_with_array
+		xml.xpath("//Pedidos").map do |order_xml|
+			[order_xml, order_xml.at_css("date")]
+		end
+	end
+
+	def test_array_with_array_with_elements_untyped
+		xml.xpath("//Pedidos").map do |order_xml|
+			[untyped]
+		end
+	end
+
 	def verify_multiples_returns_with_void
 		if user_posts.any?
 			save_post

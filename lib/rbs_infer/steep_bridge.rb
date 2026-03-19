@@ -155,7 +155,11 @@ module RbsInfer
       end
 
       # Fallback: extract block body type from Steep typing (for Array[untyped] case)
-      return nil unless type_str.include?("untyped")
+      # Only apply when the top-level type is exactly Array[untyped] (Steep couldn't
+      # resolve the generic at all). If the type is already resolved (e.g.,
+      # Array[Array[untyped]]), the gsub would incorrectly add another nesting layer
+      # on each stabilization pass, causing infinite Array[Array[Array[...]]] growth.
+      return nil unless type_str == "Array[untyped]"
 
       block_body = last_expr.children[2]
       block_body = block_body.children.last if block_body&.type == :begin
