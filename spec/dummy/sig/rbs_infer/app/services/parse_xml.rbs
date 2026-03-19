@@ -1,5 +1,5 @@
 class ParseXml
   @xml: Nokogiri::XML::Node
   def initialize: (Nokogiri::XML::Node xml) -> void
-  def parse: () -> { order: untyped }
+  def parse: () -> { order: Nokogiri::XML::Node? }
 end
