@@ -207,4 +207,52 @@ RSpec.describe "bin/rbs_infer" do
       expect(stdout2.strip.split("\n").size).to eq(1)
     end
   end
+
+  # ─── --max-passes ────────────────────────────────────────────────
+
+  describe "--max-passes" do
+    it "accepts --max-passes option" do
+      setup_project
+      stdout, stderr, status = run_rbs_infer("--max-passes", "3", "--output", "app/models/user.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stderr).not_to include("Warning")
+      expect(stdout.strip).to eq("sig/generated/app/models/user.rbs")
+    end
+
+    it "warns when convergence is not reached within max passes" do
+      setup_project
+
+      # With --max-passes 1, the loop body never executes (pass starts at 1,
+      # condition is pass < max_passes which is 1 < 1 = false).
+      # On a fresh run (no pre-existing RBS), files always change on pass 1,
+      # so changed will be non-empty and the warning triggers.
+      _stdout, stderr, status = run_rbs_infer(
+        "--max-passes", "1", "--output", "app/models", dir: @tmpdir
+      )
+
+      expect(status).to be_success
+      expect(stderr).to include("Warning: types did not converge after 1 passes")
+      expect(stderr).to include("Try increasing --max-passes")
+    end
+
+    it "does not warn when types converge within max passes" do
+      setup_project
+      _stdout, stderr, status = run_rbs_infer(
+        "--max-passes", "10", "--output", "app/models/user.rb", dir: @tmpdir
+      )
+
+      expect(status).to be_success
+      expect(stderr).not_to include("Warning")
+    end
+
+    it "defaults to 10 passes without --max-passes" do
+      setup_project
+      # Just verify it runs successfully without the option
+      _stdout, stderr, status = run_rbs_infer("--output", "app/models/user.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stderr).not_to include("Warning")
+    end
+  end
 end
