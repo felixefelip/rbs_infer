@@ -4,7 +4,7 @@ class Post
     def notification_title: () -> String
     def notify_subscribers: (untyped subscribers) -> untyped
     def notification_excerpt: (?Integer length) -> untyped
-    def notification_payload: () -> Hash[Symbol, untyped]
+    def notification_payload: () -> { post_id: untyped, title: untyped, author_name: untyped, published_at: untyped, excerpt: untyped }
 
     private
 
