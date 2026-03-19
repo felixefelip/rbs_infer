@@ -4,11 +4,12 @@ module RbsInfer
 
     attr_reader :method_call_usages
 
-    def initialize(target_class:, method_type_resolver:, init_positional_params: [], target_methods: {})
+    def initialize(target_class:, method_type_resolver:, init_positional_params: [], target_methods: {}, steep_bridge: nil)
       @target_class = target_class
       @method_type_resolver = method_type_resolver
       @init_positional_params = init_positional_params
       @target_methods = target_methods
+      @steep_bridge = steep_bridge
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
     end
 
@@ -36,6 +37,12 @@ module RbsInfer
       end
 
       local_var_types = {}
+
+      # Use Steep to resolve local var types (including block params)
+      if @steep_bridge
+        steep_vars = @steep_bridge.local_var_types_per_method(source)
+        steep_vars.each_value { |vars| local_var_types.merge!(vars) { |_k, old, _new| old } }
+      end
 
       visitor = NewCallCollector.new(
         target_class: @target_class,

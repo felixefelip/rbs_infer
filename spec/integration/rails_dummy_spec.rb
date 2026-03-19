@@ -82,6 +82,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("tag_destroy", target_class: "TagDestroy", target_file: "app/services/tag_destroy.rb")
   end
 
+  it "ParseXml service matches expected RBS" do
+    assert_snapshot("parse_xml", target_class: "ParseXml", target_file: "app/services/parse_xml.rb")
+  end
+
   it "Post::Taggable concern matches expected RBS" do
     assert_snapshot("post/taggable", target_class: "Post::Taggable", target_file: "app/models/post/taggable.rb")
   end
