@@ -192,4 +192,19 @@ RSpec.describe "bin/rbs_infer" do
       expect(File.exist?(File.join(@tmpdir, "custom_sig/app/models/user.rbs"))).to be true
     end
   end
+
+  # ─── Multi-pass convergence ──────────────────────────────────────
+
+  describe "multi-pass convergence" do
+    it "does not re-run files when output is unchanged" do
+      setup_project
+      stdout, _stderr, status = run_rbs_infer("--output", "app/models/user.rb", dir: @tmpdir)
+      expect(status).to be_success
+
+      # Run again — since files already exist and content is the same, should print once
+      stdout2, _stderr2, status2 = run_rbs_infer("--output", "app/models/user.rb", dir: @tmpdir)
+      expect(status2).to be_success
+      expect(stdout2.strip.split("\n").size).to eq(1)
+    end
+  end
 end

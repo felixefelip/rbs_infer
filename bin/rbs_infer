@@ -56,30 +56,57 @@ end
 
 source_files = Dir["app/**/*.rb", "engines/**/*.rb", "lib/**/*.rb"]
 
-files.each do |input|
-  is_path = input.include?("/") || input.end_with?(".rb")
-  args = if is_path
-           { target_file: input, source_files: source_files }
-         else
-           { target_class: input, source_files: source_files }
-         end
+max_passes = 5
 
-  analyzer = RbsInfer::Analyzer.new(**args)
-  rbs = analyzer.generate_rbs
+generate = lambda do |inputs_to_process, silent: false|
+  changed_files = []
 
-  unless rbs
-    warn "#{input}: class not found or no members detected."
-    next
+  inputs_to_process.each do |input|
+    is_path = input.include?("/") || input.end_with?(".rb")
+    args = if is_path
+             { target_file: input, source_files: source_files }
+           else
+             { target_class: input, source_files: source_files }
+           end
+
+    analyzer = RbsInfer::Analyzer.new(**args)
+    rbs = analyzer.generate_rbs
+
+    unless rbs
+      warn "#{input}: class not found or no members detected."
+      next
+    end
+
+    if output
+      source_path = analyzer.target_file || input
+      output_path = File.join(output_dir, source_path.sub(/\.rb$/, ".rbs"))
+
+      FileUtils.mkdir_p(File.dirname(output_path))
+
+      new_content = rbs + "\n"
+      old_content = File.exist?(output_path) ? File.read(output_path) : nil
+
+      File.write(output_path, new_content)
+      puts output_path unless silent
+
+      changed_files << input if new_content != old_content
+    else
+      puts rbs
+    end
   end
 
-  if output
-    source_path = analyzer.target_file || input
-    output_path = File.join(output_dir, source_path.sub(/\.rb$/, ".rbs"))
+  changed_files
+end
 
-    FileUtils.mkdir_p(File.dirname(output_path))
-    File.write(output_path, rbs + "\n")
-    puts output_path
-  else
-    puts rbs
+if output
+  changed = generate.call(files)
+  pass = 1
+
+  while changed.any? && pass < max_passes
+    pass += 1
+    RbsInfer::SteepBridge.reset!
+    changed = generate.call(changed, silent: true)
   end
+else
+  generate.call(files)
 end

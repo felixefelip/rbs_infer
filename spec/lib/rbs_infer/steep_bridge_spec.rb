@@ -228,13 +228,13 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
     it "resolves .map block body type when Steep returns Array[untyped]" do
       code = File.read(File.join(__dir__, "../../dummy/app/services/tag_destroy.rb"))
       result = bridge.method_return_types(code)
-      expect(result["parse_xml_as_hash_with_parse"]).to eq("Array[Hash[Symbol, untyped]]")
+      expect(result["parse_xml_as_hash_with_parse"]).to eq("Array[{ order: untyped }]")
     end
 
     it "resolves .map block with self method call" do
       code = File.read(File.join(__dir__, "../../dummy/app/services/tag_destroy.rb"))
       result = bridge.method_return_types(code)
-      expect(result["parse_xml_as_hash"]).to eq("Array[Hash[Symbol, untyped]]")
+      expect(result["parse_xml_as_hash"]).to eq("Array[{ date: untyped, order: untyped }]")
     end
 
     it "does not modify non-map block calls" do
