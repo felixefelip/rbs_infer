@@ -5,5 +5,7 @@ class Comment
     private
 
     def process_creation_response: (Comment comment, Symbol status) -> void
+    def dummy_hash: () -> Hash[Symbol, untyped]
+    def test_dummy_hash: () -> untyped
   end
 end

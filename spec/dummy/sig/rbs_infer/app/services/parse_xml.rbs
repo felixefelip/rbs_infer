@@ -1,0 +1,4 @@
+class ParseXml
+  def initialize: (untyped xml) -> untyped
+  def parse: () -> untyped
+end
