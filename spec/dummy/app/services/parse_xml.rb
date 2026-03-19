@@ -4,6 +4,6 @@ class ParseXml
 	end
 
 	def parse
-
+    { order: }
 	end
 end
