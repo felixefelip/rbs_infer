@@ -7,6 +7,7 @@ require "optparse"
 
 output = false
 output_dir = "sig/generated"
+max_passes = 10
 files = []
 
 parser = OptionParser.new do |opts|
@@ -19,6 +20,10 @@ parser = OptionParser.new do |opts|
   opts.on("--output-dir DIR", "Output directory (default: sig/generated)") do |dir|
     output = true
     output_dir = dir
+  end
+
+  opts.on("--max-passes N", Integer, "Max iterative passes for type convergence (default: 10)") do |n|
+    max_passes = n
   end
 
   opts.on("-v", "--version", "Show version") do
@@ -55,8 +60,6 @@ if files.empty?
 end
 
 source_files = Dir["app/**/*.rb", "engines/**/*.rb", "lib/**/*.rb"]
-
-max_passes = 5
 
 generate = lambda do |inputs_to_process, silent: false|
   changed_files = []
@@ -106,6 +109,11 @@ if output
     pass += 1
     RbsInfer::SteepBridge.reset!
     changed = generate.call(changed, silent: true)
+  end
+
+  if changed.any?
+    warn "Warning: types did not converge after #{max_passes} passes (#{changed.size} files still changing). " \
+         "Try increasing --max-passes."
   end
 else
   generate.call(files)
