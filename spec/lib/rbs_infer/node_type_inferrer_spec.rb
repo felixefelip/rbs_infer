@@ -2,10 +2,10 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::NodeTypeInferrer do
-  def infer_hash(source)
+  def infer_hash(source, known_types: {}, context_class: nil)
     result = Prism.parse(source)
     hash_node = find_hash_node(result.value)
-    described_class.infer_hash_type(hash_node)
+    described_class.infer_hash_type(hash_node, known_types: known_types, context_class: context_class)
   end
 
   def find_hash_node(node)
@@ -68,6 +68,33 @@ RSpec.describe RbsInfer::NodeTypeInferrer do
 
     it "handles array values" do
       expect(infer_hash("{ items: [1, 2, 3] }")).to eq("{ items: Array[untyped] }")
+    end
+
+    context "with known_types context" do
+      it "resolves local variable reads to known types" do
+        expect(infer_hash("{ name: user_name }", known_types: { "user_name" => "String" })).to eq(
+          "{ name: String }"
+        )
+      end
+
+      it "resolves receiverless method calls to known types" do
+        expect(infer_hash("{ addr: from_address }", known_types: { "from_address" => "String" })).to eq(
+          "{ addr: String }"
+        )
+      end
+
+      it "falls back to untyped when known_types has no entry" do
+        expect(infer_hash("{ val: unknown_var }", known_types: { "other" => "String" })).to eq(
+          "{ val: untyped }"
+        )
+      end
+
+      it "mixes literal and context-resolved types" do
+        known = { "from_address" => "String" }
+        expect(infer_hash("{ from: from_address, count: 42 }", known_types: known)).to eq(
+          "{ from: String, count: Integer }"
+        )
+      end
     end
   end
 end

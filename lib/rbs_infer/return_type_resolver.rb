@@ -40,7 +40,7 @@ module RbsInfer
         still_untyped = members.select { |m| m.kind == :method && m.name != "initialize" && m.signature =~ /->\s*untyped$/ }
         steep_returns = @steep_bridge.method_return_types(parsed_target.source)
 
-        unless still_untyped.empty? || steep_returns.empty?
+        unless steep_returns.empty?
           # Build def map for nil-return detection
           collector = DefCollector.new
           parsed_target.tree.accept(collector)
@@ -76,6 +76,27 @@ module RbsInfer
             next if current_type == steep_type
             # Only override Array types (block generic correction)
             next unless current_type&.start_with?("Array[") && steep_type.start_with?("Array[")
+            m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> #{steep_type}")
+          end
+
+          # Refine record types containing untyped values using Steep's body type inference
+          members.each do |m|
+            next if m.kind != :method || m.name == "initialize"
+            current_type = m.signature[/->\s*(.+)$/, 1]&.strip
+            next unless current_type&.start_with?("{") && current_type.include?("untyped")
+
+            steep_type = steep_returns[m.name]
+            next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
+            next unless steep_type.start_with?("{")
+            next if current_type == steep_type
+
+            steep_type = "self" if self_types.include?(steep_type)
+
+            defn = def_map[m.name]
+            if defn && has_nil_return?(defn) && !steep_type.end_with?("?")
+              steep_type = "#{steep_type}?"
+            end
+
             m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> #{steep_type}")
           end
         end
@@ -155,7 +176,7 @@ module RbsInfer
       when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then NodeTypeInferrer.infer_hash_type(node)
+      when Prism::HashNode then NodeTypeInferrer.infer_hash_type(node, known_types: known_return_types, context_class: @target_class)
       when Prism::SelfNode then @target_class
       when Prism::CallNode
         if node.name == :new && node.receiver

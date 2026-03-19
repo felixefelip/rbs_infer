@@ -252,6 +252,13 @@ module RbsInfer
       # Remove leading :: from all type names
       str = str.gsub(/(^|[\[\(, |])::/) { $1 }
 
+      # Normalize record key format: { :sym => Type } → { sym: Type }
+      str = str.gsub(/:(\w+) =>/, '\1:')
+
+      # Normalize nilable types in nested contexts: (Type | nil) → Type?
+      str = str.gsub(/\(([^|()]+) \| nil\)/) { "#{$1.strip}?" }
+      str = str.gsub(/\(nil \| ([^|()]+)\)/) { "#{$1.strip}?" }
+
       # Normalize void out of union types: (void | T) → T?
       # void in a union means "return value not used in that branch", treat as nil
       if str =~ /\A\(/ && str.include?("void")

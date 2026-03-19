@@ -16,7 +16,7 @@ module RbsInfer
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::NilNode then "nil"
       when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then infer_hash_type(node)
+      when Prism::HashNode then infer_hash_type(node, context_class: context_class, known_types: known_types)
       when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
       when Prism::SelfNode then context_class
       when Prism::ConstantReadNode, Prism::ConstantPathNode
@@ -38,11 +38,11 @@ module RbsInfer
       end
     end
 
-    def infer_hash_type(node)
-      NodeTypeInferrer.infer_hash_type(node)
+    def infer_hash_type(node, context_class: nil, known_types: {})
+      NodeTypeInferrer.infer_hash_type(node, known_types: known_types, context_class: context_class)
     end
 
-    def self.infer_hash_type(node)
+    def self.infer_hash_type(node, known_types: {}, context_class: nil)
       elements = node.elements
       return "Hash[untyped, untyped]" if elements.empty?
 
@@ -58,7 +58,7 @@ module RbsInfer
         # Record type: { key: Type, ... }
         pairs = assocs.map { |e|
           key_name = e.key.unescaped
-          value_type = infer_value_type(e.value)
+          value_type = infer_value_type(e.value, known_types: known_types, context_class: context_class)
           "#{key_name}: #{value_type}"
         }
         "{ #{pairs.join(", ")} }"
@@ -75,7 +75,7 @@ module RbsInfer
       end
     end
 
-    def self.infer_value_type(node)
+    def self.infer_value_type(node, known_types: {}, context_class: nil)
       case node
       when Prism::StringNode, Prism::InterpolatedStringNode then "String"
       when Prism::IntegerNode then "Integer"
@@ -84,16 +84,23 @@ module RbsInfer
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::NilNode then "nil"
       when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then infer_hash_type(node)
+      when Prism::HashNode then infer_hash_type(node, known_types: known_types, context_class: context_class)
       when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
+      when Prism::SelfNode then context_class || "untyped"
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         Analyzer.extract_constant_path(node) || "untyped"
       when Prism::CallNode
         if node.name == :new && node.receiver
           Analyzer.extract_constant_path(node.receiver) || "untyped"
+        elsif node.receiver.nil?
+          known_types[node.name.to_s] || "untyped"
         else
           "untyped"
         end
+      when Prism::LocalVariableReadNode
+        known_types[node.name.to_s] || "untyped"
+      when Prism::InstanceVariableReadNode
+        known_types[node.name.to_s.sub(/\A@/, "")] || "untyped"
       else
         "untyped"
       end

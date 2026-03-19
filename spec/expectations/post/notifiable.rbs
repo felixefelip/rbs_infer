@@ -4,10 +4,10 @@ class Post
     def notification_title: () -> String
     def notify_subscribers: (untyped subscribers) -> untyped
     def notification_excerpt: (?Integer length) -> untyped
-    def notification_payload: () -> { post_id: untyped, title: untyped, author_name: untyped, published_at: untyped, excerpt: untyped }
+    def notification_payload: () -> { author_name: String, excerpt: untyped, post_id: Integer, published_at: String?, title: String }
 
     private
 
-    def deliver_notification: (untyped subscriber) -> Hash[Symbol, untyped]
+    def deliver_notification: (untyped subscriber) -> { body: String, from: String, sent_at: ActiveSupport::TimeWithZone, to: String }
   end
 end
