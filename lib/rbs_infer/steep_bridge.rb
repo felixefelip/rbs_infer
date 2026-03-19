@@ -154,13 +154,13 @@ module RbsInfer
         end
       end
 
-      # Fallback: extract block body type from Steep typing (for Array[untyped] case)
-      # Only apply when the top-level type is exactly Array[untyped] (Steep couldn't
-      # resolve the generic at all). If the type is already resolved (e.g.,
-      # Array[Array[untyped]]), the gsub would incorrectly add another nesting layer
-      # on each stabilization pass, causing infinite Array[Array[Array[...]]] growth.
-      return nil unless type_str == "Array[untyped]"
-
+      # Extract block body type from Steep and construct Array[block_body_type].
+      # For .map/.collect the return is always Array[block_body_type].
+      # This handles both:
+      # - Array[untyped]: Steep couldn't resolve the generic at all
+      # - Array[{record with untyped}]: Steep's bidirectional typing used the
+      #   declared type, but the actual block body has a more precise type
+      #   (e.g., test_hash refined order: untyped → order: Nokogiri::XML::Node)
       block_body = last_expr.children[2]
       block_body = block_body.children.last if block_body&.type == :begin
       return nil unless block_body
@@ -168,7 +168,7 @@ module RbsInfer
       block_body_type = format_type(typing.type_of(node: block_body))
       return nil if !block_body_type || block_body_type == "untyped" || block_body_type == "bot"
 
-      resolved = type_str.gsub("Array[untyped]", "Array[#{block_body_type}]")
+      resolved = "Array[#{block_body_type}]"
       resolved == type_str ? nil : resolved
     end
 
