@@ -261,15 +261,14 @@ module RbsInfer
       def collect_partial_locals(erb_files)
         locals_map = Hash.new { |h, k| h[k] = {} }
 
-        # Scan ERB files for render calls
+        # Scan ERB files for render calls (convert ERB → Ruby, then parse with Prism)
         erb_files.each do |erb_path|
           erb_source = File.read(erb_path)
-          ruby_fragments = extract_erb_ruby(erb_source)
+          ruby_code = erb_to_ruby(erb_source)
           context_ivars = context_ivars_for_erb(erb_path)
 
-          ruby_fragments.each do |fragment|
-            collect_render_locals(fragment, context_ivars, locals_map)
-          end
+          tree = Prism.parse(ruby_code).value
+          collect_render_locals_from_tree(tree, context_ivars, locals_map)
         end
 
         # Scan controller files for render calls
@@ -285,9 +284,14 @@ module RbsInfer
         locals_map
       end
 
-      # Extract Ruby code fragments from ERB source.
-      def extract_erb_ruby(erb_source)
-        erb_source.scan(/<%[=#]?\s*(.*?)\s*-?%>/m).flatten
+      def erb_to_ruby(erb_source)
+        require "steep/source/erb_to_ruby_code"
+        Steep::Source::ErbToRubyCode.convert(erb_source.dup)
+      end
+
+      def extract_controller_class_from_path(ctrl_path)
+        relative = ctrl_path.sub("#{@app_dir}/app/controllers/", "").sub(/\.rb\z/, "")
+        relative.split("/").map { |s| s.split(/[_-]/).map(&:capitalize).join }.join("::")
       end
 
       # Get context ivars for an ERB file (from its controller action).
@@ -301,26 +305,6 @@ module RbsInfer
         return {} unless controller_file
 
         extract_action_ivars(controller_file, view_info[:controller_class], view_info[:action])
-      end
-
-      def extract_controller_class_from_path(ctrl_path)
-        relative = ctrl_path.sub("#{@app_dir}/app/controllers/", "").sub(/\.rb\z/, "")
-        relative.split("/").map { |s| s.split(/[_-]/).map(&:capitalize).join }.join("::")
-      end
-
-      # Parse Ruby fragments from ERB and collect render calls with locals.
-      def collect_render_locals(ruby_fragment, context_ivars, locals_map)
-        # Match: render partial: "name", locals: { key: value, ... }
-        return unless ruby_fragment.match?(/render\b/)
-
-        wrapped = ruby_fragment.strip
-        begin
-          tree = Prism.parse(wrapped).value
-        rescue
-          return
-        end
-
-        collect_render_locals_from_tree(tree, context_ivars, locals_map)
       end
 
       # Traverse a Prism AST collecting render calls with locals.
