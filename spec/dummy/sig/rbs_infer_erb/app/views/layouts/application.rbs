@@ -4,4 +4,5 @@ class ERBLayoutsApplication
   def current_user: () -> User?
   include ApplicationHelper
   include ActionView::Helpers
+  include _RbsRailsPathHelpers
 end

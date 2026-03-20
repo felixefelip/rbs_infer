@@ -249,6 +249,13 @@ module RbsInfer
         helpers << "ApplicationHelper" if File.exist?(app_helper)
 
         helpers << "ActionView::Helpers"
+
+        # Include route helpers if rbs_rails generated path_helpers.rbs
+        path_helpers_rbs = Dir[File.join(@app_dir, "sig/**/path_helpers.rbs")].first
+        if path_helpers_rbs && File.read(path_helpers_rbs).include?("_RbsRailsPathHelpers")
+          helpers << "_RbsRailsPathHelpers"
+        end
+
         helpers
       end
 

@@ -35,6 +35,7 @@ target :app do
   check "app"
   check "lib"
   check "app/views/**/*.erb"
+  ignore "app/views/pwa/**"
   signature "sig"
   signature "app"
   signature "lib"

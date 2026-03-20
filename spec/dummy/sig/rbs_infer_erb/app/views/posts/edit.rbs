@@ -6,4 +6,5 @@ class ERBPostsEdit
   include PostsHelper
   include ApplicationHelper
   include ActionView::Helpers
+  include _RbsRailsPathHelpers
 end
