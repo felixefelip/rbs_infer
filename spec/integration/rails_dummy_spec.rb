@@ -121,4 +121,38 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       expect(rbs.chomp).to eq(expected_rbs("application_controller").chomp)
     end
   end
+
+  describe "ERB convention generator" do
+    let(:erb_generator) do
+      require "rbs_infer/erb_convention_generator"
+      @erb_tmpdir = Dir.mktmpdir
+      RbsInfer::ErbConvention::Generator.new(
+        app_dir: Dir.pwd,
+        output_dir: @erb_tmpdir,
+        source_files: source_files
+      )
+    end
+
+    after { FileUtils.remove_entry(@erb_tmpdir) if @erb_tmpdir }
+
+    before { erb_generator.generate_all }
+
+    def assert_erb_snapshot(name, output_file:)
+      rbs = File.read(File.join(@erb_tmpdir, output_file))
+
+      if ENV["UPDATE_EXPECTATIONS"]
+        expectations_dir.join("erb/#{name}.rbs").write(rbs)
+      end
+
+      expect(rbs.chomp).to eq(expected_rbs("erb/#{name}").chomp)
+    end
+
+    it "ERBPostsShow matches expected RBS" do
+      assert_erb_snapshot("posts_show", output_file: "app/views/posts/show.rbs")
+    end
+
+    it "ERBLayoutsApplication matches expected RBS" do
+      assert_erb_snapshot("layouts_application", output_file: "app/views/layouts/application.rbs")
+    end
+  end
 end

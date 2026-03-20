@@ -3,7 +3,7 @@ ROOT_DIR = $(shell pwd)
 RBS_INFER = bundle exec ruby -I$(ROOT_DIR)/lib $(ROOT_DIR)/bin/rbs_infer
 OUTPUT_DIR = sig/rbs_infer
 
-.PHONY: rbs rbs-controllers rbs-models rbs-services rbs-rails-custom test steep
+.PHONY: rbs rbs-controllers rbs-models rbs-services rbs-rails-custom rbs-erb test steep
 
 ## Gerar RBS para todo o app/ do dummy
 rbs:
@@ -20,6 +20,9 @@ rbs-helpers:
 
 rbs-rails-custom:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/rails_custom_generator'; RbsInfer::RailsCustom::Generator.new(output_dir: 'sig/rbs_rails_custom').generate_all"
+
+rbs-erb:
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/erb_convention_generator'; RbsInfer::ErbConvention::Generator.new(app_dir: '.', output_dir: 'sig/rbs_infer_erb', source_files: Dir['app/**/*.rb']).generate_all"
 
 ## Gerar RBS apenas para arquivo específico passado como argumento
 
