@@ -2,5 +2,7 @@
 
 class ERBPartialPostsForm
   attr_reader post: Post
+  def current_user: () -> User?
   include ApplicationHelper
+  include ActionView::Helpers
 end

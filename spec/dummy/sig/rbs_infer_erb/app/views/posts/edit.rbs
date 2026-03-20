@@ -2,6 +2,8 @@
 
 class ERBPostsEdit
   @post: Post
+  def current_user: () -> User?
   include PostsHelper
   include ApplicationHelper
+  include ActionView::Helpers
 end
