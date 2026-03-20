@@ -3,8 +3,8 @@ class Post
     extend ActiveSupport::Concern
     def notification_title: () -> String
     def notify_subscribers: (untyped subscribers) -> untyped
-    def notification_excerpt: (?Integer length) -> untyped
-    def notification_payload: () -> { author_name: String, excerpt: untyped, post_id: Integer, published_at: String?, title: String }
+    def notification_excerpt: (?Integer length) -> String
+    def notification_payload: () -> { author_name: String, excerpt: String, post_id: Integer, published_at: String?, title: String }
 
     private
 
