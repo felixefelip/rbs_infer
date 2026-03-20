@@ -1,0 +1,10 @@
+<h1><%= @post.title %></h1>
+
+<div class="post-meta">
+  <span>Por <%= @post.author_name %></span>
+  <%= post_status_badge(@post) %>
+</div>
+
+<div class="post-body">
+  <%= post_summary(@post) %>
+</div>

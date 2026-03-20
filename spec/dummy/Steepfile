@@ -34,7 +34,7 @@
 target :app do
   check "app"
   check "lib"
-  # check "app/views/**/*.erb"
+  check "app/views/**/*.erb"
   signature "sig"
   signature "app"
   signature "lib"
