@@ -228,7 +228,7 @@ Reutilizar o `ClassBodyAttrAnalyzer` / `ClassMemberCollector` existentes no rbs_
 - Cache de RBS do controller compartilhado entre `controller_ivar_types` e `extract_helper_method_signatures` via `controller_rbs`
 - Métodos helper aparecem como `def name: signature` na classe ERB
 
-### Fase 4 — Integração com Steep (sem alterar ERB files)
+### Fase 4 — Integração com Steep (sem alterar ERB files) ✅
 
 O Steep não possui nenhuma opção nativa no Steepfile para associar ERB files a tipos automaticamente. O `self_type` é determinado exclusivamente via annotation `# @type self:` dentro do arquivo, e o Steepfile só oferece `check`, `signature`, `library`, `ignore` e `configure_code_diagnostics`.
 
@@ -269,11 +269,19 @@ A função `erb_self_type_for(path)` segue as convenções Rails:
 
 #### Tarefas
 
-- [ ] Adicionar `erb_self_type_for(path)` no fork do Steep
-- [ ] Injetar annotation no `Source.parse` baseado no path
-- [ ] Configuração opt-in (flag no Steepfile ou variável de ambiente) para ativar a convenção
-- [ ] Validar que o Steep resolve tipos nas views usando as classes RBS geradas
-- [ ] Testes no fork do Steep para a convenção de naming
+- [x] Adicionar `erb_self_type_for(path)` no fork do Steep
+- [x] Injetar annotation no `Source.parse` baseado no path
+- [x] Configuração opt-in (flag no Steepfile ou variável de ambiente) para ativar a convenção
+- [x] Validar que o Steep resolve tipos nas views usando as classes RBS geradas
+- [x] Testes no fork do Steep para a convenção de naming
+
+**Detalhes de implementação:**
+- `ErbSelfTypeResolver` (`lib/steep/source/erb_self_type_resolver.rb`): módulo com `resolve(path)` que mapeia view paths → nomes de classe ERB
+- Opt-in via `ENV["STEEP_ERB_CONVENTION"]` — quando setada, `Source.parse` injeta `# @type self:` antes do parsing de annotations
+- Guards: rejeita paths que não terminam em `.erb` ou não contêm `app/views/`
+- Suporta views, partials, layouts, controllers namespaced, mailers e turbo_stream
+- 16 testes unitários para o resolver + 2 testes de integração no `Source.parse`
+- Validado com dummy app: `STEEP_ERB_CONVENTION=1 bundle exec steep check "app/views/"` → "No type error detected. 🫖"
 
 ### Fase 5 — Extração como gem separada (futuro)
 
