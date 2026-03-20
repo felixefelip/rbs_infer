@@ -102,6 +102,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("user/displayable", target_class: "User::Displayable", target_file: "app/models/user/displayable.rb")
   end
 
+  it "ApplicationHelper matches expected RBS" do
+    assert_snapshot("application_helper", target_class: "ApplicationHelper", target_file: "app/helpers/application_helper.rb")
+  end
+
   it "ApplicationController rails_custom matches expected RBS" do
     require "rbs_infer/rails_custom_generator"
     require "tmpdir"

@@ -1,0 +1,5 @@
+module ApplicationHelper
+  def test_helper_method: () -> String
+  def user_name_created_at: () -> ActiveSupport::TimeWithZone
+  def user_label_tag: () -> String
+end
