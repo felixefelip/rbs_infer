@@ -17,6 +17,10 @@ module RbsInfer
 
       def generate_all
         erb_files = Dir[File.join(@app_dir, "app/views/**/*.{html,turbo_stream}.erb")].sort
+
+        # Phase 1: collect partial locals from render call sites
+        @partial_locals = collect_partial_locals(erb_files)
+
         erb_files.each { |erb_path| generate_for_erb(erb_path) }
       end
 
@@ -30,6 +34,7 @@ module RbsInfer
 
         view_info = parse_view_path(view_relative)
         ivar_types = {}
+        local_types = {}
 
         if view_info
           controller_file = find_controller_file(view_info[:controller_name])
@@ -40,10 +45,14 @@ module RbsInfer
               view_info[:action]
             )
           end
+        else
+          # Partial: resolve locals from render call sites
+          partial_key = partial_key_from_view_relative(view_relative)
+          local_types = @partial_locals[partial_key] || {} if partial_key
         end
 
         helpers = detect_helpers(view_info)
-        rbs = build_rbs(class_name, ivar_types, helpers)
+        rbs = build_rbs(class_name, ivar_types, local_types, helpers)
 
         output_subpath = relative.sub(/\.(html|turbo_stream)\.erb\z/, ".rbs")
         output_path = File.join(@output_dir, output_subpath)
@@ -70,6 +79,18 @@ module RbsInfer
 
         prefix = is_partial ? "ERBPartial" : "ERB"
         "#{prefix}#{segments.join}"
+      end
+
+      # Extract the partial key from a view-relative path.
+      # "posts/_form.html.erb" → "posts/form"
+      def partial_key_from_view_relative(view_relative)
+        path = view_relative.sub(/\.(html|turbo_stream)\.erb\z/, "")
+        parts = path.split("/")
+        filename = parts.pop
+        return nil unless filename&.start_with?("_")
+
+        parts.push(filename.sub(/\A_/, ""))
+        parts.join("/")
       end
 
       # Parse view path to extract controller class and action.
@@ -233,12 +254,165 @@ module RbsInfer
         helpers
       end
 
-      def build_rbs(class_name, ivar_types, helpers)
+      # ── Partial locals inference (Fase 2) ─────────────────────────
+
+      # Scan all ERB files and controller files for `render partial:` calls
+      # and collect locals with their inferred types.
+      def collect_partial_locals(erb_files)
+        locals_map = Hash.new { |h, k| h[k] = {} }
+
+        # Scan ERB files for render calls
+        erb_files.each do |erb_path|
+          erb_source = File.read(erb_path)
+          ruby_fragments = extract_erb_ruby(erb_source)
+          context_ivars = context_ivars_for_erb(erb_path)
+
+          ruby_fragments.each do |fragment|
+            collect_render_locals(fragment, context_ivars, locals_map)
+          end
+        end
+
+        # Scan controller files for render calls
+        Dir[File.join(@app_dir, "app/controllers/**/*.rb")].each do |ctrl_path|
+          source = File.read(ctrl_path)
+          tree = Prism.parse(source).value
+          controller_class = extract_controller_class_from_path(ctrl_path)
+          all_ivars = controller_class ? (controller_ivar_types(ctrl_path, controller_class) rescue {}) : {}
+
+          collect_render_locals_from_tree(tree, all_ivars, locals_map)
+        end
+
+        locals_map
+      end
+
+      # Extract Ruby code fragments from ERB source.
+      def extract_erb_ruby(erb_source)
+        erb_source.scan(/<%[=#]?\s*(.*?)\s*-?%>/m).flatten
+      end
+
+      # Get context ivars for an ERB file (from its controller action).
+      def context_ivars_for_erb(erb_path)
+        relative = erb_path.sub("#{@app_dir}/", "")
+        view_relative = relative.sub(%r{\Aapp/views/}, "")
+        view_info = parse_view_path(view_relative)
+        return {} unless view_info
+
+        controller_file = find_controller_file(view_info[:controller_name])
+        return {} unless controller_file
+
+        extract_action_ivars(controller_file, view_info[:controller_class], view_info[:action])
+      end
+
+      def extract_controller_class_from_path(ctrl_path)
+        relative = ctrl_path.sub("#{@app_dir}/app/controllers/", "").sub(/\.rb\z/, "")
+        relative.split("/").map { |s| s.split(/[_-]/).map(&:capitalize).join }.join("::")
+      end
+
+      # Parse Ruby fragments from ERB and collect render calls with locals.
+      def collect_render_locals(ruby_fragment, context_ivars, locals_map)
+        # Match: render partial: "name", locals: { key: value, ... }
+        return unless ruby_fragment.match?(/render\b/)
+
+        wrapped = ruby_fragment.strip
+        begin
+          tree = Prism.parse(wrapped).value
+        rescue
+          return
+        end
+
+        collect_render_locals_from_tree(tree, context_ivars, locals_map)
+      end
+
+      # Traverse a Prism AST collecting render calls with locals.
+      def collect_render_locals_from_tree(tree, context_ivars, locals_map)
+        each_call(tree, :render) do |call|
+          args = call.arguments&.arguments
+          next unless args
+
+          partial_name = nil
+          locals_hash = nil
+
+          args.each do |arg|
+            next unless arg.is_a?(Prism::KeywordHashNode)
+
+            arg.elements.each do |assoc|
+              next unless assoc.is_a?(Prism::AssocNode)
+              next unless assoc.key.is_a?(Prism::SymbolNode)
+
+              case assoc.key.value
+              when "partial"
+                partial_name = extract_string_value(assoc.value)
+              when "locals"
+                locals_hash = assoc.value if assoc.value.is_a?(Prism::HashNode)
+              end
+            end
+          end
+
+          next unless partial_name && locals_hash
+
+          locals_hash.elements.each do |element|
+            next unless element.is_a?(Prism::AssocNode)
+            next unless element.key.is_a?(Prism::SymbolNode)
+
+            local_name = element.key.value
+            local_type = infer_local_value_type(element.value, context_ivars)
+            next unless local_type
+
+            existing = locals_map[partial_name][local_name]
+            locals_map[partial_name][local_name] = if existing && existing != local_type
+                                                     merge_types(existing, local_type)
+                                                   else
+                                                     local_type
+                                                   end
+          end
+        end
+      end
+
+      def extract_string_value(node)
+        case node
+        when Prism::StringNode then node.content
+        end
+      end
+
+      # Infer the type of a value passed as a local to a partial.
+      def infer_local_value_type(node, context_ivars)
+        case node
+        when Prism::InstanceVariableReadNode
+          ivar_name = node.name.to_s.sub(/\A@/, "")
+          context_ivars[ivar_name]
+        when Prism::StringNode, Prism::InterpolatedStringNode then "String"
+        when Prism::IntegerNode then "Integer"
+        when Prism::FloatNode then "Float"
+        when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
+        when Prism::TrueNode then "bool"
+        when Prism::FalseNode then "bool"
+        when Prism::NilNode then "nil"
+        when Prism::ArrayNode then "Array[untyped]"
+        when Prism::HashNode then "Hash[untyped, untyped]"
+        when Prism::CallNode
+          if node.name == :new && node.receiver
+            RbsInfer::Analyzer.extract_constant_path(node.receiver)
+          end
+        end
+      end
+
+      def merge_types(type_a, type_b)
+        types = [type_a, type_b].flat_map { |t| t.split(" | ") }.uniq
+        types.join(" | ")
+      end
+
+      # ── RBS output ────────────────────────────────────────────────
+
+      def build_rbs(class_name, ivar_types, local_types, helpers)
         lines = ["# Generated by rbs_infer (erb_convention)", ""]
         lines << "class #{class_name}"
 
         ivar_types.each do |name, type|
           lines << "  @#{name}: #{type}"
+        end
+
+        local_types.each do |name, type|
+          lines << "  attr_reader #{name}: #{type}"
         end
 
         helpers.each do |helper|
