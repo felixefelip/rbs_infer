@@ -151,6 +151,22 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       assert_erb_snapshot("posts_show", output_file: "app/views/posts/show.rbs")
     end
 
+    it "ERBPostsIndex matches expected RBS" do
+      assert_erb_snapshot("posts_index", output_file: "app/views/posts/index.rbs")
+    end
+
+    it "ERBPostsNew matches expected RBS" do
+      assert_erb_snapshot("posts_new", output_file: "app/views/posts/new.rbs")
+    end
+
+    it "ERBPostsEdit matches expected RBS" do
+      assert_erb_snapshot("posts_edit", output_file: "app/views/posts/edit.rbs")
+    end
+
+    it "ERBPartialPostsForm matches expected RBS" do
+      assert_erb_snapshot("posts_form_partial", output_file: "app/views/posts/_form.rbs")
+    end
+
     it "ERBLayoutsApplication matches expected RBS" do
       assert_erb_snapshot("layouts_application", output_file: "app/views/layouts/application.rbs")
     end

@@ -1,0 +1,16 @@
+<h1>Posts</h1>
+
+<div class="posts-list">
+  <% @posts.each do |post| %>
+    <div class="post-item">
+      <h2><%= link_to post.title, post %></h2>
+      <div class="post-meta">
+        <span><%= post.author_name %></span>
+        <%= post_status_badge(post) %>
+      </div>
+      <%= post_summary(post) %>
+    </div>
+  <% end %>
+</div>
+
+<%= link_to "New Post", new_post_path, class: "btn btn-primary" %>
