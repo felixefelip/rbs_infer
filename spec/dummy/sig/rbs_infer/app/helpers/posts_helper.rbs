@@ -1,4 +1,4 @@
 module PostsHelper
-  def post_status_badge: (untyped post) -> String
-  def post_summary: (untyped post, ?Integer length) -> String
+  def post_status_badge: (Post post) -> String
+  def post_summary: (Post post, ?Integer length) -> String
 end

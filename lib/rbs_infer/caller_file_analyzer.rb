@@ -62,7 +62,86 @@ module RbsInfer
       visitor.usages
     end
 
+    # Analyze pre-converted source code (e.g. ERB → Ruby) with known local/ivar types.
+    # Matches bare calls against target_methods (for included module methods).
+    def analyze_source(source, local_var_types: {})
+      result = Prism.parse(source)
+
+      # Resolve block param types from iterator calls on known-type collections
+      resolve_block_param_types(result.value, local_var_types)
+
+      visitor = NewCallCollector.new(
+        target_class: @target_class,
+        method_return_types: {},
+        local_var_types: local_var_types,
+        method_type_resolver: @method_type_resolver,
+        init_positional_params: @init_positional_params,
+        target_methods: @target_methods,
+        match_bare_calls: true
+      )
+      result.value.accept(visitor)
+
+      visitor.method_call_usages.each do |method_name, usages|
+        @method_call_usages[method_name].concat(usages)
+      end
+
+      visitor.usages
+    end
+
     private
+
+    ITERATOR_METHODS = RbsInfer::ITERATOR_METHODS
+
+    # Resolve block param types from iterator calls on known-type ivars/locals.
+    # e.g. @posts.each do |post| → post: Post (when @posts: Post::ActiveRecord_Relation)
+    def resolve_block_param_types(tree, local_var_types)
+      RbsInfer::Analyzer.find_all_nodes(tree) do |node|
+        node.is_a?(Prism::CallNode) && ITERATOR_METHODS.include?(node.name) && node.block
+      end.each do |call|
+        block = call.block
+        next unless block.is_a?(Prism::BlockNode)
+
+        params = block.parameters&.parameters
+        next unless params
+
+        param_names = []
+        params.requireds.each { |p| param_names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
+        next if param_names.empty?
+
+        collection_type = resolve_receiver_collection_type(call.receiver, local_var_types)
+        next unless collection_type
+
+        element_type = extract_element_type(collection_type)
+        next unless element_type
+
+        # First block param gets the element type
+        local_var_types[param_names.first] ||= element_type
+      end
+    end
+
+    def resolve_receiver_collection_type(receiver, local_var_types)
+      case receiver
+      when Prism::InstanceVariableReadNode
+        local_var_types[receiver.name.to_s.sub(/\A@/, "")]
+      when Prism::LocalVariableReadNode
+        local_var_types[receiver.name.to_s]
+      when Prism::CallNode
+        # method chain: e.g. @post.comments.recent → resolve via method_type_resolver
+        nil
+      end
+    end
+
+    # Extract element type from collection types.
+    # Post::ActiveRecord_Relation → Post
+    # Post::ActiveRecord_Associations_CollectionProxy → Post
+    # Array[Post] → Post
+    def extract_element_type(collection_type)
+      if collection_type =~ /\A(.+)::ActiveRecord_(?:Relation|Associations_CollectionProxy)\z/
+        $1
+      elsif collection_type =~ /\AArray\[(.+)\]\z/
+        $1
+      end
+    end
 
     def extract_attr_return_types(source, comments, tree)
       types = {}

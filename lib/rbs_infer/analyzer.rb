@@ -338,6 +338,11 @@ module RbsInfer
     )
     @source_index.files_referencing(@target_class).each { |file| analyzer.analyze(file) }
 
+    # For helper modules, also scan ERB views as callers
+    if @target_class.end_with?("Helper")
+      scan_erb_views_for_helper_calls(analyzer)
+    end
+
     result = {}
     analyzer.method_call_usages.each do |method_name, usages|
       merged = type_merger.merge_argument_types(usages)
@@ -345,6 +350,103 @@ module RbsInfer
       result[method_name] = merged unless merged.empty?
     end
     result
+  end
+
+  # Scan ERB views for bare helper method calls and resolve param types
+  # from the view's controller ivar context.
+  def scan_erb_views_for_helper_calls(analyzer)
+    app_dir = detect_app_dir
+    return unless app_dir
+
+    erb_files = Dir[File.join(app_dir, "app/views/**/*.{html,turbo_stream}.erb")].sort
+    return if erb_files.empty?
+
+    # Derive controller name from helper: PostsHelper → posts
+    controller_name = @target_class.sub(/Helper\z/, "").gsub("::", "/")
+    controller_name = controller_name.gsub(/([a-z])([A-Z])/, '\1_\2').downcase
+
+    erb_files.each do |erb_path|
+      relative = erb_path.sub("#{app_dir}/app/views/", "")
+
+      # For specific helpers, only scan views from the matching controller + layouts/partials
+      # ApplicationHelper applies to all views
+      unless @target_class == "ApplicationHelper"
+        view_controller = relative.split("/")[0..-2].join("/")
+        next unless view_controller == controller_name || relative.start_with?("layouts/") || relative.include?("/_")
+      end
+
+      erb_source = File.read(erb_path)
+      ruby_source = erb_to_ruby_safe(erb_source)
+      next unless ruby_source
+
+      # Build local_var_types from controller ivars
+      local_var_types = erb_ivar_types(app_dir, relative)
+
+      analyzer.analyze_source(ruby_source, local_var_types: local_var_types)
+    end
+  rescue => e
+    # Don't let ERB scanning failures break the main analysis
+    nil
+  end
+
+  def erb_to_ruby_safe(erb_source)
+    require "steep/source/erb_to_ruby_code"
+    Steep::Source::ErbToRubyCode.convert(erb_source.dup)
+  rescue
+    nil
+  end
+
+  # Resolve ivar types for an ERB view from its controller action.
+  def erb_ivar_types(app_dir, view_relative)
+    parts = view_relative.split("/")
+    filename = parts.last.sub(/\.(html|turbo_stream)\.erb\z/, "")
+
+    # Skip partials (start with _) — they don't have a direct controller action
+    return {} if filename.start_with?("_")
+
+    controller_parts = parts[0..-2]
+    controller_name = controller_parts.join("/")
+    controller_class = controller_parts.map { |p| p.split(/[_-]/).map(&:capitalize).join }.join("::") + "Controller"
+    action = filename
+
+    controller_file = Dir[File.join(app_dir, "app/controllers/#{controller_name}_controller.rb")].first
+    return {} unless controller_file && File.exist?(controller_file)
+
+    # Use Analyzer to get ivar types (cached)
+    @erb_ivar_cache ||= {}
+    cache_key = "#{controller_class}##{action}"
+    return @erb_ivar_cache[cache_key] if @erb_ivar_cache.key?(cache_key)
+
+    begin
+      ctrl_analyzer = Analyzer.new(
+        target_class: controller_class,
+        target_file: controller_file,
+        source_files: @source_files
+      )
+      rbs = ctrl_analyzer.generate_rbs
+      return(@erb_ivar_cache[cache_key] = {}) unless rbs
+
+      # Extract ivar types from generated RBS for the specific action
+      ivar_types = {}
+      rbs.each_line do |line|
+        stripped = line.strip
+        if (m = stripped.match(/\A@(\w+): (.+)\z/))
+          ivar_types[m[1]] = m[2]
+        end
+      end
+      @erb_ivar_cache[cache_key] = ivar_types
+    rescue
+      @erb_ivar_cache[cache_key] = {}
+    end
+  end
+
+  def detect_app_dir
+    # Derive app_dir from source_files (find a file matching app/controllers/*.rb)
+    sample = @source_files.find { |f| f.include?("app/controllers/") }
+    return nil unless sample
+    idx = sample.index("app/controllers/")
+    dir = sample[0...idx]
+    dir.empty? ? "." : dir.chomp("/")
   end
 
   # Extrai nomes dos parâmetros posicionais de cada método da classe-alvo

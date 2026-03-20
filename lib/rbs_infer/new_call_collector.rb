@@ -2,7 +2,7 @@ module RbsInfer
   class NewCallCollector < Prism::Visitor
     attr_reader :usages, :method_call_usages
 
-    def initialize(target_class:, method_return_types:, local_var_types:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {})
+    def initialize(target_class:, method_return_types:, local_var_types:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false)
       @target_class = target_class
       @method_return_types = method_return_types
       @local_var_types = local_var_types
@@ -10,6 +10,7 @@ module RbsInfer
       @caller_class_name = caller_class_name
       @init_positional_params = init_positional_params
       @target_methods = target_methods
+      @match_bare_calls = match_bare_calls
       @usages = []
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
     end
@@ -47,6 +48,15 @@ module RbsInfer
             args = extract_cross_class_args(node, @target_methods[method_name])
             @method_call_usages[method_name] << args unless args.empty?
           end
+        end
+      end
+
+      # Bare method calls matching target_methods (for included modules, e.g. helpers in ERB views)
+      if !@target_methods.empty? && node.receiver.nil? && node.arguments && @match_bare_calls
+        method_name = node.name.to_s
+        if @target_methods.key?(method_name)
+          args = extract_cross_class_args(node, @target_methods[method_name])
+          @method_call_usages[method_name] << args unless args.empty?
         end
       end
 
