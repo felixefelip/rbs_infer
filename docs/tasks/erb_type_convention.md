@@ -212,17 +212,21 @@ Reutilizar o `ClassBodyAttrAnalyzer` / `ClassMemberCollector` existentes no rbs_
 - Tipos inferidos: ivars resolvidas pelo contexto do controller, literais (`String`, `Integer`, `bool`, `nil`, etc.), `Klass.new`
 - Locals opcionais (presentes em alguns call sites mas não todos) resultam em union type
 
-### Fase 3 — Includes automáticos de helpers ✅ (parcial)
+### Fase 3 — Includes automáticos de helpers ✅
 
 - [x] Detectar helpers associados ao controller (`PostsHelper` para `PostsController`)
 - [x] Incluir `ApplicationHelper` em todas as classes
-- [ ] Incluir `ActionView::Helpers` para métodos como `content_tag`, `link_to`, etc.
-- [ ] Suporte a helpers adicionais via `helper_method` no controller
+- [x] Incluir `ActionView::Helpers` para métodos como `content_tag`, `link_to`, etc.
+- [x] Suporte a `helper_method` do controller (extrai assinaturas do RBS gerado)
 
 **Detalhes de implementação:**
 - `detect_helpers` resolve helper pelo nome do controller (ex: `PostsController` → `PostsHelper` se o arquivo existir)
 - `ApplicationHelper` incluído em todas as classes se `app/helpers/application_helper.rb` existir
-- Partials herdam helpers do contexto onde são renderizados (apenas `ApplicationHelper` por enquanto)
+- `ActionView::Helpers` incluído em todas as classes ERB
+- `collect_helper_methods` escaneia `ApplicationController` + controller específico para declarações `helper_method :name`
+- `extract_helper_method_signatures` parseia o AST com Prism, coleta nomes dos `helper_method`, e extrai assinaturas do RBS gerado pelo Analyzer
+- Cache de RBS do controller compartilhado entre `controller_ivar_types` e `extract_helper_method_signatures` via `controller_rbs`
+- Métodos helper aparecem como `def name: signature` na classe ERB
 
 ### Fase 4 — Integração com Steep (sem alterar ERB files)
 
