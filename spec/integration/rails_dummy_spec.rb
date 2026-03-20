@@ -101,4 +101,20 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   it "User::Displayable concern matches expected RBS" do
     assert_snapshot("user/displayable", target_class: "User::Displayable", target_file: "app/models/user/displayable.rb")
   end
+
+  it "ApplicationController rails_custom matches expected RBS" do
+    require "rbs_infer/rails_custom_generator"
+    require "tmpdir"
+    Dir.mktmpdir do |tmpdir|
+      generator = RbsInfer::RailsCustom::Generator.new(output_dir: tmpdir)
+      generator.generate_all
+      rbs = File.read(File.join(tmpdir, "application_controller.rbs"))
+
+      if ENV["UPDATE_EXPECTATIONS"]
+        expectations_dir.join("application_controller.rbs").write(rbs)
+      end
+
+      expect(rbs.chomp).to eq(expected_rbs("application_controller").chomp)
+    end
+  end
 end
