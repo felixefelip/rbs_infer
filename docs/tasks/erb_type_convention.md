@@ -181,31 +181,48 @@ Reutilizar o `ClassBodyAttrAnalyzer` / `ClassMemberCollector` existentes no rbs_
 
 ## Fases de implementação
 
-### Fase 1 — Geração básica de classes para views
+### Fase 1 — Geração básica de classes para views ✅
 
-- [ ] Implementar `RBSInferRailsErbConvention::Generator`
-- [ ] Scanner de `app/views/**/*.html.erb`
-- [ ] Converter path do arquivo → nome da classe (`ERBPostsShow`, `ERBPartialPostsForm`)
-- [ ] Extrair ivars do controller correspondente
-- [ ] Gerar RBS com ivars + includes de helpers
-- [ ] Rake task: `rbs_infer:erb:all`
-- [ ] Makefile target: `make rbs-erb`
-- [ ] Output em `sig/rbs_infer_erb/`
+- [x] Implementar `RbsInfer::ErbConvention::Generator` (`lib/rbs_infer/erb_convention_generator.rb`)
+- [x] Scanner de `app/views/**/*.{html,turbo_stream}.erb`
+- [x] Converter path do arquivo → nome da classe (`ERBPostsShow`, `ERBPartialPostsForm`)
+- [x] Extrair ivars do controller correspondente (via `Analyzer`, com filtro por `before_action` only/except)
+- [x] Gerar RBS com ivars + includes de helpers
+- [x] Rake task: `rbs_infer:erb:all` (`lib/tasks/rbs_infer_erb.rake`)
+- [x] Makefile target: `make rbs-erb`
+- [x] Output em `sig/rbs_infer_erb/` (preserva subpaths: `app/views/posts/show.rbs`)
 
-### Fase 2 — Inferência de locals para partials
+**Detalhes de implementação:**
+- Conversão ERB → Ruby usa `Steep::Source::ErbToRubyCode.convert` (fork do Steep)
+- Ivars filtradas por action: mapeia quais métodos escrevem cada ivar, cruza com `before_action` callbacks
+- Cache de ivar types por controller (`@controller_ivar_cache`)
+- 6 testes de integração cobrindo views, partials e layouts
 
-- [ ] Coletar call sites de `render` em controllers e views
-- [ ] Extrair `locals:` hash e inferir tipos dos valores
-- [ ] Gerar `attr_reader` para cada local
+### Fase 2 — Inferência de locals para partials ✅ (parcial)
+
+- [x] Coletar call sites de `render` em controllers e views (ERB + controllers)
+- [x] Extrair `locals:` hash e inferir tipos dos valores (ivars, literais, `Klass.new`)
+- [x] Gerar `attr_reader` para cada local
 - [ ] Suporte a `collection:` e `render @collection`
-- [ ] Merge de tipos quando partial é renderizada em múltiplos locais
+- [x] Merge de tipos quando partial é renderizada em múltiplos locais (union com `|`)
 
-### Fase 3 — Includes automáticos de helpers
+**Detalhes de implementação:**
+- ERB files convertidos com `ErbToRubyCode.convert` → parse Prism completo → extrai `render partial:` + `locals:`
+- Controllers escaneados via Prism AST para `render` calls
+- Tipos inferidos: ivars resolvidas pelo contexto do controller, literais (`String`, `Integer`, `bool`, `nil`, etc.), `Klass.new`
+- Locals opcionais (presentes em alguns call sites mas não todos) resultam em union type
 
-- [ ] Detectar helpers associados ao controller (`PostsHelper` para `PostsController`)
-- [ ] Incluir `ApplicationHelper` em todas as classes
+### Fase 3 — Includes automáticos de helpers ✅ (parcial)
+
+- [x] Detectar helpers associados ao controller (`PostsHelper` para `PostsController`)
+- [x] Incluir `ApplicationHelper` em todas as classes
 - [ ] Incluir `ActionView::Helpers` para métodos como `content_tag`, `link_to`, etc.
 - [ ] Suporte a helpers adicionais via `helper_method` no controller
+
+**Detalhes de implementação:**
+- `detect_helpers` resolve helper pelo nome do controller (ex: `PostsController` → `PostsHelper` se o arquivo existir)
+- `ApplicationHelper` incluído em todas as classes se `app/helpers/application_helper.rb` existir
+- Partials herdam helpers do contexto onde são renderizados (apenas `ApplicationHelper` por enquanto)
 
 ### Fase 4 — Integração com Steep (sem alterar ERB files)
 
@@ -315,3 +332,21 @@ end
 3. **Turbo/Stimulus templates**: `.turbo_stream.erb` segue a mesma convenção de naming.
 4. **Conflito de nomes**: Se existir uma classe real no app com o mesmo nome (ex: `ERBPostsShow`), incrementar um sufixo numérico para distinguir (ex: `ERBPostsShow1`).
 5. **Performance**: Deixar para o futuro. Otimizações de cache serão consideradas quando necessário.
+6. **ERB → Ruby conversion**: Usar `Steep::Source::ErbToRubyCode.convert` do fork do Steep em vez de regex. Preserva line numbers e lida com todos os tipos de tags ERB (`<%= %>`, `<% %>`, `<%# %>`, `<%- -%>`, etc.).
+7. **Dependência do Steep fork**: `Gemfile` do rbs_infer aponta para fork local (`/home/felix/workspaces/ruby-workspace/steep_fork/steep`). Gem não foi lançada, sem risco de breaking change.
+8. **Sem fallback regex**: Sempre usar `ErbToRubyCode.convert`, sem fallback para regex.
+
+---
+
+## Arquivos implementados
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `lib/rbs_infer/erb_convention_generator.rb` | Generator principal (Fases 1-3) |
+| `lib/tasks/rbs_infer_erb.rake` | Rake task `rbs_infer:erb:all` |
+| `lib/rbs_infer/railtie.rb` | Carrega rake task automaticamente no Rails |
+| `Makefile` | Target `rbs-erb` |
+| `spec/integration/rails_dummy_spec.rb` | 6 testes de integração ERB |
+| `spec/expectations/erb/` | 6 snapshots de expectativa |
+| `spec/dummy/app/views/posts/` | Views CRUD (index, show, new, edit, _form) |
+| `spec/dummy/app/views/layouts/application.html.erb` | Layout padrão |
