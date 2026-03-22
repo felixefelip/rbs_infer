@@ -13,4 +13,6 @@ class Post < ApplicationRecord
   def was_priority_high: () -> bool?
   def publish_in_transaction: () -> self
   def iterate_tags: () -> Tag::ActiveRecord_Associations_CollectionProxy
+  def test_enumerize_status: () -> Post::EnumerizeStatusAttribute
+  def test_enumerize_status_options: () -> Array[Array[untyped]]
 end
