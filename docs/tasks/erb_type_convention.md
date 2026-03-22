@@ -193,7 +193,7 @@ Reutilizar o `ClassBodyAttrAnalyzer` / `ClassMemberCollector` existentes no rbs_
 - [x] Output em `sig/rbs_infer_erb/` (preserva subpaths: `app/views/posts/show.rbs`)
 
 **Detalhes de implementação:**
-- Conversão ERB → Ruby usa `Steep::Source::ErbToRubyCode.convert` (fork do Steep)
+- Conversão ERB → Ruby usa `Herb.extract_ruby` (gem Herb)
 - Ivars filtradas por action: mapeia quais métodos escrevem cada ivar, cruza com `before_action` callbacks
 - Cache de ivar types por controller (`@controller_ivar_cache`)
 - 6 testes de integração cobrindo views, partials e layouts
@@ -207,7 +207,7 @@ Reutilizar o `ClassBodyAttrAnalyzer` / `ClassMemberCollector` existentes no rbs_
 - [x] Merge de tipos quando partial é renderizada em múltiplos locais (union com `|`)
 
 **Detalhes de implementação:**
-- ERB files convertidos com `ErbToRubyCode.convert` → parse Prism completo → extrai `render partial:` + `locals:`
+- ERB files convertidos com `Herb.extract_ruby` → parse Prism completo → extrai `render partial:` + `locals:`
 - Controllers escaneados via Prism AST para `render` calls
 - Tipos inferidos: ivars resolvidas pelo contexto do controller, literais (`String`, `Integer`, `bool`, `nil`, etc.), `Klass.new`
 - Locals opcionais (presentes em alguns call sites mas não todos) resultam em union type
@@ -238,7 +238,7 @@ A abordagem escolhida é **patch no fork do Steep** (`support_erb/convert_erb_co
 
 ```
 Source.parse(source_code, path:)
-  → ErbToRubyCode.convert(source_code)  # strip tags ERB → Ruby puro
+  → Herb.extract_ruby(source_code)  # strip tags ERB → Ruby puro
   → Parser extrai comments (# @type self: ...)
   → Se encontrar annotation → usa como self_type
   → Senão → default Object
@@ -246,12 +246,12 @@ Source.parse(source_code, path:)
 
 #### Implementação no fork Steep
 
-Interceptar em `Source.parse`, após `ErbToRubyCode.convert` e antes do parsing:
+Interceptar em `Source.parse`, após `Herb.extract_ruby` e antes do parsing:
 
 ```ruby
 # Em lib/steep/source.rb, dentro de Source.parse:
 if path.to_s.end_with?(".erb")
-  source_code = ErbToRubyCode.convert(source_code)
+  source_code = Herb.extract_ruby(source_code)
   if (erb_class = erb_self_type_for(path))
     source_code = "# @type self: #{erb_class}\n" + source_code
   end
@@ -344,9 +344,9 @@ end
 3. **Turbo/Stimulus templates**: `.turbo_stream.erb` segue a mesma convenção de naming.
 4. **Conflito de nomes**: Se existir uma classe real no app com o mesmo nome (ex: `ERBPostsShow`), incrementar um sufixo numérico para distinguir (ex: `ERBPostsShow1`).
 5. **Performance**: Deixar para o futuro. Otimizações de cache serão consideradas quando necessário.
-6. **ERB → Ruby conversion**: Usar `Steep::Source::ErbToRubyCode.convert` do fork do Steep em vez de regex. Preserva line numbers e lida com todos os tipos de tags ERB (`<%= %>`, `<% %>`, `<%# %>`, `<%- -%>`, etc.).
-7. **Dependência do Steep fork**: `Gemfile` do rbs_infer aponta para fork local (`/home/felix/workspaces/ruby-workspace/steep_fork/steep`). Gem não foi lançada, sem risco de breaking change.
-8. **Sem fallback regex**: Sempre usar `ErbToRubyCode.convert`, sem fallback para regex.
+6. **ERB → Ruby conversion**: Usar `Herb.extract_ruby` (gem Herb) em vez de regex. Preserva line numbers e lida com todos os tipos de tags ERB (`<%= %>`, `<% %>`, `<%# %>`, `<%- -%>`, etc.).
+7. **Sem dependência do Steep para ERB parsing**: A gem Herb é usada diretamente, sem depender do fork do Steep.
+8. **Sem fallback regex**: Sempre usar `Herb.extract_ruby`, sem fallback para regex.
 
 ---
 

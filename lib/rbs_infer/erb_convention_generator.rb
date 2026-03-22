@@ -353,8 +353,8 @@ module RbsInfer
       end
 
       def erb_to_ruby(erb_source)
-        require "steep/source/erb_to_ruby_code"
-        Steep::Source::ErbToRubyCode.convert(erb_source.dup)
+        require "herb"
+        Herb.extract_ruby(erb_source, comments: true)
       end
 
       def extract_controller_class_from_path(ctrl_path)

@@ -392,8 +392,8 @@ module RbsInfer
   end
 
   def erb_to_ruby_safe(erb_source)
-    require "steep/source/erb_to_ruby_code"
-    Steep::Source::ErbToRubyCode.convert(erb_source.dup)
+    require "herb"
+    Herb.extract_ruby(erb_source, comments: true)
   rescue
     nil
   end
