@@ -202,11 +202,13 @@ module RbsInfer
         lines << ""
         lines << "class ::#{class_name}"
         lines << "  extend Enumerize::ActiveRecordSupport"
+        lines << ""
 
         enumerize_calls.each do |call|
           lines.concat(build_instance_methods(call))
           lines.concat(build_predicate_methods(call))
           lines.concat(build_scope_methods(call))
+          lines.concat(build_class_attribute_accessor(call))
         end
 
         lines << "end"
@@ -300,6 +302,10 @@ module RbsInfer
 
         lines << "" unless lines.empty?
         lines
+      end
+
+      def build_class_attribute_accessor(call)
+        ["  def self.#{call[:name]}: () -> Enumerize::Attribute", ""]
       end
     end
   end
