@@ -4,6 +4,7 @@ class ERBPostsShow
   @comments: Comment::ActiveRecord_Relation
   @post: Post
   def current_user: () -> User?
+  def params: () -> ActionController::Parameters
   include PostsHelper
   include ApplicationHelper
   include ActionView::Helpers

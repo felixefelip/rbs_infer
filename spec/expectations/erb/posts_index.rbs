@@ -3,6 +3,7 @@
 class ERBPostsIndex
   @posts: Post::ActiveRecord_Relation
   def current_user: () -> User?
+  def params: () -> ActionController::Parameters
   include PostsHelper
   include ApplicationHelper
   include ActionView::Helpers

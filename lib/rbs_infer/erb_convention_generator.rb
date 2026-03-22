@@ -471,6 +471,8 @@ module RbsInfer
           lines << "  def #{name}: #{signature}"
         end
 
+        lines << "  def params: () -> ActionController::Parameters"
+
         helpers.each do |helper|
           lines << "  include #{helper}"
         end

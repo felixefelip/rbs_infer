@@ -368,6 +368,8 @@ module RbsInfer
     erb_files.each do |erb_path|
       relative = erb_path.sub("#{app_dir}/app/views/", "")
 
+      # Tá horrível esse código, não pode ser específico para o Rails, a gem deve ser genérica para qualquer projeto Ruby.
+      # Precisa de uma forma de configurar quais arquivos analisar como callers para cada target_class, talvez via um bloco passado no initialize do Analyzer.
       # For specific helpers, only scan views from the matching controller + layouts/partials
       # ApplicationHelper applies to all views
       unless @target_class == "ApplicationHelper"
