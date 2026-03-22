@@ -67,4 +67,12 @@ class Post < ApplicationRecord
       puts tag.name
     end
   end
+
+  def test_enumerize_status
+    Post.status
+  end
+
+  def test_enumerize_status_options
+    Post.status.options
+  end
 end
