@@ -5,16 +5,32 @@ class ::Post::EnumerizeStatusValue < Enumerize::Value
   def published?: () -> bool
   def archived?: () -> bool
 end
+class ::Post::EnumerizeStatusAttribute < Enumerize::Attribute
+  def draft: () -> Post::EnumerizeStatusValue
+  def published: () -> Post::EnumerizeStatusValue
+  def archived: () -> Post::EnumerizeStatusValue
+end
 class ::Post::EnumerizePriorityValue < Enumerize::Value
   def low?: () -> bool
   def medium?: () -> bool
   def high?: () -> bool
+end
+class ::Post::EnumerizePriorityAttribute < Enumerize::Attribute
+  def low: () -> Post::EnumerizePriorityValue
+  def medium: () -> Post::EnumerizePriorityValue
+  def high: () -> Post::EnumerizePriorityValue
 end
 class ::Post::EnumerizeCategoryValue < Enumerize::Value
   def tech?: () -> bool
   def lifestyle?: () -> bool
   def travel?: () -> bool
   def food?: () -> bool
+end
+class ::Post::EnumerizeCategoryAttribute < Enumerize::Attribute
+  def tech: () -> Post::EnumerizeCategoryValue
+  def lifestyle: () -> Post::EnumerizeCategoryValue
+  def travel: () -> Post::EnumerizeCategoryValue
+  def food: () -> Post::EnumerizeCategoryValue
 end
 
 class ::Post
@@ -36,14 +52,14 @@ class ::Post
   def self.archived: () -> Post::ActiveRecord_Relation
   def self.not_archived: () -> Post::ActiveRecord_Relation
 
-  def self.status: () -> Enumerize::Attribute
+  def self.status: () -> Post::EnumerizeStatusAttribute
 
   def priority: () -> Post::EnumerizePriorityValue?
   def priority=: (String | Symbol | nil) -> (String | Symbol | nil)
   def priority_text: () -> String?
   def priority_value: () -> String?
 
-  def self.priority: () -> Enumerize::Attribute
+  def self.priority: () -> Post::EnumerizePriorityAttribute
 
   def category: () -> Post::EnumerizeCategoryValue
   def category=: (String | Symbol | nil) -> (String | Symbol | nil)
@@ -59,5 +75,6 @@ class ::Post
   def self.food: () -> Post::ActiveRecord_Relation
   def self.not_food: () -> Post::ActiveRecord_Relation
 
-  def self.category: () -> Enumerize::Attribute
+  def self.category: () -> Post::EnumerizeCategoryAttribute
+
 end

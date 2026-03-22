@@ -196,7 +196,9 @@ module RbsInfer
           call[:class_name] = class_name
           call[:relation_type] = "#{class_name}::ActiveRecord_Relation"
           call[:value_type] = "#{class_name}::Enumerize#{call[:name].capitalize}Value"
+          call[:attribute_type] = "#{class_name}::Enumerize#{call[:name].capitalize}Attribute"
           lines.concat(build_value_class(call))
+          lines.concat(build_attribute_class(call))
         end
 
         lines << ""
@@ -304,8 +306,20 @@ module RbsInfer
         lines
       end
 
+      def build_attribute_class(call)
+        lines = []
+        lines << "class ::#{call[:attribute_type]} < Enumerize::Attribute"
+
+        call[:values].each do |value|
+          lines << "  def #{value}: () -> #{call[:value_type]}"
+        end
+
+        lines << "end"
+        lines
+      end
+
       def build_class_attribute_accessor(call)
-        ["  def self.#{call[:name]}: () -> Enumerize::Attribute", ""]
+        ["  def self.#{call[:name]}: () -> #{call[:attribute_type]}", ""]
       end
     end
   end
