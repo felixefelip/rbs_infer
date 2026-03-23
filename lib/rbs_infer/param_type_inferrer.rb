@@ -377,17 +377,13 @@ module RbsInfer
       end
     end
 
-    # Extrai o tipo do elemento de uma coleção
+    # Extrai o tipo do elemento de uma coleção via RBS definitions
     def extract_element_type(collection_type)
-      # AR CollectionProxy: Foo::Bar::ActiveRecord_Associations_CollectionProxy → Foo::Bar
-      if collection_type =~ /(.+)::ActiveRecord_Associations_CollectionProxy\z/
-        return $1.sub(/\A::/, "")
-      end
-      # Array[Type] → Type
-      if collection_type =~ /\AArray\[(.+)\]\z/
-        return $1
-      end
-      nil
+      rbs_definition_resolver.resolve_each_element_type(collection_type)
+    end
+
+    def rbs_definition_resolver
+      @rbs_definition_resolver ||= RbsDefinitionResolver.new
     end
 
     # Resolve nome curto de constante no namespace do caller
