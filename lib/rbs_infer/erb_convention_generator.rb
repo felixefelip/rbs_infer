@@ -334,9 +334,11 @@ module RbsInfer
           erb_source = File.read(erb_path)
           ruby_code = erb_to_ruby(erb_source)
           context_ivars = context_ivars_for_erb(erb_path)
+          caller_dir = caller_view_dir_from_erb(erb_path)
 
           tree = Prism.parse(ruby_code).value
-          collect_render_locals_from_tree(tree, context_ivars, locals_map)
+          local_var_types = build_local_var_types(tree, context_ivars)
+          collect_render_locals_from_tree(tree, context_ivars, locals_map, caller_dir: caller_dir, local_var_types: local_var_types)
         end
 
         # Scan controller files for render calls
@@ -345,8 +347,9 @@ module RbsInfer
           tree = Prism.parse(source).value
           controller_class = extract_controller_class_from_path(ctrl_path)
           all_ivars = controller_class ? (controller_ivar_types(ctrl_path, controller_class) rescue {}) : {}
+          caller_dir = caller_view_dir_from_controller(ctrl_path)
 
-          collect_render_locals_from_tree(tree, all_ivars, locals_map)
+          collect_render_locals_from_tree(tree, all_ivars, locals_map, caller_dir: caller_dir)
         end
 
         locals_map
@@ -375,8 +378,79 @@ module RbsInfer
         extract_action_ivars(controller_file, view_info[:controller_class], view_info[:action])
       end
 
+      # Extract the view directory for an ERB caller.
+      # "app/views/posts/edit.html.erb" → "posts"
+      def caller_view_dir_from_erb(erb_path)
+        relative = erb_path.sub("#{@app_dir}/", "").sub(%r{\Aapp/views/}, "")
+        parts = relative.split("/")
+        parts.pop # remove filename
+        parts.empty? ? nil : parts.join("/")
+      end
+
+      # Extract the view directory for a controller caller.
+      # "app/controllers/posts_controller.rb" → "posts"
+      # "app/controllers/admin/posts_controller.rb" → "admin/posts"
+      def caller_view_dir_from_controller(ctrl_path)
+        relative = ctrl_path.sub("#{@app_dir}/app/controllers/", "").sub(/_controller\.rb\z/, "")
+        relative.empty? ? nil : relative
+      end
+
+      # Resolve a short partial name to a full path using the caller's directory.
+      # "form" with caller_dir "posts" → "posts/form"
+      # "posts/form" (already qualified) → "posts/form"
+      def resolve_partial_name(partial_name, caller_dir)
+        return partial_name if partial_name.include?("/") || caller_dir.nil?
+
+        "#{caller_dir}/#{partial_name}"
+      end
+
+      # Build a map of local variable names to their inferred types
+      # by analyzing iterator blocks like `@comments.each do |comment|`.
+      def build_local_var_types(tree, context_ivars)
+        local_types = {}
+        collect_iterator_var_types(tree, context_ivars, local_types)
+        local_types
+      end
+
+      # Recursively collect block variable types from iterator patterns.
+      # Handles: @ivar.each { |x| ... }, @ivar.map { |x| ... }, etc.
+      def collect_iterator_var_types(node, context_ivars, local_types)
+        if node.is_a?(Prism::CallNode) && node.block.is_a?(Prism::BlockNode)
+          block = node.block
+          params = block.parameters&.parameters
+
+          if params && node.receiver.is_a?(Prism::InstanceVariableReadNode)
+            ivar_name = node.receiver.name.to_s.sub(/\A@/, "")
+            collection_type = context_ivars[ivar_name]
+
+            if collection_type
+              element_type = element_type_from_collection(collection_type)
+              if element_type && params.respond_to?(:requireds)
+                first_param = params.requireds.first
+                if first_param.respond_to?(:name)
+                  local_types[first_param.name.to_s] = element_type
+                end
+              end
+            end
+          end
+        end
+
+        node.compact_child_nodes.each { |child| collect_iterator_var_types(child, context_ivars, local_types) }
+      end
+
+      # Extract element type from a collection type via RBS definitions.
+      # Looks up the `each` method's block parameter type — works for any
+      # collection class with `each` defined in RBS.
+      def element_type_from_collection(type)
+        rbs_definition_resolver.resolve_each_element_type(type)
+      end
+
+      def rbs_definition_resolver
+        @rbs_definition_resolver ||= RbsDefinitionResolver.new
+      end
+
       # Traverse a Prism AST collecting render calls with locals.
-      def collect_render_locals_from_tree(tree, context_ivars, locals_map)
+      def collect_render_locals_from_tree(tree, context_ivars, locals_map, caller_dir: nil, local_var_types: {})
         each_call(tree, :render) do |call|
           args = call.arguments&.arguments
           next unless args
@@ -400,6 +474,7 @@ module RbsInfer
             end
           end
 
+          partial_name = resolve_partial_name(partial_name, caller_dir) if partial_name
           next unless partial_name && locals_hash
 
           locals_hash.elements.each do |element|
@@ -407,7 +482,7 @@ module RbsInfer
             next unless element.key.is_a?(Prism::SymbolNode)
 
             local_name = element.key.value
-            local_type = infer_local_value_type(element.value, context_ivars)
+            local_type = infer_local_value_type(element.value, context_ivars, local_var_types: local_var_types)
             next unless local_type
 
             existing = locals_map[partial_name][local_name]
@@ -427,8 +502,10 @@ module RbsInfer
       end
 
       # Infer the type of a value passed as a local to a partial.
-      def infer_local_value_type(node, context_ivars)
+      def infer_local_value_type(node, context_ivars, local_var_types: {})
         case node
+        when Prism::LocalVariableReadNode
+          local_var_types[node.name.to_s]
         when Prism::InstanceVariableReadNode
           ivar_name = node.name.to_s.sub(/\A@/, "")
           context_ivars[ivar_name]

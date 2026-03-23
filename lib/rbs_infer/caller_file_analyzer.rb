@@ -131,16 +131,11 @@ module RbsInfer
       end
     end
 
-    # Extract element type from collection types.
-    # Post::ActiveRecord_Relation → Post
-    # Post::ActiveRecord_Associations_CollectionProxy → Post
-    # Array[Post] → Post
+    # Extract element type from collection types via RBS definitions.
+    # Looks up the `each` method's block parameter type.
     def extract_element_type(collection_type)
-      if collection_type =~ /\A(.+)::ActiveRecord_(?:Relation|Associations_CollectionProxy)\z/
-        $1
-      elsif collection_type =~ /\AArray\[(.+)\]\z/
-        $1
-      end
+      @rbs_definition_resolver ||= RbsDefinitionResolver.new
+      @rbs_definition_resolver.resolve_each_element_type(collection_type)
     end
 
     def extract_attr_return_types(source, comments, tree)

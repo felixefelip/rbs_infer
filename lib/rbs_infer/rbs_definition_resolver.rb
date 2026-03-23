@@ -50,6 +50,35 @@ module RbsInfer
       nil
     end
 
+    # Resolve the element type of a collection by looking up the `each` method's
+    # block parameter type via RBS definitions.
+    # Works for any class with `each` defined in RBS (Array, Set, ActiveRecord_Relation, etc.)
+    def resolve_each_element_type(collection_type)
+      return nil unless rbs_builder
+
+      type_name = build_rbs_type_name(collection_type)
+      return nil unless type_name
+
+      defn = rbs_builder.build_instance(type_name)
+      each_method = defn&.methods&.[](:each)
+      return nil unless each_method
+
+      each_method.defs.each do |d|
+        block = d.type.block
+        next unless block
+
+        first_param = block.type.required_positionals.first
+        next unless first_param
+
+        formatted = format_rbs_return_type(first_param.type, collection_type)
+        return formatted if formatted && formatted != "untyped"
+      end
+
+      nil
+    rescue => _e
+      nil
+    end
+
     def format_rbs_return_type(rbs_type, context_class = nil)
       case rbs_type
       when RBS::Types::Bases::Instance

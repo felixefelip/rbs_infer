@@ -167,6 +167,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       assert_erb_snapshot("posts_form_partial", output_file: "app/views/posts/_form.rbs")
     end
 
+    it "ERBPartialPostsComment matches expected RBS" do
+      assert_erb_snapshot("posts_comment_partial", output_file: "app/views/posts/_comment.rbs")
+    end
+
     it "ERBLayoutsApplication matches expected RBS" do
       assert_erb_snapshot("layouts_application", output_file: "app/views/layouts/application.rbs")
     end

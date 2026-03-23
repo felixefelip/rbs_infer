@@ -2,6 +2,7 @@
 
 class ERBLayoutsApplication
   def current_user: () -> User?
+  def params: () -> ActionController::Parameters
   include ApplicationHelper
   include ActionView::Helpers
   include _RbsRailsPathHelpers

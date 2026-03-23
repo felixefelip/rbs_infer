@@ -8,3 +8,9 @@
 <div class="post-body">
   <%= post_summary(@post) %>
 </div>
+
+<div class="comments">
+  <% @comments.each do |comment| %>
+    <%= render partial: "comment", locals: { comment: comment } %>
+  <% end %>
+</div>
