@@ -2,9 +2,6 @@
 
 class ERBPartialPostsComment
   attr_reader comment: Comment
-  def current_user: () -> User?
   def params: () -> ActionController::Parameters
-  include ApplicationHelper
-  include ActionView::Helpers
-  include _RbsRailsPathHelpers
+  include ActionViewContext
 end

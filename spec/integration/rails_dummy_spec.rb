@@ -110,7 +110,11 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     require "rbs_infer/rails_custom_generator"
     require "tmpdir"
     Dir.mktmpdir do |tmpdir|
-      generator = RbsInfer::RailsCustom::Generator.new(output_dir: tmpdir)
+      generator = RbsInfer::RailsCustom::Generator.new(
+        output_dir: tmpdir,
+        app_dir: Dir.pwd,
+        source_files: source_files
+      )
       generator.generate_all
       rbs = File.read(File.join(tmpdir, "application_controller.rbs"))
 
@@ -119,6 +123,26 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       end
 
       expect(rbs.chomp).to eq(expected_rbs("application_controller").chomp)
+    end
+  end
+
+  it "ActionViewContext rails_custom matches expected RBS" do
+    require "rbs_infer/rails_custom_generator"
+    require "tmpdir"
+    Dir.mktmpdir do |tmpdir|
+      generator = RbsInfer::RailsCustom::Generator.new(
+        output_dir: tmpdir,
+        app_dir: Dir.pwd,
+        source_files: source_files
+      )
+      generator.generate_all
+      rbs = File.read(File.join(tmpdir, "action_view_context.rbs"))
+
+      if ENV["UPDATE_EXPECTATIONS"]
+        expectations_dir.join("rails_custom_action_view_context.rbs").write(rbs)
+      end
+
+      expect(rbs.chomp).to eq(expected_rbs("rails_custom_action_view_context").chomp)
     end
   end
 
