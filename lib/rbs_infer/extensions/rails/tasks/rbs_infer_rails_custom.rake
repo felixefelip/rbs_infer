@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "../rbs_infer/rails_custom_generator"
+require_relative "../custom_generator"
 
 namespace :rbs_infer do
   namespace :rails_custom do
@@ -10,7 +10,7 @@ namespace :rbs_infer do
       output_dir = File.join(app_dir, "sig/rbs_rails_custom")
       source_files = Dir[File.join(app_dir, "app/**/*.rb")]
 
-      generator = RbsInfer::RailsCustom::Generator.new(
+      generator = RbsInfer::Extensions::Rails::CustomGenerator.new(
         output_dir: output_dir,
         app_dir: app_dir,
         source_files: source_files

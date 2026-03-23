@@ -19,10 +19,10 @@ rbs-helpers:
 	cd $(DUMMY_DIR) && $(RBS_INFER) app/helpers/ --output --output-dir $(OUTPUT_DIR)
 
 rbs-rails-custom:
-	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/rails_custom_generator'; RbsInfer::RailsCustom::Generator.new(output_dir: 'sig/rbs_rails_custom').generate_all"
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/extensions/rails/custom_generator'; RbsInfer::Extensions::Rails::CustomGenerator.new(output_dir: 'sig/rbs_rails_custom').generate_all"
 
 rbs-erb:
-	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/erb_convention_generator'; RbsInfer::ErbConvention::Generator.new(app_dir: '.', output_dir: 'sig/rbs_infer_erb', source_files: Dir['app/**/*.rb']).generate_all"
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/extensions/rails/erb_convention_generator'; RbsInfer::Extensions::Rails::ErbConventionGenerator.new(app_dir: '.', output_dir: 'sig/rbs_infer_erb', source_files: Dir['app/**/*.rb']).generate_all"
 
 ## Gerar RBS apenas para arquivo específico passado como argumento
 

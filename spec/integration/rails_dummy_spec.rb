@@ -107,10 +107,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   end
 
   it "ApplicationController rails_custom matches expected RBS" do
-    require "rbs_infer/rails_custom_generator"
+    require "rbs_infer/extensions/rails/custom_generator"
     require "tmpdir"
     Dir.mktmpdir do |tmpdir|
-      generator = RbsInfer::RailsCustom::Generator.new(
+      generator = RbsInfer::Extensions::Rails::CustomGenerator.new(
         output_dir: tmpdir,
         app_dir: Dir.pwd,
         source_files: source_files
@@ -127,10 +127,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   end
 
   it "ActionViewContext rails_custom matches expected RBS" do
-    require "rbs_infer/rails_custom_generator"
+    require "rbs_infer/extensions/rails/custom_generator"
     require "tmpdir"
     Dir.mktmpdir do |tmpdir|
-      generator = RbsInfer::RailsCustom::Generator.new(
+      generator = RbsInfer::Extensions::Rails::CustomGenerator.new(
         output_dir: tmpdir,
         app_dir: Dir.pwd,
         source_files: source_files
@@ -148,9 +148,9 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   describe "ERB convention generator" do
     let(:erb_generator) do
-      require "rbs_infer/erb_convention_generator"
+      require "rbs_infer/extensions/rails/erb_convention_generator"
       @erb_tmpdir = Dir.mktmpdir
-      RbsInfer::ErbConvention::Generator.new(
+      RbsInfer::Extensions::Rails::ErbConventionGenerator.new(
         app_dir: Dir.pwd,
         output_dir: @erb_tmpdir,
         source_files: source_files
