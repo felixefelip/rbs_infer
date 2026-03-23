@@ -18,11 +18,12 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     end
   end
 
-  def generate_rbs(target_class:, target_file:)
+  def generate_rbs(target_class:, target_file:, **kwargs)
     RbsInfer::Analyzer.new(
       target_class: target_class,
       target_file: target_file,
-      source_files: source_files
+      source_files: source_files,
+      **kwargs
     ).generate_rbs
   end
 
@@ -32,8 +33,8 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   # To regenerate expectations after intentional changes:
   #   UPDATE_EXPECTATIONS=1 bundle exec rspec spec/integration/
-  def assert_snapshot(name, target_class:, target_file:)
-    rbs = generate_rbs(target_class: target_class, target_file: target_file)
+  def assert_snapshot(name, target_class:, target_file:, **kwargs)
+    rbs = generate_rbs(target_class: target_class, target_file: target_file, **kwargs)
 
     if ENV["UPDATE_EXPECTATIONS"]
       expectations_dir.join("#{name}.rbs").write(rbs)
@@ -103,7 +104,9 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   end
 
   it "ApplicationHelper matches expected RBS" do
-    assert_snapshot("application_helper", target_class: "ApplicationHelper", target_file: "app/helpers/application_helper.rb")
+    require "rbs_infer/extensions/rails/erb_caller_resolver"
+    erb_resolver = RbsInfer::Extensions::Rails::ErbCallerResolver.new(app_dir: Dir.pwd, source_files: source_files)
+    assert_snapshot("application_helper", target_class: "ApplicationHelper", target_file: "app/helpers/application_helper.rb", extra_caller_sources: erb_resolver)
   end
 
   it "ApplicationController rails_custom matches expected RBS" do
