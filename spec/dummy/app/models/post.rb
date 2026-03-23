@@ -18,6 +18,8 @@ class Post < ApplicationRecord
   validates :title, presence: true
   validates :body, presence: true
 
+  delegate :email, to: :user, prefix: true
+
   def summary(length = 100)
     body.to_s.truncate(length)
   end
