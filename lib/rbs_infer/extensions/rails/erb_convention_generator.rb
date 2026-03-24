@@ -512,6 +512,11 @@ module RbsInfer
           when Prism::CallNode
             if node.name == :new && node.receiver
               RbsInfer::Analyzer.extract_constant_path(node.receiver)
+            elsif node.receiver
+              receiver_type = infer_local_value_type(node.receiver, context_ivars, local_var_types: local_var_types)
+              if receiver_type
+                rbs_definition_resolver.resolve_via_rbs_builder(:instance, receiver_type, node.name)
+              end
             end
           end
         end
