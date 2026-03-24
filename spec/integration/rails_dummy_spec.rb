@@ -44,69 +44,69 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   end
 
   it "User model matches expected RBS" do
-    assert_snapshot("user", target_class: "User", target_file: "app/models/user.rb")
+    assert_snapshot("models/user", target_class: "User", target_file: "app/models/user.rb")
   end
 
   it "Post model matches expected RBS" do
-    assert_snapshot("post", target_class: "Post", target_file: "app/models/post.rb")
+    assert_snapshot("models/post", target_class: "Post", target_file: "app/models/post.rb")
   end
 
   it "Comment model matches expected RBS" do
-    assert_snapshot("comment", target_class: "Comment", target_file: "app/models/comment.rb")
+    assert_snapshot("models/comment", target_class: "Comment", target_file: "app/models/comment.rb")
   end
 
   it "Tag model matches expected RBS" do
-    assert_snapshot("tag", target_class: "Tag", target_file: "app/models/tag.rb")
+    assert_snapshot("models/tag", target_class: "Tag", target_file: "app/models/tag.rb")
   end
 
   it "PostTag model matches expected RBS" do
-    assert_snapshot("post_tag", target_class: "PostTag", target_file: "app/models/post_tag.rb")
+    assert_snapshot("models/post_tag", target_class: "PostTag", target_file: "app/models/post_tag.rb")
   end
 
   it "PostsController matches expected RBS" do
-    assert_snapshot("posts_controller", target_class: "PostsController", target_file: "app/controllers/posts_controller.rb")
+    assert_snapshot("controllers/posts_controller", target_class: "PostsController", target_file: "app/controllers/posts_controller.rb")
   end
 
   it "UsersController matches expected RBS" do
-    assert_snapshot("users_controller", target_class: "UsersController", target_file: "app/controllers/users_controller.rb")
+    assert_snapshot("controllers/users_controller", target_class: "UsersController", target_file: "app/controllers/users_controller.rb")
   end
 
   it "PostPublisher service matches expected RBS" do
-    assert_snapshot("post_publisher", target_class: "PostPublisher", target_file: "app/services/post_publisher.rb")
+    assert_snapshot("services/post_publisher", target_class: "PostPublisher", target_file: "app/services/post_publisher.rb")
   end
 
   it "EmailNotifier service matches expected RBS" do
-    assert_snapshot("email_notifier", target_class: "EmailNotifier", target_file: "app/services/email_notifier.rb")
+    assert_snapshot("services/email_notifier", target_class: "EmailNotifier", target_file: "app/services/email_notifier.rb")
   end
 
   it "TagDestroy service matches expected RBS" do
-    assert_snapshot("tag_destroy", target_class: "TagDestroy", target_file: "app/services/tag_destroy.rb")
+    assert_snapshot("services/tag_destroy", target_class: "TagDestroy", target_file: "app/services/tag_destroy.rb")
   end
 
   it "ParseXml service matches expected RBS" do
-    assert_snapshot("parse_xml", target_class: "ParseXml", target_file: "app/services/parse_xml.rb")
+    assert_snapshot("services/parse_xml", target_class: "ParseXml", target_file: "app/services/parse_xml.rb")
   end
 
   it "Post::Taggable concern matches expected RBS" do
-    assert_snapshot("post/taggable", target_class: "Post::Taggable", target_file: "app/models/post/taggable.rb")
+    assert_snapshot("models/post/taggable", target_class: "Post::Taggable", target_file: "app/models/post/taggable.rb")
   end
 
   it "Post::Notifiable concern matches expected RBS" do
-    assert_snapshot("post/notifiable", target_class: "Post::Notifiable", target_file: "app/models/post/notifiable.rb")
+    assert_snapshot("models/post/notifiable", target_class: "Post::Notifiable", target_file: "app/models/post/notifiable.rb")
   end
 
   it "User::Recoverable concern matches expected RBS" do
-    assert_snapshot("user/recoverable", target_class: "User::Recoverable", target_file: "app/models/user/recoverable.rb")
+    assert_snapshot("models/user/recoverable", target_class: "User::Recoverable", target_file: "app/models/user/recoverable.rb")
   end
 
   it "User::Displayable concern matches expected RBS" do
-    assert_snapshot("user/displayable", target_class: "User::Displayable", target_file: "app/models/user/displayable.rb")
+    assert_snapshot("models/user/displayable", target_class: "User::Displayable", target_file: "app/models/user/displayable.rb")
   end
 
   it "ApplicationHelper matches expected RBS" do
     require "rbs_infer/extensions/rails/erb_caller_resolver"
     erb_resolver = RbsInfer::Extensions::Rails::ErbCallerResolver.new(app_dir: Dir.pwd, source_files: source_files)
-    assert_snapshot("application_helper", target_class: "ApplicationHelper", target_file: "app/helpers/application_helper.rb", extra_caller_sources: erb_resolver)
+    assert_snapshot("helpers/application_helper", target_class: "ApplicationHelper", target_file: "app/helpers/application_helper.rb", extra_caller_sources: erb_resolver)
   end
 
   it "ApplicationController rails_custom matches expected RBS" do
@@ -122,10 +122,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       rbs = File.read(File.join(tmpdir, "application_controller.rbs"))
 
       if ENV["UPDATE_EXPECTATIONS"]
-        expectations_dir.join("application_controller.rbs").write(rbs)
+        expectations_dir.join("controllers/application_controller.rbs").write(rbs)
       end
 
-      expect(rbs.chomp).to eq(expected_rbs("application_controller").chomp)
+      expect(rbs.chomp).to eq(expected_rbs("controllers/application_controller").chomp)
     end
   end
 
@@ -164,42 +164,45 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
     before { erb_generator.generate_all }
 
-    def assert_erb_snapshot(name, output_file:)
+    def assert_erb_snapshot(output_file:)
       rbs = File.read(File.join(@erb_tmpdir, output_file))
+      snapshot_name = output_file.delete_prefix("app/").delete_suffix(".rbs")
 
       if ENV["UPDATE_EXPECTATIONS"]
-        expectations_dir.join("erb/#{name}.rbs").write(rbs)
+        path = expectations_dir.join("#{snapshot_name}.rbs")
+        FileUtils.mkdir_p(path.dirname)
+        path.write(rbs)
       end
 
-      expect(rbs.chomp).to eq(expected_rbs("erb/#{name}").chomp)
+      expect(rbs.chomp).to eq(expected_rbs(snapshot_name).chomp)
     end
 
     it "ERBPostsShow matches expected RBS" do
-      assert_erb_snapshot("posts_show", output_file: "app/views/posts/show.rbs")
+      assert_erb_snapshot(output_file: "app/views/posts/show.rbs")
     end
 
     it "ERBPostsIndex matches expected RBS" do
-      assert_erb_snapshot("posts_index", output_file: "app/views/posts/index.rbs")
+      assert_erb_snapshot(output_file: "app/views/posts/index.rbs")
     end
 
     it "ERBPostsNew matches expected RBS" do
-      assert_erb_snapshot("posts_new", output_file: "app/views/posts/new.rbs")
+      assert_erb_snapshot(output_file: "app/views/posts/new.rbs")
     end
 
     it "ERBPostsEdit matches expected RBS" do
-      assert_erb_snapshot("posts_edit", output_file: "app/views/posts/edit.rbs")
+      assert_erb_snapshot(output_file: "app/views/posts/edit.rbs")
     end
 
     it "ERBPartialPostsForm matches expected RBS" do
-      assert_erb_snapshot("posts_form_partial", output_file: "app/views/posts/_form.rbs")
+      assert_erb_snapshot(output_file: "app/views/posts/_form.rbs")
     end
 
     it "ERBPartialPostsComment matches expected RBS" do
-      assert_erb_snapshot("posts_comment_partial", output_file: "app/views/posts/_comment.rbs")
+      assert_erb_snapshot(output_file: "app/views/posts/_comment.rbs")
     end
 
     it "ERBLayoutsApplication matches expected RBS" do
-      assert_erb_snapshot("layouts_application", output_file: "app/views/layouts/application.rbs")
+      assert_erb_snapshot(output_file: "app/views/layouts/application.rbs")
     end
   end
 end
