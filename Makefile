@@ -6,7 +6,7 @@ OUTPUT_DIR = sig/rbs_infer
 .PHONY: rbs rbs-controllers rbs-models rbs-services rbs-rails-custom rbs-erb test steep
 
 ## Gerar RBS para todo o app/ do dummy
-rbs:
+rbs_infer:
 	cd $(DUMMY_DIR) && $(RBS_INFER) app/ --output --output-dir $(OUTPUT_DIR)
 
 rbs_models:
