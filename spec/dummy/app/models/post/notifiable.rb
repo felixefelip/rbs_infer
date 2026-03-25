@@ -6,6 +6,10 @@ module Post::Notifiable
 	# @type self: singleton(Post) & singleton(Post::Notifiable)
 	# @type instance: Post & Post::Notifiable
 
+  included do
+    delegate :updated_at, to: :user, prefix: true
+  end
+
   def notification_title
     "[#{status.text}] #{title}"
   end
