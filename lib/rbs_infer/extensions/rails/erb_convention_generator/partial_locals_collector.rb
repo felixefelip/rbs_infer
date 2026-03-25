@@ -141,18 +141,25 @@ module RbsInfer
               partial_name = nil
               locals_hash = nil
 
-              args.each do |arg|
-                next unless arg.is_a?(Prism::KeywordHashNode)
+              # Shorthand: render "partial_name", key: value
+              # args[0] is a StringNode, args[1] is a KeywordHashNode with locals directly.
+              if args[0].is_a?(Prism::StringNode) && args[1].is_a?(Prism::KeywordHashNode)
+                partial_name = args[0].content
+                locals_hash = args[1]
+              else
+                args.each do |arg|
+                  next unless arg.is_a?(Prism::KeywordHashNode)
 
-                arg.elements.each do |assoc|
-                  next unless assoc.is_a?(Prism::AssocNode)
-                  next unless assoc.key.is_a?(Prism::SymbolNode)
+                  arg.elements.each do |assoc|
+                    next unless assoc.is_a?(Prism::AssocNode)
+                    next unless assoc.key.is_a?(Prism::SymbolNode)
 
-                  case assoc.key.value
-                  when "partial"
-                    partial_name = extract_string_value(assoc.value)
-                  when "locals"
-                    locals_hash = assoc.value if assoc.value.is_a?(Prism::HashNode)
+                    case assoc.key.value
+                    when "partial"
+                      partial_name = extract_string_value(assoc.value)
+                    when "locals"
+                      locals_hash = assoc.value if assoc.value.is_a?(Prism::HashNode)
+                    end
                   end
                 end
               end

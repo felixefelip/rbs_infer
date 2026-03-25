@@ -201,6 +201,23 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       assert_erb_snapshot(output_file: "app/views/posts/_comment.rbs")
     end
 
+    # _summary is rendered via shorthand: render "posts/summary", post: @post
+    # (no `partial:` / `locals:` keys) — verifies shorthand render local inference
+    it "ERBPartialPostsSummary matches expected RBS" do
+      assert_erb_snapshot(output_file: "app/views/posts/_summary.rbs")
+    end
+
+    it "shorthand render infers local type without partial:/locals: keys" do
+      rbs = File.read(File.join(@erb_tmpdir, "app/views/posts/_summary.rbs"))
+      expect(rbs).to include("attr_reader post: Post")
+    end
+
+    it "shorthand render does not bleed into explicit partial:/locals: inference" do
+      rbs = File.read(File.join(@erb_tmpdir, "app/views/posts/_comment.rbs"))
+      expect(rbs).to include("attr_reader comment: Comment")
+      expect(rbs).not_to include("post:")
+    end
+
     it "ERBLayoutsApplication matches expected RBS" do
       assert_erb_snapshot(output_file: "app/views/layouts/application.rbs")
     end
