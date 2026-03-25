@@ -16,4 +16,7 @@ class Post < ApplicationRecord
   def test_enumerize_status: () -> Post::EnumerizeStatusAttribute
   def test_enumerize_status_options: () -> Array[Array[untyped]]
   def user_email: () -> String
+  def full_name: () -> String
+  def user_created_at: () -> ActiveSupport::TimeWithZone
+  def name: () -> String?
 end

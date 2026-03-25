@@ -7,7 +7,7 @@ OUTPUT_DIR = sig/rbs_infer
 
 ## Gerar RBS para todo o app/ do dummy
 rbs_infer:
-	cd $(DUMMY_DIR) && $(RBS_INFER) app/ --output --output-dir $(OUTPUT_DIR)
+	cd $(DUMMY_DIR) && $(RBS_INFER) app/models/post.rb --output --output-dir $(OUTPUT_DIR)
 
 rbs_models:
 	cd $(DUMMY_DIR) && $(RBS_INFER) app/models/ --output --output-dir $(OUTPUT_DIR)
