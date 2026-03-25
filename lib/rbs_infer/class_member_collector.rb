@@ -2,11 +2,14 @@ module RbsInfer
   # Estrutura que representa um membro da classe
   Member = Struct.new(:kind, :name, :signature, :visibility, keyword_init: true)
 
+  # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
+  DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
+
   class ClassMemberCollector < Prism::Visitor
     include NodeTypeInferrer
     include RbsAnnotationParser
 
-    attr_reader :members, :superclass_name, :is_module
+    attr_reader :members, :delegates, :superclass_name, :is_module
 
     CONTROLLER_BASES = %w[ApplicationController ActionController::Base ActionController::API].freeze
 
@@ -14,6 +17,7 @@ module RbsInfer
       @comments = comments
       @lines = lines
       @members = []
+      @delegates = []
       @current_visibility = :public
       @is_controller = false
       @superclass_name = nil
@@ -83,6 +87,8 @@ module RbsInfer
         extract_includes(node)
       when :extend
         extract_extends(node)
+      when :delegate
+        extract_delegates(node)
       end
 
       super
@@ -120,6 +126,46 @@ module RbsInfer
           visibility: :public
         )
       end
+    end
+
+    def extract_delegates(node)
+      return unless node.arguments
+
+      args = node.arguments.arguments
+      method_names = args.select { |a| a.is_a?(Prism::SymbolNode) }.map(&:value)
+      return if method_names.empty?
+
+      kwargs = args.find { |a| a.is_a?(Prism::KeywordHashNode) }
+      return unless kwargs
+
+      target = nil
+      prefix = nil
+      allow_nil = false
+
+      kwargs.elements.each do |assoc|
+        next unless assoc.is_a?(Prism::AssocNode) && assoc.key.is_a?(Prism::SymbolNode)
+
+        case assoc.key.value
+        when "to"
+          target = assoc.value.is_a?(Prism::SymbolNode) ? assoc.value.value : nil
+        when "prefix"
+          prefix = case assoc.value
+                   when Prism::TrueNode then true
+                   when Prism::SymbolNode then assoc.value.value
+                   end
+        when "allow_nil"
+          allow_nil = assoc.value.is_a?(Prism::TrueNode)
+        end
+      end
+
+      return unless target
+
+      @delegates << DelegateInfo.new(
+        methods: method_names,
+        target: target,
+        prefix: prefix,
+        allow_nil: allow_nil
+      )
     end
 
     def extract_attrs(node)

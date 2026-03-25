@@ -61,6 +61,7 @@ module RbsInfer
 
     # Parsear o arquivo-alvo para extrair todos os membros da classe
     target_members = parse_target_class
+    resolve_delegate_methods(target_members)
 
     # Extrair classes da anotação @type instance (para concerns)
     @instance_types = extract_instance_types
@@ -192,7 +193,34 @@ module RbsInfer
     @parsed_target.tree.accept(visitor)
     @superclass_name = visitor.superclass_name
     @is_module = visitor.is_module if @is_module.nil?
+    @delegates = visitor.delegates
     visitor.members
+  end
+
+  def resolve_delegate_methods(target_members)
+    return if @delegates.nil? || @delegates.empty?
+
+    @delegates.each do |info|
+      target_class = info.target.split("_").map(&:capitalize).join
+
+      info.methods.each do |method_name|
+        return_type = method_type_resolver.resolve(target_class, method_name) || "untyped"
+        return_type = "#{return_type}?" if info.allow_nil && !return_type.end_with?("?")
+
+        generated_name = case info.prefix
+                         when true   then "#{info.target}_#{method_name}"
+                         when String then "#{info.prefix}_#{method_name}"
+                         else             method_name
+                         end
+
+        target_members << Member.new(
+          kind: :method,
+          name: generated_name,
+          signature: "#{generated_name}: () -> #{return_type}",
+          visibility: :public
+        )
+      end
+    end
   end
 
   # ─── Extrair classes da anotação @type instance ────────────────────

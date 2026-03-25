@@ -127,6 +127,78 @@ RSpec.describe RbsInfer::ClassMemberCollector do
     expect(collector.members.find { |m| m.name == "build_count" }.signature).to include("-> Integer")
   end
 
+  describe "delegate parsing" do
+    it "collects a basic delegate call" do
+      source = <<~RUBY
+        class Post
+          delegate :email, to: :user
+        end
+      RUBY
+
+      collector = collect(source)
+      expect(collector.delegates.size).to eq(1)
+      info = collector.delegates.first
+      expect(info.methods).to eq(["email"])
+      expect(info.target).to eq("user")
+      expect(info.prefix).to be_nil
+      expect(info.allow_nil).to eq(false)
+    end
+
+    it "collects delegate with prefix: true" do
+      source = <<~RUBY
+        class Post
+          delegate :email, to: :user, prefix: true
+        end
+      RUBY
+
+      info = collect(source).delegates.first
+      expect(info.prefix).to eq(true)
+    end
+
+    it "collects delegate with custom symbol prefix" do
+      source = <<~RUBY
+        class Post
+          delegate :email, to: :user, prefix: :author
+        end
+      RUBY
+
+      info = collect(source).delegates.first
+      expect(info.prefix).to eq("author")
+    end
+
+    it "collects delegate with allow_nil: true" do
+      source = <<~RUBY
+        class Post
+          delegate :email, to: :user, allow_nil: true
+        end
+      RUBY
+
+      info = collect(source).delegates.first
+      expect(info.allow_nil).to eq(true)
+    end
+
+    it "collects multiple delegated methods in one call" do
+      source = <<~RUBY
+        class Post
+          delegate :name, :email, :phone, to: :user
+        end
+      RUBY
+
+      info = collect(source).delegates.first
+      expect(info.methods).to eq(["name", "email", "phone"])
+    end
+
+    it "ignores delegate without to: keyword" do
+      source = <<~RUBY
+        class Post
+          delegate :email
+        end
+      RUBY
+
+      expect(collect(source).delegates).to be_empty
+    end
+  end
+
   it "gera assinatura com keyword params" do
     source = <<~RUBY
       class Foo
