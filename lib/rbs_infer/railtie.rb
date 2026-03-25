@@ -8,6 +8,7 @@ module RbsInfer
       load File.expand_path("extensions/enumerize/tasks/rbs_infer_enumerize.rake", __dir__)
       load File.expand_path("extensions/rails/tasks/rbs_infer_rails_custom.rake", __dir__)
       load File.expand_path("extensions/rails/tasks/rbs_infer_erb.rake", __dir__)
+      load File.expand_path("extensions/rails/tasks/rbs_infer_concerns.rake", __dir__)
     end
   end
 end
