@@ -27,7 +27,7 @@ rbs_infer_enumerize:
 rbs_rails_generator:
 	cd $(DUMMY_DIR) && rake rbs_rails:all
 
-rbs_erb:
+rbs_infer_erb:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/extensions/rails/erb_convention_generator'; RbsInfer::Extensions::Rails::ErbConventionGenerator.new(app_dir: '.', output_dir: 'sig/rbs_infer_erb', source_files: Dir['app/**/*.rb']).generate_all"
 
 rbs_generators_all:
