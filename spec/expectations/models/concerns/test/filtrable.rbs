@@ -1,0 +1,7 @@
+module Test
+  module Filtrable
+    extend ActiveSupport::Concern
+    def filtrable?: () -> untyped
+    def teste: () -> untyped
+  end
+end
