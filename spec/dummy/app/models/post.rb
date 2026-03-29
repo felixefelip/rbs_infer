@@ -3,6 +3,7 @@
 class Post < ApplicationRecord
   include Post::Taggable
   include Post::Notifiable
+  include Test::Filtrable
 
   extend Enumerize
 

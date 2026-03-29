@@ -3,9 +3,6 @@
 module Post::Notifiable
   extend ActiveSupport::Concern
 
-	# @type self: singleton(Post) & singleton(Post::Notifiable)
-	# @type instance: Post & Post::Notifiable
-
   included do
     delegate :updated_at, to: :user, prefix: true
   end

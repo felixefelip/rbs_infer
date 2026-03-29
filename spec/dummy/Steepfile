@@ -1,3 +1,6 @@
+ENV["STEEP_ERB_CONVENTION"] = "1"
+ENV["STEEP_MODULE_CONVENTION"] = "1"
+
 # D = Steep::Diagnostic
 #
 # target :lib do
