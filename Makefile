@@ -18,6 +18,9 @@ rbs_services:
 rbs_helpers:
 	cd $(DUMMY_DIR) && $(RBS_INFER) app/helpers/ --output --output-dir $(OUTPUT_DIR)
 
+rbs_controllers:
+	cd $(DUMMY_DIR) && $(RBS_INFER) app/controllers/ --output --output-dir $(OUTPUT_DIR)
+
 rbs_rails_custom:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/extensions/rails/custom_generator'; RbsInfer::Extensions::Rails::CustomGenerator.new(output_dir: 'sig/rbs_rails_custom').generate_all"
 
