@@ -113,6 +113,12 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("helpers/application_helper", target_class: "ApplicationHelper", target_file: "app/helpers/application_helper.rb", extra_caller_sources: erb_resolver)
   end
 
+  it "PostsHelper matches expected RBS" do
+    require "rbs_infer/extensions/rails/erb_caller_resolver"
+    erb_resolver = RbsInfer::Extensions::Rails::ErbCallerResolver.new(app_dir: Dir.pwd, source_files: source_files)
+    assert_snapshot("helpers/posts_helper", target_class: "PostsHelper", target_file: "app/helpers/posts_helper.rb", extra_caller_sources: erb_resolver)
+  end
+
   it "ApplicationController rails_custom matches expected RBS" do
     require "rbs_infer/extensions/rails/custom_generator"
     require "tmpdir"
