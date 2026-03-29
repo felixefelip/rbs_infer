@@ -61,6 +61,16 @@ end
 
 source_files = Dir["app/**/*.rb", "engines/**/*.rb", "lib/**/*.rb"]
 
+rails_project = Gem::Specification.find_by_name("rails") rescue nil
+
+if rails_project
+  require "rbs_infer/extensions/rails/erb_caller_resolver"
+  erb_caller_resolver = RbsInfer::Extensions::Rails::ErbCallerResolver.new(
+    app_dir: Dir.pwd,
+    source_files: source_files
+  )
+end
+
 generate = lambda do |inputs_to_process, silent: false|
   changed_files = []
 
@@ -71,6 +81,10 @@ generate = lambda do |inputs_to_process, silent: false|
            else
              { target_class: input, source_files: source_files }
            end
+
+    if erb_caller_resolver && input.include?("helpers/")
+      args[:extra_caller_sources] = erb_caller_resolver
+    end
 
     analyzer = RbsInfer::Analyzer.new(**args)
     rbs = analyzer.generate_rbs
