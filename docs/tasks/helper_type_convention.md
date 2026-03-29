@@ -182,8 +182,8 @@ Adicionar casos em `test/source/module_self_type_resolver_test.rb`:
 
 ## Trabalho restante
 
-- [ ] Adicionar `HELPERS_PREFIX` e método `annotate_helper` no fork do Steep
-- [ ] Garantir que `rbs_infer/analyzer.rb` processa arquivos em `app/helpers/`
-- [ ] Adicionar testes no fork do Steep para helpers
-- [ ] Remover anotações manuais de `spec/dummy/app/helpers/posts_helper.rb` e validar que as anotações são injetadas automaticamente
-- [ ] Atualizar `docs/guides/module_type_inference.md`
+- [x] Adicionar `HELPERS_PREFIX` e método `annotate_helper` no fork do Steep
+- [x] Garantir que `rbs_infer/analyzer.rb` processa arquivos em `app/helpers/` (sem mudanças necessárias — já chama `ModuleSelfTypeResolver.annotate`)
+- [x] Adicionar testes no fork do Steep para helpers
+- [x] Remover anotações manuais de `spec/dummy/app/helpers/posts_helper.rb` e validar que as anotações são injetadas automaticamente
+- [x] Atualizar `docs/guides/module_type_inference.md`
