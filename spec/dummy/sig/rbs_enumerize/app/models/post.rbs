@@ -47,7 +47,6 @@ class ::Post
 
   def self.draft: () -> Post::ActiveRecord_Relation
   def self.not_draft: () -> Post::ActiveRecord_Relation
-  def self.published: () -> Post::ActiveRecord_Relation
   def self.not_published: () -> Post::ActiveRecord_Relation
   def self.archived: () -> Post::ActiveRecord_Relation
   def self.not_archived: () -> Post::ActiveRecord_Relation

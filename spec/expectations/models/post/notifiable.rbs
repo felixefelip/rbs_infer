@@ -4,7 +4,7 @@ class Post
     def notification_title: () -> String
     def notify_subscribers: (untyped subscribers) -> untyped
     def notification_excerpt: (?Integer length) -> String
-    def notification_payload: () -> { author_name: untyped, excerpt: untyped, post_id: untyped, published_at: untyped, title: untyped }
+    def notification_payload: () -> { author_name: String, excerpt: untyped, post_id: Integer, published_at: String?, title: String }
     def user_updated_at: () -> ActiveSupport::TimeWithZone
 
     private

@@ -42,9 +42,7 @@ module RbsInfer
         loader = RBS::EnvironmentLoader.new
 
         Dir["sig/*/"].each { |d| loader.add(path: Pathname(d)) }
-        Dir[".gem_rbs_collection/*/"].each do |gem_dir|
-          Dir["#{gem_dir}/*/"].each { |ver_dir| loader.add(path: Pathname(ver_dir)) }
-        end
+        Dir[".gem_rbs_collection/*/*/"].each { |ver_dir| loader.add(path: Pathname(ver_dir)) }
 
         env = RBS::Environment.from_loader(loader).resolve_type_names
         RBS::DefinitionBuilder.new(env: env)
