@@ -114,14 +114,23 @@ respects it at parse time.
 
 | File | Injected annotations |
 |---|---|
-| Concern (`extend ActiveSupport::Concern`) | `# @type self: singleton(Post) & singleton(Post::Notifiable)` + `# @type instance: Post & Post::Notifiable` |
-| Plain module | `# @type instance: Post & Post::Taggable` only |
+| `app/models/` concern (`extend ActiveSupport::Concern`) | `# @type self: singleton(Post) & singleton(Post::Notifiable)` + `# @type instance: Post & Post::Notifiable` |
+| `app/models/` plain module | `# @type instance: Post & Post::Taggable` only |
+| `app/helpers/` plain module | `# @type instance: ApplicationController & PostsHelper` only |
+| `app/helpers/` concern | `# @type self: singleton(ApplicationController) & singleton(PostsHelper)` + `# @type instance: ApplicationController & PostsHelper` |
 
 **Why no `@type self:` for plain modules?**
 In a concern, `included do` and `class_methods do` blocks run in the singleton context of the
 including class. Steep needs `@type self:` to resolve class-level calls inside them. In a
 plain module, `self` inside instance methods is always the including instance — `@type instance:`
 covers it completely.
+
+**Why `ApplicationController` as including class for helpers?**
+Rails helpers are mixed into the view context, but `ApplicationController` is the most useful
+type for checking because it carries `url_helpers`, `flash`, and other controller methods.
+This also matches what Steep needs to resolve calls like `content_tag` or `link_to` when
+those are declared in `ActionView::Helpers` (which should be included in the
+`ApplicationController` RBS definition).
 
 ---
 
@@ -171,6 +180,6 @@ The algorithm (`ModuleSelfTypeResolver.annotate`):
 
 | Scenario | Current behaviour |
 |---|---|
-| Module without namespace (`module Taggable`) | Skipped — including class cannot be derived from path alone (Strategy B not implemented) |
+| Module without namespace (`module Taggable`) in `app/models/` | Skipped — including class cannot be derived from path alone (Strategy B not implemented) |
 | Multiple classes include the same module | Only the namespace-derived class is used; Strategy B would scan all files for `include ModuleName` |
 | `extend ActiveSupport::Concern` inside a nested block | Detected by simple string match — always treated as a concern even if nested |

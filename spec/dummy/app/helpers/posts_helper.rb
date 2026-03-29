@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
 module PostsHelper
-	# @type self: singleton(PostsHelper) & singleton(ApplicationController)
-	# @type instance: PostsHelper & ApplicationController
-
   def post_status_badge(post)
     css_class = case post.status.to_s
                 when "published" then "bg-success"
