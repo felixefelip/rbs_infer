@@ -4,8 +4,8 @@ module Test::Filtrable
   extend ActiveSupport::Concern
 
   included do
-    scope :published, -> { where(published: true) }
-    scope :drafts, -> { where(published: false) }
+    scope :pinned, -> { where(pinned: true) }
+    scope :unpinned, -> { where(pinned: false) }
   end
 
   def filtrable?
