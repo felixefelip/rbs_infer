@@ -3,9 +3,6 @@
 module User::Displayable
   extend ActiveSupport::Concern
 
-	# @type self: singleton(User) & singleton(User::Displayable)
-	# @type instance: User & User::Displayable
-
   def initials
     first = first_name.to_s[0] || ""
     last = last_name.to_s[0] || ""
