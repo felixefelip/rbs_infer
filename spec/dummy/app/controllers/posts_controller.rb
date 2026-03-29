@@ -1,10 +1,13 @@
 # frozen_string_literal: true
 
 class PostsController < ApplicationController
+  include FilterConfiguration
+
   before_action :set_post, only: %i[show edit update destroy publish]
 
   def index
-    @posts = Post.published.order(created_at: :desc)
+    filter = configure_filter("posts")
+    @posts = Post.query_filter(filter).order(created_at: :desc)
   end
 
   def show

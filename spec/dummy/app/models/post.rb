@@ -16,6 +16,13 @@ class Post < ApplicationRecord
   enumerize :priority, in: [:low, :medium, :high]
   enumerize :category, in: { tech: 1, lifestyle: 2, travel: 3, food: 4 }, default: :tech, scope: :shallow
 
+  scope :by_title, ->(title) { where("title ILIKE ?", "%#{title}%") if title.present? }
+  scope :by_body, ->(body) { where("body ILIKE ?", "%#{body}%") if body.present? }
+  scope :query_filter, ->(filter) {
+    by_title(filter[:title])
+      .by_body(filter[:body])
+  }
+
   validates :title, presence: true
   validates :body, presence: true
 
