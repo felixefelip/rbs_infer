@@ -1,6 +1,6 @@
 DUMMY_DIR = spec/dummy
 ROOT_DIR = $(shell pwd)
-RBS_INFER = bundle exec ruby -I$(ROOT_DIR)/lib $(ROOT_DIR)/bin/rbs_infer
+RBS_INFER = bundle exec rbs_infer
 OUTPUT_DIR = sig/rbs_infer
 
 .PHONY: rbs rbs-controllers rbs-models rbs-services rbs-rails-custom rbs-erb test steep
