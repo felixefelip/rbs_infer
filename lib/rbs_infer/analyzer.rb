@@ -1,4 +1,5 @@
 require "prism"
+require "steep/source/module_self_type_resolver"
 
 # Analisador que gera assinaturas RBS completas a partir de código Ruby puro,
 # sem exigir anotações de tipo, comentários especiais ou arquivos extras.
@@ -51,6 +52,7 @@ module RbsInfer
 
     # Parsear o arquivo-alvo uma única vez e reutilizar em todo o pipeline
     source = File.read(@target_file)
+    source = Steep::Source::ModuleSelfTypeResolver.annotate(@target_file, source)
     result = Prism.parse(source)
     @parsed_target = RbsInfer::ParsedFile.new(
       result: result,
