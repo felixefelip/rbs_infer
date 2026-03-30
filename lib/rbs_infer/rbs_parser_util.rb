@@ -7,9 +7,11 @@ module RbsInfer
   module RbsParserUtil
     module_function
 
-    # Remove palavras-chave não suportadas pelo RBS (e.g. `protected`)
+    # Remove palavras-chave não suportadas pelo RBS (e.g. `protected`, anotações Steep)
     def sanitize_rbs_content(content)
-      content.gsub(/^\s*protected\s*$/, "")
+      content
+        .gsub(/^\s*protected\s*$/, "")
+        .gsub(/<%.*?%>/, "untyped")
     end
 
     # Extrai superclass, tipos de método, includes e class methods de uma classe/módulo.

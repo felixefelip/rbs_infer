@@ -198,6 +198,20 @@ RSpec.describe RbsInfer::RbsParserUtil do
       expect(result).to include("def public_method")
       expect(result).to include("def protected_method")
     end
+
+    it "substitui anotações Steep (<% ... %>) por untyped" do
+      content = <<~RBS
+        class Foo
+          @saas: <% Steep::AST::Types::Logic::Not %>
+          def saas?: () -> untyped
+        end
+      RBS
+
+      result = described_class.sanitize_rbs_content(content)
+
+      expect(result).not_to include("<%")
+      expect(result).to include("@saas: untyped")
+    end
   end
 
   describe ".class_info_from_rbs com protected" do
