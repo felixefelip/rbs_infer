@@ -1,6 +1,6 @@
 module FilterConfiguration
   extend ActiveSupport::Concern
-  def configure_filter: (untyped name) -> untyped
+  def configure_filter: (String name) -> untyped
 
   private
 

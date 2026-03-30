@@ -44,6 +44,12 @@ module RbsInfer
         steep_vars.each_value { |vars| local_var_types.merge!(vars) { |_k, old, _new| old } }
       end
 
+      # Enable bare call matching when the file includes the target module/concern.
+      # e.g. PostsController includes FilterConfiguration → configure_filter("posts")
+      # is a bare call that would otherwise be invisible to cross-class analysis.
+      short_name = @target_class.split("::").last
+      match_bare = source.match?(/\binclude\b.*\b#{Regexp.escape(short_name)}\b/)
+
       visitor = NewCallCollector.new(
         target_class: @target_class,
         method_return_types: method_return_types,
@@ -51,7 +57,8 @@ module RbsInfer
         method_type_resolver: @method_type_resolver,
         caller_class_name: caller_visitor.class_name,
         init_positional_params: @init_positional_params,
-        target_methods: @target_methods
+        target_methods: @target_methods,
+        match_bare_calls: match_bare
       )
       result.value.accept(visitor)
 

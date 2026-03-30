@@ -3,6 +3,7 @@ class PostsController < ApplicationController
   @comments: Comment::ActiveRecord_Relation
   @post: Post
   @test: Post?
+  include FilterConfiguration
   def index: () -> void
   def show: () -> void
   def new: () -> void
