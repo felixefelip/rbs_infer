@@ -174,4 +174,52 @@ RSpec.describe RbsInfer::RbsParserUtil do
       expect(result).to eq(false)
     end
   end
+
+  describe ".sanitize_rbs_content" do
+    it "remove linhas com protected (não suportado pelo RBS)" do
+      content = <<~RBS
+        class Foo
+          def public_method: () -> void
+
+          protected
+
+          def protected_method: () -> untyped
+
+          private
+
+          def private_method: () -> void
+        end
+      RBS
+
+      result = described_class.sanitize_rbs_content(content)
+
+      expect(result).not_to match(/^\s*protected\s*$/)
+      expect(result).to include("private")
+      expect(result).to include("def public_method")
+      expect(result).to include("def protected_method")
+    end
+  end
+
+  describe ".class_info_from_rbs com protected" do
+    it "parseia RBS contendo protected sem erro" do
+      rbs = <<~RBS
+        class Foo
+          def public_method: () -> String
+
+          protected
+
+          def protected_method: () -> Integer
+
+          private
+
+          def private_method: () -> void
+        end
+      RBS
+
+      info = described_class.class_info_from_rbs(rbs, "Foo")
+
+      expect(info.types).to include("public_method" => "String")
+      expect(info.types).to include("protected_method" => "Integer")
+    end
+  end
 end
