@@ -1,0 +1,9 @@
+module FilterConfiguration
+  extend ActiveSupport::Concern
+  def configure_filter: (untyped name) -> untyped
+
+  private
+
+  def clean_filter?: () -> untyped
+  def sanitize_filter: () -> untyped
+end

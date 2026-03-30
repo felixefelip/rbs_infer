@@ -107,6 +107,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/concerns/test/filtrable", target_class: "Test::Filtrable", target_file: "app/models/concerns/test/filtrable.rb")
   end
 
+  it "FilterConfiguration controller concern matches expected RBS" do
+    assert_snapshot("controllers/concerns/filter_configuration", target_class: "FilterConfiguration", target_file: "app/controllers/concerns/filter_configuration.rb")
+  end
+
   it "ApplicationHelper matches expected RBS" do
     require "rbs_infer/extensions/rails/erb_caller_resolver"
     erb_resolver = RbsInfer::Extensions::Rails::ErbCallerResolver.new(app_dir: Dir.pwd, source_files: source_files)
