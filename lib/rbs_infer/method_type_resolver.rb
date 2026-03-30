@@ -86,7 +86,7 @@ module RbsInfer
         member_collector.members.each do |m|
           case m.kind
           when :method
-            if m.signature =~ /->\s*(.+)$/
+            if m.signature =~ /.*->\s*(.+)$/
               mrt[m.name] = $1.strip
             end
           when :attr_accessor, :attr_reader
@@ -154,7 +154,7 @@ module RbsInfer
         collector.members.each do |member|
           case member.kind
           when :method
-            if member.signature =~ /->\s*(.+)$/
+            if member.signature =~ /.*->\s*(.+)$/
               types[member.name] = $1.strip
             end
           when :attr_accessor, :attr_reader

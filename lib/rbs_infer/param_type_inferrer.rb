@@ -175,7 +175,7 @@ module RbsInfer
         member_collector.members.each do |m|
           case m.kind
           when :method
-            if m.signature =~ /->\s*(.+)$/
+            if m.signature =~ /.*->\s*(.+)$/
               method_return_types[m.name] = $1.strip
             end
           when :attr_accessor, :attr_reader

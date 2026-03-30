@@ -213,4 +213,64 @@ RSpec.describe RbsInfer::ClassMemberCollector do
     expect(member.signature).to include("email: untyped")
     expect(member.signature).to include("?senha: untyped")
   end
+
+  it "coloca bloco após parênteses na assinatura RBS" do
+    source = <<~RUBY
+      class Foo
+        def tag(id:, name:, **options, &block)
+        end
+      end
+    RUBY
+
+    collector = collect(source)
+    member = collector.members.find { |m| m.name == "tag" }
+    expect(member.signature).to eq("tag: (id: untyped, name: untyped, **untyped) ?{ (untyped) -> untyped } -> untyped")
+    expect(member.signature).not_to include(", ?{")
+  end
+
+  it "gera assinatura com bloco sem outros params" do
+    source = <<~RUBY
+      class Foo
+        def each(&block)
+        end
+      end
+    RUBY
+
+    collector = collect(source)
+    member = collector.members.find { |m| m.name == "each" }
+    expect(member.signature).to eq("each: () ?{ (untyped) -> untyped } -> untyped")
+  end
+
+  it "gera assinatura com params posicionais e bloco" do
+    source = <<~RUBY
+      class Foo
+        def map(items, &block)
+        end
+      end
+    RUBY
+
+    collector = collect(source)
+    member = collector.members.find { |m| m.name == "map" }
+    expect(member.signature).to eq("map: (untyped items) ?{ (untyped) -> untyped } -> untyped")
+  end
+
+  it "gera assinatura válida para RBS parser quando tem bloco" do
+    source = <<~RUBY
+      module MyHelper
+        def wrapper(id:, data: {}, **options, &block)
+        end
+      end
+    RUBY
+
+    collector = collect(source)
+    member = collector.members.find { |m| m.name == "wrapper" }
+
+    rbs_content = <<~RBS
+      module MyHelper
+        def #{member.signature}
+      end
+    RBS
+
+    expect { RBS::Parser.parse_signature(rbs_content) }.not_to raise_error
+  end
 end

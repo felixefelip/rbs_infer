@@ -678,6 +678,74 @@ RSpec.describe RbsInfer::Analyzer do
         expect(rbs).to include("def processar: (entity: ::MyApp::Entity)")
       end
     end
+
+    it "gera RBS válido para módulo com métodos que recebem blocos" do
+      helper_src = <<~RUBY
+        module MyHelper
+          def wrapper(id:, name:, data: {}, **options, &block)
+            tag.section(id: id, &block)
+          end
+
+          def simple_yield(&block)
+            yield if block_given?
+          end
+
+          def mixed(items, label:, &block)
+            items.each(&block)
+          end
+        end
+      RUBY
+
+      with_temp_files("my_helper.rb" => helper_src) do |dir, paths|
+        analyzer = described_class.new(target_file: paths.first, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        aggregate_failures do
+          # Block should be outside parentheses
+          expect(rbs).to include("def wrapper: (id: untyped, name: untyped, ?data: untyped, **untyped) ?{ (untyped) -> untyped } -> untyped")
+          expect(rbs).to include("def simple_yield: () ?{ (untyped) -> untyped } -> untyped")
+          expect(rbs).to include("def mixed: (untyped items, label: untyped) ?{ (untyped) -> untyped } -> untyped")
+
+          # Block must NEVER be inside parentheses
+          expect(rbs).not_to include(", ?{")
+
+          # Output must be valid RBS
+          expect { RBS::Parser.parse_signature(rbs) }.not_to raise_error
+        end
+      end
+    end
+
+    it "não corrompe return type de método com bloco ao resolver tipos" do
+      helper_src = <<~RUBY
+        module MyHelper
+          def wrapper(&block)
+            "hello"
+          end
+
+          def count_items(items, &block)
+            42
+          end
+        end
+      RUBY
+
+      with_temp_files("my_helper.rb" => helper_src) do |dir, paths|
+        analyzer = described_class.new(target_file: paths.first, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        aggregate_failures do
+          # Return types should be resolved correctly
+          expect(rbs).to include("def wrapper: () ?{ (untyped) -> untyped } -> String")
+          expect(rbs).to include("def count_items: (untyped items) ?{ (untyped) -> untyped } -> Integer")
+
+          # The -> untyped inside the block must not be replaced
+          expect(rbs).not_to include("-> String }")
+          expect(rbs).not_to include("-> Integer }")
+
+          # Output must be valid RBS
+          expect { RBS::Parser.parse_signature(rbs) }.not_to raise_error
+        end
+      end
+    end
   end
 
   # ─── Integração com arquivos reais do projeto ───────────────────

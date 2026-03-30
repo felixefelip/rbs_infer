@@ -71,7 +71,7 @@ module RbsInfer
         # 1. Literal na última expressão
         literal_type = infer_literal_type(last_stmt)
         if literal_type
-          member.signature = member.signature.sub("-> untyped", "-> #{literal_type}")
+          member.signature = member.signature.sub(/-> untyped\z/, "-> #{literal_type}")
           known_return_types[method_name] = literal_type
           next
         end
@@ -80,7 +80,7 @@ module RbsInfer
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.name == :new && last_stmt.receiver
           class_name = RbsInfer::Analyzer.extract_constant_path(last_stmt.receiver)
           if class_name
-            member.signature = member.signature.sub("-> untyped", "-> #{class_name}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{class_name}")
             known_return_types[method_name] = class_name
             next
           end
@@ -96,7 +96,7 @@ module RbsInfer
           receiver_name = implicit_self_method_name(last_stmt.receiver)
           if receiver_name && known_return_types[receiver_name]
             resolved = known_return_types[receiver_name]
-            member.signature = member.signature.sub("-> untyped", "-> #{resolved}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{resolved}")
             known_return_types[method_name] = resolved
             next
           end
@@ -107,7 +107,7 @@ module RbsInfer
           local_types = method_param_types[method_name] || {}
           resolved = infer_call_return_type(last_stmt, known_return_types, method_type_resolver, local_types: local_types)
           if resolved
-            member.signature = member.signature.sub("-> untyped", "-> #{resolved}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{resolved}")
             known_return_types[method_name] = resolved
             next
           end
@@ -125,7 +125,7 @@ module RbsInfer
         resolved_type = known_return_types[called_name]
         next unless resolved_type
 
-        member.signature = member.signature.sub("-> untyped", "-> #{resolved_type}")
+        member.signature = member.signature.sub(/-> untyped\z/, "-> #{resolved_type}")
       end
 
       # Second pass: retry chain resolution for still-untyped methods
@@ -149,7 +149,7 @@ module RbsInfer
           local_types = method_param_types[method_name] || {}
           resolved = infer_call_return_type(last_stmt, known_return_types, method_type_resolver, local_types: local_types)
           if resolved
-            member.signature = member.signature.sub("-> untyped", "-> #{resolved}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{resolved}")
             known_return_types[method_name] = resolved
           end
         end

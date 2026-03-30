@@ -10,7 +10,7 @@ module RbsInfer
       members.each do |m|
         case m.kind
         when :method
-          if m.signature =~ /->\s*(.+)$/ && $1.strip != "untyped" && $1.strip != "void"
+          if m.signature =~ /.*->\s*(.+)$/ && $1.strip != "untyped" && $1.strip != "void"
             types[m.name] = $1.strip
           end
         when :attr_accessor, :attr_reader

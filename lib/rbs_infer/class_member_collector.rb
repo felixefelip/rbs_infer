@@ -62,7 +62,6 @@ module RbsInfer
         signature: signature,
         visibility: @current_visibility
       )
-
       super
     end
 
@@ -267,12 +266,15 @@ module RbsInfer
         parts << "**untyped"
       end
 
-      # Block
+      # Block — in RBS, the block goes after the closing paren, not inside it
+      block_sig = nil
       if params.respond_to?(:block) && params.block
-        parts << "?{ (untyped) -> untyped }"
+        block_sig = "?{ (untyped) -> untyped }"
       end
 
-      "(#{parts.join(", ")})"
+      result = "(#{parts.join(", ")})"
+      result = "#{result} #{block_sig}" if block_sig
+      result
     end
 
     def param_name(param)
