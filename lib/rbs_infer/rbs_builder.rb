@@ -49,13 +49,14 @@ module RbsInfer
       has_protected = members.any? { |m| m.visibility == :protected }
 
       # Agrupar por visibilidade: public -> protected -> private
+      # RBS não suporta `protected`, então tratamos como public
       [:public, :protected, :private].each do |vis|
         vis_members = members.select { |m| m.visibility == vis && ![:include, :extend].include?(m.kind) }
         next if vis_members.empty?
 
-        if vis != :public
+        if vis == :private
           lines << ""
-          lines << "#{member_indent}#{vis}"
+          lines << "#{member_indent}private"
           lines << ""
         end
 

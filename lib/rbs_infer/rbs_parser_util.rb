@@ -7,10 +7,15 @@ module RbsInfer
   module RbsParserUtil
     module_function
 
+    # Remove palavras-chave não suportadas pelo RBS (e.g. `protected`)
+    def sanitize_rbs_content(content)
+      content.gsub(/^\s*protected\s*$/, "")
+    end
+
     # Extrai superclass, tipos de método, includes e class methods de uma classe/módulo.
     # Equivalente ao antigo parse_rbs_class_block, mas usando RBS::Parser.
     def class_info_from_rbs(content, class_name)
-      _, _, declarations = RBS::Parser.parse_signature(content)
+      _, _, declarations = RBS::Parser.parse_signature(sanitize_rbs_content(content))
       normalized = class_name.sub(/\A::/, "")
 
       superclass = nil
@@ -28,7 +33,7 @@ module RbsInfer
 
     # Verifica se um módulo contém sub-módulo ClassMethods (declarado, não incluído).
     def has_class_methods_submodule?(content, module_name)
-      _, _, declarations = RBS::Parser.parse_signature(content)
+      _, _, declarations = RBS::Parser.parse_signature(sanitize_rbs_content(content))
       normalized = module_name.sub(/\A::/, "")
 
       found = false
