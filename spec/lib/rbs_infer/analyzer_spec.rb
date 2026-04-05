@@ -748,6 +748,28 @@ RSpec.describe RbsInfer::Analyzer do
     end
   end
 
+  # ─── resolve_namespace_classes ─────────────────────────────────
+
+  describe "#resolve_namespace_classes (via generate_rbs)" do
+    it "usa 'module' para namespace definido com sintaxe compacta (module Foo::Bar)" do
+      files = {
+        "foo/bar.rb" => "module Foo::Bar\nend\n",
+        "foo/bar/baz.rb" => "module Foo\n  module Bar\n    class Baz\n    end\n  end\nend\n"
+      }
+
+      with_temp_files(files) do |dir, paths|
+        target = paths.find { |p| p.end_with?("foo/bar/baz.rb") }
+        analyzer = described_class.new(target_file: target, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        expect(rbs).to include("module Foo")
+        expect(rbs).to include("module Bar")
+        expect(rbs).not_to include("class Bar")
+        expect { RBS::Parser.parse_signature(rbs) }.not_to raise_error
+      end
+    end
+  end
+
   # ─── Integração com arquivos reais do projeto ───────────────────
 
   describe "#generate_rbs (integração com arquivos reais)", :integration do

@@ -470,7 +470,7 @@ module RbsInfer
       result = Prism.parse(File.read(source_file))
       visitor = ClassNameExtractor.new
       result.value.accept(visitor)
-      classes.add(full_name) if visitor.class_name == full_name
+      classes.add(full_name) if visitor.class_name == full_name && !visitor.is_module
     end
 
     classes

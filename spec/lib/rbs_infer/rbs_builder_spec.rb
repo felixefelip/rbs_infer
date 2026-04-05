@@ -27,6 +27,35 @@ RSpec.describe RbsInfer::RbsBuilder do
     end
   end
 
+  describe "#build com namespaces" do
+    it "usa 'module' para namespace que é módulo (sintaxe compacta)" do
+      builder = described_class.new(
+        target_class: "Card::Eventable::SystemCommenter",
+        superclass_name: nil,
+        namespace_classes: Set.new  # Card::Eventable NÃO está no set → deve ser module
+      )
+
+      result = builder.build([], {}, {})
+
+      expect(result).to include("module Card")
+      expect(result).to include("module Eventable")
+      expect(result).not_to include("class Eventable")
+    end
+
+    it "usa 'class' para namespace que é classe" do
+      builder = described_class.new(
+        target_class: "Card::Eventable::SystemCommenter",
+        superclass_name: nil,
+        namespace_classes: Set.new(["Card::Eventable"])
+      )
+
+      result = builder.build([], {}, {})
+
+      expect(result).to include("class Eventable")
+      expect(result).not_to include("module Eventable")
+    end
+  end
+
   describe "#build com protected" do
     let(:builder) do
       described_class.new(target_class: "Foo", superclass_name: nil)
