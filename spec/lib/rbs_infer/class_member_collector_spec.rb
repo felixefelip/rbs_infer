@@ -254,6 +254,19 @@ RSpec.describe RbsInfer::ClassMemberCollector do
     expect(member.signature).to eq("map: (untyped items) ?{ (untyped) -> untyped } -> untyped")
   end
 
+  it "não sobrescreve superclass com a de uma classe aninhada" do
+    source = <<~RUBY
+      class Webhook::Delivery < ApplicationRecord
+        class ResponseTooLarge < StandardError; end
+
+        def deliver; end
+      end
+    RUBY
+
+    collector = collect(source)
+    expect(collector.superclass_name).to eq("ApplicationRecord")
+  end
+
   it "gera assinatura válida para RBS parser quando tem bloco" do
     source = <<~RUBY
       module MyHelper

@@ -31,9 +31,12 @@ module RbsInfer
 
     def visit_class_node(node)
       @is_module = false
-      if node.superclass
-        @superclass_name = RbsInfer::Analyzer.extract_constant_path(node.superclass)
-        @is_controller = CONTROLLER_BASES.include?(@superclass_name)
+      unless @primary_class_seen
+        @primary_class_seen = true
+        if node.superclass
+          @superclass_name = RbsInfer::Analyzer.extract_constant_path(node.superclass)
+          @is_controller = CONTROLLER_BASES.include?(@superclass_name)
+        end
       end
       super
     end
