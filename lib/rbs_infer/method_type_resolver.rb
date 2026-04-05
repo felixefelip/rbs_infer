@@ -345,7 +345,7 @@ module RbsInfer
 
     def find_class_file(class_name)
       class_path = RbsInfer.class_name_to_path(class_name)
-      @source_files.find { |f| f.end_with?("#{class_path}.rb") }
+      @source_files.find { |f| RbsInfer.file_matches_class_path?(f, class_path) }
     end
 
     # Inferir return type a partir de literais ou Klass.new na última expressão

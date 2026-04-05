@@ -173,7 +173,7 @@ module RbsInfer
 
   def find_target_file
     class_path = RbsInfer.class_name_to_path(@target_class)
-    @source_files.find { |f| f.end_with?("#{class_path}.rb") }
+    @source_files.find { |f| RbsInfer.file_matches_class_path?(f, class_path) }
   end
 
   # ─── Extrair nome da classe a partir do arquivo (via Prism) ────────
@@ -463,7 +463,7 @@ module RbsInfer
     parts.each_index do |i|
       full_name = parts[0..i].join("::")
       class_path = RbsInfer.class_name_to_path(full_name)
-      source_file = @source_files.find { |f| f.end_with?("#{class_path}.rb") }
+      source_file = @source_files.find { |f| RbsInfer.file_matches_class_path?(f, class_path) }
 
       next unless source_file && File.exist?(source_file)
 

@@ -768,6 +768,25 @@ RSpec.describe RbsInfer::Analyzer do
         expect { RBS::Parser.parse_signature(rbs) }.not_to raise_error
       end
     end
+
+    it "usa 'class' para namespace quando outro arquivo tem sufixo igual mas caminho diferente" do
+      # Reproduz o caso MagicLink: "via_magic_link.rb" não deve ser confundido com "magic_link.rb"
+      files = {
+        "models/magic_link.rb"                              => "class MagicLink\nend\n",
+        "controllers/via_magic_link.rb"                     => "module ViaMagicLink\nend\n",
+        "models/magic_link/code.rb"                         => "module MagicLink::Code\nend\n"
+      }
+
+      with_temp_files(files) do |dir, paths|
+        target = paths.find { |p| p.end_with?("magic_link/code.rb") }
+        analyzer = described_class.new(target_file: target, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        expect(rbs).to include("class MagicLink")
+        expect(rbs).not_to include("module MagicLink")
+        expect { RBS::Parser.parse_signature(rbs) }.not_to raise_error
+      end
+    end
   end
 
   # ─── Integração com arquivos reais do projeto ───────────────────

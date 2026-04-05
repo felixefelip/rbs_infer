@@ -396,7 +396,7 @@ module RbsInfer
         parts.pop
         candidate = (parts + [short_name]).join("::")
         class_path = RbsInfer.class_name_to_path(candidate)
-        return candidate if @source_files.any? { |f| f.end_with?("#{class_path}.rb") }
+        return candidate if @source_files.any? { |f| RbsInfer.file_matches_class_path?(f, class_path) }
       end
 
       short_name

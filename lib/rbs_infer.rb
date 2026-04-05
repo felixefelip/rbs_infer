@@ -16,6 +16,12 @@ module RbsInfer
               .gsub(/([a-z])([A-Z])/, '\1_\2')
               .downcase
   end
+
+  # Verifica se um caminho de arquivo corresponde exatamente ao path da classe,
+  # evitando falsos positivos como "via_magic_link.rb" ao buscar "magic_link.rb".
+  def self.file_matches_class_path?(file, class_path, ext: ".rb")
+    file == "#{class_path}#{ext}" || file.end_with?("/#{class_path}#{ext}")
+  end
 end
 
 require_relative "rbs_infer/analyzer"
