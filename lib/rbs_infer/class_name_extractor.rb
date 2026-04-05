@@ -21,8 +21,10 @@ module RbsInfer
 
     def visit_class_node(node)
       name = extract_const_name(node.constant_path)
-      @class_name = (@namespace + [name]).join("::")
-      @is_module = false
+      if @class_name.nil? || @is_module
+        @class_name = (@namespace + [name]).join("::")
+        @is_module = false
+      end
       @namespace.push(name)
       super
       @namespace.pop

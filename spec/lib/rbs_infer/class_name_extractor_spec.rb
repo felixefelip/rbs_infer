@@ -34,4 +34,15 @@ RSpec.describe RbsInfer::ClassNameExtractor do
     RUBY
     expect(extract_class(source)).to eq("Academico::Aluno::Email")
   end
+
+  it "não sobrescreve classe-alvo com classe aninhada (nested class inside target)" do
+    source = <<~RUBY
+      class Webhook::Delivery < ApplicationRecord
+        class ResponseTooLarge < StandardError; end
+
+        def deliver; end
+      end
+    RUBY
+    expect(extract_class(source)).to eq("Webhook::Delivery")
+  end
 end
