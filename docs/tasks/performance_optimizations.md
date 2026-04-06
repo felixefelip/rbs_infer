@@ -13,7 +13,8 @@ Para cada arquivo de caller, o código roda 3–4 `accept()` separados no mesmo 
 **Fix**: Um único traversal por arquivo que coleta tudo de uma vez.
 
 **Implementado**: `lib/rbs_infer/caller_file_cache.rb` — cache de `CallerFileAnalysis` (members + class_name + defs) compartilhado entre `MethodTypeResolver` e `ParamTypeInferrer`. Reduz de 3–4 `accept()` para 1 por arquivo de caller.
-**Resultado medido**: tempo dos testes de integração reduziu de **2min 45s → 2min 30s** (~9% de ganho adicional).
+**Resultado medido**: tempo dos testes de integração reduziu de **2min 35s → 2min 31s** (~3% de ganho adicional).
+**Por que abaixo do esperado**: o custo dominante (I/O + `Prism.parse`) já havia sido eliminado pelo `ParseCache`. Traversal de AST em memória é rápido. Além disso, a taxa de cache hits é baixa — na prática cada arquivo de caller é visitado poucas vezes por análise, então o cache raramente é aproveitado.
 
 ---
 
