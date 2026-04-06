@@ -69,6 +69,9 @@ end
 end
 ```
 
+**Implementado**: `lib/rbs_infer/file_index.rb` — índice compartilhado entre `Analyzer`, `MethodTypeResolver` e `ParamTypeInferrer`.
+**Resultado medido**: tempo dos testes de integração reduziu de **2min 45s → 2min 35s** (~6% de ganho adicional).
+
 ---
 
 ### 5. Scan O(D×C) de comentários
