@@ -30,6 +30,9 @@ def parsed(file)
 end
 ```
 
+**Implementado**: `lib/rbs_infer/parse_cache.rb` — cache compartilhado entre `Analyzer`, `MethodTypeResolver` e `ParamTypeInferrer`.
+**Resultado medido**: tempo dos testes de integração reduziu de **3min 18s → 2min 45s** (~17% de ganho).
+
 ---
 
 ### 3. `.find` linear dentro de loops
