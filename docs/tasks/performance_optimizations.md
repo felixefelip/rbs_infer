@@ -106,15 +106,35 @@ Dois blocos separados constroem um `DefCollector` e chamam `accept()` no mesmo `
 
 ---
 
-## Prioridade sugerida
+## Gargalo descoberto via profiling
 
-| Fix | Esforço | Impacto |
+Após implementar as otimizações acima, foi feito profiling com `stackprof` que revelou que `RBS::Parser.parse_signature` consumia **44.9% do tempo total**. Os mesmos arquivos `.rbs` (ex: `activerecord-generated.rbs`) eram lidos e parseados pelo `RBS::Parser` a cada chamada de `lookup_rbs_types`, `lookup_inherited_types` e `lookup_gem_rbs_collection_class` — uma vez por classe analisada.
+
+**Fix**: Separar o parsing das declarations (caro) da extração de info por classe (barato) em `RbsParserUtil`, e adicionar `@rbs_declarations_cache` e `@rbs_content_cache` em `RbsTypeLookup` para que cada arquivo `.rbs` seja lido e parseado no máximo uma vez.
+
+**Resultado medido**: tempo dos testes de integração reduziu de **2min 31s → 43s** (~71% de ganho adicional).
+
+---
+
+## Resultado acumulado
+
+| Otimização | Tempo | Ganho |
 |---|---|---|
-| Cache de parse por arquivo | baixo | muito alto |
-| Índice `class_path → file` | baixo | alto |
-| Hash de comentários por linha | baixo | médio |
-| `members_by_name` hash | baixo | médio |
-| Unificar visitors por arquivo | médio | alto |
+| Baseline | 3min 18s | — |
+| ParseCache (Ruby files) | 2min 45s | -33s |
+| FileIndex | 2min 35s | -10s |
+| CallerFileCache | 2min 31s | -4s |
+| RBS declarations cache | 43s | -108s |
+| **Total** | **43s** | **-78%** |
+
+---
+
+## Prioridade sugerida (itens pendentes)
+
+| Fix | Esforço | Impacto estimado |
+|---|---|---|
+| Hash de comentários por linha | baixo | baixo |
+| `members_by_name` hash | baixo | baixo |
 | DefCollector único | baixo | baixo |
 
-Os dois primeiros devem dar o maior ganho com menor risco de regressão, pois eliminam I/O e parse repetidos sem alterar a lógica de inferência.
+Os itens restantes têm impacto pequeno — o profiling mostrou que os gargalos dominantes já foram resolvidos.
