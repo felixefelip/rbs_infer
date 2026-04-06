@@ -217,6 +217,14 @@ gems:
   version: '0'
   source:
     type: stdlib
+- name: loofah
+  version: '2.0'
+  source:
+    type: git
+    name: ruby/gem_rbs_collection
+    revision: 0d434df8e59efc89854404382c9319aed41739bd
+    remote: https://github.com/felixefelip/gem_rbs_collection.git
+    repo_dir: gems
 - name: mail
   version: '2.8'
   source:

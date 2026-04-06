@@ -116,6 +116,16 @@ Após implementar as otimizações acima, foi feito profiling com `stackprof` qu
 
 ---
 
+### Tentativa: índice de declarations por arquivo (O(1) lookup)
+
+Após o RBS declarations cache, o profiler mostrava `find_declaration` com 12.8% do tempo total. A hipótese era que substituir a busca recursiva por um hash `fqn → declaration` reduziria esse custo.
+
+**Implementado**: `RbsParserUtil.build_declaration_index` + `class_info_from_index` + `@rbs_index_cache` em `RbsTypeLookup`.
+**Resultado medido**: **43s → 44s** — sem ganho mensurável.
+**Por que abaixo do esperado**: o profiler rodou os testes de integração com ~70 instâncias de `Analyzer` em paralelo, inflando artificialmente as contagens de chamadas de `find_declaration`. Por instância individual, a busca recursiva era rápida — o custo dominante era o `RBS::Parser.parse_signature`, já eliminado. Substituir O(n) recursivo por O(1) num hash não remove tempo real mensurável quando n é pequeno (poucos níveis de nesting nas declarations).
+
+---
+
 ## Resultado acumulado
 
 | Otimização | Tempo | Ganho |
@@ -125,6 +135,7 @@ Após implementar as otimizações acima, foi feito profiling com `stackprof` qu
 | FileIndex | 2min 35s | -10s |
 | CallerFileCache | 2min 31s | -4s |
 | RBS declarations cache | 43s | -108s |
+| Declaration index cache | 44s | ~0s |
 | **Total** | **43s** | **-78%** |
 
 ---

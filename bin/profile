@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "stackprof"
+require_relative "../lib/rbs_infer"
+
+DUMMY_APP_ROOT = File.expand_path("../spec/dummy", __dir__)
+
+Dir.chdir(DUMMY_APP_ROOT) do
+  source_files = Dir["app/**/*.rb"]
+
+  targets = [
+    { target_class: "User",          target_file: "app/models/user.rb" },
+    { target_class: "Post",          target_file: "app/models/post.rb" },
+    { target_class: "Tag",           target_file: "app/models/tag.rb" },
+    { target_class: "Comment",       target_file: "app/models/comment.rb" },
+    { target_class: "PostPublisher", target_file: "app/services/post_publisher.rb" },
+    { target_class: "TagDestroy",    target_file: "app/services/tag_destroy.rb" },
+    { target_class: "PostsController", target_file: "app/controllers/posts_controller.rb" },
+  ]
+
+  profile = StackProf.run(mode: :wall, interval: 100, raw: true) do
+    10.times do
+      targets.each do |t|
+        RbsInfer::Analyzer.new(
+          target_class: t[:target_class],
+          target_file: t[:target_file],
+          source_files: source_files
+        ).generate_rbs
+      end
+    end
+  end
+
+  StackProf::Report.new(profile).print_text(false, 30)
+end
