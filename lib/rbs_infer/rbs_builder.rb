@@ -49,10 +49,16 @@ module RbsInfer
       has_private = members.any? { |m| m.visibility == :private }
       has_protected = members.any? { |m| m.visibility == :protected }
 
+      # Emitir métodos de classe (def self.foo)
+      class_methods = members.select { |m| m.kind == :class_method }
+      class_methods.each do |member|
+        lines << "#{member_indent}def self.#{member.signature}"
+      end
+
       # Agrupar por visibilidade: public -> protected -> private
       # RBS não suporta `protected`, então tratamos como public
       [:public, :protected, :private].each do |vis|
-        vis_members = members.select { |m| m.visibility == vis && ![:include, :extend].include?(m.kind) }
+        vis_members = members.select { |m| m.visibility == vis && ![:include, :extend, :class_method].include?(m.kind) }
         next if vis_members.empty?
 
         if vis == :private

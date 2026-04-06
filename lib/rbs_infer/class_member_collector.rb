@@ -42,6 +42,7 @@ module RbsInfer
     end
 
     def visit_def_node(node)
+      is_class_method = node.receiver.is_a?(Prism::SelfNode)
       name = node.name.to_s
       sig = find_rbs_signature(@comments, @lines, node.location.start_line)
 
@@ -60,7 +61,7 @@ module RbsInfer
                   end
 
       @members << Member.new(
-        kind: :method,
+        kind: is_class_method ? :class_method : :method,
         name: name,
         signature: signature,
         visibility: @current_visibility
