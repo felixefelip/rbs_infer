@@ -23,6 +23,44 @@ module RbsInfer
       []
     end
 
+    # Constrói um índice fqn → declaration a partir de uma lista de declarations.
+    # Permite lookup O(1) por nome de classe em vez de busca recursiva O(n).
+    def build_declaration_index(declarations, current_prefix = "", index = {})
+      declarations.each do |decl|
+        next unless decl.is_a?(RBS::AST::Declarations::Class) || decl.is_a?(RBS::AST::Declarations::Module)
+
+        decl_name = decl.name.to_s.sub(/\A::/, "")
+        fqn = if decl.name.namespace.absolute? || current_prefix.empty?
+                decl_name
+              else
+                "#{current_prefix}::#{decl_name}"
+              end
+
+        index[fqn] = decl
+
+        nested = decl.members.select { |m|
+          m.is_a?(RBS::AST::Declarations::Class) || m.is_a?(RBS::AST::Declarations::Module)
+        }
+        build_declaration_index(nested, fqn, index) if nested.any?
+      end
+      index
+    end
+
+    # Extrai RbsClassInfo a partir de um índice fqn → declaration (O(1)).
+    def class_info_from_index(index, class_name)
+      normalized = class_name.sub(/\A::/, "")
+      decl = index[normalized]
+      return RbsClassInfo.new(superclass: nil, types: {}, includes: [], class_method_types: {}) unless decl
+
+      superclass = extract_superclass(decl)
+      types = {}
+      includes = []
+      class_method_types = {}
+      extract_members(decl.members, types, includes, class_method_types, normalized)
+
+      RbsClassInfo.new(superclass:, types:, includes:, class_method_types:)
+    end
+
     # Extrai superclass, tipos de método, includes e class methods de declarations já parseadas.
     def class_info_from_declarations(declarations, class_name)
       normalized = class_name.sub(/\A::/, "")

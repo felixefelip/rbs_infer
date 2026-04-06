@@ -14,6 +14,7 @@ module RbsInfer
       @rbs_collection_cache = {}
       @rbs_declarations_cache = {}
       @rbs_content_cache = {}
+      @rbs_index_cache = {}
     end
 
     # Busca tipos em arquivos .rbs gerados (ex: rbs_rails para AR models)
@@ -39,7 +40,7 @@ module RbsInfer
         short_name = normalized.split("::").last
         Dir["sig/**/*.rbs"].each do |rbs_file|
           next unless cached_content_for(rbs_file).include?(short_name)
-          info = RbsParserUtil.class_info_from_declarations(cached_declarations_for(rbs_file), normalized)
+          info = class_info_from_file(rbs_file, normalized)
           next if info.types.empty? && info.superclass.nil? && info.includes.empty?
           superclass ||= info.superclass
           info.types.each { |name, type| types[name] ||= type }
@@ -76,9 +77,11 @@ module RbsInfer
       end
     end
 
-    # Retorna RbsClassInfo para um arquivo e classe usando declarations cacheadas.
+    # Retorna RbsClassInfo para um arquivo e classe usando índice cacheado (O(1) lookup).
     def class_info_from_file(rbs_file, class_name)
-      RbsParserUtil.class_info_from_declarations(cached_declarations_for(rbs_file), class_name)
+      index = @rbs_index_cache[rbs_file] ||=
+        RbsParserUtil.build_declaration_index(cached_declarations_for(rbs_file))
+      RbsParserUtil.class_info_from_index(index, class_name)
     end
 
     # Resolve tipos herdados percorrendo a cadeia de superclasses via RBS
@@ -164,7 +167,7 @@ module RbsInfer
       all_includes = []
       rbs_files.each do |rbs_file|
         next unless cached_content_for(rbs_file).include?(parts.last)
-        info = RbsParserUtil.class_info_from_declarations(cached_declarations_for(rbs_file), normalized)
+        info = class_info_from_file(rbs_file, normalized)
         next if info.types.empty? && info.superclass.nil? && info.includes.empty?
         superclass ||= info.superclass
         info.types.each { |name, type| types[name] ||= type }
@@ -218,7 +221,7 @@ module RbsInfer
       types = {}
       rbs_files.each do |rbs_file|
         next unless cached_content_for(rbs_file).include?(parts.last)
-        info = RbsParserUtil.class_info_from_declarations(cached_declarations_for(rbs_file), module_name)
+        info = class_info_from_file(rbs_file, module_name)
         info.types.each do |name, ret_type|
           parent_module = parts[0..-2].join("::")
           if ret_type !~ /::/ && ret_type =~ /\A[A-Z]/ && !parent_module.empty?
