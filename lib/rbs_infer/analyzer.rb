@@ -37,6 +37,7 @@ module RbsInfer
     @source_files = source_files
     @source_index = SourceIndex.new(source_files)
     @parse_cache = ParseCache.new
+    @file_index = FileIndex.new(source_files)
     @target_file = target_file
     @target_class = target_class
     @extra_caller_sources = extra_caller_sources
@@ -174,7 +175,7 @@ module RbsInfer
 
   def find_target_file
     class_path = RbsInfer.class_name_to_path(@target_class)
-    @source_files.find { |f| RbsInfer.file_matches_class_path?(f, class_path) }
+    @file_index.find(class_path)
   end
 
   # ─── Extrair nome da classe a partir do arquivo (via Prism) ────────
@@ -423,7 +424,7 @@ module RbsInfer
   end
 
   def method_type_resolver
-    @method_type_resolver ||= MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache)
+    @method_type_resolver ||= MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index)
   end
 
   def type_merger
@@ -449,7 +450,8 @@ module RbsInfer
       method_type_resolver: method_type_resolver,
       type_merger: type_merger,
       steep_bridge: steep_bridge,
-      parse_cache: @parse_cache
+      parse_cache: @parse_cache,
+      file_index: @file_index
     )
   end
 
@@ -467,7 +469,7 @@ module RbsInfer
     parts.each_index do |i|
       full_name = parts[0..i].join("::")
       class_path = RbsInfer.class_name_to_path(full_name)
-      source_file = @source_files.find { |f| RbsInfer.file_matches_class_path?(f, class_path) }
+      source_file = @file_index.find(class_path)
 
       next unless source_file && File.exist?(source_file)
 
@@ -486,6 +488,7 @@ module RbsInfer
 end
 
 require_relative "parse_cache"
+require_relative "file_index"
 require_relative "node_type_inferrer"
 require_relative "known_return_types_builder"
 require_relative "rbs_annotation_parser"

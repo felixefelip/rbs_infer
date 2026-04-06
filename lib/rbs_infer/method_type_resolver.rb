@@ -7,10 +7,11 @@ module RbsInfer
   class MethodTypeResolver
     include NodeTypeInferrer
 
-    def initialize(source_files, source_index: nil, parse_cache: nil)
+    def initialize(source_files, source_index: nil, parse_cache: nil, file_index: nil)
       @source_files = source_files
       @source_index = source_index
       @parse_cache = parse_cache || ParseCache.new
+      @file_index = file_index || FileIndex.new(source_files)
       @cache = {}
       @building = Set.new # guard contra recursão infinita
       @rbs_type_lookup = RbsTypeLookup.new
@@ -341,7 +342,7 @@ module RbsInfer
 
     def find_class_file(class_name)
       class_path = RbsInfer.class_name_to_path(class_name)
-      @source_files.find { |f| RbsInfer.file_matches_class_path?(f, class_path) }
+      @file_index.find(class_path)
     end
 
     # Inferir return type a partir de literais ou Klass.new na última expressão

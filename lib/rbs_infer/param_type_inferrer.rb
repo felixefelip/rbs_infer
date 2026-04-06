@@ -7,7 +7,7 @@ module RbsInfer
   class ParamTypeInferrer
     ITERATOR_METHODS = RbsInfer::ITERATOR_METHODS
 
-    def initialize(target_file:, target_class:, source_files:, source_index: nil, method_type_resolver:, type_merger:, steep_bridge: nil, parse_cache: nil)
+    def initialize(target_file:, target_class:, source_files:, source_index: nil, method_type_resolver:, type_merger:, steep_bridge: nil, parse_cache: nil, file_index: nil)
       @target_file = target_file
       @target_class = target_class
       @source_files = source_files
@@ -16,6 +16,7 @@ module RbsInfer
       @type_merger = type_merger
       @steep_bridge = steep_bridge
       @parse_cache = parse_cache || ParseCache.new
+      @file_index = file_index || FileIndex.new(source_files)
     end
 
     def infer_method_param_types(attr_types, parsed_target: nil)
@@ -390,7 +391,7 @@ module RbsInfer
         parts.pop
         candidate = (parts + [short_name]).join("::")
         class_path = RbsInfer.class_name_to_path(candidate)
-        return candidate if @source_files.any? { |f| RbsInfer.file_matches_class_path?(f, class_path) }
+        return candidate if @file_index.include?(class_path)
       end
 
       short_name
