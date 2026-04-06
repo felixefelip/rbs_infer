@@ -12,6 +12,8 @@ module RbsInfer
     def initialize
       @inherited_cache = {}
       @rbs_collection_cache = {}
+      @rbs_declarations_cache = {}
+      @rbs_content_cache = {}
     end
 
     # Busca tipos em arquivos .rbs gerados (ex: rbs_rails para AR models)
@@ -26,8 +28,7 @@ module RbsInfer
       class_path = RbsInfer.class_name_to_path(normalized)
       Dir["sig/**/*.rbs"].each do |rbs_file|
         next unless rbs_file.end_with?("#{class_path}.rbs")
-        content = File.read(rbs_file)
-        info = parse_rbs_class_block(content, normalized)
+        info = class_info_from_file(rbs_file, normalized)
         superclass ||= info.superclass
         info.types.each { |name, type| types[name] ||= type }
         all_includes.concat(info.includes)
@@ -35,10 +36,10 @@ module RbsInfer
 
       # 2. Buscar inner classes dentro de todos os rbs files
       if types.empty? && superclass.nil?
+        short_name = normalized.split("::").last
         Dir["sig/**/*.rbs"].each do |rbs_file|
-          content = File.read(rbs_file)
-          next unless content.include?(normalized.split("::").last)
-          info = parse_rbs_class_block(content, normalized)
+          next unless cached_content_for(rbs_file).include?(short_name)
+          info = RbsParserUtil.class_info_from_declarations(cached_declarations_for(rbs_file), normalized)
           next if info.types.empty? && info.superclass.nil? && info.includes.empty?
           superclass ||= info.superclass
           info.types.each { |name, type| types[name] ||= type }
@@ -53,6 +54,31 @@ module RbsInfer
     # Usa RBS::Parser para parsing correto (suporta nesting, generics, interfaces, etc).
     def parse_rbs_class_block(content, class_name)
       RbsParserUtil.class_info_from_rbs(content, class_name)
+    end
+
+    # Retorna as declarations RBS cacheadas para um arquivo.
+    # Cada arquivo é lido e parseado pelo RBS::Parser no máximo uma vez por instância.
+    def cached_declarations_for(rbs_file)
+      @rbs_declarations_cache[rbs_file] ||= begin
+        content = File.read(rbs_file)
+        @rbs_content_cache[rbs_file] = content
+        RbsParserUtil.parse_declarations(content)
+      rescue Errno::ENOENT, Errno::EACCES
+        []
+      end
+    end
+
+    # Retorna o conteúdo cacheado de um arquivo RBS (lido no máximo uma vez).
+    def cached_content_for(rbs_file)
+      @rbs_content_cache[rbs_file] ||= begin
+        cached_declarations_for(rbs_file) # popula ambos os caches
+        @rbs_content_cache[rbs_file] || ""
+      end
+    end
+
+    # Retorna RbsClassInfo para um arquivo e classe usando declarations cacheadas.
+    def class_info_from_file(rbs_file, class_name)
+      RbsParserUtil.class_info_from_declarations(cached_declarations_for(rbs_file), class_name)
     end
 
     # Resolve tipos herdados percorrendo a cadeia de superclasses via RBS
@@ -70,8 +96,7 @@ module RbsInfer
 
       # 1. Buscar em sig/rbs_rails/
       Dir["sig/rbs_rails/**/*.rbs"].each do |rbs_file|
-        content = File.read(rbs_file)
-        info = parse_rbs_class_block(content, normalized)
+        info = class_info_from_file(rbs_file, normalized)
         parent_superclass ||= info.superclass
         info.types.each { |name, type| types[name] ||= type }
         all_includes.concat(info.includes)
@@ -138,9 +163,8 @@ module RbsInfer
 
       all_includes = []
       rbs_files.each do |rbs_file|
-        content = File.read(rbs_file)
-        next unless content.include?(parts.last)
-        info = parse_rbs_class_block(content, normalized)
+        next unless cached_content_for(rbs_file).include?(parts.last)
+        info = RbsParserUtil.class_info_from_declarations(cached_declarations_for(rbs_file), normalized)
         next if info.types.empty? && info.superclass.nil? && info.includes.empty?
         superclass ||= info.superclass
         info.types.each { |name, type| types[name] ||= type }
@@ -150,11 +174,11 @@ module RbsInfer
       RbsClassInfo.new(superclass:, types:, includes: all_includes, class_method_types: {})
     end
 
-    # Extrai nomes de módulos incluídos via `include Foo::Bar` no source
-    def extract_includes(source)
-      result = Prism.parse(source)
+    # Extrai nomes de módulos incluídos via `include Foo::Bar` no source ou AST.
+    def extract_includes(source_or_node)
+      node = source_or_node.is_a?(String) ? Prism.parse(source_or_node).value : source_or_node
       includes = []
-      extract_include_nodes(result.value, includes)
+      extract_include_nodes(node, includes)
       includes
     end
 
@@ -193,9 +217,8 @@ module RbsInfer
 
       types = {}
       rbs_files.each do |rbs_file|
-        content = File.read(rbs_file)
-        next unless content.include?(parts.last)
-        info = RbsParserUtil.class_info_from_rbs(content, module_name)
+        next unless cached_content_for(rbs_file).include?(parts.last)
+        info = RbsParserUtil.class_info_from_declarations(cached_declarations_for(rbs_file), module_name)
         info.types.each do |name, ret_type|
           parent_module = parts[0..-2].join("::")
           if ret_type !~ /::/ && ret_type =~ /\A[A-Z]/ && !parent_module.empty?

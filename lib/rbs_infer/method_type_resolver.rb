@@ -212,7 +212,7 @@ module RbsInfer
           end
 
           # 5. Tipos de módulos incluídos (via RBS collection)
-          included_modules = @rbs_type_lookup.extract_includes(entry.source)
+          included_modules = @rbs_type_lookup.extract_includes(entry.result.value)
           included_modules.each do |mod_name|
             mod_types = @rbs_type_lookup.lookup_rbs_collection_module_types(mod_name)
             mod_types.each { |name, type| types[name] ||= type }

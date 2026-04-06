@@ -14,10 +14,17 @@ module RbsInfer
         .gsub(/<%.*?%>/, "untyped")
     end
 
-    # Extrai superclass, tipos de método, includes e class methods de uma classe/módulo.
-    # Equivalente ao antigo parse_rbs_class_block, mas usando RBS::Parser.
-    def class_info_from_rbs(content, class_name)
+    # Parseia conteúdo RBS e retorna as declarations.
+    # Separado de class_info_from_rbs para permitir cache das declarations por arquivo.
+    def parse_declarations(content)
       _, _, declarations = RBS::Parser.parse_signature(sanitize_rbs_content(content))
+      declarations
+    rescue RBS::ParsingError
+      []
+    end
+
+    # Extrai superclass, tipos de método, includes e class methods de declarations já parseadas.
+    def class_info_from_declarations(declarations, class_name)
       normalized = class_name.sub(/\A::/, "")
 
       superclass = nil
@@ -33,9 +40,15 @@ module RbsInfer
       RbsClassInfo.new(superclass:, types:, includes:, class_method_types:)
     end
 
+    # Extrai superclass, tipos de método, includes e class methods de uma classe/módulo.
+    # Equivalente ao antigo parse_rbs_class_block, mas usando RBS::Parser.
+    def class_info_from_rbs(content, class_name)
+      class_info_from_declarations(parse_declarations(content), class_name)
+    end
+
     # Verifica se um módulo contém sub-módulo ClassMethods (declarado, não incluído).
     def has_class_methods_submodule?(content, module_name)
-      _, _, declarations = RBS::Parser.parse_signature(sanitize_rbs_content(content))
+      declarations = parse_declarations(content)
       normalized = module_name.sub(/\A::/, "")
 
       found = false
