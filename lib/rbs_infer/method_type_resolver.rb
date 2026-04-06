@@ -7,9 +7,10 @@ module RbsInfer
   class MethodTypeResolver
     include NodeTypeInferrer
 
-    def initialize(source_files, source_index: nil)
+    def initialize(source_files, source_index: nil, parse_cache: nil)
       @source_files = source_files
       @source_index = source_index
+      @parse_cache = parse_cache || ParseCache.new
       @cache = {}
       @building = Set.new # guard contra recursão infinita
       @rbs_type_lookup = RbsTypeLookup.new
@@ -68,16 +69,13 @@ module RbsInfer
 
       files = @source_index ? @source_index.files_referencing(class_name) : @source_files
       files.each do |file|
-        begin
-          source = File.read(file)
-        rescue Errno::ENOENT, Errno::EACCES
-          next
-        end
-        next unless source.include?(short_name)
+        entry = @parse_cache.get(file)
+        next unless entry
+        next unless entry.source.include?(short_name)
 
-        result = Prism.parse(source)
+        result = entry.result
         comments = result.comments
-        lines = source.lines
+        lines = entry.source.lines
 
         # Montar method_return_types do caller
         mrt = {}
@@ -141,87 +139,88 @@ module RbsInfer
       file = find_class_file(class_name)
 
       if file && File.exist?(file)
-        source = File.read(file)
-        result = Prism.parse(source)
-        comments = result.comments
-        lines = source.lines
+        entry = @parse_cache.get(file)
 
-        # 1. Tipos anotados via ClassMemberCollector
-        collector = RbsInfer::ClassMemberCollector.new(comments: comments, lines: lines)
-        result.value.accept(collector)
+        if entry
+          result = entry.result
+          comments = result.comments
+          lines = entry.source.lines
 
-        attr_names = Set.new
-        collector.members.each do |member|
-          case member.kind
-          when :method
-            if member.signature =~ /.*->\s*(.+)$/
-              types[member.name] = $1.strip
-            end
-          when :attr_accessor, :attr_reader
-            attr_names.add(member.name)
-            if member.signature =~ /\w+:\s*(.+)/
-              type = $1.strip
-              types[member.name] = type unless type == "untyped"
+          # 1. Tipos anotados via ClassMemberCollector
+          collector = RbsInfer::ClassMemberCollector.new(comments: comments, lines: lines)
+          result.value.accept(collector)
+
+          attr_names = Set.new
+          collector.members.each do |member|
+            case member.kind
+            when :method
+              if member.signature =~ /.*->\s*(.+)$/
+                types[member.name] = $1.strip
+              end
+            when :attr_accessor, :attr_reader
+              attr_names.add(member.name)
+              if member.signature =~ /\w+:\s*(.+)/
+                type = $1.strip
+                types[member.name] = type unless type == "untyped"
+              end
             end
           end
-        end
 
-        # 1b. Inferir return types de literais/Klass.new na última expressão do método
-        def_collector = RbsInfer::DefCollector.new
-        result.value.accept(def_collector)
-        def_collector.defs.each do |defn|
-          next if types[defn.name.to_s] && types[defn.name.to_s] != "untyped"
-          body = defn.body
-          next unless body
-          last_stmt = body.is_a?(Prism::StatementsNode) ? body.body.last : body
-          next unless last_stmt
+          # 1b. Inferir return types de literais/Klass.new na última expressão do método
+          def_collector = RbsInfer::DefCollector.new
+          result.value.accept(def_collector)
+          def_collector.defs.each do |defn|
+            next if types[defn.name.to_s] && types[defn.name.to_s] != "untyped"
+            body = defn.body
+            next unless body
+            last_stmt = body.is_a?(Prism::StatementsNode) ? body.body.last : body
+            next unless last_stmt
 
-          inferred = infer_literal_return_type(last_stmt, class_name)
-          types[defn.name.to_s] = inferred if inferred
-        end
+            inferred = infer_literal_return_type(last_stmt, class_name)
+            types[defn.name.to_s] = inferred if inferred
+          end
 
-        # 2. Tipos inferidos via keyword defaults do initialize
-        init_visitor = RbsInfer::InitializeBodyAnalyzer.new
-        result.value.accept(init_visitor)
+          # 2. Tipos inferidos via keyword defaults do initialize
+          init_visitor = RbsInfer::InitializeBodyAnalyzer.new
+          result.value.accept(init_visitor)
 
-        init_visitor.keyword_defaults.each do |param_name, default_type|
+          init_visitor.keyword_defaults.each do |param_name, default_type|
+            init_visitor.self_assignments.each do |attr_name, info|
+              if info[:kind] == :param && info[:name] == param_name && !types[attr_name]
+                types[attr_name] = default_type
+              end
+            end
+          end
+
+          # 3. Tipos inferidos via self.attr = Algo.new(...) ou constante
           init_visitor.self_assignments.each do |attr_name, info|
-            if info[:kind] == :param && info[:name] == param_name && !types[attr_name]
-              types[attr_name] = default_type
+            next if types[attr_name]
+            next unless attr_names.include?(attr_name)
+
+            case info[:kind]
+            when :constant, :call
+              types[attr_name] = info[:type] if info[:type]
             end
           end
-        end
 
-        # 3. Tipos inferidos via self.attr = Algo.new(...) ou constante
-        init_visitor.self_assignments.each do |attr_name, info|
-          next if types[attr_name]
-          next unless attr_names.include?(attr_name)
-
-          case info[:kind]
-          when :constant, :call
-            types[attr_name] = info[:type] if info[:type]
+          # 4. Inferir attrs restantes via call-sites de ClassName.new(...)
+          untyped_attr_params = {}
+          init_visitor.self_assignments.each do |attr_name, info|
+            if info[:kind] == :param && attr_names.include?(attr_name) && !types[attr_name]
+              untyped_attr_params[info[:name]] = attr_name
+            end
           end
-        end
 
-        # 4. Inferir attrs restantes via call-sites de ClassName.new(...)
-        untyped_attr_params = {}
-        init_visitor.self_assignments.each do |attr_name, info|
-          if info[:kind] == :param && attr_names.include?(attr_name) && !types[attr_name]
-            untyped_attr_params[info[:name]] = attr_name
+          if untyped_attr_params.any?
+            infer_attrs_from_call_sites(class_name, types, untyped_attr_params)
           end
-        end
 
-        if untyped_attr_params.any?
-          infer_attrs_from_call_sites(class_name, types, untyped_attr_params)
-        end
-      end
-
-      # 5. Tipos de módulos incluídos (via RBS collection)
-      if file && File.exist?(file)
-        included_modules = @rbs_type_lookup.extract_includes(File.read(file))
-        included_modules.each do |mod_name|
-          mod_types = @rbs_type_lookup.lookup_rbs_collection_module_types(mod_name)
-          mod_types.each { |name, type| types[name] ||= type }
+          # 5. Tipos de módulos incluídos (via RBS collection)
+          included_modules = @rbs_type_lookup.extract_includes(entry.source)
+          included_modules.each do |mod_name|
+            mod_types = @rbs_type_lookup.lookup_rbs_collection_module_types(mod_name)
+            mod_types.each { |name, type| types[name] ||= type }
+          end
         end
       end
 
@@ -270,16 +269,13 @@ module RbsInfer
 
       files = @source_index ? @source_index.files_referencing(class_name) : @source_files
       files.each do |file|
-        begin
-          source = File.read(file)
-        rescue Errno::ENOENT, Errno::EACCES
-          next
-        end
-        next unless source.include?(short_name)
+        entry = @parse_cache.get(file)
+        next unless entry
+        next unless entry.source.include?(short_name)
 
-        result = Prism.parse(source)
+        result = entry.result
         comments = result.comments
-        lines = source.lines
+        lines = entry.source.lines
 
         # Extrair tipos de métodos e attrs anotados do caller
         method_return_types = {}

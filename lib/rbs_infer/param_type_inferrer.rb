@@ -7,7 +7,7 @@ module RbsInfer
   class ParamTypeInferrer
     ITERATOR_METHODS = RbsInfer::ITERATOR_METHODS
 
-    def initialize(target_file:, target_class:, source_files:, source_index: nil, method_type_resolver:, type_merger:, steep_bridge: nil)
+    def initialize(target_file:, target_class:, source_files:, source_index: nil, method_type_resolver:, type_merger:, steep_bridge: nil, parse_cache: nil)
       @target_file = target_file
       @target_class = target_class
       @source_files = source_files
@@ -15,6 +15,7 @@ module RbsInfer
       @method_type_resolver = method_type_resolver
       @type_merger = type_merger
       @steep_bridge = steep_bridge
+      @parse_cache = parse_cache || ParseCache.new
     end
 
     def infer_method_param_types(attr_types, parsed_target: nil)
@@ -69,15 +70,11 @@ module RbsInfer
 
       files = @source_index ? @source_index.files_referencing(@target_class) : @source_files
       files.each do |file|
-        begin
-          source = File.read(file)
-        rescue Errno::ENOENT, Errno::EACCES
-          next
-        end
-        next unless source.include?(short_name)
+        entry = @parse_cache.get(file)
+        next unless entry
+        next unless entry.source.include?(short_name)
 
-        result = Prism.parse(source)
-        forwarding = detect_forwarding_methods(result, target_class_filter: @target_class)
+        forwarding = detect_forwarding_methods(entry.result, target_class_filter: @target_class)
         next if forwarding.empty?
 
         forwarding.each do |method_name, param_names|
@@ -157,16 +154,13 @@ module RbsInfer
       usages = []
 
       @source_files.each do |file|
-        begin
-          file_source = File.read(file)
-        rescue Errno::ENOENT, Errno::EACCES
-          next
-        end
-        next unless file_source.include?(method_name)
+        entry = @parse_cache.get(file)
+        next unless entry
+        next unless entry.source.include?(method_name)
 
-        file_result = Prism.parse(file_source)
+        file_result = entry.result
         comments = file_result.comments
-        lines = file_source.lines
+        lines = entry.source.lines
 
         # Montar method_return_types do caller
         method_return_types = {}

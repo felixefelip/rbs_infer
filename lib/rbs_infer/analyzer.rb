@@ -36,6 +36,7 @@ module RbsInfer
   def initialize(target_class: nil, source_files:, target_file: nil, extra_caller_sources: nil)
     @source_files = source_files
     @source_index = SourceIndex.new(source_files)
+    @parse_cache = ParseCache.new
     @target_file = target_file
     @target_class = target_class
     @extra_caller_sources = extra_caller_sources
@@ -181,9 +182,11 @@ module RbsInfer
   def extract_class_name_from_file(file)
     return nil unless File.exist?(file)
 
-    result = Prism.parse(File.read(file))
+    entry = @parse_cache.get(file)
+    return nil unless entry
+
     visitor = ClassNameExtractor.new
-    result.value.accept(visitor)
+    entry.result.value.accept(visitor)
     @is_module = visitor.is_module
     visitor.class_name
   end
@@ -420,7 +423,7 @@ module RbsInfer
   end
 
   def method_type_resolver
-    @method_type_resolver ||= MethodTypeResolver.new(@source_files, source_index: @source_index)
+    @method_type_resolver ||= MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache)
   end
 
   def type_merger
@@ -445,7 +448,8 @@ module RbsInfer
       source_index: @source_index,
       method_type_resolver: method_type_resolver,
       type_merger: type_merger,
-      steep_bridge: steep_bridge
+      steep_bridge: steep_bridge,
+      parse_cache: @parse_cache
     )
   end
 
@@ -467,9 +471,11 @@ module RbsInfer
 
       next unless source_file && File.exist?(source_file)
 
-      result = Prism.parse(File.read(source_file))
+      entry = @parse_cache.get(source_file)
+      next unless entry
+
       visitor = ClassNameExtractor.new
-      result.value.accept(visitor)
+      entry.result.value.accept(visitor)
       classes.add(full_name) if visitor.class_name == full_name && !visitor.is_module
     end
 
@@ -479,6 +485,7 @@ module RbsInfer
   end
 end
 
+require_relative "parse_cache"
 require_relative "node_type_inferrer"
 require_relative "known_return_types_builder"
 require_relative "rbs_annotation_parser"
