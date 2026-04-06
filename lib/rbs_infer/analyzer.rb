@@ -38,6 +38,7 @@ module RbsInfer
     @source_index = SourceIndex.new(source_files)
     @parse_cache = ParseCache.new
     @file_index = FileIndex.new(source_files)
+    @caller_file_cache = CallerFileCache.new(@parse_cache)
     @target_file = target_file
     @target_class = target_class
     @extra_caller_sources = extra_caller_sources
@@ -424,7 +425,7 @@ module RbsInfer
   end
 
   def method_type_resolver
-    @method_type_resolver ||= MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index)
+    @method_type_resolver ||= MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache)
   end
 
   def type_merger
@@ -451,7 +452,8 @@ module RbsInfer
       type_merger: type_merger,
       steep_bridge: steep_bridge,
       parse_cache: @parse_cache,
-      file_index: @file_index
+      file_index: @file_index,
+      caller_file_cache: @caller_file_cache
     )
   end
 
@@ -489,6 +491,7 @@ end
 
 require_relative "parse_cache"
 require_relative "file_index"
+require_relative "caller_file_cache"
 require_relative "node_type_inferrer"
 require_relative "known_return_types_builder"
 require_relative "rbs_annotation_parser"

@@ -7,11 +7,12 @@ module RbsInfer
   class MethodTypeResolver
     include NodeTypeInferrer
 
-    def initialize(source_files, source_index: nil, parse_cache: nil, file_index: nil)
+    def initialize(source_files, source_index: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil)
       @source_files = source_files
       @source_index = source_index
       @parse_cache = parse_cache || ParseCache.new
       @file_index = file_index || FileIndex.new(source_files)
+      @caller_file_cache = caller_file_cache || CallerFileCache.new(@parse_cache)
       @cache = {}
       @building = Set.new # guard contra recursão infinita
       @rbs_type_lookup = RbsTypeLookup.new
@@ -74,15 +75,12 @@ module RbsInfer
         next unless entry
         next unless entry.source.include?(short_name)
 
-        result = entry.result
-        comments = result.comments
-        lines = entry.source.lines
+        analysis = @caller_file_cache.get(file)
+        next unless analysis
 
-        # Montar method_return_types do caller
+        # Montar method_return_types do caller a partir dos membros já coletados
         mrt = {}
-        member_collector = RbsInfer::ClassMemberCollector.new(comments: comments, lines: lines)
-        result.value.accept(member_collector)
-        member_collector.members.each do |m|
+        analysis.members.each do |m|
           case m.kind
           when :method
             if m.signature =~ /.*->\s*(.+)$/
@@ -96,10 +94,7 @@ module RbsInfer
           end
         end
 
-        # Resolver caller class types
-        caller_ext = RbsInfer::ClassNameExtractor.new
-        result.value.accept(caller_ext)
-        caller_class_name = caller_ext.class_name
+        caller_class_name = analysis.class_name
         if caller_class_name
           caller_types = resolve_all(caller_class_name)
           caller_types.each { |name, type| mrt[name] ||= type }
@@ -113,7 +108,7 @@ module RbsInfer
           method_type_resolver: self,
           caller_class_name: caller_class_name
         )
-        result.value.accept(visitor)
+        entry.result.value.accept(visitor)
         all_usages.concat(visitor.usages)
       end
 
@@ -274,15 +269,13 @@ module RbsInfer
         next unless entry
         next unless entry.source.include?(short_name)
 
-        result = entry.result
-        comments = result.comments
-        lines = entry.source.lines
+        analysis = @caller_file_cache.get(file)
+        next unless analysis
 
-        # Extrair tipos de métodos e attrs anotados do caller
+        # Extrair tipos de métodos anotados via #: nos defs já coletados
+        comments = entry.result.comments
         method_return_types = {}
-        def_visitor = RbsInfer::DefCollector.new
-        result.value.accept(def_visitor)
-        def_visitor.defs.each do |defn|
+        analysis.defs.each do |defn|
           def_line = defn.location.start_line
           comments.each do |comment|
             cl = comment.location.start_line
@@ -294,10 +287,8 @@ module RbsInfer
           end
         end
 
-        # Incluir attr types anotados
-        member_collector = RbsInfer::ClassMemberCollector.new(comments: comments, lines: lines)
-        result.value.accept(member_collector)
-        member_collector.members.each do |m|
+        # Incluir attr types anotados a partir dos membros já coletados
+        analysis.members.each do |m|
           next unless [:attr_accessor, :attr_reader].include?(m.kind)
           if m.signature =~ /\w+:\s*(.+)/
             type = $1.strip
@@ -305,10 +296,7 @@ module RbsInfer
           end
         end
 
-        # Resolver caller class types via MethodTypeResolver
-        caller_ext = RbsInfer::ClassNameExtractor.new
-        result.value.accept(caller_ext)
-        caller_class_name = caller_ext.class_name
+        caller_class_name = analysis.class_name
         if caller_class_name
           caller_types = resolve_all(caller_class_name)
           caller_types.each { |name, type| method_return_types[name] ||= type }
@@ -322,7 +310,7 @@ module RbsInfer
           method_type_resolver: self,
           caller_class_name: caller_class_name
         )
-        result.value.accept(visitor)
+        entry.result.value.accept(visitor)
 
         visitor.usages.each do |usage|
           usage.each do |param_name, type|

@@ -7,7 +7,7 @@ module RbsInfer
   class ParamTypeInferrer
     ITERATOR_METHODS = RbsInfer::ITERATOR_METHODS
 
-    def initialize(target_file:, target_class:, source_files:, source_index: nil, method_type_resolver:, type_merger:, steep_bridge: nil, parse_cache: nil, file_index: nil)
+    def initialize(target_file:, target_class:, source_files:, source_index: nil, method_type_resolver:, type_merger:, steep_bridge: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil)
       @target_file = target_file
       @target_class = target_class
       @source_files = source_files
@@ -17,6 +17,7 @@ module RbsInfer
       @steep_bridge = steep_bridge
       @parse_cache = parse_cache || ParseCache.new
       @file_index = file_index || FileIndex.new(source_files)
+      @caller_file_cache = caller_file_cache || CallerFileCache.new(@parse_cache)
     end
 
     def infer_method_param_types(attr_types, parsed_target: nil)
@@ -159,15 +160,14 @@ module RbsInfer
         next unless entry
         next unless entry.source.include?(method_name)
 
-        file_result = entry.result
-        comments = file_result.comments
-        lines = entry.source.lines
+        analysis = @caller_file_cache.get(file)
+        next unless analysis
 
-        # Montar method_return_types do caller
+        file_result = entry.result
+
+        # Montar method_return_types do caller a partir dos membros já coletados
         method_return_types = {}
-        member_collector = ClassMemberCollector.new(comments: comments, lines: lines)
-        file_result.value.accept(member_collector)
-        member_collector.members.each do |m|
+        analysis.members.each do |m|
           case m.kind
           when :method
             if m.signature =~ /.*->\s*(.+)$/
@@ -181,11 +181,8 @@ module RbsInfer
           end
         end
 
-        # Resolver caller class types
-        caller_ext = ClassNameExtractor.new
-        file_result.value.accept(caller_ext)
-        if caller_ext.class_name
-          caller_types = @method_type_resolver.resolve_all(caller_ext.class_name)
+        if analysis.class_name
+          caller_types = @method_type_resolver.resolve_all(analysis.class_name)
           caller_types.each { |name, type| method_return_types[name] ||= type }
         end
 
@@ -193,7 +190,7 @@ module RbsInfer
         matching_calls = Analyzer.find_all_nodes(file_result.value) { |n| n.is_a?(Prism::CallNode) && n.name == method_name.to_sym && n.arguments }
         matching_calls.each do |node|
 
-          local_var_types = collect_local_var_types_for_scope(node, file_result, method_return_types, caller_ext.class_name, source_code: file_source)
+          local_var_types = collect_local_var_types_for_scope(node, file_result, method_return_types, analysis.class_name, source_code: entry.source)
 
           usage = {}
           node.arguments.arguments.each do |arg|
