@@ -32,15 +32,16 @@ module RbsInfer
       # Emitir extend para módulos estendidos (e.g. ActiveSupport::Concern)
       extends = members.select { |m| m.kind == :extend }
       extends.each do |ext|
-        lines << "#{member_indent}extend #{ext.name}"
+        lines << "#{member_indent}extend #{qualify(ext.name)}"
       end
 
       # Emitir include/extend para módulos incluídos (concerns)
       includes = members.select { |m| m.kind == :include }
       includes.each do |inc|
-        lines << "#{member_indent}include #{inc.name}"
+        qualified = qualify(inc.name)
+        lines << "#{member_indent}include #{qualified}"
         if has_class_methods_module?(inc.name)
-          lines << "#{member_indent}extend #{inc.name}::ClassMethods"
+          lines << "#{member_indent}extend #{qualified}::ClassMethods"
         end
       end
 
@@ -100,6 +101,16 @@ module RbsInfer
     end
 
     private
+
+    # Qualifica nomes de tipo que seriam ambíguos no contexto do namespace gerado.
+    # Ex: dentro de "class Account { module Storage { ... } }", um include "Storage::Totaled"
+    # seria resolvido como Account::Storage::Totaled em vez de ::Storage::Totaled.
+    def qualify(type_name)
+      return type_name if type_name.start_with?("::")
+      all_parts = @target_class.split("::")
+      first = type_name.split("::").first
+      all_parts.include?(first) ? "::#{type_name}" : type_name
+    end
 
     MAILER_BASES = %w[ApplicationMailer ActionMailer::Base].freeze
 

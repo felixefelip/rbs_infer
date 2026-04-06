@@ -56,6 +56,31 @@ RSpec.describe RbsInfer::RbsBuilder do
     end
   end
 
+  describe "#build com qualify (include/extend ambíguos)" do
+    it "prefixa include com :: quando o nome coincide com parte do namespace" do
+      # Account::Storage inclui Storage::Totaled → dentro de class Account { module Storage }
+      # o RBS resolveria Storage::Totaled como Account::Storage::Totaled (errado)
+      members = [
+        RbsInfer::Member.new(kind: :include, name: "Storage::Totaled", signature: "", visibility: :public)
+      ]
+      builder = described_class.new(target_class: "Account::Storage", superclass_name: nil)
+      result = builder.build(members, {}, {})
+
+      expect(result).to include("include ::Storage::Totaled")
+    end
+
+    it "não prefixa include quando não há ambiguidade" do
+      members = [
+        RbsInfer::Member.new(kind: :include, name: "ActiveSupport::Concern", signature: "", visibility: :public)
+      ]
+      builder = described_class.new(target_class: "Account::Storage", superclass_name: nil)
+      result = builder.build(members, {}, {})
+
+      expect(result).to include("include ActiveSupport::Concern")
+      expect(result).not_to include("::ActiveSupport")
+    end
+  end
+
   describe "#build com protected" do
     let(:builder) do
       described_class.new(target_class: "Foo", superclass_name: nil)
