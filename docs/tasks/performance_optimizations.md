@@ -12,6 +12,9 @@ Para cada arquivo de caller, o código roda 3–4 `accept()` separados no mesmo 
 
 **Fix**: Um único traversal por arquivo que coleta tudo de uma vez.
 
+**Implementado**: `lib/rbs_infer/caller_file_cache.rb` — cache de `CallerFileAnalysis` (members + class_name + defs) compartilhado entre `MethodTypeResolver` e `ParamTypeInferrer`. Reduz de 3–4 `accept()` para 1 por arquivo de caller.
+**Resultado medido**: tempo dos testes de integração reduziu de **2min 45s → 2min 30s** (~9% de ganho adicional).
+
 ---
 
 ### 2. Mesmos arquivos lidos e parseados múltiplas vezes
