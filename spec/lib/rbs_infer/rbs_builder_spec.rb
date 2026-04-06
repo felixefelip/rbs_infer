@@ -69,6 +69,14 @@ RSpec.describe RbsInfer::RbsBuilder do
       expect(result).to include("include ::Storage::Totaled")
     end
 
+    it "prefixa superclass com :: quando o nome coincide com parte do namespace" do
+      # Account::Export < Export → dentro de class Account, Export resolve como Account::Export
+      builder = described_class.new(target_class: "Account::Export", superclass_name: "Export")
+      result = builder.build([], {}, {})
+
+      expect(result).to include("class Export < ::Export")
+    end
+
     it "não prefixa include quando não há ambiguidade" do
       members = [
         RbsInfer::Member.new(kind: :include, name: "ActiveSupport::Concern", signature: "", visibility: :public)

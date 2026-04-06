@@ -22,7 +22,7 @@ module RbsInfer
         lines << "#{"  " * i}#{keyword} #{mod}"
       end
       keyword = @is_module ? "module" : "class"
-      lines << "#{base_indent}#{keyword} #{class_name}#{!@is_module && @superclass_name ? " < #{@superclass_name}" : ""}"
+      lines << "#{base_indent}#{keyword} #{class_name}#{!@is_module && @superclass_name ? " < #{qualify(@superclass_name)}" : ""}"
 
       # Emitir instance variables tipadas (@post: Post, @posts: ...)
       ivar_types.each do |name, type|
