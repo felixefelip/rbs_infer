@@ -1,7 +1,7 @@
 class Post < ApplicationRecord
   extend Enumerize
-  include Post::Taggable
-  include Post::Notifiable
+  include ::Post::Taggable
+  include ::Post::Notifiable
   include Test::Filtrable
   def summary: (?Integer length) -> String
   def test_status: () -> Post::EnumerizeStatusValue
