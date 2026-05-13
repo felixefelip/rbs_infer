@@ -27,6 +27,9 @@ rbs_rails_custom:
 rbs_infer_enumerize:
 	cd $(DUMMY_DIR) && bundle exec rake rbs_infer:enumerize:all
 
+rbs_infer_carrierwave:
+	cd $(DUMMY_DIR) && bundle exec rake rbs_infer:carrierwave:all
+
 rbs_rails_generator:
 	cd $(DUMMY_DIR) && rake rbs_rails:all
 
@@ -37,6 +40,7 @@ rbs_generators_all:
 	make rbs_rails_generator
 	make rbs_rails_custom
 	make rbs_infer_enumerize
+	make rbs_infer_carrierwave
 	make rbs_infer_erb
 
 ## Gerar RBS apenas para arquivo específico passado como argumento

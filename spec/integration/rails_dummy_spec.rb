@@ -79,6 +79,60 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("uploaders/avatar_uploader", target_class: "AvatarUploader", target_file: "app/uploaders/avatar_uploader.rb")
   end
 
+  describe "CarrierWave mount_uploader generator" do
+    require "rbs_infer/extensions/carrierwave/generator"
+    require "tmpdir"
+    require "fileutils"
+
+    it "rewrites User accessors and strips conflicting rbs_rails column defs" do
+      Dir.mktmpdir do |tmpdir|
+        rbs_rails_copy = File.join(tmpdir, "rbs_rails")
+        FileUtils.cp_r("sig/rbs_rails", rbs_rails_copy)
+
+        generator = RbsInfer::Extensions::CarrierWave::Generator.new(
+          app_dir: Dir.pwd,
+          output_dir: tmpdir,
+          rbs_rails_dir: rbs_rails_copy
+        )
+        generator.generate_all
+
+        rbs = File.read(File.join(tmpdir, "app/models/user.rbs"))
+
+        if ENV["UPDATE_EXPECTATIONS"]
+          path = expectations_dir.join("carrierwave/user.rbs")
+          FileUtils.mkdir_p(path.dirname)
+          path.write(rbs)
+        end
+
+        expect(rbs.chomp).to eq(expected_rbs("carrierwave/user").chomp)
+
+        stripped = File.read(File.join(rbs_rails_copy, "app/models/user.rbs"))
+        expect(stripped).not_to match(/^\s+def avatar:/)
+        expect(stripped).not_to match(/^\s+def avatar=:/)
+        expect(stripped).not_to match(/^\s+def avatar\?:/)
+        expect(stripped).to match(/^\s+def avatar_changed\?:/)
+        expect(stripped).to match(/^\s+def avatar_before_type_cast:/)
+      end
+    end
+
+    it "skips models without mount_uploader" do
+      Dir.mktmpdir do |tmpdir|
+        rbs_rails_copy = File.join(tmpdir, "rbs_rails")
+        FileUtils.cp_r("sig/rbs_rails", rbs_rails_copy)
+
+        generator = RbsInfer::Extensions::CarrierWave::Generator.new(
+          app_dir: Dir.pwd,
+          output_dir: tmpdir,
+          rbs_rails_dir: rbs_rails_copy
+        )
+        generator.generate_all
+
+        expect(File.exist?(File.join(tmpdir, "app/models/post.rbs"))).to be false
+        expect(File.exist?(File.join(tmpdir, "app/models/comment.rbs"))).to be false
+      end
+    end
+  end
+
   it "PostPublisher service matches expected RBS" do
     assert_snapshot("services/post_publisher", target_class: "PostPublisher", target_file: "app/services/post_publisher.rb")
   end
