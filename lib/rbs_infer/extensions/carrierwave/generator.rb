@@ -136,29 +136,89 @@ module RbsInfer
         end
 
         def build_methods(call)
+          call[:multiple] ? build_multiple_methods(call) : build_single_methods(call)
+        end
+
+        def build_single_methods(call)
           attr = call[:name]
           uploader = "::#{call[:uploader]}"
-          getter_type = call[:multiple] ? "Array[#{uploader}]" : uploader
 
           [
-            "  def #{attr}: () -> #{getter_type}",
+            "  def #{attr}: () -> #{uploader}",
             "  def #{attr}=: (untyped) -> untyped",
             "  def #{attr}?: () -> bool",
-            "",
-            "  def remove_#{attr}: () -> bool",
-            "  def remove_#{attr}=: (bool | ::String) -> (bool | ::String)",
-            "  def remove_#{attr}?: () -> bool",
+            "  def #{attr}_url: (*::Symbol) -> ::String?",
+            "  def #{attr}_identifier: () -> ::String?",
             "",
             "  def #{attr}_cache: () -> ::String?",
             "  def #{attr}_cache=: (::String?) -> ::String?",
             "",
             "  def remote_#{attr}_url: () -> ::String?",
             "  def remote_#{attr}_url=: (::String?) -> ::String?",
+            "  def remote_#{attr}_request_header=: (untyped) -> untyped",
             "",
-            "  def write_#{attr}_identifier: () -> void",
-            "  def store_#{attr}!: () -> void",
+            *shared_lifecycle_methods(attr),
+            "",
+            "  def #{attr}_integrity_error: () -> ::CarrierWave::IntegrityError?",
+            "  def #{attr}_processing_error: () -> ::CarrierWave::ProcessingError?",
+            "  def #{attr}_download_error: () -> ::CarrierWave::DownloadError?",
+            *error_collection_methods(attr),
+            "",
+            *callback_methods(attr)
+          ]
+        end
+
+        def build_multiple_methods(call)
+          attr = call[:name]
+          uploader = "::#{call[:uploader]}"
+
+          [
+            "  def #{attr}: () -> ::Array[#{uploader}]",
+            "  def #{attr}=: (untyped) -> untyped",
+            "  def #{attr}?: () -> bool",
+            "  def #{attr}_urls: (*::Symbol) -> ::Array[::String]",
+            "  def #{attr}_identifiers: () -> ::Array[::String]",
+            "",
+            "  def #{attr}_cache: () -> ::String?",
+            "  def #{attr}_cache=: (::String?) -> ::String?",
+            "",
+            "  def remote_#{attr}_urls: () -> ::Array[::String]",
+            "  def remote_#{attr}_urls=: (::Array[::String]) -> ::Array[::String]",
+            "  def remote_#{attr}_request_headers=: (untyped) -> untyped",
+            "",
+            *shared_lifecycle_methods(attr),
+            "",
+            *error_collection_methods(attr),
+            "",
+            *callback_methods(attr)
+          ]
+        end
+
+        def shared_lifecycle_methods(attr)
+          [
+            "  def remove_#{attr}: () -> (bool | ::String)",
+            "  def remove_#{attr}=: (bool | ::String) -> (bool | ::String)",
+            "  def remove_#{attr}?: () -> bool",
             "  def remove_#{attr}!: () -> void",
-            "  def store_previous_changes_for_#{attr}: () -> void"
+            "  def store_#{attr}!: () -> void",
+            "  def write_#{attr}_identifier: () -> void"
+          ]
+        end
+
+        def error_collection_methods(attr)
+          [
+            "  def #{attr}_integrity_errors: () -> ::Array[::CarrierWave::IntegrityError]",
+            "  def #{attr}_processing_errors: () -> ::Array[::CarrierWave::ProcessingError]",
+            "  def #{attr}_download_errors: () -> ::Array[::CarrierWave::DownloadError]"
+          ]
+        end
+
+        def callback_methods(attr)
+          [
+            "  def mark_remove_#{attr}_false: () -> void",
+            "  def reset_previous_changes_for_#{attr}: () -> void",
+            "  def remove_previously_stored_#{attr}: () -> void",
+            "  def remove_rolled_back_#{attr}: () -> void"
           ]
         end
 

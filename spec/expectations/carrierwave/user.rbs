@@ -4,19 +4,32 @@ class ::User
   def avatar: () -> ::AvatarUploader
   def avatar=: (untyped) -> untyped
   def avatar?: () -> bool
-
-  def remove_avatar: () -> bool
-  def remove_avatar=: (bool | ::String) -> (bool | ::String)
-  def remove_avatar?: () -> bool
+  def avatar_url: (*::Symbol) -> ::String?
+  def avatar_identifier: () -> ::String?
 
   def avatar_cache: () -> ::String?
   def avatar_cache=: (::String?) -> ::String?
 
   def remote_avatar_url: () -> ::String?
   def remote_avatar_url=: (::String?) -> ::String?
+  def remote_avatar_request_header=: (untyped) -> untyped
 
-  def write_avatar_identifier: () -> void
-  def store_avatar!: () -> void
+  def remove_avatar: () -> (bool | ::String)
+  def remove_avatar=: (bool | ::String) -> (bool | ::String)
+  def remove_avatar?: () -> bool
   def remove_avatar!: () -> void
-  def store_previous_changes_for_avatar: () -> void
+  def store_avatar!: () -> void
+  def write_avatar_identifier: () -> void
+
+  def avatar_integrity_error: () -> ::CarrierWave::IntegrityError?
+  def avatar_processing_error: () -> ::CarrierWave::ProcessingError?
+  def avatar_download_error: () -> ::CarrierWave::DownloadError?
+  def avatar_integrity_errors: () -> ::Array[::CarrierWave::IntegrityError]
+  def avatar_processing_errors: () -> ::Array[::CarrierWave::ProcessingError]
+  def avatar_download_errors: () -> ::Array[::CarrierWave::DownloadError]
+
+  def mark_remove_avatar_false: () -> void
+  def reset_previous_changes_for_avatar: () -> void
+  def remove_previously_stored_avatar: () -> void
+  def remove_rolled_back_avatar: () -> void
 end
