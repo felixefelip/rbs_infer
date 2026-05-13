@@ -1,0 +1,106 @@
+# frozen_string_literal: true
+
+require "spec_helper"
+require "open3"
+require "pathname"
+
+# Baseline-style steep check: runs `steep check` against the dummy app and
+# compares the resulting error list to spec/expectations/steep_baseline.txt.
+#
+# - Fails if *any* error is in the current run but not in the baseline
+#   (regression — guard against new type errors introduced by changes to
+#   the generators, RBS shims, or the dummy fixtures).
+# - Fails if any error is in the baseline but not in the current run
+#   (improvement — forces the dev to consciously refresh the baseline so
+#   we don't silently drift back into a worse state later).
+#
+# To accept changes in either direction:
+#
+#     UPDATE_STEEP_BASELINE=1 bundle exec rspec spec/integration/steep_dummy_spec.rb
+RSpec.describe "Steep type check on dummy app", :dummy_app do
+  let(:dummy_root) { Pathname.new(DUMMY_APP_ROOT) }
+  let(:baseline_path) { Pathname.new(File.expand_path("../expectations/steep_baseline.txt", __dir__)) }
+
+  before(:all) do
+    Dir.chdir(DUMMY_APP_ROOT) do
+      Bundler.with_unbundled_env do
+        system("bundle", "install", "--quiet", exception: true)
+        system("bundle", "exec", "rake", "db:create", "db:migrate", "RAILS_ENV=development",
+               exception: true, out: File::NULL, err: File::NULL)
+        system("bundle", "exec", "rake", "rbs_rails:all",
+               exception: true, out: File::NULL, err: File::NULL)
+        system("bundle", "exec", "rbs", "collection", "install",
+               exception: true, out: File::NULL, err: File::NULL)
+        # rbs_infer:carrierwave:all must run *after* rbs_rails:all because it
+        # strips the column accessors from the freshly-generated rbs_rails
+        # output. Skipping it would let the rbs_rails-emitted `def avatar:
+        # () -> ::String?` clash with the uploader-typed accessor and surface
+        # as a noisy DuplicateMethodDefinition.
+        system("bundle", "exec", "rake", "rbs_infer:carrierwave:all",
+               exception: true, out: File::NULL, err: File::NULL)
+      end
+    end
+  end
+
+  # Match the compact "path:line:col: [severity] message" lines steep prints
+  # to stdout. Ignore stderr warnings (rbs collection version mismatch noise)
+  # and the trailing "Detected N problems" summary.
+  STEEP_ERROR_LINE = /\A(?<path>[^\s:]+\.[a-z]+):(?<line>\d+):(?<col>\d+):\s+\[(?<severity>error|warning)\]\s+(?<message>.+)\z/.freeze
+
+  def run_steep
+    env = {
+      "STEEP_ERB_CONVENTION" => "1",
+      "STEEP_MODULE_CONVENTION" => "1"
+    }
+
+    Bundler.with_unbundled_env do
+      Dir.chdir(DUMMY_APP_ROOT) do
+        stdout, _stderr, _status = Open3.capture3(env, "bundle", "exec", "steep", "check")
+        stdout
+      end
+    end
+  end
+
+  def parse_errors(steep_output)
+    steep_output.lines.filter_map do |line|
+      m = line.chomp.match(STEEP_ERROR_LINE)
+      next unless m
+
+      "#{m[:path]}:#{m[:line]}:#{m[:col]}: [#{m[:severity]}] #{m[:message]}"
+    end.sort.uniq
+  end
+
+  def load_baseline
+    return [] unless baseline_path.exist?
+
+    baseline_path.read.lines.map(&:chomp).reject(&:empty?)
+  end
+
+  def write_baseline(errors)
+    baseline_path.parent.mkpath
+    baseline_path.write(errors.join("\n") + "\n")
+  end
+
+  it "produces only the errors recorded in the baseline" do
+    current = parse_errors(run_steep)
+
+    if ENV["UPDATE_STEEP_BASELINE"]
+      write_baseline(current)
+      skip "baseline refreshed at #{baseline_path.relative_path_from(Pathname.pwd)} (#{current.size} entries)"
+    end
+
+    baseline = load_baseline
+    new_errors = current - baseline
+    fixed_errors = baseline - current
+
+    failures = []
+    if new_errors.any?
+      failures << "New steep errors not in baseline (regression):\n  " + new_errors.join("\n  ")
+    end
+    if fixed_errors.any?
+      failures << "Errors gone from baseline (good — refresh with UPDATE_STEEP_BASELINE=1):\n  " + fixed_errors.join("\n  ")
+    end
+
+    expect(failures).to be_empty, failures.join("\n\n")
+  end
+end

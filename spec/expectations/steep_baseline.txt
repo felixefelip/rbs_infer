@@ -1,0 +1,15 @@
+app/models/concerns/test/filtrable.rb:12:27: [error] Type `(::Test & ::Test::Filtrable)` does not have method `updated_at`
+app/models/concerns/test/filtrable.rb:12:4: [error] Type `(::Test & ::Test::Filtrable)` does not have method `created_at`
+app/models/concerns/test/filtrable.rb:16:13: [error] Type `(::Test & ::Test::Filtrable)` does not have method `adddd`
+app/models/concerns/test/filtrable.rb:16:4: [error] Type `(::Test & ::Test::Filtrable)` does not have method `asdasd`
+app/models/concerns/test/filtrable.rb:7:24: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `where`
+app/models/concerns/test/filtrable.rb:7:4: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `scope`
+app/models/concerns/test/filtrable.rb:8:26: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `where`
+app/models/concerns/test/filtrable.rb:8:4: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `scope`
+app/models/tag.rb:9:11: [warning] Method `::Tag.popular` is not declared in RBS
+app/models/user/recoverable.rb:10:6: [error] Cannot allow method body have type `::User` because declared as type `self`
+app/models/user/recoverable.rb:14:6: [error] Cannot allow method body have type `::User` because declared as type `self`
+app/models/user/recoverable.rb:18:6: [error] Cannot allow method body have type `::User` because declared as type `self`
+app/services/post_publisher.rb:19:11: [warning] Method `::PostPublisher.publish` is not declared in RBS
+app/services/tag_destroy.rb:103:5: [error] Cannot allow method body have type `(void | ::String | nil)` because declared as type `(::String | nil)`
+app/services/tag_destroy.rb:89:4: [error] Type `::TagDestroy` does not have method `untyped`
