@@ -1,0 +1,4 @@
+class AvatarUploader < CarrierWave::Uploader::Base
+  def store_dir: () -> String
+  def extension_allowlist: () -> Array[untyped]
+end

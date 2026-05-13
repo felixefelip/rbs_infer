@@ -1,0 +1,12 @@
+module Users
+  class AvatarsController < ApplicationController
+    @user: User
+    def edit: () -> void
+    def update: () -> void
+
+    private
+
+    def set_user: () -> User
+    def avatar_params: () -> untyped
+  end
+end

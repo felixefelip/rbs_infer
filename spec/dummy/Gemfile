@@ -11,6 +11,8 @@ gem "puma", ">= 5.0"
 
 gem "enumerize"
 
+gem "carrierwave", "~> 3.0"
+
 # RBS type signatures
 gem "rbs_infer", path: "../.."
 gem "rbs_rails", path: "/home/felix/workspaces/ruby-workspace/rbs_rails", require: false

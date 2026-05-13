@@ -71,6 +71,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("controllers/users_controller", target_class: "UsersController", target_file: "app/controllers/users_controller.rb")
   end
 
+  it "Users::AvatarsController matches expected RBS" do
+    assert_snapshot("controllers/users/avatars_controller", target_class: "Users::AvatarsController", target_file: "app/controllers/users/avatars_controller.rb")
+  end
+
+  it "AvatarUploader matches expected RBS" do
+    assert_snapshot("uploaders/avatar_uploader", target_class: "AvatarUploader", target_file: "app/uploaders/avatar_uploader.rb")
+  end
+
   it "PostPublisher service matches expected RBS" do
     assert_snapshot("services/post_publisher", target_class: "PostPublisher", target_file: "app/services/post_publisher.rb")
   end
@@ -234,6 +242,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
     it "ERBLayoutsApplication matches expected RBS" do
       assert_erb_snapshot(output_file: "app/views/layouts/application.rbs")
+    end
+
+    it "ERBUsersShow matches expected RBS" do
+      assert_erb_snapshot(output_file: "app/views/users/show.rbs")
+    end
+
+    it "ERBUsersAvatarsEdit matches expected RBS" do
+      assert_erb_snapshot(output_file: "app/views/users/avatars/edit.rbs")
     end
   end
 end

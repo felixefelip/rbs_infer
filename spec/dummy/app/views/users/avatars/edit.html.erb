@@ -1,0 +1,35 @@
+<h1>Edit avatar for <%= @user.name %></h1>
+
+<%= form_with(model: @user, url: user_avatar_path(@user), method: :patch) do |f| %>
+  <% if @user.errors.any? %>
+    <div class="errors">
+      <h3><%= pluralize(@user.errors.count, "error") %> prohibited this user from being saved:</h3>
+      <ul>
+        <% @user.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% if @user.avatar.present? %>
+    <div class="field">
+      <%= image_tag @user.avatar.url, alt: "Current avatar", style: "max-width: 200px;" %>
+      <label>
+        <%= f.check_box :remove_avatar %> Remove avatar
+      </label>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :avatar %>
+    <%= f.file_field :avatar %>
+    <%= f.hidden_field :avatar_cache %>
+  </div>
+
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>
+
+<%= link_to "Back to user", @user %>

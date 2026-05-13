@@ -16,3 +16,4 @@ spec/dummy/tmp/
 spec/dummy/sig/rbs_rails/
 spec/dummy/.rbs_collection/
 spec/dummy/.gem_rbs_collection/
+spec/dummy/public/uploads/

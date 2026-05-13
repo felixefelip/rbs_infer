@@ -1,6 +1,6 @@
 class User < ApplicationRecord
-  include User::Recoverable
-  include User::Displayable
+  include ::User::Recoverable
+  include ::User::Displayable
   attr_accessor session_token: untyped
   def full_name: () -> String
   def active?: () -> bool?

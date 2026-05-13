@@ -4,6 +4,8 @@ class User < ApplicationRecord
   include User::Recoverable
   include User::Displayable
 
+  mount_uploader :avatar, AvatarUploader
+
   has_many :posts, dependent: :destroy
   has_many :comments, dependent: :destroy
 

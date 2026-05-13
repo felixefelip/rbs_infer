@@ -1,0 +1,16 @@
+<h1><%= @user.name %></h1>
+
+<% if @user.avatar.present? %>
+  <%= image_tag @user.avatar.url, alt: "#{@user.name} avatar", style: "max-width: 200px;" %>
+<% end %>
+
+<p><strong>Email:</strong> <%= @user.email %></p>
+
+<h2>Recent posts</h2>
+<ul>
+  <% @posts.each do |post| %>
+    <li><%= link_to post.title, post %></li>
+  <% end %>
+</ul>
+
+<%= link_to "Edit avatar", edit_user_avatar_path(@user) %>

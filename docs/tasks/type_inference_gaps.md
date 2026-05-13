@@ -186,3 +186,40 @@ key, value = pair.split("=", 2)
 | 6 | `@ivar` como argumento | Baixo | Trivial | 3 linhas no `ParamTypeInferrer`. |
 | 7 | `begin/rescue` valor | Médio | Médio | Decidir semântica de union com rescue clauses. |
 | 8 | Multi-assignment | Baixo-Médio | Médio-Alto | Requer resolução de tuples, escopo limitado. |
+
+---
+
+## Apêndice: cobertura de gems externas — caso CarrierWave
+
+Observado ao executar o plano `carrierwave_user_avatar_upload.md` no `spec/dummy`:
+
+### 1. RBS da gem CarrierWave — resolvido via `gem_rbs_collection` (fork)
+
+`rbs_infer` gera `sig/rbs_infer/app/uploaders/avatar_uploader.rbs` com `class AvatarUploader < CarrierWave::Uploader::Base`. A RBS para a hierarquia da gem (`CarrierWave::Uploader::Base`, `Mount`, `Configuration`, etc.) **vem do fork `felixefelip/gem_rbs_collection`** referenciado em `spec/dummy/rbs_collection.yaml`. Após `bundle exec rbs collection install`, a entrada `carrierwave` aparece em `rbs_collection.lock.yaml` e os tipos passam a resolver normalmente.
+
+**Caminho recomendado para outras gems sem entry no collection:** adicionar manualmente a RBS no fork, ou criar uma stub local em `sig/vendor/<gem>.rbs` com a interface pública usada.
+
+### 2. `mount_uploader` não é reconhecido como override de coluna AR
+
+O `rbs_rails` gera `def avatar: () -> ::String?` (e o setter equivalente) a partir da coluna `users.avatar:string`. Após `mount_uploader :avatar, AvatarUploader`, em runtime esses acessores passam a retornar uma instância de `AvatarUploader`, mas nem `rbs_rails` nem `rbs_infer` ajustam o tipo. Como agora a hierarquia `CarrierWave::*` está resolvida (gap #1), o erro vira concreto no consumidor:
+
+```
+app/views/users/show.html.erb:4:29: [error] Type `(::String | nil)` does not have method `url`
+app/views/users/avatars/edit.html.erb:17:33: [error] Type `(::String | nil)` does not have method `url`
+```
+
+Métodos novos injetados pelo `mount_uploader` também ficam ausentes:
+
+- `avatar` / `avatar=` (override; retornam `AvatarUploader`, aceitam `IO`/`ActionDispatch::Http::UploadedFile`)
+- `avatar?` (presence check via uploader)
+- `avatar_cache` / `avatar_cache=`
+- `remove_avatar` / `remove_avatar=` / `remove_avatar?`
+- `remote_avatar_url` / `remote_avatar_url=`
+- `write_avatar_identifier`, `store_avatar!`, `store_previous_changes_for_avatar`, etc.
+
+**Possíveis caminhos:**
+- Estender `rbs_rails` (ou adicionar um gerador em `RbsInfer::Extensions::Rails`) para detectar `mount_uploader` / `mount_uploaders` no model e reescrever os acessores da coluna correspondente para retornar `<UploaderClass>` em vez de `String?`, além de emitir os auxiliares `*_cache`, `remove_*` e `remote_*_url`.
+
+### 3. Array literal homogêneo inferido como `Array[untyped]`
+
+Para `extension_allowlist`, o corpo é `%w[jpg jpeg gif png webp]`, mas a sig saiu como `def extension_allowlist: () -> Array[untyped]` em vez de `Array[String]`. Provavelmente o `NodeTypeInferrer` não trata `ArrayNode` com `StringNode`/`SymbolNode` literais — gap pequeno, mas reproduzível e isolado.
