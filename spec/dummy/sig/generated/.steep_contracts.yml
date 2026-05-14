@@ -1,0 +1,11 @@
+---
+version: 1
+methods:
+  ProfileFormatter#format_nickname:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: nickname
