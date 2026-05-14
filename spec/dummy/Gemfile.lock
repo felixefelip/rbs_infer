@@ -7,14 +7,15 @@ PATH
       steep
 
 PATH
-  remote: /home/felix/workspaces/ruby-workspace/rbs_rails
+  remote: /Users/felipepessoa/workspaces/rbs_rails
   specs:
-    rbs_rails (0.12.1)
+    rbs_rails (0.13.0)
       parser
+      prism
       rbs (>= 1)
 
 PATH
-  remote: /home/felix/workspaces/ruby-workspace/steep_fork/steep
+  remote: /Users/felipepessoa/workspaces/steep
   specs:
     steep (2.0.0.dev)
       activesupport (>= 5.1)

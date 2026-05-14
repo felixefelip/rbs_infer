@@ -226,7 +226,8 @@ module RbsInfer
         source: source,
         subtyping: @subtyping,
         constant_resolver: @constant_resolver,
-        cursor: nil
+        cursor: nil,
+        contracts: Steep::Contracts::Store.empty
       )
     rescue => _e
       nil

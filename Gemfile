@@ -4,7 +4,7 @@ source "https://rubygems.org"
 
 gemspec
 
-gem "steep", path: "/home/felix/workspaces/ruby-workspace/steep_fork/steep"
+gem "steep", path: "../steep"
 
 group :development, :test do
   gem "rails", "~> 8.0"
