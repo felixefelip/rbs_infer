@@ -1,0 +1,13 @@
+class ProfileFormatter
+  @nickname: String?
+
+  attr_reader nickname: String?
+
+  def initialize: (nickname: String?) -> void
+
+  def call: () -> String?
+
+  private
+
+  def format_nickname: () -> String
+end
