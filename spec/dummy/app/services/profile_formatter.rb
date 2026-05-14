@@ -21,6 +21,15 @@ class ProfileFormatter
     format_nickname
   end
 
+  # Intentional fixture: this caller of `format_nickname` skips the nil-check
+  # that `call` performs above. Phase 1's call-site verification catches it
+  # and emits `PreconditionUnsatisfied`, which lands in
+  # `spec/expectations/steep_baseline.txt` as the demonstration entry for the
+  # contracts feature.
+  def call_without_check
+    format_nickname
+  end
+
   private
 
   def format_nickname
