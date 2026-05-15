@@ -1,0 +1,237 @@
+module CarrierWave
+  # Error hierarchy from lib/carrierwave/error.rb and lib/carrierwave/uploader/cache.rb.
+  # All classes are empty subclasses used purely for `rescue` discrimination.
+  class UploadError < ::StandardError
+  end
+
+  class IntegrityError < ::CarrierWave::UploadError
+  end
+
+  class InvalidParameter < ::CarrierWave::UploadError
+  end
+
+  class ProcessingError < ::CarrierWave::UploadError
+  end
+
+  class DownloadError < ::CarrierWave::UploadError
+  end
+
+  class FormNotMultipart < ::CarrierWave::UploadError
+  end
+
+  class UnknownStorageError < ::StandardError
+  end
+
+  module ActiveRecord
+    include CarrierWave::Mount
+  end
+
+  module Mount
+    def uploaders: () -> Hash[Symbol, CarrierWave::Uploader::Base]
+    def uploader_options: () -> Hash[untyped, untyped]
+    def uploader_option: (Symbol, Symbol) -> untyped
+    def mount_uploader: (Symbol, singleton(CarrierWave::Uploader::Base), **untyped) ? { () -> void } -> void
+    def mount_uploaders: (Symbol, singleton(CarrierWave::Uploader::Base), **untyped) ? { () -> void } -> void
+  end
+
+  module Uploader
+    module Configuration
+      module ClassMethods
+        def storage: (untyped) -> untyped
+        alias storage= storage
+
+        def cache_storage: (untyped) -> untyped
+        alias cache_storage= cache_storage
+
+        def add_config: (untyped) -> void
+        def add_deprecated_config: (untyped) -> void
+        def configure: () { (self) -> void } -> void
+        def reset_config: () -> void
+      end
+    end
+
+    module Mountable
+      attr_reader model: untyped
+      attr_reader mounted_as: Symbol
+
+      def index: () -> Integer
+    end
+
+    module Processing
+      module ClassMethods
+        def process: (*untyped) -> void
+      end
+
+      def process!: (untyped) -> void
+    end
+
+    module Versions
+      module ClassMethods
+        def version: (String | Symbol name, **untyped) ? { () -> void } -> void
+      end
+
+      def versions: () -> Hash[Symbol, CarrierWave::Uploader::Base]
+      def version_name: () -> String
+      def version_exists?: (String | Symbol) -> bool
+      def cache: (*untyped) -> void
+      def url: (*Symbol) -> String
+             | (Hash[untyped, untyped]) -> String
+      def recreate_versions!: (*untyped) -> void
+    end
+
+    module Proxy
+      def blank?: () -> bool
+      def current_path: () -> ::String?
+      alias path current_path
+      def identifier: () -> ::String?
+      def temporary_identifier: () -> ::String?
+      def read: (*untyped) -> ::String?
+      def size: () -> ::Integer
+      def length: () -> ::Integer
+      def content_type: () -> ::String?
+    end
+
+    module Url
+      def url: (?::Hash[untyped, untyped] options) -> ::String?
+      def to_s: () -> ::String
+    end
+
+    module DefaultUrl
+      def default_url: (*untyped) -> ::String?
+    end
+
+    module Cache
+      def cached?: () -> bool
+      def cache_stored_file!: () -> void
+      def sanitized_file: () -> untyped
+      def cache_name: () -> ::String?
+      def cache!: (?untyped new_file) -> void
+      def retrieve_from_cache!: (::String cache_name) -> void
+      def cache_path: (?::String for_file) -> ::String
+      def workfile_path: (?::String for_file) -> ::String
+      def cache_id=: (::String?) -> ::String?
+      def original_filename=: (::String?) -> ::String?
+      def cache_storage: () -> untyped
+      def full_original_filename: () -> ::String?
+    end
+
+    module Store
+      def filename: () -> ::String?
+      def deduplicated_filename: () -> ::String?
+      def store_path: (?::String for_file) -> ::String
+      def store!: (?untyped new_file) -> void
+      def retrieve_from_store!: (::String identifier) -> void
+      def deduplicate: (::Array[::String] current_identifiers) -> void
+      def full_filename: (::String for_file) -> ::String
+      def storage: () -> untyped
+    end
+
+    module Remove
+      def remove!: () -> void
+    end
+
+    module Download
+      def download!: (::String uri, ?::Hash[::String, ::String] remote_headers) -> void
+    end
+
+    module Serialization
+      def serializable_hash: (?untyped options) -> ::Hash[::String, untyped]
+      def as_json: (?untyped options) -> ::Hash[::String, untyped]
+      def to_json: (?untyped options) -> ::String
+      def to_xml: (?::Hash[untyped, untyped] options) -> ::String
+    end
+
+    module Callbacks
+      def with_callbacks: (::Symbol kind, *untyped) { () -> void } -> void
+
+      module ClassMethods
+        def before: (::Symbol kind, ::Symbol callback) -> void
+        def after: (::Symbol kind, ::Symbol callback) -> void
+      end
+    end
+
+    module Dimension
+      def width_range: () -> ::Range[::Integer]?
+      def height_range: () -> ::Range[::Integer]?
+      def check_dimensions!: (untyped new_file) -> void
+    end
+
+    module FileSize
+      def size_range: () -> ::Range[::Integer]?
+      def check_size!: (untyped new_file) -> void
+    end
+
+    module ExtensionAllowlist
+      def extension_allowlist: () -> ::Array[::String | ::Regexp]?
+      def check_extension_allowlist!: (untyped new_file) -> void
+      def allowlisted_extension?: (::Array[::String | ::Regexp] allowlist, ::String extension) -> bool
+    end
+
+    module ExtensionDenylist
+      def extension_denylist: () -> ::Array[::String | ::Regexp]?
+      def check_extension_denylist!: (untyped new_file) -> void
+      def denylisted_extension?: (::Array[::String | ::Regexp] denylist, ::String extension) -> bool
+    end
+
+    module ContentTypeAllowlist
+      def content_type_allowlist: () -> ::Array[::String | ::Regexp]?
+      def check_content_type_allowlist!: (untyped new_file) -> void
+      def allowlisted_content_type?: (::Array[::String | ::Regexp] allowlist, ::String content_type) -> bool
+    end
+
+    module ContentTypeDenylist
+      def content_type_denylist: () -> ::Array[::String | ::Regexp]?
+      def check_content_type_denylist!: (untyped new_file) -> void
+      def denylisted_content_type?: (::Array[::String | ::Regexp] denylist, ::String content_type) -> bool
+    end
+
+    class Base
+      include CarrierWave::Uploader::Configuration
+      extend CarrierWave::Uploader::Configuration::ClassMethods
+
+      include CarrierWave::Uploader::Callbacks
+      extend CarrierWave::Uploader::Callbacks::ClassMethods
+
+      include CarrierWave::Uploader::Mountable
+
+      include CarrierWave::Uploader::Proxy
+      include CarrierWave::Uploader::Url
+
+      include CarrierWave::Uploader::Cache
+      include CarrierWave::Uploader::Store
+      include CarrierWave::Uploader::Remove
+      include CarrierWave::Uploader::Download
+
+      include CarrierWave::Uploader::ExtensionAllowlist
+      include CarrierWave::Uploader::ExtensionDenylist
+      include CarrierWave::Uploader::ContentTypeAllowlist
+      include CarrierWave::Uploader::ContentTypeDenylist
+      include CarrierWave::Uploader::FileSize
+      include CarrierWave::Uploader::Dimension
+
+      include CarrierWave::Uploader::Processing
+      extend CarrierWave::Uploader::Processing::ClassMethods
+
+      include CarrierWave::Uploader::Versions
+      extend CarrierWave::Uploader::Versions::ClassMethods
+
+      include CarrierWave::Uploader::DefaultUrl
+
+      include CarrierWave::Uploader::Serialization
+
+      attr_reader file: untyped
+    end
+  end
+end
+
+module CarrierWave
+  module RMagick
+    def manipulate!: (*untyped) ? { (untyped, untyped, untyped) -> void } -> void
+  end
+end
+
+module ActiveRecord
+  class Base
+    extend CarrierWave::ActiveRecord
+  end
+end

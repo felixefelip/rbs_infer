@@ -1,0 +1,38 @@
+module ActionText
+  module Attribute
+    module ClassMethods
+      def has_rich_text: (String | Symbol name, ?encrypted: bool, ?strict_loading: bool) -> void
+      def with_all_rich_text: () -> untyped
+      def rich_text_association_names: () -> Array[String]
+    end
+  end
+end
+
+module ActionText
+  # Include this module to make a record attachable to an ActionText::Content.
+  module Attachable
+    extend ActiveSupport::Concern
+
+    module ClassMethods
+      def from_attachable_sgid: (untyped sgid) -> untyped
+      def to_missing_attachable_partial_path: () -> String
+    end
+
+    def attachable_sgid: () -> String
+    def attachable_content_type: () -> String
+    def attachable_filename: () -> String?
+    def attachable_filesize: () -> Integer?
+    def attachable_metadata: () -> Hash[Symbol, untyped]
+    def previewable_attachable?: () -> bool
+    def to_editor_content_attachment_partial_path: () -> String
+    def to_attachable_partial_path: () -> String
+    def to_rich_text_attributes: (?Hash[Symbol, untyped] attributes) -> Hash[Symbol, untyped]
+  end
+end
+
+module ActiveRecord
+  class Base
+    include ActionText::Attribute
+    extend ActionText::Attribute::ClassMethods
+  end
+end

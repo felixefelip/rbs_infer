@@ -1,0 +1,9 @@
+---
+name: i18n
+version: '1.10'
+source:
+  type: git
+  name: ruby/gem_rbs_collection
+  revision: 8b8537e147d1166a4879346389c2f5e479e75680
+  remote: https://github.com/felixefelip/gem_rbs_collection.git
+  repo_dir: gems

@@ -1,0 +1,21 @@
+module Loofah
+  class ScrubberNotFound < ::RuntimeError
+  end
+
+  class Scrubber
+    CONTINUE: Object
+    STOP: Object
+
+    attr_reader direction: Symbol
+    attr_reader block: Proc?
+
+    def initialize: (?::Hash[Symbol, untyped] options) ?{ (Nokogiri::XML::Node) -> untyped } -> void
+    def traverse: (Nokogiri::XML::Node node) -> void
+    def scrub: (Nokogiri::XML::Node node) -> untyped
+    def append_attribute: (Nokogiri::XML::Node node, String attribute, String value) -> void
+
+    private
+      def traverse_conditionally_top_down: (Nokogiri::XML::Node node) -> void
+      def traverse_conditionally_bottom_up: (Nokogiri::XML::Node node) -> void
+  end
+end

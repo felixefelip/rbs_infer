@@ -1,0 +1,42 @@
+# resolve-type-names: false
+
+interface ::_RbsRailsPathHelpers
+  def rails_info_properties_path: (*untyped) -> ::String
+  def rails_info_routes_path: (*untyped) -> ::String
+  def rails_info_notes_path: (*untyped) -> ::String
+  def rails_info_path: (*untyped) -> ::String
+  def rails_health_check_path: (*untyped) -> ::String
+  def root_path: (*untyped) -> ::String
+  def post_comments_path: (*untyped) -> ::String
+  def post_comment_path: (*untyped) -> ::String
+  def posts_path: (*untyped) -> ::String
+  def new_post_path: (*untyped) -> ::String
+  def edit_post_path: (*untyped) -> ::String
+  def post_path: (*untyped) -> ::String
+  def edit_user_avatar_path: (*untyped) -> ::String
+  def user_avatar_path: (*untyped) -> ::String
+  def users_path: (*untyped) -> ::String
+  def user_path: (*untyped) -> ::String
+  def rails_info_properties_url: (*untyped) -> ::String
+  def rails_info_routes_url: (*untyped) -> ::String
+  def rails_info_notes_url: (*untyped) -> ::String
+  def rails_info_url: (*untyped) -> ::String
+  def rails_health_check_url: (*untyped) -> ::String
+  def root_url: (*untyped) -> ::String
+  def post_comments_url: (*untyped) -> ::String
+  def post_comment_url: (*untyped) -> ::String
+  def posts_url: (*untyped) -> ::String
+  def new_post_url: (*untyped) -> ::String
+  def edit_post_url: (*untyped) -> ::String
+  def post_url: (*untyped) -> ::String
+  def edit_user_avatar_url: (*untyped) -> ::String
+  def user_avatar_url: (*untyped) -> ::String
+  def users_url: (*untyped) -> ::String
+  def user_url: (*untyped) -> ::String
+end
+
+module ::ActionController
+  class ::ActionController::Base
+    include ::_RbsRailsPathHelpers
+  end
+end

@@ -1,0 +1,9 @@
+---
+name: bigdecimal
+version: '4.0'
+source:
+  type: git
+  name: ruby/gem_rbs_collection
+  revision: 932252528636d0c07b8430cf167f1a77c1e23cf0
+  remote: https://github.com/felixefelip/gem_rbs_collection.git
+  repo_dir: gems
