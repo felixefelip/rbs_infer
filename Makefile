@@ -30,8 +30,11 @@ rbs_infer_enumerize:
 rbs_infer_carrierwave:
 	cd $(DUMMY_DIR) && bundle exec rake rbs_infer:carrierwave:all
 
+rbs_collection_update:
+	cd $(DUMMY_DIR) && rbs collection update
+
 rbs_rails_generator:
-	cd $(DUMMY_DIR) && rake rbs_rails:all
+	cd $(DUMMY_DIR) && bundle exec rake rbs_rails:all
 
 rbs_infer_erb:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/extensions/rails/erb_convention_generator'; RbsInfer::Extensions::Rails::ErbConventionGenerator.new(app_dir: '.', output_dir: 'sig/rbs_infer_erb', source_files: Dir['app/**/*.rb']).generate_all"
