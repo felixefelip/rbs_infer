@@ -148,4 +148,66 @@ RSpec.describe RbsInfer::MethodTypeResolver do
       expect(resolver.resolve_init_param_types("MyApp::Entity")["email"]).to eq("String")
     end
   end
+
+  # Regression: finders narrowed by the gem_rbs_collection ValidatedModel
+  # change return strings like `(OrderImport & OrderImport::Validated)`.
+  # `MethodTypeResolver#resolve` used to feed that whole string into
+  # `RBS::TypeName` and ended up with a garbage symbol like `:"Validated)"`,
+  # so the lookup silently failed and the caller saw `untyped` instead of
+  # the real return type.
+  it "resolve method on an intersection-type string (right-to-left)" do
+    files = {
+      "uploader.rb" => <<~RUBY,
+        class Uploader
+        end
+      RUBY
+      "model.rb" => <<~RUBY,
+        class Model
+          #: -> Uploader
+          def file
+            Uploader.new
+          end
+        end
+      RUBY
+      "validated.rb" => <<~RUBY
+        class Model::Validated
+        end
+      RUBY
+    }
+
+    with_temp_files(files) do |dir, paths|
+      resolver = described_class.new(paths)
+      expect(resolver.resolve("Model & Model::Validated", "file")).to eq("Uploader")
+      expect(resolver.resolve("(Model & Model::Validated)", "file")).to eq("Uploader")
+    end
+  end
+
+  # When the right-most component defines the method (and would win in
+  # `intersection_shape`), prefer its declaration. File names follow the
+  # Rails convention so `find_class_file` resolves both classes.
+  it "prefere o componente da direita em intersection_shape merge order" do
+    files = {
+      "left_class.rb" => <<~RUBY,
+        class LeftClass
+          #: -> String
+          def shared
+            "left"
+          end
+        end
+      RUBY
+      "right_class.rb" => <<~RUBY
+        class RightClass
+          #: -> Symbol
+          def shared
+            :right
+          end
+        end
+      RUBY
+    }
+
+    with_temp_files(files) do |dir, paths|
+      resolver = described_class.new(paths)
+      expect(resolver.resolve("(LeftClass & RightClass)", "shared")).to eq("Symbol")
+    end
+  end
 end

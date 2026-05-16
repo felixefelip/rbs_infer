@@ -22,6 +22,19 @@ module RbsInfer
     def resolve(class_name, method_name, block_body_type: nil)
       return nil unless class_name && class_name != "untyped"
 
+      # Intersection types (e.g. `(OrderImport & OrderImport::Validated)` from
+      # finders that now return `Model & Model::Validated`) need to be split
+      # before lookup — `RBS::TypeName` only accepts a single nominal name.
+      # Resolve right-to-left to match `Steep::Interface::Builder.intersection_shape`,
+      # which gives precedence to later components in the intersection.
+      if (components = parse_intersection(class_name))
+        components.reverse_each do |component|
+          result = resolve(component, method_name, block_body_type: block_body_type)
+          return result if result && result != "untyped"
+        end
+        return nil
+      end
+
       # Tentar via RBS DefinitionBuilder primeiro (resolve genéricos corretamente)
       rbs_result = @rbs_definition_resolver.resolve_via_rbs_builder(:instance, class_name, method_name, block_body_type: block_body_type)
       return rbs_result if rbs_result && rbs_result != "untyped"
@@ -29,6 +42,16 @@ module RbsInfer
       # Fallback: source + regex-based resolution
       class_types = resolve_all(class_name)
       class_types[method_name] || class_types[method_name.delete_suffix("!").delete_suffix("?")]
+    end
+
+    # Parses an intersection-type string of the form `A & B` or `(A & B)`
+    # into its components. Returns nil for non-intersection strings so the
+    # caller can take the legacy fast path.
+    private def parse_intersection(class_name)
+      stripped = class_name.strip
+      stripped = stripped[1..-2].to_s if stripped.start_with?("(") && stripped.end_with?(")")
+      return nil unless stripped.include?(" & ")
+      stripped.split(" & ").map(&:strip).reject(&:empty?)
     end
 
     # Resolve um método de classe (def self.xxx) via RBS
