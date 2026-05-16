@@ -227,10 +227,37 @@ module RbsInfer
         subtyping: @subtyping,
         constant_resolver: @constant_resolver,
         cursor: nil,
-        contracts: Steep::Contracts::Store.empty
+        contracts: contracts_store
       )
     rescue => _e
       nil
+    end
+
+    # Loads Steep's auto-inferred precondition contracts from the project's
+    # sidecar (`sig/generated/.steep_contracts.yml`). With these in hand,
+    # `Steep::TypeConstruction#contract_narrowed_type` fires inside method
+    # bodies — so `Comment#author_name` reads `user` (a pure attr-style
+    # method) as non-nil when the contract for that method requires it, and
+    # `user.name` typechecks cleanly. Without this hook the store stayed
+    # empty and no narrowing applied, which made rbs_infer fall back to
+    # `untyped`.
+    def contracts_store
+      @contracts_store ||=
+        begin
+          base = Pathname(contracts_base_dir).expand_path
+          Steep::Contracts.load(base)
+        rescue StandardError => e
+          warn "[rbs_infer] failed to load Steep contracts from #{base}: #{e.class}: #{e.message}"
+          Steep::Contracts::Store.empty
+        end
+    end
+
+    def contracts_base_dir
+      if defined?(::Rails) && ::Rails.respond_to?(:root) && ::Rails.root
+        ::Rails.root.to_s
+      else
+        Dir.pwd
+      end
     end
 
     def ensure_initialized

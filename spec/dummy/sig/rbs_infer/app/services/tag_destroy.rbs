@@ -1,6 +1,6 @@
 class TagDestroy
-  attr_reader tag: Tag
-  attr_reader user: User
+  attr_reader tag: Tag & Tag::Validated
+  attr_reader user: User & User::Validated
   attr_reader posts: Array[untyped]
   attr_reader xml: Nokogiri::XML::Document
   def initialize: (untyped tag_id, untyped user_id) -> void
@@ -8,13 +8,13 @@ class TagDestroy
 
   private
 
-  def atribui_user: (untyped user_id) -> User
+  def atribui_user: (untyped user_id) -> (User & User::Validated)
   def user_name: () -> String
   def iterate_tags: () -> Tag::ActiveRecord_Associations_CollectionProxy?
   def iterate_tag_posts: () -> Post::ActiveRecord_Associations_CollectionProxy
   def iterate_tag_posts_with_transaction: () -> Post::ActiveRecord_Associations_CollectionProxy
   def call_process_tag: () -> void
-  def process_tag: (Tag tag) -> void
+  def process_tag: (Tag & Tag::Validated tag) -> void
   def test_nokogiri: () -> Nokogiri::XML::Document
   def parse_xml: () -> Array[Nokogiri::XML::Node]
   def parse_xml_as_hash: () -> Array[{ date: Nokogiri::XML::Node?, order: Nokogiri::XML::Node }]

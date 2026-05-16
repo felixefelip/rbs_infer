@@ -1,6 +1,38 @@
 ---
 version: 1
 methods:
+  Comment#author_name:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: user
+  Comment#short_body:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: body
+  Post#author_name:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: user
+  Post::Notifiable#notification_payload:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: user
   ProfileFormatter#format_nickname:
     requires:
     - kind: not_nil

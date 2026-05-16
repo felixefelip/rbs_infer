@@ -20,8 +20,10 @@ module RbsInfer
     def improve_method_return_types(members, attr_types, parsed_target: nil)
       return unless parsed_target
 
-      # Métodos com return type untyped
-      untyped_methods = members.select { |m| m.kind == :method && m.signature =~ /->\ s*untyped$/ }
+      # Métodos com return type untyped — inclui `:method` (instance) e
+      # `:class_method` (singleton, `def self.X`) porque o steep_bridge
+      # devolve tipos pra ambos via `typing.each_typing` sem distinguir.
+      untyped_methods = members.select { |m| method_member?(m) && m.signature =~ /->\ s*untyped$/ }
       return if untyped_methods.empty?
 
       known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
@@ -37,7 +39,7 @@ module RbsInfer
 
       # Use Steep for any remaining untyped methods and to correct wrong block generic types
       if @steep_bridge && parsed_target.source
-        still_untyped = members.select { |m| m.kind == :method && m.name != "initialize" && m.signature =~ /->\s*untyped$/ }
+        still_untyped = members.select { |m| method_member?(m) && m.name != "initialize" && m.signature =~ /->\s*untyped$/ }
         steep_returns = @steep_bridge.method_return_types(parsed_target.source)
 
         unless steep_returns.empty?
@@ -68,7 +70,8 @@ module RbsInfer
           # Correct already-typed methods where Steep detected BlockBodyTypeMismatch
           # (existing RBS had wrong type from previous generation)
           members.each do |m|
-            next if m.kind != :method || m.name == "initialize"
+            next unless method_member?(m)
+            next if m.name == "initialize"
             next if m.signature =~ /->\s*untyped$/
             steep_type = steep_returns[m.name]
             next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
@@ -81,7 +84,8 @@ module RbsInfer
 
           # Refine record types containing untyped values using Steep's body type inference
           members.each do |m|
-            next if m.kind != :method || m.name == "initialize"
+            next unless method_member?(m)
+            next if m.name == "initialize"
             current_type = m.signature[/->\s*(.+)$/, 1]&.strip
             next unless current_type&.start_with?("{") && current_type.include?("untyped")
 
@@ -137,6 +141,13 @@ module RbsInfer
     private
 
     attr_reader :method_type_resolver
+
+    # Singleton (`def self.X`) é coletado como `:class_method` em
+    # `class_member_collector.rb` mas tem o mesmo tratamento de inferência de
+    # retorno que `:method` (steep_bridge devolve por nome para ambos).
+    def method_member?(member)
+      member.kind == :method || member.kind == :class_method
+    end
 
     # Verifica se o corpo do método contém `return nil` ou `return` (implícito nil)
     def has_nil_return?(defn)

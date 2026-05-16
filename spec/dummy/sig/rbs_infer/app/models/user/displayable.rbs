@@ -2,9 +2,9 @@ class User
   module Displayable
     extend ActiveSupport::Concern
     def initials: () -> String
-    def display_name: () -> String
+    def display_name: () -> String?
     def gravatar_url: (?Integer size) -> String
-    def profile_summary: () -> { initials: String, member_since: Integer?, name: String, posts_count: Integer }
+    def profile_summary: () -> { initials: String, member_since: Integer?, name: String?, posts_count: Integer }
     def short_bio: (?Integer max) -> String
   end
 end

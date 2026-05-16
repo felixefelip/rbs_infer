@@ -2,7 +2,7 @@ class PostsController < ApplicationController
   @posts: Post::ActiveRecord_Relation
   @comments: Comment::ActiveRecord_Relation
   @post: Post
-  @test: Post?
+  @test: (Post & Post::Validated)?
   include FilterConfiguration
   def index: () -> void
   def show: () -> void
@@ -14,7 +14,7 @@ class PostsController < ApplicationController
 
   private
 
-  def set_post: () -> Post
-  def set_test: () -> Post?
+  def set_post: () -> (Post & Post::Validated)
+  def set_test: () -> (Post & Post::Validated)?
   def post_params: () -> untyped
 end

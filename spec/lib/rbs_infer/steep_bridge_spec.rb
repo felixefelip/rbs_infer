@@ -15,7 +15,7 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
       RUBY
 
       result = bridge.local_var_types_per_method(code)
-      expect(result["bar"]["comment"]).to eq("Comment")
+      expect(result["bar"]["comment"]).to eq("(Comment & Comment::Validated)")
     end
 
     it "resolves chained method calls" do
@@ -28,7 +28,7 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
       RUBY
 
       result = bridge.local_var_types_per_method(code)
-      expect(result["bar"]["user"]).to eq("User?")
+      expect(result["bar"]["user"]).to eq("(User & User::Validated)?")
     end
 
     it "resolves comparison operators to bool" do
@@ -58,7 +58,7 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
       RUBY
 
       result = bridge.local_var_types_per_method(code)
-      expect(result["bar"]["x"]).to eq("Comment")
+      expect(result["bar"]["x"]).to eq("(Comment & Comment::Validated)")
       expect(result["baz"]["y"]).to eq("Integer")
       expect(result["bar"]).not_to have_key("y")
     end
@@ -186,7 +186,7 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
       RUBY
 
       result = bridge.method_return_types(code)
-      expect(result["bar"]).to eq("User?")
+      expect(result["bar"]).to eq("(User & User::Validated)?")
     end
 
     it "excludes empty methods" do
@@ -244,6 +244,75 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
     end
   end
 
+  describe "#contracts_store" do
+    # Regression: the bridge used to call Steep with `Steep::Contracts::Store.empty`,
+    # so `Steep::TypeConstruction#contract_narrowed_type` never fired even when
+    # the project had a `sig/generated/.steep_contracts.yml` describing
+    # preconditions for the methods being analyzed. The bridge now loads the
+    # sidecar on first access; `method_return_types` consumes it transparently.
+    context "with the dummy app's sidecar present" do
+      it "loads precondition contracts from sig/generated/.steep_contracts.yml" do
+        store = bridge.send(:contracts_store)
+
+        expect(store).to be_a(Steep::Contracts::Store)
+        expect(store.empty?).to be false
+      end
+
+      it "exposes individual entries via lookup_instance" do
+        store = bridge.send(:contracts_store)
+        contract = store.lookup_instance("Comment", :author_name)
+
+        expect(contract).not_to be_nil
+        expect(contract.requires).not_to be_empty
+      end
+
+      it "memoizes the loaded store across calls" do
+        first = bridge.send(:contracts_store)
+        second = bridge.send(:contracts_store)
+
+        expect(first).to equal(second)
+      end
+    end
+
+    context "without a sidecar" do
+      around do |example|
+        Dir.mktmpdir do |tmp|
+          Dir.chdir(tmp) { example.run }
+        end
+      end
+
+      it "returns an empty store without raising" do
+        fresh = described_class.new
+        store = fresh.send(:contracts_store)
+
+        expect(store).to be_a(Steep::Contracts::Store)
+        expect(store.empty?).to be true
+      end
+    end
+
+    context "with a malformed sidecar" do
+      around do |example|
+        Dir.mktmpdir do |tmp|
+          dir = File.join(tmp, "sig", "generated")
+          FileUtils.mkdir_p(dir)
+          File.write(File.join(dir, ".steep_contracts.yml"), "not: valid: yaml:\n  - [unbalanced")
+          Dir.chdir(tmp) { example.run }
+        end
+      end
+
+      it "warns and falls back to an empty store" do
+        fresh = described_class.new
+        # The Steep loader catches Psych::SyntaxError internally and returns
+        # Store.empty, so our rescue isn't exercised — but the path is still
+        # safe and produces an empty store rather than blowing up.
+        store = fresh.send(:contracts_store)
+
+        expect(store).to be_a(Steep::Contracts::Store)
+        expect(store.empty?).to be true
+      end
+    end
+  end
+
   describe "#all_expression_types" do
     it "maps line:column to type for all typed expressions" do
       code = <<~RUBY
@@ -258,7 +327,7 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
       expect(result).not_to be_empty
       # The lvasgn for x is on line 3
       typed_values = result.values
-      expect(typed_values).to include("Comment")
+      expect(typed_values).to include("(Comment & Comment::Validated)")
     end
 
     it "returns empty hash for unparseable code" do
