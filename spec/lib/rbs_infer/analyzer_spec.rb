@@ -343,6 +343,52 @@ RSpec.describe RbsInfer::Analyzer do
       end
     end
 
+    # Regression: `has_nil_return?` annotates a method whose body has an
+    # early `return` (implicit nil) with `?`. The selectors that invoke it
+    # were `m.kind == :method`, so singleton methods missed the wrap.
+    it "anota def self.X com ? quando o body tem return implícito nil" do
+      files = {
+        "factory.rb" => <<~RUBY
+          class EarlyReturn
+            def self.maybe_greet(empty)
+              return if empty
+              "hi".upcase
+            end
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |dir, paths|
+        analyzer = described_class.new(target_file: paths.first, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        expect(rbs).to include("def self.maybe_greet: (untyped empty) -> String?")
+      end
+    end
+
+    # Regression: block generic resolution (`.map { ... }`) lives in the
+    # same loop that updates already-typed methods. Singleton methods
+    # need that loop to fire on them too — otherwise `.map`'s
+    # `Array[untyped]` declaration sticks.
+    it "resolve generic de bloco (.map) dentro de def self.X" do
+      files = {
+        "factory.rb" => <<~RUBY
+          class MapFactory
+            def self.names
+              [1, 2, 3].map { |n| n.to_s }
+            end
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |dir, paths|
+        analyzer = described_class.new(target_file: paths.first, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        expect(rbs).to include("def self.names: () -> Array[String]")
+      end
+    end
+
     it "resolve tipos inter-procedurais via method chain (receiver.method)" do
       dto_src = <<~RUBY
         class Dto
