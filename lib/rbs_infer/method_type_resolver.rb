@@ -44,14 +44,17 @@ module RbsInfer
       class_types[method_name] || class_types[method_name.delete_suffix("!").delete_suffix("?")]
     end
 
-    # Parses an intersection-type string of the form `A & B` or `(A & B)`
-    # into its components. Returns nil for non-intersection strings so the
-    # caller can take the legacy fast path.
+    # Parses an intersection-type string via `RBS::Parser.parse_type` and
+    # returns the component names. Returns nil for non-intersection (or
+    # unparseable) strings so the caller can take the legacy fast path.
+    # Using RBS's own parser handles nested unions, generics, and parens
+    # without hand-rolling a splitter.
     private def parse_intersection(class_name)
-      stripped = class_name.strip
-      stripped = stripped[1..-2].to_s if stripped.start_with?("(") && stripped.end_with?(")")
-      return nil unless stripped.include?(" & ")
-      stripped.split(" & ").map(&:strip).reject(&:empty?)
+      parsed = RBS::Parser.parse_type(class_name)
+      return nil unless parsed.is_a?(RBS::Types::Intersection)
+      parsed.types.map(&:to_s)
+    rescue StandardError
+      nil
     end
 
     # Resolve um método de classe (def self.xxx) via RBS
