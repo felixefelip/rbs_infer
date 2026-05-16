@@ -5,5 +5,5 @@ module ActionViewContext
   include _RbsRailsPathHelpers
   include ApplicationHelper
 
-  def current_user: () -> User?
+  def current_user: () -> (User & User::Validated)?
 end

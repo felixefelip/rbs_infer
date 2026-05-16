@@ -6,7 +6,7 @@ class Post < ApplicationRecord
   def summary: (?Integer length) -> String
   def test_status: () -> Post::EnumerizeStatusValue
   def was_archived?: () -> bool
-  def creator: () -> ::User
+  def creator: () -> ::User?
   def author_name: () -> String
   def publish!: () -> self
   def comments_count: () -> Integer
@@ -16,8 +16,8 @@ class Post < ApplicationRecord
   def iterate_tags: () -> Tag::ActiveRecord_Associations_CollectionProxy
   def test_enumerize_status: () -> Post::EnumerizeStatusAttribute
   def test_enumerize_status_options: () -> Array[Array[untyped]]
-  def user_email: () -> String
+  def user_email: () -> String?
   def full_name: () -> String
-  def user_created_at: () -> ActiveSupport::TimeWithZone
+  def user_created_at: () -> ActiveSupport::TimeWithZone?
   def name: () -> String?
 end
