@@ -135,12 +135,6 @@ module RbsInfer
     end
 
     def build_rbs_type_name(class_name)
-      # `RBS::TypeName.parse` already handles `::Foo::Bar`-style nesting,
-      # absolute vs relative namespaces, and validation. Equivalent to the
-      # manual `split("::") + Namespace.new + TypeName.new` we used to do.
-      # The caller wraps the whole flow in a `rescue => _e` (returning
-      # nil), so malformed inputs propagate naturally without a redundant
-      # rescue here.
       RBS::TypeName.parse(class_name).absolute!
     end
   end
