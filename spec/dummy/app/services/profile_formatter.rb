@@ -15,6 +15,7 @@ class ProfileFormatter
     @nickname = nickname
   end
 
+  # o retorno deveria ser `String?`
   def call
     return unless nickname
 
