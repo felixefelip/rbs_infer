@@ -291,6 +291,58 @@ RSpec.describe RbsInfer::Analyzer do
       end
     end
 
+    # Regression: ReturnTypeResolver used to filter members with
+    # `m.kind == :method`, dropping the `:class_method` tag that
+    # ClassMemberCollector assigns to `def self.X`. As a result Steep's
+    # inferred return type for singleton methods was discarded and the
+    # final RBS dropped to `untyped`. The basic node_type inferrer can't
+    # type `"hello".upcase` (chain call), so this body specifically
+    # exercises the Steep bridge → resolver path.
+    it "resolve o tipo de retorno de def self.X quando depende de inferência via Steep" do
+      files = {
+        "factory.rb" => <<~RUBY
+          class GreetFactory
+            def self.greet
+              "hello".upcase
+            end
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |dir, paths|
+        analyzer = described_class.new(target_file: paths.first, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        expect(rbs).to include("def self.greet: () -> String")
+        expect(rbs).not_to include("def self.greet: () -> untyped")
+      end
+    end
+
+    it "atualiza def self.X mesmo quando há um def X (instance) homônimo no mesmo lugar" do
+      files = {
+        "factory.rb" => <<~RUBY
+          class TwinNames
+            def self.run
+              new.run.upcase
+            end
+
+            def run
+              "abc"
+            end
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |dir, paths|
+        analyzer = described_class.new(target_file: paths.first, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        # Both surfaces should resolve away from untyped.
+        expect(rbs).to include("def self.run: () -> String")
+        expect(rbs).to include("def run: () -> String")
+      end
+    end
+
     it "resolve tipos inter-procedurais via method chain (receiver.method)" do
       dto_src = <<~RUBY
         class Dto
