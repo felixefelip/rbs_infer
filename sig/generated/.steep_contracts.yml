@@ -1,0 +1,11 @@
+---
+version: 1
+methods:
+  RbsInfer::SteepBridge#ensure_initialized:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: class

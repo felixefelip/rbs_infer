@@ -44,7 +44,6 @@ class ::User < ::ApplicationRecord
 
     def id_for_database: () -> ::Integer?
 
-    %a{pure}
     def name: () -> ::String?
 
     def name=: (::String?) -> ::String?
@@ -325,11 +324,8 @@ class ::User < ::ApplicationRecord
 
     def updated_at_for_database: () -> ::Time?
 
-    def avatar: () -> ::String?
 
-    def avatar=: (::String?) -> ::String?
 
-    def avatar?: () -> bool
 
     def avatar_changed?: (?from: ::String?, ?to: ::String?) -> bool
 
@@ -459,7 +455,6 @@ class ::User < ::ApplicationRecord
 
   class ::User::Validated
     def id: () -> ::Integer
-    %a{pure}
     def name: () -> ::String
     def email: () -> ::String
     def created_at: () -> ::ActiveSupport::TimeWithZone

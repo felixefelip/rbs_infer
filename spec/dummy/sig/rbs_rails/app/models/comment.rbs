@@ -124,7 +124,6 @@ class ::Comment < ::ApplicationRecord
 
     def post_id_for_database: () -> ::Integer?
 
-    %a{pure}
     def body: () -> ::String?
 
     def body=: (::String?) -> ::String?
@@ -291,7 +290,6 @@ class ::Comment < ::ApplicationRecord
   end
   include ::Comment::GeneratedAliasAttributeMethods
 
-  %a{pure}
   def user: () -> ::User?
   def user=: (::User?) -> ::User?
   def reload_user: () -> ::User?
@@ -339,10 +337,8 @@ class ::Comment < ::ApplicationRecord
 
   class ::Comment::Validated
     def id: () -> ::Integer
-    %a{pure}
     def user: () -> ::User
     def post: () -> ::Post
-    %a{pure}
     def body: () -> ::String
     def created_at: () -> ::ActiveSupport::TimeWithZone
     def updated_at: () -> ::ActiveSupport::TimeWithZone

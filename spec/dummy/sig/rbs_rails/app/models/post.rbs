@@ -502,7 +502,6 @@ class ::Post < ::ApplicationRecord
   def tag_ids: () -> ::Array[::Integer]
   def tag_ids=: (::Array[::Integer]) -> ::Array[::Integer]
 
-  %a{pure}
   def user: () -> ::User?
   def user=: (::User?) -> ::User?
   def reload_user: () -> ::User?
@@ -556,7 +555,6 @@ class ::Post < ::ApplicationRecord
 
   class ::Post::Validated
     def id: () -> ::Integer
-    %a{pure}
     def user: () -> ::User
     def title: () -> ::String
     def body: () -> ::String
