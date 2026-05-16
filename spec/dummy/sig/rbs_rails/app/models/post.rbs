@@ -1,12 +1,12 @@
 # resolve-type-names: false
 
 class ::Post < ::ApplicationRecord
-  extend ::ActiveRecord::Base::ClassMethods[::Post, ::Post::ActiveRecord_Relation, ::Integer]
+  extend ::ActiveRecord::Base::ClassMethods[::Post, ::Post::ActiveRecord_Relation, ::Integer, ::Post::Validated]
 
   module ::Post::GeneratedAttributeMethods
-    def id: () -> ::Integer
+    def id: () -> ::Integer?
 
-    def id=: (::Integer) -> ::Integer
+    def id=: (::Integer?) -> ::Integer?
 
     def id?: () -> bool
 
@@ -40,13 +40,13 @@ class ::Post < ::ApplicationRecord
 
     def clear_id_change: () -> void
 
-    def id_before_type_cast: () -> ::Integer
+    def id_before_type_cast: () -> ::Integer?
 
-    def id_for_database: () -> ::Integer
+    def id_for_database: () -> ::Integer?
 
-    def user_id: () -> ::Integer
+    def user_id: () -> ::Integer?
 
-    def user_id=: (::Integer) -> ::Integer
+    def user_id=: (::Integer?) -> ::Integer?
 
     def user_id?: () -> bool
 
@@ -80,13 +80,13 @@ class ::Post < ::ApplicationRecord
 
     def clear_user_id_change: () -> void
 
-    def user_id_before_type_cast: () -> ::Integer
+    def user_id_before_type_cast: () -> ::Integer?
 
-    def user_id_for_database: () -> ::Integer
+    def user_id_for_database: () -> ::Integer?
 
-    def title: () -> ::String
+    def title: () -> ::String?
 
-    def title=: (::String) -> ::String
+    def title=: (::String?) -> ::String?
 
     def title?: () -> bool
 
@@ -120,13 +120,13 @@ class ::Post < ::ApplicationRecord
 
     def clear_title_change: () -> void
 
-    def title_before_type_cast: () -> ::String
+    def title_before_type_cast: () -> ::String?
 
-    def title_for_database: () -> ::String
+    def title_for_database: () -> ::String?
 
-    def body: () -> ::String
+    def body: () -> ::String?
 
-    def body=: (::String) -> ::String
+    def body=: (::String?) -> ::String?
 
     def body?: () -> bool
 
@@ -160,9 +160,9 @@ class ::Post < ::ApplicationRecord
 
     def clear_body_change: () -> void
 
-    def body_before_type_cast: () -> ::String
+    def body_before_type_cast: () -> ::String?
 
-    def body_for_database: () -> ::String
+    def body_for_database: () -> ::String?
 
     def published_at: () -> ::ActiveSupport::TimeWithZone?
 
@@ -204,9 +204,9 @@ class ::Post < ::ApplicationRecord
 
     def published_at_for_database: () -> ::Time?
 
-    def created_at: () -> ::ActiveSupport::TimeWithZone
+    def created_at: () -> ::ActiveSupport::TimeWithZone?
 
-    def created_at=: (::ActiveSupport::TimeWithZone) -> ::ActiveSupport::TimeWithZone
+    def created_at=: (::ActiveSupport::TimeWithZone?) -> ::ActiveSupport::TimeWithZone?
 
     def created_at?: () -> bool
 
@@ -240,13 +240,13 @@ class ::Post < ::ApplicationRecord
 
     def clear_created_at_change: () -> void
 
-    def created_at_before_type_cast: () -> ::Time
+    def created_at_before_type_cast: () -> ::Time?
 
-    def created_at_for_database: () -> ::Time
+    def created_at_for_database: () -> ::Time?
 
-    def updated_at: () -> ::ActiveSupport::TimeWithZone
+    def updated_at: () -> ::ActiveSupport::TimeWithZone?
 
-    def updated_at=: (::ActiveSupport::TimeWithZone) -> ::ActiveSupport::TimeWithZone
+    def updated_at=: (::ActiveSupport::TimeWithZone?) -> ::ActiveSupport::TimeWithZone?
 
     def updated_at?: () -> bool
 
@@ -280,13 +280,13 @@ class ::Post < ::ApplicationRecord
 
     def clear_updated_at_change: () -> void
 
-    def updated_at_before_type_cast: () -> ::Time
+    def updated_at_before_type_cast: () -> ::Time?
 
-    def updated_at_for_database: () -> ::Time
+    def updated_at_for_database: () -> ::Time?
 
-    def status: () -> ::Integer
+    def status: () -> ::Integer?
 
-    def status=: (::Integer) -> ::Integer
+    def status=: (::Integer?) -> ::Integer?
 
     def status?: () -> bool
 
@@ -320,9 +320,9 @@ class ::Post < ::ApplicationRecord
 
     def clear_status_change: () -> void
 
-    def status_before_type_cast: () -> ::Integer
+    def status_before_type_cast: () -> ::Integer?
 
-    def status_for_database: () -> ::Integer
+    def status_for_database: () -> ::Integer?
 
     def priority: () -> ::String?
 
@@ -404,9 +404,9 @@ class ::Post < ::ApplicationRecord
 
     def category_for_database: () -> ::Integer?
 
-    def pinned: () -> bool
+    def pinned: () -> bool?
 
-    def pinned=: (bool) -> bool
+    def pinned=: (bool?) -> bool?
 
     def pinned?: () -> bool
 
@@ -440,9 +440,9 @@ class ::Post < ::ApplicationRecord
 
     def clear_pinned_change: () -> void
 
-    def pinned_before_type_cast: () -> bool
+    def pinned_before_type_cast: () -> bool?
 
-    def pinned_for_database: () -> bool
+    def pinned_for_database: () -> bool?
   end
   include ::Post::GeneratedAttributeMethods
   module ::Post::GeneratedAliasAttributeMethods
@@ -502,7 +502,7 @@ class ::Post < ::ApplicationRecord
   def tag_ids: () -> ::Array[::Integer]
   def tag_ids=: (::Array[::Integer]) -> ::Array[::Integer]
 
-  def user: () -> ::User
+  def user: () -> ::User?
   def user=: (::User?) -> ::User?
   def reload_user: () -> ::User?
   def build_user: (untyped) -> ::User
@@ -530,13 +530,13 @@ class ::Post < ::ApplicationRecord
   class ::Post::ActiveRecord_Relation < ::ActiveRecord::Relation
     include ::Enumerable[::Post]
     include ::Post::GeneratedRelationMethods
-    include ::ActiveRecord::Relation::Methods[::Post, ::Integer]
+    include ::ActiveRecord::Relation::Methods[::Post, ::Integer, ::Post::Validated]
   end
 
   class ::Post::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
     include ::Enumerable[::Post]
     include ::Post::GeneratedRelationMethods
-    include ::ActiveRecord::Relation::Methods[::Post, ::Integer]
+    include ::ActiveRecord::Relation::Methods[::Post, ::Integer, ::Post::Validated]
 
     def build: (?::ActiveRecord::Associations::CollectionProxy::_EachPair attributes) ?{ () -> untyped } -> ::Post
              | (::Array[::ActiveRecord::Associations::CollectionProxy::_EachPair] attributes) ?{ () -> untyped } -> ::Array[::Post]
@@ -552,9 +552,20 @@ class ::Post < ::ApplicationRecord
     def <<: (*::Post | ::Array[::Post]) -> self
     def prepend: (*::Post | ::Array[::Post]) -> self
   end
+
+  class ::Post::Validated
+    def id: () -> ::Integer
+    def user: () -> ::User
+    def title: () -> ::String
+    def body: () -> ::String
+    def created_at: () -> ::ActiveSupport::TimeWithZone
+    def updated_at: () -> ::ActiveSupport::TimeWithZone
+  end
 end
 
 class ::ApplicationRecord < ::ActiveRecord::Base
+end
+class ::User < ::ApplicationRecord
 end
 class ::Comment < ::ApplicationRecord
 end
@@ -567,6 +578,4 @@ end
 class ::Tag < ::ApplicationRecord
 end
 class ::Tag::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
-end
-class ::User < ::ApplicationRecord
 end

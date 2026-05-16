@@ -1,12 +1,12 @@
 # resolve-type-names: false
 
 class ::Comment < ::ApplicationRecord
-  extend ::ActiveRecord::Base::ClassMethods[::Comment, ::Comment::ActiveRecord_Relation, ::Integer]
+  extend ::ActiveRecord::Base::ClassMethods[::Comment, ::Comment::ActiveRecord_Relation, ::Integer, ::Comment::Validated]
 
   module ::Comment::GeneratedAttributeMethods
-    def id: () -> ::Integer
+    def id: () -> ::Integer?
 
-    def id=: (::Integer) -> ::Integer
+    def id=: (::Integer?) -> ::Integer?
 
     def id?: () -> bool
 
@@ -40,13 +40,13 @@ class ::Comment < ::ApplicationRecord
 
     def clear_id_change: () -> void
 
-    def id_before_type_cast: () -> ::Integer
+    def id_before_type_cast: () -> ::Integer?
 
-    def id_for_database: () -> ::Integer
+    def id_for_database: () -> ::Integer?
 
-    def user_id: () -> ::Integer
+    def user_id: () -> ::Integer?
 
-    def user_id=: (::Integer) -> ::Integer
+    def user_id=: (::Integer?) -> ::Integer?
 
     def user_id?: () -> bool
 
@@ -80,13 +80,13 @@ class ::Comment < ::ApplicationRecord
 
     def clear_user_id_change: () -> void
 
-    def user_id_before_type_cast: () -> ::Integer
+    def user_id_before_type_cast: () -> ::Integer?
 
-    def user_id_for_database: () -> ::Integer
+    def user_id_for_database: () -> ::Integer?
 
-    def post_id: () -> ::Integer
+    def post_id: () -> ::Integer?
 
-    def post_id=: (::Integer) -> ::Integer
+    def post_id=: (::Integer?) -> ::Integer?
 
     def post_id?: () -> bool
 
@@ -120,13 +120,13 @@ class ::Comment < ::ApplicationRecord
 
     def clear_post_id_change: () -> void
 
-    def post_id_before_type_cast: () -> ::Integer
+    def post_id_before_type_cast: () -> ::Integer?
 
-    def post_id_for_database: () -> ::Integer
+    def post_id_for_database: () -> ::Integer?
 
-    def body: () -> ::String
+    def body: () -> ::String?
 
-    def body=: (::String) -> ::String
+    def body=: (::String?) -> ::String?
 
     def body?: () -> bool
 
@@ -160,13 +160,13 @@ class ::Comment < ::ApplicationRecord
 
     def clear_body_change: () -> void
 
-    def body_before_type_cast: () -> ::String
+    def body_before_type_cast: () -> ::String?
 
-    def body_for_database: () -> ::String
+    def body_for_database: () -> ::String?
 
-    def created_at: () -> ::ActiveSupport::TimeWithZone
+    def created_at: () -> ::ActiveSupport::TimeWithZone?
 
-    def created_at=: (::ActiveSupport::TimeWithZone) -> ::ActiveSupport::TimeWithZone
+    def created_at=: (::ActiveSupport::TimeWithZone?) -> ::ActiveSupport::TimeWithZone?
 
     def created_at?: () -> bool
 
@@ -200,13 +200,13 @@ class ::Comment < ::ApplicationRecord
 
     def clear_created_at_change: () -> void
 
-    def created_at_before_type_cast: () -> ::Time
+    def created_at_before_type_cast: () -> ::Time?
 
-    def created_at_for_database: () -> ::Time
+    def created_at_for_database: () -> ::Time?
 
-    def updated_at: () -> ::ActiveSupport::TimeWithZone
+    def updated_at: () -> ::ActiveSupport::TimeWithZone?
 
-    def updated_at=: (::ActiveSupport::TimeWithZone) -> ::ActiveSupport::TimeWithZone
+    def updated_at=: (::ActiveSupport::TimeWithZone?) -> ::ActiveSupport::TimeWithZone?
 
     def updated_at?: () -> bool
 
@@ -240,9 +240,9 @@ class ::Comment < ::ApplicationRecord
 
     def clear_updated_at_change: () -> void
 
-    def updated_at_before_type_cast: () -> ::Time
+    def updated_at_before_type_cast: () -> ::Time?
 
-    def updated_at_for_database: () -> ::Time
+    def updated_at_for_database: () -> ::Time?
   end
   include ::Comment::GeneratedAttributeMethods
   module ::Comment::GeneratedAliasAttributeMethods
@@ -290,13 +290,13 @@ class ::Comment < ::ApplicationRecord
   end
   include ::Comment::GeneratedAliasAttributeMethods
 
-  def user: () -> ::User
+  def user: () -> ::User?
   def user=: (::User?) -> ::User?
   def reload_user: () -> ::User?
   def build_user: (untyped) -> ::User
   def create_user: (untyped) -> ::User
   def create_user!: (untyped) -> ::User
-  def post: () -> ::Post
+  def post: () -> ::Post?
   def post=: (::Post?) -> ::Post?
   def reload_post: () -> ::Post?
   def build_post: (untyped) -> ::Post
@@ -312,13 +312,13 @@ class ::Comment < ::ApplicationRecord
   class ::Comment::ActiveRecord_Relation < ::ActiveRecord::Relation
     include ::Enumerable[::Comment]
     include ::Comment::GeneratedRelationMethods
-    include ::ActiveRecord::Relation::Methods[::Comment, ::Integer]
+    include ::ActiveRecord::Relation::Methods[::Comment, ::Integer, ::Comment::Validated]
   end
 
   class ::Comment::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
     include ::Enumerable[::Comment]
     include ::Comment::GeneratedRelationMethods
-    include ::ActiveRecord::Relation::Methods[::Comment, ::Integer]
+    include ::ActiveRecord::Relation::Methods[::Comment, ::Integer, ::Comment::Validated]
 
     def build: (?::ActiveRecord::Associations::CollectionProxy::_EachPair attributes) ?{ () -> untyped } -> ::Comment
              | (::Array[::ActiveRecord::Associations::CollectionProxy::_EachPair] attributes) ?{ () -> untyped } -> ::Array[::Comment]
@@ -333,6 +333,15 @@ class ::Comment < ::ApplicationRecord
     def destroy: (*::Comment | ::Integer) -> ::Array[::Comment]
     def <<: (*::Comment | ::Array[::Comment]) -> self
     def prepend: (*::Comment | ::Array[::Comment]) -> self
+  end
+
+  class ::Comment::Validated
+    def id: () -> ::Integer
+    def user: () -> ::User
+    def post: () -> ::Post
+    def body: () -> ::String
+    def created_at: () -> ::ActiveSupport::TimeWithZone
+    def updated_at: () -> ::ActiveSupport::TimeWithZone
   end
 end
 
