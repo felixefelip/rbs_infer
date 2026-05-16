@@ -135,15 +135,12 @@ module RbsInfer
     end
 
     def build_rbs_type_name(class_name)
-      normalized = class_name.sub(/\A::/, "")
-      parts = normalized.split("::")
-      name_sym = parts.pop.to_sym
-      ns = if parts.empty?
-             RBS::Namespace.root
-           else
-             RBS::Namespace.new(path: parts.map(&:to_sym), absolute: true)
-           end
-      RBS::TypeName.new(name: name_sym, namespace: ns)
+      # `RBS::TypeName.parse` already handles `::Foo::Bar`-style nesting,
+      # absolute vs relative namespaces, and validation. Equivalent to the
+      # manual `split("::") + Namespace.new + TypeName.new` we used to do.
+      RBS::TypeName.parse(class_name).absolute!
+    rescue StandardError
+      nil
     end
   end
 end
