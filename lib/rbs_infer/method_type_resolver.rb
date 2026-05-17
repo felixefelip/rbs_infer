@@ -53,7 +53,7 @@ module RbsInfer
       parsed = RBS::Parser.parse_type(class_name)
       return nil unless parsed.is_a?(RBS::Types::Intersection)
       parsed.types.map(&:to_s)
-    rescue StandardError
+    rescue RBS::ParsingError
       nil
     end
 

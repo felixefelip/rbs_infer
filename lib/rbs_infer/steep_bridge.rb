@@ -120,8 +120,6 @@ module RbsInfer
       end
 
       result
-    rescue
-      {}
     end
 
     BLOCK_GENERIC_METHODS = %w[map collect].freeze
@@ -188,8 +186,6 @@ module RbsInfer
       end
 
       result
-    rescue
-      {}
     end
 
     # Returns the type of a specific node within the typing result.
@@ -230,7 +226,7 @@ module RbsInfer
         contracts: contracts_store,
         postconditions: postconditions_store
       )
-    rescue => _e
+    rescue Parser::SyntaxError
       nil
     end
 
@@ -286,9 +282,6 @@ module RbsInfer
       interface_builder = Steep::Interface::Builder.new(factory, implicitly_returns_nil: false)
       @subtyping = Steep::Subtyping::Check.new(builder: interface_builder)
       @constant_resolver = RBS::Resolver::ConstantResolver.new(builder: definition_builder)
-    rescue => _e
-      @subtyping = nil
-      @constant_resolver = nil
     end
 
     def format_type(steep_type)

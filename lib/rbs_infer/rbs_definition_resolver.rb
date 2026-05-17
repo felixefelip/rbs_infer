@@ -16,6 +16,7 @@ module RbsInfer
 
       type_name = build_rbs_type_name(class_name)
       return nil unless type_name
+      return nil unless rbs_builder.env.class_decls.key?(type_name)
 
       defn = case kind
              when :singleton then rbs_builder.build_singleton(type_name)
@@ -46,7 +47,7 @@ module RbsInfer
         best ||= formatted
       end
       best
-    rescue => _e
+    rescue RBS::BaseError
       nil
     end
 
@@ -58,6 +59,7 @@ module RbsInfer
 
       type_name = build_rbs_type_name(collection_type)
       return nil unless type_name
+      return nil unless rbs_builder.env.class_decls.key?(type_name)
 
       defn = rbs_builder.build_instance(type_name)
       each_method = defn&.methods&.[](:each)
@@ -75,7 +77,7 @@ module RbsInfer
       end
 
       nil
-    rescue => _e
+    rescue RBS::BaseError
       nil
     end
 
