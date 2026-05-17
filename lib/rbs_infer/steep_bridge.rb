@@ -227,7 +227,8 @@ module RbsInfer
         subtyping: @subtyping,
         constant_resolver: @constant_resolver,
         cursor: nil,
-        contracts: contracts_store
+        contracts: contracts_store,
+        postconditions: postconditions_store
       )
     rescue => _e
       nil
@@ -249,6 +250,20 @@ module RbsInfer
         rescue StandardError => e
           warn "[rbs_infer] failed to load Steep contracts from #{base}: #{e.class}: #{e.message}"
           Steep::Contracts::Store.empty
+        end
+    end
+
+    # Loads conditional postconditions written by external generators
+    # (rbs_rails, rbs_inline, hand-authored) into a glob under `sig/`.
+    # Required by Steep's TypeCheckService since felixefelip/steep#10.
+    def postconditions_store
+      @postconditions_store ||=
+        begin
+          base = Pathname(contracts_base_dir).expand_path
+          Steep::Postconditions.load(base)
+        rescue StandardError => e
+          warn "[rbs_infer] failed to load Steep postconditions from #{base}: #{e.class}: #{e.message}"
+          Steep::Postconditions::Store.empty
         end
     end
 
