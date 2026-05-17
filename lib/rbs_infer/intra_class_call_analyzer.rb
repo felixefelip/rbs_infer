@@ -76,13 +76,6 @@ module RbsInfer
         infer_param_types_from_new_call(node)
       end
 
-      # Usage-side: param passed as positional arg to a call whose RBS
-      # signature already types it. Example: `OrderImport.find(order_import_id)`
-      # → `find` expects `Integer`, so `order_import_id` is `Integer`.
-      if @current_method_name && node.receiver && node.arguments && node.name != :new
-        infer_param_types_from_positional_usage(node)
-      end
-
       super
     end
 
@@ -94,49 +87,6 @@ module RbsInfer
       params.keywords.each { |kw| names << kw.name.to_s } if params.respond_to?(:keywords)
       params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
       names
-    end
-
-    # Quando um parâmetro do método atual é passado como argumento posicional
-    # para `Klass.method(param)` ou `obj.method(param)` cuja assinatura RBS
-    # declara o tipo desse positional, inferir o parâmetro com esse tipo.
-    # Ex: `OrderImport.find(order_import_id)` → `find` espera `Integer`,
-    # logo `order_import_id: Integer`.
-    def infer_param_types_from_positional_usage(node)
-      return unless @method_type_resolver
-
-      kind, class_name = receiver_class_lookup(node.receiver)
-      return unless kind && class_name
-
-      param_types = @method_type_resolver.rbs_definition_resolver
-        .resolve_method_positional_param_types(kind, class_name, node.name.to_s)
-      return unless param_types
-
-      positional_args = node.arguments.arguments.reject { |a| a.is_a?(Prism::KeywordHashNode) }
-      positional_args.each_with_index do |arg, i|
-        expected = param_types[i]
-        next unless expected && expected != "untyped"
-
-        param_name = extract_param_reference(arg)
-        next unless param_name
-
-        existing = @inferred_param_types[@current_method_name][param_name]
-        @inferred_param_types[@current_method_name][param_name] = expected unless existing
-      end
-    end
-
-    # Resolve the receiver into [:singleton, "Class"] for constant receivers
-    # (`Klass.method`) or [:instance, "Class"] for known-typed local variables.
-    # Returns [nil, nil] for shapes we don't infer through.
-    def receiver_class_lookup(receiver)
-      case receiver
-      when Prism::ConstantReadNode, Prism::ConstantPathNode
-        [:singleton, Analyzer.extract_constant_path(receiver)]
-      when Prism::LocalVariableReadNode
-        type = @local_var_types[receiver.name.to_s]
-        type ? [:instance, type] : [nil, nil]
-      else
-        [nil, nil]
-      end
     end
 
     # Quando o corpo de um método faz Klass.new(param:, param2:) e os valores

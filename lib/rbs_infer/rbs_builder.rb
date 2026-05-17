@@ -71,16 +71,9 @@ module RbsInfer
           case member.kind
           when :method
             sig = member.signature
-            # `initialize`: caller-side types (from `.new(...)` call-sites)
-            # and usage-side types (params passed to known-typed methods
-            # inside the body, populated by IntraClassCallAnalyzer) are
-            # complementary. Merge so each fills the other's gaps; caller
-            # types take precedence on shared keys.
-            if member.name == "initialize"
-              combined = (method_param_types[member.name] || {}).merge(init_arg_types) do |_, usage, caller|
-                caller == "untyped" ? usage : caller
-              end
-              sig = apply_inferred_init_types(sig, combined, optional_params) unless combined.empty?
+            # Substituir initialize com tipos inferidos dos call-sites
+            if member.name == "initialize" && !init_arg_types.empty?
+              sig = apply_inferred_init_types(sig, init_arg_types, optional_params)
             elsif method_param_types[member.name]
               sig = apply_inferred_param_types(sig, method_param_types[member.name])
             end

@@ -19,10 +19,6 @@ module RbsInfer
       @rbs_definition_resolver = RbsDefinitionResolver.new
     end
 
-    # Exposed so collaborators that already have a `MethodTypeResolver` can
-    # reach the underlying RBS lookup without re-wiring the dependency.
-    attr_reader :rbs_definition_resolver
-
     def resolve(class_name, method_name, block_body_type: nil)
       return nil unless class_name && class_name != "untyped"
 

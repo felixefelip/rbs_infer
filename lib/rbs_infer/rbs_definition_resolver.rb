@@ -137,39 +137,5 @@ module RbsInfer
     def build_rbs_type_name(class_name)
       RBS::TypeName.parse(class_name).absolute!
     end
-
-    public
-
-    # Returns the positional parameter types for a method declaration, as
-    # strings (e.g. `["Integer", "String"]`), or nil when the method or
-    # class isn't reachable through the RBS builder. Used by usage-based
-    # parameter inference (e.g. inferring `order_import_id: Integer` when
-    # it's the only positional passed to `OrderImport.find`).
-    def resolve_method_positional_param_types(kind, class_name, method_name)
-      return nil unless rbs_builder
-
-      type_name = build_rbs_type_name(class_name)
-      return nil unless type_name
-
-      defn = case kind
-             when :singleton then rbs_builder.build_singleton(type_name)
-             when :instance then rbs_builder.build_instance(type_name)
-             end
-      method = defn&.methods&.[](method_name.to_sym)
-      return nil unless method
-
-      # Pick the first overload that has positionals declared. Real-world
-      # methods like `find` have multiple overloads (single id, array, …);
-      # the simplest scalar overload is what we use to infer scalars.
-      method.defs.each do |d|
-        positionals = d.type.type.required_positionals
-        next if positionals.empty?
-        return positionals.map { |p| format_rbs_return_type(p.type, class_name) || "untyped" }
-      end
-
-      nil
-    rescue StandardError
-      nil
-    end
   end
 end
