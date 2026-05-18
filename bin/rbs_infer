@@ -118,10 +118,19 @@ end
 if output
   levels = RbsInfer::DependencySorter.sort(files)
 
+  reset_caches = lambda do
+    RbsInfer::SteepBridge.reset!
+    # ErbCallerResolver caches controller-ivar lookups per (class, action).
+    # Without this reset, pass 2 would return the empty result that pass 1
+    # computed when ApplicationHelper had no RBS, losing the inferred types
+    # from the freshly-written file.
+    erb_caller_resolver&.reset_cache!
+  end
+
   all_changed = []
   levels.each_with_index do |level_files, idx|
     # Reset Steep cache between levels so it picks up RBS from prior levels
-    RbsInfer::SteepBridge.reset! if idx > 0
+    reset_caches.call if idx > 0
     changed = generate.call(level_files)
     all_changed.concat(changed)
   end
@@ -131,7 +140,7 @@ if output
   changed = all_changed.uniq
   while changed.any? && pass < max_passes
     pass += 1
-    RbsInfer::SteepBridge.reset!
+    reset_caches.call
     changed = generate.call(changed, silent: true)
   end
 

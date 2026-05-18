@@ -21,6 +21,13 @@ module RbsInfer
           @source_files = source_files
         end
 
+        # Drop the controller-ivar cache. Call between stabilization passes
+        # so freshly-written RBS for controllers/helpers is re-read instead
+        # of returning stale results computed from an incomplete env.
+        def reset_cache!
+          @erb_ivar_cache = nil
+        end
+
         # Called by Analyzer#infer_method_param_types_from_callers to provide
         # additional caller analysis from ERB views.
         def call(analyzer, target_class, source_files)
