@@ -14,6 +14,19 @@ module RbsInfer
     def resolve_via_rbs_builder(kind, class_name, method_name, block_body_type: nil)
       return nil unless rbs_builder
 
+      # Intersection types (e.g. `(Order & Order::Validated)` yielded by
+      # `Relation::Methods[Model, Pk, ValidatedModel]#each`) need to be split
+      # before lookup — `RBS::TypeName` only accepts a single nominal name.
+      # Resolve right-to-left to match
+      # `Steep::Interface::Builder.intersection_shape`'s later-wins merge.
+      if (components = parse_intersection_components(class_name))
+        components.reverse_each do |component|
+          result = resolve_via_rbs_builder(kind, component, method_name, block_body_type: block_body_type)
+          return result if result && result != "untyped"
+        end
+        return nil
+      end
+
       type_name = build_rbs_type_name(class_name)
       return nil unless type_name
       return nil unless rbs_builder.env.class_decls.key?(type_name)
@@ -100,6 +113,17 @@ module RbsInfer
       else
         rbs_type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }
       end
+    end
+
+    # Parses an intersection-type string via `RBS::Parser.parse_type` and
+    # returns the component names. Returns nil for non-intersection (or
+    # unparseable) strings so the caller takes the legacy fast path.
+    def parse_intersection_components(class_name)
+      parsed = RBS::Parser.parse_type(class_name)
+      return nil unless parsed.is_a?(RBS::Types::Intersection)
+      parsed.types.map(&:to_s)
+    rescue RBS::ParsingError
+      nil
     end
 
     private
