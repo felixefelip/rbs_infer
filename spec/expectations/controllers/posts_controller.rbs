@@ -1,7 +1,7 @@
 class PostsController < ApplicationController
-  @posts: Post::ActiveRecord_Relation
-  @comments: Comment::ActiveRecord_Relation
-  @post: Post
+  @posts: Post::ActiveRecord_Relation?
+  @comments: Comment::ActiveRecord_Relation?
+  @post: (Post | (Post & Post::Validated))?
   @test: (Post & Post::Validated)?
   include FilterConfiguration
   def index: () -> void

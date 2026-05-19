@@ -313,6 +313,189 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
     end
   end
 
+  describe "#ivar_write_types" do
+    # Cobertura da regra introduzida em felixefelip/rbs_infer#4:
+    # coleta todas as escritas, deduplica, e adiciona `| nil` quando a
+    # ivar não tem escrita garantida por construção (initialize ou
+    # corpo da classe).
+
+    it "collects single write inside initialize as non-nilable" do
+      code = <<~RUBY
+        class Foo
+          def initialize
+            @x = "hello"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code)
+      expect(result["x"]).to eq("String")
+    end
+
+    it "adds nil when ivar is written only in a non-initialize method" do
+      code = <<~RUBY
+        class Foo
+          def set_x
+            @x = "hello"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code)
+      expect(result["x"]).to eq("String?")
+    end
+
+    it "unions multiple distinct writes across non-initialize methods" do
+      code = <<~RUBY
+        class Foo
+          def set_a
+            @x = Comment.find(1)
+          end
+
+          def set_b
+            @x = Comment.new
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code)
+      expect(result["x"]).to eq("((Comment & Comment::Validated) | Comment)?")
+    end
+
+    it "unions writes and drops nil when initialize also writes" do
+      code = <<~RUBY
+        class Foo
+          def initialize
+            @x = Comment.new
+          end
+
+          def set_x
+            @x = Comment.find(1)
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code)
+      expect(result["x"]).to eq("Comment | (Comment & Comment::Validated)")
+    end
+
+    it "dedupes textually-equal writes" do
+      code = <<~RUBY
+        class Foo
+          def set_a
+            @x = Comment.find(1)
+          end
+
+          def set_b
+            @x = Comment.find(2)
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code)
+      expect(result["x"]).to eq("(Comment & Comment::Validated)?")
+    end
+
+    it "collects attr_writer self.x = expr as a write to @x" do
+      code = <<~RUBY
+        class Foo
+          attr_writer :x
+
+          def set_a
+            self.x = "hello"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code)
+      expect(result["x"]).to eq("String?")
+    end
+
+    it "collects attr_accessor writes into the same union as direct ivasgn" do
+      code = <<~RUBY
+        class Foo
+          attr_accessor :x
+
+          def initialize
+            @x = Comment.new
+          end
+
+          def update
+            self.x = Comment.find(1)
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code)
+      expect(result["x"]).to eq("Comment | (Comment & Comment::Validated)")
+    end
+
+    it "keeps non-nil when initialize uses attr_writer setter" do
+      code = <<~RUBY
+        class Foo
+          attr_accessor :x
+
+          def initialize
+            self.x = "hello"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code)
+      expect(result["x"]).to eq("String")
+    end
+
+    it "explicit @x = nil adds nilability even when initialize writes" do
+      code = <<~RUBY
+        class Foo
+          def initialize
+            @x = "hello"
+          end
+
+          def clear
+            @x = nil
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code)
+      expect(result["x"]).to eq("String?")
+    end
+
+    it "treats class-body @x = expr as initialized" do
+      code = <<~RUBY
+        class Foo
+          @x = "hello"
+
+          def update
+            @x = "world"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code)
+      # class-body ivasgn is class-instance variable scope; method
+      # ivasgn is instance scope. Per the issue, we treat the class-body
+      # write as initialized for the same name (best-effort).
+      expect(result["x"]).to eq("String")
+    end
+
+    it "single non-initialize write of nil literal stays just nil-ish (returns nil token)" do
+      code = <<~RUBY
+        class Foo
+          def reset
+            @x = nil
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code)
+      # Only `nil` was observed; nilable, no concrete type. The emitter
+      # returns "nil" which is a valid RBS type.
+      expect(result["x"]).to eq("nil")
+    end
+  end
+
   describe "#all_expression_types" do
     it "maps line:column to type for all typed expressions" do
       code = <<~RUBY

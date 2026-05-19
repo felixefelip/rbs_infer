@@ -1,4 +1,4 @@
 module PostsHelper
-  def post_status_badge: (Post post) -> String
-  def post_summary: (Post post, ?Integer length) -> String
+  def post_status_badge: ((Post | (Post & Post::Validated))? post) -> String
+  def post_summary: ((Post | (Post & Post::Validated))? post, ?Integer length) -> String
 end

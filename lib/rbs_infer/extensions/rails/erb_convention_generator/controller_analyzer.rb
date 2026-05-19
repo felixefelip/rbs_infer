@@ -25,6 +25,17 @@ module RbsInfer
           end
 
           # Generate controller RBS via Analyzer and extract ivar types (cached).
+          #
+          # Strips an outer trailing `?` from the ivar type. Rationale: in
+          # the Rails request lifecycle a view template only runs after
+          # the controller action returned, so an ivar that's nilable at
+          # the *controller declaration* level (`@x: T?`) is in practice
+          # always set by the time the view reads it. Keeping the `?`
+          # here would force every `<%= @x.foo %>` to be flagged as a
+          # NoMethod against nil. We keep inner-union nilability (e.g.
+          # `T1 | nil` semantically inside a union) but only because the
+          # outer-`?` form is what the rbs_infer ivar inferrer emits by
+          # default (felixefelip/rbs_infer#4).
           def controller_ivar_types(controller_file, controller_class)
             @controller_ivar_cache ||= {}
             return @controller_ivar_cache[controller_class] if @controller_ivar_cache.key?(controller_class)
@@ -34,10 +45,35 @@ module RbsInfer
             ivars = {}
             rbs&.each_line do |line|
               m = line.strip.match(/\A@(\w+): (.+)\z/)
-              ivars[m[1]] = m[2] if m
+              ivars[m[1]] = unwrap_outer_nilable(m[2]) if m
             end
 
             @controller_ivar_cache[controller_class] = ivars
+          end
+
+          # Removes a single trailing `?` and balanced wrapping parens.
+          # `T?` → `T`. `(T1 | T2)?` → `T1 | T2`. `T` stays `T`.
+          def unwrap_outer_nilable(type_str)
+            return type_str unless type_str.end_with?("?")
+            stripped = type_str.chomp("?")
+            if stripped.start_with?("(") && stripped.end_with?(")") && balanced_outer_parens?(stripped)
+              stripped[1..-2]
+            else
+              stripped
+            end
+          end
+
+          def balanced_outer_parens?(str)
+            return false unless str.start_with?("(") && str.end_with?(")")
+            depth = 0
+            str.each_char.with_index do |c, i|
+              depth += 1 if c == "("
+              depth -= 1 if c == ")"
+              # If depth hits 0 before the very last char, the outer
+              # parens are NOT a single balanced wrap (e.g. `(A) | (B)`).
+              return false if depth.zero? && i < str.length - 1
+            end
+            depth.zero?
           end
 
           # Generate controller RBS (cached, shared with controller_ivar_types).

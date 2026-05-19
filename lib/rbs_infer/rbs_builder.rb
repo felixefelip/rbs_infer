@@ -103,7 +103,7 @@ module RbsInfer
         lines << "#{"  " * (modules.size - 1 - i)}end"
       end
 
-      lines.join("\n")
+      "#{lines.join("\n")}\n"
     end
 
     private
