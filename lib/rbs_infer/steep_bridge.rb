@@ -589,9 +589,7 @@ module RbsInfer
       # which then leaks into generated RBS. Collapse all of them to
       # `bool` since that's the user-visible meaning of any predicate
       # return.
-      if defined?(Steep::AST::Types::Logic::Base) && steep_type.is_a?(Steep::AST::Types::Logic::Base)
-        return "bool"
-      end
+      return "bool" if steep_type.is_a?(Steep::AST::Types::Logic::Base)
 
       str = steep_type.to_s
 
