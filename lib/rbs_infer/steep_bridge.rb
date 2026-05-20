@@ -582,6 +582,15 @@ module RbsInfer
     end
 
     def format_type(steep_type)
+      # `Steep::AST::Types::Logic::*` are internal types Steep uses for
+      # predicate-narrowing flow analysis (e.g., the body of
+      # `def x?; !@y.nil?; end` types as `Logic::Not`). They have no
+      # valid RBS surface form — `to_s` emits `<% Steep::AST::Types::Logic::Not %>`,
+      # which then leaks into generated RBS. Collapse all of them to
+      # `bool` since that's the user-visible meaning of any predicate
+      # return.
+      return "bool" if steep_type.is_a?(Steep::AST::Types::Logic::Base)
+
       str = steep_type.to_s
 
       # Remove leading :: from all type names
