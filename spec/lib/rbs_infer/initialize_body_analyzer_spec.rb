@@ -81,6 +81,40 @@ RSpec.describe RbsInfer::InitializeBodyAnalyzer do
     expect(visitor.keyword_defaults).not_to have_key("senha")
   end
 
+  it "registra params com default nil em nil_default_params (pra propagar nilabilidade)" do
+    # Param com default literal nil aceita nil em runtime mesmo se
+    # callers só passam não-nil. O attr/ivar correspondente precisa
+    # virar `T?` em vez de `T`. Trackear separadamente do
+    # `keyword_defaults` (que é só pra tipo do default).
+    source = <<~RUBY
+      class Foo
+        def initialize(nome: nil, idade: 0)
+          @nome = nome
+          @idade = idade
+        end
+      end
+    RUBY
+
+    visitor = analyze(source)
+    expect(visitor.nil_default_params).to include("nome")
+    expect(visitor.nil_default_params).not_to include("idade")  # default literal, não nil
+    expect(visitor.keyword_defaults["idade"]).to eq("Integer")
+    expect(visitor.keyword_defaults).not_to have_key("nome")
+  end
+
+  it "nil_default_params vazio quando initialize não tem keyword params" do
+    source = <<~RUBY
+      class Foo
+        def initialize(nome)
+          @nome = nome
+        end
+      end
+    RUBY
+
+    visitor = analyze(source)
+    expect(visitor.nil_default_params).to be_empty
+  end
+
   it "detecta self.attr = param.method como :param_method" do
     source = <<~RUBY
       class Matricular
