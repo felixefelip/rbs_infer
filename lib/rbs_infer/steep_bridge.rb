@@ -224,6 +224,57 @@ module RbsInfer
       result
     end
 
+    # Returns `{ "method_name" => { "ivar_name" => "type" } }` for every
+    # method in the source that writes (directly or via attr_writer) an
+    # instance variable. The per-method shape is what enables consumers
+    # (e.g., the ERB convention generator) to narrow an ivar's type to
+    # the contribution of a specific writer — rather than always seeing
+    # the wide union of all observed writes.
+    #
+    # Coverage mirrors `ivar_write_types`:
+    # - Direct `:ivasgn` (`@x = expr`) inside any method.
+    # - `:send` matching `attr_writer :x` / `attr_accessor :x` declared
+    #   on the same class, with implicit-self or `self` receiver.
+    #
+    # Top-level `:ivasgn` outside any method (class-instance variable in
+    # class body) is intentionally NOT recorded here — there's no method
+    # to attribute it to. Use `collect_initialized_ivars` for that case.
+    def ivar_write_types_per_method(source_code)
+      typing = type_check(source_code)
+      return {} unless typing
+
+      source_node = typing.source.node
+      return {} unless source_node
+
+      attr_writer_to_ivar = collect_attr_writers(source_node)
+      per_method_sets = Hash.new do |h, k|
+        h[k] = Hash.new { |h2, k2| h2[k2] = IvarTypeSet.new }
+      end
+
+      collect_ivar_writes_per_method(
+        source_node,
+        typing: typing,
+        attr_writer_to_ivar: attr_writer_to_ivar,
+        current_method: nil,
+        result: per_method_sets
+      )
+
+      result = {}
+      per_method_sets.each do |method_name, ivar_sets|
+        ivar_types = {}
+        ivar_sets.each do |ivar_name, type_set|
+          # `force_nilable: false` — this method already filters per
+          # writer; nilability decisions live at the consumer
+          # (controller declaration uses `ivar_write_types`, the
+          # view consumer wants the writer's raw contribution).
+          emitted = type_set.emit(force_nilable: false)
+          ivar_types[ivar_name] = emitted if emitted
+        end
+        result[method_name] = ivar_types unless ivar_types.empty?
+      end
+      result
+    end
+
     # Returns Set[String] of ivar names (without leading `@`) that are
     # assigned inside `def initialize` of any class in the source, or at
     # class-body scope. Used by the definite-initialization rule to
@@ -267,6 +318,80 @@ module RbsInfer
     end
 
     private
+
+    # Walks `node` accumulating ivar writes attributed to the enclosing
+    # `def`. Propagates `current_method` through descent; only records
+    # writes that happen inside a `:def` (writes in class body are
+    # ignored here since they don't belong to any callable). Mirrors the
+    # filter logic of `ivar_write_types` for both `:ivasgn` and
+    # attr_writer-style `:send`.
+    def collect_ivar_writes_per_method(node, typing:, attr_writer_to_ivar:, current_method:, result:)
+      return unless node.is_a?(::Parser::AST::Node)
+
+      case node.type
+      when :class, :module, :sclass
+        body = node.type == :class ? node.children[2] : node.children[1]
+        collect_ivar_writes_per_method(body, typing: typing,
+                                       attr_writer_to_ivar: attr_writer_to_ivar,
+                                       current_method: nil,
+                                       result: result) if body
+      when :def
+        method_name = node.children[0].to_s
+        body = node.children[2]
+        collect_ivar_writes_per_method(body, typing: typing,
+                                       attr_writer_to_ivar: attr_writer_to_ivar,
+                                       current_method: method_name,
+                                       result: result) if body
+      when :defs
+        # Singleton `def self.X` — class-instance variable scope, not
+        # relevant for the per-action narrowing this method serves.
+      when :ivasgn
+        if current_method
+          var_name = node.children[0].to_s.sub(/\A@/, "")
+          ivasgn_type = typing.type_of(node: node) rescue nil
+          if ivasgn_type
+            result[current_method][var_name].add(format_type(ivasgn_type))
+          end
+        end
+        rhs = node.children[1]
+        collect_ivar_writes_per_method(rhs, typing: typing,
+                                       attr_writer_to_ivar: attr_writer_to_ivar,
+                                       current_method: current_method,
+                                       result: result) if rhs
+      when :send
+        receiver, method_name, *args = node.children
+        if current_method && attr_writer_to_ivar.key?(method_name) &&
+           (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
+           !args.empty?
+          arg = args[0]
+          arg_type = typing.type_of(node: arg) rescue nil
+          if arg_type
+            ivar = attr_writer_to_ivar.fetch(method_name)
+            result[current_method][ivar].add(format_type(arg_type))
+          end
+        end
+        node.children.each do |c|
+          collect_ivar_writes_per_method(c, typing: typing,
+                                         attr_writer_to_ivar: attr_writer_to_ivar,
+                                         current_method: current_method,
+                                         result: result)
+        end
+      when :begin
+        node.children.each do |c|
+          collect_ivar_writes_per_method(c, typing: typing,
+                                         attr_writer_to_ivar: attr_writer_to_ivar,
+                                         current_method: current_method,
+                                         result: result)
+        end
+      else
+        node.children.each do |c|
+          collect_ivar_writes_per_method(c, typing: typing,
+                                         attr_writer_to_ivar: attr_writer_to_ivar,
+                                         current_method: current_method,
+                                         result: result)
+        end
+      end
+    end
 
     # Walks `node` looking for `:ivasgn` targets that count as definite
     # initialization (inside `def initialize` or directly in a class body

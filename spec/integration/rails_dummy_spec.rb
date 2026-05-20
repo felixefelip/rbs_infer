@@ -297,7 +297,13 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
     it "shorthand render infers local type without partial:/locals: keys" do
       rbs = File.read(File.join(@erb_tmpdir, "app/views/posts/_summary.rbs"))
-      expect(rbs).to include("attr_reader post: Post")
+      # The per-action narrowing (#4 follow-up) picks the writer that
+      # actually runs for `show` — `set_post` via the controller's
+      # `before_action`. So `post` resolves to the `Validated` branch,
+      # not the wide union. The shorthand inference path is still
+      # exercised; just the resulting type is the narrowed one.
+      expect(rbs).to include("attr_reader post:")
+      expect(rbs).to match(/attr_reader post: \(?Post(?:\s|\)|$)/)
     end
 
     it "shorthand render does not bleed into explicit partial:/locals: inference" do

@@ -5,23 +5,61 @@ module RbsInfer
     module Rails
       class ErbConventionGenerator
         module ControllerAnalyzer
-          # Extract only the ivars relevant to a specific controller action.
+          # Extract only the ivars relevant to a specific controller action,
+          # narrowed to the contributions of the writers that actually run
+          # for that action (the action method itself + `before_action`
+          # handlers selected by `only:`/`except:`).
+          #
+          # Rationale: the controller's declared ivar type is the union of
+          # *all* observed writes across *all* methods — e.g.,
+          # `@company: ((Company & Validated) | Company)?`. Inside `show`
+          # only `set_company` runs (via `before_action`), so the view
+          # should see only `Company & Validated`, not the wide union.
+          # Per-method types from `SteepBridge#ivar_write_types_per_method`
+          # give us that granularity.
           def extract_action_ivars(controller_file, controller_class, action)
-            all_ivar_types = controller_ivar_types(controller_file, controller_class)
-            return {} if all_ivar_types.empty?
+            per_method = controller_per_method_ivar_types(controller_file, controller_class)
+            return {} if per_method.empty?
 
             source = File.read(controller_file)
             tree = Prism.parse(source).value
-
-            ivar_method_map = map_ivars_to_methods(tree)
             relevant = relevant_methods_for_action(tree, action)
 
-            filtered = {}
-            all_ivar_types.each do |name, type|
-              writers = ivar_method_map[name] || Set.new
-              filtered[name] = type if writers.any? { |m| relevant.include?(m) }
+            collected = Hash.new { |h, k| h[k] = RbsInfer::IvarTypeSet.new }
+            relevant.each do |method_name|
+              writes = per_method[method_name.to_s]
+              next unless writes
+              writes.each do |ivar, type|
+                collected[ivar].add(type)
+              end
             end
-            filtered
+
+            result = {}
+            collected.each do |ivar, type_set|
+              # `force_nilable: false` — view templates render after the
+              # action returned, so writers that did run produced
+              # non-nil values. The full nilability picture lives in the
+              # controller declaration; views narrow past it.
+              emitted = type_set.emit(force_nilable: false)
+              result[ivar] = emitted if emitted
+            end
+            result
+          end
+
+          # Returns `{ method_name => { ivar_name => type } }` for the
+          # controller class, cached. The keys are method names as
+          # strings (matching `relevant_methods_for_action`'s output).
+          def controller_per_method_ivar_types(controller_file, controller_class)
+            @controller_per_method_ivar_cache ||= {}
+            return @controller_per_method_ivar_cache[controller_class] if @controller_per_method_ivar_cache.key?(controller_class)
+
+            source = File.read(controller_file)
+            bridge = controller_steep_bridge
+            @controller_per_method_ivar_cache[controller_class] = bridge.ivar_write_types_per_method(source)
+          end
+
+          def controller_steep_bridge
+            @controller_steep_bridge ||= RbsInfer::SteepBridge.new
           end
 
           # Generate controller RBS via Analyzer and extract ivar types (cached).

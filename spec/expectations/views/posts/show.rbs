@@ -2,7 +2,7 @@
 
 class ERBPostsShow
   @comments: Comment::ActiveRecord_Relation
-  @post: Post | (Post & Post::Validated)
+  @post: (Post & Post::Validated)
   def params: () -> ActionController::Parameters
   include PostsHelper
   include ActionViewContext

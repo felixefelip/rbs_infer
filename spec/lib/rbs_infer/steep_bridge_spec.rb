@@ -496,6 +496,140 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
     end
   end
 
+  describe "#ivar_write_types_per_method" do
+    # Per-method narrowing primitive — drives per-action ivar typing in
+    # the ERB convention generator. Each method's contribution is kept
+    # separate so consumers can union only the writers relevant to a
+    # given context (action + before_action handlers, for example).
+
+    it "groups ivar writes by enclosing method" do
+      code = <<~RUBY
+        class Foo
+          def set_x
+            @x = Comment.find(1)
+          end
+
+          def make_x
+            @x = Comment.new
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types_per_method(code)
+
+      expect(result["set_x"]["x"]).to eq("(Comment & Comment::Validated)")
+      expect(result["make_x"]["x"]).to eq("Comment")
+    end
+
+    it "unions multiple writes within the same method" do
+      code = <<~RUBY
+        class Foo
+          def set_x
+            @x = Comment.new
+            @x = Comment.find(1)
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types_per_method(code)
+
+      expect(result["set_x"]["x"]).to eq("Comment | (Comment & Comment::Validated)")
+    end
+
+    it "captures attr_writer self.x = expr as a write to @x in the enclosing method" do
+      code = <<~RUBY
+        class Foo
+          attr_writer :x
+
+          def assign
+            self.x = "hello"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types_per_method(code)
+
+      expect(result["assign"]["x"]).to eq("String")
+    end
+
+    it "omits methods that don't write any ivar" do
+      code = <<~RUBY
+        class Foo
+          def writes
+            @x = "hello"
+          end
+
+          def no_write
+            1 + 1
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types_per_method(code)
+
+      expect(result.keys).to eq(["writes"])
+    end
+
+    it "does NOT add | nil for methods that don't write the ivar" do
+      # Distinct from `ivar_write_types` which adds `| nil` when no
+      # writer is in `initialize`. The per-method primitive returns
+      # the writer's raw contribution; nilability is the caller's
+      # decision.
+      code = <<~RUBY
+        class Foo
+          def set_x
+            @x = "hello"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types_per_method(code)
+
+      expect(result["set_x"]["x"]).to eq("String")
+    end
+
+    it "returns empty hash for source with no class body" do
+      result = bridge.ivar_write_types_per_method("# just a comment")
+      expect(result).to eq({})
+    end
+
+    it "ignores ivasgn outside any method (class-body scope)" do
+      code = <<~RUBY
+        class Foo
+          @class_inst = "hello"
+
+          def writes
+            @inst = "world"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types_per_method(code)
+
+      # `@class_inst` at class body is class-instance variable, not
+      # attributable to a method.
+      expect(result["writes"]["inst"]).to eq("String")
+      expect(result["writes"]).not_to have_key("class_inst")
+    end
+
+    it "skips writes inside singleton methods" do
+      code = <<~RUBY
+        class Foo
+          def self.set_x
+            @x = "hello"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types_per_method(code)
+
+      # `def self.X` operates on the singleton; ivars there are
+      # class-instance variables, not relevant for the per-action
+      # narrowing we serve.
+      expect(result).to eq({})
+    end
+  end
+
   describe "#all_expression_types" do
     it "maps line:column to type for all typed expressions" do
       code = <<~RUBY
