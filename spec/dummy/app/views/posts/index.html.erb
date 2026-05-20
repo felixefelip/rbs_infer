@@ -4,6 +4,7 @@
   <% @posts.each do |post| %>
     <div class="post-item">
       <h2><%= link_to post.title, post %></h2>
+      <%= post_index_marker(post) %>
       <div class="post-meta">
         <span><%= post.author_name %></span>
         <%= post_status_badge(post) %>

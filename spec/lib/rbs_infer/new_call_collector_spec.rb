@@ -119,4 +119,58 @@ RSpec.describe RbsInfer::NewCallCollector do
       method_return_types: { "build_nome" => "String" })
     expect(usages.first["nome"]).to eq("String")
   end
+
+  describe "ivar/local name collision (regression)" do
+    # The ERB caller resolver passes ivar types keyed by `@name`
+    # (with prefix) and locals keyed by `name`. The collector's
+    # `InstanceVariableReadNode` lookup must use the prefixed key so
+    # an ivar named `@company` doesn't shadow a local named `company`
+    # of unrelated type, and vice-versa.
+
+    it "resolves @ivar via the @-prefixed key" do
+      source = <<~RUBY
+        Foo.new(value: @company)
+      RUBY
+
+      usages = collect_usages(
+        source,
+        target_class: "Foo",
+        local_var_types: { "@company" => "WideCompany", "company" => "NarrowCompany" }
+      )
+      expect(usages.first["value"]).to eq("WideCompany")
+    end
+
+    it "resolves local var via the unprefixed key without seeing the ivar entry" do
+      source = <<~RUBY
+        def test
+          # `company` is a method-local, NOT the ivar @company.
+          company = pick_one
+          Foo.new(value: company)
+        end
+      RUBY
+
+      usages = collect_usages(
+        source,
+        target_class: "Foo",
+        method_return_types: { "pick_one" => "NarrowCompany" },
+        local_var_types: { "@company" => "WideCompany" }
+      )
+      expect(usages.first["value"]).to eq("NarrowCompany")
+    end
+
+    it "falls back to the unprefixed key when only that one is set (backward compat with in-class collect_class_ivar_types)" do
+      # `collect_class_ivar_types` writes ivars under their bare name
+      # (no `@`). The lookup should still find them.
+      source = <<~RUBY
+        Foo.new(value: @company)
+      RUBY
+
+      usages = collect_usages(
+        source,
+        target_class: "Foo",
+        local_var_types: { "company" => "LegacyCompany" }
+      )
+      expect(usages.first["value"]).to eq("LegacyCompany")
+    end
+  end
 end

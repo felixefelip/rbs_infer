@@ -197,6 +197,26 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("helpers/posts_helper", target_class: "PostsHelper", target_file: "app/helpers/posts_helper.rb", extra_caller_sources: erb_resolver)
   end
 
+  # Regression for the ivar-vs-local name collision in `ErbCallerResolver`
+  # combined with the `?` outer-unwrap in `extract_element_type`. The
+  # `post_index_marker` helper is called ONLY from `posts/index.html.erb`
+  # inside `@posts.each |post|`, so its parameter must come from the
+  # block-element resolution (`Post::ActiveRecord_Relation?` →
+  # `Post & Post::Validated`), not from the controller's `@post` ivar
+  # (which has a wide nilable union and would pollute the local lookup
+  # without the namespace separation).
+  it "narrows helper param via block-param resolution (ivar/local name-collision regression)" do
+    require "rbs_infer/extensions/rails/erb_caller_resolver"
+    erb_resolver = RbsInfer::Extensions::Rails::ErbCallerResolver.new(app_dir: Dir.pwd, source_files: source_files)
+    rbs = generate_rbs(
+      target_class: "PostsHelper",
+      target_file: "app/helpers/posts_helper.rb",
+      extra_caller_sources: erb_resolver
+    )
+
+    expect(rbs).to include("def post_index_marker: (Post & Post::Validated post)")
+  end
+
   it "ApplicationController rails_custom matches expected RBS" do
     require "rbs_infer/extensions/rails/custom_generator"
     require "tmpdir"

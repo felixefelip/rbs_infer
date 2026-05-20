@@ -110,13 +110,48 @@ module RbsInfer
                 # `@companies.each |company|` and pass `company`
                 # downstream. Without the `@`, the ivar's wide type
                 # would be returned for any `company` local read.
-                ivar_types["@#{m[1]}"] = m[2]
+                #
+                # Strip the outer trailing `?` for the same reason the
+                # ERB convention generator does (`unwrap_outer_nilable`
+                # in controller_analyzer.rb): view templates only run
+                # after the controller action, so an ivar declared
+                # `T?` (because not written in `initialize`) is in
+                # practice always set by the time the view passes it
+                # to a helper. Keeping the `?` here leaks `nil` into
+                # the helper body's parameter type and produces false
+                # NoMethod errors for `param.foo` calls.
+                ivar_types["@#{m[1]}"] = unwrap_outer_nilable(m[2])
               end
             end
             @erb_ivar_cache[cache_key] = ivar_types
           rescue
             @erb_ivar_cache[cache_key] = {}
           end
+        end
+
+        # Removes a single trailing `?` and balanced wrapping parens
+        # from a type string. Mirrors the helper in
+        # `controller_analyzer.rb` — see comment in `erb_ivar_types`
+        # for the rationale.
+        def unwrap_outer_nilable(type_str)
+          return type_str unless type_str.is_a?(String) && type_str.end_with?("?")
+          stripped = type_str.chomp("?")
+          if stripped.start_with?("(") && stripped.end_with?(")") && balanced_outer_parens?(stripped)
+            stripped[1..-2]
+          else
+            stripped
+          end
+        end
+
+        def balanced_outer_parens?(str)
+          return false unless str.start_with?("(") && str.end_with?(")")
+          depth = 0
+          str.each_char.with_index do |c, i|
+            depth += 1 if c == "("
+            depth -= 1 if c == ")"
+            return false if depth.zero? && i < str.length - 1
+          end
+          depth.zero?
         end
       end
     end
