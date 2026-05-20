@@ -17,12 +17,28 @@ module RbsInfer
           # should see only `Company & Validated`, not the wide union.
           # Per-method types from `SteepBridge#ivar_write_types_per_method`
           # give us that granularity.
+          #
+          # **Cross-action rendering (felixefelip/rbs_infer#6)**: when a
+          # view is rendered by 2+ actions (e.g., `edit.html.erb`
+          # rendered by both `edit` and by `update`'s failure branch via
+          # `render :edit`), the per-action narrowing is no longer safe
+          # — it'd type the view by `edit`'s writers alone, missing
+          # `update`'s contribution. In that case we fall back to the
+          # controller's wide declared type (`controller_ivar_types`),
+          # which is a sound super-set covering all rendering paths.
           def extract_action_ivars(controller_file, controller_class, action)
             per_method = controller_per_method_ivar_types(controller_file, controller_class)
-            return {} if per_method.empty?
 
             source = File.read(controller_file)
             tree = Prism.parse(source).value
+            renderers = collect_view_renderers(tree, action.to_s)
+
+            if renderers.size > 1
+              return shared_view_ivar_types(controller_file, controller_class, tree, renderers, per_method)
+            end
+
+            return {} if per_method.empty?
+
             relevant = relevant_methods_for_action(tree, action)
 
             collected = Hash.new { |h, k| h[k] = RbsInfer::IvarTypeSet.new }
@@ -44,6 +60,129 @@ module RbsInfer
               result[ivar] = emitted if emitted
             end
             result
+          end
+
+          # When a view is rendered by 2+ actions (e.g., `edit.html.erb`
+          # rendered by both `edit` and `update`'s failure branch),
+          # per-action narrowing can't capture all the contributions —
+          # methods like `@x.update(...)` widen `@x` in their falsy
+          # branch via Steep postcondition narrowing, and our
+          # syntactic walker doesn't see that.
+          #
+          # Fallback: for every ivar **written by some method in the
+          # rendering union**, emit the controller's *declared* type
+          # (the wide union from `controller_ivar_types`, with outer
+          # `?` stripped — same convention as the single-renderer
+          # path). This is a sound super-set of every contributing
+          # writer's type, covering the cases the per-method walker
+          # misses.
+          #
+          # Ivars not touched by any rendering-action method (e.g.,
+          # `@comments` set only in `show` when the view is
+          # `edit.html.erb`) are excluded — bringing them into a view
+          # that doesn't render them would be noise.
+          def shared_view_ivar_types(controller_file, controller_class, tree, renderers, per_method)
+            relevant_union = Set.new
+            renderers.each do |renderer|
+              relevant_union.merge(relevant_methods_for_action(tree, renderer))
+            end
+
+            touched_ivars = Set.new
+            relevant_union.each do |method_name|
+              writes = per_method[method_name.to_s]
+              next unless writes
+              touched_ivars.merge(writes.keys)
+            end
+
+            return {} if touched_ivars.empty?
+
+            declared = controller_ivar_types(controller_file, controller_class)
+            result = {}
+            touched_ivars.each do |ivar|
+              type = declared[ivar]
+              result[ivar] = type if type
+            end
+            result
+          end
+
+          # Returns the set of action method names that render the
+          # template `view_name`. Always includes the conventional
+          # action (the action of the same name); adds any other
+          # action whose body contains a `render` call that targets
+          # this view (felixefelip/rbs_infer#6).
+          #
+          # Detected forms:
+          # - `render :view_name`             (Symbol)
+          # - `render "view_name"`            (String, NOT partial)
+          # - `render template: "view_name"`  (or `"controller/view_name"`)
+          # - `render action: :view_name`     (or `"view_name"`)
+          #
+          # Skipped (not template renders):
+          # - `render partial: "..."` / `render "_underscored_name"` (partials)
+          # - `render layout: "..."` (layout reference)
+          # - `render plain:/json:/inline:/...` (non-template responses)
+          def collect_view_renderers(tree, view_name)
+            result = Set.new([view_name])
+
+            each_def(tree) do |defn|
+              action_name = defn.name.to_s
+              next if action_name == view_name
+
+              each_call(defn, :render) do |call|
+                result << action_name if render_targets_template?(call, view_name)
+              end
+            end
+
+            result
+          end
+
+          # Heuristic test: does `call` (a `render` invocation) target the
+          # template `view_name`?
+          def render_targets_template?(call, view_name)
+            args = call.arguments&.arguments || []
+            return false if args.empty?
+
+            first = args[0]
+            case first
+            when Prism::SymbolNode
+              return first.value.to_s == view_name
+            when Prism::StringNode
+              str = first.content
+              # `_partial_name` strings are partials, not templates.
+              return false if str.start_with?("_")
+              # Match either bare "view_name" or "controller/view_name".
+              return str == view_name || str.end_with?("/#{view_name}")
+            end
+
+            args.each do |arg|
+              case arg
+              when Prism::KeywordHashNode, Prism::HashNode
+                arg.elements.each do |assoc|
+                  next unless assoc.is_a?(Prism::AssocNode)
+                  next unless assoc.key.is_a?(Prism::SymbolNode)
+
+                  case assoc.key.value
+                  when "partial"
+                    # `partial:` is set → it's a partial render, not template.
+                    return false
+                  when "template"
+                    value = case assoc.value
+                            when Prism::StringNode then assoc.value.content
+                            when Prism::SymbolNode then assoc.value.value.to_s
+                            end
+                    return true if value && (value == view_name || value.end_with?("/#{view_name}"))
+                  when "action"
+                    value = case assoc.value
+                            when Prism::SymbolNode then assoc.value.value.to_s
+                            when Prism::StringNode then assoc.value.content
+                            end
+                    return true if value == view_name
+                  end
+                end
+              end
+            end
+
+            false
           end
 
           # Returns `{ method_name => { ivar_name => type } }` for the
