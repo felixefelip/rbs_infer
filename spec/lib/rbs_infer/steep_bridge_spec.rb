@@ -176,6 +176,19 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
       expect(result["bar"]).to eq("bool")
     end
 
+    it "collapses Steep Logic types to bool (regression for Logic::Not leaking into RBS)" do
+      # `!@x.nil?` and similar predicate bodies type as
+      # `Steep::AST::Types::Logic::*` internally — unprintable types
+      # Steep uses for predicate flow narrowing. Without explicit
+      # handling, `to_s` emits `<% Steep::AST::Types::Logic::Not %>`
+      # which leaks into the generated RBS as a literal `Logic::Not`
+      # string. Verify the helper collapses each Logic type to `bool`.
+      expect(bridge.send(:format_type, Steep::AST::Types::Logic::Not.instance)).to eq("bool")
+      expect(bridge.send(:format_type, Steep::AST::Types::Logic::ReceiverIsNil.instance)).to eq("bool")
+      expect(bridge.send(:format_type, Steep::AST::Types::Logic::ReceiverIsArg.instance)).to eq("bool")
+      expect(bridge.send(:format_type, Steep::AST::Types::Logic::ArgIsReceiver.instance)).to eq("bool")
+    end
+
     it "resolves chained method return types" do
       code = <<~RUBY
         class Foo
