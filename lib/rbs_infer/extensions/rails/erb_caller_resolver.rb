@@ -103,7 +103,14 @@ module RbsInfer
             rbs.each_line do |line|
               stripped = line.strip
               if (m = stripped.match(/\A@(\w+): (.+)\z/))
-                ivar_types[m[1]] = m[2]
+                # Key with the leading `@` so the caller-file analyzer
+                # can distinguish ivar lookups (`@company`) from
+                # local-var lookups (`company`) when both happen to
+                # share a basename — common in views that iterate
+                # `@companies.each |company|` and pass `company`
+                # downstream. Without the `@`, the ivar's wide type
+                # would be returned for any `company` local read.
+                ivar_types["@#{m[1]}"] = m[2]
               end
             end
             @erb_ivar_cache[cache_key] = ivar_types
