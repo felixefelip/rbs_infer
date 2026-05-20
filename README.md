@@ -35,13 +35,7 @@ Concrete examples of patterns the forks now cover automatically (and used to req
 | `<% @posts.each |post| %>` in views | block param typed from collection element |
 | View rendered by multiple actions (`render :edit` in `update`) | view ivars use the wide controller union |
 
-Frontier work (open issues drive the next round):
-
-| Pattern | Status |
-|---|---|
-| Delegation chain markers (`def x; y.x; end` propagating narrowing) | [rbs_infer#2](https://github.com/felixefelip/rbs_infer/issues/2) |
-| Cross-receiver unconditional postconditions (setter on non-self receiver) | gap A — Steep issue pending |
-| Constructor argument narrowing propagation (`Event.new(narrowed_venue)` inherits markers) | gap C — Steep/RBS issue pending |
+For the current list of patterns still under work, see open issues across the three repos.
 
 ## Status
 
