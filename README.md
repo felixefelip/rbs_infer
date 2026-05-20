@@ -4,6 +4,39 @@ Infer RBS type signatures from Ruby source code via static analysis using [Prism
 
 No annotations required — types are inferred from `initialize` call-sites, `attr` assignments, method bodies, return statements, collection operations, and (in Rails projects) controller actions, partial render call-sites, and `enumerize` declarations.
 
+## Project goal
+
+**Zero manual typing annotations, ever.** The tooling — `rbs_infer` and the forked checker/generators it composes with — should infer types as precisely as they occur at runtime, reading the same code a human reads.
+
+The guiding rule:
+
+> If a human can infer the type by reading the source (without running it), the tooling has to.
+
+Annotations like `#: T`, `@type var`, or hand-written sidecars are treated as **tooling debt**, not solutions. When inference fails today, the response is to open an issue and improve the generator/checker — not to push the burden onto the user.
+
+This drives a coordinated fork strategy across three repos:
+
+- [`felixefelip/steep`](https://github.com/felixefelip/steep) — type checker, augmented with conditional postconditions, unconditional ivar narrowing, callback sidecars, `drops:` for marker subtraction, and self/ivar refinement for predicates.
+- [`felixefelip/rbs_rails`](https://github.com/felixefelip/rbs_rails) — emits markers and postcondition sidecars from ActiveRecord validations, associations, lifecycle callbacks, and through-derived markers.
+- [`felixefelip/rbs_infer`](https://github.com/felixefelip/rbs_infer) (this repo) — emits markers and sidecars from generic Ruby patterns (delegation, ivar unions with nilability, cross-action ERB rendering, helper inference).
+
+Each PR removes one class of "a human can see this is well-typed but the ferramenta can't" — turning what used to need an annotation into automatic inference. Out-of-scope is reserved for cases where **no static analysis can decide** (`eval`, dynamic `method_missing`, runtime-generated method names, instance_eval with external blocks, etc.) — never for "complex but tractable".
+
+Concrete examples of patterns the forks now cover automatically (and used to require annotations):
+
+| Pattern | Removed annotation |
+|---|---|
+| `@x = ...` only in `set_x` method (not `initialize`) | ivar typed `T?` automatically |
+| Multiple `@x = ...` with different types across methods | ivar typed as syntactic union |
+| `if @model.save then @model.name end` | self/ivar narrows to `Validated` marker |
+| `before_action :set_x` callbacks | action body sees `@x` populated |
+| `update`/`save` returning false | `drops:` marker on the falsy branch |
+| Helper called with `@x` from controller view | helper param inferred from ivar type |
+| `<% @posts.each |post| %>` in views | block param typed from collection element |
+| View rendered by multiple actions (`render :edit` in `update`) | view ivars use the wide controller union |
+
+For the current list of patterns still under work, see open issues across the three repos.
+
 ## Status
 
 Pre-release (`0.1.0`); not yet published to RubyGems. Add via local path or git:
