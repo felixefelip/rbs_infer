@@ -378,7 +378,8 @@ module RbsInfer
         constant_resolver: @constant_resolver,
         cursor: nil,
         contracts: contracts_store,
-        postconditions: postconditions_store
+        postconditions: postconditions_store,
+        callbacks: callbacks_store
       )
     rescue Parser::SyntaxError
       nil
@@ -414,6 +415,23 @@ module RbsInfer
         rescue StandardError => e
           warn "[rbs_infer] failed to load Steep postconditions from #{base}: #{e.class}: #{e.message}"
           Steep::Postconditions::Store.empty
+        end
+    end
+
+    # Loads the generic callback sidecar (felixefelip/steep#27) from
+    # `sig/**/.steep_callbacks.yml`. rbs_rails emits this from
+    # `before_action` declarations; combined with postconditions it
+    # narrows ivars at the entry of every covered action without an
+    # explicit setter call in the body. Required by `TypeCheckService`
+    # since Steep made `callbacks:` a mandatory keyword.
+    def callbacks_store
+      @callbacks_store ||=
+        begin
+          base = Pathname(contracts_base_dir).expand_path
+          Steep::Callbacks.load(base)
+        rescue StandardError => e
+          warn "[rbs_infer] failed to load Steep callbacks from #{base}: #{e.class}: #{e.message}"
+          Steep::Callbacks::Store.empty
         end
     end
 
