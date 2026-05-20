@@ -1,0 +1,15 @@
+---
+version: 1
+callbacks:
+- class: PostsController
+  apply_postcondition_of: set_post
+  runs_before:
+  - show
+  - update
+  - destroy
+  - publish
+- class: Users::AvatarsController
+  apply_postcondition_of: set_user
+  runs_before:
+  - edit
+  - update

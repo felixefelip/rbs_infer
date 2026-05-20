@@ -1,6 +1,6 @@
 module Users
   class AvatarsController < ApplicationController
-    @user: (User & User::Validated)
+    @user: (User & User::Validated)?
     def edit: () -> void
     def update: () -> void
 

@@ -301,6 +301,35 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       assert_erb_snapshot(output_file: "app/views/posts/edit.rbs")
     end
 
+    # Regression for the cross-action rendering tracking
+    # (felixefelip/rbs_infer#6). The controller's `update` action does
+    # `render :edit` on validation failure, so `edit.html.erb` is
+    # rendered by two actions. Per-action narrowing would type `@post`
+    # by `edit`'s writers alone (`set_post` via `before_action` →
+    # `Post & Validated`) and miss `update`'s falsy-branch
+    # contribution. The wide fallback uses the controller's declared
+    # union, preserving soundness across both rendering paths.
+    it "widens @post in edit.rbs when update renders :edit (cross-action regression)" do
+      output_dir = @erb_tmpdir
+      rbs = File.read(File.join(output_dir, "app/views/posts/edit.rbs"))
+      expect(rbs).to include("@post: Post | (Post & Post::Validated)")
+    end
+
+    it "widens @post in new.rbs when create renders :new (cross-action regression)" do
+      output_dir = @erb_tmpdir
+      rbs = File.read(File.join(output_dir, "app/views/posts/new.rbs"))
+      expect(rbs).to include("@post: Post | (Post & Post::Validated)")
+    end
+
+    it "keeps single-renderer narrowing on show.rbs (not rendered by any other action)" do
+      output_dir = @erb_tmpdir
+      rbs = File.read(File.join(output_dir, "app/views/posts/show.rbs"))
+      # `show.html.erb` is only rendered by `show` action; per-action
+      # narrowing applies → `Post & Validated` (from `set_post`), no
+      # wide fallback.
+      expect(rbs).to include("@post: (Post & Post::Validated)")
+    end
+
     it "ERBPartialPostsForm matches expected RBS" do
       assert_erb_snapshot(output_file: "app/views/posts/_form.rbs")
     end

@@ -1,0 +1,8 @@
+---
+version: 1
+postconditions:
+- class: PostsController
+  method: set_post
+  unconditional:
+    ivars:
+      "@post": "(::Post & ::Post::Validated)"
