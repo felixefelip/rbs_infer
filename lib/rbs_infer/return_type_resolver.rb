@@ -116,7 +116,10 @@ module RbsInfer
 
       ivar_types = {}
 
-      # Use Steep for ivar type resolution
+      # Use Steep for ivar type resolution. Per felixefelip/rbs_infer#4,
+      # the bridge returns union strings and applies the definite-init
+      # rule itself (`@x: T1 | T2 | nil` when `@x` isn't written in
+      # initialize). The fallback only fills ivars Steep didn't see.
       if @steep_bridge && parsed_target.source
         steep_ivars = @steep_bridge.ivar_write_types(parsed_target.source)
         steep_ivars.each do |name, type|
@@ -125,14 +128,28 @@ module RbsInfer
         end
       end
 
-      # Fallback: basic ivar type inference for cases Steep doesn't cover
+      # Fallback: Prism-side ivar type inference for ivars Steep didn't
+      # cover (e.g., parse failures or pure ivasgn that Steep can't type).
       known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
 
       collector = DefCollector.new
       parsed_target.tree.accept(collector)
 
+      initialized_ivars = collect_prism_initialized_ivars(parsed_target.tree)
+      fallback_type_sets = Hash.new { |h, k| h[k] = IvarTypeSet.new }
+
       collector.defs.each do |defn|
-        collect_ivar_writes(defn, known_return_types, ivar_types, attr_names)
+        collect_ivar_writes(defn, known_return_types, fallback_type_sets, attr_names)
+      end
+
+      fallback_type_sets.each do |name, type_set|
+        next if ivar_types.key?(name)
+        force_nilable = !initialized_ivars.include?(name)
+        emitted = type_set.emit(force_nilable: force_nilable)
+        if emitted
+          ivar_types[name] = emitted
+          known_return_types[name] = emitted
+        end
       end
 
       ivar_types
@@ -158,21 +175,66 @@ module RbsInfer
       end.any?
     end
 
-    def collect_ivar_writes(node, known_return_types, ivar_types, attr_names)
+    def collect_ivar_writes(node, known_return_types, type_sets, attr_names)
       queue = [node]
       while (current = queue.shift)
         if current.is_a?(Prism::InstanceVariableWriteNode)
           name = current.name.to_s.sub(/\A@/, "")
-          next if attr_names.include?(name)
-          next if ivar_types[name] && ivar_types[name] != "untyped"
-
-          inferred = basic_value_type(current.value, known_return_types)
-          if inferred && inferred != "untyped"
-            ivar_types[name] = inferred
-            known_return_types[name] = inferred
+          unless attr_names.include?(name)
+            inferred = basic_value_type(current.value, known_return_types)
+            type_sets[name].add(inferred) if inferred
           end
         end
         queue.concat(current.compact_child_nodes)
+      end
+    end
+
+    # Walks the Prism tree of a class body and collects ivar names that
+    # are assigned inside `def initialize` or directly in the class body
+    # (outside any method). Mirrors `SteepBridge#collect_initialized_ivars`
+    # for the Prism path. Used by the definite-initialization rule
+    # (felixefelip/rbs_infer#4).
+    def collect_prism_initialized_ivars(tree)
+      result = Set.new
+      walk_prism_init_targets(tree, in_init: false, in_class_body: false, result: result)
+      result
+    end
+
+    def walk_prism_init_targets(node, in_init:, in_class_body:, result:)
+      return unless node
+
+      case node
+      when Prism::ClassNode, Prism::ModuleNode, Prism::SingletonClassNode
+        body = node.body
+        walk_prism_init_targets(body, in_init: false, in_class_body: true, result: result) if body
+      when Prism::DefNode
+        if node.name == :initialize && node.receiver.nil?
+          walk_prism_init_targets(node.body, in_init: true, in_class_body: false, result: result) if node.body
+        end
+        # other defs: do not descend (their ivasgns don't count as init)
+      when Prism::InstanceVariableWriteNode
+        if in_init || in_class_body
+          result << node.name.to_s.sub(/\A@/, "")
+        end
+        walk_prism_init_targets(node.value, in_init: in_init, in_class_body: in_class_body, result: result) if node.value
+      when Prism::CallNode
+        # `self.x = expr` inside initialize or class body counts as init
+        # for `@x` if `x=` is a writer/accessor on this class. We mark
+        # optimistically; non-attr `x=` methods would harmlessly mark a
+        # name that never appears in the type-set (so emits nothing).
+        if (in_init || in_class_body) &&
+           node.name.to_s.end_with?("=") && node.name != :"==" &&
+           (node.receiver.nil? || node.receiver.is_a?(Prism::SelfNode))
+          ivar_name = node.name.to_s.chomp("=").sub(/\A@/, "")
+          result << ivar_name unless ivar_name.empty?
+        end
+        node.compact_child_nodes.each do |c|
+          walk_prism_init_targets(c, in_init: in_init, in_class_body: in_class_body, result: result)
+        end
+      else
+        node.compact_child_nodes.each do |c|
+          walk_prism_init_targets(c, in_init: in_init, in_class_body: in_class_body, result: result)
+        end
       end
     end
 

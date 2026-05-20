@@ -100,7 +100,9 @@ generate = lambda do |inputs_to_process, silent: false|
 
       FileUtils.mkdir_p(File.dirname(output_path))
 
-      new_content = rbs + "\n"
+      # `RbsBuilder#build` already terminates with a single `\n`, so
+      # `rbs` ends in a newline. Don't double it up.
+      new_content = rbs.end_with?("\n") ? rbs : "#{rbs}\n"
       old_content = File.exist?(output_path) ? File.read(output_path) : nil
 
       File.write(output_path, new_content)

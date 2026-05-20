@@ -129,7 +129,12 @@ module RbsInfer
     def resolve_receiver_collection_type(receiver, local_var_types)
       case receiver
       when Prism::InstanceVariableReadNode
-        local_var_types[receiver.name.to_s.sub(/\A@/, "")]
+        # Try the `@`-prefixed key first (set by `ErbCallerResolver`
+        # to disambiguate ivar/local with the same basename); fall
+        # back to the unprefixed form for callers that still store
+        # ivars under their bare name (e.g., `NewCallCollector#collect_class_ivar_types`).
+        full = receiver.name.to_s
+        local_var_types[full] || local_var_types[full.sub(/\A@/, "")]
       when Prism::LocalVariableReadNode
         local_var_types[receiver.name.to_s]
       when Prism::CallNode
@@ -139,10 +144,37 @@ module RbsInfer
     end
 
     # Extract element type from collection types via RBS definitions.
-    # Looks up the `each` method's block parameter type.
+    # Looks up the `each` method's block parameter type. Strips a
+    # trailing outer `?` first — the ivar inferrer (felixefelip/rbs_infer#4)
+    # adds `?` for ivars not written in `initialize`; the RBS lookup of
+    # `each` doesn't handle nilable wrappers directly, so we treat
+    # `T?` as `T` for the purpose of iteration. View templates only
+    # render after the action ran, so non-nil is a safe assumption.
     def extract_element_type(collection_type)
       @rbs_definition_resolver ||= RbsDefinitionResolver.new
-      @rbs_definition_resolver.resolve_each_element_type(collection_type)
+      unwrapped = unwrap_outer_nilable(collection_type)
+      @rbs_definition_resolver.resolve_each_element_type(unwrapped)
+    end
+
+    def unwrap_outer_nilable(type_str)
+      return type_str unless type_str.is_a?(String) && type_str.end_with?("?")
+      stripped = type_str.chomp("?")
+      if stripped.start_with?("(") && stripped.end_with?(")") && balanced_outer_parens?(stripped)
+        stripped[1..-2]
+      else
+        stripped
+      end
+    end
+
+    def balanced_outer_parens?(str)
+      return false unless str.start_with?("(") && str.end_with?(")")
+      depth = 0
+      str.each_char.with_index do |c, i|
+        depth += 1 if c == "("
+        depth -= 1 if c == ")"
+        return false if depth.zero? && i < str.length - 1
+      end
+      depth.zero?
     end
 
     def extract_attr_return_types(source, comments, tree)

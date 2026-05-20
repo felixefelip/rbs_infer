@@ -65,6 +65,16 @@ module RbsInfer
 
     private
 
+    # Lookup the type of an `:ivar` reference. Tries the `@`-prefixed
+    # key first (the convention used by `ErbCallerResolver` to keep
+    # ivar names separate from same-basename local vars), then falls
+    # back to the unprefixed key (used by `collect_class_ivar_types`
+    # for in-class ivars).
+    def lookup_ivar_type(node)
+      full = node.name.to_s
+      @local_var_types[full] || @local_var_types[full.sub(/\A@/, "")]
+    end
+
     def collect_class_ivar_types(class_node)
       ivar_writes = RbsInfer::Analyzer.find_all_nodes(class_node) do |n|
         n.is_a?(Prism::InstanceVariableWriteNode) && n.value.is_a?(Prism::CallNode)
@@ -229,7 +239,7 @@ module RbsInfer
       when Prism::LocalVariableReadNode
         @local_var_types[node.name.to_s] || "untyped"
       when Prism::InstanceVariableReadNode
-        @local_var_types[node.name.to_s.sub(/\A@/, "")] || "untyped"
+        lookup_ivar_type(node) || "untyped"
       when Prism::CallNode
         if node.receiver.nil?
           @method_return_types[node.name.to_s] || "untyped"
@@ -271,7 +281,7 @@ module RbsInfer
       when Prism::LocalVariableReadNode
         @local_var_types[node.name.to_s]
       when Prism::InstanceVariableReadNode
-        @local_var_types[node.name.to_s.sub(/\A@/, "")]
+        lookup_ivar_type(node)
       when Prism::CallNode
         if node.receiver.nil?
           # Implicit method call (ex: attr_reader como aluno_dto)
