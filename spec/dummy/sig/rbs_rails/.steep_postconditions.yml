@@ -4,6 +4,9 @@ postconditions:
   method: save
   when_true:
     self: Comment & Comment::Validated
+  when_false:
+    drops:
+    - Comment::Validated
 - class: Comment
   method: save!
   when_true:
@@ -12,6 +15,9 @@ postconditions:
   method: update
   when_true:
     self: Comment & Comment::Validated
+  when_false:
+    drops:
+    - Comment::Validated
 - class: Comment
   method: update!
   when_true:
@@ -20,10 +26,16 @@ postconditions:
   method: valid?
   when_true:
     self: Comment & Comment::Validated
+  when_false:
+    drops:
+    - Comment::Validated
 - class: Post
   method: save
   when_true:
     self: Post & Post::Validated
+  when_false:
+    drops:
+    - Post::Validated
 - class: Post
   method: save!
   when_true:
@@ -32,6 +44,9 @@ postconditions:
   method: update
   when_true:
     self: Post & Post::Validated
+  when_false:
+    drops:
+    - Post::Validated
 - class: Post
   method: update!
   when_true:
@@ -40,10 +55,16 @@ postconditions:
   method: valid?
   when_true:
     self: Post & Post::Validated
+  when_false:
+    drops:
+    - Post::Validated
 - class: PostTag
   method: save
   when_true:
     self: PostTag & PostTag::Validated
+  when_false:
+    drops:
+    - PostTag::Validated
 - class: PostTag
   method: save!
   when_true:
@@ -52,6 +73,9 @@ postconditions:
   method: update
   when_true:
     self: PostTag & PostTag::Validated
+  when_false:
+    drops:
+    - PostTag::Validated
 - class: PostTag
   method: update!
   when_true:
@@ -60,10 +84,16 @@ postconditions:
   method: valid?
   when_true:
     self: PostTag & PostTag::Validated
+  when_false:
+    drops:
+    - PostTag::Validated
 - class: Tag
   method: save
   when_true:
     self: Tag & Tag::Validated
+  when_false:
+    drops:
+    - Tag::Validated
 - class: Tag
   method: save!
   when_true:
@@ -72,6 +102,9 @@ postconditions:
   method: update
   when_true:
     self: Tag & Tag::Validated
+  when_false:
+    drops:
+    - Tag::Validated
 - class: Tag
   method: update!
   when_true:
@@ -80,10 +113,16 @@ postconditions:
   method: valid?
   when_true:
     self: Tag & Tag::Validated
+  when_false:
+    drops:
+    - Tag::Validated
 - class: User
   method: save
   when_true:
     self: User & User::Validated
+  when_false:
+    drops:
+    - User::Validated
 - class: User
   method: save!
   when_true:
@@ -92,6 +131,9 @@ postconditions:
   method: update
   when_true:
     self: User & User::Validated
+  when_false:
+    drops:
+    - User::Validated
 - class: User
   method: update!
   when_true:
@@ -100,3 +142,6 @@ postconditions:
   method: valid?
   when_true:
     self: User & User::Validated
+  when_false:
+    drops:
+    - User::Validated
