@@ -2,11 +2,17 @@ module RbsInfer
   class InitializeBodyAnalyzer < Prism::Visitor
     include NodeTypeInferrer
 
-    attr_reader :self_assignments, :keyword_defaults
+    attr_reader :self_assignments, :keyword_defaults, :nil_default_params
 
     def initialize
       @self_assignments = {}
       @keyword_defaults = {}
+      # Params com default literal `nil` (`def x(name: nil)`). Separados
+      # do `keyword_defaults` porque o tipo `nil` em si não é
+      # informativo pra inferência — mas a *presença* de um default nil
+      # significa que o tipo final do param/attr é nilable (`String?`
+      # em vez de `String`).
+      @nil_default_params = Set.new
       @param_names = []
       @in_initialize = false
     end
@@ -60,8 +66,13 @@ module RbsInfer
       params.keywords.each do |kw|
         next unless kw.is_a?(Prism::OptionalKeywordParameterNode)
         param_name = kw.name.to_s
-        default_type = infer_type_from_node(kw.value)
-        @keyword_defaults[param_name] = default_type if default_type
+
+        if kw.value.is_a?(Prism::NilNode)
+          @nil_default_params << param_name
+        else
+          default_type = infer_type_from_node(kw.value)
+          @keyword_defaults[param_name] = default_type if default_type
+        end
       end
     end
 

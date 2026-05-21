@@ -94,6 +94,17 @@ module RbsInfer
       end
     end
 
+    # Params com default literal `nil` aceitam nil mesmo se todos os
+    # callers atuais passam não-nil — o signature precisa refletir
+    # isso. Aplicado APÓS o enriquecimento pra não duplicar `?` em
+    # tipos que já vieram nilable do attr_types.
+    nil_default_param_names = extract_nil_default_param_names
+    nil_default_param_names.each do |param_name|
+      current = init_arg_types[param_name]
+      next if current.nil? || current == "untyped"
+      init_arg_types[param_name] = "#{current}?" unless current.end_with?("?")
+    end
+
     # Resolver return types de métodos que retornam attrs conhecidos
     type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target)
 
@@ -264,6 +275,7 @@ module RbsInfer
 
     # Mapear defaults dos keyword params: param_name -> tipo do default
     default_types = visitor.keyword_defaults
+    nil_default_params = visitor.nil_default_params
 
     # Mapear self.attr = expr encontrados no initialize
     visitor.self_assignments.each do |attr_name, expr_info|
@@ -273,7 +285,15 @@ module RbsInfer
                param_name = expr_info[:name]
                call_site_type = init_arg_types[param_name]
                call_site_type = nil if call_site_type == "untyped"
-               call_site_type || default_types[param_name]
+               type = call_site_type || default_types[param_name]
+               # Se o param tem default literal `nil` (e.g.,
+               # `def initialize(name: nil); @name = name; end`), a
+               # ivar pode receber nil mesmo quando todos os callers
+               # passam não-nil. Refletir isso na declaração.
+               if type && nil_default_params.include?(param_name) && !type.end_with?("?")
+                 type = "#{type}?"
+               end
+               type
              when :param_method
                # self.x = param.method → resolver tipo do param, depois método
                param_name = expr_info[:param_name]
@@ -422,6 +442,18 @@ module RbsInfer
     params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
     params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
     names
+  end
+
+  # Returns the names of `initialize` keyword params whose default
+  # value is literal `nil` — used to widen the inferred type to its
+  # nilable form (`String` → `String?`) since the param can in fact
+  # receive nil even if every observed call site passes non-nil.
+  def extract_nil_default_param_names
+    return Set.new unless @parsed_target
+
+    visitor = InitializeBodyAnalyzer.new
+    @parsed_target.tree.accept(visitor)
+    visitor.nil_default_params
   end
 
   def method_type_resolver
