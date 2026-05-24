@@ -137,7 +137,7 @@ module RbsInfer
     # específico que o declarado vira uma marker nested class — Steep
     # intersecta o receiver com ela após a chamada via
     # `unconditional.self` no sidecar.
-    markers = synthesize_setter_markers(target_members, attr_types, ivar_types)
+    markers = synthesize_markers(target_members, attr_types, ivar_types)
 
     namespace_classes = resolve_namespace_classes
     rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module)
@@ -154,9 +154,16 @@ module RbsInfer
   # Mirrors `RbsBuilder`'s emit rule: if the member's signature
   # carries an annotation (any non-`untyped` type), use it; otherwise
   # fall back to `attr_types[name]` from the inference pipeline.
-  def synthesize_setter_markers(target_members, attr_types, _ivar_types)
+  def synthesize_markers(target_members, attr_types, _ivar_types)
     return [] unless @parsed_target && @parsed_target.source
 
+    setter_markers = synthesize_setter_markers(target_members, attr_types)
+    predicate_markers = synthesize_predicate_markers(target_members)
+
+    merge_markers(setter_markers + predicate_markers)
+  end
+
+  def synthesize_setter_markers(target_members, attr_types)
     per_method = steep_bridge.ivar_write_types_per_method(@parsed_target.source)
     return [] if per_method.empty?
 
@@ -166,6 +173,39 @@ module RbsInfer
       ivar_write_types_per_method: per_method,
       declared_ivar_types: declared_ivar_types
     )
+  end
+
+  # Reads Steep's `Postconditions::Inferrer` output directly — the
+  # source-of-truth for "this predicate narrows these ivars". Keeps
+  # rbs_infer's predicate-marker generation in lockstep with Steep's
+  # `LogicTypeInterpreter`-driven detection.
+  def synthesize_predicate_markers(target_members)
+    entries = steep_bridge.postcondition_inferred_entries(@parsed_target.source)
+    return [] if entries.empty?
+
+    PredicateMarkerSynthesizer.synthesize(
+      inferred_entries: entries,
+      target_class: @target_class,
+      members: target_members
+    )
+  end
+
+  # Merge markers from multiple synthesizers, deduplicating by
+  # marker_name. If two synthesizers produce the same marker name
+  # (a method that's both a setter and a predicate — pathological
+  # but possible with `name=` / `name?` collisions stripping to the
+  # same pascal), unions the overrides preserving the first emitter.
+  def merge_markers(markers)
+    by_name = {}
+    markers.each do |marker|
+      existing = by_name[marker.marker_name]
+      if existing
+        existing.overrides.merge!(marker.overrides) { |_key, old, _new| old }
+      else
+        by_name[marker.marker_name] = marker
+      end
+    end
+    by_name.values.sort_by(&:marker_name)
   end
 
   def collect_declared_attr_types(target_members, attr_types)
