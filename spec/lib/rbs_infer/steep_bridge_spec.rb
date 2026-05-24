@@ -671,6 +671,37 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
       # the result here would be `String?` instead of `nil`.
       expect(result["clear_name"]["name"]).to eq("nil")
     end
+
+    it "uses literal's intrinsic type when ivar is declared nilable in RBS" do
+      # Even reading the RHS still gives the WIDENED type because
+      # Steep's `:ivasgn` synthesize passes the LHS declared type as
+      # `hint:` to RHS synthesize, and `test_literal_type` returns the
+      # hint when the literal is compatible. `intrinsic_type_of`
+      # bypasses hint propagation for literal nodes (mirrors the same
+      # fix in Steep's `Postconditions::Inferrer`,
+      # felixefelip/steep#35).
+      #
+      # Without the fix, `@name = "TBA"` against declared `String?`
+      # types as `String?` — narrowing detection misses it and the
+      # SetterMarkerSynthesizer never emits `AfterSetDefaultName`.
+      code = <<~RUBY
+        class Foo
+          attr_accessor :name #: String?
+
+          def initialize(name: nil)
+            @name = name
+          end
+
+          def set_default_name
+            @name = "TBA"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types_per_method(code)
+
+      expect(result["set_default_name"]["name"]).to eq("String")
+    end
   end
 
   describe "#all_expression_types" do
