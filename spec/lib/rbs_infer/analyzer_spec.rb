@@ -885,6 +885,73 @@ RSpec.describe RbsInfer::Analyzer do
         expect { RBS::Parser.parse_signature(rbs) }.not_to raise_error
       end
     end
+
+    # ─── Setter marker classes (felixefelip/rbs_infer#11) ──────────
+
+    context "setter marker classes" do
+      it "gera marker nested class para setter que narrow attr_accessor" do
+        # `attr_accessor :name #: String?` declara explicitamente o
+        # tipo wide do ivar. set_default_name escreve "TBA Venue"
+        # (String, strict subtype de String?) → marker
+        # AfterSetDefaultName. clear_name escreve nil (também strict
+        # subtype) → marker AfterClearName com override pra nil.
+        files = {
+          "venue.rb" => <<~RUBY
+            class Venue
+              attr_accessor :name #: String?
+
+              def initialize(name: nil)
+                @name = name
+              end
+
+              def set_default_name
+                @name = "TBA Venue"
+              end
+
+              def clear_name
+                @name = nil
+              end
+            end
+          RUBY
+        }
+
+        with_temp_files(files) do |_dir, paths|
+          analyzer = described_class.new(target_file: paths.first, source_files: paths)
+          rbs = analyzer.generate_rbs
+
+          aggregate_failures do
+            expect(rbs).to include("class AfterSetDefaultName")
+            expect(rbs).to include("attr_reader name: String")
+            expect(rbs).to include("class AfterClearName")
+            expect(rbs).to include("attr_reader name: nil")
+            expect { RBS::Parser.parse_signature(rbs) }.not_to raise_error
+          end
+        end
+      end
+
+      it "não gera marker para classe sem attr_reader observável" do
+        files = {
+          "isolated.rb" => <<~RUBY
+            class Isolated
+              def initialize(name: nil)
+                @name = name
+              end
+
+              def set_default_name
+                @name = "TBA"
+              end
+            end
+          RUBY
+        }
+
+        with_temp_files(files) do |_dir, paths|
+          analyzer = described_class.new(target_file: paths.first, source_files: paths)
+          rbs = analyzer.generate_rbs
+
+          expect(rbs).not_to include("class After")
+        end
+      end
+    end
   end
 
   # ─── Integração com arquivos reais do projeto ───────────────────

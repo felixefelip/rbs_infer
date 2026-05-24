@@ -641,6 +641,36 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
       # narrowing we serve.
       expect(result).to eq({})
     end
+
+    it "reads RHS type rather than the :ivasgn type so LHS-widening doesn't mask narrowings" do
+      # When the ivar is declared via attr_accessor with a nilable
+      # type, Steep widens the :ivasgn node's type to the declared
+      # type. Reading the RHS directly preserves the writer's actual
+      # contribution — matching what Steep's own
+      # `Postconditions::Inferrer` does and unblocking marker
+      # synthesis in steady state.
+      code = <<~RUBY
+        class Foo
+          attr_accessor :name #: String?
+
+          def initialize(name: nil)
+            @name = name
+          end
+
+          def clear_name
+            @name = nil
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types_per_method(code)
+
+      # `nil` literal isn't context-widened (it's already the bottom
+      # of the union), so this test catches LHS-widening regressions
+      # specifically: if the code reverts to reading `:ivasgn` type,
+      # the result here would be `String?` instead of `nil`.
+      expect(result["clear_name"]["name"]).to eq("nil")
+    end
   end
 
   describe "#all_expression_types" do

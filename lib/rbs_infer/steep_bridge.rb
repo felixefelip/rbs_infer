@@ -346,14 +346,23 @@ module RbsInfer
         # Singleton `def self.X` — class-instance variable scope, not
         # relevant for the per-action narrowing this method serves.
       when :ivasgn
-        if current_method
+        rhs = node.children[1]
+        if current_method && rhs
           var_name = node.children[0].to_s.sub(/\A@/, "")
-          ivasgn_type = typing.type_of(node: node) rescue nil
-          if ivasgn_type
-            result[current_method][var_name].add(format_type(ivasgn_type))
+          # Read the RHS type, not the `:ivasgn` node's type. When the
+          # ivar is already declared in RBS (e.g., `@name: String?`),
+          # Steep widens the assignment's typing to the declared type,
+          # which silently swallows narrowings the writer actually
+          # introduces (`@name = "TBA Venue"` would show up as
+          # `String?` instead of `String`). Steep's own
+          # `Postconditions::Inferrer` reads the RHS for the same
+          # reason; mirroring keeps the two narrow-detection paths
+          # consistent and unblocks marker synthesis in steady state.
+          rhs_type = typing.type_of(node: rhs) rescue nil
+          if rhs_type
+            result[current_method][var_name].add(format_type(rhs_type))
           end
         end
-        rhs = node.children[1]
         collect_ivar_writes_per_method(rhs, typing: typing,
                                        attr_writer_to_ivar: attr_writer_to_ivar,
                                        current_method: current_method,
