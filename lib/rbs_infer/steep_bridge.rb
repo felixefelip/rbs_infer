@@ -279,6 +279,28 @@ module RbsInfer
       result
     end
 
+    # Runs Steep's `Postconditions::Inferrer` against the source and
+    # returns the resulting `InferredEntry` array. These describe what
+    # ivars each method narrows (unconditional for setters, when_true
+    # for predicates) and which marker class names the inferrer would
+    # reference in the sidecar — exactly the info rbs_infer needs to
+    # generate the matching marker class declarations in RBS.
+    #
+    # Using Steep's inferrer (instead of re-implementing detection on
+    # the rbs_infer side) keeps the two emitters semantically aligned
+    # for free: whenever Steep learns a new predicate shape, rbs_infer
+    # picks it up without code change.
+    def postcondition_inferred_entries(source_code)
+      typing = type_check(source_code)
+      return [] unless typing
+      return [] unless @subtyping
+
+      Steep::Postconditions::Inferrer.infer(typing.source, typing, @subtyping)
+    rescue StandardError => e
+      Steep.logger.warn { "[rbs_infer] postcondition inferrer failed: #{e.message}" } if defined?(Steep.logger)
+      []
+    end
+
     # Returns Set[String] of ivar names (without leading `@`) that are
     # assigned inside `def initialize` of any class in the source, or at
     # class-body scope. Used by the definite-initialization rule to
