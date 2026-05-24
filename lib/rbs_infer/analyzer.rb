@@ -132,9 +132,60 @@ module RbsInfer
     # Identificar parâmetros opcionais do initialize
     optional_params = extract_optional_init_params
 
+    # Marker classes para cross-receiver narrowing (felixefelip/rbs_infer#11).
+    # Cada setter que escreve um ivar com tipo estritamente mais
+    # específico que o declarado vira uma marker nested class — Steep
+    # intersecta o receiver com ela após a chamada via
+    # `unconditional.self` no sidecar.
+    markers = synthesize_setter_markers(target_members, attr_types, ivar_types)
+
     namespace_classes = resolve_namespace_classes
     rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module)
-    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types)
+    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, markers: markers)
+  end
+
+  # Builds the marker class list to inject into the generated RBS.
+  # The "declared" type for each ivar is the type the GENERATED RBS
+  # will actually expose to callers via `attr_reader`/`attr_accessor`
+  # — not Steep's internal wide view of all writes. If a setter's
+  # narrowed type already equals what callers see by default, the
+  # marker would be a no-op; only refinements add value.
+  #
+  # Mirrors `RbsBuilder`'s emit rule: if the member's signature
+  # carries an annotation (any non-`untyped` type), use it; otherwise
+  # fall back to `attr_types[name]` from the inference pipeline.
+  def synthesize_setter_markers(target_members, attr_types, _ivar_types)
+    return [] unless @parsed_target && @parsed_target.source
+
+    per_method = steep_bridge.ivar_write_types_per_method(@parsed_target.source)
+    return [] if per_method.empty?
+
+    declared_ivar_types = collect_declared_attr_types(target_members, attr_types)
+    SetterMarkerSynthesizer.synthesize(
+      members: target_members,
+      ivar_write_types_per_method: per_method,
+      declared_ivar_types: declared_ivar_types
+    )
+  end
+
+  def collect_declared_attr_types(target_members, attr_types)
+    result = {}
+    target_members.each do |m|
+      next unless [:attr_reader, :attr_accessor].include?(m.kind)
+      result[m.name] = emitted_attr_type_for(m, attr_types)
+    end
+    result
+  end
+
+  # Extracts the type the builder will actually emit for an attr
+  # member, mirroring `RbsBuilder#build`'s logic.
+  def emitted_attr_type_for(member, attr_types)
+    sig = member.signature
+    if sig.end_with?(": untyped") && attr_types[member.name]
+      attr_types[member.name]
+    else
+      sig.split(": ", 2)[1].to_s
+    end
   end
 
   def self.extract_constant_path(node)

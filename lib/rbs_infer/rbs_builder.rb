@@ -7,7 +7,7 @@ module RbsInfer
       @is_module = is_module
     end
 
-    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {})
+    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {}, markers: [])
       parts = @target_class.split("::")
       class_name = parts.pop
       modules = parts
@@ -98,6 +98,15 @@ module RbsInfer
         end
       end
 
+      # Marker classes para cross-receiver narrowing
+      # (felixefelip/rbs_infer#11). Cada um vira uma nested class
+      # `class AfterXxx ... end` com attr_reader overrides — Steep
+      # intersecta o receiver com ela após a chamada via
+      # `unconditional.self` no sidecar.
+      markers.each do |marker|
+        emit_marker(lines, marker, member_indent)
+      end
+
       lines << "#{base_indent}end"
       modules.each_with_index do |_, i|
         lines << "#{"  " * (modules.size - 1 - i)}end"
@@ -107,6 +116,16 @@ module RbsInfer
     end
 
     private
+
+    def emit_marker(lines, marker, member_indent)
+      override_indent = member_indent + "  "
+      lines << ""
+      lines << "#{member_indent}class #{marker.marker_name}"
+      marker.overrides.sort_by { |name, _| name }.each do |ivar_name, type_str|
+        lines << "#{override_indent}attr_reader #{ivar_name}: #{type_str}"
+      end
+      lines << "#{member_indent}end"
+    end
 
     # Qualifica nomes de tipo que seriam ambíguos no contexto do namespace gerado.
     # Ex: dentro de "class Account { module Storage { ... } }", um include "Storage::Totaled"

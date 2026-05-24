@@ -2,7 +2,51 @@
 version: 1
 postconditions:
 - class: PostsController
+  method: create
+  unconditional:
+    ivars:
+      "@post": "::Post"
+    self: "::PostsController & ::PostsController::AfterCreate"
+- class: PostsController
+  method: index
+  unconditional:
+    ivars:
+      "@posts": "::Post::ActiveRecord_Relation"
+    self: "::PostsController & ::PostsController::AfterIndex"
+- class: PostsController
+  method: new
+  unconditional:
+    ivars:
+      "@post": "::Post"
+    self: "::PostsController & ::PostsController::AfterNew"
+- class: PostsController
   method: set_post
   unconditional:
     ivars:
       "@post": "(::Post & ::Post::Validated)"
+    self: "::PostsController & ::PostsController::AfterSetPost"
+- class: PostsController
+  method: show
+  unconditional:
+    ivars:
+      "@comments": "::Comment::ActiveRecord_Relation"
+    self: "::PostsController & ::PostsController::AfterShow"
+- class: Users::AvatarsController
+  method: set_user
+  unconditional:
+    ivars:
+      "@user": "(::User & ::User::Validated)"
+    self: "::Users::AvatarsController & ::Users::AvatarsController::AfterSetUser"
+- class: UsersController
+  method: index
+  unconditional:
+    ivars:
+      "@users": "::User::ActiveRecord_Relation"
+    self: "::UsersController & ::UsersController::AfterIndex"
+- class: UsersController
+  method: show
+  unconditional:
+    ivars:
+      "@posts": "::Post::ActiveRecord_Associations_CollectionProxy"
+      "@user": "(::User & ::User::Validated)"
+    self: "::UsersController & ::UsersController::AfterShow"
