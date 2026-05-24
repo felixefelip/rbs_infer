@@ -198,8 +198,12 @@ module RbsInfer
       typing.each_typing do |node, type|
         case node.type
         when :ivasgn
+          rhs = node.children[1]
+          next unless rhs
+          rhs_type = intrinsic_type_of(rhs, typing)
+          next unless rhs_type
           var_name = node.children[0].to_s.sub(/\A@/, "")
-          type_sets[var_name].add(format_type(type))
+          type_sets[var_name].add(format_type(rhs_type))
         when :send
           receiver, method_name, *args = node.children
           next unless attr_writer_to_ivar.key?(method_name)
@@ -207,7 +211,7 @@ module RbsInfer
           next if args.empty?
 
           arg = args[0]
-          arg_type = typing.type_of(node: arg) rescue nil
+          arg_type = intrinsic_type_of(arg, typing)
           next unless arg_type
 
           ivar = attr_writer_to_ivar.fetch(method_name)
@@ -349,16 +353,17 @@ module RbsInfer
         rhs = node.children[1]
         if current_method && rhs
           var_name = node.children[0].to_s.sub(/\A@/, "")
-          # Read the RHS type, not the `:ivasgn` node's type. When the
-          # ivar is already declared in RBS (e.g., `@name: String?`),
-          # Steep widens the assignment's typing to the declared type,
-          # which silently swallows narrowings the writer actually
-          # introduces (`@name = "TBA Venue"` would show up as
-          # `String?` instead of `String`). Steep's own
-          # `Postconditions::Inferrer` reads the RHS for the same
-          # reason; mirroring keeps the two narrow-detection paths
-          # consistent and unblocks marker synthesis in steady state.
-          rhs_type = typing.type_of(node: rhs) rescue nil
+          # Use the RHS's INTRINSIC type, not what `typing` recorded.
+          # When the ivar is already declared in RBS (e.g.,
+          # `@name: String?`), Steep's `:ivasgn` synthesize widens
+          # the literal's typing via hint propagation — `@name = "TBA"`
+          # shows up as `String?` instead of `String`, silently
+          # swallowing the narrowing the writer actually introduces.
+          # `intrinsic_type_of` re-computes the type from the literal
+          # node shape, matching `synthesize(node, hint: nil)`.
+          # Mirrors the same fix in Steep's
+          # `Postconditions::Inferrer` (felixefelip/steep#35).
+          rhs_type = intrinsic_type_of(rhs, typing)
           if rhs_type
             result[current_method][var_name].add(format_type(rhs_type))
           end
@@ -373,7 +378,7 @@ module RbsInfer
            (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
            !args.empty?
           arg = args[0]
-          arg_type = typing.type_of(node: arg) rescue nil
+          arg_type = intrinsic_type_of(arg, typing)
           if arg_type
             ivar = attr_writer_to_ivar.fetch(method_name)
             result[current_method][ivar].add(format_type(arg_type))
@@ -588,6 +593,47 @@ module RbsInfer
       interface_builder = Steep::Interface::Builder.new(factory, implicitly_returns_nil: false)
       @subtyping = Steep::Subtyping::Check.new(builder: interface_builder)
       @constant_resolver = RBS::Resolver::ConstantResolver.new(builder: definition_builder)
+    end
+
+    # Returns the intrinsic (hint-free) type of a node. For literal AST
+    # nodes Steep's `:ivasgn` synthesize widens the recorded type to
+    # match the LHS declared type via hint propagation — so a
+    # `@name = "TBA"` against `@name: String?` ends up with the str
+    # node typed as `String?` in `typing`. The widening is intentional
+    # for collections (`@x: Array[Numeric] = [1, 2, 3]` needs hint to
+    # type-check), but for narrowing-detection it silently swallows
+    # the writer's actual contribution.
+    #
+    # For literal nodes we compute the type directly from the node
+    # shape, mirroring `synthesize(node, hint: nil)`. Non-literal RHS
+    # nodes (sends, lvars, dstrs without interpolation, arrays, hashes)
+    # fall back to `typing.type_of` — those rarely suffer the widening
+    # since the hint mostly affects literal value-class lookups.
+    #
+    # Same pattern as `Steep::Postconditions::Inferrer#intrinsic_type_of`
+    # (felixefelip/steep#35). Both call sites need to bypass the same
+    # widening for the cross-receiver narrowing pipeline to fire.
+    def intrinsic_type_of(node, typing)
+      case node.type
+      when :nil
+        Steep::AST::Builtin.nil_type
+      when :str, :dstr
+        Steep::AST::Builtin::String.instance_type
+      when :int
+        Steep::AST::Builtin::Integer.instance_type
+      when :float
+        Steep::AST::Builtin::Float.instance_type
+      when :sym, :dsym
+        Steep::AST::Builtin::Symbol.instance_type
+      when :true
+        Steep::AST::Types::Literal.new(value: true)
+      when :false
+        Steep::AST::Types::Literal.new(value: false)
+      when :regexp
+        Steep::AST::Builtin::Regexp.instance_type
+      else
+        typing.type_of(node: node) rescue nil
+      end
     end
 
     def format_type(steep_type)
