@@ -540,10 +540,20 @@ module RbsInfer
         cursor: nil,
         contracts: contracts_store,
         postconditions: postconditions_store,
-        callbacks: callbacks_store
+        callbacks: callbacks_store,
+        delegation_registry: delegation_registry_store
       )
     rescue Parser::SyntaxError
       nil
+    end
+
+    # rbs_infer runs Steep's inferrers in isolation per-source, with
+    # no surrounding project context — there's no delegation graph
+    # to feed in. An empty registry satisfies the required kwarg
+    # (felixefelip/steep#38) without enabling chain inlining that
+    # we wouldn't be able to populate here anyway.
+    def delegation_registry_store
+      @delegation_registry_store ||= Steep::Project::DelegationRegistry.new
     end
 
     # Loads Steep's auto-inferred precondition contracts from the project's
