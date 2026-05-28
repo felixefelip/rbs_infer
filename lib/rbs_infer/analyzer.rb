@@ -289,7 +289,7 @@ module RbsInfer
     entry = @parse_cache.get(file)
     return nil unless entry
 
-    visitor = ClassNameExtractor.new
+    visitor = ClassNameExtractor.new(file_path: file)
     entry.result.value.accept(visitor)
     @is_module = visitor.is_module
     visitor.class_name
@@ -601,7 +601,7 @@ module RbsInfer
       entry = @parse_cache.get(source_file)
       next unless entry
 
-      visitor = ClassNameExtractor.new
+      visitor = ClassNameExtractor.new(file_path: source_file)
       entry.result.value.accept(visitor)
       classes.add(full_name) if visitor.class_name == full_name && !visitor.is_module
     end
