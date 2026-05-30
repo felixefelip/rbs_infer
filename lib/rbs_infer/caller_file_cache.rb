@@ -31,7 +31,7 @@ module RbsInfer
       member_collector = ClassMemberCollector.new(comments: comments, lines: lines)
       result.value.accept(member_collector)
 
-      caller_ext = ClassNameExtractor.new
+      caller_ext = ClassNameExtractor.new(file_path: file)
       result.value.accept(caller_ext)
 
       def_collector = DefCollector.new
