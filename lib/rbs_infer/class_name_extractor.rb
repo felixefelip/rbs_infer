@@ -1,6 +1,6 @@
 module RbsInfer
   class ClassNameExtractor < Prism::Visitor
-    def initialize(file_path: nil)
+    def initialize(file_path:)
       @file_path = file_path
       @namespace = []
       @candidates = []
@@ -42,8 +42,6 @@ module RbsInfer
     # `class User; module Idade; ...; end; end` in `user/idade.rb`, where the
     # outer class only re-opens an existing constant to define the inner one.
     def match_by_file_path
-      return nil unless @file_path
-
       expected = expected_leaf(@file_path)
       return nil unless expected
 

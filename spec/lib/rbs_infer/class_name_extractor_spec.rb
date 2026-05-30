@@ -2,22 +2,25 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::ClassNameExtractor do
-  def extract_class(source, file_path: nil)
+  def extract_class(source, file_path:)
     result = Prism.parse(source)
     visitor = described_class.new(file_path: file_path)
     result.value.accept(visitor)
     visitor.class_name
   end
 
-  def extract(source, file_path: nil)
+  def extract(source, file_path:)
     result = Prism.parse(source)
     visitor = described_class.new(file_path: file_path)
     result.value.accept(visitor)
     [visitor.class_name, visitor.is_module]
   end
 
+  # Path cujo basename não corresponde a nenhum candidato, forçando o fallback_pick.
+  FALLBACK_PATH = "app/models/sem_correspondencia.rb"
+
   it "extrai nome de classe simples" do
-    expect(extract_class("class Foo; end")).to eq("Foo")
+    expect(extract_class("class Foo; end", file_path: FALLBACK_PATH)).to eq("Foo")
   end
 
   it "extrai classe dentro de módulos inline" do
@@ -27,7 +30,7 @@ RSpec.describe RbsInfer::ClassNameExtractor do
         end
       end
     RUBY
-    expect(extract_class(source)).to eq("Academico::Aluno::Entity")
+    expect(extract_class(source, file_path: FALLBACK_PATH)).to eq("Academico::Aluno::Entity")
   end
 
   it "extrai classe com módulos aninhados" do
@@ -39,7 +42,7 @@ RSpec.describe RbsInfer::ClassNameExtractor do
         end
       end
     RUBY
-    expect(extract_class(source)).to eq("Academico::Aluno::Email")
+    expect(extract_class(source, file_path: FALLBACK_PATH)).to eq("Academico::Aluno::Email")
   end
 
   it "não sobrescreve classe-alvo com classe aninhada (nested class inside target)" do
@@ -50,7 +53,7 @@ RSpec.describe RbsInfer::ClassNameExtractor do
         def deliver; end
       end
     RUBY
-    expect(extract_class(source)).to eq("Webhook::Delivery")
+    expect(extract_class(source, file_path: FALLBACK_PATH)).to eq("Webhook::Delivery")
   end
 
   context "quando o file_path é informado" do
