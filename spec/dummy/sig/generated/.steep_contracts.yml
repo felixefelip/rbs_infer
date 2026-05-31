@@ -33,6 +33,7 @@ methods:
         receiver:
           kind: self
         method: user
+    enforced: false
   ProfileFormatter#format_nickname:
     requires:
     - kind: not_nil
@@ -41,3 +42,4 @@ methods:
         receiver:
           kind: self
         method: nickname
+    enforced: false

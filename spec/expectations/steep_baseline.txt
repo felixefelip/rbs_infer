@@ -6,12 +6,13 @@ app/models/concerns/test/filtrable.rb:7:24: [error] Type `(singleton(::Test) & s
 app/models/concerns/test/filtrable.rb:7:4: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `scope`
 app/models/concerns/test/filtrable.rb:8:26: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `where`
 app/models/concerns/test/filtrable.rb:8:4: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `scope`
+app/models/post/notifiable.rb:28:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/user/recoverable.rb:10:6: [error] Cannot allow method body have type `::User` because declared as type `self`
 app/models/user/recoverable.rb:14:6: [error] Cannot allow method body have type `::User` because declared as type `self`
 app/models/user/recoverable.rb:18:6: [error] Cannot allow method body have type `::User` because declared as type `self`
 app/services/comment/create.rb:3:12: [error] Cannot find compatible overloading of method `find` of type `singleton(::Comment)`
 app/services/email_notifier.rb:13:15: [error] Type `(::User | nil)` does not have method `email`
-app/services/profile_formatter.rb:20:4: [error] The method cannot return a value of type `nil` because declared as type `::String`
 app/services/profile_formatter.rb:31:4: [error] `format_nickname` requires `self.nickname` to be non-nil here
-app/services/tag_destroy.rb:103:5: [error] Cannot allow method body have type `(void | ::String | nil)` because declared as type `(::String | nil)`
+app/services/profile_formatter.rb:37:13: [error] Type `(::String | nil)` does not have method `upcase`
+app/services/tag_destroy.rb:103:5: [error] Cannot allow method body have type `(void | ::String)` because declared as type `(::String | nil)`
 app/services/tag_destroy.rb:89:4: [error] Type `::TagDestroy` does not have method `untyped`

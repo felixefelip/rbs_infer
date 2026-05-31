@@ -1,11 +1,10 @@
 class ProfileFormatter
   attr_reader nickname: (String | nil)
   def initialize: (nickname: (String | nil)) -> void
-  # o retorno deveria ser `String?
-  def call: () -> String
-  def call_without_check: () -> String
+  def call: () -> untyped
+  def call_without_check: () -> untyped
 
   private
 
-  def format_nickname: () -> String
+  def format_nickname: () -> untyped
 end

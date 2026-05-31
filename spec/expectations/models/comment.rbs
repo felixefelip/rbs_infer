@@ -2,4 +2,6 @@ class Comment < ApplicationRecord
   def author_name: () -> String?
   def short_body: (?Integer max) -> String
   def create_custom: () -> void
+  def display_author: () -> String?
+  def display_body: () -> String
 end

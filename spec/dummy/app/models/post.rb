@@ -51,6 +51,16 @@ class Post < ApplicationRecord
     user.full_name
   end
 
+  # Satisfying call site: guard self.user not-nil before calling author_name,
+  # so Contracts::Enforcement marks the contract enforced and the narrowing
+  # inside author_name applies. The guard returns a non-nil default so the
+  # helper's own inferred type stays consistent (no implicit nil return path).
+  def display_author
+    return "anonymous" unless user
+
+    author_name
+  end
+
   def publish!
     update!(published: true, published_at: Time.current)
   end
