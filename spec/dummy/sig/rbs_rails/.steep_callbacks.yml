@@ -1,6 +1,10 @@
 ---
 version: 1
 callbacks:
+- class: Comment
+  applies_self: Comment & Comment::Validated
+  runs_before:
+  - notify_post_author
 - class: PostsController
   apply_postcondition_of: set_post
   runs_before:

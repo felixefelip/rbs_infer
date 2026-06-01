@@ -8,6 +8,14 @@ class Comment < ApplicationRecord
 
   scope :recent, -> { order(created_at: :desc) }
 
+  # ActiveRecord after-validation callback: it runs in `after_save`, so the
+  # record satisfies its presence validations and `self` is
+  # `Comment & Comment::Validated` — `post` (a required belongs_to) is non-nil
+  # here. rbs_rails emits an `applies_self` callback entry and Steep refines
+  # `self` at this method's entry, so `post.author_name` typechecks without a
+  # nil-guard (no `(Post | nil)` error).
+  after_save :notify_post_author
+
   def author_name
     user.name
   end
@@ -35,5 +43,9 @@ class Comment < ApplicationRecord
     return "" unless body
 
     short_body
+  end
+
+  def notify_post_author
+    post.author_name
   end
 end
