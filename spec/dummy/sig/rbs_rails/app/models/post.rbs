@@ -555,7 +555,7 @@ class ::Post < ::ApplicationRecord
 
   class ::Post::Validated
     def id: () -> ::Integer
-    def user: () -> ::User
+    def user: () -> (::User & ::User::Validated)
     def title: () -> ::String
     def body: () -> ::String
     def created_at: () -> ::ActiveSupport::TimeWithZone

@@ -337,8 +337,8 @@ class ::Comment < ::ApplicationRecord
 
   class ::Comment::Validated
     def id: () -> ::Integer
-    def user: () -> ::User
-    def post: () -> ::Post
+    def user: () -> (::User & ::User::Validated)
+    def post: () -> (::Post & ::Post::Validated)
     def body: () -> ::String
     def created_at: () -> ::ActiveSupport::TimeWithZone
     def updated_at: () -> ::ActiveSupport::TimeWithZone

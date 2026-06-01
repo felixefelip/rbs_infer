@@ -294,8 +294,8 @@ class ::PostTag < ::ApplicationRecord
 
   class ::PostTag::Validated
     def id: () -> ::Integer
-    def post: () -> ::Post
-    def tag: () -> ::Tag
+    def post: () -> (::Post & ::Post::Validated)
+    def tag: () -> (::Tag & ::Tag::Validated)
     def created_at: () -> ::ActiveSupport::TimeWithZone
     def updated_at: () -> ::ActiveSupport::TimeWithZone
   end
