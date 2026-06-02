@@ -120,6 +120,139 @@ RSpec.describe RbsInfer::NewCallCollector do
     expect(usages.first["nome"]).to eq("String")
   end
 
+  describe "self as a .new argument (regression)" do
+    # `Cadastrar.new(self)` inside `Caderneta#criar_caderneta_de_vacinacao`
+    # should infer the positional `initialize(caderneta)` param as
+    # `Caderneta` — `self` resolves to the lexically-enclosing class.
+    # Previously `self` fell through to `untyped`.
+    def collect_with_self(source, target_class:, caller_class_name:, init_positional_params:, self_types_by_method: {})
+      result = Prism.parse(source)
+      visitor = described_class.new(
+        target_class: target_class,
+        method_return_types: {},
+        local_var_types: {},
+        caller_class_name: caller_class_name,
+        init_positional_params: init_positional_params,
+        self_types_by_method: self_types_by_method
+      )
+      result.value.accept(visitor)
+      visitor.usages
+    end
+
+    it "infers self in an instance method as the enclosing class instance" do
+      source = <<~RUBY
+        class Caderneta
+          def criar_caderneta_de_vacinacao
+            Cadastrar.new(self).call
+          end
+        end
+      RUBY
+
+      usages = collect_with_self(
+        source,
+        target_class: "Caderneta::Cadastrar",
+        caller_class_name: "Caderneta",
+        init_positional_params: ["caderneta"]
+      )
+      expect(usages.first["caderneta"]).to eq("Caderneta")
+    end
+
+    it "infers self in a singleton method as singleton(EnclosingClass)" do
+      source = <<~RUBY
+        class Caderneta
+          def self.build
+            Cadastrar.new(self)
+          end
+        end
+      RUBY
+
+      usages = collect_with_self(
+        source,
+        target_class: "Caderneta::Cadastrar",
+        caller_class_name: "Caderneta",
+        init_positional_params: ["caderneta"]
+      )
+      expect(usages.first["caderneta"]).to eq("singleton(Caderneta)")
+    end
+
+    it "resolves self to the innermost lexically-enclosing class when nested" do
+      source = <<~RUBY
+        class Outer
+          class Inner
+            def make
+              Target.new(self)
+            end
+          end
+        end
+      RUBY
+
+      usages = collect_with_self(
+        source,
+        target_class: "Outer::Inner::Target",
+        caller_class_name: "Outer",
+        init_positional_params: ["owner"]
+      )
+      expect(usages.first["owner"]).to eq("Outer::Inner")
+    end
+
+    # After-validation callback narrowing: inside an `after_create` handler
+    # the record is validated, so `self` (and thus `Cadastrar.new(self)`)
+    # should be `Caderneta & Caderneta::Validated`. The refined self type
+    # comes from the callback sidecar (SteepBridge#callback_self_types) since
+    # Steep keeps `self` abstract in its typing output.
+    it "prefers the callback-refined self type over the lexical class" do
+      source = <<~RUBY
+        class Caderneta
+          def criar_caderneta_de_vacinacao
+            Cadastrar.new(self).call
+          end
+        end
+      RUBY
+
+      usages = collect_with_self(
+        source,
+        target_class: "Caderneta::Cadastrar",
+        caller_class_name: "Caderneta",
+        init_positional_params: ["caderneta"],
+        self_types_by_method: { "criar_caderneta_de_vacinacao" => "Caderneta & Caderneta::Validated" }
+      )
+      expect(usages.first["caderneta"]).to eq("Caderneta & Caderneta::Validated")
+    end
+
+    it "uses the lexical class for methods not covered by a callback entry" do
+      source = <<~RUBY
+        class Caderneta
+          def some_other_method
+            Cadastrar.new(self)
+          end
+        end
+      RUBY
+
+      usages = collect_with_self(
+        source,
+        target_class: "Caderneta::Cadastrar",
+        caller_class_name: "Caderneta",
+        init_positional_params: ["caderneta"],
+        self_types_by_method: { "criar_caderneta_de_vacinacao" => "Caderneta & Caderneta::Validated" }
+      )
+      expect(usages.first["caderneta"]).to eq("Caderneta")
+    end
+
+    it "falls back to untyped when self has no resolvable class context" do
+      # No enclosing class node and no caller_class_name.
+      source = "Target.new(self)"
+      result = Prism.parse(source)
+      visitor = described_class.new(
+        target_class: "Target",
+        method_return_types: {},
+        local_var_types: {},
+        init_positional_params: ["owner"]
+      )
+      result.value.accept(visitor)
+      expect(visitor.usages.first["owner"]).to eq("untyped")
+    end
+  end
+
   describe "ivar/local name collision (regression)" do
     # The ERB caller resolver passes ivar types keyed by `@name`
     # (with prefix) and locals keyed by `name`. The collector's

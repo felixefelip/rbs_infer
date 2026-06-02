@@ -395,6 +395,40 @@ module RbsInfer
       result
     end
 
+    # Returns `{ "method_name" => "Self & Self::Validated" }` for `class_name`,
+    # derived from the `applies_self` callback sidecar entries
+    # (`.steep_callbacks.yml`, felixefelip/steep#27) loaded into the
+    # callbacks store. rbs_rails' `ModelCallbacksGenerator` emits these for
+    # after-validation lifecycle callbacks (`after_create`, `after_save`, …)
+    # and their transitive self-call closure — so inside such a handler the
+    # record is known validated and `self` refines to `Model & Model::Validated`.
+    #
+    # rbs_infer needs this because Steep keeps a `self` node as the abstract
+    # `self` token in its typing output (the refinement only affects dispatch,
+    # never the recorded node type), so the narrowed self type can't be read
+    # back from `each_typing`. Reading the sidecar — the same source of truth
+    # Steep consumes — lets call-site inference resolve `Klass.new(self)`
+    # inside a callback to the validated type instead of the bare class.
+    def callback_self_types(class_name)
+      return {} unless class_name
+
+      store = callbacks_store
+      return {} if store.nil? || store.empty?
+
+      key = class_name.to_s.sub(/\A::/, "")
+      entries = store.entries_by_class[key]
+      return {} unless entries
+
+      result = {}
+      entries.each do |entry|
+        next unless entry.applies_self
+        entry.runs_before.each do |method_sym|
+          result[method_sym.to_s] ||= entry.applies_self
+        end
+      end
+      result
+    end
+
     private
 
     # Walks `node` accumulating ivar writes attributed to the enclosing

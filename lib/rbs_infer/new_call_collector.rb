@@ -2,7 +2,7 @@ module RbsInfer
   class NewCallCollector < Prism::Visitor
     attr_reader :usages, :method_call_usages
 
-    def initialize(target_class:, method_return_types:, local_var_types:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false)
+    def initialize(target_class:, method_return_types:, local_var_types:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {})
       @target_class = target_class
       @method_return_types = method_return_types
       @local_var_types = local_var_types
@@ -11,21 +11,47 @@ module RbsInfer
       @init_positional_params = init_positional_params
       @target_methods = target_methods
       @match_bare_calls = match_bare_calls
+      # `{ "method_name" => "Self & Self::Validated" }` — refined `self`
+      # types per method, from after-validation callback sidecars (see
+      # SteepBridge#callback_self_types). Preferred over the lexical class
+      # name when resolving `self` inside such a method.
+      @self_types_by_method = self_types_by_method
       @usages = []
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
+      # Lexically-enclosing class names (fully qualified) and whether the
+      # current method is a singleton (`def self.x`) — used to resolve a
+      # `self` argument/receiver to its type.
+      @class_name_stack = []
+      @in_singleton_method = false
+      @current_method = nil
     end
 
     def visit_class_node(node)
       # Pré-coletar tipos de ivars de todos os métodos da classe
       # para que @post definido em set_post esteja disponível em publish
       collect_class_ivar_types(node)
+
+      segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
+      full_name =
+        if segment
+          @class_name_stack.empty? ? segment : "#{@class_name_stack.last}::#{segment}"
+        end
+      @class_name_stack.push(full_name) if full_name
       super
+      @class_name_stack.pop if full_name
     end
 
     def visit_def_node(node)
       old_vars = @local_var_types.dup
+      old_singleton = @in_singleton_method
+      old_method = @current_method
+      # `def self.foo` carries a receiver; plain `def foo` does not.
+      @in_singleton_method = !node.receiver.nil?
+      @current_method = node.name.to_s
       collect_local_assignments(node)
       super
+      @current_method = old_method
+      @in_singleton_method = old_singleton
       @local_var_types = old_vars
     end
 
@@ -258,11 +284,41 @@ module RbsInfer
       when Prism::HashNode then RbsInfer::NodeTypeInferrer.infer_hash_type(node)
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         RbsInfer::Analyzer.extract_constant_path(node) || "untyped"
+      when Prism::SelfNode
+        current_self_type
       when Prism::ImplicitNode
         resolve_value_type(node.value)
       else
         "untyped"
       end
+    end
+
+    # Resolve `self` (passed as an argument or used as a receiver) to the
+    # lexically-enclosing class. Inside an instance method `self` is an
+    # instance of that class (`Caderneta`); inside a singleton method
+    # (`def self.x`) it's the class object itself (`singleton(Caderneta)`),
+    # so we never infer a bogus instance type for it. Falls back to the
+    # caller class (derived from the file path) when no class node is on
+    # the stack, and to `"untyped"` when even that is unknown.
+    #
+    # Drives call-site inference like `Cadastrar.new(self)` inside
+    # `Caderneta#criar_caderneta_de_vacinacao`, where the positional
+    # `initialize(caderneta)` param should infer as `Caderneta`.
+    def current_self_type
+      # Inside an instance method covered by an after-validation callback,
+      # `self` is the validated record — prefer the refined type from the
+      # callback sidecar (e.g. `Caderneta & Caderneta::Validated`) over the
+      # bare lexical class. Singleton methods aren't callback handlers, so
+      # they keep the lexical resolution.
+      unless @in_singleton_method
+        refined = @current_method && @self_types_by_method[@current_method]
+        return refined if refined && !refined.empty?
+      end
+
+      base = @class_name_stack.last || @caller_class_name
+      return "untyped" unless base
+
+      @in_singleton_method ? "singleton(#{base})" : base
     end
 
     # Resolver receiver.method() → tipo do retorno do method no receiver
@@ -292,7 +348,10 @@ module RbsInfer
           resolve_method_chain(node)
         end
       when Prism::SelfNode
-        nil # self → seria a própria classe, não resolvemos por enquanto
+        # self → tipo da classe léxica (instância ou singleton); nil quando
+        # desconhecido, mantendo a convenção nil-returning deste método.
+        resolved = current_self_type
+        resolved == "untyped" ? nil : resolved
       end
     end
 

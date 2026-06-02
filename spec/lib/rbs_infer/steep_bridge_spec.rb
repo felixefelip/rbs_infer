@@ -376,6 +376,30 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
     end
   end
 
+  describe "#callback_self_types" do
+    # Reads the `applies_self` callback sidecar (.steep_callbacks.yml,
+    # felixefelip/steep#27) so call-site inference can resolve `self`
+    # inside an after-validation callback to the validated record type.
+    # The dummy's sidecar declares `Comment#notify_post_author` →
+    # `Comment & Comment::Validated`.
+    it "maps callback handler methods to their refined self type" do
+      result = bridge.callback_self_types("Comment")
+      expect(result["notify_post_author"]).to eq("Comment & Comment::Validated")
+    end
+
+    it "normalizes a leading :: in the class name" do
+      expect(bridge.callback_self_types("::Comment")).to eq(bridge.callback_self_types("Comment"))
+    end
+
+    it "returns an empty hash for a class with no callback entries" do
+      expect(bridge.callback_self_types("Foo")).to eq({})
+    end
+
+    it "returns an empty hash for nil" do
+      expect(bridge.callback_self_types(nil)).to eq({})
+    end
+  end
+
   describe "#ivar_write_types" do
     # Cobertura da regra introduzida em felixefelip/rbs_infer#4:
     # coleta todas as escritas, deduplica, e adiciona `| nil` quando a
