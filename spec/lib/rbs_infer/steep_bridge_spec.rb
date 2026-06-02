@@ -231,6 +231,56 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
       expect(ret).not_to include("void")
     end
 
+    # Regression for the `User::Idade#idade` => `() -> untyped` bug.
+    #
+    # Gem RBS (e.g. activesupport) reopens core stdlib classes with
+    # overload-extending signatures, e.g. on `::Date`:
+    #
+    #     def +: (ActiveSupport::Duration other) -> self
+    #          | ...   # extends the stdlib Date#+ overloads
+    #
+    # The trailing `| ...` needs the stdlib `date` base method to exist.
+    # The bridge used to load only `.gem_rbs_collection/*/*/` (gem RBS,
+    # no stdlib), so building `::Date`'s method table raised
+    # `RBS::InvalidOverloadMethodError`, Steep wrapped it as an
+    # `UnexpectedError`, and every `Date`-receiver expression collapsed
+    # to `untyped` — poisoning the whole arithmetic chain. Loading the
+    # collection lockfile (which lists `date`/`time` as `type: stdlib`)
+    # brings in the base definitions and keeps the bridge in parity with
+    # `steep check`.
+    context "Date/stdlib-backed chains (collection lockfile loading)" do
+      it "types a Date arithmetic chain ending in #to_f as Float, not untyped" do
+        code = <<~RUBY
+          class Comment
+            def age_in_years
+              ((Date.today - Date.today) / 365).to_f
+            end
+          end
+        RUBY
+
+        result = bridge.method_return_types(code)
+        expect(result["age_in_years"]).to eq("Float")
+      end
+
+      it "types the reported User::Idade#idade chain (.to_f.truncate(2))" do
+        code = <<~RUBY
+          class Comment
+            def idade
+              ((Date.today - Date.today) / 365).to_f.truncate(2)
+            end
+          end
+        RUBY
+
+        result = bridge.method_return_types(code)
+        # The essential guarantee is that it is no longer `untyped`
+        # (absent from the result). `Float#truncate(ndigits)` is declared
+        # to return `(Integer | Float)` because the type system can't see
+        # that `2 > 0`.
+        expect(result).to have_key("idade")
+        expect(result["idade"]).to eq("(Integer | Float)")
+      end
+    end
+
     it "returns empty hash for unparseable code" do
       result = bridge.method_return_types("!!!invalid ruby")
       expect(result).to eq({})
