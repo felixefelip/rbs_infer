@@ -2,7 +2,7 @@ module RbsInfer
   class NewCallCollector < Prism::Visitor
     attr_reader :usages, :method_call_usages
 
-    def initialize(target_class:, method_return_types:, local_var_types:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false)
+    def initialize(target_class:, method_return_types:, local_var_types:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {})
       @target_class = target_class
       @method_return_types = method_return_types
       @local_var_types = local_var_types
@@ -11,6 +11,11 @@ module RbsInfer
       @init_positional_params = init_positional_params
       @target_methods = target_methods
       @match_bare_calls = match_bare_calls
+      # `{ "method_name" => "Self & Self::Validated" }` — refined `self`
+      # types per method, from after-validation callback sidecars (see
+      # SteepBridge#callback_self_types). Preferred over the lexical class
+      # name when resolving `self` inside such a method.
+      @self_types_by_method = self_types_by_method
       @usages = []
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
       # Lexically-enclosing class names (fully qualified) and whether the
@@ -18,6 +23,7 @@ module RbsInfer
       # `self` argument/receiver to its type.
       @class_name_stack = []
       @in_singleton_method = false
+      @current_method = nil
     end
 
     def visit_class_node(node)
@@ -38,10 +44,13 @@ module RbsInfer
     def visit_def_node(node)
       old_vars = @local_var_types.dup
       old_singleton = @in_singleton_method
+      old_method = @current_method
       # `def self.foo` carries a receiver; plain `def foo` does not.
       @in_singleton_method = !node.receiver.nil?
+      @current_method = node.name.to_s
       collect_local_assignments(node)
       super
+      @current_method = old_method
       @in_singleton_method = old_singleton
       @local_var_types = old_vars
     end
@@ -296,6 +305,16 @@ module RbsInfer
     # `Caderneta#criar_caderneta_de_vacinacao`, where the positional
     # `initialize(caderneta)` param should infer as `Caderneta`.
     def current_self_type
+      # Inside an instance method covered by an after-validation callback,
+      # `self` is the validated record — prefer the refined type from the
+      # callback sidecar (e.g. `Caderneta & Caderneta::Validated`) over the
+      # bare lexical class. Singleton methods aren't callback handlers, so
+      # they keep the lexical resolution.
+      unless @in_singleton_method
+        refined = @current_method && @self_types_by_method[@current_method]
+        return refined if refined && !refined.empty?
+      end
+
       base = @class_name_stack.last || @caller_class_name
       return "untyped" unless base
 

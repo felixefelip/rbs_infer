@@ -50,6 +50,18 @@ module RbsInfer
       short_name = @target_class.split("::").last
       match_bare = source.match?(/\binclude\b.*\b#{Regexp.escape(short_name)}\b/)
 
+      # After-validation callback narrowing: inside e.g. an `after_create`
+      # handler, `self` is the validated record, so `Foo.new(self)` should
+      # infer the arg as `Caller & Caller::Validated`. Pull the refined
+      # `self` types from the callback sidecar (felixefelip/steep#27) — the
+      # narrowing isn't readable from Steep's per-node typing.
+      self_types_by_method =
+        if @steep_bridge && caller_visitor.class_name
+          @steep_bridge.callback_self_types(caller_visitor.class_name)
+        else
+          {}
+        end
+
       visitor = NewCallCollector.new(
         target_class: @target_class,
         method_return_types: method_return_types,
@@ -58,7 +70,8 @@ module RbsInfer
         caller_class_name: caller_visitor.class_name,
         init_positional_params: @init_positional_params,
         target_methods: @target_methods,
-        match_bare_calls: match_bare
+        match_bare_calls: match_bare,
+        self_types_by_method: self_types_by_method
       )
       result.value.accept(visitor)
 

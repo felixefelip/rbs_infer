@@ -125,14 +125,15 @@ RSpec.describe RbsInfer::NewCallCollector do
     # should infer the positional `initialize(caderneta)` param as
     # `Caderneta` — `self` resolves to the lexically-enclosing class.
     # Previously `self` fell through to `untyped`.
-    def collect_with_self(source, target_class:, caller_class_name:, init_positional_params:)
+    def collect_with_self(source, target_class:, caller_class_name:, init_positional_params:, self_types_by_method: {})
       result = Prism.parse(source)
       visitor = described_class.new(
         target_class: target_class,
         method_return_types: {},
         local_var_types: {},
         caller_class_name: caller_class_name,
-        init_positional_params: init_positional_params
+        init_positional_params: init_positional_params,
+        self_types_by_method: self_types_by_method
       )
       result.value.accept(visitor)
       visitor.usages
@@ -192,6 +193,49 @@ RSpec.describe RbsInfer::NewCallCollector do
         init_positional_params: ["owner"]
       )
       expect(usages.first["owner"]).to eq("Outer::Inner")
+    end
+
+    # After-validation callback narrowing: inside an `after_create` handler
+    # the record is validated, so `self` (and thus `Cadastrar.new(self)`)
+    # should be `Caderneta & Caderneta::Validated`. The refined self type
+    # comes from the callback sidecar (SteepBridge#callback_self_types) since
+    # Steep keeps `self` abstract in its typing output.
+    it "prefers the callback-refined self type over the lexical class" do
+      source = <<~RUBY
+        class Caderneta
+          def criar_caderneta_de_vacinacao
+            Cadastrar.new(self).call
+          end
+        end
+      RUBY
+
+      usages = collect_with_self(
+        source,
+        target_class: "Caderneta::Cadastrar",
+        caller_class_name: "Caderneta",
+        init_positional_params: ["caderneta"],
+        self_types_by_method: { "criar_caderneta_de_vacinacao" => "Caderneta & Caderneta::Validated" }
+      )
+      expect(usages.first["caderneta"]).to eq("Caderneta & Caderneta::Validated")
+    end
+
+    it "uses the lexical class for methods not covered by a callback entry" do
+      source = <<~RUBY
+        class Caderneta
+          def some_other_method
+            Cadastrar.new(self)
+          end
+        end
+      RUBY
+
+      usages = collect_with_self(
+        source,
+        target_class: "Caderneta::Cadastrar",
+        caller_class_name: "Caderneta",
+        init_positional_params: ["caderneta"],
+        self_types_by_method: { "criar_caderneta_de_vacinacao" => "Caderneta & Caderneta::Validated" }
+      )
+      expect(usages.first["caderneta"]).to eq("Caderneta")
     end
 
     it "falls back to untyped when self has no resolvable class context" do
