@@ -39,16 +39,68 @@ module RbsInfer
 
       def build_definition_builder
         require "rbs"
+        require "yaml"
 
         loader = RBS::EnvironmentLoader.new
 
+        # Load the project's RBS collection (gems + stdlib) from its
+        # lockfile, mirroring what `steep check` does (see Steep's
+        # `Drivers::Utils::DriverHelper`). This is what pulls in the
+        # *stdlib* RBS — `date`, `time`, etc. — which gem RBS depends on
+        # but `EnvironmentLoader.new` does not load by itself.
+        #
+        # It matters because gems like activesupport reopen core stdlib
+        # classes with overload-extending signatures, e.g. on `::Date`:
+        #
+        #     def +: (ActiveSupport::Duration other) -> self
+        #          | ...   # extends the stdlib Date#+ overloads
+        #
+        # The trailing `| ...` requires the stdlib `date` base method to
+        # already exist. Without `date` loaded, building `::Date`'s method
+        # table raises `RBS::InvalidOverloadMethodError`; Steep wraps it as
+        # an `UnexpectedError` and types every `Date`-receiver expression
+        # as `untyped`. That silently poisons whole return-type chains
+        # (e.g. `((Date.current - born) / 365).to_f.truncate(2)` inferred
+        # as `untyped` instead of `Float`). Loading the lockfile keeps the
+        # bridge's environment in parity with `steep check`.
+        add_collection_from_lockfile(loader)
+
         Dir["sig/*/"].each { |d| loader.add(path: Pathname(d)) }
-        Dir[".gem_rbs_collection/*/*/"].each { |ver_dir| loader.add(path: Pathname(ver_dir)) }
 
         env = RBS::Environment.from_loader(loader).resolve_type_names
         RBS::DefinitionBuilder.new(env: env)
       rescue LoadError, StandardError => _e
         nil
+      end
+
+      # Adds the project's RBS collection (gems + stdlib) to `loader` from
+      # its `rbs_collection.lock.yaml`. Falls back to the legacy
+      # `.gem_rbs_collection/*/*/` glob when there's no readable/usable
+      # lockfile — note that fallback does NOT bring in stdlib RBS, so
+      # `Date`/`Time` chains there still degrade to `untyped`.
+      def add_collection_from_lockfile(loader)
+        config_path = RBS::Collection::Config.find_config_path
+        lock_path = config_path && RBS::Collection::Config.to_lockfile_path(config_path)
+
+        unless lock_path&.exist?
+          return add_gem_rbs_collection_glob(loader)
+        end
+
+        lockfile = RBS::Collection::Config::Lockfile.from_lockfile(
+          lockfile_path: lock_path,
+          data: YAML.load(lock_path.read)
+        )
+        # Raises CollectionNotAvailable if the lockfile references gems
+        # that aren't installed under the collection dir. Check before
+        # mutating `loader` so we can fall back cleanly to the glob.
+        lockfile.check_rbs_availability!
+        loader.add_collection(lockfile)
+      rescue StandardError
+        add_gem_rbs_collection_glob(loader)
+      end
+
+      def add_gem_rbs_collection_glob(loader)
+        Dir[".gem_rbs_collection/*/*/"].each { |ver_dir| loader.add(path: Pathname(ver_dir)) }
       end
     end
 
