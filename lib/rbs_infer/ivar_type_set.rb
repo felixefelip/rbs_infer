@@ -46,12 +46,13 @@ module RbsInfer
         return add(type_str.chomp("?"))
       end
 
-      # Unions chegam como string única quando o tipo vem do Steep ou de
-      # um RBS já gerado (e.g. `(User | (User & User::Validated) | nil)`
-      # numa segunda geração). Achatar em componentes — união de uniões é
-      # associativa, então isso preserva todos os componentes e mantém a
-      # emissão estável entre gerações (fixpoint). NÃO é a simplificação
-      # semântica proibida pelo steep#16 (`(A & B) | A → A`).
+      # Unions arrive as a single string when the type comes from Steep
+      # or from an already-generated RBS (e.g.
+      # `(User | (User & User::Validated) | nil)` on a second generation).
+      # Flatten into components — union of unions is associative, so this
+      # preserves every component and keeps the emission stable across
+      # generations (fixpoint). This is NOT the semantic simplification
+      # forbidden by steep#16 (`(A & B) | A → A`).
       if (components = parse_union_components(type_str))
         components.each { |c| add(c) }
         return
@@ -82,10 +83,10 @@ module RbsInfer
 
     private
 
-    # Retorna os componentes de um union top-level (`A | B | nil`), ou nil
-    # quando o tipo não é union (ou não parseia como RBS). Componentes
-    # interseção mantêm parens (`(A & B)`) — preserva a forma emitida e a
-    # chave de dedupe usadas pelos demais produtores de entradas.
+    # Returns the components of a top-level union (`A | B | nil`), or nil
+    # when the type isn't a union (or doesn't parse as RBS). Intersection
+    # components keep their parens (`(A & B)`) — preserving the emitted
+    # form and the dedupe key used by the other entry producers.
     def parse_union_components(type_str)
       return nil unless type_str.include?("|")
 

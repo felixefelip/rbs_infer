@@ -89,7 +89,7 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
       end
     RUBY
 
-    # set/with são emitidos uma única vez, na última call, com TODOS os attrs
+    # set/with are emitted once, at the last call, with ALL the attrs
     expect(expanded.scan(/def self\.set\(/).length).to eq(1)
     expect(expanded).to include("def self.set(user: nil, account: nil, &block); @user = user; @account = account; block.call; end")
     expect(expanded.scan(/def self\.with\(/).length).to eq(1)
@@ -117,7 +117,7 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
 
   it "does not expand attribute calls on unrelated superclasses" do
     expect(expand(<<~RUBY)).to be_nil
-      # menção a CurrentAttributes só no comentário
+      # CurrentAttributes mentioned only in this comment
       class Form < ApplicationForm
         attribute :name
       end

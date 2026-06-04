@@ -67,10 +67,11 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/current", target_class: "Current", target_file: "app/models/current.rb")
   end
 
-  it "Current expansion (pseudo-código) matches expected source" do
-    # Snapshot do desugar em si, separado do snapshot do RBS: um bug novo
-    # aponta direto pra camada certa — expansão muda → bug no expander;
-    # expansão idêntica e RBS muda → bug no pipeline de inferência.
+  it "Current expansion (pseudo-code) matches expected source" do
+    # Snapshot of the desugar itself, separate from the RBS snapshot: a
+    # new bug points straight to the right layer — expansion changes →
+    # expander bug; identical expansion with a changed RBS → inference
+    # pipeline bug.
     expanded = RbsInfer::Extensions::Rails::CurrentAttributesExpander.expand(
       File.read("app/models/current.rb")
     )

@@ -53,9 +53,9 @@ module RbsInfer
       class_methods = members.select { |m| m.kind == :class_method }
       class_methods.each do |member|
         sig = member.signature
-        # Tipos de params inferidos via call-sites valem também para
-        # singletons (`Current.user = x` → `def self.user=: (User? value)`)
-        # — felixefelip/rbs_infer#19.
+        # Param types inferred from call-sites also apply to singletons
+        # (`Current.user = x` → `def self.user=: (User? value)`) —
+        # felixefelip/rbs_infer#19.
         if method_param_types[member.name]
           sig = apply_inferred_param_types(sig, method_param_types[member.name])
         end

@@ -3,8 +3,8 @@
 require "spec_helper"
 
 RSpec.describe RbsInfer::SourceExpanders do
-  # Expanders de teste são registrados/desregistrados por exemplo para não
-  # vazar estado no registry global (que já contém os expanders padrão).
+  # Test expanders are registered/unregistered per example so no state
+  # leaks into the global registry (which already holds the defaults).
   let(:upcase_class_expander) do
     Module.new do
       def self.expand(source)

@@ -121,11 +121,11 @@ module RbsInfer
       # rule itself (`@x: T1 | T2 | nil` when `@x` isn't written in
       # initialize). The fallback only fills ivars Steep didn't see.
       #
-      # Exceção: quando o Steep só viu escritas `nil` (e.g. o default nil
-      # de um kwarg atribuído à ivar, como nos `set`/`with` expandidos de
-      # CurrentAttributes — rbs_infer#19), o "nil" não carrega tipo
-      # nominal. Não fechar a porta para o fallback Prism: o nil vira só
-      # nilabilidade e o fallback soma os tipos nominais dos call-sites.
+      # Exception: when Steep only saw `nil` writes (e.g. the nil kwarg
+      # default assigned to the ivar, as in the expanded CurrentAttributes
+      # `set`/`with` — rbs_infer#19), the "nil" carries no nominal type.
+      # Don't close the door on the Prism fallback: the nil becomes mere
+      # nilability and the fallback adds the call-sites' nominal types.
       steep_nil_only = Set.new
       if @steep_bridge && parsed_target.source
         steep_ivars = @steep_bridge.ivar_write_types(parsed_target.source)
@@ -164,8 +164,8 @@ module RbsInfer
         end
       end
 
-      # Ivars que o Steep viu como só-nil e o fallback não enriqueceu:
-      # preservar o comportamento anterior (`@x: nil`).
+      # Ivars Steep saw as nil-only that the fallback didn't enrich:
+      # preserve the previous behavior (`@x: nil`).
       steep_nil_only.each { |name| ivar_types[name] ||= "nil" }
 
       ivar_types
@@ -198,9 +198,9 @@ module RbsInfer
           name = current.name.to_s.sub(/\A@/, "")
           unless attr_names.include?(name)
             inferred = basic_value_type(current.value, known_return_types)
-            # `@x = param` onde o tipo do param veio dos call-sites
-            # cross-class (e.g. setter `def x=(value); @x = value; end`
-            # tipado por `Obj.x = expr` em outros arquivos) —
+            # `@x = param` where the param's type came from cross-class
+            # call-sites (e.g. setter `def x=(value); @x = value; end`
+            # typed by `Obj.x = expr` in other files) —
             # felixefelip/rbs_infer#19.
             if inferred.nil? && current.value.is_a?(Prism::LocalVariableReadNode)
               inferred = param_types[current.value.name.to_s]

@@ -29,10 +29,11 @@ require_relative "rbs_infer/setter_marker_synthesizer"
 require_relative "rbs_infer/predicate_marker_synthesizer"
 require_relative "rbs_infer/dependency_sorter"
 
-# Source expanders padrão (plugins de RbsInfer::SourceExpanders). Cada um
-# se auto-registra no require; gems externas podem registrar os seus sem
-# tocar o core. O expander de CurrentAttributes é puro Prism (sem Rails
-# em runtime) e se auto-gateia pela superclasse, então é seguro sempre.
+# Default source expanders (RbsInfer::SourceExpanders plugins). Each one
+# registers itself on require; external gems can register their own
+# without touching the core. The CurrentAttributes expander is pure Prism
+# (no Rails at runtime) and self-gates on the superclass, so it is always
+# safe to load.
 require_relative "rbs_infer/extensions/rails/current_attributes_expander"
 
 require_relative "rbs_infer/railtie" if defined?(Rails::Railtie)

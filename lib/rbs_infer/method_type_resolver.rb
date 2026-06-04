@@ -22,10 +22,10 @@ module RbsInfer
     def resolve(class_name, method_name, block_body_type: nil)
       return nil unless class_name && class_name != "untyped"
 
-      # Receiver nilável (`User?`) → lookup otimista no tipo base, como um
-      # humano lendo `user.caderneta` sabe que o método é de User. O steep
-      # check do app continua acusando o nil não tratado; aqui é só
-      # inferência best-effort (felixefelip/rbs_infer#19).
+      # Nilable receiver (`User?`) → optimistic lookup on the base type,
+      # just as a human reading `user.name` knows the method belongs to
+      # User. The app's steep check still flags the unhandled nil; this
+      # is best-effort inference only (felixefelip/rbs_infer#19).
       class_name = class_name.delete_suffix("?") if class_name.end_with?("?")
 
       # Intersection types (e.g. `(OrderImport & OrderImport::Validated)` from
@@ -41,11 +41,11 @@ module RbsInfer
         return nil
       end
 
-      # Union types (e.g. `User | (User & User::Validated)` de ivars com
-      # call-sites heterogêneos — a forma union é deliberadamente não
-      # simplificada, ver IvarTypeSet). O método só resolve se TODOS os
-      # componentes concordam no tipo de retorno; divergência → nil
-      # (ambíguo, melhor untyped que um chute) — felixefelip/rbs_infer#19.
+      # Union types (e.g. `User | (User & User::Validated)` from ivars
+      # with heterogeneous call-sites — the union form is deliberately
+      # not simplified, see IvarTypeSet). The method only resolves if ALL
+      # components agree on the return type; divergence → nil (ambiguous,
+      # better untyped than a guess) — felixefelip/rbs_infer#19.
       if (components = parse_union(class_name))
         results = components.map { |c| resolve(c, method_name, block_body_type: block_body_type) }
         return nil if results.any?(&:nil?)

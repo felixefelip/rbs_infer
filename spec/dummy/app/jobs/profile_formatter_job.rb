@@ -16,11 +16,11 @@ class ProfileFormatterJob < ApplicationJob
     ProfileFormatter.new(nickname: "ada").call
     ProfileFormatter.new(nickname: nil).call
 
-    # Call-site kwarg de `Current.with` (rbs_infer#19): segunda fonte de
-    # tipo para o atributo `user`, na forma com bloco (restaura ao sair).
-    # `User.first` → `User?` exercita o merge nilável no pool da ivar.
-    # (`User.first!` retornaria `User & User::Validated`, cujo union com
-    # `User` é deliberadamente não simplificado — ver IvarTypeSet.)
+    # Kwarg call-site of `Current.with` (rbs_infer#19): a second type
+    # source for the `user` attribute, in block form (restores on exit).
+    # `User.first` → `User?` exercises the nilable merge in the ivar pool.
+    # (`User.first!` would return `User & User::Validated`, whose union
+    # with `User` is deliberately not simplified — see IvarTypeSet.)
     Current.with(user: User.first) do
       ProfileFormatter.new(nickname: "ada").call
     end

@@ -47,7 +47,7 @@ module RbsInfer
 
       known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
 
-      # Coletar mapeamento: [kind, method_name] -> última expressão do body
+      # Collect mapping: [kind, method_name] -> last expression of the body
       method_last_exprs = {}
       collector = DefCollector.new
       parsed_target.tree.accept(collector)
@@ -63,18 +63,18 @@ module RbsInfer
         next unless last_stmt
 
         method_name = defn.name.to_s
-        # `def self.x` é coletado como :class_method — casar o kind evita
-        # atualizar o member errado quando instância e singleton têm o
-        # mesmo nome (e.g. accessors de CurrentAttributes expandidos).
+        # `def self.x` is collected as :class_method — matching the kind
+        # avoids updating the wrong member when instance and singleton
+        # share a name (e.g. expanded CurrentAttributes accessors).
         kind = defn.receiver.is_a?(Prism::SelfNode) ? :class_method : :method
         member = members.find { |m| m.kind == kind && m.name == method_name }
         next unless member
         next unless member.signature.end_with?("-> untyped")
         next if method_name == "initialize"
 
-        # 0. Leitura/escrita direta de ivar na última expressão
+        # 0. Direct ivar read/write as the last expression
         #    (`def user; @user; end`, `def user=(v); @user = v; end`) →
-        #    tipo já inferido da ivar (felixefelip/rbs_infer#19)
+        #    type already inferred for the ivar (felixefelip/rbs_infer#19)
         if last_stmt.is_a?(Prism::InstanceVariableReadNode) || last_stmt.is_a?(Prism::InstanceVariableWriteNode)
           resolved = ivar_types[last_stmt.name.to_s.sub(/\A@/, "")]
           if resolved && resolved != "untyped"
@@ -201,9 +201,9 @@ module RbsInfer
                        method_type_resolver.resolve(receiver_type, call_node.name.to_s, block_body_type: block_body_type)
                      end
           resolved = receiver_type if resolved == "self"
-          # `a&.b` com receiver nilável: o nil flui pro resultado. (Em
-          # chamada comum o resolve é otimista — `a.b` levanta em nil —
-          # mas o safe-nav devolve nil de verdade.)
+          # `a&.b` with a nilable receiver: the nil flows into the result.
+          # (On a plain call the resolve is optimistic — `a.b` raises on
+          # nil — but safe-nav really returns nil.)
           if resolved && call_node.safe_navigation? && receiver_type.end_with?("?") && !resolved.end_with?("?")
             resolved = "#{resolved}?"
           end

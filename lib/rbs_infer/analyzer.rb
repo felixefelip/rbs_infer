@@ -33,10 +33,10 @@ module RbsInfer
 
   attr_reader :target_class, :target_file, :source_files
 
-  # Source pós-expansão de macros (felixefelip/rbs_infer#19) — preenchido
-  # apenas quando alguma expansão foi aplicada (e.g. `attribute` de
-  # CurrentAttributes desaçucarado). Exposto para o CLI materializar o
-  # sidecar de debug em `sig/.../.expanded/`.
+  # Post-macro-expansion source (felixefelip/rbs_infer#19) — only set
+  # when some expansion applied (e.g. a desugared CurrentAttributes
+  # `attribute`). Exposed so the CLI can materialize the debug sidecar
+  # under `sig/.../.expanded/`.
   attr_reader :expanded_source
 
   def initialize(target_class: nil, source_files:, target_file: nil, extra_caller_sources: nil)
@@ -62,11 +62,11 @@ module RbsInfer
     # Parsear o arquivo-alvo uma única vez e reutilizar em todo o pipeline
     source = File.read(@target_file)
 
-    # Desaçucarar macros em pseudo-código Ruby ANTES do parse, para que
-    # todo o pipeline enxergue a visão expandida (felixefelip/rbs_infer#19).
-    # O pseudo-código existe só aqui, em memória — runtime e `steep check`
-    # do app continuam lendo o source real. Os expanders são plugins
-    # registrados em RbsInfer::SourceExpanders; o core não conhece nenhum.
+    # Desugar macros into plain-Ruby pseudo-code BEFORE the parse, so the
+    # whole pipeline sees the expanded view (felixefelip/rbs_infer#19).
+    # The pseudo-code exists only here, in memory — runtime and the app's
+    # `steep check` keep reading the real source. Expanders are plugins
+    # registered on RbsInfer::SourceExpanders; the core knows none.
     @expanded_source = SourceExpanders.apply(source)
     source = @expanded_source if @expanded_source
 
@@ -136,21 +136,21 @@ module RbsInfer
     end
 
     # Inferir tipos de instance variables (@post, @posts, etc.)
-    # method_param_types alimenta `@x = param` quando o tipo do param
-    # veio de call-sites cross-class (felixefelip/rbs_infer#19).
+    # method_param_types feeds `@x = param` when the param's type came
+    # from cross-class call-sites (felixefelip/rbs_infer#19).
     ivar_types = return_type_resolver.infer_ivar_types(target_members, attr_types, parsed_target: @parsed_target, method_param_types: method_param_types)
 
-    # Params atribuídos diretamente a ivars (`def x=(v); @x = v; end`)
-    # aceitam tudo que a ivar pode conter — alinhar `User` → `User?`
-    # quando a ivar é nilável (felixefelip/rbs_infer#19, convenção dos
-    # setters do rbs_rails: `(T?) -> T?`).
+    # Params assigned directly to ivars (`def x=(v); @x = v; end`) accept
+    # everything the ivar can hold — align `User` → `User?` when the ivar
+    # is nilable (felixefelip/rbs_infer#19, mirroring the rbs_rails
+    # setter convention: `(T?) -> T?`).
     widen_assigned_param_types(method_param_types, ivar_types)
 
     # Melhorar return types de métodos que retornam untyped usando chain resolution
     return_type_resolver.improve_method_return_types(target_members, attr_types, parsed_target: @parsed_target)
 
     # Second TypeMerger pass: now benefits from Steep-resolved types, inferred
-    # param types and ivar types (getters/setters de ivar — rbs_infer#19)
+    # param types and ivar types (ivar getters/setters — rbs_infer#19)
     type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target, method_param_types: method_param_types, ivar_types: ivar_types)
 
     # Identificar parâmetros opcionais do initialize
@@ -288,10 +288,10 @@ module RbsInfer
 
   private
 
-  # ─── Alinhar tipos de params atribuídos a ivars niláveis ──────────
-  # Para cada `@y = param` no corpo de um método cujo param já tem tipo
-  # inferido `T`, se a ivar foi inferida como `T?` o param é alargado
-  # para `T?` — atribuir nil é válido (a ivar pode conter nil).
+  # ─── Align types of params assigned to nilable ivars ──────────────
+  # For each `@y = param` in a method body: if the param's inferred type
+  # is `T` and the ivar was inferred as `T?`, widen the param to `T?` —
+  # assigning nil is valid (the ivar may hold nil).
 
   def widen_assigned_param_types(method_param_types, ivar_types)
     return if method_param_types.empty? || ivar_types.empty? || @parsed_target.nil?
@@ -315,8 +315,9 @@ module RbsInfer
         params = (method_param_types[defn.name.to_s] ||= {})
         current = params[param_name]
         if current.nil?
-          # Param sem tipo cujo único sinal é a ivar destino — herdar o
-          # tipo dela (e.g. `Current.set(user: nil)` sem call-site direto).
+          # Untyped param whose only signal is the destination ivar —
+          # inherit its type (e.g. `Current.set(user: nil)` with no
+          # direct call-site).
           params[param_name] = ivar_type
         elsif ivar_type == "#{current}?"
           params[param_name] = ivar_type
@@ -568,13 +569,13 @@ module RbsInfer
     result
   end
 
-  # Extrai nomes dos parâmetros de cada método da classe-alvo
-  # Retorna { "notify" => ["user", "message"], ... }
+  # Extracts the parameter names of each target-class method
+  # Returns { "notify" => ["user", "message"], ... }
   #
-  # Keywords entram DEPOIS dos posicionais: `extract_cross_class_args`
-  # mapeia args posicionais por índice (que só pode atingir o prefixo
-  # requireds+optionals) e kwargs por nome, então a ordem preserva o
-  # mapeamento posicional.
+  # Keywords come AFTER positionals: `extract_cross_class_args` maps
+  # positional args by index (which can only reach the
+  # requireds+optionals prefix) and kwargs by name, so the order
+  # preserves the positional mapping.
   def extract_target_method_params
     return {} unless @parsed_target
 

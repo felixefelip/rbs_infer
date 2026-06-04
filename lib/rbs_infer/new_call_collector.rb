@@ -325,9 +325,9 @@ module RbsInfer
     def resolve_method_chain(node)
       return nil unless @method_type_resolver
 
-      # Receiver constante → lookup singleton (`Account.first`), não de
-      # instância. `self` no RBS de um método de classe é a própria classe
-      # (mesma convenção de Analyzer#infer_attr_types_from_initialize).
+      # Constant receiver → singleton lookup (`Account.first`), not
+      # instance. `self` in a class method's RBS is the class itself
+      # (same convention as Analyzer#infer_attr_types_from_initialize).
       if node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
         class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
         return nil unless class_name
@@ -340,8 +340,8 @@ module RbsInfer
       return nil unless receiver_type && receiver_type != "untyped"
 
       resolved = @method_type_resolver.resolve(receiver_type, node.name.to_s)
-      # `a&.b` com receiver nilável: o nil flui pro resultado (em chamada
-      # comum o resolve é otimista — `a.b` levanta em nil).
+      # `a&.b` with a nilable receiver: the nil flows into the result (on
+      # a plain call the resolve is optimistic — `a.b` raises on nil).
       if resolved && node.safe_navigation? && receiver_type.end_with?("?") && !resolved.end_with?("?")
         resolved = "#{resolved}?"
       end
@@ -370,9 +370,9 @@ module RbsInfer
         resolved = current_self_type
         resolved == "untyped" ? nil : resolved
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        # Receiver constante → chamada de método singleton da classe
-        # (`Current.user = x`, `Notifier.notify(...)`). O nome da classe é
-        # o próprio "tipo" do receiver para fins de match_class?
+        # Constant receiver → singleton method call on the class
+        # (`Current.user = x`, `Notifier.notify(...)`). The class name is
+        # itself the receiver's "type" for match_class? purposes
         # (felixefelip/rbs_infer#19).
         RbsInfer::Analyzer.extract_constant_path(node)
       end

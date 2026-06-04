@@ -1,19 +1,19 @@
 # frozen_string_literal: true
 
 module RbsInfer
-  # Registry de plugins que reescrevem o source do arquivo-alvo ANTES do
-  # parse (felixefelip/rbs_infer#19). Cada expander desaçucara macros em
-  # pseudo-código Ruby para que o pipeline de inferência enxergue defs
-  # comuns — a visão expandida existe só em memória durante a geração.
+  # Registry of plugins that rewrite the target file's source BEFORE the
+  # parse (felixefelip/rbs_infer#19). Each expander desugars macros into
+  # plain-Ruby pseudo-code so the inference pipeline sees ordinary defs —
+  # the expanded view exists only in memory during generation.
   #
-  # O core não conhece nenhum framework: extensões (desta gem ou de
-  # terceiros) se registram em require-time. Contrato de um expander:
+  # The core knows no framework: extensions (from this gem or third
+  # parties) register themselves at require time. Expander contract:
   #
-  #   expander.expand(source) #=> String (source expandido) | nil (no-op)
+  #   expander.expand(source) #=> String (expanded source) | nil (no-op)
   #
-  # Expanders devem ser idempotentes sobre o próprio output e baratos no
-  # caminho no-op (gate por substring antes de parsear, como o
-  # CurrentAttributesExpander faz com `CurrentAttributes`).
+  # Expanders must be idempotent over their own output and cheap on the
+  # no-op path (gate on a substring before parsing, as
+  # CurrentAttributesExpander does with `CurrentAttributes`).
   module SourceExpanders
     @expanders = []
 
@@ -32,9 +32,9 @@ module RbsInfer
       @expanders.dup
     end
 
-    # Aplica os expanders em cadeia (o output de um alimenta o próximo).
-    # Retorna o source final expandido, ou nil quando nenhum alterou nada
-    # — o caller usa nil para saber que não há visão expandida a expor.
+    # Applies the expanders in a chain (one's output feeds the next).
+    # Returns the final expanded source, or nil when none changed
+    # anything — callers use nil to know there is no expanded view.
     def apply(source)
       result = nil
       @expanders.each do |expander|

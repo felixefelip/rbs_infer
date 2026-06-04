@@ -6,36 +6,38 @@ require_relative "../../source_expanders"
 module RbsInfer
   module Extensions
     module Rails
-      # Desaçucara as macros `attribute :x` de subclasses de
-      # ActiveSupport::CurrentAttributes em Ruby puro (pseudo-código),
-      # para que o pipeline de inferência existente enxergue os accessors
-      # como defs comuns (felixefelip/rbs_infer#19).
+      # Desugars the `attribute :x` macros of ActiveSupport::CurrentAttributes
+      # subclasses into plain-Ruby pseudo-code, so the existing inference
+      # pipeline sees the accessors as ordinary defs
+      # (felixefelip/rbs_infer#19).
       #
-      # O pseudo-código existe apenas em memória durante a geração — nunca
-      # é carregado em runtime nem visto pelo `steep check` do app (que lê
-      # o source real + o RBS gerado). A forma é a fonte mais simples que
-      # produz os tipos certos, não uma simulação fiel do runtime:
+      # The pseudo-code exists only in memory during generation — it is
+      # never loaded at runtime nor seen by the app's `steep check` (which
+      # reads the real source + the generated RBS). The shape is the
+      # simplest source that yields the right types, not a faithful
+      # simulation of the runtime:
       #
       #   attribute :user
-      #   # vira:
+      #   # becomes:
       #   def user; @user; end
       #   def user=(value); @user = value; end
       #   def self.user; @user; end
       #   def self.user=(value); @user = value; end
       #
-      # Os dois níveis (instância e singleton) leem/escrevem a MESMA ivar
-      # de propósito: o pool de tipos fica unificado, espelhando o
-      # `@attributes` compartilhado do CurrentAttributes real.
+      # Both levels (instance and singleton) read/write the SAME ivar on
+      # purpose: the type pool is unified, mirroring the shared
+      # `@attributes` of the real CurrentAttributes.
       #
-      # Semântica do reset per-request expressa em código:
-      # - sem `default:` → `@user` nunca é atribuída em `initialize`, então
-      #   a regra de definite-initialization existente emite `User?`.
-      # - com `default:` → o expander emite `def initialize; @user = <expr>; end`,
-      #   tornando a ivar não-nilável e somando o default como fonte de tipo.
+      # The per-request reset semantics expressed as code:
+      # - without `default:` → `@user` is never assigned in `initialize`,
+      #   so the existing definite-initialization rule emits `User?`.
+      # - with `default:` → the expander emits
+      #   `def initialize; @user = <expr>; end`, making the ivar
+      #   non-nilable and adding the default as a type source.
       #
-      # `set`/`with` (set é alias de with) viram defs com kwargs que
-      # escrevem as ivars diretamente, para que call-sites como
-      # `Current.set(user: u)` alimentem o mesmo fluxo de inferência.
+      # `set`/`with` (set is an alias of with) become defs with kwargs
+      # that write the ivars directly, so call-sites like
+      # `Current.set(user: u)` feed the same inference flow.
       module CurrentAttributesExpander
         SUPERCLASS_NAMES = [
           "ActiveSupport::CurrentAttributes",
@@ -44,8 +46,9 @@ module RbsInfer
 
         module_function
 
-        # Retorna o source expandido, ou nil quando não há nada a expandir
-        # (o arquivo não define subclasse de CurrentAttributes com `attribute`).
+        # Returns the expanded source, or nil when there is nothing to
+        # expand (the file defines no CurrentAttributes subclass with
+        # `attribute` declarations).
         def expand(source)
           return nil unless source.include?("CurrentAttributes")
 
@@ -73,9 +76,9 @@ module RbsInfer
           SUPERCLASS_NAMES.include?(RbsInfer::Analyzer.extract_constant_path(superclass))
         end
 
-        # Coleta os CallNodes `attribute ...` no nível do corpo da classe
-        # (statements diretos, sem receiver). `attribute` dentro de defs ou
-        # blocos não é o macro do CurrentAttributes.
+        # Collects the `attribute ...` CallNodes at class-body level
+        # (direct statements, no receiver). An `attribute` inside defs or
+        # blocks is not the CurrentAttributes macro.
         def attribute_calls_in(klass)
           body = klass.body
           statements = case body
@@ -89,10 +92,10 @@ module RbsInfer
           end
         end
 
-        # Constrói as substituições para os `attribute` de UMA classe.
-        # Cada call vira os 4 accessors dos seus atributos; a última call
-        # ganha também `initialize` (quando há `default:`) e `set`/`with`
-        # com kwargs de todos os atributos da classe.
+        # Builds the replacements for the `attribute` calls of ONE class.
+        # Each call becomes the 4 accessors of its attributes; the last
+        # call also gets `initialize` (when there is a `default:`) and
+        # `set`/`with` with kwargs for all attributes of the class.
         def build_replacements(source, calls)
           all_names = []
           defaults = {}
@@ -121,9 +124,9 @@ module RbsInfer
         end
 
         # `attribute :user, :account, default: -> { ... }` →
-        # [["user", "account"], { "user" => "<source do default>" , ... }]
-        # O default declarado vale para todos os atributos da mesma call
-        # (mesmo comportamento do ActiveSupport).
+        # [["user", "account"], { "user" => "<default source>", ... }]
+        # The declared default applies to every attribute of the same call
+        # (same behavior as ActiveSupport).
         def parse_attribute_call(source, call)
           names = []
           default_source = nil
@@ -146,9 +149,9 @@ module RbsInfer
           [names, defaults]
         end
 
-        # Para lambdas/procs (`default: -> { User.new }`), o valor do
-        # atributo é o RESULTADO do callable — usar o corpo. Para qualquer
-        # outra expressão, o source literal.
+        # For lambdas/procs (`default: -> { User.new }`) the attribute
+        # value is the RESULT of the callable — use the body. For any
+        # other expression, the literal source.
         def default_expression_source(source, node)
           body = case node
                  when Prism::LambdaNode
@@ -187,18 +190,18 @@ module RbsInfer
           kwargs = names.map { |n| "#{n}: nil" }.join(", ")
           writes = names.map { |n| "@#{n} = #{n}" }.join("; ")
 
-          # `&block` mantém a assinatura call-compatible com o uso real
-          # (`Current.with(user: u) { ... }` restaura os atributos ao sair).
-          # O corpo termina em `block.call` porque em runtime set/with
-          # retornam o resultado do bloco — sem isso o return inferido
-          # seria o valor atribuído, vazando pro tipo dos callers.
+          # `&block` keeps the signature call-compatible with real usage
+          # (`Current.with(user: u) { ... }` restores attributes on exit).
+          # The body ends in `block.call` because at runtime set/with
+          # return the block's result — without it the inferred return
+          # would be the assigned value, leaking into callers' types.
           ["set", "with"].map do |method|
             "def self.#{method}(#{kwargs}, &block); #{writes}; block.call; end"
           end
         end
 
-        # Aplica as substituições de trás pra frente para não invalidar os
-        # byte offsets das anteriores.
+        # Applies the replacements back to front so earlier byte offsets
+        # stay valid.
         def apply_replacements(source, replacements)
           out = source.dup
           replacements.sort_by { |r| -r[:start] }.each do |r|
@@ -210,7 +213,7 @@ module RbsInfer
     end
   end
 
-  # Plugin de expansão de source (registrado por padrão: é puro Prism —
-  # nada de Rails em runtime — e se auto-gateia pela superclasse).
+  # Source-expansion plugin (registered by default: it is pure Prism —
+  # no Rails at runtime — and self-gates on the superclass).
   SourceExpanders.register(Extensions::Rails::CurrentAttributesExpander)
 end
