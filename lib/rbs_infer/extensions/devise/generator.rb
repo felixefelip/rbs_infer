@@ -69,24 +69,30 @@ module RbsInfer
         # same mechanism as the AR after-validation narrowing.
         def write_callbacks_sidecar(scopes)
           scanner = BeforeActionScanner.new(app_dir: app_dir, scopes: scopes.map { |s| s[:scope] })
-          guarded = scanner.guarded_controllers
           sidecar_path = File.join(output_dir, ".steep_callbacks.yml")
 
-          if guarded.empty?
+          # Actions de controllers guardados + handlers de before_action
+          # declarados depois do guard (e.g. `set_authenticated_user` roda
+          # com current_user provadamente presente).
+          entries =
+            scanner.guarded_controllers.map { |e| callback_entry(e[:class_name], e[:scope], e[:actions]) } +
+            scanner.guarded_handlers.map { |e| callback_entry(e[:class_name], e[:scope], e[:handlers]) }
+
+          if entries.empty?
             FileUtils.rm_f(sidecar_path)
             return
           end
 
-          entries = guarded.map do |entry|
-            marker = "#{MODULE_NAME}::#{authenticated_marker_name(entry[:scope])}"
-            {
-              "class" => entry[:class_name],
-              "applies_self" => "#{entry[:class_name]} & #{marker}",
-              "runs_before" => entry[:actions],
-            }
-          end
-
           File.write(sidecar_path, { "version" => 1, "callbacks" => entries }.to_yaml)
+        end
+
+        def callback_entry(class_name, scope, methods)
+          marker = "#{MODULE_NAME}::#{authenticated_marker_name(scope)}"
+          {
+            "class" => class_name,
+            "applies_self" => "#{class_name} & #{marker}",
+            "runs_before" => methods,
+          }
         end
 
         # Extracts [{scope:, class_name:}, ...] from `devise_for` calls.

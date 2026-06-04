@@ -129,6 +129,122 @@ RSpec.describe RbsInfer::Extensions::Devise::BeforeActionScanner do
     expect(guarded).to be_empty
   end
 
+  describe "#guarded_handlers" do
+    def scan_handlers(scopes: ["user"], **controllers)
+      Dir.mktmpdir do |dir|
+        controllers.each do |path, source|
+          full = File.join(dir, "app/controllers", path.to_s)
+          FileUtils.mkdir_p(File.dirname(full))
+          File.write(full, source)
+        end
+
+        described_class.new(app_dir: dir, scopes: scopes).guarded_handlers
+      end
+    end
+
+    it "narrows handlers declared after the guard, attributed to the defining class" do
+      handlers = scan_handlers(
+        "application_controller.rb" => <<~RUBY
+          class ApplicationController < ActionController::Base
+            before_action :authenticate_user!
+            before_action :set_authenticated_user
+
+            private
+
+            def set_authenticated_user
+              Current.user = current_user
+            end
+          end
+        RUBY
+      )
+
+      expect(handlers).to eq([
+        { class_name: "ApplicationController", scope: "user", handlers: ["set_authenticated_user"] },
+      ])
+    end
+
+    it "does not narrow handlers declared before the guard" do
+      handlers = scan_handlers(
+        "application_controller.rb" => <<~RUBY
+          class ApplicationController < ActionController::Base
+            before_action :set_locale
+            before_action :authenticate_user!
+
+            private
+
+            def set_locale; end
+          end
+        RUBY
+      )
+
+      expect(handlers).to be_empty
+    end
+
+    it "requires an unconditional guard" do
+      handlers = scan_handlers(
+        "application_controller.rb" => <<~RUBY
+          class ApplicationController < ActionController::Base
+            before_action :authenticate_user!, only: [:show]
+            before_action :set_authenticated_user
+
+            private
+
+            def set_authenticated_user; end
+          end
+        RUBY
+      )
+
+      expect(handlers).to be_empty
+    end
+
+    it "narrows a subclass handler under an inherited guard" do
+      handlers = scan_handlers(
+        "application_controller.rb" => <<~RUBY,
+          class ApplicationController < ActionController::Base
+            before_action :authenticate_user!
+          end
+        RUBY
+        "posts_controller.rb" => <<~RUBY
+          class PostsController < ApplicationController
+            before_action :set_post
+
+            private
+
+            def set_post; end
+          end
+        RUBY
+      )
+
+      expect(handlers).to eq([
+        { class_name: "PostsController", scope: "user", handlers: ["set_post"] },
+      ])
+    end
+
+    it "drops all handler narrowing when any controller skips the guard" do
+      handlers = scan_handlers(
+        "application_controller.rb" => <<~RUBY,
+          class ApplicationController < ActionController::Base
+            before_action :authenticate_user!
+            before_action :set_authenticated_user
+
+            private
+
+            def set_authenticated_user; end
+          end
+        RUBY
+        "public_controller.rb" => <<~RUBY
+          class PublicController < ApplicationController
+            skip_before_action :authenticate_user!
+
+            def landing; end
+          end
+        RUBY
+      )
+
+      expect(handlers).to be_empty
+    end
+  end
+
   it "matches guards per scope" do
     guarded = scan(
       scopes: %w[user admin],
