@@ -65,8 +65,9 @@ module RbsInfer
     # Desaçucarar macros em pseudo-código Ruby ANTES do parse, para que
     # todo o pipeline enxergue a visão expandida (felixefelip/rbs_infer#19).
     # O pseudo-código existe só aqui, em memória — runtime e `steep check`
-    # do app continuam lendo o source real.
-    @expanded_source = Extensions::Rails::CurrentAttributesExpander.expand(source)
+    # do app continuam lendo o source real. Os expanders são plugins
+    # registrados em RbsInfer::SourceExpanders; o core não conhece nenhum.
+    @expanded_source = SourceExpanders.apply(source)
     source = @expanded_source if @expanded_source
 
     source = Steep::Source::ModuleSelfTypeResolver.annotate(@target_file, source)
@@ -712,4 +713,4 @@ require_relative "return_type_resolver"
 require_relative "param_type_inferrer"
 require_relative "source_index"
 require_relative "steep_bridge"
-require_relative "extensions/rails/current_attributes_expander"
+require_relative "source_expanders"
