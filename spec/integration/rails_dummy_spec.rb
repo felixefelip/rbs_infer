@@ -63,6 +63,31 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/post_tag", target_class: "PostTag", target_file: "app/models/post_tag.rb")
   end
 
+  it "Current (CurrentAttributes) matches expected RBS" do
+    assert_snapshot("models/current", target_class: "Current", target_file: "app/models/current.rb")
+  end
+
+  it "Current expansion (pseudo-code) matches expected source" do
+    # Snapshot of the desugar itself, separate from the RBS snapshot: a
+    # new bug points straight to the right layer — expansion changes →
+    # expander bug; identical expansion with a changed RBS → inference
+    # pipeline bug.
+    expanded = RbsInfer::Extensions::Rails::CurrentAttributesExpander.expand(
+      File.read("app/models/current.rb")
+    )
+
+    expect(expanded).not_to be_nil
+    expect(Prism.parse(expanded).success?).to be(true)
+
+    expectation_path = expectations_dir.join("expanded/current.rb")
+    if ENV["UPDATE_EXPECTATIONS"]
+      expectation_path.dirname.mkpath
+      expectation_path.write(expanded)
+    end
+
+    expect(expanded).to eq(expectation_path.read)
+  end
+
   it "PostsController matches expected RBS" do
     assert_snapshot("controllers/posts_controller", target_class: "PostsController", target_file: "app/controllers/posts_controller.rb")
   end

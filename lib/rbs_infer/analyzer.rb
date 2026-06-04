@@ -33,6 +33,12 @@ module RbsInfer
 
   attr_reader :target_class, :target_file, :source_files
 
+  # Post-macro-expansion source (felixefelip/rbs_infer#19) — only set
+  # when some expansion applied (e.g. a desugared CurrentAttributes
+  # `attribute`). Exposed so the CLI can materialize the debug sidecar
+  # under `sig/.../.expanded/`.
+  attr_reader :expanded_source
+
   def initialize(target_class: nil, source_files:, target_file: nil, extra_caller_sources: nil)
     @source_files = source_files
     @source_index = SourceIndex.new(source_files)
@@ -55,6 +61,15 @@ module RbsInfer
 
     # Parsear o arquivo-alvo uma única vez e reutilizar em todo o pipeline
     source = File.read(@target_file)
+
+    # Desugar macros into plain-Ruby pseudo-code BEFORE the parse, so the
+    # whole pipeline sees the expanded view (felixefelip/rbs_infer#19).
+    # The pseudo-code exists only here, in memory — runtime and the app's
+    # `steep check` keep reading the real source. Expanders are plugins
+    # registered on RbsInfer::SourceExpanders; the core knows none.
+    @expanded_source = SourceExpanders.apply(source)
+    source = @expanded_source if @expanded_source
+
     source = Steep::Source::ModuleSelfTypeResolver.annotate(@target_file, source)
     result = Prism.parse(source)
     @parsed_target = RbsInfer::ParsedFile.new(
@@ -121,13 +136,22 @@ module RbsInfer
     end
 
     # Inferir tipos de instance variables (@post, @posts, etc.)
-    ivar_types = return_type_resolver.infer_ivar_types(target_members, attr_types, parsed_target: @parsed_target)
+    # method_param_types feeds `@x = param` when the param's type came
+    # from cross-class call-sites (felixefelip/rbs_infer#19).
+    ivar_types = return_type_resolver.infer_ivar_types(target_members, attr_types, parsed_target: @parsed_target, method_param_types: method_param_types)
+
+    # Params assigned directly to ivars (`def x=(v); @x = v; end`) accept
+    # everything the ivar can hold — align `User` → `User?` when the ivar
+    # is nilable (felixefelip/rbs_infer#19, mirroring the rbs_rails
+    # setter convention: `(T?) -> T?`).
+    widen_assigned_param_types(method_param_types, ivar_types)
 
     # Melhorar return types de métodos que retornam untyped usando chain resolution
     return_type_resolver.improve_method_return_types(target_members, attr_types, parsed_target: @parsed_target)
 
-    # Second TypeMerger pass: now benefits from Steep-resolved types and inferred param types
-    type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target, method_param_types: method_param_types)
+    # Second TypeMerger pass: now benefits from Steep-resolved types, inferred
+    # param types and ivar types (ivar getters/setters — rbs_infer#19)
+    type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target, method_param_types: method_param_types, ivar_types: ivar_types)
 
     # Identificar parâmetros opcionais do initialize
     optional_params = extract_optional_init_params
@@ -263,6 +287,55 @@ module RbsInfer
   end
 
   private
+
+  # ─── Align types of params assigned to nilable ivars ──────────────
+  # For each `@y = param` in a method body: if the param's inferred type
+  # is `T` and the ivar was inferred as `T?`, widen the param to `T?` —
+  # assigning nil is valid (the ivar may hold nil).
+
+  def widen_assigned_param_types(method_param_types, ivar_types)
+    return if method_param_types.empty? || ivar_types.empty? || @parsed_target.nil?
+
+    collector = DefCollector.new
+    @parsed_target.tree.accept(collector)
+
+    collector.defs.each do |defn|
+      param_names = def_param_names(defn)
+      next if param_names.empty?
+
+      self.class.find_all_nodes(defn) { |n| n.is_a?(Prism::InstanceVariableWriteNode) }.each do |write|
+        next unless write.value.is_a?(Prism::LocalVariableReadNode)
+
+        param_name = write.value.name.to_s
+        next unless param_names.include?(param_name)
+
+        ivar_type = ivar_types[write.name.to_s.sub(/\A@/, "")]
+        next if ivar_type.nil? || ivar_type == "untyped"
+
+        params = (method_param_types[defn.name.to_s] ||= {})
+        current = params[param_name]
+        if current.nil?
+          # Untyped param whose only signal is the destination ivar —
+          # inherit its type (e.g. `Current.set(user: nil)` with no
+          # direct call-site).
+          params[param_name] = ivar_type
+        elsif ivar_type == "#{current}?"
+          params[param_name] = ivar_type
+        end
+      end
+    end
+  end
+
+  def def_param_names(defn)
+    params = defn.parameters
+    return [] unless params
+
+    names = []
+    params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
+    params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
+    params.keywords.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:keywords)
+    names
+  end
 
   # ─── Extrair nomes dos keyword params opcionais do initialize ─────
 
@@ -496,8 +569,13 @@ module RbsInfer
     result
   end
 
-  # Extrai nomes dos parâmetros posicionais de cada método da classe-alvo
-  # Retorna { "notify" => ["user", "message"], ... }
+  # Extracts the parameter names of each target-class method
+  # Returns { "notify" => ["user", "message"], ... }
+  #
+  # Keywords come AFTER positionals: `extract_cross_class_args` maps
+  # positional args by index (which can only reach the
+  # requireds+optionals prefix) and kwargs by name, so the order
+  # preserves the positional mapping.
   def extract_target_method_params
     return {} unless @parsed_target
 
@@ -513,6 +591,7 @@ module RbsInfer
       names = []
       params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
       params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
+      params.keywords.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:keywords)
       methods[defn.name.to_s] = names unless names.empty?
     end
     methods
@@ -635,3 +714,4 @@ require_relative "return_type_resolver"
 require_relative "param_type_inferrer"
 require_relative "source_index"
 require_relative "steep_bridge"
+require_relative "source_expanders"

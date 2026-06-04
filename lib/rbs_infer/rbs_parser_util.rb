@@ -161,7 +161,47 @@ module RbsInfer
     def extract_return_type(method_def)
       overload = method_def.overloads.first
       return nil unless overload
-      overload.method_type.type.return_type.to_s
+
+      return_type = overload.method_type.type.return_type
+      # Returns referencing type variables (e.g. `(Model & ValidatedModel)?`
+      # inside `module Methods[Model, ...]`) are only meaningful after
+      # substitution — which this regex-level path can't do. Skip them;
+      # the RBS DefinitionBuilder path resolves generics properly, and
+      # leaking raw variable names produces invalid RBS that poisons the
+      # whole environment (felixefelip/rbs_infer#19).
+      return nil if return_type.free_variables.any?
+
+      return_type.to_s
+    end
+
+    # In method-type position a bare `|` is an overload separator —
+    # `def x: () -> Integer | Float` is invalid RBS. Wraps top-level
+    # unions in parens before they're substituted into signatures.
+    def parenthesize_union(type_str)
+      return type_str unless type_str&.include?("|")
+      # Already wrapped (parens are transparent to the RBS parser, so the
+      # parse below can't distinguish `(A | B)` from `A | B`).
+      return type_str if outer_parenthesized?(type_str)
+
+      parsed = RBS::Parser.parse_type(type_str)
+      parsed.is_a?(RBS::Types::Union) ? "(#{type_str})" : type_str
+    rescue RBS::ParsingError, RBS::BaseError
+      type_str
+    end
+
+    # True when the first `(` closes only at the last character —
+    # i.e. the whole string is wrapped by one outer pair. `(A) | (B)`
+    # is NOT outer-parenthesized.
+    def outer_parenthesized?(str)
+      return false unless str.start_with?("(") && str.end_with?(")")
+
+      depth = 0
+      str.each_char.with_index do |char, i|
+        depth += 1 if char == "("
+        depth -= 1 if char == ")"
+        return i == str.length - 1 if depth.zero?
+      end
+      false
     end
   end
 

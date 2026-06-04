@@ -52,7 +52,14 @@ module RbsInfer
       # Emitir métodos de classe (def self.foo)
       class_methods = members.select { |m| m.kind == :class_method }
       class_methods.each do |member|
-        lines << "#{member_indent}def self.#{member.signature}"
+        sig = member.signature
+        # Param types inferred from call-sites also apply to singletons
+        # (`Current.user = x` → `def self.user=: (User? value)`) —
+        # felixefelip/rbs_infer#19.
+        if method_param_types[member.name]
+          sig = apply_inferred_param_types(sig, method_param_types[member.name])
+        end
+        lines << "#{member_indent}def self.#{sig}"
       end
 
       # Agrupar por visibilidade: public -> protected -> private

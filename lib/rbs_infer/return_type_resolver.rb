@@ -33,7 +33,7 @@ module RbsInfer
         next if m.name == "initialize"
         resolved = known_return_types[m.name]
         if resolved && resolved != "untyped"
-          m.signature = m.signature.sub(/-> untyped$/, "-> #{resolved}")
+          m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
         end
       end
 
@@ -63,7 +63,7 @@ module RbsInfer
                 steep_type = "#{steep_type}?"
               end
 
-              m.signature = m.signature.sub(/-> untyped$/, "-> #{steep_type}")
+              m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsParserUtil.parenthesize_union(steep_type)}")
             end
           end
 
@@ -107,7 +107,7 @@ module RbsInfer
       end
     end
 
-    def infer_ivar_types(members, attr_types, parsed_target: nil)
+    def infer_ivar_types(members, attr_types, parsed_target: nil, method_param_types: {})
       return {} unless parsed_target
 
       # Nomes de attrs já declarados (attr_accessor, attr_reader) → pular
@@ -120,10 +120,21 @@ module RbsInfer
       # the bridge returns union strings and applies the definite-init
       # rule itself (`@x: T1 | T2 | nil` when `@x` isn't written in
       # initialize). The fallback only fills ivars Steep didn't see.
+      #
+      # Exception: when Steep only saw `nil` writes (e.g. the nil kwarg
+      # default assigned to the ivar, as in the expanded CurrentAttributes
+      # `set`/`with` — rbs_infer#19), the "nil" carries no nominal type.
+      # Don't close the door on the Prism fallback: the nil becomes mere
+      # nilability and the fallback adds the call-sites' nominal types.
+      steep_nil_only = Set.new
       if @steep_bridge && parsed_target.source
         steep_ivars = @steep_bridge.ivar_write_types(parsed_target.source)
         steep_ivars.each do |name, type|
           next if attr_names.include?(name)
+          if type == "nil"
+            steep_nil_only << name
+            next
+          end
           ivar_types[name] = type
         end
       end
@@ -139,12 +150,13 @@ module RbsInfer
       fallback_type_sets = Hash.new { |h, k| h[k] = IvarTypeSet.new }
 
       collector.defs.each do |defn|
-        collect_ivar_writes(defn, known_return_types, fallback_type_sets, attr_names)
+        param_types = method_param_types[defn.name.to_s] || {}
+        collect_ivar_writes(defn, known_return_types, fallback_type_sets, attr_names, param_types: param_types)
       end
 
       fallback_type_sets.each do |name, type_set|
         next if ivar_types.key?(name)
-        force_nilable = !initialized_ivars.include?(name)
+        force_nilable = !initialized_ivars.include?(name) || steep_nil_only.include?(name)
         emitted = type_set.emit(force_nilable: force_nilable)
         if emitted
           ivar_types[name] = emitted
@@ -175,13 +187,20 @@ module RbsInfer
       end.any?
     end
 
-    def collect_ivar_writes(node, known_return_types, type_sets, attr_names)
+    def collect_ivar_writes(node, known_return_types, type_sets, attr_names, param_types: {})
       queue = [node]
       while (current = queue.shift)
         if current.is_a?(Prism::InstanceVariableWriteNode)
           name = current.name.to_s.sub(/\A@/, "")
           unless attr_names.include?(name)
             inferred = basic_value_type(current.value, known_return_types)
+            # `@x = param` where the param's type came from cross-class
+            # call-sites (e.g. setter `def x=(value); @x = value; end`
+            # typed by `Obj.x = expr` in other files) —
+            # felixefelip/rbs_infer#19.
+            if inferred.nil? && current.value.is_a?(Prism::LocalVariableReadNode)
+              inferred = param_types[current.value.name.to_s]
+            end
             type_sets[name].add(inferred) if inferred
           end
         end
@@ -243,6 +262,7 @@ module RbsInfer
     # Complex chain resolution is delegated to Steep.
     def basic_value_type(node, known_return_types)
       case node
+      when Prism::NilNode then "nil"
       when Prism::StringNode, Prism::InterpolatedStringNode then "String"
       when Prism::IntegerNode then "Integer"
       when Prism::FloatNode then "Float"

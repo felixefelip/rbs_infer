@@ -236,4 +236,47 @@ RSpec.describe RbsInfer::RbsParserUtil do
       expect(info.types).to include("protected_method" => "Integer")
     end
   end
+
+  describe ".class_info_from_rbs with generic declarations" do
+    it "skips returns referencing type variables (no substitution at this layer)" do
+      # Raw type variables leaking into generated RBS (`Model` etc.)
+      # produce `Cannot find type` errors that poison the whole
+      # environment (felixefelip/rbs_infer#19).
+      rbs = <<~RBS
+        module Methods[Model, PrimaryKey, ValidatedModel = Model]
+          def find_by: (*untyped) -> (Model & ValidatedModel)?
+          def count: () -> Integer
+        end
+      RBS
+
+      info = described_class.class_info_from_rbs(rbs, "Methods")
+
+      expect(info.types).not_to have_key("find_by")
+      expect(info.types).to include("count" => "Integer")
+    end
+  end
+
+  describe ".parenthesize_union" do
+    it "wraps a bare top-level union (invalid in method-type position)" do
+      expect(described_class.parenthesize_union("Integer | Float")).to eq("(Integer | Float)")
+    end
+
+    it "does not double-wrap an already parenthesized union" do
+      expect(described_class.parenthesize_union("(Integer | Float)")).to eq("(Integer | Float)")
+    end
+
+    it "wraps when outer parens do not span the whole union" do
+      expect(described_class.parenthesize_union("(A) | (B)")).to eq("((A) | (B))")
+    end
+
+    it "leaves optionals, plain types and generics untouched" do
+      expect(described_class.parenthesize_union("(A | B)?")).to eq("(A | B)?")
+      expect(described_class.parenthesize_union("User")).to eq("User")
+      expect(described_class.parenthesize_union("Array[A | B]")).to eq("Array[A | B]")
+    end
+
+    it "returns unparseable strings as-is" do
+      expect(described_class.parenthesize_union("| broken")).to eq("| broken")
+    end
+  end
 end

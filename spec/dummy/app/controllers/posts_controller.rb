@@ -41,6 +41,8 @@ class PostsController < ApplicationController
   end
 
   def publish
+    # Assignment call-site that types `Current.user` (rbs_infer#19)
+    Current.user = @post.user
     publisher = PostPublisher.new(@post)
     if publisher.call
       redirect_to @post, notice: "Post published."

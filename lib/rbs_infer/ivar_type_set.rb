@@ -43,10 +43,22 @@ module RbsInfer
 
       if type_str.end_with?("?")
         @nilable = true
-        add_unique(type_str.chomp("?"))
-      else
-        add_unique(type_str)
+        return add(type_str.chomp("?"))
       end
+
+      # Unions arrive as a single string when the type comes from Steep
+      # or from an already-generated RBS (e.g.
+      # `(User | (User & User::Validated) | nil)` on a second generation).
+      # Flatten into components — union of unions is associative, so this
+      # preserves every component and keeps the emission stable across
+      # generations (fixpoint). This is NOT the semantic simplification
+      # forbidden by steep#16 (`(A & B) | A → A`).
+      if (components = parse_union_components(type_str))
+        components.each { |c| add(c) }
+        return
+      end
+
+      add_unique(type_str)
     end
 
     def empty?
@@ -70,6 +82,24 @@ module RbsInfer
     end
 
     private
+
+    # Returns the components of a top-level union (`A | B | nil`), or nil
+    # when the type isn't a union (or doesn't parse as RBS). Intersection
+    # components keep their parens (`(A & B)`) — preserving the emitted
+    # form and the dedupe key used by the other entry producers.
+    def parse_union_components(type_str)
+      return nil unless type_str.include?("|")
+
+      parsed = RBS::Parser.parse_type(type_str)
+      return nil unless parsed.is_a?(RBS::Types::Union)
+
+      parsed.types.map do |t|
+        s = t.to_s
+        t.is_a?(RBS::Types::Intersection) ? "(#{s})" : s
+      end
+    rescue RBS::ParsingError, RBS::BaseError
+      nil
+    end
 
     def add_unique(type_str)
       key = type_str.gsub(/\s+/, "")

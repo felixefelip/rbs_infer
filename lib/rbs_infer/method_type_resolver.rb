@@ -22,6 +22,12 @@ module RbsInfer
     def resolve(class_name, method_name, block_body_type: nil)
       return nil unless class_name && class_name != "untyped"
 
+      # Nilable receiver (`User?`) → optimistic lookup on the base type,
+      # just as a human reading `user.name` knows the method belongs to
+      # User. The app's steep check still flags the unhandled nil; this
+      # is best-effort inference only (felixefelip/rbs_infer#19).
+      class_name = class_name.delete_suffix("?") if class_name.end_with?("?")
+
       # Intersection types (e.g. `(OrderImport & OrderImport::Validated)` from
       # finders that now return `Model & Model::Validated`) need to be split
       # before lookup — `RBS::TypeName` only accepts a single nominal name.
@@ -32,6 +38,18 @@ module RbsInfer
           result = resolve(component, method_name, block_body_type: block_body_type)
           return result if result && result != "untyped"
         end
+        return nil
+      end
+
+      # Union types (e.g. `User | (User & User::Validated)` from ivars
+      # with heterogeneous call-sites — the union form is deliberately
+      # not simplified, see IvarTypeSet). The method only resolves if ALL
+      # components agree on the return type; divergence → nil (ambiguous,
+      # better untyped than a guess) — felixefelip/rbs_infer#19.
+      if (components = parse_union(class_name))
+        results = components.map { |c| resolve(c, method_name, block_body_type: block_body_type) }
+        return nil if results.any?(&:nil?)
+        return results.first if results.uniq.length == 1
         return nil
       end
 
@@ -52,6 +70,14 @@ module RbsInfer
     private def parse_intersection(class_name)
       parsed = RBS::Parser.parse_type(class_name)
       return nil unless parsed.is_a?(RBS::Types::Intersection)
+      parsed.types.map(&:to_s)
+    rescue RBS::ParsingError
+      nil
+    end
+
+    private def parse_union(class_name)
+      parsed = RBS::Parser.parse_type(class_name)
+      return nil unless parsed.is_a?(RBS::Types::Union)
       parsed.types.map(&:to_s)
     rescue RBS::ParsingError
       nil

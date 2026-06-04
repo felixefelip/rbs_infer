@@ -42,12 +42,12 @@ module RbsInfer
     # e substitui pelo tipo do attr se a última expressão do método
     # for uma chamada implícita a um attr conhecido.
 
-    def resolve_method_return_types_from_attrs(members, attr_types, method_type_resolver: nil, parsed_target: nil, method_param_types: {})
+    def resolve_method_return_types_from_attrs(members, attr_types, method_type_resolver: nil, parsed_target: nil, method_param_types: {}, ivar_types: {})
       return unless parsed_target
 
       known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
 
-      # Coletar mapeamento: method_name -> última expressão do body
+      # Collect mapping: [kind, method_name] -> last expression of the body
       method_last_exprs = {}
       collector = DefCollector.new
       parsed_target.tree.accept(collector)
@@ -63,15 +63,31 @@ module RbsInfer
         next unless last_stmt
 
         method_name = defn.name.to_s
-        member = members.find { |m| m.kind == :method && m.name == method_name }
+        # `def self.x` is collected as :class_method — matching the kind
+        # avoids updating the wrong member when instance and singleton
+        # share a name (e.g. expanded CurrentAttributes accessors).
+        kind = defn.receiver.is_a?(Prism::SelfNode) ? :class_method : :method
+        member = members.find { |m| m.kind == kind && m.name == method_name }
         next unless member
         next unless member.signature.end_with?("-> untyped")
         next if method_name == "initialize"
 
+        # 0. Direct ivar read/write as the last expression
+        #    (`def user; @user; end`, `def user=(v); @user = v; end`) →
+        #    type already inferred for the ivar (felixefelip/rbs_infer#19)
+        if last_stmt.is_a?(Prism::InstanceVariableReadNode) || last_stmt.is_a?(Prism::InstanceVariableWriteNode)
+          resolved = ivar_types[last_stmt.name.to_s.sub(/\A@/, "")]
+          if resolved && resolved != "untyped"
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
+            known_return_types[method_name] = resolved
+            next
+          end
+        end
+
         # 1. Literal na última expressão
         literal_type = infer_literal_type(last_stmt)
         if literal_type
-          member.signature = member.signature.sub(/-> untyped\z/, "-> #{literal_type}")
+          member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(literal_type)}")
           known_return_types[method_name] = literal_type
           next
         end
@@ -80,7 +96,7 @@ module RbsInfer
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.name == :new && last_stmt.receiver
           class_name = RbsInfer::Analyzer.extract_constant_path(last_stmt.receiver)
           if class_name
-            member.signature = member.signature.sub(/-> untyped\z/, "-> #{class_name}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(class_name)}")
             known_return_types[method_name] = class_name
             next
           end
@@ -88,7 +104,7 @@ module RbsInfer
 
         # 3. Chamada implícita a self (ex: `endereco` ou `process(arg)` sem receiver)
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver.nil?
-          method_last_exprs[method_name] = last_stmt.name.to_s
+          method_last_exprs[[kind, method_name]] = last_stmt.name.to_s
         end
 
         # 4. attr.mutation_method(expr) → return type é o tipo do attr (Array retorna self)
@@ -96,7 +112,7 @@ module RbsInfer
           receiver_name = implicit_self_method_name(last_stmt.receiver)
           if receiver_name && known_return_types[receiver_name]
             resolved = known_return_types[receiver_name]
-            member.signature = member.signature.sub(/-> untyped\z/, "-> #{resolved}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
             known_return_types[method_name] = resolved
             next
           end
@@ -107,7 +123,7 @@ module RbsInfer
           local_types = method_param_types[method_name] || {}
           resolved = infer_call_return_type(last_stmt, known_return_types, method_type_resolver, local_types: local_types)
           if resolved
-            member.signature = member.signature.sub(/-> untyped\z/, "-> #{resolved}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
             known_return_types[method_name] = resolved
             next
           end
@@ -116,16 +132,16 @@ module RbsInfer
 
       # Atualizar signatures de métodos que retornam attrs/métodos conhecidos
       members.each do |member|
-        next unless member.kind == :method
+        next unless [:method, :class_method].include?(member.kind)
         next unless member.signature.end_with?("-> untyped")
 
-        called_name = method_last_exprs[member.name]
+        called_name = method_last_exprs[[member.kind, member.name]]
         next unless called_name
 
         resolved_type = known_return_types[called_name]
         next unless resolved_type
 
-        member.signature = member.signature.sub(/-> untyped\z/, "-> #{resolved_type}")
+        member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved_type)}")
       end
 
       # Second pass: retry chain resolution for still-untyped methods
@@ -141,7 +157,8 @@ module RbsInfer
         next unless last_stmt
 
         method_name = defn.name.to_s
-        member = members.find { |m| m.kind == :method && m.name == method_name }
+        kind = defn.receiver.is_a?(Prism::SelfNode) ? :class_method : :method
+        member = members.find { |m| m.kind == kind && m.name == method_name }
         next unless member
         next unless member.signature.end_with?("-> untyped")
 
@@ -149,7 +166,7 @@ module RbsInfer
           local_types = method_param_types[method_name] || {}
           resolved = infer_call_return_type(last_stmt, known_return_types, method_type_resolver, local_types: local_types)
           if resolved
-            member.signature = member.signature.sub(/-> untyped\z/, "-> #{resolved}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
             known_return_types[method_name] = resolved
           end
         end
@@ -183,7 +200,14 @@ module RbsInfer
                      else
                        method_type_resolver.resolve(receiver_type, call_node.name.to_s, block_body_type: block_body_type)
                      end
-          resolved == "self" ? receiver_type : resolved
+          resolved = receiver_type if resolved == "self"
+          # `a&.b` with a nilable receiver: the nil flows into the result.
+          # (On a plain call the resolve is optimistic — `a.b` raises on
+          # nil — but safe-nav really returns nil.)
+          if resolved && call_node.safe_navigation? && receiver_type.end_with?("?") && !resolved.end_with?("?")
+            resolved = "#{resolved}?"
+          end
+          resolved
         end
       end
       # Normalize: instance methods returning their own class → self
