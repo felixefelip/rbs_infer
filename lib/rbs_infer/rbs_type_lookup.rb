@@ -105,6 +105,22 @@ module RbsInfer
         all_includes.concat(info.includes)
       end
 
+      # 1b. Demais diretórios sig/ por filename-match (módulos/shims
+      #     gerados por extensions, e.g. sig/rbs_infer_devise/
+      #     devise_scoped_helpers.rbs → DeviseScopedHelpers). Sem isso,
+      #     tipos herdados via include desses shims ficam invisíveis
+      #     (felixefelip/rbs_infer#19 follow-up: current_user do Devise).
+      if types.empty? && parent_superclass.nil?
+        class_path = RbsInfer.class_name_to_path(normalized)
+        Dir["sig/**/*.rbs"].each do |rbs_file|
+          next unless RbsInfer.file_matches_class_path?(rbs_file, class_path, ext: ".rbs")
+          info = class_info_from_file(rbs_file, normalized)
+          parent_superclass ||= info.superclass
+          info.types.each { |name, type| types[name] ||= type }
+          all_includes.concat(info.includes)
+        end
+      end
+
       # 2. Buscar em .gem_rbs_collection/
       gem_info = lookup_gem_rbs_collection_class(normalized)
       parent_superclass ||= gem_info.superclass
