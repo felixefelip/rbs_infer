@@ -5,6 +5,7 @@ require "fileutils"
 require "yaml"
 require "active_support/core_ext/string/inflections"
 require_relative "before_action_scanner"
+require_relative "../../rbs_parser_util"
 
 module RbsInfer
   module Extensions
@@ -154,13 +155,13 @@ module RbsInfer
           lines << "module #{MODULE_NAME}"
           scopes.each_with_index do |entry, idx|
             scope = entry[:scope]
-            klass = entry[:class_name]
+            resource = resource_type(entry[:class_name])
             lines << "" if idx.positive?
             # `current_*` is nil when unauthenticated; `authenticate_*!`
             # either returns the resource or throws :warden (redirect).
-            lines << "  def current_#{scope}: () -> #{klass}?"
+            lines << "  def current_#{scope}: () -> #{optional(resource)}"
             lines << ""
-            lines << "  def authenticate_#{scope}!: (?::Hash[::Symbol, untyped] opts) -> #{klass}"
+            lines << "  def authenticate_#{scope}!: (?::Hash[::Symbol, untyped] opts) -> #{wrap(resource)}"
             lines << ""
             lines << "  def #{scope}_signed_in?: () -> bool"
             lines << ""
@@ -182,7 +183,7 @@ module RbsInfer
           [
             "  # Receiver narrowed under `authenticate_#{scope}!`.",
             "  module #{authenticated_marker_name(scope)}",
-            "    def current_#{scope}: () -> #{entry[:class_name]}",
+            "    def current_#{scope}: () -> #{wrap(resource_type(entry[:class_name]))}",
             "",
             "    def #{scope}_signed_in?: () -> true",
             "  end",
@@ -191,6 +192,38 @@ module RbsInfer
 
         def authenticated_marker_name(scope)
           "#{scope.camelize}Authenticated"
+        end
+
+        # The resource comes from the DB (warden → serialize_from_session
+        # → finder), the same provenance that makes the fork's finders
+        # return `Model & Model::Validated`. Decorate identically — but
+        # only when rbs_rails actually emitted the marker (models without
+        # unconditional validations have no `::Validated`; referencing a
+        # missing type would poison the RBS environment).
+        def resource_type(class_name)
+          validated_marker?(class_name) ? "#{class_name} & #{class_name}::Validated" : class_name
+        end
+
+        def validated_marker?(class_name)
+          @validated_markers ||= {}
+          return @validated_markers[class_name] if @validated_markers.key?(class_name)
+
+          target = "#{class_name}::Validated"
+          @validated_markers[class_name] = Dir[File.join(app_dir, "sig/**/*.rbs")].any? do |rbs_file|
+            content = File.read(rbs_file)
+            next false unless content.include?("::Validated")
+
+            RbsParserUtil.build_declaration_index(RbsParserUtil.parse_declarations(content)).key?(target)
+          end
+        end
+
+        # Intersections need parens in method-type position and before `?`.
+        def wrap(type)
+          type.include?("&") ? "(#{type})" : type
+        end
+
+        def optional(type)
+          "#{wrap(type)}?"
         end
 
         def controller_rbs
