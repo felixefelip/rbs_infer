@@ -108,19 +108,26 @@ module RbsInfer
           end
 
           parsed.map.with_index do |(call, names), idx|
-            lines = names.flat_map { |name| accessor_defs(name) }
+            blocks = names.flat_map { |name| accessor_defs(name) }
             if idx == parsed.length - 1
-              lines.concat(initialize_def(defaults))
-              lines.concat(set_with_defs(all_names))
+              blocks.concat(initialize_def(defaults))
+              blocks.concat(set_with_defs(all_names))
             end
 
             indent = " " * call.location.start_column
             {
               start: call.location.start_offset,
               end: call.location.end_offset,
-              text: lines.join("\n#{indent}"),
+              text: join_blocks(blocks, indent),
             }
           end
+        end
+
+        # Each block is one multi-line def; blocks are separated by a
+        # blank line. Only non-blank lines get the indent prefix, so the
+        # output carries no trailing whitespace.
+        def join_blocks(blocks, indent)
+          blocks.map { |block| block.join("\n#{indent}") }.join("\n\n#{indent}")
         end
 
         # `attribute :user, :account, default: -> { ... }` →
@@ -171,24 +178,25 @@ module RbsInfer
 
         def accessor_defs(name)
           [
-            "def #{name}; @#{name}; end",
-            "def #{name}=(value); @#{name} = value; end",
-            "def self.#{name}; @#{name}; end",
-            "def self.#{name}=(value); @#{name} = value; end",
+            ["def #{name}", "  @#{name}", "end"],
+            ["def #{name}=(value)", "  @#{name} = value", "end"],
+            ["def self.#{name}", "  @#{name}", "end"],
+            ["def self.#{name}=(value)", "  @#{name} = value", "end"],
           ]
         end
 
         def initialize_def(defaults)
           return [] if defaults.empty?
 
-          ["def initialize"] +
-            defaults.map { |name, expr| "  @#{name} = #{expr}" } +
-            ["end"]
+          [
+            ["def initialize"] +
+              defaults.map { |name, expr| "  @#{name} = #{expr}" } +
+              ["end"],
+          ]
         end
 
         def set_with_defs(names)
           kwargs = names.map { |n| "#{n}: nil" }.join(", ")
-          writes = names.map { |n| "@#{n} = #{n}" }.join("; ")
 
           # `&block` keeps the signature call-compatible with real usage
           # (`Current.with(user: u) { ... }` restores attributes on exit).
@@ -196,7 +204,9 @@ module RbsInfer
           # return the block's result — without it the inferred return
           # would be the assigned value, leaking into callers' types.
           ["set", "with"].map do |method|
-            "def self.#{method}(#{kwargs}, &block); #{writes}; block.call; end"
+            ["def self.#{method}(#{kwargs}, &block)"] +
+              names.map { |n| "  @#{n} = #{n}" } +
+              ["  block.call", "end"]
           end
         end
 

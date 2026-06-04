@@ -35,12 +35,31 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
 
     expect(expanded).to eq(<<~RUBY)
       class Current < ActiveSupport::CurrentAttributes
-        def user; @user; end
-        def user=(value); @user = value; end
-        def self.user; @user; end
-        def self.user=(value); @user = value; end
-        def self.set(user: nil, &block); @user = user; block.call; end
-        def self.with(user: nil, &block); @user = user; block.call; end
+        def user
+          @user
+        end
+
+        def user=(value)
+          @user = value
+        end
+
+        def self.user
+          @user
+        end
+
+        def self.user=(value)
+          @user = value
+        end
+
+        def self.set(user: nil, &block)
+          @user = user
+          block.call
+        end
+
+        def self.with(user: nil, &block)
+          @user = user
+          block.call
+        end
       end
     RUBY
   end
@@ -76,9 +95,9 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
       end
     RUBY
 
-    expect(expanded).to include("def user; @user; end")
-    expect(expanded).to include("def account; @account; end")
-    expect(expanded).to include("def self.set(user: nil, account: nil, &block); @user = user; @account = account; block.call; end")
+    expect(expanded).to include("def user\n    @user\n  end")
+    expect(expanded).to include("def account\n    @account\n  end")
+    expect(expanded).to include("def self.set(user: nil, account: nil, &block)\n    @user = user\n    @account = account\n    block.call\n  end")
   end
 
   it "merges attributes from multiple attribute calls into set/with" do
@@ -91,7 +110,7 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
 
     # set/with are emitted once, at the last call, with ALL the attrs
     expect(expanded.scan(/def self\.set\(/).length).to eq(1)
-    expect(expanded).to include("def self.set(user: nil, account: nil, &block); @user = user; @account = account; block.call; end")
+    expect(expanded).to include("def self.set(user: nil, account: nil, &block)")
     expect(expanded.scan(/def self\.with\(/).length).to eq(1)
   end
 

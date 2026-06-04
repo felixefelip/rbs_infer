@@ -6,12 +6,31 @@
 # `Current.with(user: ...)` in ProfileFormatterJob), unlocking the type
 # of the derived method `self.author_full_name`.
 class Current < ActiveSupport::CurrentAttributes
-  def user; @user; end
-  def user=(value); @user = value; end
-  def self.user; @user; end
-  def self.user=(value); @user = value; end
-  def self.set(user: nil, &block); @user = user; block.call; end
-  def self.with(user: nil, &block); @user = user; block.call; end
+  def user
+    @user
+  end
+
+  def user=(value)
+    @user = value
+  end
+
+  def self.user
+    @user
+  end
+
+  def self.user=(value)
+    @user = value
+  end
+
+  def self.set(user: nil, &block)
+    @user = user
+    block.call
+  end
+
+  def self.with(user: nil, &block)
+    @user = user
+    block.call
+  end
 
   # `&.` because the attribute is honestly nilable (per-request reset);
   # inference propagates the safe-nav nil → `String?`.
