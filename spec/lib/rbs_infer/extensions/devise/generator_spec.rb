@@ -126,6 +126,53 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
     end
   end
 
+  it "emits the per-scope Authenticated marker inside the helpers module" do
+    _, rbs = generate("Rails.application.routes.draw { devise_for :users }")
+
+    expect(rbs).to include("module UserAuthenticated")
+    expect(rbs).to include("    def current_user: () -> User")
+    expect(rbs).to include("    def user_signed_in?: () -> true")
+  end
+
+  it "emits the callbacks sidecar for before_action-guarded controllers" do
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p(File.join(dir, "config"))
+      File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
+      FileUtils.mkdir_p(File.join(dir, "app/controllers"))
+      File.write(File.join(dir, "app/controllers/posts_controller.rb"), <<~RUBY)
+        class PostsController < ApplicationController
+          before_action :authenticate_user!
+
+          def index; end
+        end
+      RUBY
+
+      output_dir = File.join(dir, "sig/rbs_infer_devise")
+      described_class.new(app_dir: dir, output_dir: output_dir).generate_all
+
+      sidecar = YAML.safe_load(File.read(File.join(output_dir, ".steep_callbacks.yml")))
+      expect(sidecar["callbacks"]).to eq([
+        {
+          "class" => "PostsController",
+          "applies_self" => "PostsController & DeviseScopedHelpers::UserAuthenticated",
+          "runs_before" => ["index"],
+        },
+      ])
+    end
+  end
+
+  it "omits the callbacks sidecar when no controller is guarded" do
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p(File.join(dir, "config"))
+      File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
+
+      output_dir = File.join(dir, "sig/rbs_infer_devise")
+      described_class.new(app_dir: dir, output_dir: output_dir).generate_all
+
+      expect(File.exist?(File.join(output_dir, ".steep_callbacks.yml"))).to be(false)
+    end
+  end
+
   it "dedupes repeated devise_for of the same resource" do
     scopes, = generate(<<~RUBY)
       Rails.application.routes.draw do

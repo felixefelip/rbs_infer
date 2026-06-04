@@ -2,7 +2,9 @@
 
 require "prism"
 require "fileutils"
+require "yaml"
 require "active_support/core_ext/string/inflections"
+require_relative "before_action_scanner"
 
 module RbsInfer
   module Extensions
@@ -55,7 +57,35 @@ module RbsInfer
           FileUtils.mkdir_p(output_dir)
           File.write(File.join(output_dir, "devise_scoped_helpers.rbs"), helpers_rbs(scopes))
           File.write(File.join(output_dir, "application_controller.rbs"), controller_rbs)
+          write_callbacks_sidecar(scopes)
           scopes
+        end
+
+        # `.steep_callbacks.yml` (felixefelip/steep#27): inside actions
+        # guarded by `before_action :authenticate_<scope>!`, `self` is
+        # narrowed with the `<Scope>Authenticated` marker — so
+        # `current_<scope>` is proven non-nil right at method entry, the
+        # same mechanism as the AR after-validation narrowing.
+        def write_callbacks_sidecar(scopes)
+          scanner = BeforeActionScanner.new(app_dir: app_dir, scopes: scopes.map { |s| s[:scope] })
+          guarded = scanner.guarded_controllers
+          sidecar_path = File.join(output_dir, ".steep_callbacks.yml")
+
+          if guarded.empty?
+            FileUtils.rm_f(sidecar_path)
+            return
+          end
+
+          entries = guarded.map do |entry|
+            marker = "#{MODULE_NAME}::#{authenticated_marker_name(entry[:scope])}"
+            {
+              "class" => entry[:class_name],
+              "applies_self" => "#{entry[:class_name]} & #{marker}",
+              "runs_before" => entry[:actions],
+            }
+          end
+
+          File.write(sidecar_path, { "version" => 1, "callbacks" => entries }.to_yaml)
         end
 
         # Extracts [{scope:, class_name:}, ...] from `devise_for` calls.
@@ -136,8 +166,31 @@ module RbsInfer
             lines << ""
             lines << "  def #{scope}_session: () -> untyped"
           end
+          scopes.each do |entry|
+            lines << ""
+            lines.concat(authenticated_marker_lines(entry))
+          end
           lines << "end"
           lines.join("\n") + "\n"
+        end
+
+        # Marker intersected into `self` by the callbacks sidecar (and
+        # available to any future `unconditional.self` postcondition):
+        # under `authenticate_<scope>!`, the resource is proven present.
+        def authenticated_marker_lines(entry)
+          scope = entry[:scope]
+          [
+            "  # Receiver narrowed under `authenticate_#{scope}!`.",
+            "  module #{authenticated_marker_name(scope)}",
+            "    def current_#{scope}: () -> #{entry[:class_name]}",
+            "",
+            "    def #{scope}_signed_in?: () -> true",
+            "  end",
+          ]
+        end
+
+        def authenticated_marker_name(scope)
+          "#{scope.camelize}Authenticated"
         end
 
         def controller_rbs
