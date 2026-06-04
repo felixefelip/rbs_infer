@@ -15,5 +15,14 @@ class ProfileFormatterJob < ApplicationJob
     # `docs/tasks/type_inference_gaps.md`.
     ProfileFormatter.new(nickname: "ada").call
     ProfileFormatter.new(nickname: nil).call
+
+    # Call-site kwarg de `Current.with` (rbs_infer#19): segunda fonte de
+    # tipo para o atributo `user`, na forma com bloco (restaura ao sair).
+    # `User.first` → `User?` exercita o merge nilável no pool da ivar.
+    # (`User.first!` retornaria `User & User::Validated`, cujo union com
+    # `User` é deliberadamente não simplificado — ver IvarTypeSet.)
+    Current.with(user: User.first) do
+      ProfileFormatter.new(nickname: "ada").call
+    end
   end
 end

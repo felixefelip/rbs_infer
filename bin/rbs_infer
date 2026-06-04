@@ -100,6 +100,21 @@ generate = lambda do |inputs_to_process, silent: false|
 
       FileUtils.mkdir_p(File.dirname(output_path))
 
+      # Sidecar de debug: visão expandida (pseudo-código) que alimentou a
+      # inferência, no precedente do `.steep_contracts.yml` — vive em
+      # `sig/` mas é inerte para RBS/Steep (o glob só carrega `*.rbs`).
+      # Ver felixefelip/rbs_infer#19.
+      if analyzer.expanded_source
+        expanded_path = File.join(output_dir, ".expanded", source_path)
+        FileUtils.mkdir_p(File.dirname(expanded_path))
+        header = <<~HEADER
+          # ⚠️  Gerado por rbs_infer para debug — NUNCA é carregado em runtime.
+          #     Visão expandida de #{source_path} (macros desaçucaradas em pseudo-código).
+          #     Regenerado a cada run; não edite.
+        HEADER
+        File.write(expanded_path, header + analyzer.expanded_source)
+      end
+
       # `RbsBuilder#build` already terminates with a single `\n`, so
       # `rbs` ends in a newline. Don't double it up.
       new_content = rbs.end_with?("\n") ? rbs : "#{rbs}\n"

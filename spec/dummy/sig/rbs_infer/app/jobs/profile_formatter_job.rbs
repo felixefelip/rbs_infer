@@ -1,3 +1,3 @@
 class ProfileFormatterJob < ApplicationJob
-  def perform: () -> String
+  def perform: () -> untyped
 end

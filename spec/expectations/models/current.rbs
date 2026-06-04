@@ -1,0 +1,10 @@
+class Current < ActiveSupport::CurrentAttributes
+  @user: (User | (User & User::Validated))?
+  def self.user: () -> (User | (User & User::Validated))?
+  def self.user=: (User? value) -> (User | (User & User::Validated))?
+  def self.set: (?user: (User | (User & User::Validated))?) ?{ (untyped) -> untyped } -> untyped
+  def self.with: (?user: (User & User::Validated)?) ?{ (untyped) -> untyped } -> untyped
+  def self.author_full_name: () -> String?
+  def user: () -> (User | (User & User::Validated))?
+  def user=: (User? value) -> (User | (User & User::Validated))?
+end

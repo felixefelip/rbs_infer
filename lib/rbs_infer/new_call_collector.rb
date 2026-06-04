@@ -325,10 +325,27 @@ module RbsInfer
     def resolve_method_chain(node)
       return nil unless @method_type_resolver
 
+      # Receiver constante → lookup singleton (`Account.first`), não de
+      # instância. `self` no RBS de um método de classe é a própria classe
+      # (mesma convenção de Analyzer#infer_attr_types_from_initialize).
+      if node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
+        class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
+        return nil unless class_name
+
+        resolved = @method_type_resolver.resolve_class_method(class_name, node.name.to_s)
+        return resolved == "self" ? class_name : resolved
+      end
+
       receiver_type = resolve_receiver_type(node.receiver)
       return nil unless receiver_type && receiver_type != "untyped"
 
-      @method_type_resolver.resolve(receiver_type, node.name.to_s)
+      resolved = @method_type_resolver.resolve(receiver_type, node.name.to_s)
+      # `a&.b` com receiver nilável: o nil flui pro resultado (em chamada
+      # comum o resolve é otimista — `a.b` levanta em nil).
+      if resolved && node.safe_navigation? && receiver_type.end_with?("?") && !resolved.end_with?("?")
+        resolved = "#{resolved}?"
+      end
+      resolved
     end
 
     # Resolver o tipo do receiver de um method call
@@ -352,6 +369,12 @@ module RbsInfer
         # desconhecido, mantendo a convenção nil-returning deste método.
         resolved = current_self_type
         resolved == "untyped" ? nil : resolved
+      when Prism::ConstantReadNode, Prism::ConstantPathNode
+        # Receiver constante → chamada de método singleton da classe
+        # (`Current.user = x`, `Notifier.notify(...)`). O nome da classe é
+        # o próprio "tipo" do receiver para fins de match_class?
+        # (felixefelip/rbs_infer#19).
+        RbsInfer::Analyzer.extract_constant_path(node)
       end
     end
 
