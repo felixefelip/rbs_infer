@@ -245,6 +245,77 @@ RSpec.describe RbsInfer::Extensions::Devise::BeforeActionScanner do
     end
   end
 
+  describe "#populated_constants" do
+    def scan_populated(scopes: ["user"], **controllers)
+      Dir.mktmpdir do |dir|
+        controllers.each do |path, source|
+          full = File.join(dir, "app/controllers", path.to_s)
+          FileUtils.mkdir_p(File.dirname(full))
+          File.write(full, source)
+        end
+
+        described_class.new(app_dir: dir, scopes: scopes).populated_constants
+      end
+    end
+
+    let(:application_controller) do
+      <<~RUBY
+        class ApplicationController < ActionController::Base
+          before_action :authenticate_user!
+          before_action :set_authenticated_user
+
+          private
+
+          def set_authenticated_user
+            Current.user = current_user
+          end
+        end
+      RUBY
+    end
+
+    it "detects Const.attr = current_<scope> in a guarded handler" do
+      populated = scan_populated("application_controller.rb" => application_controller)
+
+      expect(populated).to eq([
+        { const_name: "Current", attr: "user", scope: "user", defining_class: "ApplicationController" },
+      ])
+    end
+
+    it "ignores writes whose RHS is not the guard-provided helper" do
+      populated = scan_populated(
+        "application_controller.rb" => <<~RUBY
+          class ApplicationController < ActionController::Base
+            before_action :authenticate_user!
+            before_action :set_tenant
+
+            private
+
+            def set_tenant
+              Current.tenant = Tenant.find(params[:tenant_id])
+            end
+          end
+        RUBY
+      )
+
+      expect(populated).to be_empty
+    end
+
+    it "drops the narrowing when the handler is skipped anywhere" do
+      populated = scan_populated(
+        "application_controller.rb" => application_controller,
+        "public_controller.rb" => <<~RUBY
+          class PublicController < ApplicationController
+            skip_before_action :set_authenticated_user
+
+            def landing; end
+          end
+        RUBY
+      )
+
+      expect(populated).to be_empty
+    end
+  end
+
   it "matches guards per scope" do
     guarded = scan(
       scopes: %w[user admin],

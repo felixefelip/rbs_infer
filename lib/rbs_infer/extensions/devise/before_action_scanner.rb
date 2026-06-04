@@ -24,7 +24,7 @@ module RbsInfer
       # Devise's own controllers manage authentication themselves.
       class BeforeActionScanner
         ControllerInfo = Struct.new(
-          :class_name, :superclass_name, :actions, :defs,
+          :class_name, :superclass_name, :actions, :defs, :def_nodes,
           :chain, :skips, keyword_init: true
         )
 
@@ -99,7 +99,77 @@ module RbsInfer
           end.sort_by { |entry| entry[:class_name] }
         end
 
+        # Constant-population writes inside guarded handlers:
+        # `Current.user = current_user` in `set_authenticated_user` means
+        # that, after the handler, `Current.user` is proven present — the
+        # input for `applies_constants` entries (felixefelip/steep#41).
+        #
+        # Returns [{const_name:, attr:, scope:, defining_class:}, ...].
+        #
+        # Soundness: a `skip_before_action` of the populating handler
+        # anywhere in the app drops its narrowing (a subclass action could
+        # run without the constant set).
+        def populated_constants
+          controllers = parse_controllers
+          skipped_handlers = collect_skipped_handler_names(controllers)
+
+          guarded_handlers.flat_map do |entry|
+            info = controllers[entry[:class_name]]
+            next [] unless info
+
+            entry[:handlers].flat_map do |handler|
+              next [] if skipped_handlers.include?(handler)
+
+              defn = info.def_nodes[handler]
+              next [] unless defn
+
+              constant_writes(defn, entry[:scope]).map do |write|
+                write.merge(defining_class: entry[:class_name])
+              end
+            end
+          end.uniq
+        end
+
+        # True when `class_name` is `ancestor` or descends from it within
+        # the app's controllers.
+        def descends_from?(class_name, ancestor)
+          controllers = parse_controllers
+          current = controllers[class_name]
+          visited = Set.new
+
+          while current
+            return true if current.class_name == ancestor
+            break if visited.include?(current.class_name)
+
+            visited << current.class_name
+            current = controllers[current.superclass_name]
+          end
+
+          false
+        end
+
         private
+
+        # `Const.attr = current_<scope>` writes in a def body. The RHS must
+        # be the guard-provided helper — anything else (params, finds) has
+        # no proven-present guarantee.
+        def constant_writes(defn, scope)
+          RbsInfer::Analyzer.find_all_nodes(defn) { |n| n.is_a?(Prism::CallNode) }.filter_map do |call|
+            name = call.name.to_s
+            next unless name.end_with?("=") && call.name != :==
+
+            receiver = call.receiver
+            next unless receiver.is_a?(Prism::ConstantReadNode) || receiver.is_a?(Prism::ConstantPathNode)
+
+            rhs = call.arguments&.arguments&.first
+            next unless rhs.is_a?(Prism::CallNode) && rhs.receiver.nil? && rhs.name.to_s == "current_#{scope}"
+
+            const = RbsInfer::Analyzer.extract_constant_path(receiver)
+            next unless const
+
+            { const_name: const, attr: name.chomp("="), scope: scope }
+          end
+        end
 
         def parse_controllers
           @parse_controllers ||= begin
@@ -127,7 +197,7 @@ module RbsInfer
 
           info = ControllerInfo.new(
             class_name: name, superclass_name: superclass,
-            actions: [], defs: [], chain: [], skips: []
+            actions: [], defs: [], def_nodes: {}, chain: [], skips: []
           )
 
           statements = case klass.body
@@ -142,6 +212,7 @@ module RbsInfer
             when Prism::DefNode
               next unless stmt.receiver.nil?
               info.defs << stmt.name.to_s
+              info.def_nodes[stmt.name.to_s] = stmt
               info.actions << stmt.name.to_s if visibility == :public
             when Prism::CallNode
               case stmt.name
@@ -152,7 +223,7 @@ module RbsInfer
                 info.chain << entry if entry
               when :skip_before_action
                 skip = extract_callback(stmt)
-                info.skips << skip if skip&.fetch(:scope)
+                info.skips << skip if skip
               end
             end
           end
@@ -211,6 +282,10 @@ module RbsInfer
           controllers.each_value.flat_map { |info| info.skips.map { |s| s[:scope] } }.compact.to_set
         end
 
+        def collect_skipped_handler_names(controllers)
+          controllers.each_value.flat_map { |info| info.skips.flat_map { |s| s[:handlers] } }.to_set
+        end
+
         # Walks up from the controller that sees the callback to the class
         # that defines the handler method.
         def defining_class(handler, info, controllers, visited = Set.new)
@@ -254,6 +329,7 @@ module RbsInfer
           visited << info.class_name
 
           info.skips.each do |skip|
+            next unless skip[:scope]
             dropped = if skip[:only]
                         skip[:only]
                       elsif skip[:except]
