@@ -33,7 +33,7 @@ module RbsInfer
         next if m.name == "initialize"
         resolved = known_return_types[m.name]
         if resolved && resolved != "untyped"
-          m.signature = m.signature.sub(/-> untyped$/, "-> #{resolved}")
+          m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
         end
       end
 
@@ -63,7 +63,7 @@ module RbsInfer
                 steep_type = "#{steep_type}?"
               end
 
-              m.signature = m.signature.sub(/-> untyped$/, "-> #{steep_type}")
+              m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsParserUtil.parenthesize_union(steep_type)}")
             end
           end
 
@@ -164,10 +164,6 @@ module RbsInfer
         end
       end
 
-      # Ivars Steep saw as nil-only that the fallback didn't enrich:
-      # preserve the previous behavior (`@x: nil`).
-      steep_nil_only.each { |name| ivar_types[name] ||= "nil" }
-
       ivar_types
     end
 
@@ -266,6 +262,7 @@ module RbsInfer
     # Complex chain resolution is delegated to Steep.
     def basic_value_type(node, known_return_types)
       case node
+      when Prism::NilNode then "nil"
       when Prism::StringNode, Prism::InterpolatedStringNode then "String"
       when Prism::IntegerNode then "Integer"
       when Prism::FloatNode then "Float"
