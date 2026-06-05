@@ -193,7 +193,7 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
     end
   end
 
-  it "emits applies_constants and the populated marker when a guarded handler populates Current" do
+  it "does not emit CurrentAttributes narrowing (that's the rails generator's domain)" do
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, "config"))
       File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
@@ -210,31 +210,24 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
           end
         end
       RUBY
-      File.write(File.join(dir, "app/controllers/posts_controller.rb"), <<~RUBY)
-        class PostsController < ApplicationController
-          def index; end
-        end
-      RUBY
 
       output_dir = File.join(dir, "sig/rbs_infer_devise")
       described_class.new(app_dir: dir, output_dir: output_dir).generate_all
 
-      sidecar = YAML.safe_load(File.read(File.join(output_dir, ".steep_callbacks.yml")))
-      posts = sidecar["callbacks"].find { |e| e["class"] == "PostsController" }
-      expect(posts["applies_constants"]).to eq(
-        "Current" => "singleton(Current) & Current::UserPopulated"
-      )
+      sidecar = File.read(File.join(output_dir, ".steep_callbacks.yml"))
+      expect(sidecar).not_to include("applies_constants")
+      expect(File.exist?(File.join(output_dir, "populated_markers.rbs"))).to be(false)
+    end
+  end
 
-      # The handler itself does NOT get applies_constants (Current isn't
-      # populated yet at its entry)
-      handler_entry = sidecar["callbacks"].find { |e| e["runs_before"] == ["set_authenticated_user"] }
-      expect(handler_entry).not_to have_key("applies_constants")
+  it "exposes the proven resource types for downstream generators" do
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p(File.join(dir, "config"))
+      File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
 
-      markers = File.read(File.join(output_dir, "populated_markers.rbs"))
-      expect(markers).to include("class Current")
-      expect(markers).to include("module UserPopulated")
-      expect(markers).to include("def user: () -> User")
-      expect { RBS::Parser.parse_signature(markers) }.not_to raise_error
+      generator = described_class.new(app_dir: dir, output_dir: File.join(dir, "sig"))
+
+      expect(generator.proven_resource_types).to eq("user" => "User")
     end
   end
 

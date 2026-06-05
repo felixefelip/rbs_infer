@@ -4,7 +4,7 @@ require "prism"
 
 module RbsInfer
   module Extensions
-    module Devise
+    module Rails
       # Scans app/controllers for `before_action :authenticate_<scope>!`
       # declarations and resolves what runs under the guard — the input
       # for the `.steep_callbacks.yml` sidecar (felixefelip/steep#27):

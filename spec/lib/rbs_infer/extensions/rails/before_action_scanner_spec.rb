@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "rbs_infer/extensions/devise/before_action_scanner"
+require "rbs_infer/extensions/rails/before_action_scanner"
 require "tmpdir"
 
-RSpec.describe RbsInfer::Extensions::Devise::BeforeActionScanner do
+RSpec.describe RbsInfer::Extensions::Rails::BeforeActionScanner do
   # Bare `"file.rb" => source` pairs land in **controllers (string keys
   # are fine through a double splat); `scopes:` stays a regular kwarg.
   def scan(scopes: ["user"], **controllers)
