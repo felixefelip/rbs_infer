@@ -1,10 +1,20 @@
 class Current < ActiveSupport::CurrentAttributes
   @user: (User | (User & User::Validated))?
+  @author_name: String?
+  module GeneratedAttributeMethods
+    def user=: ((User | (User & User::Validated))? value) -> (User | (User & User::Validated))?
+  end
+  include GeneratedAttributeMethods
+  extend GeneratedAttributeMethods
   def self.user: () -> (User | (User & User::Validated))?
-  def self.user=: (User? value) -> (User | (User & User::Validated))?
-  def self.set: (?user: (User | (User & User::Validated))?) ?{ (untyped) -> untyped } -> untyped
-  def self.with: (?user: (User & User::Validated)?) ?{ (untyped) -> untyped } -> untyped
+  def self.user=: (User? value) -> String?
+  def self.author_name: () -> String?
+  def self.author_name=: (String? value) -> String?
+  def self.set: (?user: (User | (User & User::Validated))?, ?author_name: String?) ?{ (untyped) -> untyped } -> untyped
+  def self.with: (?user: (User & User::Validated)?, ?author_name: String?) ?{ (untyped) -> untyped } -> untyped
   def self.author_full_name: () -> String?
   def user: () -> (User | (User & User::Validated))?
-  def user=: (User? value) -> (User | (User & User::Validated))?
+  def author_name: () -> String?
+  def author_name=: (String? value) -> String?
+  def user=: (User? value) -> String?
 end

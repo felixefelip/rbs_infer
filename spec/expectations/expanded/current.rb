@@ -10,10 +10,6 @@ class Current < ActiveSupport::CurrentAttributes
     @user
   end
 
-  def user=(value)
-    @user = value
-  end
-
   def self.user
     @user
   end
@@ -22,14 +18,42 @@ class Current < ActiveSupport::CurrentAttributes
     @user = value
   end
 
-  def self.set(user: nil, &block)
+  def author_name
+    @author_name
+  end
+
+  def author_name=(value)
+    @author_name = value
+  end
+
+  def self.author_name
+    @author_name
+  end
+
+  def self.author_name=(value)
+    @author_name = value
+  end
+
+  def self.set(user: nil, author_name: nil, &block)
     @user = user
+    @author_name = author_name
     block.call
   end
 
-  def self.with(user: nil, &block)
+  def self.with(user: nil, author_name: nil, &block)
     @user = user
+    @author_name = author_name
     block.call
+  end
+
+  # Rails-guides pattern: accessor override calling `super` and deriving
+  # another attribute. The expander skips generating this accessor and
+  # desugars the `super` into the ivar write; the generated RBS declares
+  # the generated accessor in an included GeneratedAttributeMethods
+  # module (mirroring Rails' runtime) so `super` resolves under strict.
+  def user=(value)
+    @user = value
+    self.author_name = value&.full_name
   end
 
   # `&.` because the attribute is honestly nilable (per-request reset);

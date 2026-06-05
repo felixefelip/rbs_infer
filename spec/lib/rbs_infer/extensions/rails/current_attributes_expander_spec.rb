@@ -204,6 +204,35 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
     expect(expanded).to include("def self.reset\n    super\n  end")
   end
 
+  describe ".overridden_accessors" do
+    it "lists attribute accessors the class body overrides" do
+      overrides = described_class.overridden_accessors(<<~RUBY)
+        class Current < ActiveSupport::CurrentAttributes
+          attribute :user, :account
+
+          def user=(value)
+            super
+          end
+
+          def self.account
+            super
+          end
+
+          def unrelated_method; end
+        end
+      RUBY
+
+      expect(overrides).to contain_exactly(
+        { method: "user=", attr: "user", singleton: false },
+        { method: "account", attr: "account", singleton: true }
+      )
+    end
+
+    it "returns [] for non-CurrentAttributes sources" do
+      expect(described_class.overridden_accessors("class Foo; end")).to eq([])
+    end
+  end
+
   it "does not expand attribute calls on unrelated superclasses" do
     expect(expand(<<~RUBY)).to be_nil
       # CurrentAttributes mentioned only in this comment

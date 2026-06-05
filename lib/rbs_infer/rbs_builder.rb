@@ -7,7 +7,7 @@ module RbsInfer
       @is_module = is_module
     end
 
-    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {}, markers: [])
+    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {}, markers: [], nested_modules: [])
       parts = @target_class.split("::")
       class_name = parts.pop
       modules = parts
@@ -27,6 +27,21 @@ module RbsInfer
       # Emitir instance variables tipadas (@post: Post, @posts: ...)
       ivar_types.each do |name, type|
         lines << "#{member_indent}@#{name}: #{type}"
+      end
+
+      # Nested modules included+extended into the class (e.g.
+      # `GeneratedAttributeMethods` mirroring Rails' CurrentAttributes
+      # runtime chain so overrides' `super` resolves —
+      # felixefelip/rbs_infer#19).
+      nested_modules.each do |mod|
+        lines << "#{member_indent}module #{mod[:name]}"
+        mod[:methods].each_with_index do |m, i|
+          lines << "" if i.positive?
+          lines << "#{member_indent}  def #{m[:signature]}"
+        end
+        lines << "#{member_indent}end"
+        lines << "#{member_indent}include #{mod[:name]}"
+        lines << "#{member_indent}extend #{mod[:name]}"
       end
 
       # Emitir extend para módulos estendidos (e.g. ActiveSupport::Concern)

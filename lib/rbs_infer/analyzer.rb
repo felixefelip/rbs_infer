@@ -61,6 +61,7 @@ module RbsInfer
 
     # Parsear o arquivo-alvo uma única vez e reutilizar em todo o pipeline
     source = File.read(@target_file)
+    @original_source = source
 
     # Desugar macros into plain-Ruby pseudo-code BEFORE the parse, so the
     # whole pipeline sees the expanded view (felixefelip/rbs_infer#19).
@@ -165,7 +166,33 @@ module RbsInfer
 
     namespace_classes = resolve_namespace_classes
     rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module)
-    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, markers: markers)
+    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, markers: markers, nested_modules: generated_accessor_modules(ivar_types))
+  end
+
+  # CurrentAttributes accessor overrides call `super`, which at runtime
+  # dispatches to the `generated_attribute_methods` module Rails includes
+  # in the class. Declaring the generated accessor in an included module
+  # in the RBS mirrors that ancestor chain: the class def overrides it
+  # and `super` resolves (no UnexpectedSuper under the strict template) —
+  # felixefelip/rbs_infer#19.
+  def generated_accessor_modules(ivar_types)
+    return [] unless @expanded_source
+
+    overrides = Extensions::Rails::CurrentAttributesExpander.overridden_accessors(@original_source.to_s)
+    return [] if overrides.empty?
+
+    methods = overrides.uniq { |ov| ov[:method] }.map do |ov|
+      type = RbsParserUtil.parenthesize_compound(ivar_types[ov[:attr]] || "untyped")
+      signature =
+        if ov[:method].end_with?("=")
+          "#{ov[:method]}: (#{type} value) -> #{type}"
+        else
+          "#{ov[:method]}: () -> #{type}"
+        end
+      { signature: signature }
+    end
+
+    [{ name: "GeneratedAttributeMethods", methods: methods }]
   end
 
   # Builds the marker class list to inject into the generated RBS.

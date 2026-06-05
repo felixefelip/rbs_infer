@@ -72,6 +72,34 @@ module RbsInfer
           apply_replacements(source, replacements)
         end
 
+        # Attribute accessors the class body overrides (the `def user=;
+        # super; ...; end` pattern). Consumed by the Analyzer to declare
+        # the generated accessor in an included module in the RBS — at
+        # runtime Rails defines them in `generated_attribute_methods`
+        # (an included module) precisely so override + super work; the
+        # RBS mirrors that chain so `super` resolves (no UnexpectedSuper
+        # under the strict template).
+        #
+        # Returns [{ method:, attr:, singleton: }, ...].
+        def overridden_accessors(source)
+          return [] unless source.include?("CurrentAttributes")
+
+          result = Prism.parse(source)
+          return [] unless result.success?
+
+          RbsInfer::Analyzer.find_all_nodes(result.value) { |n| n.is_a?(Prism::ClassNode) }.flat_map do |klass|
+            next [] unless current_attributes_subclass?(klass)
+
+            calls = attribute_calls_in(klass)
+            next [] if calls.empty?
+
+            names = calls.flat_map { |call| parse_attribute_call(source, call).first }
+            accessor_overrides(klass, names).keys.map do |(singleton, method_name)|
+              { method: method_name, attr: method_name.chomp("="), singleton: singleton }
+            end
+          end
+        end
+
         def current_attributes_subclass?(klass)
           superclass = klass.superclass
           return false unless superclass

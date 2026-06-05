@@ -157,6 +157,10 @@ module RbsInfer
         next unless last_stmt
 
         method_name = defn.name.to_s
+        # initialize keeps `-> void` (normalized by RbsBuilder) — without
+        # this skip, a trailing `self.x = param` would leak the RHS type
+        # via the attribute-write rule.
+        next if method_name == "initialize"
         kind = defn.receiver.is_a?(Prism::SelfNode) ? :class_method : :method
         member = members.find { |m| m.kind == kind && m.name == method_name }
         next unless member
@@ -175,6 +179,19 @@ module RbsInfer
 
     private
 
+    # RHS type of an attribute-write call. `a&.x = v` evaluates to nil
+    # when the receiver is nil, so the safe-navigation form is nilable.
+    def assignment_rhs_type(call_node, known_return_types, method_type_resolver, local_types:)
+      rhs = call_node.arguments&.arguments&.last
+      return nil unless rhs
+
+      type = infer_literal_type(rhs) ||
+             resolve_receiver_type(rhs, known_return_types, method_type_resolver, local_types: local_types)
+      return nil if type.nil? || type == "untyped"
+
+      call_node.safe_navigation? ? RbsParserUtil.nilablize(type) : type
+    end
+
     # Extrai nome do método quando o receiver é self implícito ou explícito
     def implicit_self_method_name(node)
       return unless node.is_a?(Prism::CallNode)
@@ -183,7 +200,18 @@ module RbsInfer
 
     # Resolve return type de receiver.method() ou method() com args
     def infer_call_return_type(call_node, known_return_types, method_type_resolver, local_types: {})
-      result = if call_node.receiver.nil?
+      result = if call_node.attribute_write?
+        # Assignment expression (`obj.attr = rhs`, `obj[i] = rhs`): at
+        # runtime it ALWAYS evaluates to the RHS — Ruby discards the
+        # setter's return value on assignment syntax (only `send`/`super`
+        # observe it). Resolving via the setter's declared return here
+        # leaks the wrong layer and mistypes the enclosing method.
+        # Mirrors Steep's type_construction rule (soutaro/steep#243,
+        # refined by #945); Prism's parser-level `attribute_write` flag
+        # is the exact syntactic boundary (explicit `a.[]=(i, v)` calls
+        # and `send(:x=, v)` don't carry it).
+        assignment_rhs_type(call_node, known_return_types, method_type_resolver, local_types: local_types)
+      elsif call_node.receiver.nil?
         # Chamada sem receiver (self implícito) com argumentos
         known_return_types[call_node.name.to_s]
       elsif call_node.name == :new && call_node.receiver
