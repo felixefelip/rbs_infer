@@ -62,7 +62,10 @@ module RbsInfer
             calls = attribute_calls_in(klass)
             next if calls.empty?
 
-            replacements.concat(build_replacements(source, calls))
+            attribute_names = calls.flat_map { |call| parse_attribute_call(source, call).first }
+            overrides = accessor_overrides(klass, attribute_names)
+            replacements.concat(build_replacements(source, calls, overrides))
+            replacements.concat(super_replacements(source, overrides))
           end
           return nil if replacements.empty?
 
@@ -96,7 +99,12 @@ module RbsInfer
         # Each call becomes the 4 accessors of its attributes; the last
         # call also gets `initialize` (when there is a `default:`) and
         # `set`/`with` with kwargs for all attributes of the class.
-        def build_replacements(source, calls)
+        #
+        # Accessors the class body overrides (the Rails-guides pattern
+        # `def user=(value); super; ...; end`) are NOT generated —
+        # duplicating them would be invalid RBS. The override itself has
+        # its `super` desugared by `super_replacements`.
+        def build_replacements(source, calls, overrides)
           all_names = []
           defaults = {}
 
@@ -108,7 +116,7 @@ module RbsInfer
           end
 
           parsed.map.with_index do |(call, names), idx|
-            blocks = names.flat_map { |name| accessor_defs(name) }
+            blocks = names.flat_map { |name| accessor_defs(name, overrides) }
             if idx == parsed.length - 1
               blocks.concat(initialize_def(defaults))
               blocks.concat(set_with_defs(all_names))
@@ -121,6 +129,74 @@ module RbsInfer
               text: join_blocks(blocks, indent),
             }
           end
+        end
+
+        # Attribute accessor defs the class body declares itself (overrides
+        # of the generated accessors), keyed [singleton?, method_name] →
+        # DefNode. Other defs are NOT included — their `super` (if any)
+        # has nothing to do with the generated accessors.
+        def accessor_overrides(klass, attribute_names)
+          accessor_names = attribute_names.flat_map { |n| [n, "#{n}="] }.to_set
+
+          statements = case klass.body
+                       when Prism::StatementsNode then klass.body.body
+                       when nil then []
+                       else [klass.body]
+                       end
+
+          statements.each_with_object({}) do |stmt, acc|
+            next unless stmt.is_a?(Prism::DefNode)
+            next unless accessor_names.include?(stmt.name.to_s)
+            acc[[stmt.receiver.is_a?(Prism::SelfNode), stmt.name.to_s]] = stmt
+          end
+        end
+
+        # At runtime `super` inside an accessor override dispatches to the
+        # generated accessor (Rails defines them in an included
+        # `generated_attribute_methods` module). In the expanded view the
+        # generated accessor is the plain ivar read/write, so the `super`
+        # desugars to exactly that:
+        #
+        #   def user=(value)        def user=(value)
+        #     super(value)     →      @user = value
+        #     ...                     ...
+        def super_replacements(source, overrides)
+          overrides.filter_map do |(_singleton, method_name), defn|
+            attr = method_name.chomp("=")
+            setter = method_name.end_with?("=")
+
+            supers = RbsInfer::Analyzer.find_all_nodes(defn) do |n|
+              n.is_a?(Prism::SuperNode) || n.is_a?(Prism::ForwardingSuperNode)
+            end
+
+            supers.map do |sup|
+              text = if setter
+                       "@#{attr} = #{super_argument_source(source, sup, defn)}"
+                     else
+                       "@#{attr}"
+                     end
+              { start: sup.location.start_offset, end: sup.location.end_offset, text: text }
+            end
+          end.flatten
+        end
+
+        # `super(expr)` → expr source; bare `super` forwards the def's
+        # params — for the accessor signature that's the single value param.
+        def super_argument_source(source, sup, defn)
+          if sup.is_a?(Prism::SuperNode) && sup.arguments
+            args = sup.arguments
+            source.byteslice(args.location.start_offset, args.location.end_offset - args.location.start_offset)
+          else
+            first_param_name(defn) || "value"
+          end
+        end
+
+        def first_param_name(defn)
+          params = defn.parameters
+          return nil unless params&.respond_to?(:requireds)
+
+          first = params.requireds&.first
+          first.respond_to?(:name) ? first.name.to_s : nil
         end
 
         # Each block is one multi-line def; blocks are separated by a
@@ -176,13 +252,13 @@ module RbsInfer
           node.is_a?(Prism::StatementsNode) && node.body.length > 1
         end
 
-        def accessor_defs(name)
-          [
-            ["def #{name}", "  @#{name}", "end"],
-            ["def #{name}=(value)", "  @#{name} = value", "end"],
-            ["def self.#{name}", "  @#{name}", "end"],
-            ["def self.#{name}=(value)", "  @#{name} = value", "end"],
-          ]
+        def accessor_defs(name, overrides = {})
+          defs = []
+          defs << ["def #{name}", "  @#{name}", "end"] unless overrides.key?([false, name])
+          defs << ["def #{name}=(value)", "  @#{name} = value", "end"] unless overrides.key?([false, "#{name}="])
+          defs << ["def self.#{name}", "  @#{name}", "end"] unless overrides.key?([true, name])
+          defs << ["def self.#{name}=(value)", "  @#{name} = value", "end"] unless overrides.key?([true, "#{name}="])
+          defs
         end
 
         def initialize_def(defaults)

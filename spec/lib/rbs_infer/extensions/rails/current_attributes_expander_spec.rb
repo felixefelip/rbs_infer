@@ -134,6 +134,76 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
     expect(expanded).to include("@counter = 0")
   end
 
+  it "skips accessors the class body overrides and desugars their super" do
+    # Padrão dos Rails guides: override do setter chamando super.
+    expanded = expand(<<~RUBY)
+      class Current < ActiveSupport::CurrentAttributes
+        attribute :user, :caderneta
+
+        def user=(value)
+          super(value)
+
+          if value.present?
+            self.caderneta = value.caderneta
+          end
+        end
+      end
+    RUBY
+
+    # O setter de instância NÃO é gerado (a classe define o seu)...
+    expect(expanded.scan(/def user=/).length).to eq(1)
+    # ...e o super vira o write de ivar (o accessor gerado É o ivar write)
+    expect(expanded).to include("def user=(value)\n    @user = value\n")
+    expect(expanded).not_to include("super")
+    # Os demais accessors continuam gerados
+    expect(expanded).to include("def user\n    @user\n  end")
+    expect(expanded).to include("def self.user=(value)")
+    expect(expanded).to include("def caderneta=(value)")
+    expect(Prism.parse(expanded).success?).to be(true)
+  end
+
+  it "desugars bare super forwarding the override's param" do
+    expanded = expand(<<~RUBY)
+      class Current < ActiveSupport::CurrentAttributes
+        attribute :user
+
+        def user=(novo_user)
+          super
+        end
+      end
+    RUBY
+
+    expect(expanded).to include("def user=(novo_user)\n    @user = novo_user\n  end")
+  end
+
+  it "desugars super in a getter override to the ivar read" do
+    expanded = expand(<<~RUBY)
+      class Current < ActiveSupport::CurrentAttributes
+        attribute :user
+
+        def user
+          super || User.new
+        end
+      end
+    RUBY
+
+    expect(expanded).to include("def user\n    @user || User.new\n  end")
+  end
+
+  it "leaves super in non-accessor methods untouched" do
+    expanded = expand(<<~RUBY)
+      class Current < ActiveSupport::CurrentAttributes
+        attribute :user
+
+        def self.reset
+          super
+        end
+      end
+    RUBY
+
+    expect(expanded).to include("def self.reset\n    super\n  end")
+  end
+
   it "does not expand attribute calls on unrelated superclasses" do
     expect(expand(<<~RUBY)).to be_nil
       # CurrentAttributes mentioned only in this comment
