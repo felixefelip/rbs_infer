@@ -117,7 +117,7 @@ module RbsInfer
     nil_default_param_names.each do |param_name|
       current = init_arg_types[param_name]
       next if current.nil? || current == "untyped"
-      init_arg_types[param_name] = "#{current}?" unless current.end_with?("?")
+      init_arg_types[param_name] = RbsParserUtil.nilablize(current)
     end
 
     # Resolver return types de métodos que retornam attrs conhecidos
@@ -319,7 +319,7 @@ module RbsInfer
           # inherit its type (e.g. `Current.set(user: nil)` with no
           # direct call-site).
           params[param_name] = ivar_type
-        elsif ivar_type == "#{current}?"
+        elsif ivar_type == RbsParserUtil.nilablize(current)
           params[param_name] = ivar_type
         end
       end
@@ -387,7 +387,7 @@ module RbsInfer
 
       info.methods.each do |method_name|
         return_type = method_type_resolver.resolve(target_class, method_name) || "untyped"
-        return_type = "#{return_type}?" if info.allow_nil && !return_type.end_with?("?")
+        return_type = RbsParserUtil.nilablize(return_type) if info.allow_nil
 
         generated_name = case info.prefix
                          when true   then "#{info.target}_#{method_name}"
@@ -454,8 +454,8 @@ module RbsInfer
                # `def initialize(name: nil); @name = name; end`), a
                # ivar pode receber nil mesmo quando todos os callers
                # passam não-nil. Refletir isso na declaração.
-               if type && nil_default_params.include?(param_name) && !type.end_with?("?")
-                 type = "#{type}?"
+               if type && nil_default_params.include?(param_name)
+                 type = RbsParserUtil.nilablize(type)
                end
                type
              when :param_method

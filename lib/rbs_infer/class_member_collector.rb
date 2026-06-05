@@ -305,8 +305,8 @@ module RbsInfer
       return nil unless type
 
       # Se há return nil no corpo, tornar nilable
-      if has_nil_return?(defn) && !type.end_with?("?")
-        type = "#{type}?"
+      if has_nil_return?(defn)
+        type = RbsParserUtil.nilablize(type)
       end
 
       type

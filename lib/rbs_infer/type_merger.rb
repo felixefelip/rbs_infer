@@ -204,8 +204,8 @@ module RbsInfer
           # `a&.b` with a nilable receiver: the nil flows into the result.
           # (On a plain call the resolve is optimistic — `a.b` raises on
           # nil — but safe-nav really returns nil.)
-          if resolved && call_node.safe_navigation? && receiver_type.end_with?("?") && !resolved.end_with?("?")
-            resolved = "#{resolved}?"
+          if resolved && call_node.safe_navigation? && receiver_type.end_with?("?")
+            resolved = RbsParserUtil.nilablize(resolved)
           end
           resolved
         end

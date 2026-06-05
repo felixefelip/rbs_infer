@@ -1,3 +1,5 @@
+require_relative "rbs_parser_util"
+
 module RbsInfer
   # Accumulates the observed types of an instance variable across all
   # writes (direct `@x = expr` and `self.x = expr` via attr_writer/accessor),
@@ -74,7 +76,9 @@ module RbsInfer
       return "nil" if @ordered.empty?
 
       if @ordered.length == 1
-        nilable ? "#{@ordered.first}?" : @ordered.first
+        # nilablize parenthesizes compounds — a bare `A & B?` would bind
+        # the `?` to the last component only.
+        nilable ? RbsParserUtil.nilablize(@ordered.first) : @ordered.first
       else
         body = @ordered.join(" | ")
         nilable ? "(#{body})?" : body
@@ -103,9 +107,22 @@ module RbsInfer
 
     def add_unique(type_str)
       key = type_str.gsub(/\s+/, "")
+      # `(A & B)` and `A & B` are the same type — different producers
+      # disagree on outer parens (resolve format vs Steep format).
+      key = key[1..-2] while key.start_with?("(") && key.end_with?(")") && balanced_outer?(key)
       return if @seen[key]
       @seen[key] = true
       @ordered << type_str
+    end
+
+    def balanced_outer?(str)
+      depth = 0
+      str.each_char.with_index do |char, i|
+        depth += 1 if char == "("
+        depth -= 1 if char == ")"
+        return i == str.length - 1 if depth.zero?
+      end
+      false
     end
   end
 end

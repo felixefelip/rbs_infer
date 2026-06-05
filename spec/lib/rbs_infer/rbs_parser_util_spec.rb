@@ -278,5 +278,29 @@ RSpec.describe RbsInfer::RbsParserUtil do
     it "returns unparseable strings as-is" do
       expect(described_class.parenthesize_union("| broken")).to eq("| broken")
     end
+
+    it "wraps bare intersections (invalid in return position with ?)" do
+      expect(described_class.parenthesize_compound("Caderneta & Caderneta::Validated"))
+        .to eq("(Caderneta & Caderneta::Validated)")
+    end
+  end
+
+  describe ".nilablize" do
+    it "parenthesizes compounds before appending ? (bare A & B? binds to the last component)" do
+      expect(described_class.nilablize("Caderneta & Caderneta::Validated"))
+        .to eq("(Caderneta & Caderneta::Validated)?")
+      expect(described_class.nilablize("Integer | Float")).to eq("(Integer | Float)?")
+    end
+
+    it "appends ? directly to simple types" do
+      expect(described_class.nilablize("User")).to eq("User?")
+      expect(described_class.nilablize("Array[User]")).to eq("Array[User]?")
+    end
+
+    it "is a no-op for already-optional types and nil" do
+      expect(described_class.nilablize("(A & B)?")).to eq("(A & B)?")
+      expect(described_class.nilablize("User?")).to eq("User?")
+      expect(described_class.nilablize(nil)).to be_nil
+    end
   end
 end

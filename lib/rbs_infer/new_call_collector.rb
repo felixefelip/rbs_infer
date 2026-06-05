@@ -342,8 +342,8 @@ module RbsInfer
       resolved = @method_type_resolver.resolve(receiver_type, node.name.to_s)
       # `a&.b` with a nilable receiver: the nil flows into the result (on
       # a plain call the resolve is optimistic — `a.b` raises on nil).
-      if resolved && node.safe_navigation? && receiver_type.end_with?("?") && !resolved.end_with?("?")
-        resolved = "#{resolved}?"
+      if resolved && node.safe_navigation? && receiver_type.end_with?("?")
+        resolved = RbsParserUtil.nilablize(resolved)
       end
       resolved
     end

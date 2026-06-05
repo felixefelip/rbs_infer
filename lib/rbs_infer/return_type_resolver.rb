@@ -59,8 +59,8 @@ module RbsInfer
 
               # Check for early return nil in body
               defn = def_map[m.name]
-              if defn && has_nil_return?(defn) && !steep_type.end_with?("?")
-                steep_type = "#{steep_type}?"
+              if defn && has_nil_return?(defn)
+                steep_type = RbsParserUtil.nilablize(steep_type)
               end
 
               m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsParserUtil.parenthesize_union(steep_type)}")
@@ -97,8 +97,8 @@ module RbsInfer
             steep_type = "self" if self_types.include?(steep_type)
 
             defn = def_map[m.name]
-            if defn && has_nil_return?(defn) && !steep_type.end_with?("?")
-              steep_type = "#{steep_type}?"
+            if defn && has_nil_return?(defn)
+              steep_type = RbsParserUtil.nilablize(steep_type)
             end
 
             m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> #{steep_type}")

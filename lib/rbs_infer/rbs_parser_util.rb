@@ -174,19 +174,39 @@ module RbsInfer
       return_type.to_s
     end
 
-    # In method-type position a bare `|` is an overload separator —
-    # `def x: () -> Integer | Float` is invalid RBS. Wraps top-level
-    # unions in parens before they're substituted into signatures.
-    def parenthesize_union(type_str)
-      return type_str unless type_str&.include?("|")
+    # In method-type position a bare `|` is an overload separator and a
+    # bare `&` confuses the member parser (`-> A & B?` is a syntax
+    # error) — `def x: () -> Integer | Float` is invalid RBS. Wraps
+    # top-level unions/intersections in parens before they're
+    # substituted into signatures.
+    def parenthesize_compound(type_str)
+      return type_str unless type_str && (type_str.include?("|") || type_str.include?("&"))
       # Already wrapped (parens are transparent to the RBS parser, so the
       # parse below can't distinguish `(A | B)` from `A | B`).
       return type_str if outer_parenthesized?(type_str)
 
       parsed = RBS::Parser.parse_type(type_str)
-      parsed.is_a?(RBS::Types::Union) ? "(#{type_str})" : type_str
+      case parsed
+      when RBS::Types::Union, RBS::Types::Intersection then "(#{type_str})"
+      else type_str
+      end
     rescue RBS::ParsingError, RBS::BaseError
       type_str
+    end
+
+    # Backward-compatible alias (pre-intersection name).
+    def parenthesize_union(type_str)
+      parenthesize_compound(type_str)
+    end
+
+    # Appends `?` to a type, parenthesizing compounds first — a bare
+    # `A & B?` binds the `?` to the LAST component only (semantically
+    # wrong) and is a syntax error in return position. No-op when the
+    # type is already optional.
+    def nilablize(type_str)
+      return type_str if type_str.nil? || type_str.end_with?("?")
+
+      "#{parenthesize_compound(type_str)}?"
     end
 
     # True when the first `(` closes only at the last character —
