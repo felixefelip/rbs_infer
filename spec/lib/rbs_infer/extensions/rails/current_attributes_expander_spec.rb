@@ -233,6 +233,23 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
     end
   end
 
+  describe ".attribute_names" do
+    it "lists attribute names across declarations" do
+      names = described_class.attribute_names(<<~RUBY)
+        class Current < ActiveSupport::CurrentAttributes
+          attribute :user, :account
+          attribute :request_id
+        end
+      RUBY
+
+      expect(names).to eq(%w[user account request_id])
+    end
+
+    it "returns [] for non-CurrentAttributes sources" do
+      expect(described_class.attribute_names("class Foo < ApplicationRecord; end")).to eq([])
+    end
+  end
+
   it "does not expand attribute calls on unrelated superclasses" do
     expect(expand(<<~RUBY)).to be_nil
       # CurrentAttributes mentioned only in this comment

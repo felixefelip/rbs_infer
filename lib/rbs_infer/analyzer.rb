@@ -166,33 +166,53 @@ module RbsInfer
 
     namespace_classes = resolve_namespace_classes
     rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module)
-    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, markers: markers, nested_modules: generated_accessor_modules(ivar_types))
+    module_info = generated_accessor_module(ivar_types)
+    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, markers: markers, nested_modules: module_info[:modules], skip_instance_methods: module_info[:skip_instance_methods])
   end
 
-  # CurrentAttributes accessor overrides call `super`, which at runtime
-  # dispatches to the `generated_attribute_methods` module Rails includes
-  # in the class. Declaring the generated accessor in an included module
-  # in the RBS mirrors that ancestor chain: the class def overrides it
-  # and `super` resolves (no UnexpectedSuper under the strict template) —
-  # felixefelip/rbs_infer#19.
-  def generated_accessor_modules(ivar_types)
-    return [] unless @expanded_source
+  # CurrentAttributes instance accessors live in an included
+  # `generated_attribute_methods` module at runtime (Rails:
+  # `Module.new.tap { |mod| include mod }`) — precisely so overrides can
+  # call `super`. The generated RBS mirrors that: ALL instance accessors
+  # go into a `GeneratedAttributeMethods` module (include-only, like the
+  # runtime), so cross-file resolution and `super` both flow through the
+  # ancestor chain uniformly — not just for overridden accessors
+  # (felixefelip/rbs_infer#19). Singleton accessors stay flat: at runtime
+  # they're delegated onto the singleton class, not in the module, and
+  # keeping them flat preserves their call-site-inferred types.
+  #
+  # Returns { modules: [...], skip_instance_methods: Set } — the latter
+  # are the generated instance accessors the builder must NOT emit flat
+  # (they're in the module); overrides are excluded so they stay flat.
+  def generated_accessor_module(ivar_types)
+    empty = { modules: [], skip_instance_methods: Set.new }
+    return empty unless @expanded_source
 
-    overrides = Extensions::Rails::CurrentAttributesExpander.overridden_accessors(@original_source.to_s)
-    return [] if overrides.empty?
+    attrs = Extensions::Rails::CurrentAttributesExpander.attribute_names(@original_source.to_s)
+    return empty if attrs.empty?
 
-    methods = overrides.uniq { |ov| ov[:method] }.map do |ov|
-      type = RbsParserUtil.parenthesize_compound(ivar_types[ov[:attr]] || "untyped")
-      signature =
-        if ov[:method].end_with?("=")
-          "#{ov[:method]}: (#{type} value) -> #{type}"
-        else
-          "#{ov[:method]}: () -> #{type}"
-        end
-      { signature: signature }
+    methods = attrs.flat_map do |attr|
+      type = RbsParserUtil.parenthesize_compound(ivar_types[attr] || "untyped")
+      [
+        { signature: "#{attr}: () -> #{type}" },
+        { signature: "#{attr}=: (#{type} value) -> #{type}" },
+      ]
     end
 
-    [{ name: "GeneratedAttributeMethods", methods: methods }]
+    # Generated instance accessor names, minus the ones the class body
+    # overrides (those stay flat — they're the user's real methods, and
+    # their `super` targets the module version above).
+    override_names = Extensions::Rails::CurrentAttributesExpander
+                     .overridden_accessors(@original_source.to_s)
+                     .reject { |ov| ov[:singleton] }
+                     .map { |ov| ov[:method] }
+                     .to_set
+    generated_names = attrs.flat_map { |attr| [attr, "#{attr}="] }.to_set
+
+    {
+      modules: [{ name: "GeneratedAttributeMethods", methods: methods }],
+      skip_instance_methods: generated_names - override_names,
+    }
   end
 
   # Builds the marker class list to inject into the generated RBS.

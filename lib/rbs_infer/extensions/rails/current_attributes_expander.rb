@@ -100,6 +100,22 @@ module RbsInfer
           end
         end
 
+        # Attribute names declared across all CurrentAttributes subclasses
+        # in the source (`attribute :user, :caderneta` → ["user",
+        # "caderneta"]). [] when the file has none.
+        def attribute_names(source)
+          return [] unless source.include?("CurrentAttributes")
+
+          result = Prism.parse(source)
+          return [] unless result.success?
+
+          RbsInfer::Analyzer.find_all_nodes(result.value) { |n| n.is_a?(Prism::ClassNode) }.flat_map do |klass|
+            next [] unless current_attributes_subclass?(klass)
+
+            attribute_calls_in(klass).flat_map { |call| parse_attribute_call(source, call).first }
+          end.uniq
+        end
+
         def current_attributes_subclass?(klass)
           superclass = klass.superclass
           return false unless superclass

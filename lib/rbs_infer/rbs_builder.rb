@@ -7,7 +7,7 @@ module RbsInfer
       @is_module = is_module
     end
 
-    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {}, markers: [], nested_modules: [])
+    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {}, markers: [], nested_modules: [], skip_instance_methods: Set.new)
       parts = @target_class.split("::")
       class_name = parts.pop
       modules = parts
@@ -29,10 +29,12 @@ module RbsInfer
         lines << "#{member_indent}@#{name}: #{type}"
       end
 
-      # Nested modules included+extended into the class (e.g.
+      # Nested modules included into the class (e.g.
       # `GeneratedAttributeMethods` mirroring Rails' CurrentAttributes
-      # runtime chain so overrides' `super` resolves —
-      # felixefelip/rbs_infer#19).
+      # runtime chain — instance accessors live in an included module so
+      # cross-file resolution and overrides' `super` flow through the
+      # ancestor chain. Include-only, like the runtime; singleton
+      # accessors stay flat — felixefelip/rbs_infer#19.
       nested_modules.each do |mod|
         lines << "#{member_indent}module #{mod[:name]}"
         mod[:methods].each_with_index do |m, i|
@@ -41,7 +43,6 @@ module RbsInfer
         end
         lines << "#{member_indent}end"
         lines << "#{member_indent}include #{mod[:name]}"
-        lines << "#{member_indent}extend #{mod[:name]}"
       end
 
       # Emitir extend para módulos estendidos (e.g. ActiveSupport::Concern)
@@ -92,6 +93,11 @@ module RbsInfer
         vis_members.each do |member|
           case member.kind
           when :method
+            # Generated instance accessors live in the nested module, not
+            # flat (felixefelip/rbs_infer#19). Overrides are excluded from
+            # the skip set, so they stay flat and `super` reaches the
+            # module version.
+            next if skip_instance_methods.include?(member.name)
             sig = member.signature
             # Substituir initialize com tipos inferidos dos call-sites
             if member.name == "initialize" && !init_arg_types.empty?
