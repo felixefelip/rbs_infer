@@ -45,14 +45,20 @@ module RbsInfer
         lines << "#{member_indent}include #{mod[:name]}"
       end
 
+      # Módulos aninhados definidos no corpo da classe-alvo
+      # (felixefelip/rbs_infer#22). Membros coletados com `owner` vêm de
+      # um `module X ... end` dentro da classe; reconstruímos o container
+      # aqui em vez de achatá-los (o que deixaria o `include X` pendurado).
+      emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types)
+
       # Emitir extend para módulos estendidos (e.g. ActiveSupport::Concern)
-      extends = members.select { |m| m.kind == :extend }
+      extends = members.select { |m| m.kind == :extend && m.owner.nil? }
       extends.each do |ext|
         lines << "#{member_indent}extend #{qualify(ext.name)}"
       end
 
       # Emitir include/extend para módulos incluídos (concerns)
-      includes = members.select { |m| m.kind == :include }
+      includes = members.select { |m| m.kind == :include && m.owner.nil? }
       includes.each do |inc|
         qualified = qualify(inc.name)
         lines << "#{member_indent}include #{qualified}"
@@ -66,7 +72,7 @@ module RbsInfer
       has_protected = members.any? { |m| m.visibility == :protected }
 
       # Emitir métodos de classe (def self.foo)
-      class_methods = members.select { |m| m.kind == :class_method }
+      class_methods = members.select { |m| m.kind == :class_method && m.owner.nil? }
       class_methods.each do |member|
         sig = member.signature
         # Param types inferred from call-sites also apply to singletons
@@ -81,7 +87,7 @@ module RbsInfer
       # Agrupar por visibilidade: public -> protected -> private
       # RBS não suporta `protected`, então tratamos como public
       [:public, :protected, :private].each do |vis|
-        vis_members = members.select { |m| m.visibility == vis && ![:include, :extend, :class_method].include?(m.kind) }
+        vis_members = members.select { |m| m.visibility == vis && m.owner.nil? && ![:include, :extend, :class_method].include?(m.kind) }
         next if vis_members.empty?
 
         if vis == :private
@@ -91,30 +97,13 @@ module RbsInfer
         end
 
         vis_members.each do |member|
-          case member.kind
-          when :method
-            # Generated instance accessors live in the nested module, not
-            # flat (felixefelip/rbs_infer#19). Overrides are excluded from
-            # the skip set, so they stay flat and `super` reaches the
-            # module version.
-            next if skip_instance_methods.include?(member.name)
-            sig = member.signature
-            # Substituir initialize com tipos inferidos dos call-sites
-            if member.name == "initialize" && !init_arg_types.empty?
-              sig = apply_inferred_init_types(sig, init_arg_types, optional_params)
-            elsif method_param_types[member.name]
-              sig = apply_inferred_param_types(sig, method_param_types[member.name])
-            end
-            lines << "#{member_indent}def #{sig}"
-          when :attr_accessor, :attr_reader, :attr_writer
-            sig = member.signature
-            # Se o attr está untyped, tentar preencher via inferência do initialize
-            if sig.end_with?(": untyped") && attr_types[member.name]
-              sig = "#{member.name}: #{attr_types[member.name]}"
-            end
-            prefix = member.kind.to_s.sub("_", "_")
-            lines << "#{member_indent}#{member.kind} #{sig}"
-          end
+          # Generated instance accessors live in the nested module, not
+          # flat (felixefelip/rbs_infer#19). Overrides are excluded from
+          # the skip set, so they stay flat and `super` reaches the
+          # module version.
+          next if member.kind == :method && skip_instance_methods.include?(member.name)
+          line = render_value_member(member, member_indent, init_arg_types, attr_types, method_param_types, optional_params)
+          lines << line if line
         end
       end
 
@@ -144,6 +133,57 @@ module RbsInfer
     end
 
     private
+
+    # Renders a single value member (method / attr_*) as one RBS line, or
+    # nil for other kinds. Shared between the class body and nested-module
+    # emission (felixefelip/rbs_infer#22).
+    def render_value_member(member, indent, init_arg_types, attr_types, method_param_types, optional_params)
+      case member.kind
+      when :method
+        sig = member.signature
+        if member.name == "initialize" && !init_arg_types.empty?
+          sig = apply_inferred_init_types(sig, init_arg_types, optional_params)
+        elsif method_param_types[member.name]
+          sig = apply_inferred_param_types(sig, method_param_types[member.name])
+        end
+        "#{indent}def #{sig}"
+      when :attr_accessor, :attr_reader, :attr_writer
+        sig = member.signature
+        sig = "#{member.name}: #{attr_types[member.name]}" if sig.end_with?(": untyped") && attr_types[member.name]
+        "#{indent}#{member.kind} #{sig}"
+      end
+    end
+
+    # Reconstructs `module X ... end` blocks for members collected with an
+    # `owner` (parsed from a nested module inside the target class). The
+    # parsed `include X` is emitted separately as a direct member, so the
+    # module declaration here gives that include a real target — no
+    # dangling mixin (felixefelip/rbs_infer#22).
+    def emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types)
+      owned = members.reject { |m| m.owner.nil? }
+      return if owned.empty?
+
+      owned.group_by(&:owner).each do |owner, mod_members|
+        inner_indent = member_indent + "  "
+        lines << "#{member_indent}module #{owner}"
+
+        mod_members.select { |m| m.kind == :include }.each do |inc|
+          lines << "#{inner_indent}include #{qualify(inc.name)}"
+        end
+        mod_members.select { |m| m.kind == :extend }.each do |ext|
+          lines << "#{inner_indent}extend #{qualify(ext.name)}"
+        end
+        mod_members.select { |m| m.kind == :class_method }.each do |m|
+          lines << "#{inner_indent}def self.#{m.signature}"
+        end
+        mod_members.each do |m|
+          line = render_value_member(m, inner_indent, {}, attr_types, method_param_types, Set.new)
+          lines << line if line
+        end
+
+        lines << "#{member_indent}end"
+      end
+    end
 
     def emit_marker(lines, marker, member_indent)
       override_indent = member_indent + "  "
