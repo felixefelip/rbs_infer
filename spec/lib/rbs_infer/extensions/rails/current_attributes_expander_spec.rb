@@ -26,7 +26,7 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
     RUBY
   end
 
-  it "expands attribute into the four accessors plus set/with" do
+  it "puts instance accessors in an included module and keeps singletons flat" do
     expanded = expand(<<~RUBY)
       class Current < ActiveSupport::CurrentAttributes
         attribute :user
@@ -35,13 +35,15 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
 
     expect(expanded).to eq(<<~RUBY)
       class Current < ActiveSupport::CurrentAttributes
-        def user
-          @user
+        module GeneratedAttributeMethods
+          def user
+            @user
+          end
+          def user=(value)
+            @user = value
+          end
         end
-
-        def user=(value)
-          @user = value
-        end
+        include GeneratedAttributeMethods
 
         def self.user
           @user
@@ -95,8 +97,8 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
       end
     RUBY
 
-    expect(expanded).to include("def user\n    @user\n  end")
-    expect(expanded).to include("def account\n    @account\n  end")
+    expect(expanded).to include("module GeneratedAttributeMethods")
+    expect(expanded).to match(/module GeneratedAttributeMethods.*def user\b.*def account\b.*end/m)
     expect(expanded).to include("def self.set(user: nil, account: nil, &block)\n    @user = user\n    @account = account\n    block.call\n  end")
   end
 
@@ -134,8 +136,11 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
     expect(expanded).to include("@counter = 0")
   end
 
-  it "skips accessors the class body overrides and desugars their super" do
-    # Padrão dos Rails guides: override do setter chamando super.
+  it "generates the module accessor (super target) and desugars the override's super" do
+    # Rails-guides pattern: setter override calling super. The generated
+    # instance accessor lives in the module (the override's `super` target
+    # at runtime); the override stays in the class body with its `super`
+    # desugared to the ivar write so rbs_infer can infer its body.
     expanded = expand(<<~RUBY)
       class Current < ActiveSupport::CurrentAttributes
         attribute :user, :caderneta
@@ -150,15 +155,13 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesExpander do
       end
     RUBY
 
-    # O setter de instância NÃO é gerado (a classe define o seu)...
-    expect(expanded.scan(/def user=/).length).to eq(1)
-    # ...e o super vira o write de ivar (o accessor gerado É o ivar write)
-    expect(expanded).to include("def user=(value)\n    @user = value\n")
+    # Two `user=`: the generated one in the module + the class override.
+    expect(expanded.scan(/def user=\(value\)/).length).to eq(2)
+    # The override's `super` becomes the ivar write (no dangling super).
     expect(expanded).not_to include("super")
-    # Os demais accessors continuam gerados
-    expect(expanded).to include("def user\n    @user\n  end")
+    # All instance accessors are generated in the module.
+    expect(expanded).to match(/module GeneratedAttributeMethods.*def user\b.*def caderneta\b.*end/m)
     expect(expanded).to include("def self.user=(value)")
-    expect(expanded).to include("def caderneta=(value)")
     expect(Prism.parse(expanded).success?).to be(true)
   end
 

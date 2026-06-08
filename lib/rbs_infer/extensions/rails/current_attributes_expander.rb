@@ -152,27 +152,48 @@ module RbsInfer
           all_names = []
           defaults = {}
 
-          parsed = calls.map do |call|
+          calls.each do |call|
             names, call_defaults = parse_attribute_call(source, call)
             all_names.concat(names)
             defaults.merge!(call_defaults)
-            [call, names]
           end
 
-          parsed.map.with_index do |(call, names), idx|
-            blocks = names.flat_map { |name| accessor_defs(name, overrides) }
-            if idx == parsed.length - 1
-              blocks.concat(initialize_def(defaults))
-              blocks.concat(set_with_defs(all_names))
-            end
-
+          # Instance accessors live in an included `GeneratedAttributeMethods`
+          # module (mirroring Rails' runtime `generated_attribute_methods`),
+          # so cross-file resolution and overrides' `super` flow through the
+          # ancestor chain. They are generated for EVERY attribute —
+          # including overridden ones — because the module is precisely the
+          # `super` target. Singleton accessors stay flat (delegated onto
+          # the singleton class at runtime) and skip overridden singletons.
+          # — felixefelip/rbs_infer#19, #22.
+          calls.each_with_index.map do |call, idx|
             indent = " " * call.location.start_column
-            {
-              start: call.location.start_offset,
-              end: call.location.end_offset,
-              text: join_blocks(blocks, indent),
-            }
+
+            # Only the last `attribute` call materializes the expansion;
+            # earlier calls are removed so the module is emitted once.
+            next { start: call.location.start_offset, end: call.location.end_offset, text: "" } unless idx == calls.length - 1
+
+            blocks = [module_block(all_names, indent)]
+            all_names.each { |name| blocks.concat(singleton_accessor_defs(name, overrides)) }
+            blocks.concat(initialize_def(defaults))
+            blocks.concat(set_with_defs(all_names))
+
+            { start: call.location.start_offset, end: call.location.end_offset, text: join_blocks(blocks, indent) }
           end
+        end
+
+        # The `module GeneratedAttributeMethods ... include` block (one
+        # multi-line block) wrapping every attribute's instance accessors.
+        # Inner defs are adjacent (no blank separators — those would pick
+        # up the block indent and leave trailing whitespace).
+        def module_block(names, indent)
+          inner = names.flat_map { |name| instance_accessor_defs(name) }
+          [
+            "module GeneratedAttributeMethods",
+            *inner.flat_map { |defn| defn.map { |line| "  #{line}" } },
+            "end",
+            "include GeneratedAttributeMethods",
+          ]
         end
 
         # Attribute accessor defs the class body declares itself (overrides
@@ -296,10 +317,19 @@ module RbsInfer
           node.is_a?(Prism::StatementsNode) && node.body.length > 1
         end
 
-        def accessor_defs(name, overrides = {})
+        # Instance accessors are always generated — the module is the
+        # `super` target for any override, so we never skip them here.
+        def instance_accessor_defs(name)
+          [
+            ["def #{name}", "  @#{name}", "end"],
+            ["def #{name}=(value)", "  @#{name} = value", "end"],
+          ]
+        end
+
+        # Singleton accessors stay flat in the class body; skip the ones
+        # the class overrides itself.
+        def singleton_accessor_defs(name, overrides)
           defs = []
-          defs << ["def #{name}", "  @#{name}", "end"] unless overrides.key?([false, name])
-          defs << ["def #{name}=(value)", "  @#{name} = value", "end"] unless overrides.key?([false, "#{name}="])
           defs << ["def self.#{name}", "  @#{name}", "end"] unless overrides.key?([true, name])
           defs << ["def self.#{name}=(value)", "  @#{name} = value", "end"] unless overrides.key?([true, "#{name}="])
           defs

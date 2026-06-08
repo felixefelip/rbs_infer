@@ -49,7 +49,7 @@ module RbsInfer
 
       # Collect mapping: [kind, method_name] -> last expression of the body
       method_last_exprs = {}
-      collector = DefCollector.new
+      collector = DefCollector.new(target_class: @target_class)
       parsed_target.tree.accept(collector)
 
       collector.defs.each do |defn|
@@ -67,7 +67,8 @@ module RbsInfer
         # avoids updating the wrong member when instance and singleton
         # share a name (e.g. expanded CurrentAttributes accessors).
         kind = defn.receiver.is_a?(Prism::SelfNode) ? :class_method : :method
-        member = members.find { |m| m.kind == kind && m.name == method_name }
+        owner = collector.owner_of(defn)
+        member = members.find { |m| m.kind == kind && m.name == method_name && m.owner == owner }
         next unless member
         next unless member.signature.end_with?("-> untyped")
         next if method_name == "initialize"
@@ -162,7 +163,8 @@ module RbsInfer
         # via the attribute-write rule.
         next if method_name == "initialize"
         kind = defn.receiver.is_a?(Prism::SelfNode) ? :class_method : :method
-        member = members.find { |m| m.kind == kind && m.name == method_name }
+        owner = collector.owner_of(defn)
+        member = members.find { |m| m.kind == kind && m.name == method_name && m.owner == owner }
         next unless member
         next unless member.signature.end_with?("-> untyped")
 

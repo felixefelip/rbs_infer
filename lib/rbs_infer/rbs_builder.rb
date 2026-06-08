@@ -7,7 +7,7 @@ module RbsInfer
       @is_module = is_module
     end
 
-    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {}, markers: [], nested_modules: [], skip_instance_methods: Set.new)
+    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {}, markers: [])
       parts = @target_class.split("::")
       class_name = parts.pop
       modules = parts
@@ -29,26 +29,13 @@ module RbsInfer
         lines << "#{member_indent}@#{name}: #{type}"
       end
 
-      # Nested modules included into the class (e.g.
-      # `GeneratedAttributeMethods` mirroring Rails' CurrentAttributes
-      # runtime chain — instance accessors live in an included module so
-      # cross-file resolution and overrides' `super` flow through the
-      # ancestor chain. Include-only, like the runtime; singleton
-      # accessors stay flat — felixefelip/rbs_infer#19.
-      nested_modules.each do |mod|
-        lines << "#{member_indent}module #{mod[:name]}"
-        mod[:methods].each_with_index do |m, i|
-          lines << "" if i.positive?
-          lines << "#{member_indent}  def #{m[:signature]}"
-        end
-        lines << "#{member_indent}end"
-        lines << "#{member_indent}include #{mod[:name]}"
-      end
-
       # Módulos aninhados definidos no corpo da classe-alvo
       # (felixefelip/rbs_infer#22). Membros coletados com `owner` vêm de
       # um `module X ... end` dentro da classe; reconstruímos o container
       # aqui em vez de achatá-los (o que deixaria o `include X` pendurado).
+      # É por aqui que o `GeneratedAttributeMethods` do CurrentAttributes
+      # é emitido — agora vem do parsing do pseudo-source, sem o core
+      # conhecer a extensão (felixefelip/rbs_infer#19, #22).
       emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types)
 
       # Emitir extend para módulos estendidos (e.g. ActiveSupport::Concern)
@@ -97,11 +84,6 @@ module RbsInfer
         end
 
         vis_members.each do |member|
-          # Generated instance accessors live in the nested module, not
-          # flat (felixefelip/rbs_infer#19). Overrides are excluded from
-          # the skip set, so they stay flat and `super` reaches the
-          # module version.
-          next if member.kind == :method && skip_instance_methods.include?(member.name)
           line = render_value_member(member, member_indent, init_arg_types, attr_types, method_param_types, optional_params)
           lines << line if line
         end

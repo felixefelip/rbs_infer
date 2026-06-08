@@ -11,12 +11,13 @@ module RbsInfer
   class ClassMemberCollector < Prism::Visitor
     include NodeTypeInferrer
     include RbsAnnotationParser
+    include LexicalScope
 
     attr_reader :members, :delegates, :superclass_name, :is_module
 
     CONTROLLER_BASES = %w[ApplicationController ActionController::Base ActionController::API].freeze
 
-    def initialize(comments:, lines:)
+    def initialize(comments:, lines:, target_class: nil)
       @comments = comments
       @lines = lines
       @members = []
@@ -25,10 +26,7 @@ module RbsInfer
       @is_controller = false
       @superclass_name = nil
       @is_module = false
-      # Lexical scope stack of { kind:, name:, primary: } frames — used to
-      # attribute members to a nested module inside the target class
-      # (felixefelip/rbs_infer#22).
-      @scope_stack = []
+      self.scope_target = target_class
     end
 
     def visit_module_node(node)
@@ -39,8 +37,7 @@ module RbsInfer
 
     def visit_class_node(node)
       @is_module = false
-      primary = !@primary_class_seen
-      if primary
+      unless @primary_class_seen
         @primary_class_seen = true
         if node.superclass
           @superclass_name = RbsInfer::Analyzer.extract_constant_path(node.superclass)
@@ -48,7 +45,7 @@ module RbsInfer
         end
       end
       segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
-      with_scope(:class, segment, primary: primary) { super }
+      with_scope(:class, segment) { super }
     end
 
     def visit_def_node(node)
@@ -113,26 +110,14 @@ module RbsInfer
     # Pushes a lexical scope frame, resetting visibility (a `private` in a
     # nested module must not leak out, and vice-versa), and restores both
     # on exit.
-    def with_scope(kind, name, primary: false)
-      @scope_stack.push({ kind: kind, name: name, primary: primary })
+    def with_scope(kind, name)
+      push_scope(kind, name)
       saved_visibility = @current_visibility
       @current_visibility = :public
       yield
     ensure
       @current_visibility = saved_visibility
-      @scope_stack.pop
-    end
-
-    # The nested-module path that owns members at the current position, or
-    # nil when they're direct members of the target class. Only modules
-    # lexically inside the primary class are owners — namespace modules
-    # wrapping the class (visited before it) are not.
-    def current_owner
-      primary_idx = @scope_stack.index { |f| f[:primary] }
-      return nil unless primary_idx
-
-      mods = @scope_stack[(primary_idx + 1)..].select { |f| f[:kind] == :module && f[:name] }
-      mods.empty? ? nil : mods.map { |f| f[:name] }.join("::")
+      pop_scope
     end
 
     def extract_includes(node)
