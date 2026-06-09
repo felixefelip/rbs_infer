@@ -26,11 +26,21 @@ namespace :rbs_infer do
       # populate globals (`Current.user = current_user`) under the guard
       # get their own markers + applies_constants sidecar, in a separate
       # sig dir — Current is not a Devise concern.
+      # Same source universe the rest of rbs_infer resolves against, so
+      # transitive-write types (`Current.caderneta = value.caderneta`)
+      # match (felixefelip/rbs_infer#41).
+      source_files = Dir[
+        File.join(app_dir, "app/**/*.rb"),
+        File.join(app_dir, "lib/**/*.rb"),
+        File.join(app_dir, "engines/**/*.rb")
+      ]
+
       current = RbsInfer::Extensions::Rails::CurrentAttributesCallbacksGenerator.new(
         app_dir: app_dir,
         output_dir: File.join(app_dir, "sig/rbs_infer_current_attributes"),
         scanner: generator.build_scanner(scopes),
-        resource_types: generator.proven_resource_types(scopes)
+        resource_types: generator.proven_resource_types(scopes),
+        source_files: source_files
       )
       populated = current.generate_all
 
