@@ -6,9 +6,21 @@
 # `Current.with(user: ...)` in ProfileFormatterJob), unlocking the type
 # of the derived method `self.author_full_name`.
 class Current < ActiveSupport::CurrentAttributes
-  def user
-    @user
+  module GeneratedAttributeMethods
+    def user
+      @user
+    end
+    def user=(value)
+      @user = value
+    end
+    def author_name
+      @author_name
+    end
+    def author_name=(value)
+      @author_name = value
+    end
   end
+  include GeneratedAttributeMethods
 
   def self.user
     @user
@@ -16,14 +28,6 @@ class Current < ActiveSupport::CurrentAttributes
 
   def self.user=(value)
     @user = value
-  end
-
-  def author_name
-    @author_name
-  end
-
-  def author_name=(value)
-    @author_name = value
   end
 
   def self.author_name

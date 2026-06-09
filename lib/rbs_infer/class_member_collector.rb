@@ -1,6 +1,9 @@
 module RbsInfer
-  # Estrutura que representa um membro da classe
-  Member = Struct.new(:kind, :name, :signature, :visibility, keyword_init: true)
+  # Estrutura que representa um membro da classe.
+  # `owner` = caminho do módulo aninhado que define o membro (ex.
+  # "Formatting"), ou nil quando é membro direto da classe-alvo
+  # (felixefelip/rbs_infer#22). Default nil preserva o comportamento atual.
+  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, keyword_init: true)
 
   # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
   DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
@@ -8,12 +11,13 @@ module RbsInfer
   class ClassMemberCollector < Prism::Visitor
     include NodeTypeInferrer
     include RbsAnnotationParser
+    include LexicalScope
 
     attr_reader :members, :delegates, :superclass_name, :is_module
 
     CONTROLLER_BASES = %w[ApplicationController ActionController::Base ActionController::API].freeze
 
-    def initialize(comments:, lines:)
+    def initialize(comments:, lines:, target_class: nil)
       @comments = comments
       @lines = lines
       @members = []
@@ -22,11 +26,13 @@ module RbsInfer
       @is_controller = false
       @superclass_name = nil
       @is_module = false
+      self.scope_target = target_class
     end
 
     def visit_module_node(node)
       @is_module = true unless @superclass_name
-      super
+      segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
+      with_scope(:module, segment) { super }
     end
 
     def visit_class_node(node)
@@ -38,7 +44,8 @@ module RbsInfer
           @is_controller = CONTROLLER_BASES.include?(@superclass_name)
         end
       end
-      super
+      segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
+      with_scope(:class, segment) { super }
     end
 
     def visit_def_node(node)
@@ -64,7 +71,8 @@ module RbsInfer
         kind: is_class_method ? :class_method : :method,
         name: name,
         signature: signature,
-        visibility: @current_visibility
+        visibility: @current_visibility,
+        owner: current_owner
       )
       super
     end
@@ -99,6 +107,19 @@ module RbsInfer
 
     private
 
+    # Pushes a lexical scope frame, resetting visibility (a `private` in a
+    # nested module must not leak out, and vice-versa), and restores both
+    # on exit.
+    def with_scope(kind, name)
+      push_scope(kind, name)
+      saved_visibility = @current_visibility
+      @current_visibility = :public
+      yield
+    ensure
+      @current_visibility = saved_visibility
+      pop_scope
+    end
+
     def extract_includes(node)
       return unless node.arguments
 
@@ -110,7 +131,8 @@ module RbsInfer
           kind: :include,
           name: name,
           signature: name,
-          visibility: :public
+          visibility: :public,
+          owner: current_owner
         )
       end
     end
@@ -126,7 +148,8 @@ module RbsInfer
           kind: :extend,
           name: name,
           signature: name,
-          visibility: :public
+          visibility: :public,
+          owner: current_owner
         )
       end
     end
@@ -187,7 +210,8 @@ module RbsInfer
           kind: node.name,
           name: attr_name,
           signature: "#{attr_name}: #{type}",
-          visibility: @current_visibility
+          visibility: @current_visibility,
+          owner: current_owner
         )
       end
     end

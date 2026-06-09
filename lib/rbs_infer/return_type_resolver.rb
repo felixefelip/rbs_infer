@@ -31,6 +31,13 @@ module RbsInfer
       # Aplicar tipos já resolvidos pelo resolver (ex: chamadas a métodos herdados)
       untyped_methods.each do |m|
         next if m.name == "initialize"
+        # Setters' return is body/assignment-specific (`obj.x = v` evaluates
+        # to the RHS, not the method's return) and is set by the owner-aware
+        # TypeMerger passes from each def's body. `known_return_types` is
+        # name-keyed, so resolving a setter here would leak a colliding
+        # setter's return (e.g. a CurrentAttributes override onto the
+        # generated module accessor) — felixefelip/rbs_infer#22.
+        next if setter_name?(m.name)
         resolved = known_return_types[m.name]
         if resolved && resolved != "untyped"
           m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
@@ -52,6 +59,7 @@ module RbsInfer
           self_types = Set.new([@target_class] + @instance_types)
 
           still_untyped.each do |m|
+            next if setter_name?(m.name)
             steep_type = steep_returns[m.name]
             if steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
               # Instance methods returning the same class (or host class for concerns) → self
@@ -170,6 +178,11 @@ module RbsInfer
     private
 
     attr_reader :method_type_resolver
+
+    # `user=`-style writer (not `==`/`<=`/`[]=` operators).
+    def setter_name?(name)
+      name.to_s.match?(/[A-Za-z0-9_]=\z/) && !name.to_s.start_with?("[")
+    end
 
     # Singleton (`def self.X`) é coletado como `:class_method` em
     # `class_member_collector.rb` mas tem o mesmo tratamento de inferência de

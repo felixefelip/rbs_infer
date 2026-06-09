@@ -846,6 +846,73 @@ RSpec.describe RbsInfer::Analyzer do
     end
   end
 
+  # ─── módulos aninhados (felixefelip/rbs_infer#22) ───────────────
+
+  describe "#generate_rbs com módulo aninhado incluído" do
+    # Carrega o RBS gerado num ambiente RBS real (com core) e resolve a
+    # classe — falha com NoMixinFoundError se houver `include` pendurado.
+    def assert_valid_rbs(rbs, class_name)
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, "generated.rbs")
+        File.write(path, rbs)
+        loader = RBS::EnvironmentLoader.new
+        loader.add(path: Pathname(path))
+        env = RBS::Environment.from_loader(loader).resolve_type_names
+        expect { RBS::DefinitionBuilder.new(env: env).build_instance(RBS::TypeName.parse(class_name)) }
+          .not_to raise_error
+      end
+    end
+
+    let(:report_source) do
+      <<~RUBY
+        class Report
+          module Formatting
+            def title
+              @title
+            end
+
+            def title=(value)
+              @title = value
+            end
+          end
+          include Formatting
+
+          def header
+            title
+          end
+        end
+      RUBY
+    end
+
+    it "preserva o módulo aninhado em vez de achatar os métodos" do
+      with_temp_files("report.rb" => report_source) do |_dir, paths|
+        rbs = described_class.new(target_file: paths.first, source_files: paths).generate_rbs
+
+        expect(rbs).to include("module Formatting")
+        # métodos do módulo ficam DENTRO dele, não no corpo da classe
+        expect(rbs).to match(/module Formatting.*def title.*def title=.*end/m)
+        expect(rbs).to include("include Formatting")
+      end
+    end
+
+    it "gera RBS válido (sem include pendurado)" do
+      with_temp_files("report.rb" => report_source) do |_dir, paths|
+        rbs = described_class.new(target_file: paths.first, source_files: paths).generate_rbs
+
+        assert_valid_rbs(rbs, "::Report")
+      end
+    end
+
+    it "mantém métodos diretos da classe fora do módulo" do
+      with_temp_files("report.rb" => report_source) do |_dir, paths|
+        rbs = described_class.new(target_file: paths.first, source_files: paths).generate_rbs
+
+        # `header` é método direto de Report, não do módulo Formatting
+        expect(rbs).to match(/^  def header:/)
+      end
+    end
+  end
+
   # ─── resolve_namespace_classes ─────────────────────────────────
 
   describe "#resolve_namespace_classes (via generate_rbs)" do

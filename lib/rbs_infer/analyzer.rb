@@ -61,7 +61,6 @@ module RbsInfer
 
     # Parsear o arquivo-alvo uma única vez e reutilizar em todo o pipeline
     source = File.read(@target_file)
-    @original_source = source
 
     # Desugar macros into plain-Ruby pseudo-code BEFORE the parse, so the
     # whole pipeline sees the expanded view (felixefelip/rbs_infer#19).
@@ -166,53 +165,7 @@ module RbsInfer
 
     namespace_classes = resolve_namespace_classes
     rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module)
-    module_info = generated_accessor_module(ivar_types)
-    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, markers: markers, nested_modules: module_info[:modules], skip_instance_methods: module_info[:skip_instance_methods])
-  end
-
-  # CurrentAttributes instance accessors live in an included
-  # `generated_attribute_methods` module at runtime (Rails:
-  # `Module.new.tap { |mod| include mod }`) — precisely so overrides can
-  # call `super`. The generated RBS mirrors that: ALL instance accessors
-  # go into a `GeneratedAttributeMethods` module (include-only, like the
-  # runtime), so cross-file resolution and `super` both flow through the
-  # ancestor chain uniformly — not just for overridden accessors
-  # (felixefelip/rbs_infer#19). Singleton accessors stay flat: at runtime
-  # they're delegated onto the singleton class, not in the module, and
-  # keeping them flat preserves their call-site-inferred types.
-  #
-  # Returns { modules: [...], skip_instance_methods: Set } — the latter
-  # are the generated instance accessors the builder must NOT emit flat
-  # (they're in the module); overrides are excluded so they stay flat.
-  def generated_accessor_module(ivar_types)
-    empty = { modules: [], skip_instance_methods: Set.new }
-    return empty unless @expanded_source
-
-    attrs = Extensions::Rails::CurrentAttributesExpander.attribute_names(@original_source.to_s)
-    return empty if attrs.empty?
-
-    methods = attrs.flat_map do |attr|
-      type = RbsParserUtil.parenthesize_compound(ivar_types[attr] || "untyped")
-      [
-        { signature: "#{attr}: () -> #{type}" },
-        { signature: "#{attr}=: (#{type} value) -> #{type}" },
-      ]
-    end
-
-    # Generated instance accessor names, minus the ones the class body
-    # overrides (those stay flat — they're the user's real methods, and
-    # their `super` targets the module version above).
-    override_names = Extensions::Rails::CurrentAttributesExpander
-                     .overridden_accessors(@original_source.to_s)
-                     .reject { |ov| ov[:singleton] }
-                     .map { |ov| ov[:method] }
-                     .to_set
-    generated_names = attrs.flat_map { |attr| [attr, "#{attr}="] }.to_set
-
-    {
-      modules: [{ name: "GeneratedAttributeMethods", methods: methods }],
-      skip_instance_methods: generated_names - override_names,
-    }
+    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, markers: markers)
   end
 
   # Builds the marker class list to inject into the generated RBS.
@@ -418,7 +371,7 @@ module RbsInfer
   # ─── Parsear classe-alvo: métodos, attrs, visibilidade ─────────────
 
   def parse_target_class
-    visitor = ClassMemberCollector.new(comments: @parsed_target.comments, lines: @parsed_target.lines)
+    visitor = ClassMemberCollector.new(comments: @parsed_target.comments, lines: @parsed_target.lines, target_class: @target_class)
     @parsed_target.tree.accept(visitor)
     @superclass_name = visitor.superclass_name
     @is_module = visitor.is_module if @is_module.nil?
@@ -749,6 +702,7 @@ require_relative "class_name_extractor"
 require_relative "class_body_attr_analyzer"
 require_relative "intra_class_call_analyzer"
 require_relative "initialize_body_analyzer"
+require_relative "lexical_scope"
 require_relative "class_member_collector"
 require_relative "def_collector"
 require_relative "new_call_collector"
