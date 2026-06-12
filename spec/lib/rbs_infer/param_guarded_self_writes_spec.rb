@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "rbs_infer/extensions/rails/transitive_constant_writes"
+require "rbs_infer/param_guarded_self_writes"
 require "prism"
 
-RSpec.describe RbsInfer::Extensions::Rails::TransitiveConstantWrites do
+RSpec.describe RbsInfer::ParamGuardedSelfWrites do
   # Parses a `def user=(value) ... end` body and runs extraction.
   def extract(body)
     src = "def user=(value)\n#{body}\nend\n"

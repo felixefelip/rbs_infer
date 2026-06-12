@@ -5,7 +5,7 @@ require "yaml"
 require "prism"
 require "active_support/core_ext/string/inflections"
 require_relative "before_action_scanner"
-require_relative "transitive_constant_writes"
+require_relative "../../param_guarded_self_writes"
 require_relative "../../rbs_parser_util"
 require_relative "../../method_type_resolver"
 
@@ -88,7 +88,7 @@ module RbsInfer
           return [] unless setter
 
           base_type = resource_types.fetch(direct[:scope])
-          TransitiveConstantWrites.extract(setter[:defn], setter[:param]).filter_map do |w|
+          RbsInfer::ParamGuardedSelfWrites.extract(setter[:defn], setter[:param]).filter_map do |w|
             type = w[:value_method] ? resolve_method(base_type, w[:value_method]) : base_type
             next unless type
 
