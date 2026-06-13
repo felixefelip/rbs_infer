@@ -70,6 +70,43 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesCallbacksGenerator 
     ])
     # No applies_self — self-narrowing belongs to the Devise sidecar
     expect(sidecar["callbacks"].first).not_to have_key("applies_self")
+    # No view file written for `index` → no ERB toplevel entry.
+    expect(sidecar["callbacks"].none? { |e| e["toplevel"] }).to be(true)
+  end
+
+  it "emits a toplevel ERB entry for the convention view of a guarded action" do
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p(File.join(dir, "app/controllers"))
+      File.write(File.join(dir, "app/controllers/application_controller.rb"), APP_CONTROLLER)
+      File.write(File.join(dir, "app/controllers/posts_controller.rb"), <<~RUBY)
+        class PostsController < ApplicationController
+          def show; end
+          def new; end
+        end
+      RUBY
+      # Only `show` has a convention view; `new` has none.
+      FileUtils.mkdir_p(File.join(dir, "app/views/posts"))
+      File.write(File.join(dir, "app/views/posts/show.html.erb"), "<%= Current.user %>\n")
+
+      scanner = RbsInfer::Extensions::Rails::BeforeActionScanner.new(app_dir: dir, scopes: ["user"])
+      output_dir = File.join(dir, "sig/rbs_infer_current_attributes")
+      described_class.new(
+        app_dir: dir, output_dir: output_dir, scanner: scanner,
+        resource_types: { "user" => "(User & User::Validated)" }, source_files: []
+      ).generate_all
+
+      sidecar = YAML.safe_load(File.read(File.join(output_dir, ".steep_callbacks.yml")))
+
+      expect(sidecar["callbacks"]).to include(
+        {
+          "class" => "ERBPostsShow",
+          "applies_constants" => { "Current" => "singleton(Current) & Current::UserPopulated" },
+          "toplevel" => true,
+        }
+      )
+      # `new` has no template → no ERB entry for it.
+      expect(sidecar["callbacks"].any? { |e| e["class"] == "ERBPostsNew" }).to be(false)
+    end
   end
 
   describe "transitive population through the setter override" do
