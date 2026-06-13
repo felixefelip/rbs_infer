@@ -29,7 +29,7 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesCallbacksGenerator 
       scanner = RbsInfer::Extensions::Rails::BeforeActionScanner.new(app_dir: dir, scopes: resource_types.keys)
       output_dir = File.join(dir, "sig/rbs_infer_current_attributes")
       generator = described_class.new(
-        app_dir: dir, output_dir: output_dir, scanner: scanner, resource_types: resource_types
+        app_dir: dir, output_dir: output_dir, scanner: scanner, resource_types: resource_types, source_files: []
       )
       generator.generate_all
 
@@ -70,6 +70,90 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesCallbacksGenerator 
     ])
     # No applies_self — self-narrowing belongs to the Devise sidecar
     expect(sidecar["callbacks"].first).not_to have_key("applies_self")
+  end
+
+  describe "transitive population through the setter override" do
+    # The Current model whose `user=` override transitively populates
+    # `caderneta` under a nil-decidable guard.
+    def generate_with_model(model_source, resource_types: { "user" => "(User & User::Validated)" })
+      Dir.mktmpdir do |dir|
+        FileUtils.mkdir_p(File.join(dir, "app/controllers"))
+        File.write(File.join(dir, "app/controllers/application_controller.rb"), APP_CONTROLLER)
+        # A guarded controller with a public action, so the sidecar emits
+        # an applies_constants entry.
+        File.write(File.join(dir, "app/controllers/posts_controller.rb"), <<~RUBY)
+          class PostsController < ApplicationController
+            def index; end
+          end
+        RUBY
+        FileUtils.mkdir_p(File.join(dir, "app/models"))
+        File.write(File.join(dir, "app/models/current.rb"), model_source)
+
+        scanner = RbsInfer::Extensions::Rails::BeforeActionScanner.new(app_dir: dir, scopes: resource_types.keys)
+        output_dir = File.join(dir, "sig/rbs_infer_current_attributes")
+        gen = described_class.new(app_dir: dir, output_dir: output_dir, scanner: scanner, resource_types: resource_types, source_files: [])
+        # Type resolution of `value.caderneta` is MethodTypeResolver's job
+        # (tested separately, and cwd-relative to sig/); stub it so this
+        # spec exercises the transitive wiring deterministically.
+        allow(gen).to receive(:resolve_method).with("(User & User::Validated)", "caderneta")
+                                              .and_return("(Caderneta & Caderneta::Validated)")
+        gen.generate_all
+        [
+          File.read(File.join(output_dir, "populated_markers.rbs")),
+          YAML.safe_load(File.read(File.join(output_dir, ".steep_callbacks.yml"))),
+        ]
+      end
+    end
+
+    it "adds the transitively-populated attribute to the marker (nil guard)" do
+      markers, = generate_with_model(<<~RUBY)
+        class Current < ActiveSupport::CurrentAttributes
+          attribute :user, :caderneta
+
+          def user=(value)
+            super(value)
+            self.caderneta = value.caderneta unless value.nil?
+          end
+        end
+      RUBY
+
+      expect(markers).to include("def user: () -> (User & User::Validated)")
+      expect(markers).to include("def caderneta: () -> (Caderneta & Caderneta::Validated)")
+      expect { RBS::Parser.parse_signature(markers) }.not_to raise_error
+    end
+
+    it "intersects every marker of the constant in the sidecar" do
+      _, sidecar = generate_with_model(<<~RUBY)
+        class Current < ActiveSupport::CurrentAttributes
+          attribute :user, :caderneta
+
+          def user=(value)
+            super(value)
+            self.caderneta = value.caderneta unless value.nil?
+          end
+        end
+      RUBY
+
+      entry = sidecar["callbacks"].find { |e| e["applies_constants"]&.key?("Current") }
+      expect(entry["applies_constants"]["Current"])
+        .to eq("singleton(Current) & Current::UserPopulated & Current::CadernetaPopulated")
+    end
+
+    it "does NOT add it when the guard is `present?` (blank gap)" do
+      markers, = generate_with_model(<<~RUBY)
+        class Current < ActiveSupport::CurrentAttributes
+          attribute :user, :caderneta
+
+          def user=(value)
+            super(value)
+            self.caderneta = value.caderneta if value.present?
+          end
+        end
+      RUBY
+
+      expect(markers).to include("def user: ()")
+      expect(markers).not_to include("def caderneta:")
+    end
   end
 
   it "writes nothing when no guarded handler populates a constant" do
