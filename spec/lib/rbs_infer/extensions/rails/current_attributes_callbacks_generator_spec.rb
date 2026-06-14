@@ -193,6 +193,82 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesCallbacksGenerator 
     end
   end
 
+  describe "partial narrowing via the render graph" do
+    # Guarded ApplicationController + a CadernetaController#index whose
+    # convention view renders the `_doses` partial. Optional extra files
+    # let each example introduce a dynamic/unguarded render.
+    def generate_with_views(extra: {})
+      Dir.mktmpdir do |dir|
+        FileUtils.mkdir_p(File.join(dir, "app/controllers"))
+        File.write(File.join(dir, "app/controllers/application_controller.rb"), APP_CONTROLLER)
+        File.write(File.join(dir, "app/controllers/caderneta_controller.rb"), <<~RUBY)
+          class CadernetaController < ApplicationController
+            def index; end
+          end
+        RUBY
+        files = {
+          "app/views/caderneta/index.html.erb" => "<%= render 'doses', vacina: v %>\n",
+          "app/views/caderneta/_doses.html.erb" => "<%= Current.user %>\n",
+        }.merge(extra)
+        files.each do |rel, src|
+          full = File.join(dir, rel)
+          FileUtils.mkdir_p(File.dirname(full))
+          File.write(full, src)
+        end
+
+        scanner = RbsInfer::Extensions::Rails::BeforeActionScanner.new(app_dir: dir, scopes: ["user"])
+        output_dir = File.join(dir, "sig/rbs_infer_current_attributes")
+        described_class.new(
+          app_dir: dir, output_dir: output_dir, scanner: scanner,
+          resource_types: { "user" => "(User & User::Validated)" }, source_files: []
+        ).generate_all
+        YAML.safe_load(File.read(File.join(output_dir, ".steep_callbacks.yml")))["callbacks"]
+      end
+    end
+
+    it "emits a toplevel entry for a partial rendered only from a guarded view" do
+      entries = generate_with_views
+
+      expect(entries).to include(
+        {
+          "class" => "ERBPartialCadernetaDoses",
+          "applies_constants" => { "Current" => "singleton(Current) & Current::UserPopulated" },
+          "toplevel" => true,
+        }
+      )
+    end
+
+    it "covers a partial rendered transitively (view → partial → partial)" do
+      entries = generate_with_views(extra: {
+        "app/views/caderneta/_doses.html.erb" => "<%= render 'dose_row' %>\n",
+        "app/views/caderneta/_dose_row.html.erb" => "<%= Current.user %>\n",
+      })
+
+      classes = entries.select { |e| e["toplevel"] }.map { |e| e["class"] }
+      expect(classes).to include("ERBPartialCadernetaDoses", "ERBPartialCadernetaDoseRow")
+    end
+
+    it "does NOT narrow any partial when a dynamic render exists anywhere" do
+      entries = generate_with_views(extra: {
+        "app/views/caderneta/_doses.html.erb" => "<%= render partial: dynamic_name %>\n",
+      })
+
+      # Convention-view narrowing still stands; partials are suppressed.
+      expect(entries.any? { |e| e["class"] == "ERBCadernetaIndex" }).to be(true)
+      expect(entries.any? { |e| e["class"]&.start_with?("ERBPartial") }).to be(false)
+    end
+
+    it "does NOT cover a partial also rendered from an unguarded view" do
+      entries = generate_with_views(extra: {
+        # `public/landing` belongs to no guarded controller → its render of
+        # `_doses` leaves the partial reachable without the guard.
+        "app/views/public/landing.html.erb" => "<%= render 'caderneta/doses' %>\n",
+      })
+
+      expect(entries.any? { |e| e["class"] == "ERBPartialCadernetaDoses" }).to be(false)
+    end
+  end
+
   it "writes nothing when no guarded handler populates a constant" do
     markers, sidecar = generate(
       "application_controller.rb" => <<~RUBY

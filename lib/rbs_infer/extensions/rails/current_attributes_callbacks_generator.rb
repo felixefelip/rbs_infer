@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require "set"
 require "yaml"
 require "prism"
 require "active_support/core_ext/string/inflections"
 require_relative "before_action_scanner"
+require_relative "partial_render_graph"
 require_relative "erb_convention_generator/view_path_naming"
 require_relative "../../param_guarded_self_writes"
 require_relative "../../rbs_parser_util"
@@ -154,39 +156,72 @@ module RbsInfer
         end
 
         # One constants-only entry per guarded controller that descends
-        # from the populating handler's class. The Devise-side sidecar
-        # carries the `applies_self` narrowing for the same methods; the
-        # Steep callbacks loader merges entries across sidecar files.
+        # from the populating handler's class, plus the `toplevel: true`
+        # entries for every ERB context (convention view or partial) reached
+        # only through those guarded actions. The Devise-side sidecar carries
+        # the `applies_self` narrowing for the same methods; the Steep
+        # callbacks loader merges entries across sidecar files.
         def sidecar_yaml(populated)
-          entries = scanner.guarded_controllers.flat_map do |controller|
-            constants = populated.select do |p|
-              p[:scope] == controller[:scope] && scanner.descends_from?(controller[:class_name], p[:defining_class])
-            end
-            next [] if constants.empty?
+          # Canonical marker order (direct writes before transitive) so every
+          # stringified intersection lists markers the same way.
+          @marker_order = populated.map { |c| marker_fqn(c) }.uniq
+          facts = guarded_controller_facts(populated)
 
-            applies = applies_constants_map(constants)
+          controller_entries = facts.flat_map do |fact|
+            applies = stringify_set_map(fact[:set_map])
+            controller = fact[:controller]
             # The action carries the narrowing at its entry...
             controller_entry = {
               "class" => controller[:class_name],
               "applies_constants" => applies,
               "runs_before" => controller[:actions],
             }
-            # ...and the convention view each guarded action renders sees
-            # the same populated Current at its top-level body (the ERB
-            # class has no method, so `toplevel: true` — felixefelip/steep#42).
+            # ...and the convention view each guarded action renders sees the
+            # same populated Current at its top-level body (the ERB class has
+            # no method, so `toplevel: true` — felixefelip/steep#42).
             [controller_entry] + erb_view_entries(controller[:class_name], controller[:actions], applies)
           end
 
+          entries = controller_entries + partial_toplevel_entries(facts)
           { "version" => 1, "callbacks" => entries }.to_yaml
         end
 
-        # A constant can be populated in several attributes (the direct
-        # write + transitive ones), each with its own marker module —
-        # intersect them all, else only one would narrow.
-        def applies_constants_map(constants)
+        # Guarded controllers that descend from a populating handler, each
+        # paired with the marker set it proves present.
+        # => [{ controller:, set_map: { const => Set[marker_fqn] } }, ...]
+        def guarded_controller_facts(populated)
+          scanner.guarded_controllers.filter_map do |controller|
+            constants = populated.select do |p|
+              p[:scope] == controller[:scope] && scanner.descends_from?(controller[:class_name], p[:defining_class])
+            end
+            next if constants.empty?
+
+            { controller: controller, set_map: marker_set_map(constants) }
+          end
+        end
+
+        # A constant can be populated in several attributes (the direct write
+        # + transitive ones), each with its own marker module. Represent the
+        # narrowing as a per-constant SET of marker FQNs so it can be
+        # intersected across render sites before being stringified.
+        def marker_set_map(constants)
           constants.group_by { |c| c[:const_name] }.transform_values do |cs|
-            markers = cs.map { |c| "#{c[:const_name]}::#{marker_name(c)}" }.uniq
-            (["singleton(#{cs.first[:const_name]})"] + markers).join(" & ")
+            cs.map { |c| marker_fqn(c) }.uniq.to_set
+          end
+        end
+
+        def marker_fqn(constant)
+          "#{constant[:const_name]}::#{marker_name(constant)}"
+        end
+
+        # { const => Set[marker_fqn] } => { const => "singleton(C) & C::M1 & …" },
+        # markers ordered canonically. Empty markers yield no key.
+        def stringify_set_map(set_map)
+          set_map.each_with_object({}) do |(const_name, markers), acc|
+            next if markers.empty?
+
+            ordered = markers.to_a.sort_by { |m| @marker_order.index(m) || Float::INFINITY }
+            acc[const_name] = (["singleton(#{const_name})"] + ordered).join(" & ")
           end
         end
 
@@ -210,6 +245,13 @@ module RbsInfer
         # template file exists. `AdminUsersController#show` → app/views/
         # admin_users/show.html.erb → "ERBAdminUsersShow".
         def erb_view_class(controller_class, action)
+          vr = convention_view_relative(controller_class, action)
+          vr && view_path_naming.erb_class_name(vr)
+        end
+
+        # View-relative path of `Controller#action`'s convention template
+        # ("admin_users/show.html.erb"), or nil when none exists.
+        def convention_view_relative(controller_class, action)
           path = controller_class.sub(/Controller\z/, "").underscore
           return nil if path.empty?
 
@@ -218,7 +260,76 @@ module RbsInfer
           end
           return nil unless fmt
 
-          view_path_naming.erb_class_name("#{path}/#{action}.#{fmt}.erb")
+          "#{path}/#{action}.#{fmt}.erb"
+        end
+
+        # `toplevel: true` entries for partials proven reachable ONLY through
+        # guard-covered render sites (felixefelip/rbs_infer#25). Bails on the
+        # whole set when the app has any unresolvable dynamic render — the
+        # graph can't then be proven complete (see PartialRenderGraph).
+        def partial_toplevel_entries(facts)
+          graph = PartialRenderGraph.new(app_dir: app_dir).build
+          return [] if graph.dynamic?
+
+          covered = covered_partials(graph, convention_view_seed(facts))
+          covered.sort.map do |view_relative, set_map|
+            {
+              "class" => view_path_naming.erb_class_name(view_relative),
+              "applies_constants" => stringify_set_map(set_map),
+              "toplevel" => true,
+            }
+          end
+        end
+
+        # Seed of the reachability fixpoint: each guarded action's convention
+        # view (the file it renders) mapped to that action's proven markers.
+        # => { "caderneta/index.html.erb" => { const => Set[marker_fqn] } }
+        def convention_view_seed(facts)
+          facts.each_with_object({}) do |fact, seed|
+            fact[:controller][:actions].each do |action|
+              vr = convention_view_relative(fact[:controller][:class_name], action)
+              seed[vr] = fact[:set_map] if vr
+            end
+          end
+        end
+
+        # Fixpoint over the render graph: a partial is covered iff it isn't
+        # rendered externally (controller/layout) and ALL of its render sites
+        # are themselves covered — its markers are the intersection across
+        # those sites. Partials in an uncovered cycle never enter `covered`.
+        # => { partial_file_view_relative => { const => Set[marker_fqn] } }
+        def covered_partials(graph, seed)
+          covered = seed.dup
+
+          loop do
+            progressed = false
+            graph.partial_files.each do |partial_key, view_relative|
+              next if covered.key?(view_relative) || graph.external.include?(partial_key)
+
+              sites = graph.renderers_of(partial_key)
+              site_maps = sites.map { |s| covered[s] }
+              next if sites.empty? || site_maps.any?(&:nil?)
+
+              merged = intersect_set_maps(site_maps)
+              next if merged.empty?
+
+              covered[view_relative] = merged
+              progressed = true
+            end
+            break unless progressed
+          end
+
+          covered.reject { |view_relative, _| seed.key?(view_relative) }
+        end
+
+        # Per-constant intersection of marker sets: a constant survives only
+        # if every site narrows it, with the markers common to all sites.
+        def intersect_set_maps(maps)
+          common_consts = maps.map(&:keys).reduce(:&) || []
+          common_consts.each_with_object({}) do |const_name, acc|
+            markers = maps.map { |m| m[const_name] }.reduce(:&)
+            acc[const_name] = markers unless markers.empty?
+          end
         end
 
         # Stateless holder for `ViewPathNaming#erb_class_name` (view path →
