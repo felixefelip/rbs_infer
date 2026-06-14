@@ -109,7 +109,10 @@ module RbsInfer
 
             layout ? @external << key : @edges[view_relative] << key
           end
-        rescue StandardError
+        rescue SystemCallError
+          # Couldn't read the view file (the only non-bug error here — parse
+          # failures surface via `success?`, not exceptions). A view we can't
+          # read could hide a render → bail conservatively.
           @dynamic = true
         end
 
@@ -120,8 +123,11 @@ module RbsInfer
             key = render_key(target, nil)
             @external << key if key
           end
-        rescue StandardError
-          nil
+        rescue SystemCallError
+          # Couldn't read the file → we may have missed an `external` mark that
+          # keeps a partial uncovered. Bail rather than risk narrowing a
+          # partial that's actually reachable without the guard.
+          @dynamic = true
         end
 
         # Resolves a yielded render target to a partial key, or nil to skip.
@@ -199,8 +205,6 @@ module RbsInfer
         def erb_to_ruby(erb_source)
           require "herb"
           Herb.extract_ruby(erb_source, comments: true)
-        rescue StandardError
-          nil
         end
       end
     end

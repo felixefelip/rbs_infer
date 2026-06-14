@@ -156,4 +156,35 @@ RSpec.describe RbsInfer::Extensions::Rails::PartialRenderGraph do
       end
     end
   end
+
+  # A file we can't read could hide a render (or, for ruby, an `external`
+  # mark) → bail rather than risk an unsound narrowing. Only I/O failures are
+  # rescued; a bug in AST traversal must still surface.
+  describe "I/O errors degrade conservatively" do
+    def graph_with_unreadable(rel, src)
+      Dir.mktmpdir do |dir|
+        full = File.join(dir, rel)
+        FileUtils.mkdir_p(File.dirname(full))
+        File.write(full, src)
+        allow(File).to receive(:read).and_call_original
+        allow(File).to receive(:read).with(full).and_raise(Errno::EACCES, full)
+        described_class.new(app_dir: dir).build
+      end
+    end
+
+    it "bails when a view file can't be read" do
+      g = graph_with_unreadable("app/views/posts/show.html.erb", "<%= render 'row' %>\n")
+      expect(g.dynamic?).to be(true)
+    end
+
+    it "bails when a render-source ruby file can't be read" do
+      # Regression: this used to be swallowed (`rescue => nil`), dropping the
+      # `external` mark and allowing an unsound narrowing.
+      g = graph_with_unreadable(
+        "app/controllers/posts_controller.rb",
+        "class PostsController; def show; render partial: 'posts/row'; end; end\n"
+      )
+      expect(g.dynamic?).to be(true)
+    end
+  end
 end
