@@ -3,6 +3,7 @@
 require "fileutils"
 require "prism"
 require "set"
+require_relative "../../../rbs_infer"
 
 module RbsInfer
   module Extensions
@@ -117,7 +118,12 @@ module RbsInfer
           lines << "  include _RbsRailsPathHelpers" if path_helpers_available?
           lines << "  include _RbsRailsFlashHelpers" if flash_helpers_available?
           lines << "  include Kaminari::Helpers::HelperMethods" if kaminari_installed?
-          lines << "  include ApplicationHelper"
+          # Rails' default `include_all_helpers` mixes every helper module into
+          # every view AND partial. ActionViewContext is included by every
+          # generated ERB context, so surfacing the helpers here is what lets a
+          # partial resolve a convention helper (e.g. SugestoesHelper) it never
+          # includes directly. (`= false` → just ApplicationHelper.)
+          app_helper_modules.each { |mod| lines << "  include #{mod}" }
 
           extract_app_controller_helper_methods.each do |name, signature|
             lines << ""
@@ -136,6 +142,33 @@ module RbsInfer
         def flash_helpers_available?
           flash_helpers_rbs = Dir[File.join(@app_dir, "sig/**/flash_helpers.rbs")].first
           flash_helpers_rbs && File.read(flash_helpers_rbs).include?("_RbsRailsFlashHelpers")
+        end
+
+        # Helper modules to mix into ActionViewContext. With Rails' default
+        # `include_all_helpers`, that's every `app/helpers/**/*.rb` module
+        # (sorted, so method-name collisions resolve deterministically);
+        # otherwise just ApplicationHelper. Names use the same path→constant
+        # convention rbs_infer applies when naming each helper's RBS, so every
+        # emitted `include` resolves to a generated module.
+        def app_helper_modules
+          return ["ApplicationHelper"] unless include_all_helpers?
+
+          helpers_root = File.join(@app_dir, "app/helpers")
+          Dir[File.join(helpers_root, "**/*.rb")].map do |path|
+            relative = path.delete_prefix("#{helpers_root}/").delete_suffix(".rb")
+            RbsInfer.path_to_class_name(relative)
+          end.sort
+        end
+
+        # `config.action_controller.include_all_helpers` defaults to true, so we
+        # only scan for an explicit opt-out under config/. A dynamic/unreadable
+        # setting falls back to the default (true).
+        def include_all_helpers?
+          Dir[File.join(@app_dir, "config/**/*.rb")].none? do |file|
+            File.read(file).match?(/\.include_all_helpers\s*=\s*false\b/)
+          end
+        rescue SystemCallError
+          true
         end
 
         def extract_app_controller_helper_methods

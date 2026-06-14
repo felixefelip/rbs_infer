@@ -17,6 +17,16 @@ module RbsInfer
               .downcase
   end
 
+  # Path (sem extensão) → nome da constante, pela mesma convenção de
+  # camelização que o rbs_infer usa para nomear a classe/módulo de um arquivo
+  # (e que o Zeitwerk garante para apps Rails). Inverso conveniente de
+  # `class_name_to_path` no caso convencional.
+  #   "sugestoes_helper"   → "SugestoesHelper"
+  #   "admin/posts_helper" → "Admin::PostsHelper"
+  def self.path_to_class_name(path)
+    path.split("/").map { |segment| segment.split(/[_-]/).map(&:capitalize).join }.join("::")
+  end
+
   # Verifica se um caminho de arquivo corresponde exatamente ao path da classe,
   # evitando falsos positivos como "via_magic_link.rb" ao buscar "magic_link.rb".
   def self.file_matches_class_path?(file, class_path, ext: ".rb")
