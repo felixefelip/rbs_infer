@@ -306,4 +306,83 @@ RSpec.describe RbsInfer::NewCallCollector do
       expect(usages.first["value"]).to eq("LegacyCompany")
     end
   end
+
+  describe "target-method calls through marker-decorated / self-refined receivers" do
+    # Peça B: the receiver type carries markers, i.e. it's an intersection
+    # like `Caderneta & Caderneta::Validated`. `match_class?` must recognize
+    # the target class as one of the intersection's components, otherwise the
+    # call is silently dropped and the argument types are never collected.
+    it "matches a target call whose receiver resolves to an intersection type" do
+      source = "caderneta.qtde_por_vacina(v)"
+      result = Prism.parse(source)
+      visitor = described_class.new(
+        target_class: "Caderneta",
+        method_return_types: { "caderneta" => "Caderneta & Caderneta::Validated", "v" => "Vacina" },
+        local_var_types: {},
+        target_methods: { "qtde_por_vacina" => ["vacina"] }
+      )
+      result.value.accept(visitor)
+
+      expect(visitor.method_call_usages["qtde_por_vacina"]).to eq([{ "vacina" => "Vacina" }])
+    end
+
+    # Peça A: inside a method whose `self` is callback-refined, a
+    # `self.<association>` used as the receiver OR as an argument resolves
+    # against that refined self (the marker-decorated reader), not the base
+    # nilable reader — so both the receiver match and the argument type pick
+    # up the validated type.
+    it "resolves self.<association> receiver and argument against the refined self" do
+      files = {
+        "sig/holder.rbs" => <<~RBS,
+          class Holder
+            def thing: () -> Thing?
+            def other: () -> Other?
+          end
+
+          class Holder::Validated
+            def thing: () -> (Thing & Thing::Validated)
+            def other: () -> (Other & Other::Validated)
+          end
+
+          class Thing
+          end
+          class Thing::Validated
+          end
+          class Other
+          end
+          class Other::Validated
+          end
+        RBS
+        "caller.rb" => <<~RUBY
+          class Holder
+            def m
+              thing.target_method(other)
+            end
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |dir, paths|
+        Dir.chdir(dir) do
+          resolver = RbsInfer::MethodTypeResolver.new(paths)
+          source = File.read(File.join(dir, "caller.rb"))
+          result = Prism.parse(source)
+          visitor = described_class.new(
+            target_class: "Thing",
+            method_return_types: {},
+            local_var_types: {},
+            method_type_resolver: resolver,
+            caller_class_name: "Holder",
+            target_methods: { "target_method" => ["arg"] },
+            self_types_by_method: { "m" => "Holder & Holder::Validated" }
+          )
+          result.value.accept(visitor)
+
+          expect(visitor.method_call_usages["target_method"]).to eq(
+            [{ "arg" => "Other & Other::Validated" }]
+          )
+        end
+      end
+    end
+  end
 end
