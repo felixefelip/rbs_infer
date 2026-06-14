@@ -1,0 +1,12 @@
+# resolve-type-names: false
+
+interface ::_RbsRailsFlashHelpers
+  def alert: () -> ::String?
+  def notice: () -> ::String?
+end
+
+module ::ActionController
+  class ::ActionController::Base
+    include ::_RbsRailsFlashHelpers
+  end
+end
