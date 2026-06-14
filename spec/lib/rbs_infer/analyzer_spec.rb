@@ -343,6 +343,43 @@ RSpec.describe RbsInfer::Analyzer do
       end
     end
 
+    # Regression: methods inside `class << self` are singleton (class)
+    # methods, but the `self.` receiver is absent on the node, so they were
+    # collected as instance methods. A `consume` defined both as a class
+    # method (in `class << self`) and an instance method then collapsed into
+    # two `def consume:` lines in the same (instance) scope. They must split
+    # into `def self.consume` and `def consume`, each resolving on its own.
+    it "separa class << self e instância homônimos em def self.X e def X" do
+      files = {
+        "magic_link.rb" => <<~RUBY
+          class MagicLink
+            class << self
+              def consume(code)
+                42
+              end
+            end
+
+            def consume
+              "done"
+            end
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |dir, paths|
+        analyzer = described_class.new(target_file: paths.first, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        # Exactly one of each surface — no duplicated `def consume:`.
+        expect(rbs.scan(/^\s*def self\.consume:/).size).to eq(1)
+        expect(rbs.scan(/^\s*def consume:/).size).to eq(1)
+        # Distinct scopes keep distinct signatures — the return types do not
+        # bleed between the singleton and the instance method.
+        expect(rbs).to include("def self.consume: (untyped code) -> Integer")
+        expect(rbs).to include("def consume: () -> String")
+      end
+    end
+
     # Regression: `has_nil_return?` annotates a method whose body has an
     # early `return` (implicit nil) with `?`. The selectors that invoke it
     # were `m.kind == :method`, so singleton methods missed the wrap.

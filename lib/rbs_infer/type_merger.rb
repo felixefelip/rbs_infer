@@ -63,10 +63,12 @@ module RbsInfer
         next unless last_stmt
 
         method_name = defn.name.to_s
-        # `def self.x` is collected as :class_method — matching the kind
-        # avoids updating the wrong member when instance and singleton
-        # share a name (e.g. expanded CurrentAttributes accessors).
-        kind = defn.receiver.is_a?(Prism::SelfNode) ? :class_method : :method
+        # Class methods (`def self.x` or `class << self; def x`) are
+        # collected as :class_method — matching the kind avoids updating the
+        # wrong member when an instance and a singleton method share a name
+        # (expanded CurrentAttributes accessors, or a `consume` defined both
+        # ways). DefCollector carries the singleton context the bare node lacks.
+        kind = collector.class_method?(defn) ? :class_method : :method
         owner = collector.owner_of(defn)
         member = members.find { |m| m.kind == kind && m.name == method_name && m.owner == owner }
         next unless member
@@ -162,7 +164,7 @@ module RbsInfer
         # this skip, a trailing `self.x = param` would leak the RHS type
         # via the attribute-write rule.
         next if method_name == "initialize"
-        kind = defn.receiver.is_a?(Prism::SelfNode) ? :class_method : :method
+        kind = collector.class_method?(defn) ? :class_method : :method
         owner = collector.owner_of(defn)
         member = members.find { |m| m.kind == kind && m.name == method_name && m.owner == owner }
         next unless member
