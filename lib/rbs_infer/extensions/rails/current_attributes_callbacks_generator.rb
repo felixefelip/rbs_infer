@@ -5,6 +5,7 @@ require "yaml"
 require "prism"
 require "active_support/core_ext/string/inflections"
 require_relative "before_action_scanner"
+require_relative "erb_convention_generator/view_path_naming"
 require_relative "../../param_guarded_self_writes"
 require_relative "../../rbs_parser_util"
 require_relative "../../method_type_resolver"
@@ -157,26 +158,73 @@ module RbsInfer
         # carries the `applies_self` narrowing for the same methods; the
         # Steep callbacks loader merges entries across sidecar files.
         def sidecar_yaml(populated)
-          entries = scanner.guarded_controllers.filter_map do |controller|
+          entries = scanner.guarded_controllers.flat_map do |controller|
             constants = populated.select do |p|
               p[:scope] == controller[:scope] && scanner.descends_from?(controller[:class_name], p[:defining_class])
             end
-            next if constants.empty?
+            next [] if constants.empty?
 
-            {
+            applies = applies_constants_map(constants)
+            # The action carries the narrowing at its entry...
+            controller_entry = {
               "class" => controller[:class_name],
-              # A constant can be populated in several attributes (the
-              # direct write + transitive ones), each with its own marker
-              # module — intersect them all, else only one would narrow.
-              "applies_constants" => constants.group_by { |c| c[:const_name] }.transform_values do |cs|
-                markers = cs.map { |c| "#{c[:const_name]}::#{marker_name(c)}" }.uniq
-                (["singleton(#{cs.first[:const_name]})"] + markers).join(" & ")
-              end,
+              "applies_constants" => applies,
               "runs_before" => controller[:actions],
             }
+            # ...and the convention view each guarded action renders sees
+            # the same populated Current at its top-level body (the ERB
+            # class has no method, so `toplevel: true` — felixefelip/steep#42).
+            [controller_entry] + erb_view_entries(controller[:class_name], controller[:actions], applies)
           end
 
           { "version" => 1, "callbacks" => entries }.to_yaml
+        end
+
+        # A constant can be populated in several attributes (the direct
+        # write + transitive ones), each with its own marker module —
+        # intersect them all, else only one would narrow.
+        def applies_constants_map(constants)
+          constants.group_by { |c| c[:const_name] }.transform_values do |cs|
+            markers = cs.map { |c| "#{c[:const_name]}::#{marker_name(c)}" }.uniq
+            (["singleton(#{cs.first[:const_name]})"] + markers).join(" & ")
+          end
+        end
+
+        # One `toplevel: true` entry per guarded action whose convention
+        # view exists. Sound for convention views (rendered by that single
+        # action). NOT emitted for partials/layouts (no single rendering
+        # action) nor checked against explicit cross-renders by an
+        # unguarded action — same heterogeneous-render scope as the issue.
+        def erb_view_entries(controller_class, actions, applies)
+          actions.filter_map do |action|
+            erb_class = erb_view_class(controller_class, action)
+            next unless erb_class
+
+            # Fresh hash per entry — sharing `applies` would serialize as a
+            # YAML alias.
+            { "class" => erb_class, "applies_constants" => applies.dup, "toplevel" => true }
+          end
+        end
+
+        # Convention view class for `Controller#action`, or nil when no
+        # template file exists. `AdminUsersController#show` → app/views/
+        # admin_users/show.html.erb → "ERBAdminUsersShow".
+        def erb_view_class(controller_class, action)
+          path = controller_class.sub(/Controller\z/, "").underscore
+          return nil if path.empty?
+
+          fmt = %w[html turbo_stream].find do |f|
+            File.exist?(File.join(app_dir, "app/views", path, "#{action}.#{f}.erb"))
+          end
+          return nil unless fmt
+
+          view_path_naming.erb_class_name("#{path}/#{action}.#{fmt}.erb")
+        end
+
+        # Stateless holder for `ViewPathNaming#erb_class_name` (view path →
+        # ERB class name), reused without dragging in the ERB generator.
+        def view_path_naming
+          @view_path_naming ||= Object.new.extend(ErbConventionGenerator::ViewPathNaming)
         end
 
         def marker_name(constant)
