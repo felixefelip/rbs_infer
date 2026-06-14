@@ -38,13 +38,9 @@ module RbsInfer
           lines << ""
           lines << "  include _RbsRailsPathHelpers"
           lines << ""
-          lines << "  # Convenience accessor for <tt>flash[:alert]</tt>."
-          lines << "  def alert: () -> String"
-          lines << ""
-          lines << "  # Convenience accessor for <tt>flash[:notice]</tt>."
-          lines << ""
-          lines << "  def notice: () -> String"
-          lines << ""
+          # `notice`/`alert` (and any custom flash types) are inherited from
+          # ActionController::Base, where rbs_rails (felixefelip/rbs_rails) mixes
+          # _RbsRailsFlashHelpers — reflected from the real `_flash_types`.
           lines << "  def user_signed_in?: () -> bool"
           if kaminari_installed?
             lines << ""
@@ -119,6 +115,7 @@ module RbsInfer
           lines << "module ActionViewContext"
           lines << "  include ActionView::Helpers"
           lines << "  include _RbsRailsPathHelpers" if path_helpers_available?
+          lines << "  include _RbsRailsFlashHelpers" if flash_helpers_available?
           lines << "  include Kaminari::Helpers::HelperMethods" if kaminari_installed?
           lines << "  include ApplicationHelper"
 
@@ -134,6 +131,11 @@ module RbsInfer
         def path_helpers_available?
           path_helpers_rbs = Dir[File.join(@app_dir, "sig/**/path_helpers.rbs")].first
           path_helpers_rbs && File.read(path_helpers_rbs).include?("_RbsRailsPathHelpers")
+        end
+
+        def flash_helpers_available?
+          flash_helpers_rbs = Dir[File.join(@app_dir, "sig/**/flash_helpers.rbs")].first
+          flash_helpers_rbs && File.read(flash_helpers_rbs).include?("_RbsRailsFlashHelpers")
         end
 
         def extract_app_controller_helper_methods
