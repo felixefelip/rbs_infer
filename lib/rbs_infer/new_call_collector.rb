@@ -126,10 +126,55 @@ module RbsInfer
 
     def match_class?(name)
       normalized_target = @target_class.sub(/\A::/, "")
-      normalized_name = name.sub(/\A::/, "")
-      # Match exato ou referência relativa (ex: Email == Academico::Aluno::Email)
-      normalized_name == normalized_target ||
-        normalized_target.end_with?("::#{normalized_name}")
+      # A marker-decorated receiver is an intersection (`Caderneta &
+      # Caderneta::Validated`); match if any component is the target.
+      intersection_components(name).any? do |component|
+        normalized_name = component.sub(/\A::/, "")
+        # Match exato ou referência relativa (ex: Email == Academico::Aluno::Email)
+        normalized_name == normalized_target ||
+          normalized_target.end_with?("::#{normalized_name}")
+      end
+    end
+
+    # Top-level components of an intersection type, respecting [] / ()
+    # nesting so generics aren't split: "Caderneta & Caderneta::Validated"
+    # → ["Caderneta", "Caderneta::Validated"]. A non-intersection type
+    # returns itself. Outer enveloping parens are stripped first.
+    def intersection_components(type_str)
+      inner = strip_enveloping_parens(type_str.strip)
+      components = []
+      depth = 0
+      buffer = +""
+      inner.each_char do |char|
+        case char
+        when "[", "(" then depth += 1; buffer << char
+        when "]", ")" then depth -= 1; buffer << char
+        when "&"
+          if depth.zero?
+            components << buffer.strip
+            buffer = +""
+          else
+            buffer << char
+          end
+        else buffer << char
+        end
+      end
+      components << buffer.strip
+      components.reject(&:empty?)
+    end
+
+    # Strips parens only when they envelop the whole string ("(A & B)" → "A &
+    # B"); leaves "(A) & (B)" untouched.
+    def strip_enveloping_parens(str)
+      return str unless str.start_with?("(") && str.end_with?(")")
+
+      depth = 0
+      str.each_char.with_index do |char, i|
+        depth += 1 if char == "("
+        depth -= 1 if char == ")"
+        return str if depth.zero? && i < str.length - 1
+      end
+      str[1..-2].strip
     end
 
     def collect_local_assignments(defn)
@@ -268,7 +313,7 @@ module RbsInfer
         lookup_ivar_type(node) || "untyped"
       when Prism::CallNode
         if node.receiver.nil?
-          @method_return_types[node.name.to_s] || "untyped"
+          refined_self_method_type(node.name.to_s) || @method_return_types[node.name.to_s] || "untyped"
         elsif node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver) || "untyped"
         else
@@ -321,6 +366,23 @@ module RbsInfer
       @in_singleton_method ? "singleton(#{base})" : base
     end
 
+    # Resolves a `self.<method>` against the refined `self` type when the
+    # enclosing method is covered by an after-validation callback (its `self`
+    # is `Model & Model::Validated`). This makes `self.<association>` resolve
+    # to the marker-decorated reader (e.g. `Caderneta & Caderneta::Validated`)
+    # rather than the base nilable reader. Returns nil outside such methods,
+    # so the normal `@method_return_types` path is preserved unchanged.
+    def refined_self_method_type(method_name)
+      return nil if @in_singleton_method
+      return nil unless @method_type_resolver
+
+      refined = @current_method && @self_types_by_method[@current_method]
+      return nil if refined.nil? || refined.empty?
+
+      resolved = @method_type_resolver.resolve(refined, method_name)
+      resolved if resolved && resolved != "untyped"
+    end
+
     # Resolver receiver.method() → tipo do retorno do method no receiver
     def resolve_method_chain(node)
       return nil unless @method_type_resolver
@@ -357,8 +419,11 @@ module RbsInfer
         lookup_ivar_type(node)
       when Prism::CallNode
         if node.receiver.nil?
-          # Implicit method call (ex: attr_reader como aluno_dto)
-          @method_return_types[node.name.to_s]
+          # Implicit `self.<method>` (ex: attr_reader/association). Inside a
+          # callback-refined method, resolve against the refined self so a
+          # `self.<association>` picks up the marker-decorated reader instead
+          # of the base nilable one.
+          refined_self_method_type(node.name.to_s) || @method_return_types[node.name.to_s]
         elsif node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
         else
