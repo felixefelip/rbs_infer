@@ -8,13 +8,6 @@ class ApplicationController < ActionController::Base
 
   include _RbsRailsPathHelpers
 
-  # Convenience accessor for <tt>flash[:alert]</tt>.
-  def alert: () -> String
-
-  # Convenience accessor for <tt>flash[:notice]</tt>.
-
-  def notice: () -> String
-
   def user_signed_in?: () -> bool
 end
 

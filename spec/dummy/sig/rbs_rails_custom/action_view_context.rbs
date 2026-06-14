@@ -3,7 +3,9 @@
 module ActionViewContext
   include ActionView::Helpers
   include _RbsRailsPathHelpers
+  include _RbsRailsFlashHelpers
   include ApplicationHelper
+  include PostsHelper
 
-  def current_user: () -> User?
+  def current_user: () -> (User & User::Validated)?
 end
