@@ -36,9 +36,13 @@ module RbsInfer
       # Emitir constantes (NOME: Tipo) em ordem de fonte — determinístico
       # (felixefelip/rbs_infer#37). `signature` já vem como "NOME: Tipo"
       # do Analyzer (ConstantTypeResolver).
-      members.select { |m| m.kind == :constant && m.owner.nil? }.each do |const|
+      direct_constants = members.select { |m| m.kind == :constant && m.owner.nil? }
+      direct_constants.each do |const|
         lines << "#{member_indent}#{const.signature}"
       end
+      # Posição logo após o bloco de constantes — usada no fim do `build`
+      # para inserir uma linha em branco separando-as do restante do corpo.
+      constants_anchor = lines.size
 
       # Módulos aninhados definidos no corpo da classe-alvo
       # (felixefelip/rbs_infer#22). Membros coletados com `owner` vêm de
@@ -115,6 +119,14 @@ module RbsInfer
       # `unconditional.self` no sidecar.
       markers.each do |marker|
         emit_marker(lines, marker, member_indent)
+      end
+
+      # Linha em branco separando as constantes do restante do corpo, quando
+      # algo as segue (felixefelip/rbs_infer#37). Pulada quando a próxima
+      # linha já é em branco (ex.: o separador da seção `private`), para não
+      # duplicar; e quando nada segue (constantes são o último conteúdo).
+      if direct_constants.any? && lines.size > constants_anchor && lines[constants_anchor] != ""
+        lines.insert(constants_anchor, "")
       end
 
       lines << "#{base_indent}end"
