@@ -1,0 +1,7 @@
+class Palette
+  MAX: Integer
+  DEFAULT_NAME: String
+  WEIGHTS: Array[Integer]
+  COLORS: Array[Palette]
+  def initialize: (untyped name, untyped value) -> untyped
+end
