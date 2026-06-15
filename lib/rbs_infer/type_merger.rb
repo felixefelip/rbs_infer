@@ -132,7 +132,8 @@ module RbsInfer
         # 5. receiver.method() na última expressão
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver && method_type_resolver
           local_types = method_param_types[method_name] || {}
-          resolved = infer_call_return_type(last_stmt, own_return_types, method_type_resolver, local_types: local_types)
+          self_ctx = self_return_type_context(known_return_types, class_return_types, kind)
+          resolved = infer_call_return_type(last_stmt, self_ctx, method_type_resolver, local_types: local_types)
           if resolved
             member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
             own_return_types[method_name] = resolved
@@ -184,7 +185,8 @@ module RbsInfer
 
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver && method_type_resolver
           local_types = method_param_types[method_name] || {}
-          resolved = infer_call_return_type(last_stmt, own_return_types, method_type_resolver, local_types: local_types)
+          self_ctx = self_return_type_context(known_return_types, class_return_types, kind)
+          resolved = infer_call_return_type(last_stmt, self_ctx, method_type_resolver, local_types: local_types)
           if resolved
             member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
             own_return_types[method_name] = resolved
@@ -195,14 +197,28 @@ module RbsInfer
 
     private
 
+    # Bundle the class's own return-type knowledge for call resolution: both
+    # kind-split maps plus the enclosing method's kind. Lets a receiver typed
+    # as the class being generated resolve against the right local map when no
+    # RBS exists yet, without instance/class types crossing
+    # (felixefelip/rbs_infer#35, guarding #33).
+    def self_return_type_context(instance_types, class_types, own_kind)
+      SelfReturnTypeContext.new(
+        target_class: @target_class,
+        instance_types: instance_types,
+        class_types: class_types,
+        own_kind: own_kind,
+      )
+    end
+
     # RHS type of an attribute-write call. `a&.x = v` evaluates to nil
     # when the receiver is nil, so the safe-navigation form is nilable.
-    def assignment_rhs_type(call_node, known_return_types, method_type_resolver, local_types:)
+    def assignment_rhs_type(call_node, self_ctx, method_type_resolver, local_types:)
       rhs = call_node.arguments&.arguments&.last
       return nil unless rhs
 
       type = infer_literal_type(rhs) ||
-             resolve_receiver_type(rhs, known_return_types, method_type_resolver, local_types: local_types)
+             resolve_receiver_type(rhs, self_ctx, method_type_resolver, local_types: local_types)
       return nil if type.nil? || type == "untyped"
 
       call_node.safe_navigation? ? RbsParserUtil.nilablize(type) : type
@@ -215,7 +231,7 @@ module RbsInfer
     end
 
     # Resolve return type de receiver.method() ou method() com args
-    def infer_call_return_type(call_node, known_return_types, method_type_resolver, local_types: {})
+    def infer_call_return_type(call_node, self_ctx, method_type_resolver, local_types: {})
       result = if call_node.attribute_write?
         # Assignment expression (`obj.attr = rhs`, `obj[i] = rhs`): at
         # runtime it ALWAYS evaluates to the RHS — Ruby discards the
@@ -226,25 +242,32 @@ module RbsInfer
         # refined by #945); Prism's parser-level `attribute_write` flag
         # is the exact syntactic boundary (explicit `a.[]=(i, v)` calls
         # and `send(:x=, v)` don't carry it).
-        assignment_rhs_type(call_node, known_return_types, method_type_resolver, local_types: local_types)
+        assignment_rhs_type(call_node, self_ctx, method_type_resolver, local_types: local_types)
       elsif call_node.receiver.nil?
-        # Chamada sem receiver (self implícito) com argumentos
-        known_return_types[call_node.name.to_s]
+        # Receiverless call (implicit self). `new` is `self.new` → an
+        # instance of the class being generated (felixefelip/rbs_infer#35);
+        # any other name reads the enclosing self's own-kind map.
+        call_node.name == :new ? self_ctx.target_class : self_ctx.own_types[call_node.name.to_s]
       elsif call_node.name == :new && call_node.receiver
-        RbsInfer::Analyzer.extract_constant_path(call_node.receiver)
+        # `Foo.new` → instance of Foo; `self.new` → instance of the class
+        # being generated (felixefelip/rbs_infer#35).
+        RbsInfer::Analyzer.extract_constant_path(call_node.receiver) ||
+          (call_node.receiver.is_a?(Prism::SelfNode) ? self_ctx.target_class : nil)
       else
         # receiver.method → resolver tipo do receiver, depois do method
-        receiver_type = resolve_receiver_type(call_node.receiver, known_return_types, method_type_resolver, local_types: local_types)
+        receiver_type = resolve_receiver_type(call_node.receiver, self_ctx, method_type_resolver, local_types: local_types)
         if receiver_type && receiver_type != "untyped"
-          block_body_type = infer_block_body_type(call_node.block, known_return_types) if call_node.block
+          block_body_type = infer_block_body_type(call_node.block, self_ctx) if call_node.block
+          constant_receiver = call_node.receiver.is_a?(Prism::ConstantReadNode) || call_node.receiver.is_a?(Prism::ConstantPathNode)
           # Use singleton lookup for constant receivers (class method calls like ActiveRecord::Base.transaction)
-          resolved = if call_node.receiver.is_a?(Prism::ConstantReadNode) || call_node.receiver.is_a?(Prism::ConstantPathNode)
+          resolved = if constant_receiver
                        method_type_resolver.resolve_class_method(receiver_type, call_node.name.to_s, block_body_type: block_body_type) ||
                          method_type_resolver.resolve(receiver_type, call_node.name.to_s, block_body_type: block_body_type)
                      else
                        method_type_resolver.resolve(receiver_type, call_node.name.to_s, block_body_type: block_body_type)
                      end
           resolved = receiver_type if resolved == "self"
+          resolved = local_self_return(self_ctx, receiver_type, call_node.name.to_s, constant_receiver) if resolved.nil? || resolved == "untyped"
           # `a&.b` with a nilable receiver: the nil flows into the result.
           # (On a plain call the resolve is optimistic — `a.b` raises on
           # nil — but safe-nav really returns nil.)
@@ -254,24 +277,38 @@ module RbsInfer
           resolved
         end
       end
-      # Normalize: instance methods returning their own class → self
-      result = "self" if result && @target_class && result == @target_class
+      # Normalize: an instance method returning its own class → self. A class
+      # (singleton) method returning an instance of its class is NOT self
+      # (self there is the class), so restrict this to instance context
+      # (felixefelip/rbs_infer#35).
+      result = "self" if result && @target_class && result == @target_class && self_ctx.own_kind != :class_method
       result
     end
 
-    def resolve_receiver_type(node, known_return_types, method_type_resolver, local_types: {})
+    def resolve_receiver_type(node, self_ctx, method_type_resolver, local_types: {})
       case node
       when Prism::CallNode
         if node.receiver.nil?
-          known_return_types[node.name.to_s]
+          # Receiverless `new` is `self.new` → an instance of the class being
+          # generated; any other receiverless name reads the own-kind map
+          # (felixefelip/rbs_infer#35).
+          node.name == :new ? self_ctx.target_class : self_ctx.own_types[node.name.to_s]
         elsif node.name == :new && node.receiver
-          RbsInfer::Analyzer.extract_constant_path(node.receiver)
+          # `Foo.new` → instance of Foo; `self.new` → instance of the class
+          # being generated (felixefelip/rbs_infer#35).
+          RbsInfer::Analyzer.extract_constant_path(node.receiver) ||
+            (node.receiver.is_a?(Prism::SelfNode) ? self_ctx.target_class : nil)
         else
-          parent_type = resolve_receiver_type(node.receiver, known_return_types, method_type_resolver, local_types: local_types)
+          parent_type = resolve_receiver_type(node.receiver, self_ctx, method_type_resolver, local_types: local_types)
           if parent_type && parent_type != "untyped"
             resolved = method_type_resolver.resolve(parent_type, node.name.to_s)
             # "self" means the method returns the same type as the receiver
-            resolved == "self" ? parent_type : resolved
+            resolved = parent_type if resolved == "self"
+            if resolved.nil? || resolved == "untyped"
+              constant_receiver = node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
+              resolved = local_self_return(self_ctx, parent_type, node.name.to_s, constant_receiver)
+            end
+            resolved
           end
         end
       when Prism::SelfNode
@@ -279,15 +316,27 @@ module RbsInfer
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         RbsInfer::Analyzer.extract_constant_path(node)
       when Prism::LocalVariableReadNode
-        local_types[node.name.to_s] || known_return_types[node.name.to_s]
+        local_types[node.name.to_s] || self_ctx.own_types[node.name.to_s]
       end
+    end
+
+    # Fallback for a method called on the class being generated: in
+    # single-pass its RBS doesn't exist yet, so the resolver returns nil. The
+    # class's own return-type maps are the local source of truth — pick the
+    # one matching the RECEIVER's kind (a constant receiver → singleton
+    # methods; an instance, e.g. `new`, → instance methods). Guarded by the
+    # receiver type and never the method name, so a homonymous instance/class
+    # method pair never crosses (felixefelip/rbs_infer#35, keeping #33 fixed).
+    def local_self_return(self_ctx, receiver_type, method_name, constant_receiver)
+      return nil unless self_ctx.own_class?(receiver_type)
+      self_ctx.self_types_for(constant_receiver ? :singleton : :instance)[method_name]
     end
 
     def infer_literal_type(node)
       infer_node_type(node)
     end
 
-    def infer_block_body_type(block_node, known_return_types)
+    def infer_block_body_type(block_node, self_ctx)
       return nil unless block_node.is_a?(Prism::BlockNode)
 
       body = block_node.body
@@ -297,7 +346,7 @@ module RbsInfer
                   end
       return nil unless last_stmt
 
-      infer_node_type(last_stmt, known_types: known_return_types, context_class: @target_class)
+      infer_node_type(last_stmt, known_types: self_ctx.own_types, context_class: @target_class)
     end
   end
 end
