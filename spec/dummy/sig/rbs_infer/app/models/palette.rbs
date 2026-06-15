@@ -3,5 +3,6 @@ class Palette
   DEFAULT_NAME: String
   WEIGHTS: Array[Integer]
   COLORS: Array[Palette]
+
   def initialize: (untyped name, untyped value) -> untyped
 end

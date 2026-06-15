@@ -172,5 +172,38 @@ RSpec.describe RbsInfer::RbsBuilder do
       expect(result).to include("module Settings")
       expect(result).to include("  VERSION: String\n")
     end
+
+    it "separa as constantes dos métodos com uma linha em branco" do
+      builder = described_class.new(target_class: "Color", superclass_name: nil)
+      members = [
+        const("MAX", "Integer"),
+        RbsInfer::Member.new(kind: :method, name: "name", signature: "name: () -> String", visibility: :public)
+      ]
+
+      result = builder.build(members, {}, {})
+
+      expect(result).to include("  MAX: Integer\n\n  def name:")
+    end
+
+    it "NÃO adiciona linha em branco quando só há constantes (sem corpo após)" do
+      builder = described_class.new(target_class: "Color", superclass_name: nil)
+      result = builder.build([const("MAX", "Integer")], {}, {})
+
+      # constante seguida direto do `end`, sem linha em branco pendurada
+      expect(result).to include("  MAX: Integer\nend")
+    end
+
+    it "não duplica a linha em branco quando a seção private segue as constantes" do
+      builder = described_class.new(target_class: "Color", superclass_name: nil)
+      members = [
+        const("MAX", "Integer"),
+        RbsInfer::Member.new(kind: :method, name: "helper", signature: "helper: () -> void", visibility: :private)
+      ]
+
+      result = builder.build(members, {}, {})
+
+      expect(result).not_to include("\n\n\n")
+      expect(result).to include("  MAX: Integer\n\n  private")
+    end
   end
 end
