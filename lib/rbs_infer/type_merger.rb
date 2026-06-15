@@ -46,6 +46,11 @@ module RbsInfer
       return unless parsed_target
 
       known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
+      # Separate surface for class methods: a `def self.x` body resolves
+      # against (and feeds) class-method types only, never the instance map
+      # above — otherwise a homonymous instance method's type leaks across
+      # (felixefelip/rbs_infer#33).
+      class_return_types = build_class_method_return_types(members, method_type_resolver: method_type_resolver, target_class: @target_class)
 
       # Collect mapping: [kind, method_name] -> last expression of the body
       method_last_exprs = {}
@@ -69,6 +74,9 @@ module RbsInfer
         # (expanded CurrentAttributes accessors, or a `consume` defined both
         # ways). DefCollector carries the singleton context the bare node lacks.
         kind = collector.class_method?(defn) ? :class_method : :method
+        # Resolve this body against (and write back into) the map for its
+        # own kind, so class and instance methods never cross (#33).
+        own_return_types = kind == :class_method ? class_return_types : known_return_types
         owner = collector.owner_of(defn)
         member = members.find { |m| m.kind == kind && m.name == method_name && m.owner == owner }
         next unless member
@@ -82,7 +90,7 @@ module RbsInfer
           resolved = ivar_types[last_stmt.name.to_s.sub(/\A@/, "")]
           if resolved && resolved != "untyped"
             member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
-            known_return_types[method_name] = resolved
+            own_return_types[method_name] = resolved
             next
           end
         end
@@ -91,7 +99,7 @@ module RbsInfer
         literal_type = infer_literal_type(last_stmt)
         if literal_type
           member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(literal_type)}")
-          known_return_types[method_name] = literal_type
+          own_return_types[method_name] = literal_type
           next
         end
 
@@ -100,7 +108,7 @@ module RbsInfer
           class_name = RbsInfer::Analyzer.extract_constant_path(last_stmt.receiver)
           if class_name
             member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(class_name)}")
-            known_return_types[method_name] = class_name
+            own_return_types[method_name] = class_name
             next
           end
         end
@@ -113,10 +121,10 @@ module RbsInfer
         # 4. attr.mutation_method(expr) → return type é o tipo do attr (Array retorna self)
         if last_stmt.is_a?(Prism::CallNode) && ARRAY_SELF_RETURN_METHODS.include?(last_stmt.name) && last_stmt.receiver
           receiver_name = implicit_self_method_name(last_stmt.receiver)
-          if receiver_name && known_return_types[receiver_name]
-            resolved = known_return_types[receiver_name]
+          if receiver_name && own_return_types[receiver_name]
+            resolved = own_return_types[receiver_name]
             member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
-            known_return_types[method_name] = resolved
+            own_return_types[method_name] = resolved
             next
           end
         end
@@ -124,10 +132,10 @@ module RbsInfer
         # 5. receiver.method() na última expressão
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver && method_type_resolver
           local_types = method_param_types[method_name] || {}
-          resolved = infer_call_return_type(last_stmt, known_return_types, method_type_resolver, local_types: local_types)
+          resolved = infer_call_return_type(last_stmt, own_return_types, method_type_resolver, local_types: local_types)
           if resolved
             member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
-            known_return_types[method_name] = resolved
+            own_return_types[method_name] = resolved
             next
           end
         end
@@ -141,7 +149,10 @@ module RbsInfer
         called_name = method_last_exprs[[member.kind, member.name]]
         next unless called_name
 
-        resolved_type = known_return_types[called_name]
+        # Resolve the called name against the member's own kind: a class
+        # method's receiverless call refers to another class method, not a
+        # homonymous instance one (#33).
+        resolved_type = (member.kind == :class_method ? class_return_types : known_return_types)[called_name]
         next unless resolved_type
 
         member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved_type)}")
@@ -165,6 +176,7 @@ module RbsInfer
         # via the attribute-write rule.
         next if method_name == "initialize"
         kind = collector.class_method?(defn) ? :class_method : :method
+        own_return_types = kind == :class_method ? class_return_types : known_return_types
         owner = collector.owner_of(defn)
         member = members.find { |m| m.kind == kind && m.name == method_name && m.owner == owner }
         next unless member
@@ -172,10 +184,10 @@ module RbsInfer
 
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver && method_type_resolver
           local_types = method_param_types[method_name] || {}
-          resolved = infer_call_return_type(last_stmt, known_return_types, method_type_resolver, local_types: local_types)
+          resolved = infer_call_return_type(last_stmt, own_return_types, method_type_resolver, local_types: local_types)
           if resolved
             member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
-            known_return_types[method_name] = resolved
+            own_return_types[method_name] = resolved
           end
         end
       end

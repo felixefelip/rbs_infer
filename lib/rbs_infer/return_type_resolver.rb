@@ -27,6 +27,12 @@ module RbsInfer
       return if untyped_methods.empty?
 
       known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
+      # A class method resolves against its OWN surface. The map above is
+      # built from instance members, so applying it to a `:class_method`
+      # would leak a homonymous instance method's return type onto it (and
+      # the reverse, via the name-keyed Steep map below) —
+      # felixefelip/rbs_infer#33.
+      class_return_types = build_class_method_return_types(members, method_type_resolver: method_type_resolver, target_class: @target_class)
 
       # Aplicar tipos já resolvidos pelo resolver (ex: chamadas a métodos herdados)
       untyped_methods.each do |m|
@@ -38,7 +44,7 @@ module RbsInfer
         # setter's return (e.g. a CurrentAttributes override onto the
         # generated module accessor) — felixefelip/rbs_infer#22.
         next if setter_name?(m.name)
-        resolved = known_return_types[m.name]
+        resolved = return_types_for(m, known_return_types, class_return_types)[m.name]
         if resolved && resolved != "untyped"
           m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
         end
@@ -47,9 +53,11 @@ module RbsInfer
       # Use Steep for any remaining untyped methods and to correct wrong block generic types
       if @steep_bridge && parsed_target.source
         still_untyped = members.select { |m| method_member?(m) && m.name != "initialize" && m.signature =~ /->\s*untyped$/ }
-        steep_returns = @steep_bridge.method_return_types(parsed_target.source)
+        # Kind-split so a `def self.x` reads Steep's singleton-method type,
+        # not a homonymous `def x`'s (felixefelip/rbs_infer#33).
+        steep_returns = @steep_bridge.method_return_types_by_kind(parsed_target.source)
 
-        unless steep_returns.empty?
+        unless steep_returns[:instance].empty? && steep_returns[:singleton].empty?
           # Build def map for nil-return detection
           collector = DefCollector.new
           parsed_target.tree.accept(collector)
@@ -60,7 +68,7 @@ module RbsInfer
 
           still_untyped.each do |m|
             next if setter_name?(m.name)
-            steep_type = steep_returns[m.name]
+            steep_type = steep_returns_for(m, steep_returns)[m.name]
             if steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
               # Instance methods returning the same class (or host class for concerns) → self
               steep_type = "self" if self_types.include?(steep_type)
@@ -81,7 +89,7 @@ module RbsInfer
             next unless method_member?(m)
             next if m.name == "initialize"
             next if m.signature =~ /->\s*untyped$/
-            steep_type = steep_returns[m.name]
+            steep_type = steep_returns_for(m, steep_returns)[m.name]
             next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
             current_type = m.signature[/->\s*(.+)$/, 1]&.strip
             next if current_type == steep_type
@@ -97,7 +105,7 @@ module RbsInfer
             current_type = m.signature[/->\s*(.+)$/, 1]&.strip
             next unless current_type&.start_with?("{") && current_type.include?("untyped")
 
-            steep_type = steep_returns[m.name]
+            steep_type = steep_returns_for(m, steep_returns)[m.name]
             next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
             next unless steep_type.start_with?("{")
             next if current_type == steep_type
@@ -189,6 +197,17 @@ module RbsInfer
     # retorno que `:method` (steep_bridge devolve por nome para ambos).
     def method_member?(member)
       member.kind == :method || member.kind == :class_method
+    end
+
+    # Pick the return-type map matching a member's kind so instance and
+    # class methods never read each other's types (felixefelip/rbs_infer#33).
+    def return_types_for(member, instance_map, class_map)
+      member.kind == :class_method ? class_map : instance_map
+    end
+
+    # Same selection for the kind-split Steep map (`{instance:, singleton:}`).
+    def steep_returns_for(member, steep_returns)
+      member.kind == :class_method ? steep_returns[:singleton] : steep_returns[:instance]
     end
 
     # Verifica se o corpo do método contém `return nil` ou `return` (implícito nil)

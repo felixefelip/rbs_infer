@@ -101,6 +101,15 @@ module RbsInfer
       @cache[class_name] ||= build_class_types(class_name)
     end
 
+    # All class (singleton) method return types for a class, keyed by name —
+    # the singleton counterpart of `resolve_all`. Lets callers resolve a
+    # class method's body against other class methods without pulling in the
+    # instance-method table (felixefelip/rbs_infer#33).
+    def resolve_all_class_methods(class_name)
+      return {} unless class_name && class_name != "untyped"
+      lookup_class_methods(class_name)
+    end
+
     # Retorna os tipos dos parâmetros do initialize inferidos via call-sites
     # Ex: Entity.new(nome: "x", email: "y") → {"nome" => "String", "email" => "String"}
     def resolve_init_param_types(class_name)

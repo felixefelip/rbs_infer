@@ -36,5 +36,29 @@ module RbsInfer
 
       types
     end
+
+    # The class-method counterpart of `build_known_return_types`: a
+    # name→type map built ONLY from `:class_method` members and the class's
+    # singleton RBS. Kept separate from the instance map so a class method
+    # and an instance method that share a name resolve against their own
+    # surface, never each other's (felixefelip/rbs_infer#33).
+    def build_class_method_return_types(members, method_type_resolver:, target_class:)
+      types = {}
+
+      members.each do |m|
+        next unless m.kind == :class_method
+        if m.signature =~ /.*->\s*(.+)$/ && $1.strip != "untyped" && $1.strip != "void"
+          types[m.name] = $1.strip
+        end
+      end
+
+      if method_type_resolver && target_class
+        method_type_resolver.resolve_all_class_methods(target_class).each do |name, type|
+          types[name] ||= type
+        end
+      end
+
+      types
+    end
   end
 end
