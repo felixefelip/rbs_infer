@@ -121,4 +121,56 @@ RSpec.describe RbsInfer::RbsBuilder do
       expect { RBS::Parser.parse_signature(result) }.not_to raise_error
     end
   end
+
+  describe "#build com constantes (felixefelip/rbs_infer#37)" do
+    # `signature` de um membro :constant já chega como "NOME: Tipo"
+    # (resolvido pelo Analyzer); o builder só emite a linha.
+    def const(name, type)
+      RbsInfer::Member.new(kind: :constant, name: name, signature: "#{name}: #{type}", visibility: :public)
+    end
+
+    it "emite NOME: Tipo na ordem de fonte (membros)" do
+      builder = described_class.new(target_class: "Color", superclass_name: nil)
+      members = [
+        const("COLORS", "Array[Color]"),
+        const("MAX", "Integer"),
+        const("DEFAULT_NAME", "String")
+      ]
+
+      result = builder.build(members, {}, {})
+
+      expect(result).to include("  COLORS: Array[Color]\n")
+      expect(result).to include("  MAX: Integer\n")
+      expect(result).to include("  DEFAULT_NAME: String\n")
+      # ordem preservada
+      expect(result.index("COLORS")).to be < result.index("MAX")
+      expect(result.index("MAX")).to be < result.index("DEFAULT_NAME")
+    end
+
+    it "gera RBS parseável" do
+      builder = described_class.new(target_class: "Color", superclass_name: nil)
+      result = builder.build([const("MAX", "Integer")], {}, {})
+
+      expect { RBS::Parser.parse_signature(result) }.not_to raise_error
+    end
+
+    it "emite constantes de módulo aninhado dentro do módulo (owner)" do
+      builder = described_class.new(target_class: "Outer", superclass_name: nil)
+      member = RbsInfer::Member.new(
+        kind: :constant, name: "SEP", signature: "SEP: String", visibility: :public, owner: "Formatting"
+      )
+
+      result = builder.build([member], {}, {})
+
+      expect(result).to match(/module Formatting\n\s+SEP: String/)
+    end
+
+    it "emite constantes em escopo de módulo (is_module)" do
+      builder = described_class.new(target_class: "Settings", superclass_name: nil, is_module: true)
+      result = builder.build([const("VERSION", "String")], {}, {})
+
+      expect(result).to include("module Settings")
+      expect(result).to include("  VERSION: String\n")
+    end
+  end
 end

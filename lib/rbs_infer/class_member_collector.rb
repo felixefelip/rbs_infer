@@ -3,7 +3,10 @@ module RbsInfer
   # `owner` = caminho do módulo aninhado que define o membro (ex.
   # "Formatting"), ou nil quando é membro direto da classe-alvo
   # (felixefelip/rbs_infer#22). Default nil preserva o comportamento atual.
-  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, keyword_init: true)
+  # `value_node` = nó Prism do RHS, preenchido só para membros `:constant`
+  # (felixefelip/rbs_infer#37); o tipo é resolvido depois no Analyzer, que
+  # tem acesso ao SteepBridge/resolvers, e gravado em `signature`.
+  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, keyword_init: true)
 
   # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
   DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
@@ -148,7 +151,70 @@ module RbsInfer
       super
     end
 
+    # `NAME = <expr>` — a class/module constant. The RHS type is inferred
+    # later by the Analyzer (it owns the SteepBridge/resolvers); here we
+    # only capture the name and the RHS node (felixefelip/rbs_infer#37).
+    def visit_constant_write_node(node)
+      collect_constant(node.name.to_s, node.value, namespace: :current)
+      super
+    end
+
+    # `Foo::BAR = <expr>` / `self::BAR = <expr>`. We attribute it only when
+    # the namespace is the scope we're generating — either `self`/the
+    # current scope, or the fully-qualified target itself (which can appear
+    # at top level, e.g. `Color::TOP = 1` outside `class Color`). A write
+    # into some *other* namespace is that namespace's constant, not ours.
+    def visit_constant_path_write_node(node)
+      target = node.target
+      ns = target.parent.is_a?(Prism::SelfNode) ? :current : RbsInfer::Analyzer.extract_constant_path(target.parent)
+      collect_constant(target.name.to_s, node.value, namespace: ns)
+      super
+    end
+
     private
+
+    # Records a `:constant` member when `namespace` places it in the scope
+    # being generated. `:current` means the lexical scope (a plain `NAME =`
+    # or `self::NAME =`); a string namespace is only ours when it equals the
+    # fully-qualified target class.
+    def collect_constant(name, value_node, namespace:)
+      owner =
+        case namespace
+        when :current
+          return unless within_target_scope?
+          current_owner
+        else
+          # Qualified path write. Only `<target>::NAME = ...` is ours; it
+          # names the class directly, so it's a direct member (owner nil)
+          # and may legitimately sit at top level (no open scope needed).
+          return unless namespace == scope_target&.sub(/\A::/, "")
+          nil
+        end
+
+      @members << Member.new(
+        kind: :constant,
+        name: name,
+        signature: nil,
+        visibility: :public,
+        owner: owner,
+        value_node: value_node
+      )
+    end
+
+    # True when the current lexical position is inside the class/module
+    # being generated: directly in its body, or in a nested module of it.
+    # Guards against collecting top-level constants (e.g. the `Color =
+    # Struct.new(...)` that precedes a reopened `class Color`) and constants
+    # of nested *classes* (which aren't members of the target) —
+    # felixefelip/rbs_infer#37.
+    def within_target_scope?
+      return false if scope_stack.empty?
+
+      target = scope_target&.sub(/\A::/, "")
+      return true if target.nil? # flat mode (no target): innermost scope wins
+
+      scope_stack.last[:path] == target || !current_owner.nil?
+    end
 
     # Pushes a lexical scope frame, resetting visibility (a `private` in a
     # nested module must not leak out, and vice-versa), and restores both

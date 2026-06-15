@@ -1160,6 +1160,130 @@ RSpec.describe RbsInfer::Analyzer do
         end
       end
     end
+
+    # ─── Constantes (felixefelip/rbs_infer#37) ────────────────────
+    describe "constant declarations" do
+      it "emite a reprodução da issue (literais, Klass.new, cadeia coletora) em single-pass" do
+        files = {
+          "color.rb" => <<~RUBY
+            Color = Struct.new(:name, :value)
+
+            class Color
+              COLORS = {
+                "Blue" => "var(--color-1)",
+                "Gray" => "var(--color-2)"
+              }.collect { |name, value| new(name, value) }.freeze
+
+              MAX = 8
+              DEFAULT_NAME = "Blue"
+            end
+          RUBY
+        }
+
+        with_temp_files(files) do |_dir, paths|
+          rbs = described_class.new(target_class: "Color", target_file: paths.first, source_files: paths).generate_rbs
+
+          # `new(...)` resolve para a classe-alvo já no primeiro passe —
+          # sem RBS prévio de Color (o que o Steep sozinho não faria).
+          expect(rbs).to include("COLORS: Array[Color]")
+          expect(rbs).to include("MAX: Integer")
+          expect(rbs).to include("DEFAULT_NAME: String")
+        end
+      end
+
+      it "resolve Klass.new e cai para untyped quando não-decidível" do
+        files = {
+          "widget.rb" => <<~RUBY
+            class Builder; end
+
+            class Widget
+              BUILDER = Builder.new
+              DYNAMIC = some_runtime_call
+            end
+          RUBY
+        }
+
+        with_temp_files(files) do |_dir, paths|
+          target = paths.find { |p| p.end_with?("widget.rb") }
+          rbs = described_class.new(target_class: "Widget", target_file: target, source_files: paths).generate_rbs
+
+          expect(rbs).to include("BUILDER: Builder")
+          expect(rbs).to include("DYNAMIC: untyped")
+        end
+      end
+
+      it "emite constantes em escopo de módulo" do
+        files = {
+          "settings.rb" => <<~RUBY
+            module Settings
+              VERSION = "1.0"
+              LIMIT = 100
+            end
+          RUBY
+        }
+
+        with_temp_files(files) do |_dir, paths|
+          rbs = described_class.new(target_class: "Settings", target_file: paths.first, source_files: paths).generate_rbs
+
+          expect(rbs).to include("module Settings")
+          expect(rbs).to include("VERSION: String")
+          expect(rbs).to include("LIMIT: Integer")
+        end
+      end
+
+      it "emite uma única linha para constante reatribuída (última vence)" do
+        files = {
+          "config.rb" => <<~RUBY
+            class Config
+              LEVEL = 1
+              LEVEL = "high"
+            end
+          RUBY
+        }
+
+        with_temp_files(files) do |_dir, paths|
+          rbs = described_class.new(target_class: "Config", target_file: paths.first, source_files: paths).generate_rbs
+
+          expect(rbs.scan(/^\s*LEVEL:/).size).to eq(1)
+          expect(rbs).to include("LEVEL: String")
+        end
+      end
+
+      it "emite constante de path qualificada pela classe (Foo::BAR no top-level)" do
+        files = {
+          "gadget.rb" => <<~RUBY
+            class Gadget
+            end
+            Gadget::MAX = 42
+          RUBY
+        }
+
+        with_temp_files(files) do |_dir, paths|
+          rbs = described_class.new(target_class: "Gadget", target_file: paths.first, source_files: paths).generate_rbs
+
+          expect(rbs).to include("MAX: Integer")
+        end
+      end
+
+      # No ambiente real do dummy (RBS de stdlib carregada), o Steep refina
+      # o tipo de elemento de literais de coleção — paridade com o que um
+      # passe convergido produziria.
+      it "infere o tipo de elemento de literais de array via Steep", :dummy_app do
+        files = {
+          "palette.rb" => <<~RUBY
+            class Palette
+              WEIGHTS = [1, 2, 3]
+            end
+          RUBY
+        }
+
+        with_temp_files(files) do |_dir, paths|
+          rbs = described_class.new(target_class: "Palette", target_file: paths.first, source_files: paths).generate_rbs
+
+          expect(rbs).to include("WEIGHTS: Array[Integer]")
+        end
+      end
+    end
   end
 
   # ─── Integração com arquivos reais do projeto ───────────────────

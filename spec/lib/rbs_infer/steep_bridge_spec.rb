@@ -800,6 +800,55 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
     end
   end
 
+  describe "#constant_types" do
+    it "tipa constantes literais pelo RHS" do
+      code = <<~RUBY
+        class Foo
+          MAX = 8
+          DEFAULT_NAME = "Blue"
+        end
+      RUBY
+
+      result = bridge.constant_types(code)
+      expect(result["MAX"]).to eq("Integer")
+      expect(result["DEFAULT_NAME"]).to eq("String")
+    end
+
+    it "infere o tipo de elemento de literais de array" do
+      code = <<~RUBY
+        class Foo
+          WEIGHTS = [1, 2, 3]
+        end
+      RUBY
+
+      expect(bridge.constant_types(code)["WEIGHTS"]).to eq("Array[Integer]")
+    end
+
+    it "chaveia constantes de path pelo nome puro (casgn)" do
+      code = <<~RUBY
+        class Foo
+        end
+        Foo::LIMIT = 100
+      RUBY
+
+      expect(bridge.constant_types(code)["LIMIT"]).to eq("Integer")
+    end
+
+    it "omite constantes cujo RHS é untyped" do
+      code = <<~RUBY
+        class Foo
+          UNKNOWN = some_runtime_call
+        end
+      RUBY
+
+      expect(bridge.constant_types(code)).not_to have_key("UNKNOWN")
+    end
+
+    it "retorna hash vazio para código inválido" do
+      expect(bridge.constant_types("!!!invalid ruby")).to eq({})
+    end
+  end
+
   describe "#all_expression_types" do
     it "maps line:column to type for all typed expressions" do
       code = <<~RUBY

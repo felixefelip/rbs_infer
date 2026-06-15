@@ -345,6 +345,128 @@ RSpec.describe RbsInfer::ClassMemberCollector do
     expect(collector.superclass_name).to eq("ApplicationRecord")
   end
 
+  describe "constantes (felixefelip/rbs_infer#37)" do
+    def constants(source, target_class: nil)
+      result = Prism.parse(source)
+      visitor = described_class.new(comments: result.comments, lines: source.lines, target_class: target_class)
+      result.value.accept(visitor)
+      visitor.members.select { |m| m.kind == :constant }
+    end
+
+    it "coleta ConstantWriteNode com nome e nó do RHS, sem inferir o tipo ainda" do
+      source = <<~RUBY
+        class Color
+          MAX = 8
+          DEFAULT_NAME = "Blue"
+        end
+      RUBY
+
+      members = constants(source, target_class: "Color")
+      expect(members.map(&:name)).to eq(["MAX", "DEFAULT_NAME"])
+      # signature é preenchida só depois, pelo Analyzer
+      expect(members.map(&:signature)).to eq([nil, nil])
+      expect(members.map { |m| m.value_node.class }).to eq([Prism::IntegerNode, Prism::StringNode])
+      expect(members.map(&:visibility).uniq).to eq([:public])
+    end
+
+    it "preserva a ordem de fonte das constantes" do
+      source = <<~RUBY
+        class Color
+          COLORS = {}.freeze
+          MAX = 8
+          DEFAULT_NAME = "Blue"
+        end
+      RUBY
+
+      expect(constants(source, target_class: "Color").map(&:name)).to eq(["COLORS", "MAX", "DEFAULT_NAME"])
+    end
+
+    it "NÃO coleta a constante top-level que precede uma classe reaberta" do
+      # `Color = Struct.new(...)` é top-level; só as constantes dentro do
+      # corpo de `class Color` são membros da classe.
+      source = <<~RUBY
+        Color = Struct.new(:name, :value)
+
+        class Color
+          MAX = 8
+        end
+      RUBY
+
+      expect(constants(source, target_class: "Color").map(&:name)).to eq(["MAX"])
+    end
+
+    it "NÃO coleta constantes de uma classe aninhada (não são membros da alvo)" do
+      source = <<~RUBY
+        class Outer
+          OUTER_CONST = 1
+
+          class Inner
+            INNER_CONST = 2
+          end
+        end
+      RUBY
+
+      expect(constants(source, target_class: "Outer").map(&:name)).to eq(["OUTER_CONST"])
+    end
+
+    it "coleta constantes de um módulo aninhado com o owner correto" do
+      source = <<~RUBY
+        class Outer
+          module Formatting
+            SEP = ","
+          end
+        end
+      RUBY
+
+      sep = constants(source, target_class: "Outer").find { |m| m.name == "SEP" }
+      expect(sep).not_to be_nil
+      expect(sep.owner).to eq("Formatting")
+    end
+
+    it "coleta constante em escopo de módulo" do
+      source = <<~RUBY
+        module Settings
+          VERSION = "1.0"
+        end
+      RUBY
+
+      expect(constants(source, target_class: "Settings").map(&:name)).to eq(["VERSION"])
+    end
+
+    it "coleta ConstantPathWriteNode top-level qualificado pela classe-alvo" do
+      source = <<~RUBY
+        class Gadget
+        end
+        Gadget::MAX = 42
+      RUBY
+
+      member = constants(source, target_class: "Gadget").find { |m| m.name == "MAX" }
+      expect(member).not_to be_nil
+      expect(member.owner).to be_nil
+      expect(member.value_node).to be_a(Prism::IntegerNode)
+    end
+
+    it "coleta ConstantPathWriteNode via self:: dentro do corpo" do
+      source = <<~RUBY
+        class Gadget
+          self::DEFAULT = 1
+        end
+      RUBY
+
+      expect(constants(source, target_class: "Gadget").map(&:name)).to eq(["DEFAULT"])
+    end
+
+    it "NÃO coleta ConstantPathWriteNode de outro namespace" do
+      source = <<~RUBY
+        class Gadget
+        end
+        Other::NOPE = 99
+      RUBY
+
+      expect(constants(source, target_class: "Gadget")).to be_empty
+    end
+  end
+
   it "gera assinatura válida para RBS parser quando tem bloco" do
     source = <<~RUBY
       module MyHelper

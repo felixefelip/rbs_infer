@@ -233,6 +233,12 @@ module RbsInfer
     # param types and ivar types (ivar getters/setters — rbs_infer#19)
     type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target, method_param_types: method_param_types, ivar_types: ivar_types)
 
+    # Resolver tipos das constantes de classe/módulo (NOME = ...).
+    # Feito aqui, no Analyzer, porque a inferência de cadeias usa o
+    # SteepBridge e o new→classe-alvo precisa do target_class
+    # (felixefelip/rbs_infer#37).
+    resolve_constant_types(target_members)
+
     # Identificar parâmetros opcionais do initialize
     optional_params = extract_optional_init_params
 
@@ -415,6 +421,34 @@ module RbsInfer
     params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
     params.keywords.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:keywords)
     names
+  end
+
+  # ─── Resolver tipos das constantes de classe/módulo ───────────────
+  # Cada membro `:constant` carrega o nó do RHS (coletado em
+  # ClassMemberCollector). O Steep tipa todos os RHS de uma vez (oráculo
+  # para cadeias); o ConstantTypeResolver sobrepõe a inferência de
+  # construtor (new→classe-alvo) para que o single-pass já bata com o
+  # resultado convergido (felixefelip/rbs_infer#37). O tipo final é
+  # gravado em `signature` como "NOME: Tipo" para o RbsBuilder emitir.
+
+  def resolve_constant_types(target_members)
+    constants = target_members.select { |m| m.kind == :constant }
+    return if constants.empty?
+
+    # Ruby's last assignment wins and RBS declares each constant once; when
+    # a name is reassigned (same owner), keep only the last node and drop
+    # the earlier members so the builder emits a single line.
+    keep = {}
+    constants.each { |m| keep[[m.owner, m.name]] = m }
+    target_members.reject! { |m| m.kind == :constant && !keep[[m.owner, m.name]].equal?(m) }
+
+    steep_types = @parsed_target&.source ? steep_bridge.constant_types(@parsed_target.source) : {}
+    resolver = ConstantTypeResolver.new(target_class: @target_class)
+
+    keep.each_value do |member|
+      type = resolver.resolve(member.value_node, steep_type: steep_types[member.name])
+      member.signature = "#{member.name}: #{type}"
+    end
   end
 
   # ─── Extrair nomes dos keyword params opcionais do initialize ─────
@@ -790,6 +824,7 @@ require_relative "new_call_collector"
 require_relative "method_type_resolver"
 require_relative "caller_file_analyzer"
 require_relative "rbs_builder"
+require_relative "constant_type_resolver"
 require_relative "self_return_type_context"
 require_relative "type_merger"
 require_relative "ivar_type_set"
