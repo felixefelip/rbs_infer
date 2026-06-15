@@ -44,5 +44,21 @@ module RbsInfer
       mods = scope_stack[(target_idx + 1)..].select { |f| f[:kind] == :module && f[:name] }
       mods.empty? ? nil : mods.map { |f| f[:name] }.join("::")
     end
+
+    # True when the innermost open class/module scope is a `class << self`
+    # block (pushed as a :singleton frame). `def`s collected here define
+    # class (singleton) methods even though they carry no `self.` receiver.
+    def in_singleton_self?
+      scope_stack.last&.dig(:kind) == :singleton
+    end
+
+    # Whether a `def` node at the current traversal position defines a
+    # singleton (class) method — either `def self.name` (explicit receiver)
+    # or a plain `def name` nested in `class << self`. The single source of
+    # truth for this classification, shared by ClassMemberCollector and
+    # DefCollector so they never disagree on a method's kind.
+    def class_method_def?(node)
+      node.receiver.is_a?(Prism::SelfNode) || in_singleton_self?
+    end
   end
 end

@@ -127,6 +127,84 @@ RSpec.describe RbsInfer::ClassMemberCollector do
     expect(collector.members.find { |m| m.name == "build_count" }.signature).to include("-> Integer")
   end
 
+  describe "class << self (métodos singleton)" do
+    it "classifica métodos definidos em `class << self` como class_method" do
+      source = <<~RUBY
+        class Foo
+          class << self
+            def build(name)
+            end
+
+            def reset
+            end
+          end
+        end
+      RUBY
+
+      collector = collect(source)
+      build = collector.members.find { |m| m.name == "build" }
+      reset = collector.members.find { |m| m.name == "reset" }
+      expect(build.kind).to eq(:class_method)
+      expect(reset.kind).to eq(:class_method)
+    end
+
+    it "mantém método de classe e de instância de mesmo nome como membros distintos" do
+      source = <<~RUBY
+        class MagicLink
+          class << self
+            def consume(code)
+            end
+          end
+
+          def consume
+          end
+        end
+      RUBY
+
+      consumes = collect(source).members.select { |m| m.name == "consume" }
+      expect(consumes.map(&:kind)).to contain_exactly(:class_method, :method)
+      # o método de classe carrega o parâmetro; o de instância não
+      class_consume = consumes.find { |m| m.kind == :class_method }
+      inst_consume = consumes.find { |m| m.kind == :method }
+      expect(class_consume.signature).to include("code")
+      expect(inst_consume.signature).not_to include("code")
+    end
+
+    it "não vaza visibilidade de dentro de `class << self` para os métodos seguintes" do
+      source = <<~RUBY
+        class Foo
+          class << self
+            private
+
+            def secret_builder
+            end
+          end
+
+          def public_api
+          end
+        end
+      RUBY
+
+      collector = collect(source)
+      expect(collector.members.find { |m| m.name == "public_api" }.visibility).to eq(:public)
+    end
+
+    it "não classifica métodos de `class << outro_objeto` como class_method" do
+      source = <<~RUBY
+        class Foo
+          OBJ = Object.new
+          class << OBJ
+            def bar
+            end
+          end
+        end
+      RUBY
+
+      bar = collect(source).members.find { |m| m.name == "bar" }
+      expect(bar.kind).not_to eq(:class_method)
+    end
+  end
+
   describe "delegate parsing" do
     it "collects a basic delegate call" do
       source = <<~RUBY

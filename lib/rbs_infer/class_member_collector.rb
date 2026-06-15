@@ -48,8 +48,23 @@ module RbsInfer
       with_scope(:class, segment) { super }
     end
 
+    # `class << self` — methods defined inside define singleton (class)
+    # methods of the enclosing class, indistinguishable from instance defs
+    # by node shape alone (no `self.` receiver). Push a :singleton scope so
+    # `class_method_def?` classifies them correctly; reuse `with_scope` so a
+    # `private` inside the block does not leak its visibility outward.
+    # `class << other` opens another object's singleton (not this class's
+    # methods), so leave its body untouched — same behavior as before.
+    def visit_singleton_class_node(node)
+      if node.expression.is_a?(Prism::SelfNode)
+        with_scope(:singleton, nil) { super }
+      else
+        super
+      end
+    end
+
     def visit_def_node(node)
-      is_class_method = node.receiver.is_a?(Prism::SelfNode)
+      is_class_method = class_method_def?(node)
       name = node.name.to_s
       sig = find_rbs_signature(@comments, @lines, node.location.start_line)
 
