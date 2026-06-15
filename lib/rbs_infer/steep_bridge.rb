@@ -140,9 +140,21 @@ module RbsInfer
 
     # Returns { "method_name" => "ReturnType" } for all def nodes.
     # The return type is inferred from the body of the method.
+    # Return types of instance methods (`def x`), keyed by name. Singleton
+    # methods (`def self.x`) are excluded — fetch those via
+    # `method_return_types_by_kind(...)[:singleton]` so a class method and an
+    # instance method sharing a name don't clobber each other's entry.
     def method_return_types(source_code)
+      method_return_types_by_kind(source_code)[:instance]
+    end
+
+    # Return types split by receiver kind: `{ instance: {name=>type},
+    # singleton: {name=>type} }`. `def x` (Prism `:def`) and `def self.x`
+    # (`:defs`) used to write the same name-keyed entry, so a homonymous
+    # pair leaked one type onto the other (felixefelip/rbs_infer#33).
+    def method_return_types_by_kind(source_code)
       typing = type_check(source_code)
-      return {} unless typing
+      return { instance: {}, singleton: {} } unless typing
 
       # Index BlockBodyTypeMismatch errors by block node identity
       block_mismatches = {}
@@ -151,12 +163,14 @@ module RbsInfer
         block_mismatches[err.node.__id__] = err
       end
 
-      result = {}
+      instance = {}
+      singleton = {}
 
       typing.each_typing do |node, _type|
         next unless node.type == :def || node.type == :defs
-        method_name = node.type == :def ? node.children[0].to_s : node.children[1].to_s
-        body = node.type == :def ? node.children[2] : node.children[3]
+        singleton_def = node.type == :defs
+        method_name = singleton_def ? node.children[1].to_s : node.children[0].to_s
+        body = singleton_def ? node.children[3] : node.children[2]
         next unless body
 
         body_type = typing.type_of(node: body)
@@ -169,10 +183,10 @@ module RbsInfer
 
         next if type_str == "untyped"
 
-        result[method_name] = type_str
+        (singleton_def ? singleton : instance)[method_name] = type_str
       end
 
-      result
+      { instance: instance, singleton: singleton }
     end
 
     BLOCK_GENERIC_METHODS = %w[map collect].freeze

@@ -318,12 +318,16 @@ RSpec.describe RbsInfer::Analyzer do
       end
     end
 
-    it "atualiza def self.X mesmo quando há um def X (instance) homônimo no mesmo lugar" do
+    it "resolve def self.X via cadeia entre class methods, sem herdar do def X homônimo" do
       files = {
         "factory.rb" => <<~RUBY
           class TwinNames
             def self.run
-              new.run.upcase
+              build
+            end
+
+            def self.build
+              42
             end
 
             def run
@@ -337,9 +341,43 @@ RSpec.describe RbsInfer::Analyzer do
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
-        # Both surfaces should resolve away from untyped.
-        expect(rbs).to include("def self.run: () -> String")
+        # `self.run` resolves against the class method `build` (Integer) it
+        # calls — NOT the homonymous instance `run` (String). Return types no
+        # longer cross the instance/singleton boundary (felixefelip#33).
+        expect(rbs).to include("def self.run: () -> Integer")
+        expect(rbs).to include("def self.build: () -> Integer")
         expect(rbs).to include("def run: () -> String")
+      end
+    end
+
+    # Regression for felixefelip/rbs_infer#33: a class method and an instance
+    # method sharing a name used to swap return types, because the resolver's
+    # name-keyed maps (known_return_types and Steep's) didn't distinguish
+    # `:method` from `:class_method`. The class `normalize` can't resolve on
+    # its own (`fetch` is unknown), so the instance `normalize`'s String used
+    # to leak onto it. It must stay untyped.
+    it "não vaza o return type do método de instância para o def self homônimo" do
+      files = {
+        "doohickey.rb" => <<~RUBY
+          class Doohickey
+            def self.normalize(value)
+              fetch(value)
+            end
+
+            def normalize
+              "instance-result"
+            end
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |dir, paths|
+        analyzer = described_class.new(target_file: paths.first, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        expect(rbs).to include("def normalize: () -> String")
+        # Without the fix this would inherit the instance method's String.
+        expect(rbs).to include("def self.normalize: (untyped value) -> untyped")
       end
     end
 

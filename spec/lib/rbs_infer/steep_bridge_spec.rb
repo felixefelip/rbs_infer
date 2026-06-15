@@ -285,6 +285,28 @@ RSpec.describe RbsInfer::SteepBridge, :dummy_app do
       result = bridge.method_return_types("!!!invalid ruby")
       expect(result).to eq({})
     end
+
+    # felixefelip/rbs_infer#33: `def x` and `def self.x` used to write the
+    # same name-keyed entry, so one clobbered the other.
+    it "keeps instance and singleton methods sharing a name in separate maps" do
+      code = <<~RUBY
+        class Foo
+          def self.tally
+            "big"
+          end
+
+          def tally
+            42
+          end
+        end
+      RUBY
+
+      by_kind = bridge.method_return_types_by_kind(code)
+      expect(by_kind[:singleton]["tally"]).to eq("String")
+      expect(by_kind[:instance]["tally"]).to eq("Integer")
+      # The name-keyed accessor returns instance methods only.
+      expect(bridge.method_return_types(code)["tally"]).to eq("Integer")
+    end
   end
 
   describe "#method_return_types block generic resolution" do
