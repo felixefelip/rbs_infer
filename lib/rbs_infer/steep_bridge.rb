@@ -189,6 +189,31 @@ module RbsInfer
       { instance: instance, singleton: singleton }
     end
 
+    # Returns { "CONSTANT_NAME" => "Type" } for every `NAME = expr` /
+    # `Foo::NAME = expr` in the source, typed from the RHS expression.
+    # Keyed by the bare constant name (the `:casgn` node's name child), so
+    # a path write (`Foo::BAR = ...`) keys as `"BAR"` — matching how
+    # `ClassMemberCollector` records the member. Same oracle role as
+    # `method_return_types`: Steep types the whole RHS (arrays, hashes,
+    # comparison/arithmetic chains, and — once the class's RBS exists —
+    # `new`-bearing collection builders), so rbs_infer#37 doesn't
+    # re-implement chain typing.
+    def constant_types(source_code)
+      typing = type_check(source_code)
+      return {} unless typing
+
+      result = {}
+      typing.each_typing do |node, type|
+        next unless node.type == :casgn
+
+        type_str = format_type(type)
+        next if type_str == "untyped" || type_str == "bot" || type_str == "void"
+
+        result[node.children[1].to_s] = type_str
+      end
+      result
+    end
+
     BLOCK_GENERIC_METHODS = %w[map collect].freeze
 
     # When Steep can't resolve generic type params bottom-up in block calls

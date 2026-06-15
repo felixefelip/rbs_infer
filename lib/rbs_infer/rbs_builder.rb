@@ -29,6 +29,13 @@ module RbsInfer
         lines << "#{member_indent}@#{name}: #{type}"
       end
 
+      # Emitir constantes (NOME: Tipo) em ordem de fonte — determinístico
+      # (felixefelip/rbs_infer#37). `signature` já vem como "NOME: Tipo"
+      # do Analyzer (ConstantTypeResolver).
+      members.select { |m| m.kind == :constant && m.owner.nil? }.each do |const|
+        lines << "#{member_indent}#{const.signature}"
+      end
+
       # Módulos aninhados definidos no corpo da classe-alvo
       # (felixefelip/rbs_infer#22). Membros coletados com `owner` vêm de
       # um `module X ... end` dentro da classe; reconstruímos o container
@@ -74,7 +81,7 @@ module RbsInfer
       # Agrupar por visibilidade: public -> protected -> private
       # RBS não suporta `protected`, então tratamos como public
       [:public, :protected, :private].each do |vis|
-        vis_members = members.select { |m| m.visibility == vis && m.owner.nil? && ![:include, :extend, :class_method].include?(m.kind) }
+        vis_members = members.select { |m| m.visibility == vis && m.owner.nil? && ![:include, :extend, :class_method, :constant].include?(m.kind) }
         next if vis_members.empty?
 
         if vis == :private
@@ -149,6 +156,9 @@ module RbsInfer
         inner_indent = member_indent + "  "
         lines << "#{member_indent}module #{owner}"
 
+        mod_members.select { |m| m.kind == :constant }.each do |const|
+          lines << "#{inner_indent}#{const.signature}"
+        end
         mod_members.select { |m| m.kind == :include }.each do |inc|
           lines << "#{inner_indent}include #{qualify(inc.name)}"
         end
