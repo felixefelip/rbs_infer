@@ -381,6 +381,72 @@ RSpec.describe RbsInfer::Analyzer do
       end
     end
 
+    # felixefelip/rbs_infer#35: a class method that builds an instance and
+    # calls an instance method on it (`new.run`) must resolve its return type
+    # in SINGLE-PASS. `new` is an instance of the class being generated, so
+    # `new.run` resolves against the instance map (`run` → String) even though
+    # the class's own RBS doesn't exist yet. This is the legitimate route to
+    # the result #34 used to reach (accidentally) via the #33 name leak —
+    # here it's driven by the receiver type, not the method name.
+    it "resolve new.<método de instância>.chain em single-pass (factory return type)" do
+      files = {
+        "twin_names.rb" => <<~RUBY
+          class TwinNames
+            def self.run
+              new.run.upcase
+            end
+
+            def run
+              "abc"
+            end
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |dir, paths|
+        analyzer = described_class.new(target_file: paths.first, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        expect(rbs).to include("def self.run: () -> String")
+        expect(rbs).to include("def run: () -> String")
+      end
+    end
+
+    # Same fix via the other two factory receiver shapes: an explicit constant
+    # (`TwinNames.new`) and `self.new`. Both denote an instance of the class
+    # being generated, so the instance method resolves locally in single-pass.
+    it "resolve TwinNames.new e self.new chains contra os métodos de instância" do
+      files = {
+        "factory.rb" => <<~RUBY
+          class Factory
+            def self.from_const
+              Factory.new.label.upcase
+            end
+
+            def self.from_self
+              self.new.size
+            end
+
+            def label
+              "x"
+            end
+
+            def size
+              42
+            end
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |dir, paths|
+        analyzer = described_class.new(target_file: paths.first, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        expect(rbs).to include("def self.from_const: () -> String")
+        expect(rbs).to include("def self.from_self: () -> Integer")
+      end
+    end
+
     # Regression: methods inside `class << self` are singleton (class)
     # methods, but the `self.` receiver is absent on the node, so they were
     # collected as instance methods. A `consume` defined both as a class
