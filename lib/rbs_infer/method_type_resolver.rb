@@ -19,6 +19,13 @@ module RbsInfer
       @rbs_definition_resolver = RbsDefinitionResolver.new
     end
 
+    # The RBS type-parameter list of an existing class ("[unchecked out
+    # Elem]"), or "" — used when reopening a generic class so the emitted
+    # declaration matches (felixefelip/rbs_infer#38).
+    def type_param_string(class_name)
+      @rbs_definition_resolver.type_param_string(class_name)
+    end
+
     def resolve(class_name, method_name, block_body_type: nil)
       return nil unless class_name && class_name != "untyped"
 

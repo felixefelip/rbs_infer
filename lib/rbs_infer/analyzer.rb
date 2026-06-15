@@ -154,7 +154,8 @@ module RbsInfer
       target_class: receiver,
       superclass_name: nil,
       namespace_classes: resolve_namespace_classes(receiver),
-      is_module: false
+      is_module: false,
+      type_params: method_type_resolver.type_param_string(receiver)
     ).build(members, {}, {})
   end
 
@@ -250,7 +251,7 @@ module RbsInfer
     markers = synthesize_markers(target_members, attr_types, ivar_types)
 
     namespace_classes = resolve_namespace_classes
-    rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module)
+    rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class))
     rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, markers: markers)
   end
 

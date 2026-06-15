@@ -126,6 +126,34 @@ module RbsInfer
       nil
     end
 
+    # The RBS type-parameter list of an existing class/module, rendered as a
+    # string ("[unchecked out Elem]"), or "" when it has none or is unknown.
+    #
+    # Reopening a generic class (e.g. `Array.include M` → `class Array ...`)
+    # must repeat its EXACT params: RBS validates arity plus
+    # variance/bounds/defaults after renaming, raising
+    # GenericParameterMismatchError otherwise — which poisons the whole Steep
+    # environment, not just the one file (felixefelip/rbs_infer#38). Emitting
+    # the params verbatim from the primary declaration guarantees the match.
+    def type_param_string(class_name)
+      return "" unless rbs_builder
+
+      type_name = build_rbs_type_name(class_name)
+      return "" unless type_name
+
+      entry = rbs_builder.env.class_decls[type_name]
+      return "" unless entry
+
+      params = entry.type_params
+      return "" if params.empty?
+
+      "[#{params.map(&:to_s).join(", ")}]"
+    rescue StandardError
+      # A lookup failure must never break generation — fall back to no params
+      # (correct for the overwhelmingly common non-generic case).
+      ""
+    end
+
     private
 
     def rbs_builder
