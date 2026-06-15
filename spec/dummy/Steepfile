@@ -39,6 +39,11 @@ target :app do
   check "lib"
   check "app/views/**/*.erb"
   ignore "app/views/pwa/**"
+  # Framework-patching files (raw `on_load`/`to_prepare` reopenings) cannot
+  # be impl-checked by stock Steep — the block receiver is unknown to it.
+  # rbs_infer's value here is the GENERATED RBS (felixefelip/rbs_infer#38),
+  # validated by the snapshot test; the raw source is not type-checked.
+  ignore "lib/rails_ext/**/*.rb"
   signature "sig"
   signature "app"
   signature "lib"

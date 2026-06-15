@@ -1,10 +1,20 @@
 module RbsInfer
   class RbsBuilder
-    def initialize(target_class:, superclass_name:, namespace_classes: Set.new, is_module: false)
+    # All keyword args are required: both call-sites always supply them, and
+    # omitting any would be silently wrong (a missing `type_params` reopens a
+    # generic class without its params → GenericParameterMismatchError; a
+    # missing `is_module`/`namespace_classes` mis-renders the declaration).
+    # Per docs/engineering/required-threaded-deps.md, that's "required", not
+    # "defaulted".
+    def initialize(target_class:, superclass_name:, namespace_classes:, is_module:, type_params:)
       @target_class = target_class
       @superclass_name = superclass_name
       @namespace_classes = namespace_classes
       @is_module = is_module
+      # Generic type-parameter list ("[unchecked out Elem]") for the leaf
+      # declaration when reopening a generic class; "" for the common
+      # non-generic case (felixefelip/rbs_infer#38).
+      @type_params = type_params
     end
 
     def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {}, markers: [])
@@ -22,7 +32,7 @@ module RbsInfer
         lines << "#{"  " * i}#{keyword} #{mod}"
       end
       keyword = @is_module ? "module" : "class"
-      lines << "#{base_indent}#{keyword} #{class_name}#{!@is_module && @superclass_name ? " < #{qualify(@superclass_name)}" : ""}"
+      lines << "#{base_indent}#{keyword} #{class_name}#{@type_params}#{!@is_module && @superclass_name ? " < #{qualify(@superclass_name)}" : ""}"
 
       # Emitir instance variables tipadas (@post: Post, @posts: ...)
       ivar_types.each do |name, type|

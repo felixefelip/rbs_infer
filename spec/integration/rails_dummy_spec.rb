@@ -92,6 +92,60 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(expanded).to eq(expectation_path.read)
   end
 
+  # Multi-target file (felixefelip/rbs_infer#38): no target_class is
+  # passed, so the analyzer discovers and emits every type the file
+  # reopens — the `on_load` blocks (expanded to `ActiveStorage::Blob` /
+  # `Attachment`), the `to_prepare` module, and the four
+  # `Receiver.include ActiveStorage::Authorize` controllers.
+  it "multi-target rails_ext file matches expected RBS" do
+    name = "lib/rails_ext/active_storage_authorization"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "#{name}.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
+  # Reopening a generic core class via `Receiver.include` must repeat its
+  # exact type parameters, or RBS rejects the file with
+  # GenericParameterMismatchError (felixefelip/rbs_infer#38).
+  it "generic-class reopen carries the class's type parameters" do
+    require "tmpdir"
+    name = "lib/rails_ext/array_conversions"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "#{name}.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+    expect(rbs).to include("class Array[unchecked out Elem]")
+
+    # The reopen must load cleanly alongside core RBS (the original crash
+    # was a GenericParameterMismatchError raised while building ::Array).
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, "gen.rbs"), rbs)
+      loader = RBS::EnvironmentLoader.new
+      loader.add(path: Pathname(dir))
+      env = RBS::Environment.from_loader(loader).resolve_type_names
+      defn = RBS::DefinitionBuilder.new(env: env)
+                                   .build_instance(RBS::TypeName.parse("::Array").absolute!)
+      expect(defn.methods).to have_key(:to_choice_sentence)
+    end
+  end
+
   it "PostsController matches expected RBS" do
     assert_snapshot("controllers/posts_controller", target_class: "PostsController", target_file: "app/controllers/posts_controller.rb")
   end

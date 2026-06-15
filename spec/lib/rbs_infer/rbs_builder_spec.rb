@@ -2,9 +2,22 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::RbsBuilder do
+  # RbsBuilder's kwargs are all required (see its initialize). This helper
+  # supplies test-only defaults so each example states only what it cares
+  # about — keeping the production API strict while specs stay terse.
+  def make_builder(target_class:, superclass_name:, namespace_classes: Set.new, is_module: false, type_params: "")
+    described_class.new(
+      target_class: target_class,
+      superclass_name: superclass_name,
+      namespace_classes: namespace_classes,
+      is_module: is_module,
+      type_params: type_params
+    )
+  end
+
   describe "#has_class_methods_module?", :dummy_app do
     let(:builder) do
-      described_class.new(target_class: "Foo", superclass_name: nil)
+      make_builder(target_class: "Foo", superclass_name: nil)
     end
 
     it "retorna true para módulo que contém sub-módulo ClassMethods" do
@@ -29,7 +42,7 @@ RSpec.describe RbsInfer::RbsBuilder do
 
   describe "#build com namespaces" do
     it "usa 'module' para namespace que é módulo (sintaxe compacta)" do
-      builder = described_class.new(
+      builder = make_builder(
         target_class: "Card::Eventable::SystemCommenter",
         superclass_name: nil,
         namespace_classes: Set.new  # Card::Eventable NÃO está no set → deve ser module
@@ -43,7 +56,7 @@ RSpec.describe RbsInfer::RbsBuilder do
     end
 
     it "usa 'class' para namespace que é classe" do
-      builder = described_class.new(
+      builder = make_builder(
         target_class: "Card::Eventable::SystemCommenter",
         superclass_name: nil,
         namespace_classes: Set.new(["Card::Eventable"])
@@ -63,7 +76,7 @@ RSpec.describe RbsInfer::RbsBuilder do
       members = [
         RbsInfer::Member.new(kind: :include, name: "Storage::Totaled", signature: "", visibility: :public)
       ]
-      builder = described_class.new(target_class: "Account::Storage", superclass_name: nil)
+      builder = make_builder(target_class: "Account::Storage", superclass_name: nil)
       result = builder.build(members, {}, {})
 
       expect(result).to include("include ::Storage::Totaled")
@@ -71,7 +84,7 @@ RSpec.describe RbsInfer::RbsBuilder do
 
     it "prefixa superclass com :: quando o nome coincide com parte do namespace" do
       # Account::Export < Export → dentro de class Account, Export resolve como Account::Export
-      builder = described_class.new(target_class: "Account::Export", superclass_name: "Export")
+      builder = make_builder(target_class: "Account::Export", superclass_name: "Export")
       result = builder.build([], {}, {})
 
       expect(result).to include("class Export < ::Export")
@@ -81,7 +94,7 @@ RSpec.describe RbsInfer::RbsBuilder do
       members = [
         RbsInfer::Member.new(kind: :include, name: "ActiveSupport::Concern", signature: "", visibility: :public)
       ]
-      builder = described_class.new(target_class: "Account::Storage", superclass_name: nil)
+      builder = make_builder(target_class: "Account::Storage", superclass_name: nil)
       result = builder.build(members, {}, {})
 
       expect(result).to include("include ActiveSupport::Concern")
@@ -91,7 +104,7 @@ RSpec.describe RbsInfer::RbsBuilder do
 
   describe "#build com protected" do
     let(:builder) do
-      described_class.new(target_class: "Foo", superclass_name: nil)
+      make_builder(target_class: "Foo", superclass_name: nil)
     end
 
     it "não emite 'protected' no RBS (trata como public)" do
@@ -130,7 +143,7 @@ RSpec.describe RbsInfer::RbsBuilder do
     end
 
     it "emite NOME: Tipo na ordem de fonte (membros)" do
-      builder = described_class.new(target_class: "Color", superclass_name: nil)
+      builder = make_builder(target_class: "Color", superclass_name: nil)
       members = [
         const("COLORS", "Array[Color]"),
         const("MAX", "Integer"),
@@ -148,14 +161,14 @@ RSpec.describe RbsInfer::RbsBuilder do
     end
 
     it "gera RBS parseável" do
-      builder = described_class.new(target_class: "Color", superclass_name: nil)
+      builder = make_builder(target_class: "Color", superclass_name: nil)
       result = builder.build([const("MAX", "Integer")], {}, {})
 
       expect { RBS::Parser.parse_signature(result) }.not_to raise_error
     end
 
     it "emite constantes de módulo aninhado dentro do módulo (owner)" do
-      builder = described_class.new(target_class: "Outer", superclass_name: nil)
+      builder = make_builder(target_class: "Outer", superclass_name: nil)
       member = RbsInfer::Member.new(
         kind: :constant, name: "SEP", signature: "SEP: String", visibility: :public, owner: "Formatting"
       )
@@ -166,7 +179,7 @@ RSpec.describe RbsInfer::RbsBuilder do
     end
 
     it "emite constantes em escopo de módulo (is_module)" do
-      builder = described_class.new(target_class: "Settings", superclass_name: nil, is_module: true)
+      builder = make_builder(target_class: "Settings", superclass_name: nil, is_module: true)
       result = builder.build([const("VERSION", "String")], {}, {})
 
       expect(result).to include("module Settings")
@@ -174,7 +187,7 @@ RSpec.describe RbsInfer::RbsBuilder do
     end
 
     it "separa as constantes dos métodos com uma linha em branco" do
-      builder = described_class.new(target_class: "Color", superclass_name: nil)
+      builder = make_builder(target_class: "Color", superclass_name: nil)
       members = [
         const("MAX", "Integer"),
         RbsInfer::Member.new(kind: :method, name: "name", signature: "name: () -> String", visibility: :public)
@@ -186,7 +199,7 @@ RSpec.describe RbsInfer::RbsBuilder do
     end
 
     it "NÃO adiciona linha em branco quando só há constantes (sem corpo após)" do
-      builder = described_class.new(target_class: "Color", superclass_name: nil)
+      builder = make_builder(target_class: "Color", superclass_name: nil)
       result = builder.build([const("MAX", "Integer")], {}, {})
 
       # constante seguida direto do `end`, sem linha em branco pendurada
@@ -194,7 +207,7 @@ RSpec.describe RbsInfer::RbsBuilder do
     end
 
     it "não duplica a linha em branco quando a seção private segue as constantes" do
-      builder = described_class.new(target_class: "Color", superclass_name: nil)
+      builder = make_builder(target_class: "Color", superclass_name: nil)
       members = [
         const("MAX", "Integer"),
         RbsInfer::Member.new(kind: :method, name: "helper", signature: "helper: () -> void", visibility: :private)

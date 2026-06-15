@@ -3,6 +3,25 @@ require "spec_helper"
 RSpec.describe RbsInfer::RbsDefinitionResolver do
   subject(:resolver) { described_class.new }
 
+  describe "#type_param_string" do
+    it "renders the exact params of a generic core class" do
+      expect(resolver.type_param_string("Array")).to eq("[unchecked out Elem]")
+      expect(resolver.type_param_string("Hash")).to eq("[unchecked out K, unchecked out V]")
+    end
+
+    it "returns '' for a non-generic class" do
+      expect(resolver.type_param_string("String")).to eq("")
+    end
+
+    it "returns '' for an unknown class" do
+      expect(resolver.type_param_string("Totally::Unknown::Klass")).to eq("")
+    end
+
+    it "returns '' for an unparseable name instead of raising" do
+      expect(resolver.type_param_string("@@ not a type")).to eq("")
+    end
+  end
+
   describe "#parse_intersection_components" do
     it "splits `A & B` into components" do
       expect(resolver.parse_intersection_components("Order & Order::Validated"))

@@ -32,23 +32,45 @@ module RbsInfer
       self.scope_target = target_class
     end
 
+    # is_module/superclass/is_controller are read off the node that IS the
+    # target — not the first declaration in the file. A multi-target file
+    # reopens several classes/modules; keying on "first seen" would leak
+    # one target's superclass onto another. `at_target?` (LexicalScope)
+    # pins the capture to the matching frame. With no target set (the
+    # collector used standalone), fall back to the legacy "first
+    # declaration wins" behavior.
     def visit_module_node(node)
-      @is_module = true unless @superclass_name
       segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
-      with_scope(:module, segment) { super }
+      with_scope(:module, segment) do
+        @is_module = true unless @superclass_name if capture_metadata_here?
+        super
+      end
     end
 
     def visit_class_node(node)
-      @is_module = false
-      unless @primary_class_seen
-        @primary_class_seen = true
-        if node.superclass
-          @superclass_name = RbsInfer::Analyzer.extract_constant_path(node.superclass)
-          @is_controller = CONTROLLER_BASES.include?(@superclass_name)
-        end
-      end
       segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
-      with_scope(:class, segment) { super }
+      with_scope(:class, segment) do
+        capture_class_metadata(node) if capture_metadata_here?
+        super
+      end
+    end
+
+    # When a target is set, only the matching frame contributes metadata
+    # (multi-target correctness); otherwise every declaration does, so the
+    # legacy first-wins guards below decide.
+    def capture_metadata_here?
+      scope_target ? at_target? : true
+    end
+
+    def capture_class_metadata(node)
+      @is_module = false
+      return if @primary_class_seen
+
+      @primary_class_seen = true
+      return unless node.superclass
+
+      @superclass_name = RbsInfer::Analyzer.extract_constant_path(node.superclass)
+      @is_controller = CONTROLLER_BASES.include?(@superclass_name)
     end
 
     # `class << self` — methods defined inside define singleton (class)
@@ -67,6 +89,12 @@ module RbsInfer
     end
 
     def visit_def_node(node)
+      # Only collect defs lexically inside the target. A def in a sibling
+      # declaration or a bare block (e.g. `on_load do def x; end end` that
+      # wasn't expanded) is not this target's method — attributing it here
+      # is exactly the multi-target leak this gate closes.
+      return super unless inside_target?
+
       is_class_method = class_method_def?(node)
       name = node.name.to_s
       sig = find_rbs_signature(@comments, @lines, node.location.start_line)
@@ -202,6 +230,13 @@ module RbsInfer
     end
 
     def extract_includes(node)
+      # `Receiver.include Mod` (explicit constant receiver) reopens another
+      # class — it is NOT a mixin of the current target. The multi-target
+      # core picks these up as separate reopen targets (TargetDiscovery);
+      # collecting them here would emit a bogus self-include. A `self.`
+      # receiver is still the current target, so only skip real constants.
+      return if node.receiver && !node.receiver.is_a?(Prism::SelfNode)
+      return unless inside_target?
       return unless node.arguments
 
       node.arguments.arguments.each do |arg|
@@ -219,6 +254,8 @@ module RbsInfer
     end
 
     def extract_extends(node)
+      return if node.receiver && !node.receiver.is_a?(Prism::SelfNode)
+      return unless inside_target?
       return unless node.arguments
 
       node.arguments.arguments.each do |arg|
@@ -236,6 +273,7 @@ module RbsInfer
     end
 
     def extract_delegates(node)
+      return unless inside_target?
       return unless node.arguments
 
       args = node.arguments.arguments
@@ -276,6 +314,7 @@ module RbsInfer
     end
 
     def extract_attrs(node)
+      return unless inside_target?
       return unless node.arguments
 
       # Buscar anotação inline na mesma linha: attr_accessor :foo #: Type

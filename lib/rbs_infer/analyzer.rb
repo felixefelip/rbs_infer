@@ -49,6 +49,12 @@ module RbsInfer
     @target_class = target_class
     @extra_caller_sources = extra_caller_sources
 
+    # An explicitly-supplied target_class means "generate just this one
+    # class" — single-target mode, preserving the API/test contract. When
+    # only a file is given (the CLI path), the analyzer is free to emit
+    # every target the file defines (felixefelip/rbs_infer#38).
+    @explicit_target_class = !target_class.nil?
+
     if @target_file && !@target_class
       @target_class = extract_class_name_from_file(@target_file)
     elsif @target_class && !@target_file
@@ -57,8 +63,23 @@ module RbsInfer
   end
 
   def generate_rbs
-    return nil unless @target_file && @target_class && File.exist?(@target_file)
+    return nil unless @target_file && File.exist?(@target_file)
 
+    load_and_parse_target
+
+    # Single-target mode: an explicit target_class was requested, so emit
+    # exactly that one declaration (API/test contract, zero churn).
+    if @explicit_target_class
+      return nil unless @target_class
+      return build_single_target_rbs
+    end
+
+    generate_multi_target_rbs
+  end
+
+  # Parse the target file once (with macro expansion) into @parsed_target,
+  # shared by the single-target pipeline and multi-target discovery.
+  def load_and_parse_target
     # Parsear o arquivo-alvo uma única vez e reutilizar em todo o pipeline
     source = File.read(@target_file)
 
@@ -78,7 +99,67 @@ module RbsInfer
       comments: result.comments,
       lines: source.lines
     )
+  end
 
+  # A single file can define or reopen several types (initializers,
+  # `lib/rails_ext/*.rb`, `on_load`/`to_prepare` blocks). Discover every
+  # top-level target and emit one RBS block per target, reusing the
+  # single-target pipeline for each declaration (felixefelip/rbs_infer#38).
+  def generate_multi_target_rbs
+    discovery = TargetDiscovery.new
+    @parsed_target.tree.accept(discovery)
+    decl_targets = discovery.declaration_targets
+    include_targets = discovery.include_targets
+
+    # The common case (one class/module, no reopen-includes) takes the
+    # exact single-target path — the ClassNameExtractor pick already in
+    # @target_class — so existing output is untouched.
+    if decl_targets.size <= 1 && include_targets.empty?
+      return nil unless @target_class
+      return build_single_target_rbs
+    end
+
+    blocks = []
+
+    decl_targets.each do |target|
+      sub = self.class.new(
+        target_class: target[:name],
+        target_file: @target_file,
+        source_files: @source_files,
+        extra_caller_sources: @extra_caller_sources
+      )
+      block = sub.generate_rbs
+      blocks << block if block && !block.strip.empty?
+    end
+
+    include_targets.each do |receiver, modules|
+      blocks << build_include_reopen(receiver, modules)
+    end
+
+    return nil if blocks.empty?
+
+    blocks.join("\n")
+  end
+
+  # Synthesizes a reopen block for `Receiver.include Mod` call-sites: the
+  # receiver has no body in this file, just the mixin. RbsBuilder handles
+  # the namespace wrapping (`module ActiveStorage; module Blobs; class
+  # RedirectController; include ...`).
+  def build_include_reopen(receiver, modules)
+    members = modules.map do |mod|
+      Member.new(kind: :include, name: mod, signature: mod, visibility: :public, owner: nil)
+    end
+
+    RbsBuilder.new(
+      target_class: receiver,
+      superclass_name: nil,
+      namespace_classes: resolve_namespace_classes(receiver),
+      is_module: false,
+      type_params: method_type_resolver.type_param_string(receiver)
+    ).build(members, {}, {})
+  end
+
+  def build_single_target_rbs
     # Parsear o arquivo-alvo para extrair todos os membros da classe
     target_members = parse_target_class
     resolve_delegate_methods(target_members)
@@ -170,7 +251,7 @@ module RbsInfer
     markers = synthesize_markers(target_members, attr_types, ivar_types)
 
     namespace_classes = resolve_namespace_classes
-    rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module)
+    rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class))
     rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, markers: markers)
   end
 
@@ -699,8 +780,8 @@ module RbsInfer
 
   # ─── Resolver quais namespaces da classe-alvo são class (não module) ──
 
-  def resolve_namespace_classes
-    parts = @target_class.split("::")
+  def resolve_namespace_classes(class_name = @target_class)
+    parts = class_name.split("::")
     parts.pop
 
     classes = Set.new
@@ -733,6 +814,7 @@ require_relative "known_return_types_builder"
 require_relative "rbs_annotation_parser"
 require_relative "optional_param_extractor"
 require_relative "class_name_extractor"
+require_relative "target_discovery"
 require_relative "class_body_attr_analyzer"
 require_relative "intra_class_call_analyzer"
 require_relative "initialize_body_analyzer"
