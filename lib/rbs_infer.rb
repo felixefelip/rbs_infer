@@ -45,5 +45,9 @@ require_relative "rbs_infer/dependency_sorter"
 # (no Rails at runtime) and self-gates on the superclass, so it is always
 # safe to load.
 require_relative "rbs_infer/extensions/rails/current_attributes_expander"
+# The on_load expander rewrites `ActiveSupport.on_load :hook do ... end`
+# into a plain class reopening (felixefelip/rbs_infer#38) — pure Prism,
+# self-gates on the `on_load` substring, so it is always safe to load.
+require_relative "rbs_infer/extensions/rails/on_load_expander"
 
 require_relative "rbs_infer/railtie" if defined?(Rails::Railtie)

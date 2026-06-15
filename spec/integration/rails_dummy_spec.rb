@@ -88,6 +88,27 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(expanded).to eq(expectation_path.read)
   end
 
+  # Multi-target file (felixefelip/rbs_infer#38): no target_class is
+  # passed, so the analyzer discovers and emits every type the file
+  # reopens — the `on_load` blocks (expanded to `ActiveStorage::Blob` /
+  # `Attachment`), the `to_prepare` module, and the four
+  # `Receiver.include ActiveStorage::Authorize` controllers.
+  it "multi-target rails_ext file matches expected RBS" do
+    name = "lib/rails_ext/active_storage_authorization"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "#{name}.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   it "PostsController matches expected RBS" do
     assert_snapshot("controllers/posts_controller", target_class: "PostsController", target_file: "app/controllers/posts_controller.rb")
   end

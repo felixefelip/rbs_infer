@@ -31,11 +31,17 @@ module RbsInfer
       scope_stack.pop
     end
 
+    # The target's fully-qualified name with any leading `::` stripped, or
+    # nil when no target is set (flat consumers like DefCollector).
+    def normalized_target
+      scope_target&.sub(/\A::/, "")
+    end
+
     # The nested-module path owning members at the current position
     # (relative to the target scope), or nil for direct members of the
     # target / positions outside it.
     def current_owner
-      target = scope_target&.sub(/\A::/, "")
+      target = normalized_target
       return nil unless target
 
       target_idx = scope_stack.index { |f| f[:path] == target }
@@ -43,6 +49,28 @@ module RbsInfer
 
       mods = scope_stack[(target_idx + 1)..].select { |f| f[:kind] == :module && f[:name] }
       mods.empty? ? nil : mods.map { |f| f[:name] }.join("::")
+    end
+
+    # True when the current traversal position is lexically inside the
+    # target declaration (the target frame is open on the scope stack).
+    # Members collected outside it belong to a sibling target or are
+    # orphan defs (e.g. a `def` in a bare block) — the multi-target core
+    # must not attribute those to this target. With no target set, every
+    # position counts as "inside" (flat default, preserving DefCollector).
+    def inside_target?
+      target = normalized_target
+      return true unless target
+
+      scope_stack.any? { |f| f[:path] == target }
+    end
+
+    # True when the innermost open scope IS the target declaration itself
+    # — the point at which is_module/superclass must be read off the node.
+    def at_target?
+      target = normalized_target
+      return false unless target
+
+      scope_stack.last && scope_stack.last[:path] == target
     end
 
     # True when the innermost open class/module scope is a `class << self`

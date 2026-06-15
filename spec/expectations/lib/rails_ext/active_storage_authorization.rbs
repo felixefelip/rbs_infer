@@ -1,0 +1,58 @@
+module ActiveStorage
+  class Blob
+    def accessible_to?: (untyped user) -> untyped
+    def publicly_accessible?: () -> untyped
+  end
+end
+
+module ActiveStorage
+  class Attachment
+    def accessible_to?: (untyped user) -> untyped
+    def publicly_accessible?: () -> untyped
+  end
+end
+
+module ActiveStorage
+  module Authorize
+    extend ActiveSupport::Concern
+
+    private
+
+    def bearer_token_authenticatable_request?: () -> bool
+    def publicly_accessible_blob?: () -> untyped
+    def ensure_accessible: () -> untyped
+    def http_cache_forever: (?public: untyped) ?{ (untyped) -> untyped } -> untyped
+  end
+end
+
+module ActiveStorage
+  module Blobs
+    class RedirectController
+      include ::ActiveStorage::Authorize
+    end
+  end
+end
+
+module ActiveStorage
+  module Blobs
+    class ProxyController
+      include ::ActiveStorage::Authorize
+    end
+  end
+end
+
+module ActiveStorage
+  module Representations
+    class RedirectController
+      include ::ActiveStorage::Authorize
+    end
+  end
+end
+
+module ActiveStorage
+  module Representations
+    class ProxyController
+      include ::ActiveStorage::Authorize
+    end
+  end
+end
