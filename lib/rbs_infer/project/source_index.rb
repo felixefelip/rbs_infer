@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Project
 
   # Índice reverso de source files para lookup eficiente por nome de classe.
   # Evita a iteração O(n×m) ao buscar referências a classes nos source files.

@@ -10,9 +10,9 @@ module RbsInfer
     def initialize(source_files, source_index: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil)
       @source_files = source_files
       @source_index = source_index
-      @parse_cache = parse_cache || ParseCache.new
-      @file_index = file_index || FileIndex.new(source_files)
-      @caller_file_cache = caller_file_cache || CallerFileCache.new(@parse_cache)
+      @parse_cache = parse_cache || RbsInfer::Project::ParseCache.new
+      @file_index = file_index || RbsInfer::Project::FileIndex.new(source_files)
+      @caller_file_cache = caller_file_cache || RbsInfer::Project::CallerFileCache.new(@parse_cache)
       @cache = {}
       @building = Set.new # guard contra recursão infinita
       @rbs_type_lookup = RbsTypeLookup.new

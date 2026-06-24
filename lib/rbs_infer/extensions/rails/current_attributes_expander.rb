@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "prism"
-require_relative "../../source_expanders"
+require_relative "../../project/source_expanders"
 
 module RbsInfer
   module Extensions
@@ -375,5 +375,5 @@ module RbsInfer
 
   # Source-expansion plugin (registered by default: it is pure Prism —
   # no Rails at runtime — and self-gates on the superclass).
-  SourceExpanders.register(Extensions::Rails::CurrentAttributesExpander)
+  RbsInfer::Project::SourceExpanders.register(Extensions::Rails::CurrentAttributesExpander)
 end

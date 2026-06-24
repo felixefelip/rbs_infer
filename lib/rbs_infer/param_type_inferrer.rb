@@ -15,9 +15,9 @@ module RbsInfer
       @method_type_resolver = method_type_resolver
       @type_merger = type_merger
       @steep_bridge = steep_bridge
-      @parse_cache = parse_cache || ParseCache.new
-      @file_index = file_index || FileIndex.new(source_files)
-      @caller_file_cache = caller_file_cache || CallerFileCache.new(@parse_cache)
+      @parse_cache = parse_cache || RbsInfer::Project::ParseCache.new
+      @file_index = file_index || RbsInfer::Project::FileIndex.new(source_files)
+      @caller_file_cache = caller_file_cache || RbsInfer::Project::CallerFileCache.new(@parse_cache)
     end
 
     def infer_method_param_types(attr_types, parsed_target: nil)

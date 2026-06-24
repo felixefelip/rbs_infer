@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe RbsInfer::DependencySorter do
+RSpec.describe RbsInfer::Project::DependencySorter do
   around do |example|
     Dir.mktmpdir do |dir|
       @tmpdir = dir

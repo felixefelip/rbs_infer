@@ -133,7 +133,7 @@ generate = lambda do |inputs_to_process, silent: false|
 end
 
 if output
-  levels = RbsInfer::DependencySorter.sort(files)
+  levels = RbsInfer::Project::DependencySorter.sort(files)
 
   reset_caches = lambda do
     RbsInfer::SteepBridge.reset!

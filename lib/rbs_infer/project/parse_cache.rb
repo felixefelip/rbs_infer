@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Project
   # Cache de parse compartilhado por análise.
   # Garante que cada arquivo seja lido do disco e parseado pelo Prism apenas uma vez.
   class ParseCache

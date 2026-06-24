@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module RbsInfer
+module RbsInfer::Project
   # Registry of plugins that rewrite the target file's source BEFORE the
   # parse (felixefelip/rbs_infer#19). Each expander desugars macros into
   # plain-Ruby pseudo-code so the inference pipeline sees ordinary defs —

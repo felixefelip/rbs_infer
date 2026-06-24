@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Project
   # Índice de arquivos fonte construído uma vez no initialize do Analyzer.
   # Permite encontrar o arquivo correspondente a um class_path em O(1)
   # em vez de percorrer @source_files linearmente a cada busca.

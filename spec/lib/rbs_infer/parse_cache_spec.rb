@@ -2,7 +2,7 @@ require "spec_helper"
 require "rbs_infer"
 require "tmpdir"
 
-RSpec.describe RbsInfer::ParseCache do
+RSpec.describe RbsInfer::Project::ParseCache do
   around do |example|
     Dir.mktmpdir do |dir|
       @dir = dir

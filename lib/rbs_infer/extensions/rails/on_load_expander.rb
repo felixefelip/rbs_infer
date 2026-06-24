@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "prism"
-require_relative "../../source_expanders"
+require_relative "../../project/source_expanders"
 
 module RbsInfer
   module Extensions
@@ -105,7 +105,7 @@ module RbsInfer
       end
 
       # Pure Prism, self-gating — safe to register by default.
-      SourceExpanders.register(OnLoadExpander)
+      RbsInfer::Project::SourceExpanders.register(OnLoadExpander)
     end
   end
 end

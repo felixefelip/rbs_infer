@@ -1,7 +1,7 @@
 require "prism"
 require "set"
 
-module RbsInfer
+module RbsInfer::Project
   # Builds a dependency graph from source files and returns them sorted in
   # topological order (grouped into levels).  Files in the same level have
   # no inter-dependencies and can be generated in any order; files in level

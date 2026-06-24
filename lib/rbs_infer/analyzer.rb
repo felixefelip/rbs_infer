@@ -41,10 +41,10 @@ module RbsInfer
 
   def initialize(target_class: nil, source_files:, target_file: nil, extra_caller_sources: nil)
     @source_files = source_files
-    @source_index = SourceIndex.new(source_files)
-    @parse_cache = ParseCache.new
-    @file_index = FileIndex.new(source_files)
-    @caller_file_cache = CallerFileCache.new(@parse_cache)
+    @source_index = RbsInfer::Project::SourceIndex.new(source_files)
+    @parse_cache = RbsInfer::Project::ParseCache.new
+    @file_index = RbsInfer::Project::FileIndex.new(source_files)
+    @caller_file_cache = RbsInfer::Project::CallerFileCache.new(@parse_cache)
     @target_file = target_file
     @target_class = target_class
     @extra_caller_sources = extra_caller_sources
@@ -87,8 +87,8 @@ module RbsInfer
     # whole pipeline sees the expanded view (felixefelip/rbs_infer#19).
     # The pseudo-code exists only here, in memory — runtime and the app's
     # `steep check` keep reading the real source. Expanders are plugins
-    # registered on RbsInfer::SourceExpanders; the core knows none.
-    @expanded_source = SourceExpanders.apply(source)
+    # registered on RbsInfer::Project::SourceExpanders; the core knows none.
+    @expanded_source = RbsInfer::Project::SourceExpanders.apply(source)
     source = @expanded_source if @expanded_source
 
     source = Steep::Source::ModuleSelfTypeResolver.annotate(@target_file, source)
@@ -806,9 +806,9 @@ module RbsInfer
   end
 end
 
-require_relative "parse_cache"
-require_relative "file_index"
-require_relative "caller_file_cache"
+require_relative "project/parse_cache"
+require_relative "project/file_index"
+require_relative "project/caller_file_cache"
 require_relative "ast/node_type_inferrer"
 require_relative "known_return_types_builder"
 require_relative "rbs_annotation_parser"
@@ -831,6 +831,6 @@ require_relative "type_merger"
 require_relative "ivar_type_set"
 require_relative "return_type_resolver"
 require_relative "param_type_inferrer"
-require_relative "source_index"
+require_relative "project/source_index"
 require_relative "steep_bridge"
-require_relative "source_expanders"
+require_relative "project/source_expanders"
