@@ -13,7 +13,7 @@ module RbsInfer
 
   class ClassMemberCollector < Prism::Visitor
     include RbsInfer::AST::NodeTypeInferrer
-    include RbsAnnotationParser
+    include RbsInfer::Signatures::RbsAnnotationParser
     include RbsInfer::AST::LexicalScope
 
     attr_reader :members, :delegates, :superclass_name, :is_module
@@ -450,7 +450,7 @@ module RbsInfer
 
       # Se há return nil no corpo, tornar nilable
       if has_nil_return?(defn)
-        type = RbsParserUtil.nilablize(type)
+        type = RbsInfer::Signatures::RbsParserUtil.nilablize(type)
       end
 
       type

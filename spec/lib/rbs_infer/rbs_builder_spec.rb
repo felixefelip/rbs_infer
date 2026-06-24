@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::RbsBuilder do
+RSpec.describe RbsInfer::Signatures::RbsBuilder do
   # RbsBuilder's kwargs are all required (see its initialize). This helper
   # supplies test-only defaults so each example states only what it cares
   # about — keeping the production API strict while specs stay terse.

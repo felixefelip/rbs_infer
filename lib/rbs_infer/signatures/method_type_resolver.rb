@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Signatures
   # ─── Resolvedor de tipos inter-procedural ──────────────────────────
   # Dado um class_name e method_name, encontra o arquivo fonte da classe,
   # parseia e retorna o tipo de retorno do método.

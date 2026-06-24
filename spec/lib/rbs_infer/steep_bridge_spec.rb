@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::SteepBridge, :dummy_app do
+RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
   subject(:bridge) { described_class.new }
 
   describe "#local_var_types_per_method" do

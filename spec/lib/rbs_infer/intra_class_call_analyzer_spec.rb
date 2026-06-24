@@ -71,7 +71,7 @@ RSpec.describe RbsInfer::IntraClassCallAnalyzer do
 
   context "usage-side: infere tipos de params via Klass.new(param:) no corpo" do
     let(:resolver) do
-      instance_double(RbsInfer::MethodTypeResolver).tap do |r|
+      instance_double(RbsInfer::Signatures::MethodTypeResolver).tap do |r|
         allow(r).to receive(:resolve_all).with("Telefone").and_return({
           "ddd" => "String",
           "numero" => "String"
@@ -102,7 +102,7 @@ RSpec.describe RbsInfer::IntraClassCallAnalyzer do
         end
       RUBY
 
-      resolver_local = instance_double(RbsInfer::MethodTypeResolver)
+      resolver_local = instance_double(RbsInfer::Signatures::MethodTypeResolver)
       allow(resolver_local).to receive(:resolve_all).with("Telefone").and_return({
         "ddd" => "String",
         "numero" => "String"

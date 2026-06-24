@@ -1,6 +1,6 @@
 module RbsInfer
   class CallerFileAnalyzer
-    include RbsAnnotationParser
+    include RbsInfer::Signatures::RbsAnnotationParser
 
     attr_reader :method_call_usages
 
@@ -164,7 +164,7 @@ module RbsInfer
     # `T?` as `T` for the purpose of iteration. View templates only
     # render after the action ran, so non-nil is a safe assumption.
     def extract_element_type(collection_type)
-      @rbs_definition_resolver ||= RbsDefinitionResolver.new
+      @rbs_definition_resolver ||= RbsInfer::Signatures::RbsDefinitionResolver.new
       unwrapped = unwrap_outer_nilable(collection_type)
       @rbs_definition_resolver.resolve_each_element_type(unwrapped)
     end

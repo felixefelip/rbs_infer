@@ -198,7 +198,7 @@ module RbsInfer
           end
 
           def controller_steep_bridge
-            @controller_steep_bridge ||= RbsInfer::SteepBridge.new
+            @controller_steep_bridge ||= RbsInfer::Signatures::SteepBridge.new
           end
 
           # Generate controller RBS via Analyzer and extract ivar types (cached).

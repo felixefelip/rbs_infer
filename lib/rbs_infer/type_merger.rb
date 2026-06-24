@@ -89,7 +89,7 @@ module RbsInfer
         if last_stmt.is_a?(Prism::InstanceVariableReadNode) || last_stmt.is_a?(Prism::InstanceVariableWriteNode)
           resolved = ivar_types[last_stmt.name.to_s.sub(/\A@/, "")]
           if resolved && resolved != "untyped"
-            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(resolved)}")
             own_return_types[method_name] = resolved
             next
           end
@@ -98,7 +98,7 @@ module RbsInfer
         # 1. Literal na última expressão
         literal_type = infer_literal_type(last_stmt)
         if literal_type
-          member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(literal_type)}")
+          member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(literal_type)}")
           own_return_types[method_name] = literal_type
           next
         end
@@ -107,7 +107,7 @@ module RbsInfer
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.name == :new && last_stmt.receiver
           class_name = RbsInfer::Analyzer.extract_constant_path(last_stmt.receiver)
           if class_name
-            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(class_name)}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(class_name)}")
             own_return_types[method_name] = class_name
             next
           end
@@ -123,7 +123,7 @@ module RbsInfer
           receiver_name = implicit_self_method_name(last_stmt.receiver)
           if receiver_name && own_return_types[receiver_name]
             resolved = own_return_types[receiver_name]
-            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(resolved)}")
             own_return_types[method_name] = resolved
             next
           end
@@ -135,7 +135,7 @@ module RbsInfer
           self_ctx = self_return_type_context(known_return_types, class_return_types, kind)
           resolved = infer_call_return_type(last_stmt, self_ctx, method_type_resolver, local_types: local_types)
           if resolved
-            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(resolved)}")
             own_return_types[method_name] = resolved
             next
           end
@@ -156,7 +156,7 @@ module RbsInfer
         resolved_type = (member.kind == :class_method ? class_return_types : known_return_types)[called_name]
         next unless resolved_type
 
-        member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved_type)}")
+        member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(resolved_type)}")
       end
 
       # Second pass: retry chain resolution for still-untyped methods
@@ -188,7 +188,7 @@ module RbsInfer
           self_ctx = self_return_type_context(known_return_types, class_return_types, kind)
           resolved = infer_call_return_type(last_stmt, self_ctx, method_type_resolver, local_types: local_types)
           if resolved
-            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
+            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(resolved)}")
             own_return_types[method_name] = resolved
           end
         end
@@ -221,7 +221,7 @@ module RbsInfer
              resolve_receiver_type(rhs, self_ctx, method_type_resolver, local_types: local_types)
       return nil if type.nil? || type == "untyped"
 
-      call_node.safe_navigation? ? RbsParserUtil.nilablize(type) : type
+      call_node.safe_navigation? ? RbsInfer::Signatures::RbsParserUtil.nilablize(type) : type
     end
 
     # Extrai nome do método quando o receiver é self implícito ou explícito
@@ -272,7 +272,7 @@ module RbsInfer
           # (On a plain call the resolve is optimistic — `a.b` raises on
           # nil — but safe-nav really returns nil.)
           if resolved && call_node.safe_navigation? && receiver_type.end_with?("?")
-            resolved = RbsParserUtil.nilablize(resolved)
+            resolved = RbsInfer::Signatures::RbsParserUtil.nilablize(resolved)
           end
           resolved
         end

@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Signatures
   class RbsBuilder
     # All keyword args are required: both call-sites always supply them, and
     # omitting any would be silently wrong (a missing `type_params` reopens a

@@ -375,7 +375,7 @@ module RbsInfer
     end
 
     def rbs_definition_resolver
-      @rbs_definition_resolver ||= RbsDefinitionResolver.new
+      @rbs_definition_resolver ||= RbsInfer::Signatures::RbsDefinitionResolver.new
     end
 
     # Resolve nome curto de constante no namespace do caller

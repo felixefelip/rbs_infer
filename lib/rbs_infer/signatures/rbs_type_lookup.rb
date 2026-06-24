@@ -1,6 +1,6 @@
 require_relative "rbs_parser_util"
 
-module RbsInfer
+module RbsInfer::Signatures
   # Busca e parseia arquivos RBS para resolver tipos de classes,
   # superclasses, módulos incluídos e herança.
   #
@@ -213,7 +213,7 @@ module RbsInfer
       when Prism::CallNode
         if node.name == :include && node.arguments
           node.arguments.arguments.each do |arg|
-            name = Analyzer.extract_constant_path(arg)
+            name = RbsInfer::Analyzer.extract_constant_path(arg)
             includes << name if name
           end
         end

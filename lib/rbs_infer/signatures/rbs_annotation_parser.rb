@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Signatures
   # Módulo com helpers compartilhados para parsing de anotações RBS
   # (rbs-inline e @rbs) em comentários próximos a definições.
   # Usado por ClassMemberCollector e CallerFileAnalyzer.

@@ -405,7 +405,7 @@ module RbsInfer
       # `a&.b` with a nilable receiver: the nil flows into the result (on
       # a plain call the resolve is optimistic — `a.b` raises on nil).
       if resolved && node.safe_navigation? && receiver_type.end_with?("?")
-        resolved = RbsParserUtil.nilablize(resolved)
+        resolved = RbsInfer::Signatures::RbsParserUtil.nilablize(resolved)
       end
       resolved
     end

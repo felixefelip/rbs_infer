@@ -129,7 +129,7 @@ module RbsInfer
           end
 
           def rbs_definition_resolver
-            @rbs_definition_resolver ||= RbsDefinitionResolver.new
+            @rbs_definition_resolver ||= RbsInfer::Signatures::RbsDefinitionResolver.new
           end
 
           # Traverse a Prism AST collecting render calls with locals.

@@ -1,4 +1,4 @@
-require_relative "rbs_parser_util"
+require_relative "signatures/rbs_parser_util"
 
 module RbsInfer
   # Accumulates the observed types of an instance variable across all
@@ -78,7 +78,7 @@ module RbsInfer
       if @ordered.length == 1
         # nilablize parenthesizes compounds — a bare `A & B?` would bind
         # the `?` to the last component only.
-        nilable ? RbsParserUtil.nilablize(@ordered.first) : @ordered.first
+        nilable ? RbsInfer::Signatures::RbsParserUtil.nilablize(@ordered.first) : @ordered.first
       else
         body = @ordered.join(" | ")
         nilable ? "(#{body})?" : body

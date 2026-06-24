@@ -1,6 +1,6 @@
 require "rbs"
 
-module RbsInfer
+module RbsInfer::Signatures
 
   # Utilitário para extrair informações de classes/módulos usando RBS::Parser.
   # Substitui os parsers ad-hoc baseados em regex por parsing oficial da AST RBS.

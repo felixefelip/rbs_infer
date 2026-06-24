@@ -150,7 +150,7 @@ module RbsInfer
       Member.new(kind: :include, name: mod, signature: mod, visibility: :public, owner: nil)
     end
 
-    RbsBuilder.new(
+    RbsInfer::Signatures::RbsBuilder.new(
       target_class: receiver,
       superclass_name: nil,
       namespace_classes: resolve_namespace_classes(receiver),
@@ -198,7 +198,7 @@ module RbsInfer
     nil_default_param_names.each do |param_name|
       current = init_arg_types[param_name]
       next if current.nil? || current == "untyped"
-      init_arg_types[param_name] = RbsParserUtil.nilablize(current)
+      init_arg_types[param_name] = RbsInfer::Signatures::RbsParserUtil.nilablize(current)
     end
 
     # Resolver return types de métodos que retornam attrs conhecidos
@@ -251,7 +251,7 @@ module RbsInfer
     markers = synthesize_markers(target_members, attr_types, ivar_types)
 
     namespace_classes = resolve_namespace_classes
-    rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class))
+    rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class))
     rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, markers: markers)
   end
 
@@ -406,7 +406,7 @@ module RbsInfer
           # inherit its type (e.g. `Current.set(user: nil)` with no
           # direct call-site).
           params[param_name] = ivar_type
-        elsif ivar_type == RbsParserUtil.nilablize(current)
+        elsif ivar_type == RbsInfer::Signatures::RbsParserUtil.nilablize(current)
           params[param_name] = ivar_type
         end
       end
@@ -502,7 +502,7 @@ module RbsInfer
 
       info.methods.each do |method_name|
         return_type = method_type_resolver.resolve(target_class, method_name) || "untyped"
-        return_type = RbsParserUtil.nilablize(return_type) if info.allow_nil
+        return_type = RbsInfer::Signatures::RbsParserUtil.nilablize(return_type) if info.allow_nil
 
         generated_name = case info.prefix
                          when true   then "#{info.target}_#{method_name}"
@@ -570,7 +570,7 @@ module RbsInfer
                # ivar pode receber nil mesmo quando todos os callers
                # passam não-nil. Refletir isso na declaração.
                if type && nil_default_params.include?(param_name)
-                 type = RbsParserUtil.nilablize(type)
+                 type = RbsInfer::Signatures::RbsParserUtil.nilablize(type)
                end
                type
              when :param_method
@@ -742,7 +742,7 @@ module RbsInfer
   end
 
   def method_type_resolver
-    @method_type_resolver ||= MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache)
+    @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache)
   end
 
   def type_merger
@@ -775,7 +775,7 @@ module RbsInfer
   end
 
   def steep_bridge
-    @steep_bridge ||= SteepBridge.new
+    @steep_bridge ||= RbsInfer::Signatures::SteepBridge.new
   end
 
   # ─── Resolver quais namespaces da classe-alvo são class (não module) ──
@@ -811,7 +811,7 @@ require_relative "project/file_index"
 require_relative "project/caller_file_cache"
 require_relative "ast/node_type_inferrer"
 require_relative "known_return_types_builder"
-require_relative "rbs_annotation_parser"
+require_relative "signatures/rbs_annotation_parser"
 require_relative "ast/optional_param_extractor"
 require_relative "ast/class_name_extractor"
 require_relative "ast/target_discovery"
@@ -822,9 +822,9 @@ require_relative "ast/lexical_scope"
 require_relative "class_member_collector"
 require_relative "ast/def_collector"
 require_relative "new_call_collector"
-require_relative "method_type_resolver"
+require_relative "signatures/method_type_resolver"
 require_relative "caller_file_analyzer"
-require_relative "rbs_builder"
+require_relative "signatures/rbs_builder"
 require_relative "constant_type_resolver"
 require_relative "self_return_type_context"
 require_relative "type_merger"
@@ -832,5 +832,5 @@ require_relative "ivar_type_set"
 require_relative "return_type_resolver"
 require_relative "param_type_inferrer"
 require_relative "project/source_index"
-require_relative "steep_bridge"
+require_relative "signatures/steep_bridge"
 require_relative "project/source_expanders"

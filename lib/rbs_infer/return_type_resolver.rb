@@ -46,7 +46,7 @@ module RbsInfer
         next if setter_name?(m.name)
         resolved = return_types_for(m, known_return_types, class_return_types)[m.name]
         if resolved && resolved != "untyped"
-          m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsParserUtil.parenthesize_union(resolved)}")
+          m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(resolved)}")
         end
       end
 
@@ -76,10 +76,10 @@ module RbsInfer
               # Check for early return nil in body
               defn = def_map[m.name]
               if defn && has_nil_return?(defn)
-                steep_type = RbsParserUtil.nilablize(steep_type)
+                steep_type = RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type)
               end
 
-              m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsParserUtil.parenthesize_union(steep_type)}")
+              m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(steep_type)}")
             end
           end
 
@@ -114,7 +114,7 @@ module RbsInfer
 
             defn = def_map[m.name]
             if defn && has_nil_return?(defn)
-              steep_type = RbsParserUtil.nilablize(steep_type)
+              steep_type = RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type)
             end
 
             m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> #{steep_type}")
