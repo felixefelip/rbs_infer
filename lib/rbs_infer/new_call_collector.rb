@@ -326,7 +326,7 @@ module RbsInfer
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::NilNode then "nil"
       when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then RbsInfer::NodeTypeInferrer.infer_hash_type(node)
+      when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node)
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         RbsInfer::Analyzer.extract_constant_path(node) || "untyped"
       when Prism::SelfNode

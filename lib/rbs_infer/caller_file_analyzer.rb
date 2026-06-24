@@ -27,7 +27,7 @@ module RbsInfer
 
       # Resolver tipos do caller class via MethodTypeResolver
       # (infere attrs sem anotação via keyword defaults e call-sites)
-      caller_visitor = ClassNameExtractor.new(file_path: file)
+      caller_visitor = RbsInfer::AST::ClassNameExtractor.new(file_path: file)
       result.value.accept(caller_visitor)
       if caller_visitor.class_name
         caller_types = @method_type_resolver.resolve_all(caller_visitor.class_name)
@@ -209,7 +209,7 @@ module RbsInfer
       types = {}
       lines = source.lines
 
-      def_visitor = DefCollector.new
+      def_visitor = RbsInfer::AST::DefCollector.new
       tree.accept(def_visitor)
 
       def_visitor.defs.each do |defn|

@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::AST
   class OptionalParamExtractor < Prism::Visitor
     attr_reader :optional_params
 

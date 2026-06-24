@@ -5,7 +5,7 @@ module RbsInfer
   # Também infere tipos de attrs via keyword defaults e call-sites.
 
   class MethodTypeResolver
-    include NodeTypeInferrer
+    include RbsInfer::AST::NodeTypeInferrer
 
     def initialize(source_files, source_index: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil)
       @source_files = source_files
@@ -231,7 +231,7 @@ module RbsInfer
           end
 
           # 1b. Inferir return types de literais/Klass.new na última expressão do método
-          def_collector = RbsInfer::DefCollector.new
+          def_collector = RbsInfer::AST::DefCollector.new
           result.value.accept(def_collector)
           def_collector.defs.each do |defn|
             next if types[defn.name.to_s] && types[defn.name.to_s] != "untyped"

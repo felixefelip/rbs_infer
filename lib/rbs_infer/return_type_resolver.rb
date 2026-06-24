@@ -59,7 +59,7 @@ module RbsInfer
 
         unless steep_returns[:instance].empty? && steep_returns[:singleton].empty?
           # Build def map for nil-return detection
-          collector = DefCollector.new
+          collector = RbsInfer::AST::DefCollector.new
           parsed_target.tree.accept(collector)
           def_map = {}
           collector.defs.each { |d| def_map[d.name.to_s] = d if d.is_a?(Prism::DefNode) }
@@ -159,7 +159,7 @@ module RbsInfer
       # cover (e.g., parse failures or pure ivasgn that Steep can't type).
       known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
 
-      collector = DefCollector.new
+      collector = RbsInfer::AST::DefCollector.new
       parsed_target.tree.accept(collector)
 
       initialized_ivars = collect_prism_initialized_ivars(parsed_target.tree)
@@ -301,7 +301,7 @@ module RbsInfer
       when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then NodeTypeInferrer.infer_hash_type(node, known_types: known_return_types, context_class: @target_class)
+      when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node, known_types: known_return_types, context_class: @target_class)
       when Prism::SelfNode then @target_class
       when Prism::CallNode
         if node.name == :new && node.receiver

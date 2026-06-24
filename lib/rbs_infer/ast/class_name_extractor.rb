@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::AST
   class ClassNameExtractor < Prism::Visitor
     def initialize(file_path:)
       @file_path = file_path

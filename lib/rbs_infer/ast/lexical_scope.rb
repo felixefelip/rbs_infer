@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module RbsInfer
+module RbsInfer::AST
   # Tracks the lexical class/module nesting of a Prism visitor so members
   # and defs can be attributed to the nested module that owns them
   # (felixefelip/rbs_infer#22). Shared by ClassMemberCollector and

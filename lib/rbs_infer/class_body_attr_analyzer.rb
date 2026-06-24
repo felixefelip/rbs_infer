@@ -1,6 +1,6 @@
 module RbsInfer
   class ClassBodyAttrAnalyzer < Prism::Visitor
-    include NodeTypeInferrer
+    include RbsInfer::AST::NodeTypeInferrer
 
     attr_reader :attr_types, :collection_element_types
 

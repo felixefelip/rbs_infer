@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::AST
   class DefCollector < Prism::Visitor
     include LexicalScope
 

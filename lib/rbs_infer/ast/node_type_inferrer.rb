@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::AST
   # Módulo compartilhado que unifica a inferência básica de tipos
   # a partir de nós da AST Prism. Cobre literais, constantes,
   # Klass.new, ImplicitNode, write nodes e leitura de variáveis.
@@ -20,10 +20,10 @@ module RbsInfer
       when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
       when Prism::SelfNode then context_class
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        Analyzer.extract_constant_path(node)
+        RbsInfer::Analyzer.extract_constant_path(node)
       when Prism::CallNode
         if node.name == :new && node.receiver
-          Analyzer.extract_constant_path(node.receiver)
+          RbsInfer::Analyzer.extract_constant_path(node.receiver)
         elsif node.receiver.nil?
           known_types[node.name.to_s]
         end
@@ -88,10 +88,10 @@ module RbsInfer
       when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
       when Prism::SelfNode then context_class || "untyped"
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        Analyzer.extract_constant_path(node) || "untyped"
+        RbsInfer::Analyzer.extract_constant_path(node) || "untyped"
       when Prism::CallNode
         if node.name == :new && node.receiver
-          Analyzer.extract_constant_path(node.receiver) || "untyped"
+          RbsInfer::Analyzer.extract_constant_path(node.receiver) || "untyped"
         elsif node.receiver.nil?
           known_types[node.name.to_s] || "untyped"
         else

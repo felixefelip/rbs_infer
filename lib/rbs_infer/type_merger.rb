@@ -1,6 +1,6 @@
 module RbsInfer
   class TypeMerger
-    include NodeTypeInferrer
+    include RbsInfer::AST::NodeTypeInferrer
     include KnownReturnTypesBuilder
 
     # Métodos de Array que retornam self (o próprio array)
@@ -54,7 +54,7 @@ module RbsInfer
 
       # Collect mapping: [kind, method_name] -> last expression of the body
       method_last_exprs = {}
-      collector = DefCollector.new(target_class: @target_class)
+      collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
       parsed_target.tree.accept(collector)
 
       collector.defs.each do |defn|

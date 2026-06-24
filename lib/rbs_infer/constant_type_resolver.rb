@@ -22,7 +22,7 @@ module RbsInfer
   #    — as the fallback when Steep is unavailable or returned nothing.
   # 4. `untyped` — nothing static could decide it.
   class ConstantTypeResolver
-    include NodeTypeInferrer
+    include RbsInfer::AST::NodeTypeInferrer
 
     # Methods that return their receiver unchanged (`self`), so the chain's
     # type is the receiver's type. Lets a trailing `.freeze` (the common

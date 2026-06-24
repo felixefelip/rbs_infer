@@ -24,7 +24,7 @@ module RbsInfer
       return {} unless parsed_target
 
       # Pré-coletar parâmetros posicionais de todos os métodos
-      collector = DefCollector.new
+      collector = RbsInfer::AST::DefCollector.new
       parsed_target.tree.accept(collector)
       positional_params = {}
       collector.defs.each do |defn|
@@ -93,7 +93,7 @@ module RbsInfer
     # Detecta métodos que fazem Klass.new(param:, param:) com parâmetros forwarded
     def detect_forwarding_methods(parse_result, target_class_filter: nil)
       forwarding = {}
-      collector = DefCollector.new
+      collector = RbsInfer::AST::DefCollector.new
       parse_result.value.accept(collector)
 
       collector.defs.each do |defn|
@@ -254,7 +254,7 @@ module RbsInfer
       local_var_types = {}
 
       # Encontrar o def encapsulante
-      collector = DefCollector.new
+      collector = RbsInfer::AST::DefCollector.new
       parse_result.value.accept(collector)
 
       enclosing_def = collector.defs.find do |defn|

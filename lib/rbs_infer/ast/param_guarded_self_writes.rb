@@ -2,7 +2,7 @@
 
 require "prism"
 
-module RbsInfer
+module RbsInfer::AST
   # Extracts the `self.<attr> = <param>` / `self.<attr> = <param>.<method>`
   # writes inside a method that are guaranteed to run whenever the named
   # parameter is non-nil — unconditional, or under a nil-decidable guard

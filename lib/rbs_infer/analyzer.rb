@@ -106,7 +106,7 @@ module RbsInfer
   # top-level target and emit one RBS block per target, reusing the
   # single-target pipeline for each declaration (felixefelip/rbs_infer#38).
   def generate_multi_target_rbs
-    discovery = TargetDiscovery.new
+    discovery = RbsInfer::AST::TargetDiscovery.new
     @parsed_target.tree.accept(discovery)
     decl_targets = discovery.declaration_targets
     include_targets = discovery.include_targets
@@ -383,7 +383,7 @@ module RbsInfer
   def widen_assigned_param_types(method_param_types, ivar_types)
     return if method_param_types.empty? || ivar_types.empty? || @parsed_target.nil?
 
-    collector = DefCollector.new
+    collector = RbsInfer::AST::DefCollector.new
     @parsed_target.tree.accept(collector)
 
     collector.defs.each do |defn|
@@ -457,7 +457,7 @@ module RbsInfer
   def extract_optional_init_params
     return Set.new unless @parsed_target
 
-    visitor = OptionalParamExtractor.new
+    visitor = RbsInfer::AST::OptionalParamExtractor.new
     @parsed_target.tree.accept(visitor)
     visitor.optional_params
   end
@@ -477,7 +477,7 @@ module RbsInfer
     entry = @parse_cache.get(file)
     return nil unless entry
 
-    visitor = ClassNameExtractor.new(file_path: file)
+    visitor = RbsInfer::AST::ClassNameExtractor.new(file_path: file)
     entry.result.value.accept(visitor)
     @is_module = visitor.is_module
     visitor.class_name
@@ -694,7 +694,7 @@ module RbsInfer
   def extract_target_method_params
     return {} unless @parsed_target
 
-    collector = DefCollector.new
+    collector = RbsInfer::AST::DefCollector.new
     @parsed_target.tree.accept(collector)
 
     methods = {}
@@ -716,7 +716,7 @@ module RbsInfer
   def extract_init_positional_params
     return [] unless @parsed_target
 
-    collector = DefCollector.new
+    collector = RbsInfer::AST::DefCollector.new
     @parsed_target.tree.accept(collector)
 
     init_def = collector.defs.find { |d| d.name == :initialize }
@@ -795,7 +795,7 @@ module RbsInfer
       entry = @parse_cache.get(source_file)
       next unless entry
 
-      visitor = ClassNameExtractor.new(file_path: source_file)
+      visitor = RbsInfer::AST::ClassNameExtractor.new(file_path: source_file)
       entry.result.value.accept(visitor)
       classes.add(full_name) if visitor.class_name == full_name && !visitor.is_module
     end
@@ -809,18 +809,18 @@ end
 require_relative "parse_cache"
 require_relative "file_index"
 require_relative "caller_file_cache"
-require_relative "node_type_inferrer"
+require_relative "ast/node_type_inferrer"
 require_relative "known_return_types_builder"
 require_relative "rbs_annotation_parser"
-require_relative "optional_param_extractor"
-require_relative "class_name_extractor"
-require_relative "target_discovery"
+require_relative "ast/optional_param_extractor"
+require_relative "ast/class_name_extractor"
+require_relative "ast/target_discovery"
 require_relative "class_body_attr_analyzer"
 require_relative "intra_class_call_analyzer"
 require_relative "initialize_body_analyzer"
-require_relative "lexical_scope"
+require_relative "ast/lexical_scope"
 require_relative "class_member_collector"
-require_relative "def_collector"
+require_relative "ast/def_collector"
 require_relative "new_call_collector"
 require_relative "method_type_resolver"
 require_relative "caller_file_analyzer"

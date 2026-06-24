@@ -3,7 +3,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::TargetDiscovery do
+RSpec.describe RbsInfer::AST::TargetDiscovery do
   def discover(source)
     visitor = described_class.new
     Prism.parse(source).value.accept(visitor)

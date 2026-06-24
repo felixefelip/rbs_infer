@@ -47,7 +47,7 @@ module RbsInfer
         result = Prism.parse(source)
 
         # Extract class/module name defined in this file
-        extractor = ClassNameExtractor.new(file_path: file)
+        extractor = RbsInfer::AST::ClassNameExtractor.new(file_path: file)
         result.value.accept(extractor)
         class_name = extractor.class_name
         next unless class_name

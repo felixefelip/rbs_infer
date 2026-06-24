@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module RbsInfer
+module RbsInfer::AST
   # Walks a (possibly macro-expanded) file tree and enumerates every
   # top-level type the file defines or reopens — the input to the
   # multi-target core (felixefelip/rbs_infer#38).

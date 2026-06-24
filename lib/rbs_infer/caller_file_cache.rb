@@ -31,10 +31,10 @@ module RbsInfer
       member_collector = ClassMemberCollector.new(comments: comments, lines: lines)
       result.value.accept(member_collector)
 
-      caller_ext = ClassNameExtractor.new(file_path: file)
+      caller_ext = RbsInfer::AST::ClassNameExtractor.new(file_path: file)
       result.value.accept(caller_ext)
 
-      def_collector = DefCollector.new
+      def_collector = RbsInfer::AST::DefCollector.new
       result.value.accept(def_collector)
 
       Analysis.new(

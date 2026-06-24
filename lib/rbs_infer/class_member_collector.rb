@@ -12,9 +12,9 @@ module RbsInfer
   DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
 
   class ClassMemberCollector < Prism::Visitor
-    include NodeTypeInferrer
+    include RbsInfer::AST::NodeTypeInferrer
     include RbsAnnotationParser
-    include LexicalScope
+    include RbsInfer::AST::LexicalScope
 
     attr_reader :members, :delegates, :superclass_name, :is_module
 

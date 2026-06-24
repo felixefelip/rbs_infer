@@ -1,6 +1,6 @@
 module RbsInfer
   class InitializeBodyAnalyzer < Prism::Visitor
-    include NodeTypeInferrer
+    include RbsInfer::AST::NodeTypeInferrer
 
     attr_reader :self_assignments, :keyword_defaults, :nil_default_params
 
@@ -106,7 +106,7 @@ module RbsInfer
         element_type = infer_collection_element_type(node.elements)
         { kind: :literal, type: "Array[#{element_type}]" }
       when Prism::HashNode
-        { kind: :literal, type: NodeTypeInferrer.infer_hash_type(node) }
+        { kind: :literal, type: RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node) }
       else
         { kind: :unknown }
       end
