@@ -15,8 +15,8 @@ gem "carrierwave", "~> 3.0"
 
 # RBS type signatures
 gem "rbs_infer", path: "../.."
-gem "rbs_rails", path: "/Users/felipepessoa/workspaces/rbs_rails", require: false
-gem "steep", path: "/Users/felipepessoa/workspaces/steep", require: false
+gem "rbs_rails", path: "/home/felipefelix/workspaces/rbs_rails", require: false
+gem "steep", path: "/home/felipefelix/workspaces/steep", require: false
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]

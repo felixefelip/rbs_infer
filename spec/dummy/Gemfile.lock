@@ -7,7 +7,7 @@ PATH
       steep
 
 PATH
-  remote: /Users/felipepessoa/workspaces/rbs_rails
+  remote: /home/felipefelix/workspaces/rbs_rails
   specs:
     rbs_rails (0.13.0)
       parser
@@ -15,7 +15,7 @@ PATH
       rbs (>= 1)
 
 PATH
-  remote: /Users/felipepessoa/workspaces/steep
+  remote: /home/felipefelix/workspaces/steep
   specs:
     steep (2.1.0.dev)
       concurrent-ruby (>= 1.1.10)
