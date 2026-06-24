@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Markers
   # Generates marker class declarations for predicate-narrowing
   # methods (`def confirmed?; !@name.nil?; end`) by reading Steep's
   # `Postconditions::Inferrer` output directly. The inferrer is

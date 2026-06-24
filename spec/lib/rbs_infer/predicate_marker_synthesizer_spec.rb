@@ -7,7 +7,7 @@ require "steep"
 # live type-checker) so the rules are tested in isolation from
 # Steep's source-walking machinery — that machinery is covered by
 # Steep's own `PostconditionsInferrerTest`.
-RSpec.describe RbsInfer::PredicateMarkerSynthesizer do
+RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
   Member = RbsInfer::Inference::Member
   InferredEntry = Steep::Postconditions::InferredEntry
 

@@ -279,7 +279,7 @@ module RbsInfer
     return [] if per_method.empty?
 
     declared_ivar_types = collect_declared_attr_types(target_members, attr_types)
-    SetterMarkerSynthesizer.synthesize(
+    RbsInfer::Markers::SetterMarkerSynthesizer.synthesize(
       members: target_members,
       ivar_write_types_per_method: per_method,
       declared_ivar_types: declared_ivar_types
@@ -294,7 +294,7 @@ module RbsInfer
     entries = steep_bridge.postcondition_inferred_entries(@parsed_target.source)
     return [] if entries.empty?
 
-    PredicateMarkerSynthesizer.synthesize(
+    RbsInfer::Markers::PredicateMarkerSynthesizer.synthesize(
       inferred_entries: entries,
       target_class: @target_class,
       members: target_members

@@ -1,6 +1,6 @@
 require "steep/postconditions/marker_naming"
 
-module RbsInfer
+module RbsInfer::Markers
   # Produces "marker" class declarations to attach to a generated RBS
   # so that Steep's `unconditional.self` postcondition refinements have
   # a real type to intersect with. See felixefelip/rbs_infer#11 and the

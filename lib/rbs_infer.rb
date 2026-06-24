@@ -35,8 +35,8 @@ module RbsInfer
 end
 
 require_relative "rbs_infer/analyzer"
-require_relative "rbs_infer/setter_marker_synthesizer"
-require_relative "rbs_infer/predicate_marker_synthesizer"
+require_relative "rbs_infer/markers/setter_marker_synthesizer"
+require_relative "rbs_infer/markers/predicate_marker_synthesizer"
 require_relative "rbs_infer/project/dependency_sorter"
 
 # Default source expanders (RbsInfer::Project::SourceExpanders plugins). Each one

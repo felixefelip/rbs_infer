@@ -5,7 +5,7 @@ require "rbs_infer"
 # the marker-generation rules (matches attr_reader, skips no-narrow
 # methods, etc.) are independent of the Steep bridge's per-method
 # write detection — that piece is covered by `steep_bridge_spec`.
-RSpec.describe RbsInfer::SetterMarkerSynthesizer do
+RSpec.describe RbsInfer::Markers::SetterMarkerSynthesizer do
   Member = RbsInfer::Inference::Member
 
   def member(kind:, name:)
