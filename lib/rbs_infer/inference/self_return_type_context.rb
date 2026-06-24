@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Inference
   # The own-method return types of the class currently being generated, for
   # resolving calls whose receiver IS that class.
   #

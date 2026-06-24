@@ -147,7 +147,7 @@ module RbsInfer
   # RedirectController; include ...`).
   def build_include_reopen(receiver, modules)
     members = modules.map do |mod|
-      Member.new(kind: :include, name: mod, signature: mod, visibility: :public, owner: nil)
+      RbsInfer::Inference::Member.new(kind: :include, name: mod, signature: mod, visibility: :public, owner: nil)
     end
 
     RbsInfer::Signatures::RbsBuilder.new(
@@ -444,7 +444,7 @@ module RbsInfer
     target_members.reject! { |m| m.kind == :constant && !keep[[m.owner, m.name]].equal?(m) }
 
     steep_types = @parsed_target&.source ? steep_bridge.constant_types(@parsed_target.source) : {}
-    resolver = ConstantTypeResolver.new(target_class: @target_class)
+    resolver = RbsInfer::Inference::ConstantTypeResolver.new(target_class: @target_class)
 
     keep.each_value do |member|
       type = resolver.resolve(member.value_node, steep_type: steep_types[member.name])
@@ -486,7 +486,7 @@ module RbsInfer
   # ─── Parsear classe-alvo: métodos, attrs, visibilidade ─────────────
 
   def parse_target_class
-    visitor = ClassMemberCollector.new(comments: @parsed_target.comments, lines: @parsed_target.lines, target_class: @target_class)
+    visitor = RbsInfer::Inference::ClassMemberCollector.new(comments: @parsed_target.comments, lines: @parsed_target.lines, target_class: @target_class)
     @parsed_target.tree.accept(visitor)
     @superclass_name = visitor.superclass_name
     @is_module = visitor.is_module if @is_module.nil?
@@ -510,7 +510,7 @@ module RbsInfer
                          else             method_name
                          end
 
-        target_members << Member.new(
+        target_members << RbsInfer::Inference::Member.new(
           kind: :method,
           name: generated_name,
           signature: "#{generated_name}: () -> #{return_type}",
@@ -547,7 +547,7 @@ module RbsInfer
   def infer_attr_types_from_initialize(init_arg_types)
     return {} unless @parsed_target
 
-    visitor = InitializeBodyAnalyzer.new
+    visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new
     @parsed_target.tree.accept(visitor)
 
     attr_types = {}
@@ -613,7 +613,7 @@ module RbsInfer
                         .to_set
     return [{}, {}] if attr_names.empty?
 
-    visitor = ClassBodyAttrAnalyzer.new(attr_names: attr_names, method_type_resolver: method_type_resolver)
+    visitor = RbsInfer::Inference::ClassBodyAttrAnalyzer.new(attr_names: attr_names, method_type_resolver: method_type_resolver)
     @parsed_target.tree.accept(visitor)
 
     [visitor.attr_types, visitor.collection_element_types]
@@ -653,7 +653,7 @@ module RbsInfer
   def find_new_calls
     positional_params = extract_init_positional_params
     target_methods = extract_target_method_params
-    analyzer = CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, init_positional_params: positional_params, target_methods: target_methods, steep_bridge: steep_bridge)
+    analyzer = RbsInfer::Inference::CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, init_positional_params: positional_params, target_methods: target_methods, steep_bridge: steep_bridge)
     @source_index.files_referencing(@target_class).flat_map { |file| analyzer.analyze(file) }
   end
 
@@ -664,7 +664,7 @@ module RbsInfer
     return {} if target_methods.empty?
 
     positional_params = extract_init_positional_params
-    analyzer = CallerFileAnalyzer.new(
+    analyzer = RbsInfer::Inference::CallerFileAnalyzer.new(
       target_class: @target_class,
       method_type_resolver: method_type_resolver,
       init_positional_params: positional_params,
@@ -736,7 +736,7 @@ module RbsInfer
   def extract_nil_default_param_names
     return Set.new unless @parsed_target
 
-    visitor = InitializeBodyAnalyzer.new
+    visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new
     @parsed_target.tree.accept(visitor)
     visitor.nil_default_params
   end
@@ -746,11 +746,11 @@ module RbsInfer
   end
 
   def type_merger
-    @type_merger ||= TypeMerger.new(target_file: @target_file, target_class: @target_class, instance_types: @instance_types || [])
+    @type_merger ||= RbsInfer::Inference::TypeMerger.new(target_file: @target_file, target_class: @target_class, instance_types: @instance_types || [])
   end
 
   def return_type_resolver
-    @return_type_resolver ||= ReturnTypeResolver.new(
+    @return_type_resolver ||= RbsInfer::Inference::ReturnTypeResolver.new(
       target_file: @target_file,
       target_class: @target_class,
       method_type_resolver: method_type_resolver,
@@ -760,7 +760,7 @@ module RbsInfer
   end
 
   def param_type_inferrer
-    @param_type_inferrer ||= ParamTypeInferrer.new(
+    @param_type_inferrer ||= RbsInfer::Inference::ParamTypeInferrer.new(
       target_file: @target_file,
       target_class: @target_class,
       source_files: @source_files,
@@ -810,27 +810,27 @@ require_relative "project/parse_cache"
 require_relative "project/file_index"
 require_relative "project/caller_file_cache"
 require_relative "ast/node_type_inferrer"
-require_relative "known_return_types_builder"
+require_relative "inference/known_return_types_builder"
 require_relative "signatures/rbs_annotation_parser"
 require_relative "ast/optional_param_extractor"
 require_relative "ast/class_name_extractor"
 require_relative "ast/target_discovery"
-require_relative "class_body_attr_analyzer"
-require_relative "intra_class_call_analyzer"
-require_relative "initialize_body_analyzer"
+require_relative "inference/class_body_attr_analyzer"
+require_relative "inference/intra_class_call_analyzer"
+require_relative "inference/initialize_body_analyzer"
 require_relative "ast/lexical_scope"
-require_relative "class_member_collector"
+require_relative "inference/class_member_collector"
 require_relative "ast/def_collector"
-require_relative "new_call_collector"
+require_relative "inference/new_call_collector"
 require_relative "signatures/method_type_resolver"
-require_relative "caller_file_analyzer"
+require_relative "inference/caller_file_analyzer"
 require_relative "signatures/rbs_builder"
-require_relative "constant_type_resolver"
-require_relative "self_return_type_context"
-require_relative "type_merger"
-require_relative "ivar_type_set"
-require_relative "return_type_resolver"
-require_relative "param_type_inferrer"
+require_relative "inference/constant_type_resolver"
+require_relative "inference/self_return_type_context"
+require_relative "inference/type_merger"
+require_relative "inference/ivar_type_set"
+require_relative "inference/return_type_resolver"
+require_relative "inference/param_type_inferrer"
 require_relative "project/source_index"
 require_relative "signatures/steep_bridge"
 require_relative "project/source_expanders"

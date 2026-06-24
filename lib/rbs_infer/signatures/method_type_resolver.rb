@@ -169,7 +169,7 @@ module RbsInfer::Signatures
         end
 
         local_var_types = {}
-        visitor = RbsInfer::NewCallCollector.new(
+        visitor = RbsInfer::Inference::NewCallCollector.new(
           target_class: class_name,
           method_return_types: mrt,
           local_var_types: local_var_types,
@@ -211,7 +211,7 @@ module RbsInfer::Signatures
           lines = entry.source.lines
 
           # 1. Tipos anotados via ClassMemberCollector
-          collector = RbsInfer::ClassMemberCollector.new(comments: comments, lines: lines)
+          collector = RbsInfer::Inference::ClassMemberCollector.new(comments: comments, lines: lines)
           result.value.accept(collector)
 
           attr_names = Set.new
@@ -245,7 +245,7 @@ module RbsInfer::Signatures
           end
 
           # 2. Tipos inferidos via keyword defaults do initialize
-          init_visitor = RbsInfer::InitializeBodyAnalyzer.new
+          init_visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new
           result.value.accept(init_visitor)
 
           init_visitor.keyword_defaults.each do |param_name, default_type|
@@ -371,7 +371,7 @@ module RbsInfer::Signatures
         end
 
         local_var_types = {}
-        visitor = RbsInfer::NewCallCollector.new(
+        visitor = RbsInfer::Inference::NewCallCollector.new(
           target_class: class_name,
           method_return_types: method_return_types,
           local_var_types: local_var_types,

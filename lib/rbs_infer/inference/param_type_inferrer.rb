@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Inference
   # Infere tipos de parâmetros de métodos via chamadas intra-classe,
   # detecção de forwarding wrappers e call-sites cross-class.
   #
@@ -108,10 +108,10 @@ module RbsInfer
         body = defn.body
         next unless body
 
-        new_calls = Analyzer.find_all_nodes(body) { |n| n.is_a?(Prism::CallNode) && n.name == :new && n.receiver && n.arguments }
+        new_calls = RbsInfer::Analyzer.find_all_nodes(body) { |n| n.is_a?(Prism::CallNode) && n.name == :new && n.receiver && n.arguments }
         new_calls.each do |node|
           if target_class_filter
-            receiver_name = Analyzer.extract_constant_path(node.receiver)
+            receiver_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
             next unless receiver_name
             normalized = receiver_name.sub(/\A::/, "")
             target = target_class_filter.sub(/\A::/, "")
@@ -187,7 +187,7 @@ module RbsInfer
         end
 
         # Procurar chamadas ao método e extrair tipos dos keyword args
-        matching_calls = Analyzer.find_all_nodes(file_result.value) { |n| n.is_a?(Prism::CallNode) && n.name == method_name.to_sym && n.arguments }
+        matching_calls = RbsInfer::Analyzer.find_all_nodes(file_result.value) { |n| n.is_a?(Prism::CallNode) && n.name == method_name.to_sym && n.arguments }
         matching_calls.each do |node|
 
           local_var_types = collect_local_var_types_for_scope(node, file_result, method_return_types, analysis.class_name, source_code: entry.source)
@@ -224,7 +224,7 @@ module RbsInfer
         if node.receiver.nil?
           method_return_types[node.name.to_s] || "untyped"
         elsif node.name == :new && node.receiver
-          Analyzer.extract_constant_path(node.receiver) || "untyped"
+          RbsInfer::Analyzer.extract_constant_path(node.receiver) || "untyped"
         else
           # receiver.method → tentar resolver
           receiver_type = resolve_arg_value_type(node.receiver, local_var_types, method_return_types)
@@ -241,7 +241,7 @@ module RbsInfer
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::NilNode then "nil"
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        Analyzer.extract_constant_path(node) || "untyped"
+        RbsInfer::Analyzer.extract_constant_path(node) || "untyped"
       when Prism::ImplicitNode
         resolve_arg_value_type(node.value, local_var_types, method_return_types)
       else
@@ -283,7 +283,7 @@ module RbsInfer
       end
 
       # Coletar assignments locais (em qualquer profundidade, antes do target_node)
-      all_assignments = Analyzer.find_all_nodes(enclosing_def) do |n|
+      all_assignments = RbsInfer::Analyzer.find_all_nodes(enclosing_def) do |n|
         n.is_a?(Prism::LocalVariableWriteNode) &&
           n.location.start_offset < target_node.location.start_offset
       end
@@ -311,13 +311,13 @@ module RbsInfer
             method_name = assign.value.name.to_s
             local_var_types[var_name] = method_return_types[method_name] if method_return_types[method_name]
           elsif assign.value.name == :new && assign.value.receiver
-            class_name = Analyzer.extract_constant_path(assign.value.receiver)
+            class_name = RbsInfer::Analyzer.extract_constant_path(assign.value.receiver)
             if class_name
               local_var_types[var_name] = resolve_constant_in_namespace(class_name, caller_class_name)
             end
           else
             # receiver.method → tentar resolver tipo
-            class_name = Analyzer.extract_constant_path(assign.value.receiver)
+            class_name = RbsInfer::Analyzer.extract_constant_path(assign.value.receiver)
             if class_name
               resolved = @method_type_resolver.resolve_class_method(class_name, assign.value.name.to_s)
               if resolved && resolved != "untyped"
@@ -337,7 +337,7 @@ module RbsInfer
 
     # Resolve tipos de parâmetros de blocos iteradores (collection.each do |item|)
     def resolve_block_param_types(enclosing_def, target_node, local_var_types, method_return_types)
-      block_calls = Analyzer.find_all_nodes(enclosing_def) do |n|
+      block_calls = RbsInfer::Analyzer.find_all_nodes(enclosing_def) do |n|
         n.is_a?(Prism::CallNode) && n.block.is_a?(Prism::BlockNode) &&
           ITERATOR_METHODS.include?(n.name) &&
           n.block.location.start_offset <= target_node.location.start_offset &&

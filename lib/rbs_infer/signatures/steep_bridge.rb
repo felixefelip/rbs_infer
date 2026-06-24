@@ -1,5 +1,5 @@
 require "steep"
-require_relative "../ivar_type_set"
+require_relative "../inference/ivar_type_set"
 
 module RbsInfer::Signatures
   # Bridge to Steep's TypeConstruction for resolving expression types.
@@ -282,7 +282,7 @@ module RbsInfer::Signatures
       source_node = typing.source.node
       return {} unless source_node
 
-      type_sets = Hash.new { |h, k| h[k] = RbsInfer::IvarTypeSet.new }
+      type_sets = Hash.new { |h, k| h[k] = RbsInfer::Inference::IvarTypeSet.new }
       initialized = collect_initialized_ivars(source_node)
       attr_writer_to_ivar = collect_attr_writers(source_node)
 
@@ -343,7 +343,7 @@ module RbsInfer::Signatures
 
       attr_writer_to_ivar = collect_attr_writers(source_node)
       per_method_sets = Hash.new do |h, k|
-        h[k] = Hash.new { |h2, k2| h2[k2] = RbsInfer::IvarTypeSet.new }
+        h[k] = Hash.new { |h2, k2| h2[k2] = RbsInfer::Inference::IvarTypeSet.new }
       end
 
       collect_ivar_writes_per_method(

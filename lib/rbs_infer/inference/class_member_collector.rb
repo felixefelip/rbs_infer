@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Inference
   # Estrutura que representa um membro da classe.
   # `owner` = caminho do módulo aninhado que define o membro (ex.
   # "Formatting"), ou nil quando é membro direto da classe-alvo

@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Inference
   class NewCallCollector < Prism::Visitor
     attr_reader :usages, :method_call_usages
 

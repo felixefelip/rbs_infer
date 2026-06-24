@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Inference
   # Resolves the RBS type of a class/module constant's RHS
   # (felixefelip/rbs_infer#37). The inference pieces already exist; this
   # composes them with the right precedence so a constant resolves as

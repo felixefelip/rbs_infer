@@ -28,7 +28,7 @@ module RbsInfer::Project
       comments = result.comments
       lines = entry.source.lines
 
-      member_collector = RbsInfer::ClassMemberCollector.new(comments: comments, lines: lines)
+      member_collector = RbsInfer::Inference::ClassMemberCollector.new(comments: comments, lines: lines)
       result.value.accept(member_collector)
 
       caller_ext = RbsInfer::AST::ClassNameExtractor.new(file_path: file)

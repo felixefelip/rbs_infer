@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Inference
   # Analisa chamadas intra-classe para inferir tipos de parâmetros de métodos privados.
   # Duas estratégias:
   # 1. Caller-side: em `call`, `publicar_evento(aluno:)` onde `aluno = Entity.new(...)` →
@@ -183,11 +183,11 @@ module RbsInfer
         resolve_value_type(node.value)
       when Prism::CallNode
         if node.name == :new && node.receiver
-          Analyzer.extract_constant_path(node.receiver) || "untyped"
+          RbsInfer::Analyzer.extract_constant_path(node.receiver) || "untyped"
         elsif node.receiver.nil?
           @attr_types[node.name.to_s] || "untyped"
         elsif (node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)) && @method_type_resolver
-          class_name = Analyzer.extract_constant_path(node.receiver)
+          class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
           if class_name
             @method_type_resolver.resolve_class_method(class_name, node.name.to_s) || "untyped"
           else
@@ -212,7 +212,7 @@ module RbsInfer
       when Prism::ArrayNode then "Array[untyped]"
       when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node)
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        Analyzer.extract_constant_path(node) || "untyped"
+        RbsInfer::Analyzer.extract_constant_path(node) || "untyped"
       else
         "untyped"
       end

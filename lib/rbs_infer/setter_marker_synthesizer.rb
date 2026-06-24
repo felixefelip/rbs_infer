@@ -33,7 +33,7 @@ module RbsInfer
     #   overrides    : { "name" => "String" }    (ivar name without leading `@` → narrowed type str)
     MarkerClass = Struct.new(:method_name, :marker_name, :overrides, keyword_init: true)
 
-    # @param members [Array<RbsInfer::Member>] members of the target class
+    # @param members [Array<RbsInfer::Inference::Member>] members of the target class
     # @param ivar_write_types_per_method [Hash{String=>Hash{String=>String}}]
     #   from `SteepBridge#ivar_write_types_per_method` — method name →
     #   ivar name (no `@`) → narrowed type string

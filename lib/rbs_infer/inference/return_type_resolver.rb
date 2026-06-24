@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Inference
   # Resolve return types de métodos e tipos de instance variables
   # a partir de análise estática do corpo dos métodos.
   #
@@ -305,12 +305,12 @@ module RbsInfer
       when Prism::SelfNode then @target_class
       when Prism::CallNode
         if node.name == :new && node.receiver
-          Analyzer.extract_constant_path(node.receiver)
+          RbsInfer::Analyzer.extract_constant_path(node.receiver)
         elsif node.receiver.nil?
           known_return_types[node.name.to_s]
         end
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        Analyzer.extract_constant_path(node)
+        RbsInfer::Analyzer.extract_constant_path(node)
       end
     end
   end

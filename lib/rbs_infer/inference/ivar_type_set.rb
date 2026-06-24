@@ -1,6 +1,6 @@
-require_relative "signatures/rbs_parser_util"
+require_relative "../signatures/rbs_parser_util"
 
-module RbsInfer
+module RbsInfer::Inference
   # Accumulates the observed types of an instance variable across all
   # writes (direct `@x = expr` and `self.x = expr` via attr_writer/accessor),
   # dedupes, and emits the union string used in the generated `.rbs`.

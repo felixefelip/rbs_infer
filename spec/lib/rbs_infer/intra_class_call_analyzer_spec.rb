@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::IntraClassCallAnalyzer do
+RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
   def analyze(source, attr_types: {}, method_type_resolver: nil)
     result = Prism.parse(source)
     visitor = described_class.new(attr_types: attr_types, method_type_resolver: method_type_resolver)

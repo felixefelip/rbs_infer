@@ -4,7 +4,7 @@ require "tmpdir"
 require "fileutils"
 require_relative "../../support/temp_file_helpers"
 
-RSpec.describe RbsInfer::NewCallCollector do
+RSpec.describe RbsInfer::Inference::NewCallCollector do
   include TempFileHelpers
 
   def collect_usages(source, target_class:, method_return_types: {}, local_var_types: {})

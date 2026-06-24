@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Inference
   # Módulo que constrói o hash `known_return_types` a partir de
   # members, attr_types e method_type_resolver.
   # Padrão repetido em ReturnTypeResolver e TypeMerger.

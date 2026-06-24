@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Inference
   class CallerFileAnalyzer
     include RbsInfer::Signatures::RbsAnnotationParser
 

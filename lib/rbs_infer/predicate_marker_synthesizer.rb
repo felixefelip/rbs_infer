@@ -23,7 +23,7 @@ module RbsInfer
     #   for the source under analysis.
     # @param target_class [String] only entries matching this class
     #   contribute markers — the analyzer scopes synthesis per file.
-    # @param members [Array<RbsInfer::Member>] used to confirm a
+    # @param members [Array<RbsInfer::Inference::Member>] used to confirm a
     #   reader exists for each narrowed ivar (an
     #   `attr_reader`/`attr_accessor`); without one the marker would
     #   be unobservable.

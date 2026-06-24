@@ -74,7 +74,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
       # Account::Storage inclui Storage::Totaled → dentro de class Account { module Storage }
       # o RBS resolveria Storage::Totaled como Account::Storage::Totaled (errado)
       members = [
-        RbsInfer::Member.new(kind: :include, name: "Storage::Totaled", signature: "", visibility: :public)
+        RbsInfer::Inference::Member.new(kind: :include, name: "Storage::Totaled", signature: "", visibility: :public)
       ]
       builder = make_builder(target_class: "Account::Storage", superclass_name: nil)
       result = builder.build(members, {}, {})
@@ -92,7 +92,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
 
     it "não prefixa include quando não há ambiguidade" do
       members = [
-        RbsInfer::Member.new(kind: :include, name: "ActiveSupport::Concern", signature: "", visibility: :public)
+        RbsInfer::Inference::Member.new(kind: :include, name: "ActiveSupport::Concern", signature: "", visibility: :public)
       ]
       builder = make_builder(target_class: "Account::Storage", superclass_name: nil)
       result = builder.build(members, {}, {})
@@ -109,9 +109,9 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
 
     it "não emite 'protected' no RBS (trata como public)" do
       members = [
-        RbsInfer::Member.new(kind: :method, name: "pub", signature: "pub: () -> void", visibility: :public),
-        RbsInfer::Member.new(kind: :method, name: "prot", signature: "prot: () -> untyped", visibility: :protected),
-        RbsInfer::Member.new(kind: :method, name: "priv", signature: "priv: () -> void", visibility: :private)
+        RbsInfer::Inference::Member.new(kind: :method, name: "pub", signature: "pub: () -> void", visibility: :public),
+        RbsInfer::Inference::Member.new(kind: :method, name: "prot", signature: "prot: () -> untyped", visibility: :protected),
+        RbsInfer::Inference::Member.new(kind: :method, name: "priv", signature: "priv: () -> void", visibility: :private)
       ]
 
       result = builder.build(members, {}, {})
@@ -125,8 +125,8 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
 
     it "gera RBS válido quando tem métodos protected" do
       members = [
-        RbsInfer::Member.new(kind: :method, name: "request_range", signature: "request_range: (untyped range) -> untyped", visibility: :protected),
-        RbsInfer::Member.new(kind: :method, name: "with_http", signature: "with_http: () -> untyped", visibility: :private)
+        RbsInfer::Inference::Member.new(kind: :method, name: "request_range", signature: "request_range: (untyped range) -> untyped", visibility: :protected),
+        RbsInfer::Inference::Member.new(kind: :method, name: "with_http", signature: "with_http: () -> untyped", visibility: :private)
       ]
 
       result = builder.build(members, {}, {})
@@ -139,7 +139,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
     # `signature` de um membro :constant já chega como "NOME: Tipo"
     # (resolvido pelo Analyzer); o builder só emite a linha.
     def const(name, type)
-      RbsInfer::Member.new(kind: :constant, name: name, signature: "#{name}: #{type}", visibility: :public)
+      RbsInfer::Inference::Member.new(kind: :constant, name: name, signature: "#{name}: #{type}", visibility: :public)
     end
 
     it "emite NOME: Tipo na ordem de fonte (membros)" do
@@ -169,7 +169,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
 
     it "emite constantes de módulo aninhado dentro do módulo (owner)" do
       builder = make_builder(target_class: "Outer", superclass_name: nil)
-      member = RbsInfer::Member.new(
+      member = RbsInfer::Inference::Member.new(
         kind: :constant, name: "SEP", signature: "SEP: String", visibility: :public, owner: "Formatting"
       )
 
@@ -190,7 +190,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
       builder = make_builder(target_class: "Color", superclass_name: nil)
       members = [
         const("MAX", "Integer"),
-        RbsInfer::Member.new(kind: :method, name: "name", signature: "name: () -> String", visibility: :public)
+        RbsInfer::Inference::Member.new(kind: :method, name: "name", signature: "name: () -> String", visibility: :public)
       ]
 
       result = builder.build(members, {}, {})
@@ -210,7 +210,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
       builder = make_builder(target_class: "Color", superclass_name: nil)
       members = [
         const("MAX", "Integer"),
-        RbsInfer::Member.new(kind: :method, name: "helper", signature: "helper: () -> void", visibility: :private)
+        RbsInfer::Inference::Member.new(kind: :method, name: "helper", signature: "helper: () -> void", visibility: :private)
       ]
 
       result = builder.build(members, {}, {})

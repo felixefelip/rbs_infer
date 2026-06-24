@@ -8,7 +8,7 @@ require "steep"
 # Steep's source-walking machinery — that machinery is covered by
 # Steep's own `PostconditionsInferrerTest`.
 RSpec.describe RbsInfer::PredicateMarkerSynthesizer do
-  Member = RbsInfer::Member
+  Member = RbsInfer::Inference::Member
   InferredEntry = Steep::Postconditions::InferredEntry
 
   def member(kind:, name:)

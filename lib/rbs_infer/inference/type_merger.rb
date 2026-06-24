@@ -1,4 +1,4 @@
-module RbsInfer
+module RbsInfer::Inference
   class TypeMerger
     include RbsInfer::AST::NodeTypeInferrer
     include KnownReturnTypesBuilder

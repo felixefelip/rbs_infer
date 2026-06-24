@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::ClassMemberCollector do
+RSpec.describe RbsInfer::Inference::ClassMemberCollector do
   def collect(source)
     result = Prism.parse(source)
     comments = result.comments
