@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::FileIndex do
+RSpec.describe RbsInfer::Project::FileIndex do
   it "encontra arquivo por class_path exato" do
     file = "/project/app/models/user.rb"
     index = described_class.new([file])

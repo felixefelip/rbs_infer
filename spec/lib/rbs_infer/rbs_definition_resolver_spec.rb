@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe RbsInfer::RbsDefinitionResolver do
+RSpec.describe RbsInfer::Signatures::RbsDefinitionResolver do
   subject(:resolver) { described_class.new }
 
   describe "#type_param_string" do

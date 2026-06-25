@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::OptionalParamExtractor do
+RSpec.describe RbsInfer::AST::OptionalParamExtractor do
   def extract_optionals(source)
     result = Prism.parse(source)
     visitor = described_class.new

@@ -5,7 +5,7 @@ require "fileutils"
 require "yaml"
 require "active_support/core_ext/string/inflections"
 require_relative "../rails/before_action_scanner"
-require_relative "../../rbs_parser_util"
+require_relative "../../signatures/rbs_parser_util"
 
 module RbsInfer
   module Extensions
@@ -108,7 +108,7 @@ module RbsInfer
         # { "user" => "(User & User::Validated)" } — the proven (non-nil)
         # type of `current_<scope>` under the guard.
         def proven_resource_types(scopes = parse_scopes)
-          scopes.to_h { |s| [s[:scope], RbsParserUtil.parenthesize_compound(resource_type(s[:class_name]))] }
+          scopes.to_h { |s| [s[:scope], RbsInfer::Signatures::RbsParserUtil.parenthesize_compound(resource_type(s[:class_name]))] }
         end
 
         # Extracts [{scope:, class_name:}, ...] from `devise_for` calls.
@@ -235,7 +235,7 @@ module RbsInfer
             content = File.read(rbs_file)
             next false unless content.include?("::Validated")
 
-            RbsParserUtil.build_declaration_index(RbsParserUtil.parse_declarations(content)).key?(target)
+            RbsInfer::Signatures::RbsParserUtil.build_declaration_index(RbsInfer::Signatures::RbsParserUtil.parse_declarations(content)).key?(target)
           end
         end
 

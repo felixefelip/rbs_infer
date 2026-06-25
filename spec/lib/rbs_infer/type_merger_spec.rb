@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::TypeMerger do
+RSpec.describe RbsInfer::Inference::TypeMerger do
   let(:merger) { described_class.new(target_file: nil) }
 
   it "prioriza tipos resolvidos sobre untyped" do
@@ -49,7 +49,7 @@ RSpec.describe RbsInfer::TypeMerger do
       comments = result.comments
       lines = source.lines
 
-      collector = RbsInfer::ClassMemberCollector.new(comments: comments, lines: lines)
+      collector = RbsInfer::Inference::ClassMemberCollector.new(comments: comments, lines: lines)
       result.value.accept(collector)
 
       member = collector.members.find { |m| m.name == "wrapper" }

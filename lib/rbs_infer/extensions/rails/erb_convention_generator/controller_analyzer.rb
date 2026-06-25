@@ -41,7 +41,7 @@ module RbsInfer
 
             relevant = relevant_methods_for_action(tree, action)
 
-            collected = Hash.new { |h, k| h[k] = RbsInfer::IvarTypeSet.new }
+            collected = Hash.new { |h, k| h[k] = RbsInfer::Inference::IvarTypeSet.new }
             relevant.each do |method_name|
               writes = per_method[method_name.to_s]
               next unless writes
@@ -198,7 +198,7 @@ module RbsInfer
           end
 
           def controller_steep_bridge
-            @controller_steep_bridge ||= RbsInfer::SteepBridge.new
+            @controller_steep_bridge ||= RbsInfer::Signatures::SteepBridge.new
           end
 
           # Generate controller RBS via Analyzer and extract ivar types (cached).

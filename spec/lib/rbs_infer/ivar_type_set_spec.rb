@@ -1,7 +1,7 @@
 require "spec_helper"
-require "rbs_infer/ivar_type_set"
+require "rbs_infer/inference/ivar_type_set"
 
-RSpec.describe RbsInfer::IvarTypeSet do
+RSpec.describe RbsInfer::Inference::IvarTypeSet do
   subject(:set) { described_class.new }
 
   describe "#add and #emit" do

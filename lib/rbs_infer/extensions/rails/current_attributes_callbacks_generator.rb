@@ -8,9 +8,9 @@ require "active_support/core_ext/string/inflections"
 require_relative "before_action_scanner"
 require_relative "partial_render_graph"
 require_relative "erb_convention_generator/view_path_naming"
-require_relative "../../param_guarded_self_writes"
-require_relative "../../rbs_parser_util"
-require_relative "../../method_type_resolver"
+require_relative "../../ast/param_guarded_self_writes"
+require_relative "../../signatures/rbs_parser_util"
+require_relative "../../signatures/method_type_resolver"
 
 module RbsInfer
   module Extensions
@@ -91,7 +91,7 @@ module RbsInfer
           return [] unless setter
 
           base_type = resource_types.fetch(direct[:scope])
-          RbsInfer::ParamGuardedSelfWrites.extract(setter[:defn], setter[:param]).filter_map do |w|
+          RbsInfer::AST::ParamGuardedSelfWrites.extract(setter[:defn], setter[:param]).filter_map do |w|
             type = w[:value_method] ? resolve_method(base_type, w[:value_method]) : base_type
             next unless type
 
@@ -100,7 +100,7 @@ module RbsInfer
               attr: w[:attr],
               scope: direct[:scope],
               defining_class: direct[:defining_class],
-              type: RbsParserUtil.parenthesize_compound(type),
+              type: RbsInfer::Signatures::RbsParserUtil.parenthesize_compound(type),
             }
           end
         end
@@ -131,7 +131,7 @@ module RbsInfer
         end
 
         def method_type_resolver
-          @method_type_resolver ||= RbsInfer::MethodTypeResolver.new(source_files)
+          @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(source_files)
         end
 
         def markers_rbs(populated)

@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe RbsInfer::SourceExpanders do
+RSpec.describe RbsInfer::Project::SourceExpanders do
   # Test expanders are registered/unregistered per example so no state
   # leaks into the global registry (which already holds the defaults).
   let(:upcase_class_expander) do

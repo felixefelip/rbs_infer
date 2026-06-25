@@ -41,10 +41,10 @@ module RbsInfer
 
   def initialize(target_class: nil, source_files:, target_file: nil, extra_caller_sources: nil)
     @source_files = source_files
-    @source_index = SourceIndex.new(source_files)
-    @parse_cache = ParseCache.new
-    @file_index = FileIndex.new(source_files)
-    @caller_file_cache = CallerFileCache.new(@parse_cache)
+    @source_index = RbsInfer::Project::SourceIndex.new(source_files)
+    @parse_cache = RbsInfer::Project::ParseCache.new
+    @file_index = RbsInfer::Project::FileIndex.new(source_files)
+    @caller_file_cache = RbsInfer::Project::CallerFileCache.new(@parse_cache)
     @target_file = target_file
     @target_class = target_class
     @extra_caller_sources = extra_caller_sources
@@ -87,8 +87,8 @@ module RbsInfer
     # whole pipeline sees the expanded view (felixefelip/rbs_infer#19).
     # The pseudo-code exists only here, in memory — runtime and the app's
     # `steep check` keep reading the real source. Expanders are plugins
-    # registered on RbsInfer::SourceExpanders; the core knows none.
-    @expanded_source = SourceExpanders.apply(source)
+    # registered on RbsInfer::Project::SourceExpanders; the core knows none.
+    @expanded_source = RbsInfer::Project::SourceExpanders.apply(source)
     source = @expanded_source if @expanded_source
 
     source = Steep::Source::ModuleSelfTypeResolver.annotate(@target_file, source)
@@ -106,7 +106,7 @@ module RbsInfer
   # top-level target and emit one RBS block per target, reusing the
   # single-target pipeline for each declaration (felixefelip/rbs_infer#38).
   def generate_multi_target_rbs
-    discovery = TargetDiscovery.new
+    discovery = RbsInfer::AST::TargetDiscovery.new
     @parsed_target.tree.accept(discovery)
     decl_targets = discovery.declaration_targets
     include_targets = discovery.include_targets
@@ -147,10 +147,10 @@ module RbsInfer
   # RedirectController; include ...`).
   def build_include_reopen(receiver, modules)
     members = modules.map do |mod|
-      Member.new(kind: :include, name: mod, signature: mod, visibility: :public, owner: nil)
+      RbsInfer::Inference::Member.new(kind: :include, name: mod, signature: mod, visibility: :public, owner: nil)
     end
 
-    RbsBuilder.new(
+    RbsInfer::Signatures::RbsBuilder.new(
       target_class: receiver,
       superclass_name: nil,
       namespace_classes: resolve_namespace_classes(receiver),
@@ -198,7 +198,7 @@ module RbsInfer
     nil_default_param_names.each do |param_name|
       current = init_arg_types[param_name]
       next if current.nil? || current == "untyped"
-      init_arg_types[param_name] = RbsParserUtil.nilablize(current)
+      init_arg_types[param_name] = RbsInfer::Signatures::RbsParserUtil.nilablize(current)
     end
 
     # Resolver return types de métodos que retornam attrs conhecidos
@@ -251,7 +251,7 @@ module RbsInfer
     markers = synthesize_markers(target_members, attr_types, ivar_types)
 
     namespace_classes = resolve_namespace_classes
-    rbs_builder = RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class))
+    rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class))
     rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, markers: markers)
   end
 
@@ -279,7 +279,7 @@ module RbsInfer
     return [] if per_method.empty?
 
     declared_ivar_types = collect_declared_attr_types(target_members, attr_types)
-    SetterMarkerSynthesizer.synthesize(
+    RbsInfer::Markers::SetterMarkerSynthesizer.synthesize(
       members: target_members,
       ivar_write_types_per_method: per_method,
       declared_ivar_types: declared_ivar_types
@@ -294,7 +294,7 @@ module RbsInfer
     entries = steep_bridge.postcondition_inferred_entries(@parsed_target.source)
     return [] if entries.empty?
 
-    PredicateMarkerSynthesizer.synthesize(
+    RbsInfer::Markers::PredicateMarkerSynthesizer.synthesize(
       inferred_entries: entries,
       target_class: @target_class,
       members: target_members
@@ -383,7 +383,7 @@ module RbsInfer
   def widen_assigned_param_types(method_param_types, ivar_types)
     return if method_param_types.empty? || ivar_types.empty? || @parsed_target.nil?
 
-    collector = DefCollector.new
+    collector = RbsInfer::AST::DefCollector.new
     @parsed_target.tree.accept(collector)
 
     collector.defs.each do |defn|
@@ -406,7 +406,7 @@ module RbsInfer
           # inherit its type (e.g. `Current.set(user: nil)` with no
           # direct call-site).
           params[param_name] = ivar_type
-        elsif ivar_type == RbsParserUtil.nilablize(current)
+        elsif ivar_type == RbsInfer::Signatures::RbsParserUtil.nilablize(current)
           params[param_name] = ivar_type
         end
       end
@@ -444,7 +444,7 @@ module RbsInfer
     target_members.reject! { |m| m.kind == :constant && !keep[[m.owner, m.name]].equal?(m) }
 
     steep_types = @parsed_target&.source ? steep_bridge.constant_types(@parsed_target.source) : {}
-    resolver = ConstantTypeResolver.new(target_class: @target_class)
+    resolver = RbsInfer::Inference::ConstantTypeResolver.new(target_class: @target_class)
 
     keep.each_value do |member|
       type = resolver.resolve(member.value_node, steep_type: steep_types[member.name])
@@ -457,7 +457,7 @@ module RbsInfer
   def extract_optional_init_params
     return Set.new unless @parsed_target
 
-    visitor = OptionalParamExtractor.new
+    visitor = RbsInfer::AST::OptionalParamExtractor.new
     @parsed_target.tree.accept(visitor)
     visitor.optional_params
   end
@@ -477,7 +477,7 @@ module RbsInfer
     entry = @parse_cache.get(file)
     return nil unless entry
 
-    visitor = ClassNameExtractor.new(file_path: file)
+    visitor = RbsInfer::AST::ClassNameExtractor.new(file_path: file)
     entry.result.value.accept(visitor)
     @is_module = visitor.is_module
     visitor.class_name
@@ -486,7 +486,7 @@ module RbsInfer
   # ─── Parsear classe-alvo: métodos, attrs, visibilidade ─────────────
 
   def parse_target_class
-    visitor = ClassMemberCollector.new(comments: @parsed_target.comments, lines: @parsed_target.lines, target_class: @target_class)
+    visitor = RbsInfer::Inference::ClassMemberCollector.new(comments: @parsed_target.comments, lines: @parsed_target.lines, target_class: @target_class)
     @parsed_target.tree.accept(visitor)
     @superclass_name = visitor.superclass_name
     @is_module = visitor.is_module if @is_module.nil?
@@ -502,7 +502,7 @@ module RbsInfer
 
       info.methods.each do |method_name|
         return_type = method_type_resolver.resolve(target_class, method_name) || "untyped"
-        return_type = RbsParserUtil.nilablize(return_type) if info.allow_nil
+        return_type = RbsInfer::Signatures::RbsParserUtil.nilablize(return_type) if info.allow_nil
 
         generated_name = case info.prefix
                          when true   then "#{info.target}_#{method_name}"
@@ -510,7 +510,7 @@ module RbsInfer
                          else             method_name
                          end
 
-        target_members << Member.new(
+        target_members << RbsInfer::Inference::Member.new(
           kind: :method,
           name: generated_name,
           signature: "#{generated_name}: () -> #{return_type}",
@@ -547,7 +547,7 @@ module RbsInfer
   def infer_attr_types_from_initialize(init_arg_types)
     return {} unless @parsed_target
 
-    visitor = InitializeBodyAnalyzer.new
+    visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new
     @parsed_target.tree.accept(visitor)
 
     attr_types = {}
@@ -570,7 +570,7 @@ module RbsInfer
                # ivar pode receber nil mesmo quando todos os callers
                # passam não-nil. Refletir isso na declaração.
                if type && nil_default_params.include?(param_name)
-                 type = RbsParserUtil.nilablize(type)
+                 type = RbsInfer::Signatures::RbsParserUtil.nilablize(type)
                end
                type
              when :param_method
@@ -613,7 +613,7 @@ module RbsInfer
                         .to_set
     return [{}, {}] if attr_names.empty?
 
-    visitor = ClassBodyAttrAnalyzer.new(attr_names: attr_names, method_type_resolver: method_type_resolver)
+    visitor = RbsInfer::Inference::ClassBodyAttrAnalyzer.new(attr_names: attr_names, method_type_resolver: method_type_resolver)
     @parsed_target.tree.accept(visitor)
 
     [visitor.attr_types, visitor.collection_element_types]
@@ -653,7 +653,7 @@ module RbsInfer
   def find_new_calls
     positional_params = extract_init_positional_params
     target_methods = extract_target_method_params
-    analyzer = CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, init_positional_params: positional_params, target_methods: target_methods, steep_bridge: steep_bridge)
+    analyzer = RbsInfer::Inference::CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, init_positional_params: positional_params, target_methods: target_methods, steep_bridge: steep_bridge)
     @source_index.files_referencing(@target_class).flat_map { |file| analyzer.analyze(file) }
   end
 
@@ -664,7 +664,7 @@ module RbsInfer
     return {} if target_methods.empty?
 
     positional_params = extract_init_positional_params
-    analyzer = CallerFileAnalyzer.new(
+    analyzer = RbsInfer::Inference::CallerFileAnalyzer.new(
       target_class: @target_class,
       method_type_resolver: method_type_resolver,
       init_positional_params: positional_params,
@@ -694,7 +694,7 @@ module RbsInfer
   def extract_target_method_params
     return {} unless @parsed_target
 
-    collector = DefCollector.new
+    collector = RbsInfer::AST::DefCollector.new
     @parsed_target.tree.accept(collector)
 
     methods = {}
@@ -716,7 +716,7 @@ module RbsInfer
   def extract_init_positional_params
     return [] unless @parsed_target
 
-    collector = DefCollector.new
+    collector = RbsInfer::AST::DefCollector.new
     @parsed_target.tree.accept(collector)
 
     init_def = collector.defs.find { |d| d.name == :initialize }
@@ -736,21 +736,21 @@ module RbsInfer
   def extract_nil_default_param_names
     return Set.new unless @parsed_target
 
-    visitor = InitializeBodyAnalyzer.new
+    visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new
     @parsed_target.tree.accept(visitor)
     visitor.nil_default_params
   end
 
   def method_type_resolver
-    @method_type_resolver ||= MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache)
+    @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache)
   end
 
   def type_merger
-    @type_merger ||= TypeMerger.new(target_file: @target_file, target_class: @target_class, instance_types: @instance_types || [])
+    @type_merger ||= RbsInfer::Inference::TypeMerger.new(target_file: @target_file, target_class: @target_class, instance_types: @instance_types || [])
   end
 
   def return_type_resolver
-    @return_type_resolver ||= ReturnTypeResolver.new(
+    @return_type_resolver ||= RbsInfer::Inference::ReturnTypeResolver.new(
       target_file: @target_file,
       target_class: @target_class,
       method_type_resolver: method_type_resolver,
@@ -760,7 +760,7 @@ module RbsInfer
   end
 
   def param_type_inferrer
-    @param_type_inferrer ||= ParamTypeInferrer.new(
+    @param_type_inferrer ||= RbsInfer::Inference::ParamTypeInferrer.new(
       target_file: @target_file,
       target_class: @target_class,
       source_files: @source_files,
@@ -775,7 +775,7 @@ module RbsInfer
   end
 
   def steep_bridge
-    @steep_bridge ||= SteepBridge.new
+    @steep_bridge ||= RbsInfer::Signatures::SteepBridge.new
   end
 
   # ─── Resolver quais namespaces da classe-alvo são class (não module) ──
@@ -795,7 +795,7 @@ module RbsInfer
       entry = @parse_cache.get(source_file)
       next unless entry
 
-      visitor = ClassNameExtractor.new(file_path: source_file)
+      visitor = RbsInfer::AST::ClassNameExtractor.new(file_path: source_file)
       entry.result.value.accept(visitor)
       classes.add(full_name) if visitor.class_name == full_name && !visitor.is_module
     end
@@ -806,31 +806,31 @@ module RbsInfer
   end
 end
 
-require_relative "parse_cache"
-require_relative "file_index"
-require_relative "caller_file_cache"
-require_relative "node_type_inferrer"
-require_relative "known_return_types_builder"
-require_relative "rbs_annotation_parser"
-require_relative "optional_param_extractor"
-require_relative "class_name_extractor"
-require_relative "target_discovery"
-require_relative "class_body_attr_analyzer"
-require_relative "intra_class_call_analyzer"
-require_relative "initialize_body_analyzer"
-require_relative "lexical_scope"
-require_relative "class_member_collector"
-require_relative "def_collector"
-require_relative "new_call_collector"
-require_relative "method_type_resolver"
-require_relative "caller_file_analyzer"
-require_relative "rbs_builder"
-require_relative "constant_type_resolver"
-require_relative "self_return_type_context"
-require_relative "type_merger"
-require_relative "ivar_type_set"
-require_relative "return_type_resolver"
-require_relative "param_type_inferrer"
-require_relative "source_index"
-require_relative "steep_bridge"
-require_relative "source_expanders"
+require_relative "project/parse_cache"
+require_relative "project/file_index"
+require_relative "project/caller_file_cache"
+require_relative "ast/node_type_inferrer"
+require_relative "inference/known_return_types_builder"
+require_relative "signatures/rbs_annotation_parser"
+require_relative "ast/optional_param_extractor"
+require_relative "ast/class_name_extractor"
+require_relative "ast/target_discovery"
+require_relative "inference/class_body_attr_analyzer"
+require_relative "inference/intra_class_call_analyzer"
+require_relative "inference/initialize_body_analyzer"
+require_relative "ast/lexical_scope"
+require_relative "inference/class_member_collector"
+require_relative "ast/def_collector"
+require_relative "inference/new_call_collector"
+require_relative "signatures/method_type_resolver"
+require_relative "inference/caller_file_analyzer"
+require_relative "signatures/rbs_builder"
+require_relative "inference/constant_type_resolver"
+require_relative "inference/self_return_type_context"
+require_relative "inference/type_merger"
+require_relative "inference/ivar_type_set"
+require_relative "inference/return_type_resolver"
+require_relative "inference/param_type_inferrer"
+require_relative "project/source_index"
+require_relative "signatures/steep_bridge"
+require_relative "project/source_expanders"

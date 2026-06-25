@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::CallerFileAnalyzer do
+RSpec.describe RbsInfer::Inference::CallerFileAnalyzer do
   let(:analyzer) do
     described_class.new(
       target_class: "Foo",

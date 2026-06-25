@@ -133,10 +133,10 @@ generate = lambda do |inputs_to_process, silent: false|
 end
 
 if output
-  levels = RbsInfer::DependencySorter.sort(files)
+  levels = RbsInfer::Project::DependencySorter.sort(files)
 
   reset_caches = lambda do
-    RbsInfer::SteepBridge.reset!
+    RbsInfer::Signatures::SteepBridge.reset!
     # ErbCallerResolver caches controller-ivar lookups per (class, action).
     # Without this reset, pass 2 would return the empty result that pass 1
     # computed when ApplicationHelper had no RBS, losing the inferred types

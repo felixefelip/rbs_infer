@@ -1,7 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::NodeTypeInferrer do
+RSpec.describe RbsInfer::AST::NodeTypeInferrer do
   def infer_hash(source, known_types: {}, context_class: nil)
     result = Prism.parse(source)
     hash_node = find_hash_node(result.value)

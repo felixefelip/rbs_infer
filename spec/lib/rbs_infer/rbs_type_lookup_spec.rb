@@ -3,7 +3,7 @@ require "rbs_infer"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe RbsInfer::RbsTypeLookup do
+RSpec.describe RbsInfer::Signatures::RbsTypeLookup do
   subject(:lookup) { described_class.new }
 
   describe "#parse_rbs_class_block" do
@@ -20,7 +20,7 @@ RSpec.describe RbsInfer::RbsTypeLookup do
 
       info = lookup.parse_rbs_class_block(rbs, "User")
 
-      expect(info).to be_a(RbsInfer::RbsClassInfo)
+      expect(info).to be_a(RbsInfer::Signatures::RbsClassInfo)
       expect(info.superclass).to eq("ApplicationRecord")
       expect(info.types).to include("name" => "String", "age" => "Integer", "email" => "String")
       expect(info.class_method_types).to include("find_by_email" => "User?")
@@ -108,7 +108,7 @@ RSpec.describe RbsInfer::RbsTypeLookup do
     it "retorna RbsClassInfo ao buscar classe em .gem_rbs_collection" do
       info = lookup.lookup_gem_rbs_collection_class("ActiveRecord::Base")
 
-      expect(info).to be_a(RbsInfer::RbsClassInfo)
+      expect(info).to be_a(RbsInfer::Signatures::RbsClassInfo)
       # Não deve levantar exceção — esse é o teste principal
     end
   end

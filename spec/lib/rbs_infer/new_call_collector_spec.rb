@@ -4,7 +4,7 @@ require "tmpdir"
 require "fileutils"
 require_relative "../../support/temp_file_helpers"
 
-RSpec.describe RbsInfer::NewCallCollector do
+RSpec.describe RbsInfer::Inference::NewCallCollector do
   include TempFileHelpers
 
   def collect_usages(source, target_class:, method_return_types: {}, local_var_types: {})
@@ -72,7 +72,7 @@ RSpec.describe RbsInfer::NewCallCollector do
 
     with_temp_files(files) do |dir, paths|
       Dir.chdir(dir) do
-        resolver = RbsInfer::MethodTypeResolver.new(paths)
+        resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths)
         source = File.read(paths.last)
         result = Prism.parse(source)
         visitor = described_class.new(
@@ -364,7 +364,7 @@ RSpec.describe RbsInfer::NewCallCollector do
 
       with_temp_files(files) do |dir, paths|
         Dir.chdir(dir) do
-          resolver = RbsInfer::MethodTypeResolver.new(paths)
+          resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths)
           source = File.read(File.join(dir, "caller.rb"))
           result = Prism.parse(source)
           visitor = described_class.new(

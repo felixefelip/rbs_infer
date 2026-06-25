@@ -1,0 +1,281 @@
+module RbsInfer::Signatures
+  class RbsBuilder
+    # All keyword args are required: both call-sites always supply them, and
+    # omitting any would be silently wrong (a missing `type_params` reopens a
+    # generic class without its params → GenericParameterMismatchError; a
+    # missing `is_module`/`namespace_classes` mis-renders the declaration).
+    # Per docs/engineering/required-threaded-deps.md, that's "required", not
+    # "defaulted".
+    def initialize(target_class:, superclass_name:, namespace_classes:, is_module:, type_params:)
+      @target_class = target_class
+      @superclass_name = superclass_name
+      @namespace_classes = namespace_classes
+      @is_module = is_module
+      # Generic type-parameter list ("[unchecked out Elem]") for the leaf
+      # declaration when reopening a generic class; "" for the common
+      # non-generic case (felixefelip/rbs_infer#38).
+      @type_params = type_params
+    end
+
+    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {}, markers: [])
+      parts = @target_class.split("::")
+      class_name = parts.pop
+      modules = parts
+
+      base_indent = "  " * modules.size
+      member_indent = base_indent + "  "
+
+      lines = []
+      modules.each_with_index do |mod, i|
+        full_name = modules[0..i].join("::")
+        keyword = @namespace_classes.include?(full_name) ? "class" : "module"
+        lines << "#{"  " * i}#{keyword} #{mod}"
+      end
+      keyword = @is_module ? "module" : "class"
+      lines << "#{base_indent}#{keyword} #{class_name}#{@type_params}#{!@is_module && @superclass_name ? " < #{qualify(@superclass_name)}" : ""}"
+
+      # Emitir instance variables tipadas (@post: Post, @posts: ...)
+      ivar_types.each do |name, type|
+        lines << "#{member_indent}@#{name}: #{type}"
+      end
+
+      # Emitir constantes (NOME: Tipo) em ordem de fonte — determinístico
+      # (felixefelip/rbs_infer#37). `signature` já vem como "NOME: Tipo"
+      # do Analyzer (ConstantTypeResolver).
+      direct_constants = members.select { |m| m.kind == :constant && m.owner.nil? }
+      direct_constants.each do |const|
+        lines << "#{member_indent}#{const.signature}"
+      end
+      # Posição logo após o bloco de constantes — usada no fim do `build`
+      # para inserir uma linha em branco separando-as do restante do corpo.
+      constants_anchor = lines.size
+
+      # Módulos aninhados definidos no corpo da classe-alvo
+      # (felixefelip/rbs_infer#22). Membros coletados com `owner` vêm de
+      # um `module X ... end` dentro da classe; reconstruímos o container
+      # aqui em vez de achatá-los (o que deixaria o `include X` pendurado).
+      # É por aqui que o `GeneratedAttributeMethods` do CurrentAttributes
+      # é emitido — agora vem do parsing do pseudo-source, sem o core
+      # conhecer a extensão (felixefelip/rbs_infer#19, #22).
+      emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types)
+
+      # Emitir extend para módulos estendidos (e.g. ActiveSupport::Concern)
+      extends = members.select { |m| m.kind == :extend && m.owner.nil? }
+      extends.each do |ext|
+        lines << "#{member_indent}extend #{qualify(ext.name)}"
+      end
+
+      # Emitir include/extend para módulos incluídos (concerns)
+      includes = members.select { |m| m.kind == :include && m.owner.nil? }
+      includes.each do |inc|
+        qualified = qualify(inc.name)
+        lines << "#{member_indent}include #{qualified}"
+        if has_class_methods_module?(inc.name)
+          lines << "#{member_indent}extend #{qualified}::ClassMethods"
+        end
+      end
+
+      current_visibility = :public
+      has_private = members.any? { |m| m.visibility == :private }
+      has_protected = members.any? { |m| m.visibility == :protected }
+
+      # Emitir métodos de classe (def self.foo)
+      class_methods = members.select { |m| m.kind == :class_method && m.owner.nil? }
+      class_methods.each do |member|
+        sig = member.signature
+        # Param types inferred from call-sites also apply to singletons
+        # (`Current.user = x` → `def self.user=: (User? value)`) —
+        # felixefelip/rbs_infer#19.
+        if method_param_types[member.name]
+          sig = apply_inferred_param_types(sig, method_param_types[member.name])
+        end
+        lines << "#{member_indent}def self.#{sig}"
+      end
+
+      # Agrupar por visibilidade: public -> protected -> private
+      # RBS não suporta `protected`, então tratamos como public
+      [:public, :protected, :private].each do |vis|
+        vis_members = members.select { |m| m.visibility == vis && m.owner.nil? && ![:include, :extend, :class_method, :constant].include?(m.kind) }
+        next if vis_members.empty?
+
+        if vis == :private
+          lines << ""
+          lines << "#{member_indent}private"
+          lines << ""
+        end
+
+        vis_members.each do |member|
+          line = render_value_member(member, member_indent, init_arg_types, attr_types, method_param_types, optional_params)
+          lines << line if line
+        end
+      end
+
+      # Mailers: emitir método de classe send_mail (ActionMailer pattern)
+      if mailer_class?
+        send_mail = members.find { |m| m.kind == :method && m.name == "send_mail" }
+        if send_mail
+          lines << "#{member_indent}def self.#{send_mail.signature}"
+        end
+      end
+
+      # Marker classes para cross-receiver narrowing
+      # (felixefelip/rbs_infer#11). Cada um vira uma nested class
+      # `class AfterXxx ... end` com attr_reader overrides — Steep
+      # intersecta o receiver com ela após a chamada via
+      # `unconditional.self` no sidecar.
+      markers.each do |marker|
+        emit_marker(lines, marker, member_indent)
+      end
+
+      # Linha em branco separando as constantes do restante do corpo, quando
+      # algo as segue (felixefelip/rbs_infer#37). Pulada quando a próxima
+      # linha já é em branco (ex.: o separador da seção `private`), para não
+      # duplicar; e quando nada segue (constantes são o último conteúdo).
+      if direct_constants.any? && lines.size > constants_anchor && lines[constants_anchor] != ""
+        lines.insert(constants_anchor, "")
+      end
+
+      lines << "#{base_indent}end"
+      modules.each_with_index do |_, i|
+        lines << "#{"  " * (modules.size - 1 - i)}end"
+      end
+
+      "#{lines.join("\n")}\n"
+    end
+
+    private
+
+    # Renders a single value member (method / attr_*) as one RBS line, or
+    # nil for other kinds. Shared between the class body and nested-module
+    # emission (felixefelip/rbs_infer#22).
+    def render_value_member(member, indent, init_arg_types, attr_types, method_param_types, optional_params)
+      case member.kind
+      when :method
+        sig = member.signature
+        if member.name == "initialize" && !init_arg_types.empty?
+          sig = apply_inferred_init_types(sig, init_arg_types, optional_params)
+        elsif method_param_types[member.name]
+          sig = apply_inferred_param_types(sig, method_param_types[member.name])
+        end
+        "#{indent}def #{sig}"
+      when :attr_accessor, :attr_reader, :attr_writer
+        sig = member.signature
+        sig = "#{member.name}: #{attr_types[member.name]}" if sig.end_with?(": untyped") && attr_types[member.name]
+        "#{indent}#{member.kind} #{sig}"
+      end
+    end
+
+    # Reconstructs `module X ... end` blocks for members collected with an
+    # `owner` (parsed from a nested module inside the target class). The
+    # parsed `include X` is emitted separately as a direct member, so the
+    # module declaration here gives that include a real target — no
+    # dangling mixin (felixefelip/rbs_infer#22).
+    def emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types)
+      owned = members.reject { |m| m.owner.nil? }
+      return if owned.empty?
+
+      owned.group_by(&:owner).each do |owner, mod_members|
+        inner_indent = member_indent + "  "
+        lines << "#{member_indent}module #{owner}"
+
+        mod_members.select { |m| m.kind == :constant }.each do |const|
+          lines << "#{inner_indent}#{const.signature}"
+        end
+        mod_members.select { |m| m.kind == :include }.each do |inc|
+          lines << "#{inner_indent}include #{qualify(inc.name)}"
+        end
+        mod_members.select { |m| m.kind == :extend }.each do |ext|
+          lines << "#{inner_indent}extend #{qualify(ext.name)}"
+        end
+        mod_members.select { |m| m.kind == :class_method }.each do |m|
+          lines << "#{inner_indent}def self.#{m.signature}"
+        end
+        mod_members.each do |m|
+          line = render_value_member(m, inner_indent, {}, attr_types, method_param_types, Set.new)
+          lines << line if line
+        end
+
+        lines << "#{member_indent}end"
+      end
+    end
+
+    def emit_marker(lines, marker, member_indent)
+      override_indent = member_indent + "  "
+      lines << ""
+      lines << "#{member_indent}class #{marker.marker_name}"
+      marker.overrides.sort_by { |name, _| name }.each do |ivar_name, type_str|
+        lines << "#{override_indent}attr_reader #{ivar_name}: #{type_str}"
+      end
+      lines << "#{member_indent}end"
+    end
+
+    # Qualifica nomes de tipo que seriam ambíguos no contexto do namespace gerado.
+    # Ex: dentro de "class Account { module Storage { ... } }", um include "Storage::Totaled"
+    # seria resolvido como Account::Storage::Totaled em vez de ::Storage::Totaled.
+    def qualify(type_name)
+      return type_name if type_name.start_with?("::")
+      all_parts = @target_class.split("::")
+      first = type_name.split("::").first
+      all_parts.include?(first) ? "::#{type_name}" : type_name
+    end
+
+    MAILER_BASES = %w[ApplicationMailer ActionMailer::Base].freeze
+
+    def mailer_class?
+      MAILER_BASES.include?(@superclass_name)
+    end
+
+    # Substitui parâmetros `untyped` na assinatura por tipos inferidos
+    # Ex: "publicar_evento: (aluno: untyped) -> untyped" com {aluno: "Entity"}
+    #   → "publicar_evento: (aluno: Entity) -> untyped"
+    # Também suporta positional: "notify: (untyped user, untyped message) -> ..."
+    #   → "notify: (User user, String message) -> ..."
+    def apply_inferred_param_types(signature, param_types)
+      param_types.each do |param_name, type|
+        # Keyword: ?param_name: untyped → ?param_name: Type
+        signature = signature.gsub(/(\??)#{Regexp.escape(param_name)}:\s*untyped/, "\\1#{param_name}: #{type}")
+        # Positional: untyped param_name → Type param_name
+        signature = signature.gsub(/\buntyped\s+#{Regexp.escape(param_name)}\b/, "#{type} #{param_name}")
+      end
+      signature
+    end
+
+    # Substitui tipos de parâmetros do initialize preservando posicional vs keyword
+    # Ex: "initialize: (untyped post, ?notifier: untyped) -> untyped" com {post: "Post"}
+    #   → "initialize: (Post post, ?notifier: untyped) -> void"
+    def apply_inferred_init_types(signature, init_arg_types, optional_params)
+      init_arg_types.each do |param_name, type|
+        # Keyword: ?param_name: untyped → ?param_name: Type
+        signature = signature.gsub(/(\??)#{Regexp.escape(param_name)}:\s*untyped/, "\\1#{param_name}: #{type}")
+        # Positional: untyped param_name → Type param_name
+        signature = signature.gsub(/\buntyped\s+#{Regexp.escape(param_name)}\b/, "#{type} #{param_name}")
+      end
+      # Normalizar return type do initialize para void
+      signature = signature.sub(/->\s*untyped\s*$/, "-> void")
+      signature
+    end
+
+    # Verifica se o módulo incluído tem um sub-módulo ClassMethods em .gem_rbs_collection/
+    def has_class_methods_module?(module_name)
+      parts = module_name.split("::")
+      first = parts.first
+
+      gem_hints = [
+        first.downcase,
+        first.gsub(/([a-z])([A-Z])/, '\1_\2').downcase,
+        first.gsub(/([a-z])([A-Z])/, '\1-\2').downcase,
+      ].uniq
+
+      rbs_files = gem_hints.flat_map { |hint| Dir[".gem_rbs_collection/#{hint}/**/*.rbs"] }.uniq
+      return false if rbs_files.empty?
+
+      rbs_files.each do |file|
+        content = File.read(file)
+        next unless content.include?(parts.last)
+        return true if RbsParserUtil.has_class_methods_submodule?(content, module_name)
+      end
+
+      false
+    end
+  end
+end

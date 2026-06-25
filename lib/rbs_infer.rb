@@ -35,11 +35,11 @@ module RbsInfer
 end
 
 require_relative "rbs_infer/analyzer"
-require_relative "rbs_infer/setter_marker_synthesizer"
-require_relative "rbs_infer/predicate_marker_synthesizer"
-require_relative "rbs_infer/dependency_sorter"
+require_relative "rbs_infer/markers/setter_marker_synthesizer"
+require_relative "rbs_infer/markers/predicate_marker_synthesizer"
+require_relative "rbs_infer/project/dependency_sorter"
 
-# Default source expanders (RbsInfer::SourceExpanders plugins). Each one
+# Default source expanders (RbsInfer::Project::SourceExpanders plugins). Each one
 # registers itself on require; external gems can register their own
 # without touching the core. The CurrentAttributes expander is pure Prism
 # (no Rails at runtime) and self-gates on the superclass, so it is always
