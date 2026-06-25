@@ -30,9 +30,11 @@ module RbsInfer::Inference
     end
 
     # @param node [Prism::Node, nil] the constant's RHS
-    # @param steep_type [String, nil] Steep's type for this constant
+    # @param steep_type [String, nil] Steep's type for this constant, or nil
+    #   when Steep had none — required (not defaulted) so a caller that has a
+    #   Steep type can't silently drop it; pass `nil` explicitly to opt out.
     # @return [String] an RBS type (never nil; falls back to "untyped")
-    def resolve(node, steep_type: nil)
+    def resolve(node, steep_type:)
       return "untyped" if node.nil?
 
       @constructor_inferrer.infer(node) ||
