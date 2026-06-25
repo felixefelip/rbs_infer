@@ -311,19 +311,19 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
 
   describe "#method_return_types block generic resolution" do
     it "resolves .map block body type when Steep returns Array[untyped]" do
-      code = File.read(File.join(__dir__, "../../dummy/app/services/tag_destroy.rb"))
+      code = File.read(File.join(__dir__, "../../../dummy/app/services/tag_destroy.rb"))
       result = bridge.method_return_types(code)
       expect(result["parse_xml_as_hash_with_parse"]).to eq("Array[{ order: Nokogiri::XML::Node? }]")
     end
 
     it "resolves .map block with self method call" do
-      code = File.read(File.join(__dir__, "../../dummy/app/services/tag_destroy.rb"))
+      code = File.read(File.join(__dir__, "../../../dummy/app/services/tag_destroy.rb"))
       result = bridge.method_return_types(code)
       expect(result["parse_xml_as_hash"]).to eq("Array[{ date: Nokogiri::XML::Node?, order: Nokogiri::XML::Node }]")
     end
 
     it "does not modify non-map block calls" do
-      code = File.read(File.join(__dir__, "../../dummy/app/services/tag_destroy.rb"))
+      code = File.read(File.join(__dir__, "../../../dummy/app/services/tag_destroy.rb"))
       result = bridge.method_return_types(code)
       expect(result["parse_xml"]).to eq("Array[Nokogiri::XML::Node]")
     end

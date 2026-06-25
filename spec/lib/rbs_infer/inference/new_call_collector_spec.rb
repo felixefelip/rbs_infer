@@ -2,7 +2,7 @@ require "spec_helper"
 require "rbs_infer"
 require "tmpdir"
 require "fileutils"
-require_relative "../../support/temp_file_helpers"
+require_relative "../../../support/temp_file_helpers"
 
 RSpec.describe RbsInfer::Inference::NewCallCollector do
   include TempFileHelpers
