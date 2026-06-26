@@ -89,7 +89,7 @@ module RbsInfer::Signatures
         if method_param_types[member.name]
           sig = apply_inferred_param_types(sig, method_param_types[member.name])
         end
-        lines << "#{member_indent}def self.#{sig}"
+        lines << "#{member_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
       end
 
       # Agrupar por visibilidade: public -> protected -> private
@@ -114,7 +114,7 @@ module RbsInfer::Signatures
       if mailer_class?
         send_mail = members.find { |m| m.kind == :method && m.name == "send_mail" }
         if send_mail
-          lines << "#{member_indent}def self.#{send_mail.signature}"
+          lines << "#{member_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(send_mail.signature)}"
         end
       end
 
@@ -157,7 +157,7 @@ module RbsInfer::Signatures
         elsif method_param_types[member.name]
           sig = apply_inferred_param_types(sig, method_param_types[member.name])
         end
-        "#{indent}def #{sig}"
+        "#{indent}def #{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
       when :attr_accessor, :attr_reader, :attr_writer
         sig = member.signature
         sig = "#{member.name}: #{attr_types[member.name]}" if sig.end_with?(": untyped") && attr_types[member.name]
@@ -188,7 +188,7 @@ module RbsInfer::Signatures
           lines << "#{inner_indent}extend #{qualify(ext.name)}"
         end
         mod_members.select { |m| m.kind == :class_method }.each do |m|
-          lines << "#{inner_indent}def self.#{m.signature}"
+          lines << "#{inner_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(m.signature)}"
         end
         mod_members.each do |m|
           line = render_value_member(m, inner_indent, {}, attr_types, method_param_types, Set.new)

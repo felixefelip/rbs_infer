@@ -199,6 +199,60 @@ module RbsInfer::Signatures
       parenthesize_compound(type_str)
     end
 
+    # Emission-boundary guard: given a whole method signature string
+    # (`name: (params) -> ret`), parenthesizes the return type when it is a
+    # bare top-level union/intersection. A bare `|` in return position is
+    # parsed as an overload separator (`def x: () -> A | (Int) -> B`), so
+    # `def x: () -> bool | false` is a SYNTAX ERROR — RBS rejects it, Steep
+    # can't read the file back, and the stabilization loop never converges
+    # because the broken RBS re-derives every pass (felixefelip/rbs_infer#9).
+    #
+    # Every inference path is supposed to wrap via `parenthesize_compound`
+    # already, but this is the single chokepoint where `def`/`def self.`
+    # lines become text, so enforcing the invariant here covers any path
+    # that forgets (e.g. delegate methods) — current and future.
+    #
+    # Depth-aware: the return arrow is the LAST top-level `->` (depth 0
+    # over `()[]{}`), so proc-typed params (`(^() -> void) -> X`) and block
+    # types (`{ () -> void } -> X`) aren't mistaken for it. Type args that
+    # merely contain `|` (`Array[A | B]`), already-parenthesized unions, and
+    # nilable unions (`(A | B)?`) are left untouched by `parenthesize_compound`.
+    def parenthesize_return_type(method_sig)
+      arrow = last_top_level_arrow_index(method_sig)
+      return method_sig unless arrow
+
+      ret = method_sig[(arrow + 2)..].strip
+      wrapped = parenthesize_compound(ret)
+      return method_sig if wrapped == ret
+
+      "#{method_sig[0...arrow].rstrip} -> #{wrapped}"
+    end
+
+    # Index of the last `->` sitting at bracket depth 0, or nil. Used to
+    # locate the real return arrow past nested proc/block arrows.
+    def last_top_level_arrow_index(str)
+      return nil unless str
+
+      openers = { "(" => ")", "[" => "]", "{" => "}" }
+      closers = openers.values.to_set
+      depth = 0
+      found = nil
+      i = 0
+      while i < str.length
+        char = str[i]
+        if openers.key?(char)
+          depth += 1
+        elsif closers.include?(char)
+          depth -= 1 if depth > 0
+        elsif depth.zero? && char == "-" && str[i + 1] == ">"
+          found = i
+          i += 1
+        end
+        i += 1
+      end
+      found
+    end
+
     # Appends `?` to a type, parenthesizing compounds first — a bare
     # `A & B?` binds the `?` to the LAST component only (semantically
     # wrong) and is a syntax error in return position. No-op when the

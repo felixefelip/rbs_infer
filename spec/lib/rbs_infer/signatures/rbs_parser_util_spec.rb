@@ -285,6 +285,36 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
     end
   end
 
+  describe ".parenthesize_return_type" do
+    it "wraps a bare union in return position (overload-separator ambiguity)" do
+      # `def f: () -> bool | false` is parsed as two overloads → syntax error;
+      # the parenthesized form is the only valid emission (rbs_infer#9).
+      expect(described_class.parenthesize_return_type("accessible_to?: () -> bool | false"))
+        .to eq("accessible_to?: () -> (bool | false)")
+    end
+
+    it "wraps regardless of params, including proc-typed params and blocks" do
+      expect(described_class.parenthesize_return_type("f: (untyped user) -> bool | false"))
+        .to eq("f: (untyped user) -> (bool | false)")
+      expect(described_class.parenthesize_return_type("f: (^() -> void) -> String | Integer"))
+        .to eq("f: (^() -> void) -> (String | Integer)")
+      expect(described_class.parenthesize_return_type("f: () { () -> void } -> A | B"))
+        .to eq("f: () { () -> void } -> (A | B)")
+    end
+
+    it "leaves already-valid return types untouched" do
+      [
+        "f: () -> bool",
+        "f: () -> bool?",
+        "f: () -> (bool | false)",
+        "f: () -> (A | B)?",
+        "f: () -> Array[String | Integer]",
+        "f: () -> (^() -> void)",
+        "x: untyped",
+      ].each { |sig| expect(described_class.parenthesize_return_type(sig)).to eq(sig) }
+    end
+  end
+
   describe ".nilablize" do
     it "parenthesizes compounds before appending ? (bare A & B? binds to the last component)" do
       expect(described_class.nilablize("Caderneta & Caderneta::Validated"))
