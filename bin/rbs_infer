@@ -10,6 +10,13 @@ output_dir = "sig/generated"
 max_passes = 10
 files = []
 
+# When set, the stabilization loop prints a line-level diff every time a
+# file's regenerated RBS differs from the previous pass. This surfaces the
+# member/type that oscillates when a file never converges (the warning at
+# the end only reports the COUNT of still-changing files, not *what* keeps
+# changing). See felixefelip/rbs_infer#9 (Array[Array[...]] nesting growth).
+debug_convergence = ENV.key?("RBS_INFER_DEBUG_CONVERGENCE")
+
 parser = OptionParser.new do |opts|
   opts.banner = "Usage: rbs_infer [options] FILE_OR_DIR [...]"
 
@@ -123,7 +130,18 @@ generate = lambda do |inputs_to_process, silent: false|
       File.write(output_path, new_content)
       puts output_path unless silent
 
-      changed_files << input if new_content != old_content
+      if new_content != old_content
+        changed_files << input
+        if debug_convergence && old_content
+          old_lines = old_content.lines
+          new_lines = new_content.lines
+          removed = old_lines - new_lines
+          added   = new_lines - old_lines
+          warn "── #{output_path} changed ──"
+          removed.each { |l| warn "  - #{l.chomp}" }
+          added.each   { |l| warn "  + #{l.chomp}" }
+        end
+      end
     else
       puts rbs
     end
