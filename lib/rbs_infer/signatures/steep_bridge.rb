@@ -214,6 +214,71 @@ module RbsInfer::Signatures
       result
     end
 
+    # Resolves a constant REFERENCE (by name + the namespace it's read in)
+    # to the RBS type of its value, looking it up in the loaded environment
+    # — stdlib, gems, and previously-generated `sig/`. Complements
+    # `constant_types`, which only sees constants DEFINED in a given source:
+    # this is the cross-file path for `Klass.method(SOME_CONST)` where the
+    # constant lives in another file (its RBS becomes available on a later
+    # stabilization pass, mirroring how method return types converge).
+    #
+    # Class/module references aren't constant declarations (`class Foo` is a
+    # class decl, not a `Foo = ...` casgn), so they're absent here and the
+    # caller keeps the bare name — preserving the `foo(User) -> User`
+    # convention. Returns the type string (`::` stripped, matching
+    # `constant_types`) or nil when nothing resolves.
+    def constant_type_from_env(name, namespace: nil)
+      ensure_initialized
+      builder = self.class.definition_builder
+      return nil unless builder && name
+
+      env = builder.env
+      constant_name_candidates(name, namespace).each do |fqn|
+        entry = env.constant_decls[RBS::TypeName.parse(fqn)]
+        next unless entry
+
+        return entry.decl.type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }
+      end
+      nil
+    rescue RBS::BaseError, StandardError
+      nil
+    end
+
+    # True when `name` (resolved from `namespace`) is a class or module in the
+    # environment. Lets a constant argument keep its bare name only when that
+    # name is a valid type — `foo(User) -> User`. A value constant isn't a
+    # class, so it falls through to `untyped` rather than emitting an invalid
+    # bare-constant type that would poison the whole env (felixefelip/rbs_infer#46).
+    def class_or_module?(name, namespace: nil)
+      ensure_initialized
+      builder = self.class.definition_builder
+      return false unless builder && name
+
+      env = builder.env
+      constant_name_candidates(name, namespace).any? do |fqn|
+        env.class_decls.key?(RBS::TypeName.parse(fqn))
+      end
+    rescue RBS::BaseError, StandardError
+      false
+    end
+
+    # Fully-qualified candidates for a constant reference, walking the
+    # enclosing namespace outward (Ruby's lexical constant lookup), then
+    # top-level. An already-absolute `::X` reference only tries `::X`.
+    def constant_name_candidates(name, namespace)
+      bare = name.sub(/\A::/, "")
+      candidates = []
+      if namespace && !name.start_with?("::")
+        parts = namespace.sub(/\A::/, "").split("::")
+        until parts.empty?
+          candidates << "::#{parts.join("::")}::#{bare}"
+          parts.pop
+        end
+      end
+      candidates << "::#{bare}"
+      candidates.uniq
+    end
+
     BLOCK_GENERIC_METHODS = %w[map collect].freeze
 
     # When Steep can't resolve generic type params bottom-up in block calls

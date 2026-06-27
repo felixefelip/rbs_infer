@@ -2,12 +2,17 @@ module RbsInfer::Inference
   class NewCallCollector < Prism::Visitor
     attr_reader :usages, :method_call_usages
 
-    def initialize(target_class:, method_return_types:, local_var_types:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {})
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {})
       @target_class = target_class
       @method_return_types = method_return_types
       @local_var_types = local_var_types
       @method_type_resolver = method_type_resolver
       @caller_class_name = caller_class_name
+      # Required (not defaulted): a constant passed as an argument must resolve
+      # to its VALUE type (`generate(CODE_LENGTH)` → `Integer`), never its name
+      # — omitting the resolver silently re-emits the invalid bare-constant
+      # form this fixes (felixefelip/rbs_infer#46, required-threaded-deps).
+      @constant_arg_resolver = constant_arg_resolver
       @init_positional_params = init_positional_params
       @target_methods = target_methods
       @match_bare_calls = match_bare_calls
@@ -328,7 +333,7 @@ module RbsInfer::Inference
       when Prism::ArrayNode then "Array[untyped]"
       when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node)
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        RbsInfer::Analyzer.extract_constant_path(node) || "untyped"
+        resolve_constant_arg_type(node)
       when Prism::SelfNode
         current_self_type
       when Prism::ImplicitNode
@@ -336,6 +341,16 @@ module RbsInfer::Inference
       else
         "untyped"
       end
+    end
+
+    # A constant passed as an argument: resolve to the type of its VALUE when
+    # it's a value constant (`CODE_LENGTH = 6` → `Integer`), else keep the
+    # bare path — a class/module reference (`foo(User)` → `User`) is a valid
+    # type, a value-constant name is not (felixefelip/rbs_infer#46).
+    def resolve_constant_arg_type(node)
+      name = RbsInfer::Analyzer.extract_constant_path(node)
+      namespace = @class_name_stack.last || @caller_class_name
+      @constant_arg_resolver.resolve(name: name, namespace: namespace) || "untyped"
     end
 
     # Resolve `self` (passed as an argument or used as a receiver) to the

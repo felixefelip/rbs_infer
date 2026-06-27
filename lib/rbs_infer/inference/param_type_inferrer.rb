@@ -18,6 +18,12 @@ module RbsInfer::Inference
       @parse_cache = parse_cache || RbsInfer::Project::ParseCache.new
       @file_index = file_index || RbsInfer::Project::FileIndex.new(source_files)
       @caller_file_cache = caller_file_cache || RbsInfer::Project::CallerFileCache.new(@parse_cache)
+      # Refined per caller file (with that file's constant_types) inside
+      # `infer_wrapper_method_param_types`; this env-only default covers the
+      # paths that resolve args outside a specific caller scope
+      # (felixefelip/rbs_infer#46).
+      @constant_arg_resolver = ConstantArgTypeResolver.new(steep_bridge: @steep_bridge)
+      @constant_namespace = nil
     end
 
     def infer_method_param_types(attr_types, parsed_target: nil)
@@ -165,6 +171,15 @@ module RbsInfer::Inference
 
         file_result = entry.result
 
+        # Resolver for this caller file: constant args resolve to their value
+        # type via the file's own constant defs (same-file) or the RBS env
+        # (cross-file) — felixefelip/rbs_infer#46.
+        @constant_arg_resolver = ConstantArgTypeResolver.new(
+          steep_bridge: @steep_bridge,
+          caller_constant_types: @steep_bridge ? @steep_bridge.constant_types(entry.source) : {}
+        )
+        @constant_namespace = analysis.class_name
+
         # Montar method_return_types do caller a partir dos membros já coletados
         method_return_types = {}
         analysis.members.each do |m|
@@ -241,7 +256,8 @@ module RbsInfer::Inference
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::NilNode then "nil"
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        RbsInfer::Analyzer.extract_constant_path(node) || "untyped"
+        name = RbsInfer::Analyzer.extract_constant_path(node)
+        @constant_arg_resolver.resolve(name: name, namespace: @constant_namespace) || "untyped"
       when Prism::ImplicitNode
         resolve_arg_value_type(node.value, local_var_types, method_return_types)
       else
