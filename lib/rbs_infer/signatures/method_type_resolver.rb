@@ -317,10 +317,9 @@ module RbsInfer::Signatures
       types = {}
       normalized = class_name.sub(/\A::/, "")
 
-      Dir["sig/**/*.rbs"].each do |rbs_file|
-        content = File.read(rbs_file)
-        next unless content.include?(normalized.split("::").last)
-        info = @rbs_type_lookup.parse_rbs_class_block(content, normalized)
+      RbsTypeLookup.glob("sig/**/*.rbs").each do |rbs_file|
+        next unless @rbs_type_lookup.cached_content_for(rbs_file).include?(normalized.split("::").last)
+        info = @rbs_type_lookup.class_info_from_file(rbs_file, normalized)
         info.class_method_types.each { |name, type| types[name] ||= type }
       end
 

@@ -9,12 +9,71 @@ module RbsInfer::Signatures
   RbsClassInfo = Data.define(:superclass, :types, :includes, :class_method_types)
 
   class RbsTypeLookup
+    # Run-wide caches shared across every instance. A fresh RbsTypeLookup is
+    # built per Analyzer (one per file, per stabilization pass), so the old
+    # per-instance caches re-globbed and re-parsed the whole `sig/` tree (768
+    # .rbs in a real app) for each of ~hundreds of analyses — the dominant cost
+    # once `type_check` was memoized: `RBS::Parser.parse_signature` (~10%, 94%
+    # of it from here) plus `Dir.[]` (~7%), and the AST allocations driving
+    # ~half the run's GC. Hoisting these to the class collapses that to ~once
+    # per generation (felixefelip/rbs_infer#47).
+    #
+    # Only the *file-derived* data is shared (content/AST is immutable once
+    # parsed); class-name-keyed inference results stay per-instance.
+    class << self
+      # Per-file content + parsed declarations + declaration index, keyed by
+      # path and invalidated by mtime — so a sig file rewritten between
+      # dependency levels is re-parsed, while unchanged files are parsed once.
+      def file_entry(rbs_file)
+        cache = caches[:files]
+        mtime = File.mtime(rbs_file)
+        entry = cache[rbs_file]
+        return entry if entry && entry[:mtime] == mtime
+
+        content = File.read(rbs_file)
+        declarations = RbsParserUtil.parse_declarations(content)
+        cache[rbs_file] = {
+          mtime: mtime,
+          content: content,
+          declarations: declarations,
+          index: RbsParserUtil.build_declaration_index(declarations),
+        }
+      rescue Errno::ENOENT, Errno::EACCES
+        { mtime: nil, content: "", declarations: [], index: {} }
+      end
+
+      # Cached `Dir[...]` over `sig/`. New .rbs files appear between dependency
+      # levels, so (unlike file_entry) this can't be mtime-keyed; the CLI clears
+      # it via `reset!` between levels/passes. Gem-collection globs are static
+      # within a run, so caching them is likewise safe.
+      def glob(pattern)
+        caches[:globs][pattern] ||= Dir[pattern]
+      end
+
+      # Clears the run-wide caches. Called alongside `SteepBridge.reset!`
+      # between dependency levels so freshly-written sig is picked up.
+      def reset!
+        @caches = nil
+      end
+
+      private
+
+      # The caches are scoped to the working directory: the sig globs and the
+      # relative paths they yield only mean anything under a fixed `Dir.pwd`, so
+      # a `chdir` (the CLI never does mid-run, but tests do) starts fresh —
+      # mirroring `SteepBridge.definition_builder`'s dir guard.
+      def caches
+        dir = Dir.pwd
+        if @caches.nil? || @caches[:dir] != dir
+          @caches = { dir: dir, files: {}, globs: {} }
+        end
+        @caches
+      end
+    end
+
     def initialize
       @inherited_cache = {}
       @rbs_collection_cache = {}
-      @rbs_declarations_cache = {}
-      @rbs_content_cache = {}
-      @rbs_index_cache = {}
     end
 
     # Busca tipos em arquivos .rbs gerados (ex: rbs_rails para AR models)
@@ -27,7 +86,7 @@ module RbsInfer::Signatures
 
       # 1. Tentar match por nome de arquivo (caso simples: uma classe por arquivo)
       class_path = RbsInfer.class_name_to_path(normalized)
-      Dir["sig/**/*.rbs"].each do |rbs_file|
+      self.class.glob("sig/**/*.rbs").each do |rbs_file|
         next unless rbs_file.end_with?("#{class_path}.rbs")
         info = class_info_from_file(rbs_file, normalized)
         superclass ||= info.superclass
@@ -38,7 +97,7 @@ module RbsInfer::Signatures
       # 2. Buscar inner classes dentro de todos os rbs files
       if types.empty? && superclass.nil?
         short_name = normalized.split("::").last
-        Dir["sig/**/*.rbs"].each do |rbs_file|
+        self.class.glob("sig/**/*.rbs").each do |rbs_file|
           next unless cached_content_for(rbs_file).include?(short_name)
           info = class_info_from_file(rbs_file, normalized)
           next if info.types.empty? && info.superclass.nil? && info.includes.empty?
@@ -57,31 +116,19 @@ module RbsInfer::Signatures
       RbsParserUtil.class_info_from_rbs(content, class_name)
     end
 
-    # Retorna as declarations RBS cacheadas para um arquivo.
-    # Cada arquivo é lido e parseado pelo RBS::Parser no máximo uma vez por instância.
+    # Declarations RBS cacheadas para um arquivo (run-wide, ver `.file_entry`).
     def cached_declarations_for(rbs_file)
-      @rbs_declarations_cache[rbs_file] ||= begin
-        content = File.read(rbs_file)
-        @rbs_content_cache[rbs_file] = content
-        RbsParserUtil.parse_declarations(content)
-      rescue Errno::ENOENT, Errno::EACCES
-        []
-      end
+      self.class.file_entry(rbs_file)[:declarations]
     end
 
-    # Retorna o conteúdo cacheado de um arquivo RBS (lido no máximo uma vez).
+    # Conteúdo cacheado de um arquivo RBS (run-wide).
     def cached_content_for(rbs_file)
-      @rbs_content_cache[rbs_file] ||= begin
-        cached_declarations_for(rbs_file) # popula ambos os caches
-        @rbs_content_cache[rbs_file] || ""
-      end
+      self.class.file_entry(rbs_file)[:content]
     end
 
-    # Retorna RbsClassInfo para um arquivo e classe usando índice cacheado (O(1) lookup).
+    # RbsClassInfo para um arquivo e classe usando o índice cacheado (O(1)).
     def class_info_from_file(rbs_file, class_name)
-      index = @rbs_index_cache[rbs_file] ||=
-        RbsParserUtil.build_declaration_index(cached_declarations_for(rbs_file))
-      RbsParserUtil.class_info_from_index(index, class_name)
+      RbsParserUtil.class_info_from_index(self.class.file_entry(rbs_file)[:index], class_name)
     end
 
     # Resolve tipos herdados percorrendo a cadeia de superclasses via RBS
@@ -98,7 +145,7 @@ module RbsInfer::Signatures
       all_includes = []
 
       # 1. Buscar em sig/rbs_rails/
-      Dir["sig/rbs_rails/**/*.rbs"].each do |rbs_file|
+      self.class.glob("sig/rbs_rails/**/*.rbs").each do |rbs_file|
         info = class_info_from_file(rbs_file, normalized)
         parent_superclass ||= info.superclass
         info.types.each { |name, type| types[name] ||= type }
@@ -112,7 +159,7 @@ module RbsInfer::Signatures
       #     (felixefelip/rbs_infer#19 follow-up: current_user do Devise).
       if types.empty? && parent_superclass.nil?
         class_path = RbsInfer.class_name_to_path(normalized)
-        Dir["sig/**/*.rbs"].each do |rbs_file|
+        self.class.glob("sig/**/*.rbs").each do |rbs_file|
           next unless RbsInfer.file_matches_class_path?(rbs_file, class_path, ext: ".rbs")
           info = class_info_from_file(rbs_file, normalized)
           parent_superclass ||= info.superclass
@@ -177,7 +224,7 @@ module RbsInfer::Signatures
       end
       gem_hints.uniq!
 
-      rbs_files = gem_hints.flat_map { |hint| Dir[".gem_rbs_collection/#{hint}/**/*.rbs"] }.uniq
+      rbs_files = gem_hints.flat_map { |hint| self.class.glob(".gem_rbs_collection/#{hint}/**/*.rbs") }.uniq
       return RbsClassInfo.new(superclass: nil, types:, includes: [], class_method_types: {}) if rbs_files.empty?
 
       all_includes = []
@@ -231,7 +278,7 @@ module RbsInfer::Signatures
         first.gsub(/([a-z])([A-Z])/, '\1-\2').downcase,
       ].uniq
 
-      rbs_files = gem_hints.flat_map { |hint| Dir[".gem_rbs_collection/#{hint}/**/*.rbs"] }.uniq
+      rbs_files = gem_hints.flat_map { |hint| self.class.glob(".gem_rbs_collection/#{hint}/**/*.rbs") }.uniq
       return {} if rbs_files.empty?
 
       types = {}
