@@ -706,7 +706,26 @@ module RbsInfer::Signatures
       end
     end
 
+    # Type-checks a source string and returns Steep's `typing` (or nil). This
+    # is the single most expensive operation in the pipeline (a full Steep
+    # synthesize), and the ~7 oracle methods above each call it — so one
+    # analysis type-checks the same target source ~5x and each caller source
+    # ~2x. Memoize per source for the instance's lifetime.
+    #
+    # Safe to cache: the bridge is per-Analyzer, the result depends only on
+    # (source, env, sidecar stores), the env (`definition_builder`) only
+    # changes via the class-level `reset!` — called *between* analyses, never
+    # during one — and the stores are load-once read-only inputs. The returned
+    # `typing` is only ever read by callers, never mutated. A new analysis
+    # gets a fresh instance (and a freshly-reset env), so no cross-analysis
+    # staleness. (felixefelip/rbs_infer#47)
     def type_check(source_code)
+      (@type_check_cache ||= {}).fetch(source_code) do
+        @type_check_cache[source_code] = type_check_uncached(source_code)
+      end
+    end
+
+    private def type_check_uncached(source_code)
       ensure_initialized
       return nil unless @subtyping
 
