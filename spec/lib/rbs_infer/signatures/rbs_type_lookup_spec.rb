@@ -121,4 +121,79 @@ RSpec.describe RbsInfer::Signatures::RbsTypeLookup do
       # Não deve levantar exceção ao percorrer a cadeia
     end
   end
+
+  # Run-wide caches shared across instances (felixefelip/rbs_infer#47). Each
+  # example runs in its own tmpdir (a distinct Dir.pwd), so the pwd-scoped
+  # cache is naturally isolated; reset! is belt-and-suspenders.
+  describe "run-wide sig file/glob caches" do
+    around do |ex|
+      Dir.mktmpdir { |dir| Dir.chdir(dir) { ex.run } }
+    end
+    before { described_class.reset! }
+
+    def write_rbs(path, content, mtime: nil)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, content)
+      File.utime(File.atime(path), mtime, path) if mtime
+    end
+
+    describe ".file_entry" do
+      it "parses a file once and serves the same entry from cache" do
+        write_rbs("sig/x.rbs", "class X\n  def a: () -> Integer\nend\n")
+
+        first = described_class.file_entry("sig/x.rbs")
+        second = described_class.file_entry("sig/x.rbs")
+
+        expect(second).to be(first) # cache hit → not re-parsed
+        expect(first[:index].keys).to include("X")
+        expect(first[:content]).to include("def a")
+      end
+
+      it "re-parses when the file's mtime changes (stabilization rewrite)" do
+        write_rbs("sig/x.rbs", "class X\nend\n", mtime: Time.at(1_000_000))
+        first = described_class.file_entry("sig/x.rbs")
+
+        write_rbs("sig/x.rbs", "class X\n  def a: () -> Integer\nend\n", mtime: Time.at(2_000_000))
+        second = described_class.file_entry("sig/x.rbs")
+
+        expect(second).not_to be(first)
+        expect(second[:content]).to include("def a")
+        expect(second[:index]["X"]).not_to be_nil
+      end
+
+      it "returns an empty entry for a missing file" do
+        entry = described_class.file_entry("sig/missing.rbs")
+
+        expect(entry[:declarations]).to eq([])
+        expect(entry[:content]).to eq("")
+        expect(entry[:index]).to eq({})
+      end
+    end
+
+    describe ".glob and .reset!" do
+      it "caches the glob and only sees new files after reset!" do
+        write_rbs("sig/a.rbs", "class A\nend\n")
+        expect(described_class.glob("sig/**/*.rbs")).to eq(["sig/a.rbs"])
+
+        write_rbs("sig/b.rbs", "class B\nend\n")
+        expect(described_class.glob("sig/**/*.rbs")).to eq(["sig/a.rbs"]) # still cached
+
+        described_class.reset!
+        expect(described_class.glob("sig/**/*.rbs")).to match_array(["sig/a.rbs", "sig/b.rbs"])
+      end
+    end
+
+    it "uses a fresh cache under a different working directory (no reset! needed)" do
+      write_rbs("sig/a.rbs", "class A\nend\n")
+      expect(described_class.glob("sig/**/*.rbs")).to eq(["sig/a.rbs"])
+
+      Dir.mktmpdir do |other|
+        Dir.chdir(other) do
+          FileUtils.mkdir_p("sig")
+          File.write("sig/c.rbs", "class C\nend\n")
+          expect(described_class.glob("sig/**/*.rbs")).to eq(["sig/c.rbs"])
+        end
+      end
+    end
+  end
 end
