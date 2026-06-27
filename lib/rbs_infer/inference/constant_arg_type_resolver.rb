@@ -11,9 +11,11 @@ module RbsInfer::Inference
   # anything else unresolved → nil → caller emits `untyped`.
   class ConstantArgTypeResolver
     # caller_constant_types: bare-name => type for constants defined in the
-    # referencing source. steep_bridge nil disables the cross-file tier (the
-    # Steep-less `.new`-call collectors) → bare-name fallback, as before.
-    def initialize(steep_bridge:, caller_constant_types: {})
+    # referencing source (pass `{}` when there's no such source — the ERB path
+    # and Steep-less collectors). Required so each call site states it rather
+    # than inheriting a hidden default. steep_bridge nil disables the
+    # cross-file tier → bare-name fallback, as before.
+    def initialize(steep_bridge:, caller_constant_types:)
       @steep_bridge = steep_bridge
       @caller_constant_types = caller_constant_types
     end
@@ -21,7 +23,7 @@ module RbsInfer::Inference
     # Returns a valid RBS type (value type, or the name for a class/module),
     # or nil when nothing resolved — never an unresolved value-constant name,
     # which is invalid RBS and poisons the shared env.
-    def resolve(name:, namespace: nil)
+    def resolve(name:, namespace:)
       return nil if name.nil?
 
       bare = name.sub(/\A::/, "")

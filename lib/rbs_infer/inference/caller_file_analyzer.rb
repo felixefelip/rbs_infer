@@ -105,7 +105,8 @@ module RbsInfer::Inference
         init_positional_params: @init_positional_params,
         target_methods: @target_methods,
         match_bare_calls: true,
-        constant_arg_resolver: ConstantArgTypeResolver.new(steep_bridge: @steep_bridge)
+        # Pre-converted ERB source has no constant defs of its own → {}.
+        constant_arg_resolver: ConstantArgTypeResolver.new(steep_bridge: @steep_bridge, caller_constant_types: {})
       )
       result.value.accept(visitor)
 

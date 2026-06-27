@@ -219,7 +219,9 @@ module RbsInfer::Inference
       when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node)
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         name = RbsInfer::Analyzer.extract_constant_path(node)
-        @constant_arg_resolver.resolve(name: name) || "untyped"
+        # No namespace tracked here; intra-class constants resolve via the
+        # same-file tier, so top-level cross-file lookup (nil) is enough.
+        @constant_arg_resolver.resolve(name: name, namespace: nil) || "untyped"
       else
         "untyped"
       end

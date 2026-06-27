@@ -10,7 +10,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
   # Test-only default for the required `constant_arg_resolver` (#46); these
   # specs don't exercise constant args, so a null-tier resolver suffices.
   def null_constant_resolver
-    RbsInfer::Inference::ConstantArgTypeResolver.new(steep_bridge: nil)
+    RbsInfer::Inference::ConstantArgTypeResolver.new(steep_bridge: nil, caller_constant_types: {})
   end
 
   def collect_usages(source, target_class:, method_return_types: {}, local_var_types: {})

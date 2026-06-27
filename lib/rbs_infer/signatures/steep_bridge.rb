@@ -218,7 +218,7 @@ module RbsInfer::Signatures
     # against the loaded environment (stdlib, gems, generated `sig/`). Class
     # references are absent (a class is a class_decl, not a `Foo = ...` casgn),
     # so they return nil. Type string is `::`-stripped to match `constant_types`.
-    def constant_type_from_env(name, namespace: nil)
+    def constant_type_from_env(name, namespace:)
       ensure_initialized
       builder = self.class.definition_builder
       return nil unless builder && name
@@ -237,7 +237,7 @@ module RbsInfer::Signatures
 
     # True when `name` (resolved from `namespace`) is a class or module in the
     # env — i.e. its bare name is a valid type (`foo(User) -> User`).
-    def class_or_module?(name, namespace: nil)
+    def class_or_module?(name, namespace:)
       ensure_initialized
       builder = self.class.definition_builder
       return false unless builder && name

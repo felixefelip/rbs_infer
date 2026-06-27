@@ -20,7 +20,7 @@ module RbsInfer::Inference
       @caller_file_cache = caller_file_cache || RbsInfer::Project::CallerFileCache.new(@parse_cache)
       # Env-only default; refined per caller file in
       # infer_wrapper_method_param_types (#46).
-      @constant_arg_resolver = ConstantArgTypeResolver.new(steep_bridge: @steep_bridge)
+      @constant_arg_resolver = ConstantArgTypeResolver.new(steep_bridge: @steep_bridge, caller_constant_types: {})
       @constant_namespace = nil
     end
 
