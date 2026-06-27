@@ -7,12 +7,19 @@ require_relative "../../../support/temp_file_helpers"
 RSpec.describe RbsInfer::Inference::NewCallCollector do
   include TempFileHelpers
 
+  # Test-only default for the required `constant_arg_resolver` (#46); these
+  # specs don't exercise constant args, so a null-tier resolver suffices.
+  def null_constant_resolver
+    RbsInfer::Inference::ConstantArgTypeResolver.new(steep_bridge: nil, caller_constant_types: {})
+  end
+
   def collect_usages(source, target_class:, method_return_types: {}, local_var_types: {})
     result = Prism.parse(source)
     visitor = described_class.new(
       target_class: target_class,
       method_return_types: method_return_types,
-      local_var_types: local_var_types
+      local_var_types: local_var_types,
+      constant_arg_resolver: null_constant_resolver
     )
     result.value.accept(visitor)
     visitor.usages
@@ -79,7 +86,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
           target_class: "Target",
           method_return_types: {},
           local_var_types: {},
-          method_type_resolver: resolver
+          method_type_resolver: resolver,
+          constant_arg_resolver: null_constant_resolver
         )
         result.value.accept(visitor)
         expect(visitor.usages.first["record"]).to eq("Record")
@@ -133,7 +141,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         local_var_types: {},
         caller_class_name: caller_class_name,
         init_positional_params: init_positional_params,
-        self_types_by_method: self_types_by_method
+        self_types_by_method: self_types_by_method,
+        constant_arg_resolver: null_constant_resolver
       )
       result.value.accept(visitor)
       visitor.usages
@@ -246,7 +255,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         target_class: "Target",
         method_return_types: {},
         local_var_types: {},
-        init_positional_params: ["owner"]
+        init_positional_params: ["owner"],
+        constant_arg_resolver: null_constant_resolver
       )
       result.value.accept(visitor)
       expect(visitor.usages.first["owner"]).to eq("untyped")
@@ -319,7 +329,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         target_class: "Caderneta",
         method_return_types: { "caderneta" => "Caderneta & Caderneta::Validated", "v" => "Vacina" },
         local_var_types: {},
-        target_methods: { "qtde_por_vacina" => ["vacina"] }
+        target_methods: { "qtde_por_vacina" => ["vacina"] },
+        constant_arg_resolver: null_constant_resolver
       )
       result.value.accept(visitor)
 
@@ -374,7 +385,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
             method_type_resolver: resolver,
             caller_class_name: "Holder",
             target_methods: { "target_method" => ["arg"] },
-            self_types_by_method: { "m" => "Holder & Holder::Validated" }
+            self_types_by_method: { "m" => "Holder & Holder::Validated" },
+            constant_arg_resolver: null_constant_resolver
           )
           result.value.accept(visitor)
 

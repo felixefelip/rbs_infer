@@ -214,6 +214,59 @@ module RbsInfer::Signatures
       result
     end
 
+    # Cross-file complement to `constant_types`: resolves a constant reference
+    # against the loaded environment (stdlib, gems, generated `sig/`). Class
+    # references are absent (a class is a class_decl, not a `Foo = ...` casgn),
+    # so they return nil. Type string is `::`-stripped to match `constant_types`.
+    def constant_type_from_env(name, namespace:)
+      ensure_initialized
+      builder = self.class.definition_builder
+      return nil unless builder && name
+
+      env = builder.env
+      constant_name_candidates(name, namespace).each do |fqn|
+        entry = env.constant_decls[RBS::TypeName.parse(fqn)]
+        next unless entry
+
+        return entry.decl.type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }
+      end
+      nil
+    rescue RBS::BaseError, StandardError
+      nil
+    end
+
+    # True when `name` (resolved from `namespace`) is a class or module in the
+    # env — i.e. its bare name is a valid type (`foo(User) -> User`).
+    def class_or_module?(name, namespace:)
+      ensure_initialized
+      builder = self.class.definition_builder
+      return false unless builder && name
+
+      env = builder.env
+      constant_name_candidates(name, namespace).any? do |fqn|
+        env.class_decls.key?(RBS::TypeName.parse(fqn))
+      end
+    rescue RBS::BaseError, StandardError
+      false
+    end
+
+    # Fully-qualified candidates for a constant reference, walking the
+    # enclosing namespace outward (Ruby's lexical constant lookup), then
+    # top-level. An already-absolute `::X` reference only tries `::X`.
+    def constant_name_candidates(name, namespace)
+      bare = name.sub(/\A::/, "")
+      candidates = []
+      if namespace && !name.start_with?("::")
+        parts = namespace.sub(/\A::/, "").split("::")
+        until parts.empty?
+          candidates << "::#{parts.join("::")}::#{bare}"
+          parts.pop
+        end
+      end
+      candidates << "::#{bare}"
+      candidates.uniq
+    end
+
     BLOCK_GENERIC_METHODS = %w[map collect].freeze
 
     # When Steep can't resolve generic type params bottom-up in block calls

@@ -1,0 +1,5 @@
+class Coupon
+  CODE_LENGTH: Integer
+
+  def self.make: () -> String
+end

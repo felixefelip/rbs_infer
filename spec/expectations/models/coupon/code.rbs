@@ -1,0 +1,5 @@
+class Coupon
+  module Code
+    def self.generate: (Integer length) -> String
+  end
+end

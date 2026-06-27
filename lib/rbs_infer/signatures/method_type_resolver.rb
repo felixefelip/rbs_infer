@@ -174,7 +174,9 @@ module RbsInfer::Signatures
           method_return_types: mrt,
           local_var_types: local_var_types,
           method_type_resolver: self,
-          caller_class_name: caller_class_name
+          caller_class_name: caller_class_name,
+          # No Steep env here → bare-name fallback; explicit, not a default (#46).
+          constant_arg_resolver: RbsInfer::Inference::ConstantArgTypeResolver.new(steep_bridge: nil, caller_constant_types: {})
         )
         entry.result.value.accept(visitor)
         all_usages.concat(visitor.usages)
@@ -376,7 +378,9 @@ module RbsInfer::Signatures
           method_return_types: method_return_types,
           local_var_types: local_var_types,
           method_type_resolver: self,
-          caller_class_name: caller_class_name
+          caller_class_name: caller_class_name,
+          # No Steep env here → bare-name fallback; explicit, not a default (#46).
+          constant_arg_resolver: RbsInfer::Inference::ConstantArgTypeResolver.new(steep_bridge: nil, caller_constant_types: {})
         )
         entry.result.value.accept(visitor)
 

@@ -19,6 +19,12 @@ module RbsInfer::Inference
       @current_param_names = Set.new
       @method_positional_params = method_positional_params
       @steep_local_var_types = steep_bridge && source_code ? steep_bridge.local_var_types_per_method(source_code) : {}
+      # Constant args resolve to their value type (#46); intra-class
+      # constants are in this same source, covered by the same-file tier.
+      @constant_arg_resolver = ConstantArgTypeResolver.new(
+        steep_bridge: steep_bridge,
+        caller_constant_types: steep_bridge && source_code ? steep_bridge.constant_types(source_code) : {}
+      )
     end
 
     def visit_def_node(node)
@@ -212,7 +218,10 @@ module RbsInfer::Inference
       when Prism::ArrayNode then "Array[untyped]"
       when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node)
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        RbsInfer::Analyzer.extract_constant_path(node) || "untyped"
+        name = RbsInfer::Analyzer.extract_constant_path(node)
+        # No namespace tracked here; intra-class constants resolve via the
+        # same-file tier, so top-level cross-file lookup (nil) is enough.
+        @constant_arg_resolver.resolve(name: name, namespace: nil) || "untyped"
       else
         "untyped"
       end

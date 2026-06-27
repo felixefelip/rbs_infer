@@ -71,6 +71,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/palette", target_class: "Palette", target_file: "app/models/palette.rb")
   end
 
+  it "Coupon::Code (constant argument) matches expected RBS" do
+    assert_snapshot("models/coupon/code", target_class: "Coupon::Code", target_file: "app/models/coupon/code.rb")
+  end
+
   it "Current expansion (pseudo-code) matches expected source" do
     # Snapshot of the desugar itself, separate from the RBS snapshot: a
     # new bug points straight to the right layer — expansion changes →

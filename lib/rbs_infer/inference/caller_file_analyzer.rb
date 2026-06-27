@@ -39,10 +39,16 @@ module RbsInfer::Inference
       local_var_types = {}
 
       # Use Steep to resolve local var types (including block params)
+      caller_constant_types = {}
       if @steep_bridge
         steep_vars = @steep_bridge.local_var_types_per_method(source)
         steep_vars.each_value { |vars| local_var_types.merge!(vars) { |_k, old, _new| old } }
+        caller_constant_types = @steep_bridge.constant_types(source)
       end
+      constant_arg_resolver = ConstantArgTypeResolver.new(
+        steep_bridge: @steep_bridge,
+        caller_constant_types: caller_constant_types
+      )
 
       # Enable bare call matching when the file includes the target module/concern.
       # e.g. PostsController includes FilterConfiguration → configure_filter("posts")
@@ -71,7 +77,8 @@ module RbsInfer::Inference
         init_positional_params: @init_positional_params,
         target_methods: @target_methods,
         match_bare_calls: match_bare,
-        self_types_by_method: self_types_by_method
+        self_types_by_method: self_types_by_method,
+        constant_arg_resolver: constant_arg_resolver
       )
       result.value.accept(visitor)
 
@@ -97,7 +104,9 @@ module RbsInfer::Inference
         method_type_resolver: @method_type_resolver,
         init_positional_params: @init_positional_params,
         target_methods: @target_methods,
-        match_bare_calls: true
+        match_bare_calls: true,
+        # Pre-converted ERB source has no constant defs of its own → {}.
+        constant_arg_resolver: ConstantArgTypeResolver.new(steep_bridge: @steep_bridge, caller_constant_types: {})
       )
       result.value.accept(visitor)
 
