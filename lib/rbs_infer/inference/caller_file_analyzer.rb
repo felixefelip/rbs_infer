@@ -43,9 +43,6 @@ module RbsInfer::Inference
       if @steep_bridge
         steep_vars = @steep_bridge.local_var_types_per_method(source)
         steep_vars.each_value { |vars| local_var_types.merge!(vars) { |_k, old, _new| old } }
-        # Constants defined in this caller file, typed by their RHS — lets a
-        # constant passed as an argument resolve to its value type
-        # (felixefelip/rbs_infer#46).
         caller_constant_types = @steep_bridge.constant_types(source)
       end
       constant_arg_resolver = ConstantArgTypeResolver.new(

@@ -214,19 +214,10 @@ module RbsInfer::Signatures
       result
     end
 
-    # Resolves a constant REFERENCE (by name + the namespace it's read in)
-    # to the RBS type of its value, looking it up in the loaded environment
-    # — stdlib, gems, and previously-generated `sig/`. Complements
-    # `constant_types`, which only sees constants DEFINED in a given source:
-    # this is the cross-file path for `Klass.method(SOME_CONST)` where the
-    # constant lives in another file (its RBS becomes available on a later
-    # stabilization pass, mirroring how method return types converge).
-    #
-    # Class/module references aren't constant declarations (`class Foo` is a
-    # class decl, not a `Foo = ...` casgn), so they're absent here and the
-    # caller keeps the bare name — preserving the `foo(User) -> User`
-    # convention. Returns the type string (`::` stripped, matching
-    # `constant_types`) or nil when nothing resolves.
+    # Cross-file complement to `constant_types`: resolves a constant reference
+    # against the loaded environment (stdlib, gems, generated `sig/`). Class
+    # references are absent (a class is a class_decl, not a `Foo = ...` casgn),
+    # so they return nil. Type string is `::`-stripped to match `constant_types`.
     def constant_type_from_env(name, namespace: nil)
       ensure_initialized
       builder = self.class.definition_builder
@@ -245,10 +236,7 @@ module RbsInfer::Signatures
     end
 
     # True when `name` (resolved from `namespace`) is a class or module in the
-    # environment. Lets a constant argument keep its bare name only when that
-    # name is a valid type — `foo(User) -> User`. A value constant isn't a
-    # class, so it falls through to `untyped` rather than emitting an invalid
-    # bare-constant type that would poison the whole env (felixefelip/rbs_infer#46).
+    # env — i.e. its bare name is a valid type (`foo(User) -> User`).
     def class_or_module?(name, namespace: nil)
       ensure_initialized
       builder = self.class.definition_builder

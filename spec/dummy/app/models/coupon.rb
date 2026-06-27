@@ -1,6 +1,5 @@
-# Exercises constant-argument inference (felixefelip/rbs_infer#46): a value
-# constant passed to a submodule method resolves to its VALUE type
-# (`CODE_LENGTH = 8` → `Integer`), never the bare constant name.
+# Exercises constant-argument inference (#46): `Code.generate(CODE_LENGTH)`
+# infers `length` as `Integer` (the constant's value type), not `CODE_LENGTH`.
 class Coupon
   CODE_LENGTH = 8
 

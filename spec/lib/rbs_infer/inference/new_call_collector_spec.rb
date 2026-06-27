@@ -7,10 +7,8 @@ require_relative "../../../support/temp_file_helpers"
 RSpec.describe RbsInfer::Inference::NewCallCollector do
   include TempFileHelpers
 
-  # Test-only default: the production API requires `constant_arg_resolver`
-  # (a constant arg must resolve to its value type, not its name — #46), but
-  # these unit specs don't exercise constant args, so a null-tier resolver
-  # (no Steep env → bare-name/untyped fallback) keeps them focused.
+  # Test-only default for the required `constant_arg_resolver` (#46); these
+  # specs don't exercise constant args, so a null-tier resolver suffices.
   def null_constant_resolver
     RbsInfer::Inference::ConstantArgTypeResolver.new(steep_bridge: nil)
   end

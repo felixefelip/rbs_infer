@@ -175,8 +175,7 @@ module RbsInfer::Signatures
           local_var_types: local_var_types,
           method_type_resolver: self,
           caller_class_name: caller_class_name,
-          # No Steep environment here — constant args degrade to the bare-name
-          # fallback (felixefelip/rbs_infer#46). Explicit, not a hidden default.
+          # No Steep env here → bare-name fallback; explicit, not a default (#46).
           constant_arg_resolver: RbsInfer::Inference::ConstantArgTypeResolver.new(steep_bridge: nil)
         )
         entry.result.value.accept(visitor)
@@ -380,8 +379,7 @@ module RbsInfer::Signatures
           local_var_types: local_var_types,
           method_type_resolver: self,
           caller_class_name: caller_class_name,
-          # No Steep environment here — constant args degrade to the bare-name
-          # fallback (felixefelip/rbs_infer#46). Explicit, not a hidden default.
+          # No Steep env here → bare-name fallback; explicit, not a default (#46).
           constant_arg_resolver: RbsInfer::Inference::ConstantArgTypeResolver.new(steep_bridge: nil)
         )
         entry.result.value.accept(visitor)

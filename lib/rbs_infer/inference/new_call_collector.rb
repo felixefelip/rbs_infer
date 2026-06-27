@@ -8,10 +8,8 @@ module RbsInfer::Inference
       @local_var_types = local_var_types
       @method_type_resolver = method_type_resolver
       @caller_class_name = caller_class_name
-      # Required (not defaulted): a constant passed as an argument must resolve
-      # to its VALUE type (`generate(CODE_LENGTH)` → `Integer`), never its name
-      # — omitting the resolver silently re-emits the invalid bare-constant
-      # form this fixes (felixefelip/rbs_infer#46, required-threaded-deps).
+      # Required: omitting it silently re-emits the invalid bare-constant
+      # form this fixes (#46, required-threaded-deps).
       @constant_arg_resolver = constant_arg_resolver
       @init_positional_params = init_positional_params
       @target_methods = target_methods
@@ -343,10 +341,7 @@ module RbsInfer::Inference
       end
     end
 
-    # A constant passed as an argument: resolve to the type of its VALUE when
-    # it's a value constant (`CODE_LENGTH = 6` → `Integer`), else keep the
-    # bare path — a class/module reference (`foo(User)` → `User`) is a valid
-    # type, a value-constant name is not (felixefelip/rbs_infer#46).
+    # See ConstantArgTypeResolver (#46).
     def resolve_constant_arg_type(node)
       name = RbsInfer::Analyzer.extract_constant_path(node)
       namespace = @class_name_stack.last || @caller_class_name

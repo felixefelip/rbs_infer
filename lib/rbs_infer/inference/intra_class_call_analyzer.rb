@@ -19,9 +19,8 @@ module RbsInfer::Inference
       @current_param_names = Set.new
       @method_positional_params = method_positional_params
       @steep_local_var_types = steep_bridge && source_code ? steep_bridge.local_var_types_per_method(source_code) : {}
-      # Resolve a constant argument to its value type (felixefelip/rbs_infer#46).
-      # Constants in an intra-class call are typically defined in this same
-      # source, so the same-file tier (constant_types) covers them.
+      # Constant args resolve to their value type (#46); intra-class
+      # constants are in this same source, covered by the same-file tier.
       @constant_arg_resolver = ConstantArgTypeResolver.new(
         steep_bridge: steep_bridge,
         caller_constant_types: steep_bridge && source_code ? steep_bridge.constant_types(source_code) : {}
