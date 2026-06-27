@@ -29,10 +29,33 @@ module RbsInfer::Signatures
         @definition_builder = build_definition_builder
       end
 
+      # Steep's type-checking context (factory → interface builder → subtyping
+      # + constant resolver), derived from the shared `definition_builder` and
+      # cached at the class level. The interface builder memoizes each type's
+      # method "shape"; sharing it across every Analyzer means a type's shape is
+      # built once per env instead of rebuilt per file — the dominant cost after
+      # #48/#49 (felixefelip/rbs_infer#47). Keyed by builder identity, so it
+      # rebuilds exactly when `definition_builder` does (reset! / chdir).
+      def steep_context
+        db = definition_builder
+        return nil unless db
+        return @steep_context if @steep_context_builder.equal?(db)
+
+        @steep_context_builder = db
+        factory = Steep::AST::Types::Factory.new(builder: db)
+        interface_builder = Steep::Interface::Builder.new(factory, implicitly_returns_nil: false)
+        @steep_context = {
+          subtyping: Steep::Subtyping::Check.new(builder: interface_builder),
+          constant_resolver: RBS::Resolver::ConstantResolver.new(builder: db),
+        }
+      end
+
       def reset!
         @definition_builder = nil
         @definition_builder_loaded = false
         @definition_builder_dir = nil
+        @steep_context = nil
+        @steep_context_builder = nil
       end
 
       private
@@ -104,10 +127,15 @@ module RbsInfer::Signatures
       end
     end
 
-    def initialize
-      @subtyping = nil
-      @constant_resolver = nil
-      @initialized = false
+    # Steep's subtyping/constant-resolver context, shared at the class level so
+    # the interface builder's per-type shape cache is reused across instances
+    # (felixefelip/rbs_infer#47). nil when the env couldn't be built.
+    def steep_subtyping
+      self.class.steep_context&.fetch(:subtyping)
+    end
+
+    def steep_constant_resolver
+      self.class.steep_context&.fetch(:constant_resolver)
     end
 
     # Returns { "var_name" => "Type" } for all local variable assignments
@@ -219,7 +247,6 @@ module RbsInfer::Signatures
     # references are absent (a class is a class_decl, not a `Foo = ...` casgn),
     # so they return nil. Type string is `::`-stripped to match `constant_types`.
     def constant_type_from_env(name, namespace:)
-      ensure_initialized
       builder = self.class.definition_builder
       return nil unless builder && name
 
@@ -238,7 +265,6 @@ module RbsInfer::Signatures
     # True when `name` (resolved from `namespace`) is a class or module in the
     # env — i.e. its bare name is a valid type (`foo(User) -> User`).
     def class_or_module?(name, namespace:)
-      ensure_initialized
       builder = self.class.definition_builder
       return false unless builder && name
 
@@ -437,9 +463,11 @@ module RbsInfer::Signatures
     def postcondition_inferred_entries(source_code)
       typing = type_check(source_code)
       return [] unless typing
-      return [] unless @subtyping
 
-      Steep::Postconditions::Inferrer.infer(typing.source, typing, @subtyping)
+      subtyping = steep_subtyping
+      return [] unless subtyping
+
+      Steep::Postconditions::Inferrer.infer(typing.source, typing, subtyping)
     rescue StandardError => e
       Steep.logger.warn { "[rbs_infer] postcondition inferrer failed: #{e.message}" } if defined?(Steep.logger)
       []
@@ -726,14 +754,14 @@ module RbsInfer::Signatures
     end
 
     private def type_check_uncached(source_code)
-      ensure_initialized
-      return nil unless @subtyping
+      subtyping = steep_subtyping
+      return nil unless subtyping
 
-      source = Steep::Source.parse(source_code, path: Pathname("(rbs_infer)"), factory: @subtyping.factory)
+      source = Steep::Source.parse(source_code, path: Pathname("(rbs_infer)"), factory: subtyping.factory)
       Steep::Services::TypeCheckService.type_check(
         source: source,
-        subtyping: @subtyping,
-        constant_resolver: @constant_resolver,
+        subtyping: subtyping,
+        constant_resolver: steep_constant_resolver,
         cursor: nil,
         contracts: contracts_store,
         postconditions: postconditions_store,
@@ -809,19 +837,6 @@ module RbsInfer::Signatures
       else
         Dir.pwd
       end
-    end
-
-    def ensure_initialized
-      return if @initialized
-      @initialized = true
-
-      definition_builder = self.class.definition_builder
-      return unless definition_builder
-
-      factory = Steep::AST::Types::Factory.new(builder: definition_builder)
-      interface_builder = Steep::Interface::Builder.new(factory, implicitly_returns_nil: false)
-      @subtyping = Steep::Subtyping::Check.new(builder: interface_builder)
-      @constant_resolver = RBS::Resolver::ConstantResolver.new(builder: definition_builder)
     end
 
     # Returns the intrinsic (hint-free) type of a node. For literal AST
