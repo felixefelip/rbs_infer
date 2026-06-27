@@ -155,6 +155,10 @@ if output
 
   reset_caches = lambda do
     RbsInfer::Signatures::SteepBridge.reset!
+    # Run-wide RBS file/glob caches: clear so a freshly-written sig file (new
+    # path or changed content) is re-globbed/re-parsed on the next level/pass
+    # (felixefelip/rbs_infer#47).
+    RbsInfer::Signatures::RbsTypeLookup.reset!
     # ErbCallerResolver caches controller-ivar lookups per (class, action).
     # Without this reset, pass 2 would return the empty result that pass 1
     # computed when ApplicationHelper had no RBS, losing the inferred types
