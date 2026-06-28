@@ -11,6 +11,13 @@ class Palette
     @value = value
   end
 
+  # Return is a bare value constant (#46): the type is the constant's VALUE
+  # type (`Integer`), resolved by Steep — not the bare name `MAX`, which is
+  # invalid RBS.
+  def max_weight
+    MAX
+  end
+
   COLORS = {
     "Blue" => "var(--color-1)",
     "Gray" => "var(--color-2)"

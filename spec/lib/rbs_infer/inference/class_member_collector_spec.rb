@@ -127,6 +127,27 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
     expect(collector.members.find { |m| m.name == "build_count" }.signature).to include("-> Integer")
   end
 
+  it "defere o return type quando a última expressão é uma constante (felixefelip/rbs_infer#46)" do
+    source = <<~RUBY
+      class Foo
+        def status
+          ACTIVE
+        end
+
+        def continue
+          Loofah::Scrubber::CONTINUE
+        end
+      end
+    RUBY
+
+    collector = collect(source)
+    # O nome cru não é tipo RBS válido para uma constante-valor (nem o tipo
+    # certo para classe/módulo: seria singleton). Fica untyped; o Analyzer
+    # resolve via Steep.
+    expect(collector.members.find { |m| m.name == "status" }.signature).to eq("status: () -> untyped")
+    expect(collector.members.find { |m| m.name == "continue" }.signature).to eq("continue: () -> untyped")
+  end
+
   describe "class << self (métodos singleton)" do
     it "classifica métodos definidos em `class << self` como class_method" do
       source = <<~RUBY
