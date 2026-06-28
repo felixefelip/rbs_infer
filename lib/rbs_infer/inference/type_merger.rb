@@ -333,6 +333,14 @@ module RbsInfer::Inference
     end
 
     def infer_literal_type(node)
+      # A constant reference is not a literal: its type is the constant's VALUE
+      # type (a value constant like `CONTINUE` → `Integer`) or `singleton(K)`
+      # for a class/module — never the bare name `infer_node_type` yields, which
+      # is invalid RBS for the former and wrong for the latter. Defer to the
+      # Steep-backed return pass in `improve_method_return_types`, leaving the
+      # method `-> untyped` for now (felixefelip/rbs_infer#46).
+      return nil if node.is_a?(Prism::ConstantReadNode) || node.is_a?(Prism::ConstantPathNode)
+
       infer_node_type(node)
     end
 

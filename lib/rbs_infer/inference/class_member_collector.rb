@@ -397,6 +397,14 @@ module RbsInfer::Inference
 
       return nil unless last_stmt
 
+      # A bare constant as the last expression is a VALUE — a value constant
+      # (`CONTINUE`, an `Integer`) or a class object (`User`, typed
+      # `singleton(User)`) — never the bare name `infer_node_type` would yield,
+      # which is invalid RBS for the former and wrong for the latter. Defer to
+      # the Analyzer's Steep-backed return pass, which types both correctly
+      # (felixefelip/rbs_infer#46).
+      return nil if last_stmt.is_a?(Prism::ConstantReadNode) || last_stmt.is_a?(Prism::ConstantPathNode)
+
       type = infer_node_type(last_stmt)
       return nil unless type
 

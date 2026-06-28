@@ -406,6 +406,13 @@ module RbsInfer::Signatures
 
     # Inferir return type a partir de literais ou Klass.new na última expressão
     def infer_literal_return_type(node, class_name = nil)
+      # A bare constant as the return expression is a VALUE (value constant →
+      # its value type) or a class object (→ `singleton(K)`), never the bare
+      # name `infer_node_type` yields — invalid RBS for the former, wrong for
+      # the latter. Leave it unresolved so the method stays `untyped` and the
+      # Steep-backed return pass types it (felixefelip/rbs_infer#46).
+      return nil if node.is_a?(Prism::ConstantReadNode) || node.is_a?(Prism::ConstantPathNode)
+
       basic = infer_node_type(node, context_class: class_name)
       return basic if basic
 
