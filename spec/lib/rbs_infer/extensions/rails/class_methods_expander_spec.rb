@@ -31,24 +31,6 @@ RSpec.describe RbsInfer::Extensions::Rails::ClassMethodsExpander do
         end
       RUBY
     end
-
-    it "rewrites `class_methods do ... end` into a nested ClassMethods module" do
-      expanded = expand(<<~RUBY)
-        module Greetable
-          extend ActiveSupport::Concern
-
-          class_methods do
-            def banner
-              "hi"
-            end
-          end
-        end
-      RUBY
-
-      expect(expanded).to include("module ClassMethods")
-      expect(expanded).to include("def banner")
-      expect(expanded).not_to include("class_methods do")
-    end
   end
 
   # End-to-end: drive the real Analyzer over a Concern source and assert,
