@@ -12,3 +12,4 @@ rules distilled from past sessions.
 
 @docs/engineering/prefer-principled-over-shortcuts.md
 @docs/engineering/required-threaded-deps.md
+@docs/engineering/keep-core-framework-agnostic.md

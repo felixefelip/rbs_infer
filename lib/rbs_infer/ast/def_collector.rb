@@ -45,18 +45,6 @@ module RbsInfer::AST
       pop_scope if singleton
     end
 
-    # `class_methods do ... end` (ActiveSupport::Concern) — open a
-    # `module ClassMethods` owner so nested defs are attributed to it,
-    # matching how ClassMemberCollector/RbsBuilder represent concern class
-    # methods. Mirrors `visit_singleton_class_node` for `class << self`.
-    def visit_call_node(node)
-      is_class_methods = class_methods_block?(node)
-      push_scope(:module, CLASS_METHODS_MODULE) if is_class_methods
-      super
-    ensure
-      pop_scope if is_class_methods
-    end
-
     def visit_def_node(node)
       @defs << node
       @owners[node] = current_owner
