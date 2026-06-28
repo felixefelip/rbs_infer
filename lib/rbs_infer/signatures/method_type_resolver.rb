@@ -9,11 +9,13 @@ module RbsInfer::Signatures
 
     attr_reader :constant_resolver
 
-    # constant_resolver: env-aware resolver for value-position constants in the
-    # classes this resolver analyzes (e.g. another class's init keyword default).
-    # Defaulted nil because some callers (Rails extension generators) legitimately
-    # have no env; there a value constant just defers to untyped (#56).
-    def initialize(source_files, source_index: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil, constant_resolver: nil)
+    # constant_resolver: required (felixefelip/rbs_infer#56). Env-aware resolver
+    # for value-position constants in the classes this resolver analyzes (e.g.
+    # another class's init keyword default → its VALUE type, not its bare name).
+    # Required, not defaulted: a caller that forgets it silently degrades those
+    # types to untyped. Callers without a project SteepBridge can still pass an
+    # env-only ConstantArgTypeResolver (the RBS env is process-global).
+    def initialize(source_files, constant_resolver:, source_index: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil)
       @source_files = source_files
       @source_index = source_index
       @constant_resolver = constant_resolver
@@ -182,8 +184,9 @@ module RbsInfer::Signatures
           local_var_types: local_var_types,
           method_type_resolver: self,
           caller_class_name: caller_class_name,
-          # No Steep env here → bare-name fallback; explicit, not a default (#46).
-          constant_arg_resolver: RbsInfer::Inference::ConstantArgTypeResolver.new(steep_bridge: nil, caller_constant_types: {})
+          # Env-aware resolver so constant call-site args resolve to their value
+          # type via the loaded RBS env, not a bare name (#46, #56).
+          constant_arg_resolver: @constant_resolver
         )
         entry.result.value.accept(visitor)
         all_usages.concat(visitor.usages)
@@ -385,8 +388,9 @@ module RbsInfer::Signatures
           local_var_types: local_var_types,
           method_type_resolver: self,
           caller_class_name: caller_class_name,
-          # No Steep env here → bare-name fallback; explicit, not a default (#46).
-          constant_arg_resolver: RbsInfer::Inference::ConstantArgTypeResolver.new(steep_bridge: nil, caller_constant_types: {})
+          # Env-aware resolver so constant call-site args resolve to their value
+          # type via the loaded RBS env, not a bare name (#46, #56).
+          constant_arg_resolver: @constant_resolver
         )
         entry.result.value.accept(visitor)
 
