@@ -47,8 +47,8 @@ rbs_generators_all:
 	make rbs_rails_custom
 	make rbs_infer_enumerize
 	make rbs_infer_carrierwave
-	make rbs_infer_erb
 	make rbs_infer_module_self_types
+	make rbs_infer_erb
 
 ## Gerar RBS apenas para arquivo específico passado como argumento
 
