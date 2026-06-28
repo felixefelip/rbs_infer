@@ -1,0 +1,43 @@
+---
+app/models/concerns/test/filtrable.rb:
+  anchor: Filtrable
+  annotations:
+  - "# @type self: singleton(Test) & singleton(Test::Filtrable)"
+  - "# @type instance: Test & Test::Filtrable"
+app/models/coupon/code.rb:
+  anchor: Code
+  annotations:
+  - "# @type instance: Coupon & Coupon::Code"
+app/models/post/notifiable.rb:
+  anchor: Notifiable
+  annotations:
+  - "# @type self: singleton(Post) & singleton(Post::Notifiable)"
+  - "# @type instance: Post & Post::Notifiable"
+app/models/post/taggable.rb:
+  anchor: Taggable
+  annotations:
+  - "# @type self: singleton(Post) & singleton(Post::Taggable)"
+  - "# @type instance: Post & Post::Taggable"
+app/models/user/displayable.rb:
+  anchor: Displayable
+  annotations:
+  - "# @type self: singleton(User) & singleton(User::Displayable)"
+  - "# @type instance: User & User::Displayable"
+app/models/user/recoverable.rb:
+  anchor: Recoverable
+  annotations:
+  - "# @type self: singleton(User) & singleton(User::Recoverable)"
+  - "# @type instance: User & User::Recoverable"
+app/helpers/application_helper.rb:
+  anchor: ApplicationHelper
+  annotations:
+  - "# @type instance: ApplicationController & ApplicationHelper"
+app/helpers/posts_helper.rb:
+  anchor: PostsHelper
+  annotations:
+  - "# @type instance: ApplicationController & PostsHelper"
+app/controllers/concerns/filter_configuration.rb:
+  anchor: FilterConfiguration
+  annotations:
+  - "# @type self: singleton(ApplicationController) & singleton(FilterConfiguration)"
+  - "# @type instance: ApplicationController & FilterConfiguration"

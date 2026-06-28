@@ -40,6 +40,11 @@ RSpec.describe "Steep type check on dummy app", :dummy_app do
         # as a noisy DuplicateMethodDefinition.
         system("bundle", "exec", "rake", "rbs_infer:carrierwave:all",
                exception: true, out: File::NULL, err: File::NULL)
+        # Concern/module `@type self:`/`@type instance:` now come from this
+        # sidecar (felixefelip/rbs_infer#52); `steep check` reads it instead of
+        # deriving names from paths. Without it, concern self-types regress.
+        system("bundle", "exec", "rake", "rbs_infer:module_self_types:all",
+               exception: true, out: File::NULL, err: File::NULL)
       end
     end
   end

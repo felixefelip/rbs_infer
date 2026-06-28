@@ -1,5 +1,5 @@
 require "prism"
-require "steep/source/module_self_type_resolver"
+require "steep/source/module_self_types"
 
 # Analisador que gera assinaturas RBS completas a partir de código Ruby puro,
 # sem exigir anotações de tipo, comentários especiais ou arquivos extras.
@@ -91,7 +91,18 @@ module RbsInfer
     @expanded_source = RbsInfer::Project::SourceExpanders.apply(source)
     source = @expanded_source if @expanded_source
 
-    source = Steep::Source::ModuleSelfTypeResolver.annotate(@target_file, source)
+    # Inject `@type self:`/`@type instance:` for concerns/modules so the
+    # pipeline (and Steep) sees the right self-type. rbs_infer owns the
+    # Rails conventions + the real (AST-cased) name; Steep just places the
+    # comment (felixefelip/rbs_infer#52).
+    if @target_class &&
+       (entry = RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator.entry_for(
+         path: @target_file, module_name: @target_class, source: source))
+      source = Steep::Source::ModuleSelfTypes.inject(
+        source, annotations: entry["annotations"], anchor: entry["anchor"]
+      )
+    end
+
     result = Prism.parse(source)
     @parsed_target = RbsInfer::ParsedFile.new(
       result: result,
