@@ -88,5 +88,21 @@ module RbsInfer::AST
     def class_method_def?(node)
       node.receiver.is_a?(Prism::SelfNode) || in_singleton_self?
     end
+
+    # The `class_methods do ... end` DSL of `ActiveSupport::Concern`: defs
+    # inside become class methods on the *including* class, which RBS models
+    # as a nested `module ClassMethods` mixed in via `extend ...::ClassMethods`
+    # (the same convention `RbsBuilder` already emits on the consumer side).
+    # We therefore treat the block as a `:module "ClassMethods"` owner rather
+    # than as singleton methods of the concern module itself. True for the
+    # exact receiverless `class_methods do/{ }` call shape — the name alone is
+    # distinctive to the Concern DSL.
+    def class_methods_block?(node)
+      node.name == :class_methods &&
+        node.receiver.nil? &&
+        node.block.is_a?(Prism::BlockNode)
+    end
+
+    CLASS_METHODS_MODULE = "ClassMethods"
   end
 end

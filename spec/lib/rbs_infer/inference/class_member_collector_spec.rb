@@ -2,13 +2,41 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Inference::ClassMemberCollector do
-  def collect(source)
+  def collect(source, target_class: nil)
     result = Prism.parse(source)
     comments = result.comments
     lines = source.lines
-    visitor = described_class.new(comments: comments, lines: lines)
+    visitor = described_class.new(comments: comments, lines: lines, target_class: target_class)
     result.value.accept(visitor)
     visitor
+  end
+
+  it "atribui métodos de `class_methods do` (Concern) ao módulo ClassMethods" do
+    source = <<~RUBY
+      module Greetable
+        extend ActiveSupport::Concern
+
+        class_methods do
+          def banner
+            "hi"
+          end
+        end
+
+        def greet
+          "hello"
+        end
+      end
+    RUBY
+
+    collector = collect(source, target_class: "Greetable")
+
+    banner = collector.members.find { |m| m.name == "banner" }
+    expect(banner.kind).to eq(:method)
+    expect(banner.owner).to eq("ClassMethods")
+
+    # Instance methods of the concern stay direct members (owner nil).
+    greet = collector.members.find { |m| m.name == "greet" }
+    expect(greet.owner).to be_nil
   end
 
   it "coleta attr_reader com tipo inline" do

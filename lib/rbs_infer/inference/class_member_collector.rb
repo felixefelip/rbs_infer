@@ -138,6 +138,13 @@ module RbsInfer::Inference
     end
 
     def visit_call_node(node)
+      # `class_methods do ... end` (ActiveSupport::Concern): defs inside are
+      # class methods on the including class, modeled as a nested
+      # `module ClassMethods`. Open that owner for the block body (reusing
+      # `with_scope` so a `private` inside it doesn't leak out), exactly as
+      # `visit_singleton_class_node` handles `class << self`.
+      return with_scope(:module, CLASS_METHODS_MODULE) { super } if class_methods_block?(node)
+
       case node.name
       when :private
         if node.arguments.nil?
