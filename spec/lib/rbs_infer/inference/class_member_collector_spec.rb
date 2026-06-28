@@ -292,6 +292,39 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
     expect(member.signature).to include("?senha: untyped")
   end
 
+  describe "default de param opcional que é constante (felixefelip/rbs_infer#46)" do
+    it "defere a resolução: emite ?untyped e registra o nó da constante" do
+      source = <<~RUBY
+        class Foo
+          def bar(actions = Webhook::PERMITTED_ACTIONS)
+          end
+        end
+      RUBY
+
+      collector = collect(source)
+      member = collector.members.find { |m| m.name == "bar" }
+      # O nome cru da constante não é um tipo RBS válido para uma
+      # constante-valor; o tipo é resolvido depois no Analyzer.
+      expect(member.signature).to eq("bar: (?untyped actions) -> untyped")
+      expect(member.param_constant_defaults.keys).to eq(["actions"])
+      expect(member.param_constant_defaults["actions"]).to be_a(Prism::ConstantPathNode)
+    end
+
+    it "mantém a inferência inline para defaults literais" do
+      source = <<~RUBY
+        class Foo
+          def bar(length = 150, name = "x")
+          end
+        end
+      RUBY
+
+      collector = collect(source)
+      member = collector.members.find { |m| m.name == "bar" }
+      expect(member.signature).to eq("bar: (?Integer length, ?String name) -> untyped")
+      expect(member.param_constant_defaults).to be_empty
+    end
+  end
+
   it "coloca bloco após parênteses na assinatura RBS" do
     source = <<~RUBY
       class Foo

@@ -6,7 +6,10 @@ module RbsInfer::Inference
   # `value_node` = nó Prism do RHS, preenchido só para membros `:constant`
   # (felixefelip/rbs_infer#37); o tipo é resolvido depois no Analyzer, que
   # tem acesso ao SteepBridge/resolvers, e gravado em `signature`.
-  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, keyword_init: true)
+  # `param_constant_defaults` = para membros `:method`/`:class_method`, mapa
+  # `param => nó Prism` dos params opcionais cujo default é uma constante; o
+  # tipo (valor da constante) também é resolvido depois no Analyzer (#46).
+  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, keyword_init: true)
 
   # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
   DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
@@ -102,7 +105,8 @@ module RbsInfer::Inference
       name = node.name.to_s
       sig = find_rbs_signature(@comments, @lines, node.location.start_line)
 
-      params_sig = ExtractParamsSignature.new(node.parameters).call
+      extractor = ExtractParamsSignature.new(node.parameters)
+      params_sig = extractor.call
 
       signature = if sig
                     "#{name}: #{sig}"
@@ -120,7 +124,10 @@ module RbsInfer::Inference
         name: name,
         signature: signature,
         visibility: @current_visibility,
-        owner: current_owner
+        owner: current_owner,
+        # Only when we synthesized the signature — an explicit `#:`/`@rbs`
+        # annotation is authoritative and must not be overridden.
+        param_constant_defaults: sig ? nil : extractor.constant_default_params
       )
       super
     end

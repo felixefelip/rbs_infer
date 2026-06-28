@@ -251,6 +251,12 @@ module RbsInfer
     # (felixefelip/rbs_infer#37).
     resolve_constant_types(target_members)
 
+    # Resolver tipos dos params opcionais cujo default é uma constante
+    # (`def f(x = Webhook::ACTIONS)`). O collector deferiu (emitiu
+    # `?untyped x`) porque o tipo é o do VALOR da constante e precisa do
+    # SteepBridge/env (felixefelip/rbs_infer#46).
+    resolve_constant_default_param_types(target_members, method_param_types)
+
     # Identificar parâmetros opcionais do initialize
     optional_params = extract_optional_init_params
 
@@ -460,6 +466,36 @@ module RbsInfer
     keep.each_value do |member|
       type = resolver.resolve(member.value_node, steep_type: steep_types[member.name])
       member.signature = "#{member.name}: #{type}"
+    end
+  end
+
+  # Preenche os params opcionais com default constante que o collector deferiu
+  # (`?untyped x`). Resolve via o mesmo ConstantArgTypeResolver usado para args
+  # em call-sites (#46): constante-valor → tipo do valor, classe/módulo → o
+  # nome (tipo válido), não resolvida → fica `untyped`. A inferência por
+  # call-site, quando existe, já venceu e é preservada. Injeta em
+  # `method_param_types` para o RbsBuilder substituir o `untyped`.
+  def resolve_constant_default_param_types(target_members, method_param_types)
+    members = target_members.select do |m|
+      [:method, :class_method].include?(m.kind) && m.param_constant_defaults && !m.param_constant_defaults.empty?
+    end
+    return if members.empty?
+
+    resolver = RbsInfer::Inference::ConstantArgTypeResolver.new(
+      steep_bridge: steep_bridge,
+      caller_constant_types: @parsed_target&.source ? steep_bridge.constant_types(@parsed_target.source) : {}
+    )
+
+    members.each do |member|
+      member.param_constant_defaults.each do |param_name, node|
+        inferred = method_param_types.dig(member.name, param_name)
+        next if inferred && inferred != "untyped"
+
+        type = resolver.resolve(name: RbsInfer::Analyzer.extract_constant_path(node), namespace: @target_class)
+        next unless type
+
+        (method_param_types[member.name] ||= {})[param_name] = type
+      end
     end
   end
 
