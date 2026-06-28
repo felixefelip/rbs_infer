@@ -228,6 +228,9 @@ module RbsInfer::Inference
 
     # Resolve o tipo de um valor de argumento
     def resolve_arg_value_type(node, local_var_types, method_return_types)
+      literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: @constant_arg_resolver, context_class: @constant_namespace)
+      return literal if literal
+
       case node
       when Prism::LocalVariableReadNode
         local_var_types[node.name.to_s] || "untyped"
@@ -245,12 +248,6 @@ module RbsInfer::Inference
             "untyped"
           end
         end
-      when Prism::StringNode then "String"
-      when Prism::IntegerNode then "Integer"
-      when Prism::FloatNode then "Float"
-      when Prism::SymbolNode then "Symbol"
-      when Prism::TrueNode, Prism::FalseNode then "bool"
-      when Prism::NilNode then "nil"
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         name = RbsInfer::Analyzer.extract_constant_path(node)
         @constant_arg_resolver.resolve(name: name, namespace: @constant_namespace) || "untyped"

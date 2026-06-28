@@ -182,6 +182,9 @@ module RbsInfer::Inference
     end
 
     def resolve_value_type(node)
+      literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: @constant_arg_resolver)
+      return literal if literal
+
       case node
       when Prism::LocalVariableReadNode
         @local_var_types[node.name.to_s] || "untyped"
@@ -209,14 +212,6 @@ module RbsInfer::Inference
         else
           "untyped"
         end
-      when Prism::StringNode, Prism::InterpolatedStringNode then "String"
-      when Prism::IntegerNode then "Integer"
-      when Prism::FloatNode then "Float"
-      when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
-      when Prism::TrueNode, Prism::FalseNode then "bool"
-      when Prism::NilNode then "nil"
-      when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node, constant_resolver: @constant_arg_resolver)
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         name = RbsInfer::Analyzer.extract_constant_path(node)
         # No namespace tracked here; intra-class constants resolve via the

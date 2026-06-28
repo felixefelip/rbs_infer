@@ -294,15 +294,10 @@ module RbsInfer::Inference
     # Klass.new, and simple same-class method lookups.
     # Complex chain resolution is delegated to Steep.
     def basic_value_type(node, known_return_types)
+      literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node, known_types: known_return_types, context_class: @target_class, constant_resolver: @constant_resolver)
+      return literal if literal
+
       case node
-      when Prism::NilNode then "nil"
-      when Prism::StringNode, Prism::InterpolatedStringNode then "String"
-      when Prism::IntegerNode then "Integer"
-      when Prism::FloatNode then "Float"
-      when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
-      when Prism::TrueNode, Prism::FalseNode then "bool"
-      when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node, known_types: known_return_types, context_class: @target_class, constant_resolver: @constant_resolver)
       when Prism::SelfNode then @target_class
       when Prism::CallNode
         if node.name == :new && node.receiver

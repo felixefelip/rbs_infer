@@ -21,16 +21,10 @@ module RbsInfer::AST
     end
 
     def infer_node_type(node, context_class: nil, known_types: {})
+      literal = NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: constant_resolver, known_types: known_types, context_class: context_class)
+      return literal if literal
+
       case node
-      when Prism::StringNode, Prism::InterpolatedStringNode then "String"
-      when Prism::IntegerNode then "Integer"
-      when Prism::FloatNode then "Float"
-      when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
-      when Prism::TrueNode, Prism::FalseNode then "bool"
-      when Prism::NilNode then "nil"
-      when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then infer_hash_type(node, context_class: context_class, known_types: known_types)
-      when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
       when Prism::SelfNode then context_class
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         NodeTypeInferrer.resolve_constant_value_type(node, namespace: context_class, constant_resolver: constant_resolver)
@@ -51,16 +45,32 @@ module RbsInfer::AST
       end
     end
 
-    def infer_hash_type(node, context_class: nil, known_types: {})
-      NodeTypeInferrer.infer_hash_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
-    end
-
     # Resolves a bare-constant node to its VALUE type via the resolver, or nil
     # when none/unresolved — never the bare name (#56). Shared by the instance
     # method and the module-level value/hash typers.
     def self.resolve_constant_value_type(node, namespace:, constant_resolver:)
       return nil unless constant_resolver
       constant_resolver.resolve(name: RbsInfer::Analyzer.extract_constant_path(node), namespace: namespace)
+    end
+
+    # The single source of truth for nodes whose RBS type is unambiguous from
+    # the node alone (literals, collections, regexps). Returns nil for
+    # context-dependent nodes (calls, constants, self, variable reads) so each
+    # caller layers its own resolution on top — replacing the literal-typing
+    # case table that used to be copy-pasted across the value typers
+    # (felixefelip/rbs_infer#58).
+    def self.infer_literal_node_type(node, constant_resolver:, known_types: {}, context_class: nil)
+      case node
+      when Prism::StringNode, Prism::InterpolatedStringNode then "String"
+      when Prism::IntegerNode then "Integer"
+      when Prism::FloatNode then "Float"
+      when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
+      when Prism::TrueNode, Prism::FalseNode then "bool"
+      when Prism::NilNode then "nil"
+      when Prism::ArrayNode then "Array[untyped]"
+      when Prism::HashNode then infer_hash_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
+      when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
+      end
     end
 
     def self.infer_hash_type(node, constant_resolver:, known_types: {}, context_class: nil)
@@ -97,16 +107,10 @@ module RbsInfer::AST
     end
 
     def self.infer_value_type(node, constant_resolver:, known_types: {}, context_class: nil)
+      literal = infer_literal_node_type(node, constant_resolver: constant_resolver, known_types: known_types, context_class: context_class)
+      return literal if literal
+
       case node
-      when Prism::StringNode, Prism::InterpolatedStringNode then "String"
-      when Prism::IntegerNode then "Integer"
-      when Prism::FloatNode then "Float"
-      when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
-      when Prism::TrueNode, Prism::FalseNode then "bool"
-      when Prism::NilNode then "nil"
-      when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then infer_hash_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
-      when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
       when Prism::SelfNode then context_class || "untyped"
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         resolve_constant_value_type(node, namespace: context_class, constant_resolver: constant_resolver) || "untyped"
