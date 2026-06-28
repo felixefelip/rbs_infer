@@ -24,8 +24,14 @@ module RbsInfer::Inference
   class ConstantTypeResolver
     include RbsInfer::AST::NodeTypeInferrer
 
-    def initialize(target_class:)
+    attr_reader :constant_resolver
+
+    # constant_resolver: env-aware resolver so a constant aliasing another
+    # constant (`FOO = BAR`) resolves to BAR's VALUE type via the NodeTypeInferrer
+    # fallback, not BAR's bare name (felixefelip/rbs_infer#56).
+    def initialize(target_class:, constant_resolver:)
       @target_class = target_class
+      @constant_resolver = constant_resolver
       @constructor_inferrer = RbsInfer::AST::ConstructorTypeInferrer.new(target_class: target_class)
     end
 

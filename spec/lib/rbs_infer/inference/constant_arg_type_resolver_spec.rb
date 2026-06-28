@@ -45,9 +45,14 @@ RSpec.describe RbsInfer::Inference::ConstantArgTypeResolver do
       expect(resolver.resolve(name: "UNDEFINED_CONST", namespace: nil)).to be_nil
     end
 
-    it "without a Steep env, preserves the legacy bare-name behavior" do
+    it "without a Steep env, still resolves a same-file constant" do
+      resolver = described_class.new(steep_bridge: nil, caller_constant_types: { "CODE_LENGTH" => "Integer" })
+      expect(resolver.resolve(name: "CODE_LENGTH", namespace: nil)).to eq("Integer")
+    end
+
+    it "without a Steep env, returns nil for an unclassifiable constant (never a bare name, #56)" do
       resolver = described_class.new(steep_bridge: nil, caller_constant_types: {})
-      expect(resolver.resolve(name: "User", namespace: nil)).to eq("User")
+      expect(resolver.resolve(name: "User", namespace: nil)).to be_nil
     end
 
     it "returns nil for a nil node name" do

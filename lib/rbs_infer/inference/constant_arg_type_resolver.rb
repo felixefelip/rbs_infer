@@ -14,7 +14,8 @@ module RbsInfer::Inference
     # referencing source (pass `{}` when there's no such source — the ERB path
     # and Steep-less collectors). Required so each call site states it rather
     # than inheriting a hidden default. steep_bridge nil disables the
-    # cross-file tier → bare-name fallback, as before.
+    # cross-file tier → only same-file constants resolve; anything else → nil
+    # (caller emits untyped), never a bare name (#56).
     def initialize(steep_bridge:, caller_constant_types:)
       @steep_bridge = steep_bridge
       @caller_constant_types = caller_constant_types
@@ -32,8 +33,10 @@ module RbsInfer::Inference
       same_file = @caller_constant_types[short] || @caller_constant_types[bare]
       return same_file if same_file
 
-      # No env to classify against → keep the bare name (legacy behavior).
-      return name unless @steep_bridge
+      # No env to classify against → nil (caller emits untyped). We must NEVER
+      # return the bare name unclassified: it's invalid RBS for a value
+      # constant and poisons the shared env (felixefelip/rbs_infer#56).
+      return nil unless @steep_bridge
 
       @steep_bridge.constant_type_from_env(bare, namespace: namespace) ||
         (@steep_bridge.class_or_module?(bare, namespace: namespace) ? name : nil)

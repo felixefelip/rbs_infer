@@ -2,10 +2,13 @@ module RbsInfer::Inference
   class ClassBodyAttrAnalyzer < Prism::Visitor
     include RbsInfer::AST::NodeTypeInferrer
 
-    attr_reader :attr_types, :collection_element_types
+    attr_reader :attr_types, :collection_element_types, :constant_resolver
 
-    def initialize(attr_names:, method_type_resolver: nil)
+    # constant_resolver: env-aware resolver so an attr assigned a constant is
+    # typed by the constant's VALUE, not its bare name (felixefelip/rbs_infer#56).
+    def initialize(attr_names:, constant_resolver:, method_type_resolver: nil)
       @attr_names = attr_names
+      @constant_resolver = constant_resolver
       @attr_types = {}
       @collection_element_types = {}
       @in_method = false

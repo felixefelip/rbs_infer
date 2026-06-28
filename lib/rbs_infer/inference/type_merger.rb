@@ -6,8 +6,13 @@ module RbsInfer::Inference
     # Métodos de Array que retornam self (o próprio array)
     ARRAY_SELF_RETURN_METHODS = %i[<< push append unshift prepend insert concat].to_set
 
-    def initialize(target_file:, target_class: nil, instance_types: [])
+    attr_reader :constant_resolver
+
+    # constant_resolver: env-aware resolver so a constant in value position
+    # (e.g. a block body) is typed by its VALUE, not its bare name (#56).
+    def initialize(target_file:, constant_resolver:, target_class: nil, instance_types: [])
       @target_file = target_file
+      @constant_resolver = constant_resolver
       @target_class = target_class
       @instance_types = instance_types
     end

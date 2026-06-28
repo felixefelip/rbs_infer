@@ -216,7 +216,7 @@ module RbsInfer::Inference
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::NilNode then "nil"
       when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node)
+      when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node, constant_resolver: @constant_arg_resolver)
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         name = RbsInfer::Analyzer.extract_constant_path(node)
         # No namespace tracked here; intra-class constants resolve via the

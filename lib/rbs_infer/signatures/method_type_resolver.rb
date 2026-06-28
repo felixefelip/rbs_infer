@@ -7,9 +7,16 @@ module RbsInfer::Signatures
   class MethodTypeResolver
     include RbsInfer::AST::NodeTypeInferrer
 
-    def initialize(source_files, source_index: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil)
+    attr_reader :constant_resolver
+
+    # constant_resolver: env-aware resolver for value-position constants in the
+    # classes this resolver analyzes (e.g. another class's init keyword default).
+    # Defaulted nil because some callers (Rails extension generators) legitimately
+    # have no env; there a value constant just defers to untyped (#56).
+    def initialize(source_files, source_index: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil, constant_resolver: nil)
       @source_files = source_files
       @source_index = source_index
+      @constant_resolver = constant_resolver
       @parse_cache = parse_cache || RbsInfer::Project::ParseCache.new
       @file_index = file_index || RbsInfer::Project::FileIndex.new(source_files)
       @caller_file_cache = caller_file_cache || RbsInfer::Project::CallerFileCache.new(@parse_cache)
@@ -247,7 +254,7 @@ module RbsInfer::Signatures
           end
 
           # 2. Tipos inferidos via keyword defaults do initialize
-          init_visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new
+          init_visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new(constant_resolver: @constant_resolver)
           result.value.accept(init_visitor)
 
           init_visitor.keyword_defaults.each do |param_name, default_type|

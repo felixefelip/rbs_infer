@@ -4,7 +4,26 @@ require "rbs_infer"
 
 DUMMY_APP_ROOT = File.expand_path("dummy", __dir__)
 
+# Test-only constant resolver (felixefelip/rbs_infer#56). Production code threads
+# a real env-aware ConstantArgTypeResolver into every value-typing class; the
+# dependency is required (not defaulted) so an un-wired production caller fails
+# loudly. Unit specs build this instead — a name→type map (empty resolves to
+# nil) — keeping the production API strict per docs/engineering/required-threaded-deps.
+module ConstantResolverHelper
+  FakeConstantResolver = Struct.new(:map) do
+    def resolve(name:, namespace:)
+      map[name]
+    end
+  end
+
+  def fake_constant_resolver(map = {})
+    FakeConstantResolver.new(map)
+  end
+end
+
 RSpec.configure do |config|
+  config.include ConstantResolverHelper
+
   config.expect_with :rspec do |expectations|
     expectations.include_chain_clauses_in_custom_matcher_descriptions = true
   end

@@ -1,0 +1,9 @@
+class CborLike
+  @max_depth: Integer
+  @limit: Integer
+  @depth: Integer
+  MAX_DEPTH: Integer
+
+  def initialize: (?max_depth: Integer) -> Integer
+  def levels: () -> Array[untyped]
+end

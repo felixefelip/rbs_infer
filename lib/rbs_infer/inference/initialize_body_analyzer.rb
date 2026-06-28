@@ -2,9 +2,15 @@ module RbsInfer::Inference
   class InitializeBodyAnalyzer < Prism::Visitor
     include RbsInfer::AST::NodeTypeInferrer
 
-    attr_reader :self_assignments, :keyword_defaults, :nil_default_params
+    attr_reader :self_assignments, :keyword_defaults, :nil_default_params, :constant_resolver
 
-    def initialize
+    # constant_resolver: required (felixefelip/rbs_infer#56) so a keyword
+    # default or self-assignment from a constant (`max_depth: MAX_DEPTH`,
+    # `@x = SIZE`) is typed by the constant's VALUE, not its bare name. Pass an
+    # env-aware ConstantArgTypeResolver; an env-only one still resolves
+    # cross-file constants via generated RBS.
+    def initialize(constant_resolver:)
+      @constant_resolver = constant_resolver
       @self_assignments = {}
       @keyword_defaults = {}
       # Params com default literal `nil` (`def x(name: nil)`). Separados
@@ -101,12 +107,14 @@ module RbsInfer::Inference
           end
         end
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        { kind: :constant, type: RbsInfer::Analyzer.extract_constant_path(node) }
+        # Value of the constant, not its bare name (#56). nil when unresolved →
+        # consumer skips it (treats the attr as untyped), never emits the name.
+        { kind: :constant, type: RbsInfer::AST::NodeTypeInferrer.resolve_constant_value_type(node, namespace: nil, constant_resolver: @constant_resolver) }
       when Prism::ArrayNode
         element_type = infer_collection_element_type(node.elements)
         { kind: :literal, type: "Array[#{element_type}]" }
       when Prism::HashNode
-        { kind: :literal, type: RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node) }
+        { kind: :literal, type: RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node, constant_resolver: @constant_resolver) }
       else
         { kind: :unknown }
       end

@@ -329,7 +329,7 @@ module RbsInfer::Inference
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::NilNode then "nil"
       when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node)
+      when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node, constant_resolver: @constant_arg_resolver)
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         resolve_constant_arg_type(node)
       when Prism::SelfNode
