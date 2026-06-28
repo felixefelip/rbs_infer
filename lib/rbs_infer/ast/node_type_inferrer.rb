@@ -63,7 +63,7 @@ module RbsInfer::AST
       constant_resolver.resolve(name: RbsInfer::Analyzer.extract_constant_path(node), namespace: namespace)
     end
 
-    def self.infer_hash_type(node, known_types: {}, context_class: nil, constant_resolver: nil)
+    def self.infer_hash_type(node, constant_resolver:, known_types: {}, context_class: nil)
       elements = node.elements
       return "Hash[untyped, untyped]" if elements.empty?
 
@@ -96,7 +96,7 @@ module RbsInfer::AST
       end
     end
 
-    def self.infer_value_type(node, known_types: {}, context_class: nil, constant_resolver: nil)
+    def self.infer_value_type(node, constant_resolver:, known_types: {}, context_class: nil)
       case node
       when Prism::StringNode, Prism::InterpolatedStringNode then "String"
       when Prism::IntegerNode then "Integer"
