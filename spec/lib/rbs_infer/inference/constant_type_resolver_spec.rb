@@ -2,7 +2,7 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Inference::ConstantTypeResolver do
-  subject(:resolver) { described_class.new(target_class: "Color") }
+  subject(:resolver) { described_class.new(target_class: "Color", constant_resolver: fake_constant_resolver) }
 
   # RHS node of a `NAME = <expr>` statement.
   def rhs(code)

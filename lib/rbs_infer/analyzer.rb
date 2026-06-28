@@ -461,7 +461,7 @@ module RbsInfer
     target_members.reject! { |m| m.kind == :constant && !keep[[m.owner, m.name]].equal?(m) }
 
     steep_types = @parsed_target&.source ? steep_bridge.constant_types(@parsed_target.source) : {}
-    resolver = RbsInfer::Inference::ConstantTypeResolver.new(target_class: @target_class)
+    resolver = RbsInfer::Inference::ConstantTypeResolver.new(target_class: @target_class, constant_resolver: constant_arg_resolver)
 
     keep.each_value do |member|
       type = resolver.resolve(member.value_node, steep_type: steep_types[member.name])
@@ -475,16 +475,32 @@ module RbsInfer
   # nome (tipo válido), não resolvida → fica `untyped`. A inferência por
   # call-site, quando existe, já venceu e é preservada. Injeta em
   # `method_param_types` para o RbsBuilder substituir o `untyped`.
+  # Env-aware resolver for constants-in-value-position over the TARGET source:
+  # env tier (stdlib/gems/generated sig) + same-file tier (the target's own
+  # constants, type-checked once). Threaded into every value-typing analyzer so
+  # a constant becomes its VALUE type, never its bare name (felixefelip/rbs_infer#56).
+  def constant_arg_resolver
+    @constant_arg_resolver ||= RbsInfer::Inference::ConstantArgTypeResolver.new(
+      steep_bridge: steep_bridge,
+      caller_constant_types: @parsed_target&.source ? steep_bridge.constant_types(@parsed_target.source) : {}
+    )
+  end
+
+  # Env-only variant (no same-file tier) for analyzing OTHER classes, where the
+  # target's constants don't apply; their own constants resolve via generated RBS.
+  def env_only_constant_resolver
+    @env_only_constant_resolver ||= RbsInfer::Inference::ConstantArgTypeResolver.new(
+      steep_bridge: steep_bridge, caller_constant_types: {}
+    )
+  end
+
   def resolve_constant_default_param_types(target_members, method_param_types)
     members = target_members.select do |m|
       [:method, :class_method].include?(m.kind) && m.param_constant_defaults && !m.param_constant_defaults.empty?
     end
     return if members.empty?
 
-    resolver = RbsInfer::Inference::ConstantArgTypeResolver.new(
-      steep_bridge: steep_bridge,
-      caller_constant_types: @parsed_target&.source ? steep_bridge.constant_types(@parsed_target.source) : {}
-    )
+    resolver = constant_arg_resolver
 
     members.each do |member|
       member.param_constant_defaults.each do |param_name, node|
@@ -594,7 +610,7 @@ module RbsInfer
   def infer_attr_types_from_initialize(init_arg_types)
     return {} unless @parsed_target
 
-    visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new
+    visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new(constant_resolver: constant_arg_resolver)
     @parsed_target.tree.accept(visitor)
 
     attr_types = {}
@@ -660,7 +676,7 @@ module RbsInfer
                         .to_set
     return [{}, {}] if attr_names.empty?
 
-    visitor = RbsInfer::Inference::ClassBodyAttrAnalyzer.new(attr_names: attr_names, method_type_resolver: method_type_resolver)
+    visitor = RbsInfer::Inference::ClassBodyAttrAnalyzer.new(attr_names: attr_names, method_type_resolver: method_type_resolver, constant_resolver: constant_arg_resolver)
     @parsed_target.tree.accept(visitor)
 
     [visitor.attr_types, visitor.collection_element_types]
@@ -783,17 +799,17 @@ module RbsInfer
   def extract_nil_default_param_names
     return Set.new unless @parsed_target
 
-    visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new
+    visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new(constant_resolver: constant_arg_resolver)
     @parsed_target.tree.accept(visitor)
     visitor.nil_default_params
   end
 
   def method_type_resolver
-    @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache)
+    @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache, constant_resolver: env_only_constant_resolver)
   end
 
   def type_merger
-    @type_merger ||= RbsInfer::Inference::TypeMerger.new(target_file: @target_file, target_class: @target_class, instance_types: @instance_types || [])
+    @type_merger ||= RbsInfer::Inference::TypeMerger.new(target_file: @target_file, target_class: @target_class, instance_types: @instance_types || [], constant_resolver: constant_arg_resolver)
   end
 
   def return_type_resolver
@@ -801,6 +817,7 @@ module RbsInfer
       target_file: @target_file,
       target_class: @target_class,
       method_type_resolver: method_type_resolver,
+      constant_resolver: constant_arg_resolver,
       instance_types: @instance_types || [],
       steep_bridge: steep_bridge
     )

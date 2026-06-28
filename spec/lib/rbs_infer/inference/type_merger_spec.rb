@@ -2,7 +2,7 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Inference::TypeMerger do
-  let(:merger) { described_class.new(target_file: nil) }
+  let(:merger) { described_class.new(target_file: nil, constant_resolver: fake_constant_resolver) }
 
   it "prioriza tipos resolvidos sobre untyped" do
     usages = [

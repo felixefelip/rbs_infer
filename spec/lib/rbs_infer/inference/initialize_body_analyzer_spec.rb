@@ -2,9 +2,9 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Inference::InitializeBodyAnalyzer do
-  def analyze(source)
+  def analyze(source, constant_resolver: fake_constant_resolver)
     result = Prism.parse(source)
-    visitor = described_class.new
+    visitor = described_class.new(constant_resolver: constant_resolver)
     result.value.accept(visitor)
     visitor
   end

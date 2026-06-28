@@ -9,10 +9,11 @@ module RbsInfer::Inference
   class ReturnTypeResolver
     include KnownReturnTypesBuilder
 
-    def initialize(target_file:, target_class:, method_type_resolver:, instance_types: [], steep_bridge: nil)
+    def initialize(target_file:, target_class:, method_type_resolver:, constant_resolver:, instance_types: [], steep_bridge: nil)
       @target_file = target_file
       @target_class = target_class
       @method_type_resolver = method_type_resolver
+      @constant_resolver = constant_resolver
       @instance_types = instance_types
       @steep_bridge = steep_bridge
     end
@@ -301,7 +302,7 @@ module RbsInfer::Inference
       when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node, known_types: known_return_types, context_class: @target_class)
+      when Prism::HashNode then RbsInfer::AST::NodeTypeInferrer.infer_hash_type(node, known_types: known_return_types, context_class: @target_class, constant_resolver: @constant_resolver)
       when Prism::SelfNode then @target_class
       when Prism::CallNode
         if node.name == :new && node.receiver
@@ -310,7 +311,8 @@ module RbsInfer::Inference
           known_return_types[node.name.to_s]
         end
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        RbsInfer::Analyzer.extract_constant_path(node)
+        # Constant's VALUE type, not its bare name (#56).
+        RbsInfer::AST::NodeTypeInferrer.resolve_constant_value_type(node, namespace: @target_class, constant_resolver: @constant_resolver)
       end
     end
   end

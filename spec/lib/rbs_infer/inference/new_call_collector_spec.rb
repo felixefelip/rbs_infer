@@ -79,7 +79,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
     with_temp_files(files) do |dir, paths|
       Dir.chdir(dir) do
-        resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths)
+        resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver)
         source = File.read(paths.last)
         result = Prism.parse(source)
         visitor = described_class.new(
@@ -375,7 +375,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
       with_temp_files(files) do |dir, paths|
         Dir.chdir(dir) do
-          resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths)
+          resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver)
           source = File.read(File.join(dir, "caller.rb"))
           result = Prism.parse(source)
           visitor = described_class.new(

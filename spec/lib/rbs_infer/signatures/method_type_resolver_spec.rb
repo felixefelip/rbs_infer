@@ -20,7 +20,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     }
 
     with_temp_files(files) do |dir, paths|
-      resolver = described_class.new(paths)
+      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("Foo", "name")).to eq("String")
     end
   end
@@ -35,7 +35,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     }
 
     with_temp_files(files) do |dir, paths|
-      resolver = described_class.new(paths)
+      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("Foo", "count")).to eq("Integer")
     end
   end
@@ -54,7 +54,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     }
 
     with_temp_files(files) do |dir, paths|
-      resolver = described_class.new(paths)
+      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("Foo", "repo")).to eq("DefaultRepo")
     end
   end
@@ -79,7 +79,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     }
 
     with_temp_files(files) do |dir, paths|
-      resolver = described_class.new(paths)
+      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("MyApp::Foo", "widget")).to eq("Widget")
     end
   end
@@ -111,7 +111,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     RUBY
 
     with_temp_files("my_app/entity.rb" => entity_src, "my_app/service.rb" => service_src) do |dir, paths|
-      resolver = described_class.new(paths)
+      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("MyApp::Entity", "nome")).to eq("String")
     end
   end
@@ -143,7 +143,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     RUBY
 
     with_temp_files("my_app/entity.rb" => entity_src, "my_app/caller.rb" => caller_src) do |dir, paths|
-      resolver = described_class.new(paths)
+      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("MyApp::Entity", "email")).to eq("Wrapper")
       expect(resolver.resolve_init_param_types("MyApp::Entity")["email"]).to eq("String")
     end
@@ -176,7 +176,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     }
 
     with_temp_files(files) do |dir, paths|
-      resolver = described_class.new(paths)
+      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("Model & Model::Validated", "file")).to eq("Uploader")
       expect(resolver.resolve("(Model & Model::Validated)", "file")).to eq("Uploader")
     end
@@ -206,7 +206,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     }
 
     with_temp_files(files) do |dir, paths|
-      resolver = described_class.new(paths)
+      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("(LeftClass & RightClass)", "shared")).to eq("Symbol")
     end
   end

@@ -7,6 +7,15 @@ module RbsInfer::AST
   # method resolution) incluem este módulo e adicionam sua própria
   # camada de resolução sobre o resultado de `infer_node_type`.
   module NodeTypeInferrer
+    # Includers that type constants in VALUE position (a constant as a return,
+    # ivar, hash value, default, …) provide a `ConstantArgTypeResolver` here so
+    # the type is the constant's VALUE type, not its bare name (invalid RBS for
+    # a value constant, and env-poisoning). Purely structural includers inherit
+    # nil and value-position constants defer to untyped (felixefelip/rbs_infer#56).
+    def constant_resolver
+      nil
+    end
+
     def infer_node_type(node, context_class: nil, known_types: {})
       case node
       when Prism::StringNode, Prism::InterpolatedStringNode then "String"
@@ -20,7 +29,7 @@ module RbsInfer::AST
       when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
       when Prism::SelfNode then context_class
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        RbsInfer::Analyzer.extract_constant_path(node)
+        NodeTypeInferrer.resolve_constant_value_type(node, namespace: context_class, constant_resolver: constant_resolver)
       when Prism::CallNode
         if node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
@@ -39,10 +48,18 @@ module RbsInfer::AST
     end
 
     def infer_hash_type(node, context_class: nil, known_types: {})
-      NodeTypeInferrer.infer_hash_type(node, known_types: known_types, context_class: context_class)
+      NodeTypeInferrer.infer_hash_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
     end
 
-    def self.infer_hash_type(node, known_types: {}, context_class: nil)
+    # Resolves a bare-constant node to its VALUE type via the resolver, or nil
+    # when none/unresolved — never the bare name (#56). Shared by the instance
+    # method and the module-level value/hash typers.
+    def self.resolve_constant_value_type(node, namespace:, constant_resolver:)
+      return nil unless constant_resolver
+      constant_resolver.resolve(name: RbsInfer::Analyzer.extract_constant_path(node), namespace: namespace)
+    end
+
+    def self.infer_hash_type(node, known_types: {}, context_class: nil, constant_resolver: nil)
       elements = node.elements
       return "Hash[untyped, untyped]" if elements.empty?
 
@@ -58,7 +75,7 @@ module RbsInfer::AST
         # Record type: { key: Type, ... }
         pairs = assocs.map { |e|
           key_name = e.key.unescaped
-          value_type = infer_value_type(e.value, known_types: known_types, context_class: context_class)
+          value_type = infer_value_type(e.value, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
           "#{key_name}: #{value_type}"
         }
         "{ #{pairs.join(", ")} }"
@@ -75,7 +92,7 @@ module RbsInfer::AST
       end
     end
 
-    def self.infer_value_type(node, known_types: {}, context_class: nil)
+    def self.infer_value_type(node, known_types: {}, context_class: nil, constant_resolver: nil)
       case node
       when Prism::StringNode, Prism::InterpolatedStringNode then "String"
       when Prism::IntegerNode then "Integer"
@@ -84,11 +101,11 @@ module RbsInfer::AST
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::NilNode then "nil"
       when Prism::ArrayNode then "Array[untyped]"
-      when Prism::HashNode then infer_hash_type(node, known_types: known_types, context_class: context_class)
+      when Prism::HashNode then infer_hash_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
       when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
       when Prism::SelfNode then context_class || "untyped"
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        RbsInfer::Analyzer.extract_constant_path(node) || "untyped"
+        resolve_constant_value_type(node, namespace: context_class, constant_resolver: constant_resolver) || "untyped"
       when Prism::CallNode
         if node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver) || "untyped"

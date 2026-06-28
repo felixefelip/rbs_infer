@@ -2,9 +2,9 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Inference::ClassBodyAttrAnalyzer do
-  def analyze(source, attr_names)
+  def analyze(source, attr_names, constant_resolver: fake_constant_resolver)
     result = Prism.parse(source)
-    visitor = described_class.new(attr_names: attr_names.to_set)
+    visitor = described_class.new(attr_names: attr_names.to_set, constant_resolver: constant_resolver)
     result.value.accept(visitor)
     visitor
   end

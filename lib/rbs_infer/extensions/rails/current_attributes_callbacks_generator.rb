@@ -131,7 +131,15 @@ module RbsInfer
         end
 
         def method_type_resolver
-          @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(source_files)
+          # Env-only constant resolver (no project SteepBridge here): the RBS env
+          # is process-global, so transitively-resolved types derived from a
+          # constant still get the constant's VALUE type, not its bare name (#56).
+          @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(
+            source_files,
+            constant_resolver: RbsInfer::Inference::ConstantArgTypeResolver.new(
+              steep_bridge: RbsInfer::Signatures::SteepBridge.new, caller_constant_types: {}
+            )
+          )
         end
 
         def markers_rbs(populated)

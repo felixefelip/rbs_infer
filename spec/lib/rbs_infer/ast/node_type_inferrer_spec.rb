@@ -2,10 +2,10 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::AST::NodeTypeInferrer do
-  def infer_hash(source, known_types: {}, context_class: nil)
+  def infer_hash(source, known_types: {}, context_class: nil, constant_resolver: fake_constant_resolver)
     result = Prism.parse(source)
     hash_node = find_hash_node(result.value)
-    described_class.infer_hash_type(hash_node, known_types: known_types, context_class: context_class)
+    described_class.infer_hash_type(hash_node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
   end
 
   def find_hash_node(node)
@@ -38,8 +38,13 @@ RSpec.describe RbsInfer::AST::NodeTypeInferrer do
       expect(infer_hash("{ comment: Comment.new }")).to eq("{ comment: Comment }")
     end
 
-    it "returns record type with constant values" do
-      expect(infer_hash("{ klass: MyModule::MyClass }")).to eq("{ klass: MyModule::MyClass }")
+    it "types a constant value via the resolver (its VALUE type, not the bare name) (#56)" do
+      resolver = fake_constant_resolver("MyModule::MyClass" => "Integer")
+      expect(infer_hash("{ klass: MyModule::MyClass }", constant_resolver: resolver)).to eq("{ klass: Integer }")
+    end
+
+    it "uses untyped for a constant value the resolver can't classify (never the bare name) (#56)" do
+      expect(infer_hash("{ klass: MyModule::MyClass }")).to eq("{ klass: untyped }")
     end
 
     it "uses untyped for complex expressions in values" do
