@@ -24,6 +24,11 @@ module RbsInfer::Inference
 
     attr_reader :members, :delegates, :superclass_name, :is_module
 
+    # Structural collector: constant value/hash defaults are peeled off before
+    # they reach the resolver path (bare constants → deferred to the Analyzer),
+    # so this never types a value-position constant itself (felixefelip/rbs_infer#56).
+    def constant_resolver = nil
+
     CONTROLLER_BASES = %w[ApplicationController ActionController::Base ActionController::API].freeze
 
     def initialize(comments:, lines:, target_class: nil)

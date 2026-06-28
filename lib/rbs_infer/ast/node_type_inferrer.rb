@@ -7,13 +7,17 @@ module RbsInfer::AST
   # method resolution) incluem este módulo e adicionam sua própria
   # camada de resolução sobre o resultado de `infer_node_type`.
   module NodeTypeInferrer
-    # Includers that type constants in VALUE position (a constant as a return,
-    # ivar, hash value, default, …) provide a `ConstantArgTypeResolver` here so
-    # the type is the constant's VALUE type, not its bare name (invalid RBS for
-    # a value constant, and env-poisoning). Purely structural includers inherit
-    # nil and value-position constants defer to untyped (felixefelip/rbs_infer#56).
+    # Abstract: every includer must declare its resolver explicitly
+    # (felixefelip/rbs_infer#56). Includers that type constants in VALUE position
+    # (a constant as a return, ivar, hash value, default, …) provide a real
+    # `ConstantArgTypeResolver` so the type is the constant's VALUE type, not its
+    # bare name (invalid RBS for a value constant, and env-poisoning) — typically
+    # via `attr_reader :constant_resolver`. Purely structural includers that never
+    # type value-position constants override with an explicit `nil`. Not defaulted
+    # to nil: a future includer that types value constants but forgets to override
+    # would silently degrade them to untyped; raising forces a conscious choice.
     def constant_resolver
-      nil
+      raise NotImplementedError, "#{self.class} must declare #constant_resolver (a ConstantArgTypeResolver, or nil if it never types value-position constants)"
     end
 
     def infer_node_type(node, context_class: nil, known_types: {})
