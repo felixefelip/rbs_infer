@@ -10,6 +10,11 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
     # mirroring how `:constant` members defer (felixefelip/rbs_infer#37, #46).
     attr_reader :constant_default_params
 
+    # Structural: constant defaults are captured into @constant_default_params and
+    # emitted as `?untyped` for the Analyzer to fill, so this never resolves a
+    # value-position constant itself (felixefelip/rbs_infer#56).
+    def constant_resolver = nil
+
     def initialize(params)
 			@params = params
       @parts = []

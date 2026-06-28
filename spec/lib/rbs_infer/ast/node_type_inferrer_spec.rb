@@ -17,6 +17,39 @@ RSpec.describe RbsInfer::AST::NodeTypeInferrer do
     nil
   end
 
+  describe ".infer_literal_node_type" do
+    def infer_literal(source, constant_resolver: fake_constant_resolver)
+      node = Prism.parse(source).value.statements.body.first
+      described_class.infer_literal_node_type(node, constant_resolver: constant_resolver)
+    end
+
+    # The single source of truth shared by every value typer (#58). Each literal
+    # kind must map identically regardless of caller — this is what the per-class
+    # copies used to drift on (e.g. some missed Array/Hash/InterpolatedSymbol).
+    it "maps every unambiguous literal node to its RBS type" do
+      expect(infer_literal('"x"')).to eq("String")
+      expect(infer_literal('"a#{b}c"')).to eq("String")          # InterpolatedString
+      expect(infer_literal("1")).to eq("Integer")
+      expect(infer_literal("1.5")).to eq("Float")
+      expect(infer_literal(":a")).to eq("Symbol")
+      expect(infer_literal(':"a#{b}"')).to eq("Symbol")          # InterpolatedSymbol
+      expect(infer_literal("true")).to eq("bool")
+      expect(infer_literal("false")).to eq("bool")
+      expect(infer_literal("nil")).to eq("nil")
+      expect(infer_literal("[1, 2]")).to eq("Array[untyped]")
+      expect(infer_literal("{ a: 1 }")).to eq("{ a: Integer }")
+      expect(infer_literal("/abc/")).to eq("Regexp")
+      expect(infer_literal('/a#{b}/')).to eq("Regexp")           # InterpolatedRegexp
+    end
+
+    it "returns nil for context-dependent nodes (caller layers its own resolution)" do
+      expect(infer_literal("foo")).to be_nil                     # CallNode / receiverless
+      expect(infer_literal("@x")).to be_nil                      # InstanceVariableRead
+      expect(infer_literal("self")).to be_nil                    # SelfNode
+      expect(infer_literal("SOME_CONST")).to be_nil              # ConstantRead
+    end
+  end
+
   describe ".infer_hash_type" do
     it "returns record type for all-Symbol keys" do
       expect(infer_hash("{ foo: 'bar', baz: 42 }")).to eq("{ foo: String, baz: Integer }")
