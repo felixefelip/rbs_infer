@@ -11,6 +11,9 @@ module RbsInfer::Inference
   # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
   DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
 
+  # Pelo que eu entendi, essa classe é responsável por gerar o signature inicial
+  # de uma class/module, porém depois no analyzer, terá outras classes que irão
+  # refinar esse signature inicial, como por exemplo o `RbsInfer::Inference::ParamTypeInferrer`
   class ClassMemberCollector < Prism::Visitor
     include RbsInfer::AST::NodeTypeInferrer
     include RbsInfer::Signatures::RbsAnnotationParser
