@@ -3,6 +3,7 @@
 require "prism"
 require "yaml"
 require "fileutils"
+require_relative "class_methods_implements"
 
 module RbsInfer
   module Extensions
@@ -17,6 +18,12 @@ module RbsInfer
       # computed by `ModuleSelfTypeAnnotator` from the AST-derived FQN (correct
       # acronym casing) and Rails conventions. This replaces the path-based name
       # derivation that used to live in Steep.
+      #
+      # It also records, in the same entry, the `blocks` that Steep should
+      # annotate with `# @implements` — currently a concern's `class_methods do`
+      # block, resolved by `ClassMethodsImplements` (felixefelip/rbs_infer#60,
+      # felixefelip/steep#47). A file can produce a `blocks`-only entry even
+      # when it has no self-type annotations.
       class ModuleSelfTypeGenerator
         SIDECAR_PATH = "sig/generated/.steep_module_self_types.yml"
         ROOTS = %w[app/models app/helpers app/controllers/concerns].freeze
@@ -62,7 +69,11 @@ module RbsInfer
           module_name = extractor.class_name
           return nil unless module_name
 
-          ModuleSelfTypeAnnotator.entry_for(path: rel, module_name: module_name, source: source)
+          entry = ModuleSelfTypeAnnotator.entry_for(path: rel, module_name: module_name, source: source) || {}
+          blocks = ClassMethodsImplements.blocks_for(module_name: module_name, source: source)
+          entry["blocks"] = blocks unless blocks.empty?
+
+          entry.empty? ? nil : entry
         rescue StandardError
           nil
         end

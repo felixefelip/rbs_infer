@@ -52,6 +52,53 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
     end
   end
 
+  it "adds a `blocks` @implements entry for a concern with `class_methods do`" do
+    in_app(
+      "app/models/post/taggable.rb" => <<~RUBY
+        module Post::Taggable
+          extend ActiveSupport::Concern
+
+          class_methods do
+            def default_tag_names
+              ["news"]
+            end
+          end
+        end
+      RUBY
+    ) do |dir|
+      entry = described_class.new(app_dir: dir).build_table.fetch("app/models/post/taggable.rb")
+
+      # self-type annotations and the block @implements coexist in one entry.
+      expect(entry["anchor"]).to eq("Taggable")
+      expect(entry["blocks"]).to eq(
+        [{ "call" => "class_methods", "implements" => "::Post::Taggable::ClassMethods" }]
+      )
+    end
+  end
+
+  it "produces a `blocks`-only entry when the file has no self-type annotations" do
+    # A top-level concern (no namespace) gets no `@type self:` entry, but its
+    # `class_methods do` must still be recorded so Steep can check it.
+    in_app(
+      "app/models/concerns/greetable.rb" => <<~RUBY
+        module Greetable
+          extend ActiveSupport::Concern
+
+          class_methods do
+            def banner; "hi"; end
+          end
+        end
+      RUBY
+    ) do |dir|
+      entry = described_class.new(app_dir: dir).build_table.fetch("app/models/concerns/greetable.rb")
+
+      expect(entry).not_to have_key("anchor")
+      expect(entry["blocks"]).to eq(
+        [{ "call" => "class_methods", "implements" => "::Greetable::ClassMethods" }]
+      )
+    end
+  end
+
   it "removes a stale sidecar when nothing qualifies" do
     in_app("lib/foo.rb" => "module Foo\nend\n") do |dir|
       out = File.join(dir, described_class::SIDECAR_PATH)
