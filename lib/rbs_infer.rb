@@ -49,6 +49,11 @@ require_relative "rbs_infer/extensions/rails/current_attributes_expander"
 # into a plain class reopening (felixefelip/rbs_infer#38) — pure Prism,
 # self-gates on the `on_load` substring, so it is always safe to load.
 require_relative "rbs_infer/extensions/rails/on_load_expander"
+# The class_methods expander rewrites an ActiveSupport::Concern's
+# `class_methods do ... end` into a nested `module ClassMethods ... end`
+# (felixefelip/rbs_infer#60) — pure Prism, self-gates on the
+# `class_methods` substring, so it is always safe to load.
+require_relative "rbs_infer/extensions/rails/class_methods_expander"
 # Computes module/concern self-type annotations from the AST (correct
 # acronym casing) + Rails path conventions, for Steep's generic injector
 # (felixefelip/rbs_infer#52). Pure Prism/string logic, safe to always load.
