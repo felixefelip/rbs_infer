@@ -19,6 +19,10 @@ def default_tag_names
     def known_tag?(name)
       default_tag_names.include?(name)
     end
+
+    def tags_ordered_by_tag_name
+      joins(:tag).order('tags.name ASC')
+    end
 end
 
   def tag_names
