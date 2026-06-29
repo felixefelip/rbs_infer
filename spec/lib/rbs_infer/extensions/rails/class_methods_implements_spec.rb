@@ -5,11 +5,11 @@ require "rbs_infer"
 require "rbs_infer/extensions/rails/class_methods_implements"
 
 RSpec.describe RbsInfer::Extensions::Rails::ClassMethodsImplements do
-  def blocks(source, module_name: "Post::Taggable")
-    described_class.blocks_for(module_name: module_name, source: source)
+  def blocks(source, path: "app/models/post/taggable.rb", module_name: "Post::Taggable")
+    described_class.blocks_for(path: path, module_name: module_name, source: source)
   end
 
-  it "emits an @implements target for a `class_methods do` block" do
+  it "emits @implements and the includer-singleton self for a `class_methods do` block" do
     result = blocks(<<~RUBY)
       module Post::Taggable
         extend ActiveSupport::Concern
@@ -23,7 +23,27 @@ RSpec.describe RbsInfer::Extensions::Rails::ClassMethodsImplements do
     RUBY
 
     expect(result).to eq(
-      [{ "call" => "class_methods", "implements" => "::Post::Taggable::ClassMethods" }]
+      [{
+        "call" => "class_methods",
+        "implements" => "::Post::Taggable::ClassMethods",
+        "self" => "singleton(::Post) & ::Post::Taggable::ClassMethods"
+      }]
+    )
+  end
+
+  it "omits `self` when no including class can be derived (top-level concern)" do
+    result = blocks(<<~RUBY, path: "app/models/concerns/greetable.rb", module_name: "Greetable")
+      module Greetable
+        extend ActiveSupport::Concern
+
+        class_methods do
+          def banner; "hi"; end
+        end
+      end
+    RUBY
+
+    expect(result).to eq(
+      [{ "call" => "class_methods", "implements" => "::Greetable::ClassMethods" }]
     )
   end
 
