@@ -2,6 +2,7 @@
 
 require "prism"
 require_relative "class_methods_expander"
+require_relative "module_self_type_annotator"
 
 module RbsInfer
   module Extensions
@@ -12,26 +13,36 @@ module RbsInfer
       #
       # `ClassMethodsExpander` desugars such a block into a nested
       # `module ClassMethods` for RBS *generation*. For *source checking*, Steep
-      # needs the block body annotated `# @implements <Concern>::ClassMethods` —
-      # the symmetric counterpart. This emits, per file, the resolved target so
-      # Steep's `ModuleSelfTypes` injector can place that annotation, without
-      # Steep ever learning the `class_methods` DSL.
+      # needs the block body annotated `# @implements <Concern>::ClassMethods`
+      # (so the defs attach to ClassMethods) AND, on each method, a `self` that
+      # a `class_methods` method actually runs with: the including class's
+      # singleton intersected with ClassMethods (felixefelip/steep#47). At
+      # runtime self is the includer's singleton, where the includer's
+      # scopes/class methods live; the `& ClassMethods` term keeps calls
+      # between the block's own methods resolving even when the includer's RBS
+      # doesn't `extend ...::ClassMethods`. This emits, per file, both resolved
+      # values so Steep's `ModuleSelfTypes` injector can place the annotations,
+      # without Steep ever learning the `class_methods` DSL.
       #
       # Detection reuses `ClassMethodsExpander.class_methods_block?` so the
       # sidecar and the RBS desugar agree on exactly what a `class_methods`
-      # block is.
+      # block is. The including class is derived by the same rule
+      # `ModuleSelfTypeAnnotator` uses for the concern self-type.
       module ClassMethodsImplements
         CALL = "class_methods"
 
         module_function
 
+        # @param path [String] source path (for the including-class rule)
         # @param module_name [String] the concern's FQN from the AST (e.g.
         #   "Post::Taggable")
         # @param source [String] the file's source
         # @return [Array<Hash>] `[{ "call" => "class_methods", "implements" =>
-        #   "::<FQN>::ClassMethods" }]` when `source` has at least one
-        #   receiverless `class_methods do` block, else `[]`.
-        def blocks_for(module_name:, source:)
+        #   "::<FQN>::ClassMethods"[, "self" => "singleton(::<Includer>) &
+        #   ::<FQN>::ClassMethods"] }]` when `source` has at least one
+        #   receiverless `class_methods do` block, else `[]`. `self` is omitted
+        #   when no including class can be derived (e.g. a top-level concern).
+        def blocks_for(path:, module_name:, source:)
           return [] if module_name.nil? || module_name.empty?
           return [] unless source.include?(CALL)
 
@@ -43,7 +54,12 @@ module RbsInfer
                       .any?
           return [] unless has_block
 
-          [{ "call" => CALL, "implements" => "::#{module_name}::ClassMethods" }]
+          class_methods = "::#{module_name}::ClassMethods"
+          entry = { "call" => CALL, "implements" => class_methods }
+          if (including = ModuleSelfTypeAnnotator.including_class_for(path, module_name))
+            entry["self"] = "singleton(::#{including}) & #{class_methods}"
+          end
+          [entry]
         end
       end
     end

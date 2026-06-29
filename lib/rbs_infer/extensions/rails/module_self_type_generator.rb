@@ -70,7 +70,7 @@ module RbsInfer
           return nil unless module_name
 
           entry = ModuleSelfTypeAnnotator.entry_for(path: rel, module_name: module_name, source: source) || {}
-          blocks = ClassMethodsImplements.blocks_for(module_name: module_name, source: source)
+          blocks = ClassMethodsImplements.blocks_for(path: rel, module_name: module_name, source: source)
           entry["blocks"] = blocks unless blocks.empty?
 
           entry.empty? ? nil : entry

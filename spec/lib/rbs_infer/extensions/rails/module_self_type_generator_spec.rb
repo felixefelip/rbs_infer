@@ -71,7 +71,11 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
       # self-type annotations and the block @implements coexist in one entry.
       expect(entry["anchor"]).to eq("Taggable")
       expect(entry["blocks"]).to eq(
-        [{ "call" => "class_methods", "implements" => "::Post::Taggable::ClassMethods" }]
+        [{
+          "call" => "class_methods",
+          "implements" => "::Post::Taggable::ClassMethods",
+          "self" => "singleton(::Post) & ::Post::Taggable::ClassMethods"
+        }]
       )
     end
   end
