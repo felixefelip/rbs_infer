@@ -9,6 +9,8 @@ module Post::Taggable
   included do
     has_many :post_tags, dependent: :destroy
     has_many :tags, through: :post_tags
+
+    scope :recently_tagged, -> { joins(:tags).order(created_at: :desc) }
   end
 
   module ClassMethods
@@ -22,6 +24,12 @@ def default_tag_names
 
     def tags_ordered_by_tag_name
       joins(:tag).order('tags.name ASC')
+    end
+
+    def touch_recently_tagged
+      recently_tagged.find_each do |post|
+        post.touch
+      end
     end
 end
 
