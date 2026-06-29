@@ -1,5 +1,9 @@
 class Post
   module Taggable
+    module ClassMethods
+      def default_tag_names: () -> Array[String]
+      def known_tag?: (untyped name) -> bool
+    end
     extend ActiveSupport::Concern
     def tag_names: () -> Array[untyped]
     def tag_with: (untyped name) -> (Tag & Tag::Validated)
