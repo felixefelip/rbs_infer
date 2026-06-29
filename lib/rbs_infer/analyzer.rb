@@ -81,15 +81,15 @@ module RbsInfer
   # shared by the single-target pipeline and multi-target discovery.
   def load_and_parse_target
     # Parsear o arquivo-alvo uma única vez e reutilizar em todo o pipeline
-    source = File.read(@target_file)
+    original_source = File.read(@target_file)
 
     # Desugar macros into plain-Ruby pseudo-code BEFORE the parse, so the
     # whole pipeline sees the expanded view (felixefelip/rbs_infer#19).
     # The pseudo-code exists only here, in memory — runtime and the app's
     # `steep check` keep reading the real source. Expanders are plugins
     # registered on RbsInfer::Project::SourceExpanders; the core knows none.
-    @expanded_source = RbsInfer::Project::SourceExpanders.apply(source)
-    source = @expanded_source if @expanded_source
+    @expanded_source = RbsInfer::Project::SourceExpanders.apply(original_source)
+    source = @expanded_source || original_source
 
     # Inject `@type self:`/`@type instance:` for concerns/modules so the
     # pipeline (and Steep) sees the right self-type. rbs_infer owns the
@@ -100,6 +100,23 @@ module RbsInfer
          path: @target_file, module_name: @target_class, source: source))
       source = Steep::Source::ModuleSelfTypes.inject(
         source, annotations: entry["annotations"], anchor: entry["anchor"]
+      )
+    end
+
+    # A `class_methods do` block desugars (ClassMethodsExpander) to a nested
+    # `module ClassMethods` whose methods run with `self` = the includer's
+    # singleton. Inject that self-type onto the desugared submodule so this
+    # analyzer's own type-check resolves implicit-self scope/class-method
+    # calls inside the block (e.g. `due_to_be_postponed.find_each`) instead of
+    # collapsing them to `untyped` — matching the `blocks` self the downstream
+    # `.steep_module_self_types.yml` carries (felixefelip/rbs_infer#60). The
+    # block is detected from the *original* source: expansion already removed
+    # the `class_methods` call this keys on.
+    if @target_class &&
+       (cm_entry = RbsInfer::Extensions::Rails::ClassMethodsImplements.self_type_entry(
+         path: @target_file, module_name: @target_class, source: original_source))
+      source = Steep::Source::ModuleSelfTypes.inject(
+        source, annotations: cm_entry["annotations"], anchor: cm_entry["anchor"]
       )
     end
 

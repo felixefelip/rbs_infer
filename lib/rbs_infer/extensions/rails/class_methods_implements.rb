@@ -61,6 +61,33 @@ module RbsInfer
           end
           [entry]
         end
+
+        # A `ModuleSelfTypes.inject`-ready entry for the *desugared* nested
+        # `module ClassMethods` (the form `ClassMethodsExpander` produces). The
+        # block's methods run with `self` = the includer's singleton, so when
+        # the analyzer type-checks the expanded source to infer return types,
+        # the submodule needs that self injected — otherwise implicit-self
+        # scope/class-method calls inside (e.g. `due_to_be_postponed.find_each`)
+        # resolve to `untyped` and poison the return. This is the in-process
+        # counterpart to the `blocks` `self` that `.steep_module_self_types.yml`
+        # carries for the un-expanded source consumed by `steep check`.
+        #
+        # Detect from the *original* source (pre-expansion): `ClassMethodsExpander`
+        # has already rewritten `class_methods do` into `module ClassMethods`,
+        # which no longer contains the `class_methods` call this keys on.
+        #
+        # @return [Hash, nil] `{ "anchor" => "ClassMethods", "annotations" =>
+        #   ["# @type instance: singleton(::<Includer>) & ::<FQN>::ClassMethods"] }`,
+        #   or nil when there's no `class_methods` block or no derivable includer.
+        def self_type_entry(path:, module_name:, source:)
+          self_type = blocks_for(path: path, module_name: module_name, source: source).first&.fetch("self", nil)
+          return nil unless self_type
+
+          {
+            "anchor" => ClassMethodsExpander::MODULE_NAME,
+            "annotations" => ["# @type instance: #{self_type}"],
+          }
+        end
       end
     end
   end

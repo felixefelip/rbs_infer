@@ -3,7 +3,7 @@ class Post
     module ClassMethods
       def default_tag_names: () -> Array[String]
       def known_tag?: (untyped name) -> bool
-      def tags_ordered_by_tag_name: () -> untyped
+      def tags_ordered_by_tag_name: () -> Post::ActiveRecord_Relation
     end
     extend ActiveSupport::Concern
     def tag_names: () -> Array[untyped]
