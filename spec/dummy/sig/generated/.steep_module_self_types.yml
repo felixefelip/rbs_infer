@@ -18,6 +18,9 @@ app/models/post/taggable.rb:
   annotations:
   - "# @type self: singleton(Post) & singleton(Post::Taggable)"
   - "# @type instance: Post & Post::Taggable"
+  blocks:
+  - call: class_methods
+    implements: "::Post::Taggable::ClassMethods"
 app/models/user/displayable.rb:
   anchor: Displayable
   annotations:
