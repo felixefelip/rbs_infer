@@ -1,3 +1,5 @@
+require_relative "../../project/self_type_annotators"
+
 module RbsInfer
   module Extensions
     module Rails
@@ -11,12 +13,22 @@ module RbsInfer
       # it does NOT camelize the file path to get the module name — the caller
       # passes the real name from the AST (`Analyzer#target_class`), so acronyms
       # (`SQLite`, `OAuth`) keep their declared casing.
+      #
+      # Registers on `RbsInfer::Project::SelfTypeAnnotators` so the core injects
+      # it without naming this Rails extension (felixefelip/rbs_infer#60).
       module ModuleSelfTypeAnnotator
         MODELS_PREFIX = "app/models/"
         HELPERS_PREFIX = "app/helpers/"
         CONTROLLER_CONCERNS_PREFIX = "app/controllers/concerns/"
 
         module_function
+
+        # SelfTypeAnnotators plugin contract: the concern/module self-type as a
+        # (possibly empty) list of inject-ready entries.
+        def self_type_entries(path:, module_name:, source:)
+          entry = entry_for(path: path, module_name: module_name, source: source)
+          entry ? [entry] : []
+        end
 
         # @param path [String] source path (e.g. "app/models/search/record/sqlite.rb")
         # @param module_name [String] the real FQN from the AST (e.g. "Search::Record::SQLite")
@@ -60,6 +72,8 @@ module RbsInfer
           [self_line, instance]
         end
       end
+
+      RbsInfer::Project::SelfTypeAnnotators.register(ModuleSelfTypeAnnotator)
     end
   end
 end

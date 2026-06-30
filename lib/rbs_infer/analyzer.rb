@@ -1,5 +1,4 @@
 require "prism"
-require "steep/source/module_self_types"
 
 # Analisador que gera assinaturas RBS completas a partir de código Ruby puro,
 # sem exigir anotações de tipo, comentários especiais ou arquivos extras.
@@ -81,25 +80,28 @@ module RbsInfer
   # shared by the single-target pipeline and multi-target discovery.
   def load_and_parse_target
     # Parsear o arquivo-alvo uma única vez e reutilizar em todo o pipeline
-    source = File.read(@target_file)
+    original_source = File.read(@target_file)
 
     # Desugar macros into plain-Ruby pseudo-code BEFORE the parse, so the
     # whole pipeline sees the expanded view (felixefelip/rbs_infer#19).
     # The pseudo-code exists only here, in memory — runtime and the app's
     # `steep check` keep reading the real source. Expanders are plugins
     # registered on RbsInfer::Project::SourceExpanders; the core knows none.
-    @expanded_source = RbsInfer::Project::SourceExpanders.apply(source)
-    source = @expanded_source if @expanded_source
+    @expanded_source = RbsInfer::Project::SourceExpanders.apply(original_source)
+    source = @expanded_source || original_source
 
-    # Inject `@type self:`/`@type instance:` for concerns/modules so the
-    # pipeline (and Steep) sees the right self-type. rbs_infer owns the
-    # Rails conventions + the real (AST-cased) name; Steep just places the
-    # comment (felixefelip/rbs_infer#52).
-    if @target_class &&
-       (entry = RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator.entry_for(
-         path: @target_file, module_name: @target_class, source: source))
-      source = Steep::Source::ModuleSelfTypes.inject(
-        source, annotations: entry["annotations"], anchor: entry["anchor"]
+    # Inject `@type self:`/`@type instance:` for concerns/modules (and the
+    # desugared `module ClassMethods` of a `class_methods do` block) so the
+    # pipeline — and Steep, as the return-type oracle — sees the right
+    # self-type. Annotators are plugins registered on
+    # RbsInfer::Project::SelfTypeAnnotators; the core names none
+    # (felixefelip/rbs_infer#52, #60). Detection runs against the *original*
+    # source so an annotator can key on a macro the expanders already desugared
+    # away (`class_methods do`); the entries are injected into the expanded
+    # `source` that the pipeline parses.
+    if @target_class
+      source = RbsInfer::Project::SelfTypeAnnotators.apply(
+        source, detect_source: original_source, path: @target_file, module_name: @target_class
       )
     end
 
@@ -901,3 +903,4 @@ require_relative "inference/param_type_inferrer"
 require_relative "project/source_index"
 require_relative "signatures/steep_bridge"
 require_relative "project/source_expanders"
+require_relative "project/self_type_annotators"

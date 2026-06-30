@@ -509,6 +509,7 @@ class ::Post < ::ApplicationRecord
   def create_user: (untyped) -> ::User
   def create_user!: (untyped) -> ::User
 
+  def self.recently_tagged: () -> ::Post::ActiveRecord_Relation
   def self.pinned: () -> ::Post::ActiveRecord_Relation
   def self.unpinned: () -> ::Post::ActiveRecord_Relation
   def self.by_title: (untyped title) -> ::Post::ActiveRecord_Relation
@@ -516,6 +517,8 @@ class ::Post < ::ApplicationRecord
   def self.query_filter: (untyped filter) -> ::Post::ActiveRecord_Relation
 
   module ::Post::GeneratedRelationMethods
+    def recently_tagged: () -> ::Post::ActiveRecord_Relation
+
     def pinned: () -> ::Post::ActiveRecord_Relation
 
     def unpinned: () -> ::Post::ActiveRecord_Relation
