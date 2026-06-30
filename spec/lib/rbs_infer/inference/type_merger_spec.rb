@@ -35,6 +35,31 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
     expect(result["cpf"]).to eq("Shared::Cpf")
   end
 
+  describe ".union_types" do
+    it "une tipos distintos preservando a forma original" do
+      expect(described_class.union_types(["String", "::MyApp::Entity"]))
+        .to eq("(String | ::MyApp::Entity)")
+    end
+
+    it "emite um único tipo verbatim (mantém `::` absoluto)" do
+      expect(described_class.union_types(["::MyApp::Entity"])).to eq("::MyApp::Entity")
+    end
+
+    it "achata uniões já existentes em vez de aninhar parênteses" do
+      expect(described_class.union_types(["(String | Symbol)", "Symbol"]))
+        .to eq("(String | Symbol)")
+    end
+
+    it "não achata `|` aninhado dentro de genéricos" do
+      expect(described_class.union_types(["Array[String | Symbol]"]))
+        .to eq("Array[String | Symbol]")
+    end
+
+    it "descarta untyped quando há ao menos um tipo resolvido" do
+      expect(described_class.union_types(["untyped", "String"])).to eq("String")
+    end
+  end
+
   describe "#resolve_method_return_types_from_attrs" do
     it "não corrompe assinatura de método com bloco ao resolver return type" do
       source = <<~RUBY

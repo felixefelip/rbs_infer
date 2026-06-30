@@ -218,12 +218,21 @@ module RbsInfer
     # Inferir tipos de parâmetros de métodos via chamadas intra-classe
     method_param_types = param_type_inferrer.infer_method_param_types(attr_types, parsed_target: @parsed_target)
 
-    # Inferir tipos de parâmetros de métodos via chamadas cross-class
+    # Inferir tipos de parâmetros de métodos via chamadas cross-class.
+    # Une (não sobrescreve) com os tipos intra-classe: um método chamado com
+    # `String` num arquivo e `:Symbol` noutro deve inferir `(String | Symbol)`,
+    # não o primeiro tipo visto (felixefelip/rbs_infer#64).
     cross_class_param_types = infer_method_param_types_from_callers
     cross_class_param_types.each do |method_name, param_types|
       method_param_types[method_name] ||= {}
       param_types.each do |param_name, type|
-        method_param_types[method_name][param_name] ||= type
+        existing = method_param_types[method_name][param_name]
+        method_param_types[method_name][param_name] =
+          if existing && existing != "untyped"
+            RbsInfer::Inference::TypeMerger.union_types([existing, type])
+          else
+            type
+          end
       end
     end
 

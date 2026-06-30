@@ -26,6 +26,26 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
     expect(visitor.inferred_param_types["publicar"]["aluno"]).to eq("Entity")
   end
 
+  it "une tipos de kwargs de call-sites distintos (felixefelip/rbs_infer#64)" do
+    source = <<~RUBY
+      class Foo
+        def track_event(action:)
+        end
+
+        def track_created
+          track_event(action: "created")
+        end
+
+        def track_updated
+          track_event(action: :updated)
+        end
+      end
+    RUBY
+
+    visitor = analyze(source)
+    expect(visitor.inferred_param_types["track_event"]["action"]).to eq("(String | Symbol)")
+  end
+
   it "infere tipo via ImplicitNode (shorthand keyword: publicar(aluno:))" do
     source = <<~RUBY
       class Foo
