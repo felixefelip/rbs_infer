@@ -92,10 +92,20 @@ module RbsInfer::Signatures
         lines << "#{member_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
       end
 
+      # Aliases (`alias new old`) — o RBS resolve nativamente o tipo do
+      # método original, sem duplicar a assinatura (felixefelip/rbs_infer#63).
+      # Singletons recebem o prefixo `self.` nos dois nomes.
+      members.select { |m| m.kind == :singleton_alias && m.owner.nil? }.each do |a|
+        lines << "#{member_indent}alias self.#{a.name} self.#{a.old_name}"
+      end
+      members.select { |m| m.kind == :alias && m.owner.nil? }.each do |a|
+        lines << "#{member_indent}alias #{a.name} #{a.old_name}"
+      end
+
       # Agrupar por visibilidade: public -> protected -> private
       # RBS não suporta `protected`, então tratamos como public
       [:public, :protected, :private].each do |vis|
-        vis_members = members.select { |m| m.visibility == vis && m.owner.nil? && ![:include, :extend, :class_method, :constant].include?(m.kind) }
+        vis_members = members.select { |m| m.visibility == vis && m.owner.nil? && ![:include, :extend, :class_method, :constant, :alias, :singleton_alias].include?(m.kind) }
         next if vis_members.empty?
 
         if vis == :private
@@ -189,6 +199,12 @@ module RbsInfer::Signatures
         end
         mod_members.select { |m| m.kind == :class_method }.each do |m|
           lines << "#{inner_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(m.signature)}"
+        end
+        mod_members.select { |m| m.kind == :singleton_alias }.each do |a|
+          lines << "#{inner_indent}alias self.#{a.name} self.#{a.old_name}"
+        end
+        mod_members.select { |m| m.kind == :alias }.each do |a|
+          lines << "#{inner_indent}alias #{a.name} #{a.old_name}"
         end
         mod_members.each do |m|
           line = render_value_member(m, inner_indent, {}, attr_types, method_param_types, Set.new)

@@ -9,7 +9,10 @@ module RbsInfer::Inference
   # `param_constant_defaults` = para membros `:method`/`:class_method`, mapa
   # `param => nó Prism` dos params opcionais cujo default é uma constante; o
   # tipo (valor da constante) também é resolvido depois no Analyzer (#46).
-  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, keyword_init: true)
+  # `old_name` = para membros `:alias`/`:singleton_alias`, o método original
+  # apontado pelo alias; o RBS resolve o tipo nativamente via `alias`
+  # (felixefelip/rbs_infer#63).
+  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, keyword_init: true)
 
   # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
   DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
@@ -160,8 +163,17 @@ module RbsInfer::Inference
         extract_extends(node)
       when :delegate
         extract_delegates(node)
+      when :alias_method
+        extract_alias_method(node)
       end
 
+      super
+    end
+
+    # `alias new old` keyword (Prism::AliasMethodNode). Plain Ruby — same
+    # native-`alias` emission path as `alias_method` (felixefelip/rbs_infer#63).
+    def visit_alias_method_node(node)
+      register_alias(node.new_name, node.old_name)
       super
     end
 
@@ -283,6 +295,44 @@ module RbsInfer::Inference
           visibility: :public,
           owner: current_owner
         )
+      end
+    end
+
+    # `alias_method :new, :old` (or string args). Registers an `:alias`
+    # member; a non-literal name (dynamic alias) is skipped — no static
+    # analysis can decide it (felixefelip/rbs_infer#63).
+    def extract_alias_method(node)
+      args = node.arguments&.arguments
+      return unless args && args.length >= 2
+
+      register_alias(args[0], args[1])
+    end
+
+    # Shared by `alias_method` and the `alias` keyword. Emits the alias into
+    # the scope that owns it (concern module, singleton) so the RBS carries a
+    # native `alias`, letting RBS/Steep resolve the original method's type.
+    def register_alias(new_node, old_node)
+      return unless inside_target?
+
+      new_name = literal_method_name(new_node)
+      old_name = literal_method_name(old_node)
+      return unless new_name && old_name
+
+      @members << Member.new(
+        kind: in_singleton_self? ? :singleton_alias : :alias,
+        name: new_name,
+        old_name: old_name,
+        signature: nil,
+        visibility: @current_visibility,
+        owner: current_owner
+      )
+    end
+
+    # The method name a SymbolNode/StringNode literal denotes, or nil for a
+    # dynamic (interpolated/computed) node.
+    def literal_method_name(node)
+      case node
+      when Prism::SymbolNode, Prism::StringNode then node.unescaped
       end
     end
 
