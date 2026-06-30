@@ -3,6 +3,7 @@
 require "prism"
 require_relative "class_methods_expander"
 require_relative "module_self_type_annotator"
+require_relative "../../project/self_type_annotators"
 
 module RbsInfer
   module Extensions
@@ -88,7 +89,16 @@ module RbsInfer
             "annotations" => ["# @type instance: #{self_type}"],
           }
         end
+
+        # SelfTypeAnnotators plugin contract: the desugared `ClassMethods`
+        # submodule self-type as a (possibly empty) list of inject-ready entries.
+        def self_type_entries(path:, module_name:, source:)
+          entry = self_type_entry(path: path, module_name: module_name, source: source)
+          entry ? [entry] : []
+        end
       end
+
+      RbsInfer::Project::SelfTypeAnnotators.register(ClassMethodsImplements)
     end
   end
 end
