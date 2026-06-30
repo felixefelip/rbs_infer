@@ -58,5 +58,11 @@ require_relative "rbs_infer/extensions/rails/class_methods_expander"
 # acronym casing) + Rails path conventions, for Steep's generic injector
 # (felixefelip/rbs_infer#52). Pure Prism/string logic, safe to always load.
 require_relative "rbs_infer/extensions/rails/module_self_type_annotator"
+# Resolves the `self` a `class_methods do` block runs with (the includer's
+# singleton intersected with `…::ClassMethods`). Used both to emit the
+# downstream `blocks` sidecar and to inject the same self-type onto the
+# desugared `module ClassMethods` during the analyzer's own type-check
+# (felixefelip/rbs_infer#60). Pure Prism/string logic, safe to always load.
+require_relative "rbs_infer/extensions/rails/class_methods_implements"
 
 require_relative "rbs_infer/railtie" if defined?(Rails::Railtie)

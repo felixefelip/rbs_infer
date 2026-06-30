@@ -70,12 +70,28 @@ module RbsInfer::Inference
           still_untyped.each do |m|
             next if setter_name?(m.name)
             steep_type = steep_returns_for(m, steep_returns)[m.name]
-            if steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
+            # `nil` is a genuine inference, not a fallback: the env is built with
+            # `implicitly_returns_nil: false`, so Steep types a body as `nil` only
+            # when it evaluates to nil. Emitting `-> nil` is precise and keeps a
+            # genuinely nil-returning method (e.g. a `class_methods` def whose body
+            # is `scope.find_each { … }`) from being stuck at `untyped`
+            # (felixefelip/rbs_infer#60). `untyped`/`bot` stay filtered: the former
+            # carries no information, the latter means an unreachable/error body.
+            if steep_type && steep_type != "untyped" && steep_type != "bot"
+              defn = def_map[m.name]
+
+              # …but a `nil` from a *conditional* tail is not safe to emit: an
+              # `if`/`unless`/`case` whose value branch is `untyped` makes Steep
+              # collapse `untyped | nil` to `nil`, so `-> nil` would hide that
+              # branch (e.g. `posts.destroy_all if cond`, where `destroy_all` is
+              # `untyped`). Only take `nil` from an unconditional tail; otherwise
+              # leave the method `untyped` (the honest answer).
+              next if steep_type == "nil" && !unconditional_nil_tail?(defn)
+
               # Instance methods returning the same class (or host class for concerns) → self
               steep_type = "self" if self_types.include?(steep_type)
 
               # Check for early return nil in body
-              defn = def_map[m.name]
               if defn && has_nil_return?(defn)
                 steep_type = RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type)
               end
@@ -218,6 +234,25 @@ module RbsInfer::Inference
         node.arguments.nil? ||
           node.arguments.arguments.any? { |arg| arg.is_a?(Prism::NilNode) }
       end.any?
+    end
+
+    # Conditional tail expressions (`if`/`unless`/`case` — including the
+    # modifier forms, which Prism parses as the same nodes) implicitly yield
+    # `nil` from a missing/empty branch. When the value branch is `untyped`,
+    # Steep collapses `untyped | nil` to `nil`, so a `nil` inference there does
+    # NOT mean the method only ever returns nil. `true` only when the def's tail
+    # statement is something else (a call, literal, iterator, …) — i.e. the body
+    # unconditionally evaluates to nil and `-> nil` is safe to emit.
+    CONDITIONAL_TAIL_NODES = [Prism::IfNode, Prism::UnlessNode, Prism::CaseNode, Prism::CaseMatchNode].freeze
+
+    def unconditional_nil_tail?(defn)
+      body = defn&.body
+      return false unless body.is_a?(Prism::StatementsNode)
+
+      tail = body.body.last
+      return false if tail.nil?
+
+      CONDITIONAL_TAIL_NODES.none? { |klass| tail.is_a?(klass) }
     end
 
     def collect_ivar_writes(node, known_return_types, type_sets, attr_names, param_types: {})
