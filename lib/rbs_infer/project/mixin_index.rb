@@ -1,19 +1,18 @@
 module RbsInfer::Project
-  # Resolve, para um módulo-alvo (concern), os arquivos cujas chamadas
-  # *peladas* (sem receiver) podem alcançar os métodos de instância do módulo.
+  # For a target module (concern), resolves the files whose *bare* calls (no
+  # receiver) can reach the module's instance methods.
   #
-  # Os métodos de um concern são mixados no host e chamados sem receiver — não
-  # só no arquivo do próprio host, mas também nos *outros* concerns do host:
-  # módulos irmãos compartilham o `self` do host, então um `track_event :x`
-  # pelado em `Card::Statuses` alcança `Eventable#track_event` porque `Card`
-  # inclui ambos. Esses arquivos irmãos nunca nomeiam o concern, então o índice
-  # por referência de constante (`SourceIndex`) não os encontra.
+  # A concern's methods are mixed into the host and called without a receiver —
+  # not only in the host's own file, but in the host's *other* concerns too:
+  # sibling modules share the host's `self`, so a bare `track_event :x` in
+  # `Card::Statuses` reaches `Eventable#track_event` because `Card` includes
+  # both. Those sibling files never name the concern, so the constant-reference
+  # index (`SourceIndex`) doesn't find them.
   #
-  # Este índice parseia cada arquivo uma vez registrando, por arquivo: a
-  # classe/módulo que ele define e os short names que ele `include`/`prepend`.
-  # A partir disso responde `files_reaching(module_name)` = arquivos host (que
-  # incluem o módulo) ∪ os arquivos de cada módulo irmão que esses hosts também
-  # incluem.
+  # This index parses each file once, recording per file: the class/module it
+  # defines and the short names it `include`s/`prepend`s. From that it answers
+  # `files_reaching(module_name)` = host files (that include the module) ∪ the
+  # files of every sibling module those hosts also include.
   class MixinIndex
     def initialize(source_files, parse_cache: nil)
       @parse_cache = parse_cache || ParseCache.new
@@ -22,8 +21,8 @@ module RbsInfer::Project
       build(source_files)
     end
 
-    # Arquivos cujas chamadas peladas podem alcançar métodos de instância de
-    # `module_name` (host + concerns irmãos do host).
+    # Files whose bare calls can reach instance methods of `module_name`
+    # (the host + the host's sibling concerns).
     def files_reaching(module_name)
       short = module_name.split("::").last
       result = Set.new
@@ -42,7 +41,7 @@ module RbsInfer::Project
     EMPTY = Set.new.freeze
     private_constant :EMPTY
 
-    # Arquivos cuja classe/módulo inclui `short`.
+    # Files whose class/module includes `short`.
     def host_files(short)
       @included_shorts.filter_map { |file, shorts| file if shorts.include?(short) }
     end
@@ -62,7 +61,7 @@ module RbsInfer::Project
       end
     end
 
-    # Short names dos argumentos de `include A, B::C` / `prepend A`.
+    # Short names from the arguments of `include A, B::C` / `prepend A`.
     def include_short_names(root)
       shorts = Set.new
       RbsInfer::Analyzer.find_all_nodes(root) do |n|

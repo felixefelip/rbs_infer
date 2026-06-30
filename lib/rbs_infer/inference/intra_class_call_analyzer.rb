@@ -10,7 +10,7 @@ module RbsInfer::Inference
     def initialize(attr_types: {}, method_type_resolver: nil, method_positional_params: {}, steep_bridge: nil, source_code: nil)
       @attr_types = attr_types
       @method_type_resolver = method_type_resolver
-      # method_name → param_name → [type, ...] candidatos de cada call-site
+      # method_name → param_name → [type, ...] candidates from each call-site
       @param_type_candidates = Hash.new { |h, k| h[k] = Hash.new { |h2, k2| h2[k2] = [] } }
       @local_var_types = {}
       @current_method_name = nil
@@ -81,8 +81,8 @@ module RbsInfer::Inference
       super
     end
 
-    # method_name → { param_name → type }, unindo os candidatos de cada
-    # call-site num único tipo (`String` + `:Symbol` → `(String | Symbol)`).
+    # method_name → { param_name → type }, unioning each call-site's
+    # candidates into a single type (`String` + `:Symbol` → `(String | Symbol)`).
     def inferred_param_types
       result = Hash.new { |h, k| h[k] = {} }
       @param_type_candidates.each do |method_name, params|

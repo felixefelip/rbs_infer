@@ -36,26 +36,26 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
   end
 
   describe ".union_types" do
-    it "une tipos distintos preservando a forma original" do
+    it "unions distinct types preserving the original form" do
       expect(described_class.union_types(["String", "::MyApp::Entity"]))
         .to eq("(String | ::MyApp::Entity)")
     end
 
-    it "emite um único tipo verbatim (mantém `::` absoluto)" do
+    it "emits a single type verbatim (keeps the absolute `::`)" do
       expect(described_class.union_types(["::MyApp::Entity"])).to eq("::MyApp::Entity")
     end
 
-    it "achata uniões já existentes em vez de aninhar parênteses" do
+    it "flattens pre-existing unions instead of nesting parens" do
       expect(described_class.union_types(["(String | Symbol)", "Symbol"]))
         .to eq("(String | Symbol)")
     end
 
-    it "não achata `|` aninhado dentro de genéricos" do
+    it "does not flatten a `|` nested inside generics" do
       expect(described_class.union_types(["Array[String | Symbol]"]))
         .to eq("Array[String | Symbol]")
     end
 
-    it "descarta untyped quando há ao menos um tipo resolvido" do
+    it "drops untyped when at least one resolved type exists" do
       expect(described_class.union_types(["untyped", "String"])).to eq("String")
     end
   end

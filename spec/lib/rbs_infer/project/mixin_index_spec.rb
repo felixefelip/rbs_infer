@@ -17,7 +17,7 @@ RSpec.describe RbsInfer::Project::MixinIndex do
     path
   end
 
-  it "alcança o host e os concerns irmãos do módulo-alvo" do
+  it "reaches the host and the target module's sibling concerns" do
     eventable = write_file("eventable.rb", <<~RUBY)
       module Eventable
         def track_event(action) = nil
@@ -43,12 +43,12 @@ RSpec.describe RbsInfer::Project::MixinIndex do
 
     index = described_class.new([eventable, host, publishable, closeable])
 
-    # host + ambos os irmãos (que nunca nomeiam Eventable)
+    # host + both siblings (which never name Eventable)
     expect(index.files_reaching("Eventable"))
       .to contain_exactly(host, publishable, closeable)
   end
 
-  it "resolve includes multi-linha e com namespace" do
+  it "resolves multi-line and namespaced includes" do
     host = write_file("card.rb", <<~RUBY)
       class Card
         include Accessible, Eventable,
@@ -65,7 +65,7 @@ RSpec.describe RbsInfer::Project::MixinIndex do
       .to contain_exactly(host, statuses, accessible)
   end
 
-  it "retorna vazio para um módulo que ninguém inclui" do
+  it "returns empty for a module no one includes" do
     lonely = write_file("lonely.rb", "module Lonely\nend\n")
 
     index = described_class.new([lonely])

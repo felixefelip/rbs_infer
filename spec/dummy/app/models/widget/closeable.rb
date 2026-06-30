@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Outro concern irmão; também chama `track_event` pelado com um `Symbol`.
+# Another sibling concern; also calls `track_event` bare with a `Symbol`.
 module Widget::Closeable
   extend ActiveSupport::Concern
 

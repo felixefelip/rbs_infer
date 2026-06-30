@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# Concern irmão de Eventable no host Widget; chama `track_event` pelado com
-# um `Symbol`, sem nunca nomear `Eventable`.
+# Sibling concern of Eventable in the Widget host; calls `track_event` bare
+# with a `Symbol`, without ever naming `Eventable`.
 module Widget::Publishable
   extend ActiveSupport::Concern
 

@@ -26,7 +26,7 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
     expect(visitor.inferred_param_types["publicar"]["aluno"]).to eq("Entity")
   end
 
-  it "une tipos de kwargs de call-sites distintos (felixefelip/rbs_infer#64)" do
+  it "unions kwarg types from distinct call-sites (felixefelip/rbs_infer#64)" do
     source = <<~RUBY
       class Foo
         def track_event(action:)

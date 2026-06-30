@@ -19,21 +19,21 @@ module RbsInfer::Inference
 
     # ─── Unificar tipos de múltiplos call-sites ────────────────────────
 
-    # Une uma lista de tipos (de call-sites distintos) numa única string RBS.
-    # `untyped` é descartado quando há ao menos um tipo resolvido. Uniões já
-    # existentes (`(String | Symbol)`) são achatadas via parser RBS, de modo
-    # que combinar resultados parciais (intra-classe + cross-class) seja
-    # associativo e idempotente — sem aninhar parênteses nem duplicar membros.
+    # Unions a list of types (from distinct call-sites) into a single RBS
+    # string. `untyped` is dropped when at least one resolved type exists.
+    # Pre-existing unions (`(String | Symbol)`) are flattened via the RBS
+    # parser, so combining partial results (intra-class + cross-class) is
+    # associative and idempotent — no nested parens, no duplicate members.
     def self.union_types(types)
       flat = types.flat_map { |t| flatten_union(t) }
 
-      # Preferir tipos resolvidos sobre untyped
+      # Prefer resolved types over untyped
       resolved = flat.reject { |t| t == "untyped" }
       resolved = flat if resolved.empty?
 
-      # Deduplicar pela forma normalizada (sem `::` à esquerda), preservando
-      # a forma original da 1ª ocorrência — um único tipo é emitido verbatim,
-      # mantendo nomes absolutos (`::MyApp::Entity`) intactos.
+      # Dedup by the normalized form (no leading `::`), keeping the original
+      # form of the first occurrence — a single type is emitted verbatim, so
+      # absolute names (`::MyApp::Entity`) stay intact.
       seen = {}
       unique = []
       resolved.each do |type|
@@ -45,9 +45,9 @@ module RbsInfer::Inference
       unique.size == 1 ? unique.first : "(#{unique.join(" | ")})"
     end
 
-    # Achata um tipo num conjunto de membros de união de nível superior.
-    # `(String | Symbol)` → `["String", "Symbol"]`; tipos não-união (incl.
-    # genéricos como `Array[A | B]`) ficam intactos.
+    # Flattens a type into its set of top-level union members.
+    # `(String | Symbol)` → `["String", "Symbol"]`; non-union types (incl.
+    # generics like `Array[A | B]`) are left intact.
     def self.flatten_union(type_str)
       parsed = RBS::Parser.parse_type(type_str)
       parsed.is_a?(RBS::Types::Union) ? parsed.types.map(&:to_s) : [type_str]
@@ -66,8 +66,8 @@ module RbsInfer::Inference
 
       merged = {}
       all_types.each do |arg_name, types|
-        # Convenção cross-class: emitir nomes sem o prefixo `::` absoluto,
-        # de modo que `::Shared::Cpf` e `Shared::Cpf` colapsem num só.
+        # Cross-class convention: emit names without the absolute `::` prefix,
+        # so `::Shared::Cpf` and `Shared::Cpf` collapse into one.
         normalized = types.map { |t| t.sub(/\A::/, "") }
         merged[arg_name] = self.class.union_types(normalized)
       end
