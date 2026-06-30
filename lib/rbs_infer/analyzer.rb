@@ -220,12 +220,21 @@ module RbsInfer
     # Inferir tipos de parâmetros de métodos via chamadas intra-classe
     method_param_types = param_type_inferrer.infer_method_param_types(attr_types, parsed_target: @parsed_target)
 
-    # Inferir tipos de parâmetros de métodos via chamadas cross-class
+    # Infer method param types from cross-class call-sites. Union (don't
+    # overwrite) with the intra-class types: a method called with `String` in
+    # one file and `:Symbol` in another should infer `(String | Symbol)`, not
+    # the first type seen (felixefelip/rbs_infer#64).
     cross_class_param_types = infer_method_param_types_from_callers
     cross_class_param_types.each do |method_name, param_types|
       method_param_types[method_name] ||= {}
       param_types.each do |param_name, type|
-        method_param_types[method_name][param_name] ||= type
+        existing = method_param_types[method_name][param_name]
+        method_param_types[method_name][param_name] =
+          if existing && existing != "untyped"
+            RbsInfer::Inference::TypeMerger.union_types([existing, type])
+          else
+            type
+          end
       end
     end
 
@@ -736,7 +745,16 @@ module RbsInfer
       target_methods: target_methods,
       steep_bridge: steep_bridge
     )
-    @source_index.files_referencing(@target_class).each { |file| analyzer.analyze(file) }
+    referencing = @source_index.files_referencing(@target_class)
+
+    # A concern's instance methods are called *bare* by includer hosts and by
+    # the host's sibling concerns — files that never name the concern, so the
+    # constant-reference index misses them. For a module target, fold in the
+    # mixin graph and force bare-call matching on those files (#64).
+    reaching = @is_module ? mixin_index.files_reaching(@target_class).to_set : Set.new
+    (referencing.to_set | reaching).each do |file|
+      analyzer.analyze(file, force_bare: reaching.include?(file))
+    end
 
     @extra_caller_sources&.call(analyzer, @target_class, @source_files)
 
@@ -844,6 +862,10 @@ module RbsInfer
     @steep_bridge ||= RbsInfer::Signatures::SteepBridge.new
   end
 
+  def mixin_index
+    @mixin_index ||= RbsInfer::Project::MixinIndex.new(@source_files, parse_cache: @parse_cache)
+  end
+
   # ─── Resolver quais namespaces da classe-alvo são class (não module) ──
 
   def resolve_namespace_classes(class_name = @target_class)
@@ -901,6 +923,7 @@ require_relative "inference/ivar_type_set"
 require_relative "inference/return_type_resolver"
 require_relative "inference/param_type_inferrer"
 require_relative "project/source_index"
+require_relative "project/mixin_index"
 require_relative "signatures/steep_bridge"
 require_relative "project/source_expanders"
 require_relative "project/self_type_annotators"

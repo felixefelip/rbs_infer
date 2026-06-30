@@ -1,0 +1,6 @@
+class Widget
+  module Publishable
+    extend ActiveSupport::Concern
+    def publish: () -> { action: Symbol | String, particulars: untyped }
+  end
+end

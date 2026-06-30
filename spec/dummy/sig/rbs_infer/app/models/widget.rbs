@@ -1,0 +1,6 @@
+class Widget
+  include Eventable
+  include ::Widget::Publishable
+  include ::Widget::Closeable
+  def rename: () -> { action: Symbol | String, particulars: untyped }
+end

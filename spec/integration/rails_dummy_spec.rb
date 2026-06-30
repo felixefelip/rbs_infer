@@ -252,6 +252,19 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("services/parse_xml", target_class: "ParseXml", target_file: "app/services/parse_xml.rb")
   end
 
+  # felixefelip/rbs_infer#64: `action` is called with `String` (intra-class)
+  # and `Symbol` (via EventReporter), so it should infer `(String | Symbol)`.
+  it "EventTracker service unions param types across call-sites" do
+    assert_snapshot("services/event_tracker", target_class: "EventTracker", target_file: "app/services/event_tracker.rb")
+  end
+
+  # felixefelip/rbs_infer#64: `track_event` (in a concern) is called *bare*
+  # from the host's sibling concerns (Widget::Publishable/Closeable, which
+  # don't name Eventable), with `String` and `Symbol` → `action: (String | Symbol)`.
+  it "Eventable concern unions bare-call param types from sibling concerns" do
+    assert_snapshot("models/eventable", target_class: "Eventable", target_file: "app/models/eventable.rb")
+  end
+
   it "Post::Taggable concern matches expected RBS" do
     assert_snapshot("models/post/taggable", target_class: "Post::Taggable", target_file: "app/models/post/taggable.rb")
   end

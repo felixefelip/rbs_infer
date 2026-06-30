@@ -7,13 +7,11 @@ module RbsInfer::Inference
   #    `Telefone.new(ddd:, numero:)` → infere `ddd: String, numero: String`
   #    a partir da assinatura de Telefone#initialize
   class IntraClassCallAnalyzer < Prism::Visitor
-    # method_name → { param_name → type }
-    attr_reader :inferred_param_types
-
     def initialize(attr_types: {}, method_type_resolver: nil, method_positional_params: {}, steep_bridge: nil, source_code: nil)
       @attr_types = attr_types
       @method_type_resolver = method_type_resolver
-      @inferred_param_types = Hash.new { |h, k| h[k] = {} }
+      # method_name → param_name → [type, ...] candidates from each call-site
+      @param_type_candidates = Hash.new { |h, k| h[k] = Hash.new { |h2, k2| h2[k2] = [] } }
       @local_var_types = {}
       @current_method_name = nil
       @current_param_names = Set.new
@@ -58,8 +56,7 @@ module RbsInfer::Inference
         args = extract_keyword_arg_types(node)
         args.each do |param_name, type|
           next if type == "untyped"
-          existing = @inferred_param_types[method_name][param_name]
-          @inferred_param_types[method_name][param_name] = type unless existing
+          @param_type_candidates[method_name][param_name] << type
         end
 
         # Positional args: mapear por posição usando os nomes dos parâmetros do método-alvo
@@ -71,8 +68,7 @@ module RbsInfer::Inference
             next unless param_name
             type = resolve_value_type(arg)
             next if type == "untyped"
-            existing = @inferred_param_types[method_name][param_name]
-            @inferred_param_types[method_name][param_name] = type unless existing
+            @param_type_candidates[method_name][param_name] << type
           end
         end
       end
@@ -83,6 +79,18 @@ module RbsInfer::Inference
       end
 
       super
+    end
+
+    # method_name → { param_name → type }, unioning each call-site's
+    # candidates into a single type (`String` + `:Symbol` → `(String | Symbol)`).
+    def inferred_param_types
+      result = Hash.new { |h, k| h[k] = {} }
+      @param_type_candidates.each do |method_name, params|
+        params.each do |param_name, types|
+          result[method_name][param_name] = TypeMerger.union_types(types)
+        end
+      end
+      result
     end
 
     private
@@ -124,8 +132,7 @@ module RbsInfer::Inference
           expected_type = class_types[key]
           next unless expected_type && expected_type != "untyped"
 
-          existing = @inferred_param_types[@current_method_name][value_param]
-          @inferred_param_types[@current_method_name][value_param] = expected_type unless existing
+          @param_type_candidates[@current_method_name][value_param] << expected_type
         end
       end
     end

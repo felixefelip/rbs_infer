@@ -19,6 +19,42 @@ module RbsInfer::Inference
 
     # ─── Unificar tipos de múltiplos call-sites ────────────────────────
 
+    # Unions a list of types (from distinct call-sites) into a single RBS
+    # string. `untyped` is dropped when at least one resolved type exists.
+    # Pre-existing unions (`(String | Symbol)`) are flattened via the RBS
+    # parser, so combining partial results (intra-class + cross-class) is
+    # associative and idempotent — no nested parens, no duplicate members.
+    def self.union_types(types)
+      flat = types.flat_map { |t| flatten_union(t) }
+
+      # Prefer resolved types over untyped
+      resolved = flat.reject { |t| t == "untyped" }
+      resolved = flat if resolved.empty?
+
+      # Dedup by the normalized form (no leading `::`), keeping the original
+      # form of the first occurrence — a single type is emitted verbatim, so
+      # absolute names (`::MyApp::Entity`) stay intact.
+      seen = {}
+      unique = []
+      resolved.each do |type|
+        key = type.sub(/\A::/, "")
+        next if seen[key]
+        seen[key] = true
+        unique << type
+      end
+      unique.size == 1 ? unique.first : "(#{unique.join(" | ")})"
+    end
+
+    # Flattens a type into its set of top-level union members.
+    # `(String | Symbol)` → `["String", "Symbol"]`; non-union types (incl.
+    # generics like `Array[A | B]`) are left intact.
+    def self.flatten_union(type_str)
+      parsed = RBS::Parser.parse_type(type_str)
+      parsed.is_a?(RBS::Types::Union) ? parsed.types.map(&:to_s) : [type_str]
+    rescue RBS::ParsingError, RBS::BaseError
+      [type_str]
+    end
+
     def merge_argument_types(usages)
       all_types = Hash.new { |h, k| h[k] = [] }
 
@@ -30,13 +66,10 @@ module RbsInfer::Inference
 
       merged = {}
       all_types.each do |arg_name, types|
-        # Preferir tipos resolvidos sobre untyped
-        resolved = types.reject { |t| t == "untyped" }
-        resolved = types if resolved.empty?
-
-        # Normalizar :: prefix e deduplicar
-        unique = resolved.map { |t| t.sub(/\A::/, "") }.uniq
-        merged[arg_name] = unique.size == 1 ? unique.first : "(#{unique.join(" | ")})"
+        # Cross-class convention: emit names without the absolute `::` prefix,
+        # so `::Shared::Cpf` and `Shared::Cpf` collapse into one.
+        normalized = types.map { |t| t.sub(/\A::/, "") }
+        merged[arg_name] = self.class.union_types(normalized)
       end
 
       merged

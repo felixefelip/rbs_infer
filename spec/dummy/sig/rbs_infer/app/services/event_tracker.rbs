@@ -1,0 +1,4 @@
+class EventTracker
+  def track_event: (action: (String | Symbol)) -> { action: (String | Symbol) }
+  def track_created: () -> { action: untyped }
+end

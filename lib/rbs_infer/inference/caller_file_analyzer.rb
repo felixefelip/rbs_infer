@@ -13,7 +13,7 @@ module RbsInfer::Inference
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
     end
 
-    def analyze(file)
+    def analyze(file, force_bare: false)
       source = File.read(file)
       result = Prism.parse(source)
       comments = result.comments
@@ -53,8 +53,12 @@ module RbsInfer::Inference
       # Enable bare call matching when the file includes the target module/concern.
       # e.g. PostsController includes FilterConfiguration → configure_filter("posts")
       # is a bare call that would otherwise be invisible to cross-class analysis.
+      #
+      # `force_bare` is set by the caller for files the mixin graph already
+      # proved can reach the target's methods (the host and its sibling
+      # concerns), which never name the concern themselves (#64).
       short_name = @target_class.split("::").last
-      match_bare = source.match?(/\binclude\b.*\b#{Regexp.escape(short_name)}\b/)
+      match_bare = force_bare || source.match?(/\binclude\b.*\b#{Regexp.escape(short_name)}\b/)
 
       # After-validation callback narrowing: inside e.g. an `after_create`
       # handler, `self` is the validated record, so `Foo.new(self)` should
