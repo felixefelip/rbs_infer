@@ -540,4 +540,71 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
 
     expect { RBS::Parser.parse_signature(rbs_content) }.not_to raise_error
   end
+
+  describe "aliases (felixefelip/rbs_infer#63)" do
+    it "coleta alias_method com argumentos symbol" do
+      source = <<~RUBY
+        class Foo
+          def published?; true; end
+          alias_method :was_just_published?, :published?
+        end
+      RUBY
+
+      member = collect(source).members.find { |m| m.kind == :alias }
+      expect(member.name).to eq("was_just_published?")
+      expect(member.old_name).to eq("published?")
+    end
+
+    it "coleta alias_method com argumentos string" do
+      source = <<~RUBY
+        class Foo
+          def published?; true; end
+          alias_method "was_just_published?", "published?"
+        end
+      RUBY
+
+      member = collect(source).members.find { |m| m.kind == :alias }
+      expect(member.name).to eq("was_just_published?")
+      expect(member.old_name).to eq("published?")
+    end
+
+    it "coleta a keyword alias" do
+      source = <<~RUBY
+        class Foo
+          def published?; true; end
+          alias just_published? published?
+        end
+      RUBY
+
+      member = collect(source).members.find { |m| m.kind == :alias }
+      expect(member.name).to eq("just_published?")
+      expect(member.old_name).to eq("published?")
+    end
+
+    it "classifica alias dentro de `class << self` como singleton" do
+      source = <<~RUBY
+        class Foo
+          class << self
+            def build; new; end
+            alias_method :make, :build
+          end
+        end
+      RUBY
+
+      member = collect(source).members.find { |m| m.name == "make" }
+      expect(member.kind).to eq(:singleton_alias)
+      expect(member.old_name).to eq("build")
+    end
+
+    it "ignora alias_method com nome dinâmico (não-literal)" do
+      source = <<~RUBY
+        class Foo
+          def published?; true; end
+          alias_method :"\#{prefix}_published?", :published?
+        end
+      RUBY
+
+      expect(collect(source).members.any? { |m| m.kind == :alias }).to be(false)
+    end
+  end
 end
