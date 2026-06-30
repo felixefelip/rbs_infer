@@ -1,0 +1,6 @@
+class Widget
+  module Closeable
+    extend ActiveSupport::Concern
+    def close: () -> { action: Symbol | String, particulars: untyped }
+  end
+end

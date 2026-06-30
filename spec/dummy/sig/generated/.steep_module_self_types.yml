@@ -32,6 +32,16 @@ app/models/user/recoverable.rb:
   annotations:
   - "# @type self: singleton(User) & singleton(User::Recoverable)"
   - "# @type instance: User & User::Recoverable"
+app/models/widget/closeable.rb:
+  anchor: Closeable
+  annotations:
+  - "# @type self: singleton(Widget) & singleton(Widget::Closeable)"
+  - "# @type instance: Widget & Widget::Closeable"
+app/models/widget/publishable.rb:
+  anchor: Publishable
+  annotations:
+  - "# @type self: singleton(Widget) & singleton(Widget::Publishable)"
+  - "# @type instance: Widget & Widget::Publishable"
 app/helpers/application_helper.rb:
   anchor: ApplicationHelper
   annotations:

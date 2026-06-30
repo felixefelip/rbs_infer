@@ -745,7 +745,16 @@ module RbsInfer
       target_methods: target_methods,
       steep_bridge: steep_bridge
     )
-    @source_index.files_referencing(@target_class).each { |file| analyzer.analyze(file) }
+    referencing = @source_index.files_referencing(@target_class)
+
+    # A concern's instance methods are called *bare* by includer hosts and by
+    # the host's sibling concerns — files that never name the concern, so the
+    # constant-reference index misses them. For a module target, fold in the
+    # mixin graph and force bare-call matching on those files (#64).
+    reaching = @is_module ? mixin_index.files_reaching(@target_class).to_set : Set.new
+    (referencing.to_set | reaching).each do |file|
+      analyzer.analyze(file, force_bare: reaching.include?(file))
+    end
 
     @extra_caller_sources&.call(analyzer, @target_class, @source_files)
 
@@ -853,6 +862,10 @@ module RbsInfer
     @steep_bridge ||= RbsInfer::Signatures::SteepBridge.new
   end
 
+  def mixin_index
+    @mixin_index ||= RbsInfer::Project::MixinIndex.new(@source_files, parse_cache: @parse_cache)
+  end
+
   # ─── Resolver quais namespaces da classe-alvo são class (não module) ──
 
   def resolve_namespace_classes(class_name = @target_class)
@@ -910,6 +923,7 @@ require_relative "inference/ivar_type_set"
 require_relative "inference/return_type_resolver"
 require_relative "inference/param_type_inferrer"
 require_relative "project/source_index"
+require_relative "project/mixin_index"
 require_relative "signatures/steep_bridge"
 require_relative "project/source_expanders"
 require_relative "project/self_type_annotators"
