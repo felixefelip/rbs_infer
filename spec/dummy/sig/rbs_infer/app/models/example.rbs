@@ -1,0 +1,27 @@
+class Column
+  attr_accessor board: Board
+  attr_accessor column_name: String
+  attr_accessor user_name: untyped
+  def initialize: (column_name: String) -> void
+  def set_default_user_name: () -> String
+
+  class AfterInitialize
+    attr_reader user_name: String
+  end
+
+  class AfterSetDefaultUserName
+    attr_reader user_name: String
+  end
+end
+
+class Board
+  @column_name: String
+  attr_reader user_name: String
+  def initialize: (user_name: String) -> void
+end
+
+class Example
+  @column_name: String
+  @user_name: String
+  def self.run: () -> String
+end
