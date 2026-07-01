@@ -1,6 +1,15 @@
 ---
 version: 1
 methods:
+  Column#set_default_user_name:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: board
+    enforced: false
   Comment#author_name:
     requires:
     - kind: not_nil
