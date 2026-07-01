@@ -687,7 +687,7 @@ module RbsInfer
                         .to_set
     return [{}, {}] if attr_names.empty?
 
-    visitor = RbsInfer::Inference::ClassBodyAttrAnalyzer.new(attr_names: attr_names, method_type_resolver: method_type_resolver, constant_resolver: constant_arg_resolver)
+    visitor = RbsInfer::Inference::ClassBodyAttrAnalyzer.new(attr_names: attr_names, method_type_resolver: method_type_resolver, constant_resolver: constant_arg_resolver, target_class: @target_class)
     @parsed_target.tree.accept(visitor)
 
     [visitor.attr_types, visitor.collection_element_types]
