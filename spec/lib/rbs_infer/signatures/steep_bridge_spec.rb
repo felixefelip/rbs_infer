@@ -437,7 +437,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types(code)
+      result = bridge.ivar_write_types(code, target_class: "Foo")
       expect(result["x"]).to eq("String")
     end
 
@@ -450,7 +450,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types(code)
+      result = bridge.ivar_write_types(code, target_class: "Foo")
       expect(result["x"]).to eq("String?")
     end
 
@@ -467,7 +467,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types(code)
+      result = bridge.ivar_write_types(code, target_class: "Foo")
       expect(result["x"]).to eq("((Comment & Comment::Validated) | Comment)?")
     end
 
@@ -484,7 +484,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types(code)
+      result = bridge.ivar_write_types(code, target_class: "Foo")
       expect(result["x"]).to eq("Comment | (Comment & Comment::Validated)")
     end
 
@@ -501,7 +501,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types(code)
+      result = bridge.ivar_write_types(code, target_class: "Foo")
       expect(result["x"]).to eq("(Comment & Comment::Validated)?")
     end
 
@@ -516,7 +516,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types(code)
+      result = bridge.ivar_write_types(code, target_class: "Foo")
       expect(result["x"]).to eq("String?")
     end
 
@@ -535,7 +535,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types(code)
+      result = bridge.ivar_write_types(code, target_class: "Foo")
       expect(result["x"]).to eq("Comment | (Comment & Comment::Validated)")
     end
 
@@ -550,7 +550,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types(code)
+      result = bridge.ivar_write_types(code, target_class: "Foo")
       expect(result["x"]).to eq("String")
     end
 
@@ -567,7 +567,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types(code)
+      result = bridge.ivar_write_types(code, target_class: "Foo")
       expect(result["x"]).to eq("String?")
     end
 
@@ -582,7 +582,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types(code)
+      result = bridge.ivar_write_types(code, target_class: "Foo")
       # class-body ivasgn is class-instance variable scope; method
       # ivasgn is instance scope. Per the issue, we treat the class-body
       # write as initialized for the same name (best-effort).
@@ -598,7 +598,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types(code)
+      result = bridge.ivar_write_types(code, target_class: "Foo")
       # Only `nil` was observed; nilable, no concrete type. The emitter
       # returns "nil" which is a valid RBS type.
       expect(result["x"]).to eq("nil")
@@ -624,7 +624,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types_per_method(code)
+      result = bridge.ivar_write_types_per_method(code, target_class: "Foo")
 
       expect(result["set_x"]["x"]).to eq("(Comment & Comment::Validated)")
       expect(result["make_x"]["x"]).to eq("Comment")
@@ -640,7 +640,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types_per_method(code)
+      result = bridge.ivar_write_types_per_method(code, target_class: "Foo")
 
       expect(result["set_x"]["x"]).to eq("Comment | (Comment & Comment::Validated)")
     end
@@ -656,7 +656,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types_per_method(code)
+      result = bridge.ivar_write_types_per_method(code, target_class: "Foo")
 
       expect(result["assign"]["x"]).to eq("String")
     end
@@ -674,7 +674,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types_per_method(code)
+      result = bridge.ivar_write_types_per_method(code, target_class: "Foo")
 
       expect(result.keys).to eq(["writes"])
     end
@@ -692,13 +692,13 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types_per_method(code)
+      result = bridge.ivar_write_types_per_method(code, target_class: "Foo")
 
       expect(result["set_x"]["x"]).to eq("String")
     end
 
     it "returns empty hash for source with no class body" do
-      result = bridge.ivar_write_types_per_method("# just a comment")
+      result = bridge.ivar_write_types_per_method("# just a comment", target_class: "Foo")
       expect(result).to eq({})
     end
 
@@ -713,7 +713,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types_per_method(code)
+      result = bridge.ivar_write_types_per_method(code, target_class: "Foo")
 
       # `@class_inst` at class body is class-instance variable, not
       # attributable to a method.
@@ -730,7 +730,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types_per_method(code)
+      result = bridge.ivar_write_types_per_method(code, target_class: "Foo")
 
       # `def self.X` operates on the singleton; ivars there are
       # class-instance variables, not relevant for the per-action
@@ -759,7 +759,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types_per_method(code)
+      result = bridge.ivar_write_types_per_method(code, target_class: "Foo")
 
       # `nil` literal isn't context-widened (it's already the bottom
       # of the union), so this test catches LHS-widening regressions
@@ -794,9 +794,60 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.ivar_write_types_per_method(code)
+      result = bridge.ivar_write_types_per_method(code, target_class: "Foo")
 
       expect(result["set_default_name"]["name"]).to eq("String")
+    end
+  end
+
+  describe "ivar-write class scoping (felixefelip/rbs_infer#38)" do
+    # Two classes in one file that share a method name (`initialize`) and an
+    # ivar name (`@shared`). Before scoping, both `ivar_write_types` and
+    # `ivar_write_types_per_method` pooled writes across the classes.
+    let(:code) do
+      <<~RUBY
+        class Alpha
+          def initialize
+            @shared = "a"
+          end
+
+          def touch
+            @only_alpha = 1
+          end
+        end
+
+        class Beta
+          def configure
+            @shared = 2
+          end
+        end
+      RUBY
+    end
+
+    it "attributes per-method writes only to the requested class" do
+      alpha = bridge.ivar_write_types_per_method(code, target_class: "Alpha")
+      expect(alpha["initialize"]).to eq({ "shared" => "String" })
+      expect(alpha["touch"]).to eq({ "only_alpha" => "Integer" })
+      # Beta#configure must not appear under Alpha.
+      expect(alpha).not_to have_key("configure")
+
+      beta = bridge.ivar_write_types_per_method(code, target_class: "Beta")
+      expect(beta["configure"]).to eq({ "shared" => "Integer" })
+      # Alpha's `initialize`/`touch` must not merge into Beta.
+      expect(beta.keys).to eq(["configure"])
+    end
+
+    it "scopes flat writes and the definite-initialization rule per class" do
+      # `@shared` is initialized in Alpha#initialize (non-nil) but only
+      # assigned in Beta#configure outside init — so it is nilable *for
+      # Beta*. Without scoping, Alpha's initialize would suppress the `?`
+      # and Alpha's "String" would merge in.
+      alpha = bridge.ivar_write_types(code, target_class: "Alpha")
+      expect(alpha["shared"]).to eq("String")
+
+      beta = bridge.ivar_write_types(code, target_class: "Beta")
+      expect(beta["shared"]).to eq("Integer?")
+      expect(beta).not_to have_key("only_alpha")
     end
   end
 

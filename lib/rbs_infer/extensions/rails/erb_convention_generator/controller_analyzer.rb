@@ -194,7 +194,7 @@ module RbsInfer
 
             source = File.read(controller_file)
             bridge = controller_steep_bridge
-            @controller_per_method_ivar_cache[controller_class] = bridge.ivar_write_types_per_method(source)
+            @controller_per_method_ivar_cache[controller_class] = bridge.ivar_write_types_per_method(source, target_class: controller_class)
           end
 
           def controller_steep_bridge

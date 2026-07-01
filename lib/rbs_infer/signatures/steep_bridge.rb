@@ -339,8 +339,16 @@ module RbsInfer::Signatures
       resolved == type_str ? nil : resolved
     end
 
-    # Returns { "var_name" => "Type" } for all instance variable writes
-    # observed in the source. The var name is without the leading `@`.
+    # Returns { "var_name" => "Type" } for instance variable writes
+    # observed in the source, scoped to `target_class`. The var name is
+    # without the leading `@`.
+    #
+    # `target_class` matters when a single file defines several classes
+    # (initializers, `lib/*_ext.rb`, fixtures): only writes lexically
+    # inside `target_class` (or a module nested-and-included under it,
+    # e.g. an expander's `GeneratedAttributeMethods`) count, so a sibling
+    # class's `@x` never bleeds in (felixefelip/rbs_infer#38). Pass `nil`
+    # to opt out of scoping (whole-file behavior).
     #
     # Writes counted:
     #
@@ -351,10 +359,10 @@ module RbsInfer::Signatures
     #   of `@x` (felixefelip/rbs_infer#4 + steep#18 mapping).
     #
     # When no write is observed inside `def initialize` (nor at class-body
-    # scope), the emitted type gets `| nil` (definite-initialization rule).
-    # The narrowing is then reabsorbed by steep#16 within methods that
-    # explicitly assign before reading.
-    def ivar_write_types(source_code)
+    # scope) of `target_class`, the emitted type gets `| nil`
+    # (definite-initialization rule). The narrowing is then reabsorbed by
+    # steep#16 within methods that explicitly assign before reading.
+    def ivar_write_types(source_code, target_class:)
       typing = type_check(source_code)
       return {} unless typing
 
@@ -362,10 +370,18 @@ module RbsInfer::Signatures
       return {} unless source_node
 
       type_sets = Hash.new { |h, k| h[k] = RbsInfer::Inference::IvarTypeSet.new }
-      initialized = collect_initialized_ivars(source_node)
+      initialized = collect_initialized_ivars(source_node, target_class: target_class)
       attr_writer_to_ivar = collect_attr_writers(source_node)
+      # Only writes lexically inside `target_class` count. A single file can
+      # define several classes (initializers, `lib/*_ext.rb`, the dummy-app
+      # fixtures), and without scoping their ivars — and same-named methods
+      # like `initialize` — pool into each other (felixefelip/rbs_infer#38).
+      # `each_typing` enumerates the whole file, so we filter it by node
+      # identity against the set of writes that belong to `target_class`.
+      in_scope = collect_scoped_write_node_ids(source_node, attr_writer_to_ivar, target_class)
 
       typing.each_typing do |node, type|
+        next unless in_scope.include?(node.object_id)
         case node.type
         when :ivasgn
           rhs = node.children[1]
@@ -399,11 +415,16 @@ module RbsInfer::Signatures
     end
 
     # Returns `{ "method_name" => { "ivar_name" => "type" } }` for every
-    # method in the source that writes (directly or via attr_writer) an
-    # instance variable. The per-method shape is what enables consumers
+    # method of `target_class` that writes (directly or via attr_writer)
+    # an instance variable. The per-method shape is what enables consumers
     # (e.g., the ERB convention generator) to narrow an ivar's type to
     # the contribution of a specific writer — rather than always seeing
     # the wide union of all observed writes.
+    #
+    # Scoped to `target_class` so that same-named methods across classes
+    # in one file (`Foo#initialize` and `Bar#initialize`) don't pool into
+    # a single `"initialize"` bucket (felixefelip/rbs_infer#38). Pass
+    # `nil` to opt out of scoping.
     #
     # Coverage mirrors `ivar_write_types`:
     # - Direct `:ivasgn` (`@x = expr`) inside any method.
@@ -413,7 +434,7 @@ module RbsInfer::Signatures
     # Top-level `:ivasgn` outside any method (class-instance variable in
     # class body) is intentionally NOT recorded here — there's no method
     # to attribute it to. Use `collect_initialized_ivars` for that case.
-    def ivar_write_types_per_method(source_code)
+    def ivar_write_types_per_method(source_code, target_class:)
       typing = type_check(source_code)
       return {} unless typing
 
@@ -430,6 +451,8 @@ module RbsInfer::Signatures
         typing: typing,
         attr_writer_to_ivar: attr_writer_to_ivar,
         current_method: nil,
+        namespace: [],
+        target_class: target_class,
         result: per_method_sets
       )
 
@@ -474,12 +497,15 @@ module RbsInfer::Signatures
     end
 
     # Returns Set[String] of ivar names (without leading `@`) that are
-    # assigned inside `def initialize` of any class in the source, or at
+    # assigned inside `def initialize` of `target_class`, or at its
     # class-body scope. Used by the definite-initialization rule to
-    # decide whether `nil` is added to the union.
-    def collect_initialized_ivars(node)
+    # decide whether `nil` is added to the union — so it must be scoped to
+    # the same class the writes are, or an `@x` initialized in a *sibling*
+    # class in the same file would wrongly suppress the `| nil` here.
+    def collect_initialized_ivars(node, target_class:)
       result = Set.new
-      walk_ivar_init_targets(node, in_init: false, in_class_body: false, result: result)
+      walk_ivar_init_targets(node, in_init: false, in_class_body: false,
+                             namespace: [], target_class: target_class, result: result)
       result
     end
 
@@ -551,21 +577,111 @@ module RbsInfer::Signatures
 
     private
 
+    # Renders a whitequark `:const` node into a dotted class-path string:
+    # `(const nil :Foo)` → "Foo", `(const (const nil :Foo) :Bar)` →
+    # "Foo::Bar", `(const (cbase) :Foo)` → "Foo". Returns nil for shapes
+    # we can't name (dynamic constant paths), so the caller keeps the
+    # outer namespace rather than inventing a segment.
+    def const_node_to_name(node)
+      return nil unless node.is_a?(::Parser::AST::Node) && node.type == :const
+
+      scope, name = node.children
+      if scope.nil? || (scope.is_a?(::Parser::AST::Node) && scope.type == :cbase)
+        name.to_s
+      elsif scope.is_a?(::Parser::AST::Node) && scope.type == :const
+        prefix = const_node_to_name(scope)
+        prefix ? "#{prefix}::#{name}" : nil
+      end
+    end
+
+    # True when the lexical class path `namespace` (array of segments) is
+    # `target_class` *or* something nested under it. The nested case is
+    # required: an expander (e.g. CurrentAttributes) can emit a nested
+    # `module GeneratedAttributeMethods` that is `include`d into the class
+    # and writes the same ivars, so its writes belong to the target. The
+    # `::` boundary keeps a sibling like `BoardMember` from matching
+    # target `Board`. A nil `target_class` means "don't scope" (whole
+    # file), preserved for callers with no single target.
+    def class_scope_match?(namespace, target_class)
+      return true if target_class.nil?
+
+      target = target_class.to_s.sub(/\A::/, "")
+      current = namespace.join("::")
+      current == target || current.start_with?("#{target}::")
+    end
+
+    # Object-ids of the `:ivasgn` / attr-writer `:send` nodes that live
+    # lexically inside `target_class`. `ivar_write_types` filters the
+    # whole-file `each_typing` stream against this set so a sibling class
+    # in the same file can't contribute to the target's ivar types. Using
+    # object-ids (not the nodes) sidesteps `Parser::AST::Node`'s
+    # structural `==`, which would conflate two identical writes in
+    # different classes.
+    def collect_scoped_write_node_ids(node, attr_writer_to_ivar, target_class, namespace: [], result: Set.new)
+      return result unless node.is_a?(::Parser::AST::Node)
+
+      case node.type
+      when :class, :module
+        name = const_node_to_name(node.children[0])
+        body = node.type == :class ? node.children[2] : node.children[1]
+        collect_scoped_write_node_ids(body, attr_writer_to_ivar, target_class,
+                                      namespace: name ? namespace + [name] : namespace,
+                                      result: result) if body
+      when :sclass
+        collect_scoped_write_node_ids(node.children[1], attr_writer_to_ivar, target_class,
+                                      namespace: namespace, result: result) if node.children[1]
+      when :ivasgn
+        result << node.object_id if class_scope_match?(namespace, target_class)
+        node.children.each do |c|
+          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, result: result)
+        end
+      when :send
+        receiver, method_name = node.children[0], node.children[1]
+        if attr_writer_to_ivar.key?(method_name) &&
+           (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
+           class_scope_match?(namespace, target_class)
+          result << node.object_id
+        end
+        node.children.each do |c|
+          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, result: result)
+        end
+      else
+        node.children.each do |c|
+          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, result: result)
+        end
+      end
+
+      result
+    end
+
     # Walks `node` accumulating ivar writes attributed to the enclosing
     # `def`. Propagates `current_method` through descent; only records
     # writes that happen inside a `:def` (writes in class body are
     # ignored here since they don't belong to any callable). Mirrors the
     # filter logic of `ivar_write_types` for both `:ivasgn` and
     # attr_writer-style `:send`.
-    def collect_ivar_writes_per_method(node, typing:, attr_writer_to_ivar:, current_method:, result:)
+    def collect_ivar_writes_per_method(node, typing:, attr_writer_to_ivar:, current_method:, namespace:, target_class:, result:)
       return unless node.is_a?(::Parser::AST::Node)
 
       case node.type
-      when :class, :module, :sclass
+      when :class, :module
+        name = const_node_to_name(node.children[0])
         body = node.type == :class ? node.children[2] : node.children[1]
         collect_ivar_writes_per_method(body, typing: typing,
                                        attr_writer_to_ivar: attr_writer_to_ivar,
                                        current_method: nil,
+                                       namespace: name ? namespace + [name] : namespace,
+                                       target_class: target_class,
+                                       result: result) if body
+      when :sclass
+        # `class << self` — same lexical class, singleton scope; keep the
+        # namespace so writes inside still attribute to the enclosing class.
+        body = node.children[1]
+        collect_ivar_writes_per_method(body, typing: typing,
+                                       attr_writer_to_ivar: attr_writer_to_ivar,
+                                       current_method: nil,
+                                       namespace: namespace,
+                                       target_class: target_class,
                                        result: result) if body
       when :def
         method_name = node.children[0].to_s
@@ -573,13 +689,15 @@ module RbsInfer::Signatures
         collect_ivar_writes_per_method(body, typing: typing,
                                        attr_writer_to_ivar: attr_writer_to_ivar,
                                        current_method: method_name,
+                                       namespace: namespace,
+                                       target_class: target_class,
                                        result: result) if body
       when :defs
         # Singleton `def self.X` — class-instance variable scope, not
         # relevant for the per-action narrowing this method serves.
       when :ivasgn
         rhs = node.children[1]
-        if current_method && rhs
+        if current_method && rhs && class_scope_match?(namespace, target_class)
           var_name = node.children[0].to_s.sub(/\A@/, "")
           # Use the RHS's INTRINSIC type, not what `typing` recorded.
           # When the ivar is already declared in RBS (e.g.,
@@ -599,12 +717,14 @@ module RbsInfer::Signatures
         collect_ivar_writes_per_method(rhs, typing: typing,
                                        attr_writer_to_ivar: attr_writer_to_ivar,
                                        current_method: current_method,
+                                       namespace: namespace,
+                                       target_class: target_class,
                                        result: result) if rhs
       when :send
         receiver, method_name, *args = node.children
         if current_method && attr_writer_to_ivar.key?(method_name) &&
            (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
-           !args.empty?
+           !args.empty? && class_scope_match?(namespace, target_class)
           arg = args[0]
           arg_type = intrinsic_type_of(arg, typing)
           if arg_type
@@ -616,6 +736,8 @@ module RbsInfer::Signatures
           collect_ivar_writes_per_method(c, typing: typing,
                                          attr_writer_to_ivar: attr_writer_to_ivar,
                                          current_method: current_method,
+                                         namespace: namespace,
+                                         target_class: target_class,
                                          result: result)
         end
       when :begin
@@ -623,6 +745,8 @@ module RbsInfer::Signatures
           collect_ivar_writes_per_method(c, typing: typing,
                                          attr_writer_to_ivar: attr_writer_to_ivar,
                                          current_method: current_method,
+                                         namespace: namespace,
+                                         target_class: target_class,
                                          result: result)
         end
       else
@@ -630,6 +754,8 @@ module RbsInfer::Signatures
           collect_ivar_writes_per_method(c, typing: typing,
                                          attr_writer_to_ivar: attr_writer_to_ivar,
                                          current_method: current_method,
+                                         namespace: namespace,
+                                         target_class: target_class,
                                          result: result)
         end
       end
@@ -638,33 +764,42 @@ module RbsInfer::Signatures
     # Walks `node` looking for `:ivasgn` targets that count as definite
     # initialization (inside `def initialize` or directly in a class body
     # outside any method). Does not descend into non-initialize defs.
-    def walk_ivar_init_targets(node, in_init:, in_class_body:, result:)
+    def walk_ivar_init_targets(node, in_init:, in_class_body:, namespace:, target_class:, result:)
       return unless node.is_a?(::Parser::AST::Node)
 
       case node.type
-      when :class, :module, :sclass
+      when :class, :module
+        name = const_node_to_name(node.children[0])
         body = node.type == :class ? node.children[2] : node.children[1]
-        walk_ivar_init_targets(body, in_init: false, in_class_body: true, result: result) if body
+        walk_ivar_init_targets(body, in_init: false, in_class_body: true,
+                               namespace: name ? namespace + [name] : namespace,
+                               target_class: target_class, result: result) if body
+      when :sclass
+        body = node.children[1]
+        walk_ivar_init_targets(body, in_init: false, in_class_body: true,
+                               namespace: namespace, target_class: target_class, result: result) if body
       when :def
         if node.children[0] == :initialize
           body = node.children[2]
-          walk_ivar_init_targets(body, in_init: true, in_class_body: false, result: result) if body
+          walk_ivar_init_targets(body, in_init: true, in_class_body: false,
+                                 namespace: namespace, target_class: target_class, result: result) if body
         end
       when :defs
         # def self.X — singleton method, skip; ivar there is class-instance
         # variable, not relevant for instance ivar initialization.
       when :ivasgn
-        if in_init || in_class_body
+        if (in_init || in_class_body) && class_scope_match?(namespace, target_class)
           var_name = node.children[0].to_s.sub(/\A@/, "")
           result << var_name
         end
         # also walk RHS for nested classes (`@x = Class.new { @y = ... }` is
         # exotic but harmless to descend)
         rhs = node.children[1]
-        walk_ivar_init_targets(rhs, in_init: in_init, in_class_body: in_class_body, result: result) if rhs
+        walk_ivar_init_targets(rhs, in_init: in_init, in_class_body: in_class_body,
+                               namespace: namespace, target_class: target_class, result: result) if rhs
       when :send
         receiver, method_name, *args = node.children
-        if (in_init || in_class_body) &&
+        if (in_init || in_class_body) && class_scope_match?(namespace, target_class) &&
            (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
            method_name.to_s.end_with?("=") &&
            method_name != :==
@@ -682,17 +817,20 @@ module RbsInfer::Signatures
           result << ivar unless ivar.empty?
         end
         node.children.each do |c|
-          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body, result: result)
+          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body,
+                                 namespace: namespace, target_class: target_class, result: result)
         end
       when :begin
         node.children.each do |c|
-          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body, result: result)
+          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body,
+                                 namespace: namespace, target_class: target_class, result: result)
         end
       else
         # Descend through everything else (if/case/blocks/etc.) while
         # keeping the current scope flags.
         node.children.each do |c|
-          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body, result: result)
+          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body,
+                                 namespace: namespace, target_class: target_class, result: result)
         end
       end
     end
