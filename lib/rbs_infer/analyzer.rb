@@ -303,7 +303,7 @@ module RbsInfer
   end
 
   def synthesize_setter_markers(target_members, attr_types)
-    per_method = steep_bridge.ivar_write_types_per_method(@parsed_target.source)
+    per_method = steep_bridge.ivar_write_types_per_method(@parsed_target.source, target_class: @target_class)
     return [] if per_method.empty?
 
     declared_ivar_types = collect_declared_attr_types(target_members, attr_types)

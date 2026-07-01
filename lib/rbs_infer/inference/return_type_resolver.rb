@@ -161,7 +161,7 @@ module RbsInfer::Inference
       # nilability and the fallback adds the call-sites' nominal types.
       steep_nil_only = Set.new
       if @steep_bridge && parsed_target.source
-        steep_ivars = @steep_bridge.ivar_write_types(parsed_target.source)
+        steep_ivars = @steep_bridge.ivar_write_types(parsed_target.source, target_class: @target_class)
         steep_ivars.each do |name, type|
           next if attr_names.include?(name)
           if type == "nil"
