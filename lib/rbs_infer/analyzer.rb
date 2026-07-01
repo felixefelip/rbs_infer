@@ -224,7 +224,7 @@ module RbsInfer
     # overwrite) with the intra-class types: a method called with `String` in
     # one file and `:Symbol` in another should infer `(String | Symbol)`, not
     # the first type seen (felixefelip/rbs_infer#64).
-    cross_class_param_types = infer_method_param_types_from_callers
+    cross_class_param_types = infer_method_param_types_from_callers(extract_attr_writer_methods(target_members))
     cross_class_param_types.each do |method_name, param_types|
       method_param_types[method_name] ||= {}
       param_types.each do |param_name, type|
@@ -237,6 +237,14 @@ module RbsInfer
           end
       end
     end
+
+    # An attr set from outside via `receiver.attr = value` (receiver typed
+    # as this class) has no local write to infer from — but the setter is a
+    # method, so the cross-class call-site inference above already typed its
+    # parameter. Route that back to the attr's type, and — since the attr
+    # is never written in `initialize` — apply the definite-initialization
+    # `| nil` (felixefelip/rbs_infer#71).
+    apply_external_setter_attr_types(attr_types, method_param_types, target_members)
 
     # Inferir tipos de instance variables (@post, @posts, etc.)
     # method_param_types feeds `@x = param` when the param's type came
@@ -733,8 +741,8 @@ module RbsInfer
 
   # Inferir tipos de parâmetros de métodos via chamadas cross-class
   # Ex: PostPublisher chama notifier.notify(post.user, "msg") → user: User, message: String
-  def infer_method_param_types_from_callers
-    target_methods = extract_target_method_params
+  def infer_method_param_types_from_callers(extra_methods = {})
+    target_methods = extract_target_method_params.merge(extra_methods)
     return {} if target_methods.empty?
 
     positional_params = extract_init_positional_params
@@ -793,6 +801,46 @@ module RbsInfer
       methods[defn.name.to_s] = names unless names.empty?
     end
     methods
+  end
+
+  # `attr_accessor`/`attr_writer :x` defines an `x=` method, so an external
+  # `receiver.x = value` is just a call to it. Expose those writers as
+  # synthetic target methods (single param named after the attr) so the
+  # cross-class call-site inference types the assigned value exactly like
+  # any other method argument (felixefelip/rbs_infer#71).
+  def extract_attr_writer_methods(target_members)
+    target_members.each_with_object({}) do |m, acc|
+      next unless [:attr_accessor, :attr_writer].include?(m.kind)
+      acc["#{m.name}="] = [m.name]
+    end
+  end
+
+  # Fills `attr_types` for writable attrs whose type could only come from
+  # external `receiver.attr = value` call-sites (their `attr=` parameter,
+  # inferred by the cross-class pass). An `attr_accessor` whose backing
+  # ivar is never assigned in `initialize` is nilable — its getter can
+  # observe the pre-assignment `nil` — so the definite-initialization `?`
+  # is applied. A pure `attr_writer` has no getter, so it keeps the bare
+  # accepted-value type (felixefelip/rbs_infer#71).
+  def apply_external_setter_attr_types(attr_types, method_param_types, target_members)
+    writable = target_members.select { |m| [:attr_accessor, :attr_writer].include?(m.kind) }
+    return if writable.empty?
+
+    initialized = return_type_resolver.collect_prism_initialized_ivars(@parsed_target.tree)
+
+    writable.each do |m|
+      # Don't override a type already inferred from a local write.
+      next if attr_types[m.name] && attr_types[m.name] != "untyped"
+
+      setter_params = method_param_types["#{m.name}="]
+      inferred = setter_params&.values&.reject { |t| t.nil? || t == "untyped" }&.first
+      next unless inferred
+
+      if m.kind == :attr_accessor && !initialized.include?(m.name)
+        inferred = RbsInfer::Signatures::RbsParserUtil.nilablize(inferred)
+      end
+      attr_types[m.name] = inferred
+    end
   end
 
   # Extrai nomes dos parâmetros positional do initialize da classe-alvo

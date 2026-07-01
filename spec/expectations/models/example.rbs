@@ -1,5 +1,5 @@
 class Column
-  attr_accessor board: untyped
+  attr_accessor board: Board?
   attr_accessor column_name: String
   attr_accessor user_name: untyped
   def initialize: (column_name: String) -> void

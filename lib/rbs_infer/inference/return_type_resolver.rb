@@ -200,6 +200,16 @@ module RbsInfer::Inference
       ivar_types
     end
 
+    # Returns Set[String] of ivar names (without `@`) assigned inside any
+    # `def initialize` or directly in a class body. Public so the analyzer
+    # can apply the definite-initialization rule to attr types inferred
+    # from external setter call-sites (felixefelip/rbs_infer#71).
+    def collect_prism_initialized_ivars(tree)
+      result = Set.new
+      walk_prism_init_targets(tree, in_init: false, in_class_body: false, result: result)
+      result
+    end
+
     private
 
     attr_reader :method_type_resolver
@@ -277,16 +287,10 @@ module RbsInfer::Inference
     end
 
     # Walks the Prism tree of a class body and collects ivar names that
-    # are assigned inside `def initialize` or directly in the class body
-    # (outside any method). Mirrors `SteepBridge#collect_initialized_ivars`
-    # for the Prism path. Used by the definite-initialization rule
-    # (felixefelip/rbs_infer#4).
-    def collect_prism_initialized_ivars(tree)
-      result = Set.new
-      walk_prism_init_targets(tree, in_init: false, in_class_body: false, result: result)
-      result
-    end
-
+    # Walks Prism nodes collecting ivar names assigned inside `initialize`
+    # or a class body (outside any method). Mirrors
+    # `SteepBridge#collect_initialized_ivars` for the Prism path. Used by
+    # the definite-initialization rule (felixefelip/rbs_infer#4).
     def walk_prism_init_targets(node, in_init:, in_class_body:, result:)
       return unless node
 
