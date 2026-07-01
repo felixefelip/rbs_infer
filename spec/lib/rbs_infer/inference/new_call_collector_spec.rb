@@ -397,4 +397,51 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       end
     end
   end
+
+  describe "external attr-setter call-sites (rbs_infer#71)" do
+    def collect_method_usages(source, target_class:, target_methods:, local_var_types: {})
+      result = Prism.parse(source)
+      visitor = described_class.new(
+        target_class: target_class,
+        method_return_types: {},
+        local_var_types: local_var_types,
+        constant_arg_resolver: null_constant_resolver,
+        target_methods: target_methods
+      )
+      result.value.accept(visitor)
+      visitor.method_call_usages
+    end
+
+    it "captures `receiver.attr = value` as a usage of the synthetic `attr=` writer" do
+      # `board=` is exposed as a target method (the attr writer). A
+      # `column.board = value` with `column : Column` is just a call to it.
+      source = <<~RUBY
+        column = build_column
+        assigned = build_board
+        column.board = assigned
+      RUBY
+      usages = collect_method_usages(
+        source,
+        target_class: "Column",
+        target_methods: { "board=" => ["board"] },
+        local_var_types: { "column" => "Column", "assigned" => "Board" }
+      )
+      expect(usages["board="]).to eq([{ "board" => "Board" }])
+    end
+
+    it "ignores the setter when the receiver is not the target class" do
+      source = <<~RUBY
+        other = build_other
+        assigned = build_board
+        other.board = assigned
+      RUBY
+      usages = collect_method_usages(
+        source,
+        target_class: "Column",
+        target_methods: { "board=" => ["board"] },
+        local_var_types: { "other" => "Widget", "assigned" => "Board" }
+      )
+      expect(usages).to be_empty
+    end
+  end
 end
