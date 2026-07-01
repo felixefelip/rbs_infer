@@ -26,6 +26,8 @@ class Example
 
     column.board = board
 
+    column.board.user_name
+
     column.set_default_user_name # como o board foi atribuído, agora o user_name será definido corretamente sem NoMethodError
   end
 end
