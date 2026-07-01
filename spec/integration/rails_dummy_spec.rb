@@ -100,6 +100,29 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(expanded).to eq(expectation_path.read)
   end
 
+  # Multi-class fixture exercising the class-scoping fixes end to end
+  # (felixefelip/rbs_infer#69, #70): three classes in one file. Without
+  # scoping, `Board#initialize`'s `@user_name` leaked into a bogus
+  # `Column::AfterInitialize`, `Column`'s `@column_name` leaked onto
+  # `Board`/`Example`, and a local `board` in `Example.run` typed
+  # `Column#board` as a non-nil `Board`. No target_class → the analyzer
+  # discovers and emits all three classes.
+  it "multi-class example file matches expected RBS (class scoping)" do
+    name = "models/example"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # Multi-target file (felixefelip/rbs_infer#38): no target_class is
   # passed, so the analyzer discovers and emits every type the file
   # reopens — the `on_load` blocks (expanded to `ActiveStorage::Blob` /
