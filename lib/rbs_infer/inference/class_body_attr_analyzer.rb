@@ -6,13 +6,30 @@ module RbsInfer::Inference
 
     # constant_resolver: env-aware resolver so an attr assigned a constant is
     # typed by the constant's VALUE, not its bare name (felixefelip/rbs_infer#56).
-    def initialize(attr_names:, constant_resolver:, method_type_resolver: nil)
+    #
+    # target_class: the class whose attrs we're typing. The visitor walks the
+    # whole parsed file (which may define several classes), so writes are only
+    # counted while inside `target_class` — otherwise a local var or `self.x =`
+    # in a *sibling* class whose name happens to match one of our attrs leaks
+    # its type in (felixefelip/rbs_infer#38, mirroring the SteepBridge fix in
+    # felixefelip/rbs_infer#69). Pass `nil` to opt out of scoping (whole file).
+    def initialize(attr_names:, constant_resolver:, target_class:, method_type_resolver: nil)
       @attr_names = attr_names
       @constant_resolver = constant_resolver
+      @target_class = target_class
+      @namespace = []
       @attr_types = {}
       @collection_element_types = {}
       @in_method = false
       @method_type_resolver = method_type_resolver
+    end
+
+    def visit_class_node(node)
+      with_namespace(node.constant_path) { super }
+    end
+
+    def visit_module_node(node)
+      with_namespace(node.constant_path) { super }
     end
 
     def visit_def_node(node)
@@ -20,16 +37,18 @@ module RbsInfer::Inference
       @current_local_types = {}
       super
       # Após visitar o método, verificar variáveis locais que batem com attrs
-      @current_local_types.each do |name, type|
-        if @attr_names.include?(name) && !@attr_types[name]
-          @attr_types[name] = type
+      if in_target_class?
+        @current_local_types.each do |name, type|
+          if @attr_names.include?(name) && !@attr_types[name]
+            @attr_types[name] = type
+          end
         end
       end
       @in_method = false
     end
 
     def visit_call_node(node)
-      if @in_method
+      if @in_method && in_target_class?
         # self.attr = Foo.new(...)
         if node.name.to_s.end_with?("=") && node.receiver.is_a?(Prism::SelfNode)
           attr_name = node.name.to_s.chomp("=")
@@ -47,7 +66,7 @@ module RbsInfer::Inference
     end
 
     def visit_local_variable_write_node(node)
-      if @in_method
+      if @in_method && in_target_class?
         name = node.name.to_s
         if @attr_names.include?(name)
           type = infer_type_from_node(node.value)
@@ -58,7 +77,7 @@ module RbsInfer::Inference
     end
 
     def visit_instance_variable_write_node(node)
-      if @in_method
+      if @in_method && in_target_class?
         name = node.name.to_s.sub(/\A@/, "")
         if @attr_names.include?(name) && !@attr_types[name]
           type = infer_type_from_node(node.value)
@@ -74,6 +93,29 @@ module RbsInfer::Inference
     # concat: arg é um array, elementos estão dentro
 
     private
+
+    # Pushes the class/module name (`Foo`, `Foo::Bar` for a compact path)
+    # while visiting its body, so `in_target_class?` can tell whether the
+    # current write belongs to the class we're generating for.
+    def with_namespace(constant_path)
+      name = RbsInfer::Analyzer.extract_constant_path(constant_path)
+      @namespace.push(name) if name && !name.empty?
+      yield
+    ensure
+      @namespace.pop if name && !name.empty?
+    end
+
+    # True when the current lexical class path is `target_class` or nested
+    # under it (prefix match with a `::` boundary — so a nested-and-included
+    # module writing the same ivars still counts, while `BoardMember` does
+    # not match `Board`). A nil `target_class` disables scoping.
+    def in_target_class?
+      return true if @target_class.nil?
+
+      current = @namespace.join("::")
+      target = @target_class.to_s.sub(/\A::/, "")
+      current == target || current.start_with?("#{target}::")
+    end
 
     def collect_element_types_from_call(node)
       method_name = node.name

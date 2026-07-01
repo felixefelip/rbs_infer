@@ -2,9 +2,12 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Inference::ClassBodyAttrAnalyzer do
-  def analyze(source, attr_names, constant_resolver: fake_constant_resolver)
+  # target_class defaults to nil (no scoping) because the single-class
+  # sources below are unaffected by it; the cross-class leak test passes an
+  # explicit class.
+  def analyze(source, attr_names, constant_resolver: fake_constant_resolver, target_class: nil)
     result = Prism.parse(source)
-    visitor = described_class.new(attr_names: attr_names.to_set, constant_resolver: constant_resolver)
+    visitor = described_class.new(attr_names: attr_names.to_set, constant_resolver: constant_resolver, target_class: target_class)
     result.value.accept(visitor)
     visitor
   end
@@ -221,5 +224,51 @@ RSpec.describe RbsInfer::Inference::ClassBodyAttrAnalyzer do
 
     visitor = analyze(source, ["items"])
     expect(visitor.collection_element_types).to be_empty
+  end
+
+  context "class scoping across multiple classes in one file (rbs_infer#38)" do
+    let(:source) do
+      <<~RUBY
+        class Column
+          attr_accessor :board
+
+          def initialize(name:)
+            @name = name
+          end
+        end
+
+        class Example
+          def self.run
+            board = Board.new(x: 1)
+            column = Column.new(name: "x")
+            column.board = board
+          end
+        end
+      RUBY
+    end
+
+    it "does not leak a sibling class's local var into the target attr" do
+      # `board` is only ever a local var inside Example.run and is never
+      # assigned inside Column — its name merely collides with Column's attr.
+      # Scoped to Column, that sibling write must not type Column#board.
+      visitor = analyze(source, ["board"], target_class: "Column")
+      expect(visitor.attr_types["board"]).to be_nil
+    end
+
+    it "still types an attr from a same-named local in the target class" do
+      # Sanity: scoping must not suppress the legitimate same-class case.
+      same_class = <<~RUBY
+        class Column
+          attr_accessor :board
+
+          def build
+            board = Board.new(x: 1)
+            self.board = board
+          end
+        end
+      RUBY
+      visitor = analyze(same_class, ["board"], target_class: "Column")
+      expect(visitor.attr_types["board"]).to eq("Board")
+    end
   end
 end
