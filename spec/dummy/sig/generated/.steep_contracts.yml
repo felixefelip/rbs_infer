@@ -1,6 +1,14 @@
 ---
 version: 1
 methods:
+  Column#save:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: board
   Column#set_default_user_name:
     requires:
     - kind: not_nil
@@ -41,6 +49,15 @@ methods:
         receiver:
           kind: self
         method: user
+    enforced: false
+  ProfileFormatter#call_without_check:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: nickname
     enforced: false
   ProfileFormatter#format_nickname:
     requires:

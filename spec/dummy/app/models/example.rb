@@ -8,6 +8,12 @@ class Column
   def set_default_user_name
     self.user_name = board.user_name
   end
+
+  def save
+    set_default_user_name
+
+    true
+  end
 end
 
 class Board
@@ -28,6 +34,6 @@ class Example
 
     column.board.user_name
 
-    column.set_default_user_name # como o board foi atribuído, agora o user_name será definido corretamente sem NoMethodError
+    column.save # como o board foi atribuído, agora o user_name será definido corretamente sem NoMethodError
   end
 end
