@@ -10,7 +10,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_05_13_160150) do
+ActiveRecord::Schema[8.0].define(version: 2026_05_14_000001) do
+  create_table "assignments", force: :cascade do |t|
+    t.integer "post_id", null: false
+    t.integer "owner_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["owner_id"], name: "index_assignments_on_owner_id"
+    t.index ["post_id"], name: "index_assignments_on_post_id"
+  end
+
   create_table "comments", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "post_id", null: false
@@ -64,6 +73,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_13_160150) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "assignments", "posts"
+  add_foreign_key "assignments", "users", column: "owner_id"
   add_foreign_key "comments", "posts"
   add_foreign_key "comments", "users"
   add_foreign_key "post_tags", "posts"

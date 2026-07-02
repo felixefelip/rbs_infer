@@ -1,0 +1,12 @@
+module Posts
+  class AssignmentsController < ApplicationController
+    @assignment: Assignment?
+    @post: (Post & Post::Validated)?
+    def create: () -> void
+
+    private
+
+    def set_post: () -> (Post & Post::Validated)
+    def assignment_params: () -> untyped
+  end
+end

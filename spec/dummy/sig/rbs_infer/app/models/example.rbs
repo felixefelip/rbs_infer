@@ -5,6 +5,10 @@ class Column
   def initialize: (column_name: String) -> void
   def set_default_user_name: () -> String
   def save: () -> bool
+
+  class AfterSetDefaultUserName
+    attr_reader user_name: String
+  end
 end
 
 class Board

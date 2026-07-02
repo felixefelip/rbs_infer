@@ -9,6 +9,7 @@ interface ::_RbsRailsPathHelpers
   def root_path: (*untyped) -> ::String
   def post_comments_path: (*untyped) -> ::String
   def post_comment_path: (*untyped) -> ::String
+  def post_assignments_path: (*untyped) -> ::String
   def posts_path: (*untyped) -> ::String
   def new_post_path: (*untyped) -> ::String
   def edit_post_path: (*untyped) -> ::String
@@ -25,6 +26,7 @@ interface ::_RbsRailsPathHelpers
   def root_url: (*untyped) -> ::String
   def post_comments_url: (*untyped) -> ::String
   def post_comment_url: (*untyped) -> ::String
+  def post_assignments_url: (*untyped) -> ::String
   def posts_url: (*untyped) -> ::String
   def new_post_url: (*untyped) -> ::String
   def edit_post_url: (*untyped) -> ::String

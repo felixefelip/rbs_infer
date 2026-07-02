@@ -493,6 +493,10 @@ class ::Post < ::ApplicationRecord
   def comments=: (::Comment::ActiveRecord_Associations_CollectionProxy | ::Array[::Comment]) -> (::Comment::ActiveRecord_Associations_CollectionProxy | ::Array[::Comment])
   def comment_ids: () -> ::Array[::Integer]
   def comment_ids=: (::Array[::Integer]) -> ::Array[::Integer]
+  def assignments: () -> ::Assignment::ActiveRecord_Associations_CollectionProxy
+  def assignments=: (::Assignment::ActiveRecord_Associations_CollectionProxy | ::Array[::Assignment]) -> (::Assignment::ActiveRecord_Associations_CollectionProxy | ::Array[::Assignment])
+  def assignment_ids: () -> ::Array[::Integer]
+  def assignment_ids=: (::Array[::Integer]) -> ::Array[::Integer]
   def post_tags: () -> ::PostTag::ActiveRecord_Associations_CollectionProxy
   def post_tags=: (::PostTag::ActiveRecord_Associations_CollectionProxy | ::Array[::PostTag]) -> (::PostTag::ActiveRecord_Associations_CollectionProxy | ::Array[::PostTag])
   def post_tag_ids: () -> ::Array[::Integer]
@@ -573,6 +577,10 @@ end
 class ::Comment < ::ApplicationRecord
 end
 class ::Comment::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
+end
+class ::Assignment < ::ApplicationRecord
+end
+class ::Assignment::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
 end
 class ::PostTag < ::ApplicationRecord
 end

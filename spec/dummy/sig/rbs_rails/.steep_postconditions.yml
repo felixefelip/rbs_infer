@@ -1,5 +1,34 @@
 ---
 postconditions:
+- class: Assignment
+  method: save
+  when_true:
+    self: Assignment & Assignment::Validated
+  when_false:
+    drops:
+    - Assignment::Validated
+- class: Assignment
+  method: save!
+  when_true:
+    self: Assignment & Assignment::Validated
+- class: Assignment
+  method: update
+  when_true:
+    self: Assignment & Assignment::Validated
+  when_false:
+    drops:
+    - Assignment::Validated
+- class: Assignment
+  method: update!
+  when_true:
+    self: Assignment & Assignment::Validated
+- class: Assignment
+  method: valid?
+  when_true:
+    self: Assignment & Assignment::Validated
+  when_false:
+    drops:
+    - Assignment::Validated
 - class: Comment
   method: save
   when_true:

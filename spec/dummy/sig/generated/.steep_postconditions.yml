@@ -1,6 +1,18 @@
 ---
 version: 1
 postconditions:
+- class: Posts::AssignmentsController
+  method: create
+  unconditional:
+    ivars:
+      "@assignment": "::Assignment"
+    self: "::Posts::AssignmentsController & ::Posts::AssignmentsController::AfterCreate"
+- class: Posts::AssignmentsController
+  method: set_post
+  unconditional:
+    ivars:
+      "@post": "(::Post & ::Post::Validated)"
+    self: "::Posts::AssignmentsController & ::Posts::AssignmentsController::AfterSetPost"
 - class: PostsController
   method: create
   unconditional:
