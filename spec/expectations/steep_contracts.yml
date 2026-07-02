@@ -9,7 +9,6 @@ methods:
         receiver:
           kind: self
         method: board
-    enforced: false
   Comment#author_name:
     requires:
     - kind: not_nil
