@@ -296,14 +296,14 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
   # the safe association-construction path clears the `default:` false positive,
   # while an unsafe `Model.new.save` still errors (soundness).
   def belongs_to_default_expansion(files)
-    require "rbs_infer/extensions/rails/belongs_to_default_generator"
+    require "rbs_infer/extensions/rails/active_record/belongs_to_default_generator"
     Dir.mktmpdir("btd") do |dir|
       files.each do |rel, content|
         path = File.join(dir, rel)
         FileUtils.mkdir_p(File.dirname(path))
         File.write(path, content)
       end
-      RbsInfer::Extensions::Rails::BelongsToDefaultGenerator.new(app_dir: dir).build.expanded_source
+      RbsInfer::Extensions::Rails::ActiveRecord::BelongsToDefaultGenerator.new(app_dir: dir).build.combined_source
     end
   end
 

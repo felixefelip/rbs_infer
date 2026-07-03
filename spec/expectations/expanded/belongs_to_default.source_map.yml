@@ -1,5 +1,6 @@
 ---
-- expanded_line: 20
+- expanded_file: RbsInferBelongsToDefaultAssignment.rb
+  expanded_line: 18
   original_path: app/models/assignment.rb
   original_line: 19
   original_column: 55

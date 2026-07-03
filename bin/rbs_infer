@@ -88,8 +88,8 @@ if rails_project
   # (felixefelip/rbs_infer#72). Steep consumes them via felixefelip/steep#54
   # to type-check the `example.rb`-shaped expansion and map any diagnostic
   # back to the real `default:` lambda.
-  require "rbs_infer/extensions/rails/belongs_to_default_generator"
-  RbsInfer::Extensions::Rails::BelongsToDefaultGenerator.new(app_dir: Dir.pwd).generate
+  require "rbs_infer/extensions/rails/active_record/belongs_to_default_generator"
+  RbsInfer::Extensions::Rails::ActiveRecord::BelongsToDefaultGenerator.new(app_dir: Dir.pwd).generate
 end
 
 generate = lambda do |inputs_to_process, silent: false|

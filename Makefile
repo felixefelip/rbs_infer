@@ -43,7 +43,7 @@ rbs_infer_module_self_types:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/extensions/rails/module_self_type_generator'; RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator.new(app_dir: '.').generate"
 
 rbs_infer_belongs_to_default:
-	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/belongs_to_default_generator'; RbsInfer::Extensions::Rails::BelongsToDefaultGenerator.new(app_dir: '.').generate"
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/active_record/belongs_to_default_generator'; RbsInfer::Extensions::Rails::ActiveRecord::BelongsToDefaultGenerator.new(app_dir: '.').generate"
 
 rbs_generators_all:
 	make rbs_rails_generator

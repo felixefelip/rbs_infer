@@ -45,7 +45,7 @@ this shape:
 column = Column.new(...); column.board = board; column.save   # board non-nil → save chain enforces
 ```
 
-`RbsInfer::Extensions::Rails::BelongsToDefaultGenerator` emits the AR flow **as that exact
+`RbsInfer::Extensions::Rails::ActiveRecord::BelongsToDefaultGenerator` emits the AR flow **as that exact
 shape** into a synthetic program, plus a source-map, for Steep (#54) to check and map back.
 
 ### Model side — `belongs_to default:` → lifecycle methods
@@ -53,8 +53,12 @@ shape** into a synthetic program, plus a source-map, for Steep (#54) to check an
 ```ruby
 class RbsInferBelongsToDefaultAssignment
   attr_accessor :post, :owner
-  def save; run_before_validation_callbacks; end
-  def run_before_validation_callbacks; run_belongs_to_default_callbacks; end
+  def save
+    run_before_validation_callbacks
+  end
+  def run_before_validation_callbacks
+    run_belongs_to_default_callbacks
+  end
   def run_belongs_to_default_callbacks
     self.owner = post.user          # lambda BODY inlined directly (not `-> {}.call`),
   end                               # so the contract inferrer sees the `post` deref
@@ -107,24 +111,27 @@ removed only where construction actually proves `post` is set.
 
 ## Sidecar contract (for felixefelip/steep#54)
 
-Two files under `sig/generated/`, mirroring `.steep_module_self_types.yml`:
+Under `sig/generated/`, mirroring `.steep_module_self_types.yml`:
 
-- **`.steep_belongs_to_default.rb`** — the synthetic `example.rb`-shaped program Steep adds to
-  its check targets.
+- **`.steep_belongs_to_default/`** — a directory with one synthetic `.rb` per class
+  (`RbsInferBelongsToDefaultAssignment.rb`, `...Post.rb`, `...User.rb`, `...Runner.rb`), all
+  added to Steep's check targets.
 - **`.steep_belongs_to_default.yml`** — the source-map: a list of
 
   ```yaml
-  - expanded_line: 20                      # the inlined `self.owner = post.user` line
+  - expanded_file: RbsInferBelongsToDefaultAssignment.rb   # which expansion file
+    expanded_line: 15                        # the inlined `self.owner = post.user` line in it
     original_path: app/models/assignment.rb
-    original_line: 19                       # the `belongs_to :owner, ..., default:` line
-    original_column: 55                     # column of the lambda body `post.user`
+    original_line: 19                         # the `belongs_to :owner, ..., default:` line
+    original_column: 55                       # column of the lambda body `post.user`
     original_length: 9
   ```
 
-Steep (#54) uses each entry to (a) **remap** any diagnostic it finds on `expanded_line` back to
-the real `original_*` span, and (b) **suppress** its native check of that span (now covered by
-the expansion). So: a safe association caller ⇒ expansion clean ⇒ native diagnostic suppressed;
-an unsafe caller ⇒ expansion errors ⇒ mapped back to the real `default:` lambda.
+Steep (#54) uses each entry to (a) **remap** any diagnostic it finds at
+`expanded_file:expanded_line` back to the real `original_*` span, and (b) **suppress** its
+native check of that span (now covered by the expansion). So: a safe association caller ⇒
+expansion clean ⇒ native diagnostic suppressed; an unsafe caller ⇒ expansion errors ⇒ mapped
+back to the real `default:` lambda.
 
 ## Wiring
 
@@ -135,10 +142,12 @@ an unsafe caller ⇒ expansion errors ⇒ mapped back to the real `default:` lam
 ## Layout
 
 ```
-lib/rbs_infer/extensions/rails/
+lib/rbs_infer/extensions/rails/active_record/
   belongs_to_default_generator.rb          # orchestrator + sidecar I/O
   belongs_to_default/
     reflection_scanner.rb                  # models → belongs_to/has_many/default: reflections
     construction_site_scanner.rb           # callers → association / direct construction sites
-    expansion_builder.rb                   # reflections + sites → expanded Ruby + source-map
+    expansion_builder.rb                   # reflections + sites → per-class files + source-map
 ```
+
+All under `RbsInfer::Extensions::Rails::ActiveRecord`.

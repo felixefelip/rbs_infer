@@ -102,24 +102,31 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   it "belongs_to-default expansion + source-map match expected sidecars" do
     # Snapshot of the belongs_to-default desugar (felixefelip/rbs_infer#72):
-    # the example.rb-shaped program Steep checks, plus the source-map back to
-    # the real `default:` lambda. Kept separate from the RBS snapshots so a
-    # change localizes to the expansion layer.
-    require "rbs_infer/extensions/rails/belongs_to_default_generator"
-    result = RbsInfer::Extensions::Rails::BelongsToDefaultGenerator.new(app_dir: ".").build
+    # the example.rb-shaped program Steep checks (one file per synthetic
+    # class), plus the source-map back to the real `default:` lambda. Kept
+    # separate from the RBS snapshots so a change localizes to the expansion
+    # layer.
+    require "rbs_infer/extensions/rails/active_record/belongs_to_default_generator"
+    result = RbsInfer::Extensions::Rails::ActiveRecord::BelongsToDefaultGenerator.new(app_dir: ".").build
 
     expect(result).not_to be_nil
-    expect(Prism.parse(result.expanded_source).success?).to be(true)
+    result.files.each { |f| expect(Prism.parse(f.source).success?).to be(true) }
 
-    expanded_expectation = expectations_dir.join("expanded/belongs_to_default.rb")
-    map_expectation = expectations_dir.join("expanded/belongs_to_default.yml")
+    expected_dir = expectations_dir.join("expanded/belongs_to_default")
+    map_expectation = expectations_dir.join("expanded/belongs_to_default.source_map.yml")
     if ENV["UPDATE_EXPECTATIONS"]
-      expanded_expectation.dirname.mkpath
-      expanded_expectation.write(result.expanded_source)
+      expected_dir.rmtree if expected_dir.exist?
+      expected_dir.mkpath
+      result.files.each { |f| expected_dir.join(f.filename).write(f.source) }
       map_expectation.write(YAML.dump(result.source_map))
     end
 
-    expect(result.expanded_source).to eq(expanded_expectation.read)
+    result.files.each do |f|
+      expect(f.source).to eq(expected_dir.join(f.filename).read)
+    end
+    # No stale/extra expected files linger beyond what the generator emits.
+    expect(expected_dir.children.map { |p| p.basename.to_s }.sort)
+      .to eq(result.files.map(&:filename).sort)
     expect(result.source_map).to eq(YAML.safe_load(map_expectation.read))
   end
 
