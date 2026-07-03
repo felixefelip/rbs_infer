@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "fileutils"
 require_relative "../support/steep_scenario_helper"
 
 # End-to-end scenarios for the nilable-attr / precondition-contract pipeline:
@@ -285,5 +286,82 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
 
     expect(result.generated_rbs.chomp).to eq(expected_rbs.chomp)
     expect(result.diagnostics).to be_empty # <- documents the unsoundness
+  end
+
+  # --- belongs_to default: expansion (felixefelip/rbs_infer#72) ---------------
+  #
+  # The generator emits an example.rb-shaped program from the AR reflections +
+  # construction sites; these feed that program through the SAME rbs_infer →
+  # Steep contract pipeline to prove the emitted shape satisfies the contract:
+  # the safe association-construction path clears the `default:` false positive,
+  # while an unsafe `Model.new.save` still errors (soundness).
+  def belongs_to_default_expansion(files)
+    require "rbs_infer/extensions/rails/belongs_to_default_generator"
+    Dir.mktmpdir("btd") do |dir|
+      files.each do |rel, content|
+        path = File.join(dir, rel)
+        FileUtils.mkdir_p(File.dirname(path))
+        File.write(path, content)
+      end
+      RbsInfer::Extensions::Rails::BelongsToDefaultGenerator.new(app_dir: dir).build.expanded_source
+    end
+  end
+
+  ASSIGNMENT_MODEL = <<~RUBY
+    class Assignment < ApplicationRecord
+      belongs_to :post
+      belongs_to :owner, class_name: "User", default: -> { post.user }
+    end
+  RUBY
+
+  POST_MODEL = <<~RUBY
+    class Post < ApplicationRecord
+      has_many :assignments
+    end
+  RUBY
+
+  it "clears the default: false positive on the safe association path" do
+    expanded = belongs_to_default_expansion(
+      "app/models/assignment.rb" => ASSIGNMENT_MODEL,
+      "app/models/post.rb" => POST_MODEL,
+      "app/controllers/posts/assignments_controller.rb" => <<~RUBY
+        class Posts::AssignmentsController < ApplicationController
+          def create
+            @assignment = @post.assignments.create!(assignment_params)
+          end
+        end
+      RUBY
+    )
+
+    result = steep_scenario(expanded)
+
+    # `post` is inferred nilable (external setter) and the save-chain enforces
+    # the precondition, which the owner-setter (`record.post = owner`)
+    # establishes — so the deref of `post.user` is safe. No diagnostics.
+    expect(result.generated_rbs).to include("attr_accessor post: RbsInferBelongsToDefaultPost?")
+    expect(result.diagnostics).to be_empty
+  end
+
+  it "still flags an unsafe construction that reaches save without post (soundness)" do
+    expanded = belongs_to_default_expansion(
+      "app/models/assignment.rb" => ASSIGNMENT_MODEL,
+      "app/models/post.rb" => POST_MODEL,
+      "app/services/assignment_service.rb" => <<~RUBY
+        class AssignmentService
+          def run
+            Assignment.create!(assignment_params)
+          end
+        end
+      RUBY
+    )
+
+    result = steep_scenario(expanded)
+
+    # The params-bag construction proves nothing about `post`, so the save
+    # chain's precondition is unenforced and the deref surfaces — mapped back
+    # to the real `default:` lambda by the source-map.
+    expect(result.diagnostics).to include(
+      a_string_matching(/\(::RbsInferBelongsToDefaultPost \| nil\)` does not have method `user`/)
+    )
   end
 end

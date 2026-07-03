@@ -107,6 +107,7 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 | `rake rbs_infer:rails_custom:all` | `RbsInfer::Extensions::Rails::CustomGenerator` | `sig/rbs_rails_custom/` |
 | `rake rbs_infer:erb:all` | `RbsInfer::Extensions::Rails::ErbConventionGenerator` | `sig/rbs_infer_erb/` |
 | `rake rbs_infer:module_self_types:all` | `RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator` | `sig/generated/.steep_module_self_types.yml` |
+| `rake rbs_infer:belongs_to_default:all` | `RbsInfer::Extensions::Rails::BelongsToDefaultGenerator` | `sig/generated/.steep_belongs_to_default.{rb,yml}` |
 
 **Enumerize generator** — walks `app/models/**/*.rb`, captures `enumerize :attr, in: [...]`, and emits per-attribute `Value` / `Attribute` classes plus instance/class accessors, predicate methods, and scope methods (shallow/deep).
 
@@ -117,6 +118,8 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 - partial locals typed by collecting every `render partial: "...", locals: { ... }` call-site,
 - `params: () -> ActionController::Parameters`,
 - helper modules included.
+
+**belongs_to-default generator** — desugars `belongs_to :owner, default: -> { post.user }` (plus the association-construction call-sites that build the record) into a self-contained `example.rb`-shaped program Steep type-checks by pure inference, plus a source-map back to the real `default:` lambda. Unlike a `SourceExpander` (consumed only by rbs_infer), this sidecar is consumed by Steep ([felixefelip/steep#54](https://github.com/felixefelip/steep/pull/54)) to remove the `(::Post | nil) does not have method` false positive on the lambda — soundly, only where construction proves the derefed association is set. See [`docs/guides/belongs_to_default_inference.md`](docs/guides/belongs_to_default_inference.md).
 
 ## Layout
 

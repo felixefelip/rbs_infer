@@ -100,6 +100,29 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(expanded).to eq(expectation_path.read)
   end
 
+  it "belongs_to-default expansion + source-map match expected sidecars" do
+    # Snapshot of the belongs_to-default desugar (felixefelip/rbs_infer#72):
+    # the example.rb-shaped program Steep checks, plus the source-map back to
+    # the real `default:` lambda. Kept separate from the RBS snapshots so a
+    # change localizes to the expansion layer.
+    require "rbs_infer/extensions/rails/belongs_to_default_generator"
+    result = RbsInfer::Extensions::Rails::BelongsToDefaultGenerator.new(app_dir: ".").build
+
+    expect(result).not_to be_nil
+    expect(Prism.parse(result.expanded_source).success?).to be(true)
+
+    expanded_expectation = expectations_dir.join("expanded/belongs_to_default.rb")
+    map_expectation = expectations_dir.join("expanded/belongs_to_default.yml")
+    if ENV["UPDATE_EXPECTATIONS"]
+      expanded_expectation.dirname.mkpath
+      expanded_expectation.write(result.expanded_source)
+      map_expectation.write(YAML.dump(result.source_map))
+    end
+
+    expect(result.expanded_source).to eq(expanded_expectation.read)
+    expect(result.source_map).to eq(YAML.safe_load(map_expectation.read))
+  end
+
   # Multi-class fixture exercising the class-scoping fixes end to end
   # (felixefelip/rbs_infer#69, #70): three classes in one file. Without
   # scoping, `Board#initialize`'s `@user_name` leaked into a bogus

@@ -83,6 +83,13 @@ if rails_project
   require "rbs_infer/extensions/rails/module_self_type_generator"
   RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator.new(app_dir: Dir.pwd).generate
   Steep::Source::ModuleSelfTypes.reset!
+
+  # Emit the belongs_to-default expansion + source-map sidecars
+  # (felixefelip/rbs_infer#72). Steep consumes them via felixefelip/steep#54
+  # to type-check the `example.rb`-shaped expansion and map any diagnostic
+  # back to the real `default:` lambda.
+  require "rbs_infer/extensions/rails/belongs_to_default_generator"
+  RbsInfer::Extensions::Rails::BelongsToDefaultGenerator.new(app_dir: Dir.pwd).generate
 end
 
 generate = lambda do |inputs_to_process, silent: false|
