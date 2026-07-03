@@ -208,4 +208,37 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::BelongsToDefaultGenera
       end
     end
   end
+
+  describe "scan roots" do
+    it "falls back to app/ when Rails is not booted" do
+      in_app("app/models/assignment.rb" => ASSIGNMENT) do |dir|
+        expect(described_class.new(app_dir: dir).send(:roots)).to eq(%w[app])
+      end
+    end
+
+    it "derives roots (relativized, incl. non-app dirs) from Rails eager_load_paths at app_dir" do
+      in_app("app/models/assignment.rb" => ASSIGNMENT, "domain/post.rb" => POST) do |dir|
+        config = double(eager_load_paths: [File.join(dir, "domain"), File.join(dir, "app/models")])
+        stub_const("Rails", double(application: double(config: config), root: dir))
+
+        expect(described_class.new(app_dir: dir).send(:roots)).to contain_exactly("domain", "app/models")
+      end
+    end
+
+    it "ignores Rails when its root is not app_dir (e.g. specs/CLI in another dir)" do
+      in_app("app/models/assignment.rb" => ASSIGNMENT) do |dir|
+        config = double(eager_load_paths: ["/somewhere/else/app/models"])
+        stub_const("Rails", double(application: double(config: config), root: "/somewhere/else"))
+
+        expect(described_class.new(app_dir: dir).send(:roots)).to eq(%w[app])
+      end
+    end
+
+    it "honors an explicit roots: override (dirs outside app/)" do
+      in_app("engine/models/assignment.rb" => ASSIGNMENT, "engine/models/post.rb" => POST) do |dir|
+        result = described_class.new(app_dir: dir, roots: %w[engine/models]).build
+        expect(result.files.map(&:class_name)).to include("Assignment")
+      end
+    end
+  end
 end

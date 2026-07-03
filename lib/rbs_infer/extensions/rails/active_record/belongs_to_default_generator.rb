@@ -58,12 +58,17 @@ module RbsInfer
           SIDECAR_PATH = "sig/generated/.steep_belongs_to_default.yml"
           EXPANDED_DIR = "sig/generated/.steep_belongs_to_default"
 
-          # Roots scanned for models (reflections) and for construction sites.
-          MODEL_ROOTS = %w[app/models].freeze
-          CALLER_ROOTS = %w[app/controllers app/models app/services].freeze
+          # Fallback scan roots when Rails' load paths can't be read (the CLI
+          # runs without booting the app, and the specs use bare temp dirs):
+          # all of `app/` — reflections only fire on models, construction sites
+          # can live anywhere, so one broad root covers both.
+          DEFAULT_ROOTS = %w[app].freeze
 
-          def initialize(app_dir:)
+          # roots: explicit project-relative dirs to scan (overrides derivation);
+          #   nil ⇒ derive from Rails' eager-load paths, else DEFAULT_ROOTS.
+          def initialize(app_dir:, roots: nil)
             @app_dir = app_dir
+            @explicit_roots = roots
           end
 
           # Builds the ExpansionBuilder::Result (per-class files + source map),
@@ -101,7 +106,7 @@ module RbsInfer
           private
 
           def scan_models
-            each_rb(MODEL_ROOTS).flat_map do |abs, rel|
+            each_rb.flat_map do |abs, rel|
               BelongsToDefault::ReflectionScanner.scan(path: rel, source: File.read(abs))
             rescue StandardError => e
               warn_skip(rel, e)
@@ -113,12 +118,41 @@ module RbsInfer
             index = BelongsToDefault::AssociationIndex.new(models)
             return [] unless index.any?
 
-            each_rb(CALLER_ROOTS).flat_map do |abs, rel|
+            each_rb.flat_map do |abs, rel|
               BelongsToDefault::ConstructionSiteScanner.scan(path: rel, source: File.read(abs), index: index)
             rescue StandardError => e
               warn_skip(rel, e)
               []
             end
+          end
+
+          # Project-relative dirs to sweep for both reflections and construction
+          # sites — Rails' eager-load paths when the app is booted (so engines
+          # and custom `app/*` dirs are covered), else `DEFAULT_ROOTS`.
+          def roots
+            @roots ||= @explicit_roots || rails_eager_load_roots || DEFAULT_ROOTS
+          end
+
+          # Rails' eager-load paths (models, controllers, services, jobs,
+          # engine dirs, …) relative to `@app_dir`, or nil when Rails isn't
+          # booted here or its root isn't `@app_dir` (the CLI/specs case). Only
+          # paths under `@app_dir` are kept, so a scanned file's project-
+          # relative path stays correct for the source-map. `::Rails` is
+          # explicit: inside this module, `Rails` is our own extension module.
+          def rails_eager_load_roots
+            return nil unless defined?(::Rails) && ::Rails.respond_to?(:application) && (app = ::Rails.application)
+            return nil unless ::Rails.respond_to?(:root) && ::Rails.root &&
+                              File.expand_path(::Rails.root.to_s) == File.expand_path(@app_dir)
+
+            paths = app.config.eager_load_paths
+            roots = Array(paths).filter_map { |p| root_relative(p) }.uniq
+            roots.empty? ? nil : roots
+          end
+
+          def root_relative(abs)
+            base = File.expand_path(@app_dir)
+            expanded = File.expand_path(abs.to_s)
+            expanded.start_with?("#{base}/") ? expanded[(base.length + 1)..] : nil
           end
 
           # A malformed/unreadable file is skipped rather than aborting the whole
@@ -128,10 +162,10 @@ module RbsInfer
             warn "[rbs_infer belongs_to_default] skipped #{rel}: #{error.class}: #{error.message}"
           end
 
-          def each_rb(roots)
+          def each_rb
             roots.flat_map do |root|
               Dir.glob(File.join(@app_dir, root, "**/*.rb")).sort.map { |abs| [abs, relative(abs)] }
-            end
+            end.uniq
           end
 
           def relative(abs)

@@ -137,7 +137,11 @@ back to the real `default:` lambda.
 
 - Rake task: `rake rbs_infer:belongs_to_default:all` (registered by the railtie).
 - Makefile: `make rbs_infer_belongs_to_default` (and part of `make rbs_generators_all`).
-- CLI: `bin/rbs_infer` emits both sidecars up front when running inside a Rails app.
+- CLI: `bin/rbs_infer` emits the sidecar up front when running inside a Rails app.
+
+Scan roots (for both reflections and construction sites) come from Rails'
+`config.eager_load_paths` when the app is booted at the target dir (so engines and custom
+`app/*` dirs are covered), falling back to `app/` otherwise; pass `roots:` to override.
 
 ## Layout
 
