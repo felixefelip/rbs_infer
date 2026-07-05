@@ -240,13 +240,57 @@ blindly.
 
 ## 8. Open questions
 
-1. **RBS reconciliation with rbs_rails (§4.2).** Do we (a) have #54 override the
-   getter signature, (b) post-process the rbs_rails output, or (c) coordinate
-   emission order so ours wins? Needs a decision; affects whether this is purely
-   a #54 concern or also a generation-order concern.
-2. **What counts as "runs the default".** `create`/`create!` clearly; `new` +
-   later `save`; a bare `save` on a built record; `update`/`save!` on an unsaved
-   record. #54 needs a precise trigger set — enumerate it here once settled.
+### 8.1 RBS reconciliation with rbs_rails (§4.2) — *decision pending; recommendation below*
+
+**Empirical findings** (from the dummy's `sig/rbs_rails/app/models/post.rbs`):
+
+- `Post#assignments` is emitted **in the class body**
+  (`class ::Post … def assignments: () -> ::Assignment::ActiveRecord_Associations_CollectionProxy`),
+  **not** in an included module — so a class-body override can't "shadow" it; it
+  becomes a **duplicate method** error.
+- The proxy `::Assignment::ActiveRecord_Associations_CollectionProxy` is
+  **per-element (shared across owners)**, so it **carries no owner type** — we
+  can't type `owner` as `Post` on it.
+- That proxy **already defines** `create! / create / build` (returning
+  `::Assignment` / `::Assignment::Validated`) and includes
+  `ActiveRecord::Relation::Methods[…, ::Assignment::Validated]` — i.e. the
+  `Validated`/postcondition machinery we want to move away from already lives here.
+
+**Options:**
+
+- **(a)** #54 replaces the rbs_rails association entry at load. Simple for
+  rbs_infer, but Steep learns rbs_rails specifics (less clean, more fragile).
+- **(b)** rbs_infer post-processes the rbs_rails `.rbs` in place. Keeps it all in
+  RBS, but mutates another generator's output and is clobbered on regeneration.
+- **(c) — recommended.** The `felixefelip/rbs_rails` fork emits an
+  **owner-specific proxy** (e.g. `Post_Assignments_CollectionProxy`, carrying the
+  owner type) returned by `assignments`; rbs_infer supplies only the
+  **contract-free body**. Resolves the conflict at the source (no duplicate),
+  **gives the owner type** the shared proxy lacks, keeps Steep generic, and
+  **supersedes the `Validated`/postcondition markers** for that association —
+  aligned with dropping the rbs_rails contract machinery. Cost: a 3-repo change
+  (the split the project already assumes).
+
+> This question **gates the repo footprint**: (a)/(b) keep it a two-repo change
+> (rbs_infer ↔ steep#54); (c) makes it three (incl. `felixefelip/rbs_rails`).
+
+### 8.2 What counts as "runs the default" (the trigger set) — *decision pending; recommendation below*
+
+The `belongs_to default:` runs in `before_validation` (so on `valid?`, `save`,
+`create`, `update`, …). But contract-free suppression can only resolve locally
+what **builds and persists in the same expression**.
+
+- **v1 = `create` / `create!` only** (class-level and association-level) —
+  *recommended*. Atomic build+persist, resolvable by pure inference. `new`/`build`
+  alone don't persist (don't run the default). `new/build` + a later `save`, and
+  bare `save`/`update`/`valid?` on a record built elsewhere, are **left to the
+  native check** (no suppression ⇒ **sound**, just more conservative).
+- **Broader set** (`new`+`save`, bare `save`/`update`/`valid?`): covers split
+  build-then-save, but the fact crosses a method boundary ⇒ needs the contract
+  machinery — exactly what we're avoiding. Revisit later only if necessary.
+
+### Remaining
+
 3. **Direct construction with a non-nil literal** (`Assignment.create!(post:
    some_post)`). Is this a `safe_constructions` entry too (post established by a
    literal kwarg), or left to the native check? Likely the former — extend the
