@@ -17,4 +17,12 @@
 class Assignment < ApplicationRecord
   belongs_to :post
   belongs_to :owner, class_name: "User", default: -> { post.user }
+
+  before_validation :log_post_user_name
+
+  private
+
+  def log_post_user_name
+    Rails.logger.info("Post user name: #{post.user.name}")
+  end
 end
