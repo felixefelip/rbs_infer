@@ -489,19 +489,19 @@ class ::Post < ::ApplicationRecord
     alias id_value_for_database id_for_database
   end
   include ::Post::GeneratedAliasAttributeMethods
-  def comments: () -> ::Comment::ActiveRecord_Associations_CollectionProxy
+  def comments: () -> ::Post_Comment::ActiveRecord_Associations_CollectionProxy
   def comments=: (::Comment::ActiveRecord_Associations_CollectionProxy | ::Array[::Comment]) -> (::Comment::ActiveRecord_Associations_CollectionProxy | ::Array[::Comment])
   def comment_ids: () -> ::Array[::Integer]
   def comment_ids=: (::Array[::Integer]) -> ::Array[::Integer]
-  def assignments: () -> ::Assignment::ActiveRecord_Associations_CollectionProxy
+  def assignments: () -> ::Post_Assignment::ActiveRecord_Associations_CollectionProxy
   def assignments=: (::Assignment::ActiveRecord_Associations_CollectionProxy | ::Array[::Assignment]) -> (::Assignment::ActiveRecord_Associations_CollectionProxy | ::Array[::Assignment])
   def assignment_ids: () -> ::Array[::Integer]
   def assignment_ids=: (::Array[::Integer]) -> ::Array[::Integer]
-  def post_tags: () -> ::PostTag::ActiveRecord_Associations_CollectionProxy
+  def post_tags: () -> ::Post_PostTag::ActiveRecord_Associations_CollectionProxy
   def post_tags=: (::PostTag::ActiveRecord_Associations_CollectionProxy | ::Array[::PostTag]) -> (::PostTag::ActiveRecord_Associations_CollectionProxy | ::Array[::PostTag])
   def post_tag_ids: () -> ::Array[::Integer]
   def post_tag_ids=: (::Array[::Integer]) -> ::Array[::Integer]
-  def tags: () -> ::Tag::ActiveRecord_Associations_CollectionProxy
+  def tags: () -> ::Post_Tag::ActiveRecord_Associations_CollectionProxy
   def tags=: (::Tag::ActiveRecord_Associations_CollectionProxy | ::Array[::Tag]) -> (::Tag::ActiveRecord_Associations_CollectionProxy | ::Array[::Tag])
   def tag_ids: () -> ::Array[::Integer]
   def tag_ids=: (::Array[::Integer]) -> ::Array[::Integer]
@@ -567,6 +567,30 @@ class ::Post < ::ApplicationRecord
     def body: () -> ::String
     def created_at: () -> ::ActiveSupport::TimeWithZone
     def updated_at: () -> ::ActiveSupport::TimeWithZone
+  end
+end
+
+module Post_Comment
+  class ActiveRecord_Associations_CollectionProxy < ::Comment::ActiveRecord_Associations_CollectionProxy
+    def owner: () -> ::Post
+  end
+end
+
+module Post_Assignment
+  class ActiveRecord_Associations_CollectionProxy < ::Assignment::ActiveRecord_Associations_CollectionProxy
+    def owner: () -> ::Post
+  end
+end
+
+module Post_PostTag
+  class ActiveRecord_Associations_CollectionProxy < ::PostTag::ActiveRecord_Associations_CollectionProxy
+    def owner: () -> ::Post
+  end
+end
+
+module Post_Tag
+  class ActiveRecord_Associations_CollectionProxy < ::Tag::ActiveRecord_Associations_CollectionProxy
+    def owner: () -> ::Post
   end
 end
 
