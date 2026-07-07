@@ -25,7 +25,12 @@ module RbsInfer
         # atomic `create`/`create!` path. The `belongs_to default:` inlining and
         # the split `build` + later `save` case are follow-ups.
         class RuntimeGenerator
-          SIDECAR_DIR = "sig/generated/.steep_ar_runtime"
+          # NOT dot-prefixed: these are `.rb` SOURCE files Steep must type-check
+          # (via a `check "sig/**/*.rb"` glob), and `**` skips hidden (dot)
+          # directories — a dot-prefixed dir would be invisible to Steep. (The
+          # `.steep_*.yml` sidecars can be dot-prefixed because the fork loads
+          # them explicitly, not through a source glob.)
+          SIDECAR_DIR = "sig/generated/steep_ar_runtime"
           MODEL_ROOTS = %w[app/models].freeze
 
           def initialize(app_dir:)
