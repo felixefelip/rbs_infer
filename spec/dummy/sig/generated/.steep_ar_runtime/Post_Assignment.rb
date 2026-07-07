@@ -4,6 +4,14 @@
 # Regenerated on every run; do not edit.
 
 class Post_Assignment::ActiveRecord_Associations_CollectionProxy
+  def initialize(owner)
+    @owner = owner
+  end
+
+  def owner
+    @owner
+  end
+
   def build(attributes = nil)
     record = Assignment.new
     record.post = owner
