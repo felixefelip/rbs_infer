@@ -72,13 +72,29 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
     end
   end
 
+  describe "owner reopen (association getter)" do
+    it "returns the owner-specific proxy from the has_many getter, passing self" do
+      in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
+        owner = source_of(described_class.new(app_dir: dir).build, "Post.rb")
+
+        expect(owner).to include("class Post\n")
+        # `self` flows as the owner, so its type is inferred (not a stub).
+        expect(owner).to match(/def assignments\n\s*Post_Assignment::ActiveRecord_Associations_CollectionProxy\.new\(self\)\n\s*end/)
+        expect(Prism.parse(owner).success?).to be(true)
+      end
+    end
+  end
+
   describe "proxy reopen (construction flow)" do
-    it "reopens the owner-specific proxy with build/new/create/create!" do
+    it "captures the owner and reopens with build/new/create/create!" do
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
         proxy = source_of(described_class.new(app_dir: dir).build, "Post_Assignment.rb")
 
         expect(proxy).to include("class Post_Assignment::ActiveRecord_Associations_CollectionProxy\n")
-        # build establishes the inverse belongs_to (`post`) from the association owner.
+        # owner is captured from the getter and read back.
+        expect(proxy).to match(/def initialize\(owner\)\n\s*@owner = owner\n\s*end/)
+        expect(proxy).to match(/def owner\n\s*@owner\n\s*end/)
+        # build establishes the inverse belongs_to (`post`) from the owner.
         expect(proxy).to match(/def build\(attributes = nil\)\n\s*record = Assignment\.new\n\s*record\.post = owner\n\s*record\n\s*end/)
         # create / create! = build + save.
         expect(proxy).to match(/def create\(attributes = nil\)\n\s*record = build\(attributes\)\n\s*record\.save\n\s*record\n\s*end/)
@@ -120,7 +136,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         File.write(File.join(stale, "Old.rb"), "old")
 
         out = described_class.new(app_dir: dir).generate
-        expect(Dir.children(out).sort).to eq(["Assignment.rb", "Post_Assignment.rb"])
+        expect(Dir.children(out).sort).to eq(["Assignment.rb", "Post.rb", "Post_Assignment.rb"])
       end
     end
 
