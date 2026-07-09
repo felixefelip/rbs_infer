@@ -4,7 +4,7 @@
 # Regenerated on every run; do not edit.
 
 class Post_Assignment::ActiveRecord_Associations_CollectionProxy
-  def initialize(owner)
+  def initialize(klass, owner)
     @owner = owner
   end
 
@@ -12,24 +12,20 @@ class Post_Assignment::ActiveRecord_Associations_CollectionProxy
     @owner
   end
 
-  def build(attributes = nil)
+  def build(*)
     record = Assignment.new
     record.post = owner
     record
   end
 
-  def new(attributes = nil)
-    build(attributes)
-  end
-
-  def create(attributes = nil)
-    record = build(attributes)
+  def create(*)
+    record = build
     record.save
     record
   end
 
-  def create!(attributes = nil)
-    record = build(attributes)
+  def create!(*)
+    record = build
     record.save
     record
   end

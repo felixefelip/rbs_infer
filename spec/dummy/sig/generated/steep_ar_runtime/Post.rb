@@ -5,6 +5,6 @@
 
 class Post
   def assignments
-    Post_Assignment::ActiveRecord_Associations_CollectionProxy.new(self)
+    Post_Assignment::ActiveRecord_Associations_CollectionProxy.new(Assignment, self)
   end
 end
