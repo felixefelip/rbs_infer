@@ -1,0 +1,3 @@
+class Assignment
+  def run_before_validation_callbacks: () -> void
+end

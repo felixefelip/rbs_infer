@@ -3,6 +3,7 @@ require "rbs_infer"
 require "rbs_infer/extensions/rails/active_record/runtime_generator"
 require "tmpdir"
 require "fileutils"
+require "pathname"
 
 RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
   def in_app(files)
@@ -133,6 +134,29 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
         rbs = source_of(described_class.new(app_dir: dir).build, "Assignment.rbs")
         expect(rbs).to match(/class Assignment\n\s*def run_before_validation_callbacks: \(\) -> void\n\s*end/)
+      end
+    end
+  end
+
+  # Snapshot of the generated sidecar against the real dummy app, so a change in
+  # the emitted pseudo-code shows up as a reviewable diff.
+  #   Regenerate with: UPDATE_EXPECTATIONS=1 bundle exec rspec <this file>
+  describe "dummy snapshot" do
+    let(:expectations) { Pathname(DUMMY_APP_ROOT).dirname.join("expectations/steep_ar_runtime") }
+
+    it "matches the expected files for every generated class" do
+      files = described_class.new(app_dir: DUMMY_APP_ROOT).build
+
+      if ENV["UPDATE_EXPECTATIONS"]
+        expectations.rmtree if expectations.exist?
+        expectations.mkpath
+        files.each { |f| expectations.join(f.filename).write(f.source) }
+      end
+
+      aggregate_failures do
+        files.each { |f| expect(f.source).to eq(expectations.join(f.filename).read) }
+        # no stale/extra expectation files
+        expect(expectations.children.map { |p| p.basename.to_s }.sort).to eq(files.map(&:filename).sort)
       end
     end
   end
