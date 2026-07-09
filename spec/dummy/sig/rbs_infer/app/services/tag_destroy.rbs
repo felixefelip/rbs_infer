@@ -10,9 +10,9 @@ class TagDestroy
 
   def atribui_user: (untyped user_id) -> (User & User::Validated)
   def user_name: () -> String
-  def iterate_tags: () -> Tag::ActiveRecord_Associations_CollectionProxy?
-  def iterate_tag_posts: () -> Post::ActiveRecord_Associations_CollectionProxy
-  def iterate_tag_posts_with_transaction: () -> Post::ActiveRecord_Associations_CollectionProxy
+  def iterate_tags: () -> Post_Tag::ActiveRecord_Associations_CollectionProxy?
+  def iterate_tag_posts: () -> Tag_Post::ActiveRecord_Associations_CollectionProxy
+  def iterate_tag_posts_with_transaction: () -> Tag_Post::ActiveRecord_Associations_CollectionProxy
   def call_process_tag: () -> void
   def process_tag: (Tag & Tag::Validated tag) -> void
   def test_nokogiri: () -> Nokogiri::XML::Document
@@ -25,5 +25,5 @@ class TagDestroy
   def verify_multiples_returns_with_void: () -> void
   def verify_multiples_returns_with_void_and_rescue: () -> String?
   def save_post: () -> void
-  def user_posts: () -> Post::ActiveRecord_Associations_CollectionProxy
+  def user_posts: () -> User_Post::ActiveRecord_Associations_CollectionProxy
 end
