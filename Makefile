@@ -42,12 +42,16 @@ rbs_infer_erb:
 rbs_infer_module_self_types:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/extensions/rails/module_self_type_generator'; RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator.new(app_dir: '.').generate"
 
+rbs_infer_ar_runtime:
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/active_record/runtime_generator'; RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator.new(app_dir: '.').generate"
+
 rbs_generators_all:
 	make rbs_rails_generator
 	make rbs_rails_custom
 	make rbs_infer_enumerize
 	make rbs_infer_carrierwave
 	make rbs_infer_module_self_types
+	make rbs_infer_ar_runtime
 	make rbs_infer_erb
 
 ## Gerar RBS apenas para arquivo específico passado como argumento

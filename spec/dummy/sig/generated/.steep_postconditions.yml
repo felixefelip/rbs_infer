@@ -59,6 +59,6 @@ postconditions:
   method: show
   unconditional:
     ivars:
-      "@posts": "::Post::ActiveRecord_Associations_CollectionProxy"
+      "@posts": "::User_Post::ActiveRecord_Associations_CollectionProxy"
       "@user": "(::User & ::User::Validated)"
     self: "::UsersController & ::UsersController::AfterShow"

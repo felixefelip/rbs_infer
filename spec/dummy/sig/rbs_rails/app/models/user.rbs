@@ -324,8 +324,11 @@ class ::User < ::ApplicationRecord
 
     def updated_at_for_database: () -> ::Time?
 
+    def avatar: () -> ::String?
 
+    def avatar=: (::String?) -> ::String?
 
+    def avatar?: () -> bool
 
     def avatar_changed?: (?from: ::String?, ?to: ::String?) -> bool
 
@@ -406,11 +409,11 @@ class ::User < ::ApplicationRecord
     alias id_value_for_database id_for_database
   end
   include ::User::GeneratedAliasAttributeMethods
-  def posts: () -> ::Post::ActiveRecord_Associations_CollectionProxy
+  def posts: () -> ::User_Post::ActiveRecord_Associations_CollectionProxy
   def posts=: (::Post::ActiveRecord_Associations_CollectionProxy | ::Array[::Post]) -> (::Post::ActiveRecord_Associations_CollectionProxy | ::Array[::Post])
   def post_ids: () -> ::Array[::Integer]
   def post_ids=: (::Array[::Integer]) -> ::Array[::Integer]
-  def comments: () -> ::Comment::ActiveRecord_Associations_CollectionProxy
+  def comments: () -> ::User_Comment::ActiveRecord_Associations_CollectionProxy
   def comments=: (::Comment::ActiveRecord_Associations_CollectionProxy | ::Array[::Comment]) -> (::Comment::ActiveRecord_Associations_CollectionProxy | ::Array[::Comment])
   def comment_ids: () -> ::Array[::Integer]
   def comment_ids=: (::Array[::Integer]) -> ::Array[::Integer]
@@ -459,6 +462,18 @@ class ::User < ::ApplicationRecord
     def email: () -> ::String
     def created_at: () -> ::ActiveSupport::TimeWithZone
     def updated_at: () -> ::ActiveSupport::TimeWithZone
+  end
+end
+
+module User_Post
+  class ActiveRecord_Associations_CollectionProxy < ::Post::ActiveRecord_Associations_CollectionProxy
+    def owner: () -> ::User
+  end
+end
+
+module User_Comment
+  class ActiveRecord_Associations_CollectionProxy < ::Comment::ActiveRecord_Associations_CollectionProxy
+    def owner: () -> ::User
   end
 end
 

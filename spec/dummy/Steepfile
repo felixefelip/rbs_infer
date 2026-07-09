@@ -37,6 +37,7 @@ ENV["STEEP_MODULE_CONVENTION"] = "1"
 target :app do
   check "app"
   check "lib"
+  check "sig/**/*.rb"
   check "app/views/**/*.erb"
   ignore "app/views/pwa/**"
   # Framework-patching files (raw `on_load`/`to_prepare` reopenings) cannot

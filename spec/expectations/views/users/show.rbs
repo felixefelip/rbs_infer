@@ -2,7 +2,7 @@
 
 class ERBUsersShow
   @user: (User & User::Validated)
-  @posts: Post::ActiveRecord_Associations_CollectionProxy
+  @posts: User_Post::ActiveRecord_Associations_CollectionProxy
   def params: () -> ActionController::Parameters
   include ActionViewContext
 end

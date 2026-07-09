@@ -1,3 +1,5 @@
+app/models/assignment.rb:19:60: [error] Type `(::Post | nil)` does not have method `user`
+app/models/assignment.rb:26:46: [error] Type `(::Post | nil)` does not have method `user`
 app/models/concerns/test/filtrable.rb:12:27: [error] Type `(::Test & ::Test::Filtrable)` does not have method `updated_at`
 app/models/concerns/test/filtrable.rb:12:4: [error] Type `(::Test & ::Test::Filtrable)` does not have method `created_at`
 app/models/concerns/test/filtrable.rb:16:13: [error] Type `(::Test & ::Test::Filtrable)` does not have method `adddd`
@@ -16,3 +18,7 @@ app/services/profile_formatter.rb:31:4: [error] `format_nickname` requires `self
 app/services/profile_formatter.rb:37:13: [error] Type `(::String | nil)` does not have method `upcase`
 app/services/tag_destroy.rb:103:5: [error] Cannot allow method body have type `(void | ::String)` because declared as type `(::String | nil)`
 app/services/tag_destroy.rb:89:4: [error] Type `::TagDestroy` does not have method `untyped`
+sig/generated/steep_ar_runtime/Assignment.rb:13:4: [error] `log_post_user_name` requires `self.post` to be non-nil here
+sig/generated/steep_ar_runtime/Assignment.rb:8:4: [error] `run_before_validation_callbacks` requires `self.post` to be non-nil here
+sig/generated/steep_ar_runtime/Post_Assignment.rb:23:4: [error] `save` requires `self.post` to be non-nil here
+sig/generated/steep_ar_runtime/Post_Assignment.rb:29:4: [error] `save` requires `self.post` to be non-nil here
