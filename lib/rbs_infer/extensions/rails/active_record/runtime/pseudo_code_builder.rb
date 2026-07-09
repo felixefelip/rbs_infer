@@ -42,7 +42,7 @@ module RbsInfer
             # Returns [FileEntry], or [] when nothing qualifies (no model has a
             # `before_validation` callback).
             def build
-              class_reopens + proxy_reopens
+              class_reopens + proxy_reopens + rbs_declarations
             end
 
             private
@@ -60,7 +60,7 @@ module RbsInfer
               end
             end
 
-            # class_name => { callbacks: [...], getters: [{ name:, proxy: }, ...] }
+            # class_name => { callbacks: [...], getters: [{ name:, proxy:, element: }, ...] }
             def reopen_plan
               plan = Hash.new { |h, k| h[k] = { callbacks: [], getters: [] } }
 
@@ -72,7 +72,11 @@ module RbsInfer
                   next unless element && element.before_validation_callbacks.any?
                   next unless element.inverse_belongs_to_for(model.class_name)
 
-                  plan[model.class_name][:getters] << { name: assoc.name, proxy: proxy_type(model.class_name, element.class_name) }
+                  plan[model.class_name][:getters] << {
+                    name: assoc.name,
+                    proxy: proxy_type(model.class_name, element.class_name),
+                    element: element.class_name
+                  }
                 end
               end
 
@@ -82,13 +86,18 @@ module RbsInfer
             def class_source(class_name, info)
               body = []
               if info[:callbacks].any?
-                body.concat(method_lines("save") { ["run_before_validation_callbacks", "true"] })
+                # `save(**)` matches the real `save: (?context:, ?validate:,
+                # ?touch:) -> bool`; it runs the before_validation callbacks so
+                # their nilable-belongs_to deref is reachable from `save`.
+                body.concat(method_lines("save", "**") { ["run_before_validation_callbacks", "true"] })
                 body << ""
                 body.concat(method_lines("run_before_validation_callbacks") { info[:callbacks] })
               end
               info[:getters].each do |getter|
                 body << "" unless body.empty?
-                body.concat(method_lines(getter[:name]) { ["#{getter[:proxy]}.new(self)"] })
+                # Two args to match the real CollectionProxy constructor
+                # `(untyped, untyped)`; `self` is captured as the owner.
+                body.concat(method_lines(getter[:name]) { ["#{getter[:proxy]}.new(#{getter[:element]}, self)"] })
               end
 
               file(["class #{class_name}", *body, "end"])
@@ -120,25 +129,47 @@ module RbsInfer
             def proxy_source(ns, element, inverse)
               record = element.class_name
               body = []
-              body.concat(method_lines("initialize", "owner") { ["@owner = owner"] })
+              # `initialize(klass, owner)` matches the real constructor arity
+              # `(untyped, untyped)`; `owner` returns the captured owner (its
+              # type comes from rbs_rails' `owner: () -> Owner`).
+              body.concat(method_lines("initialize", "klass, owner") { ["@owner = owner"] })
               body << ""
               body.concat(method_lines("owner") { ["@owner"] })
               body << ""
-              body.concat(method_lines("build", "attributes = nil") do
+              body.concat(method_lines("build", "*") do
                 ["record = #{record}.new", "record.#{inverse.name} = owner", "record"]
               end)
               body << ""
-              body.concat(method_lines("new", "attributes = nil") { ["build(attributes)"] })
-              body << ""
-              body.concat(method_lines("create", "attributes = nil") do
-                ["record = build(attributes)", "record.save", "record"]
+              # `create`/`create!` = build + save. `build` is called with NO
+              # args so it matches the optional-arg overload of the RBS `build`.
+              body.concat(method_lines("create", "*") do
+                ["record = build", "record.save", "record"]
               end)
               body << ""
-              body.concat(method_lines("create!", "attributes = nil") do
-                ["record = build(attributes)", "record.save", "record"]
+              body.concat(method_lines("create!", "*") do
+                ["record = build", "record.save", "record"]
               end)
 
               file(["class #{ns}::ActiveRecord_Associations_CollectionProxy", *body, "end"])
+            end
+
+            # --- RBS for the methods this generator INVENTS ------------------
+
+            # `run_before_validation_callbacks` is not a real Rails method (the
+            # real flow, `run_callbacks(:validation)`, is dynamic and untraceable
+            # by Steep), so we declare it in RBS — otherwise Steep flags it as an
+            # undeclared method / NoMethod. The reopened real methods (`save`,
+            # `build`, `owner`, the getter, …) already have RBS and are not
+            # (re)declared here.
+            def rbs_declarations
+              @models.select { |m| m.before_validation_callbacks.any? }.map do |model|
+                source = <<~RBS
+                  class #{model.class_name}
+                    def run_before_validation_callbacks: () -> void
+                  end
+                RBS
+                FileEntry.new(filename: "#{flat(model.class_name)}.rbs", source: source)
+              end
             end
 
             # --- emit helpers ------------------------------------------------

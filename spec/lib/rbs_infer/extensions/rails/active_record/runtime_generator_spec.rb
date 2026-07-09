@@ -45,7 +45,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         model = source_of(described_class.new(app_dir: dir).build, "Assignment.rb")
 
         expect(model).to include("class Assignment\n")
-        expect(model).to match(/def save\n\s*run_before_validation_callbacks\n\s*true\n\s*end/)
+        expect(model).to match(/def save\(\*\*\)\n\s*run_before_validation_callbacks\n\s*true\n\s*end/)
         expect(model).to match(/def run_before_validation_callbacks\n\s*log_post_user_name\n\s*end/)
         expect(Prism.parse(model).success?).to be(true)
       end
@@ -78,8 +78,9 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         owner = source_of(described_class.new(app_dir: dir).build, "Post.rb")
 
         expect(owner).to include("class Post\n")
-        # `self` flows as the owner, so its type is inferred (not a stub).
-        expect(owner).to match(/def assignments\n\s*Post_Assignment::ActiveRecord_Associations_CollectionProxy\.new\(self\)\n\s*end/)
+        # 2 args (klass, self) to match the real CollectionProxy constructor;
+        # `self` is captured as the owner.
+        expect(owner).to match(/def assignments\n\s*Post_Assignment::ActiveRecord_Associations_CollectionProxy\.new\(Assignment, self\)\n\s*end/)
         expect(Prism.parse(owner).success?).to be(true)
       end
     end
@@ -91,15 +92,14 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         proxy = source_of(described_class.new(app_dir: dir).build, "Post_Assignment.rb")
 
         expect(proxy).to include("class Post_Assignment::ActiveRecord_Associations_CollectionProxy\n")
-        # owner is captured from the getter and read back.
-        expect(proxy).to match(/def initialize\(owner\)\n\s*@owner = owner\n\s*end/)
+        # initialize(klass, owner) matches the real constructor arity; owner captured.
+        expect(proxy).to match(/def initialize\(klass, owner\)\n\s*@owner = owner\n\s*end/)
         expect(proxy).to match(/def owner\n\s*@owner\n\s*end/)
         # build establishes the inverse belongs_to (`post`) from the owner.
-        expect(proxy).to match(/def build\(attributes = nil\)\n\s*record = Assignment\.new\n\s*record\.post = owner\n\s*record\n\s*end/)
-        # create / create! = build + save.
-        expect(proxy).to match(/def create\(attributes = nil\)\n\s*record = build\(attributes\)\n\s*record\.save\n\s*record\n\s*end/)
-        expect(proxy).to include("def create!(attributes = nil)")
-        expect(proxy).to match(/def new\(attributes = nil\)\n\s*build\(attributes\)\n\s*end/)
+        expect(proxy).to match(/def build\(\*\)\n\s*record = Assignment\.new\n\s*record\.post = owner\n\s*record\n\s*end/)
+        # create / create! = build (no args, matches the optional overload) + save.
+        expect(proxy).to match(/def create\(\*\)\n\s*record = build\n\s*record\.save\n\s*record\n\s*end/)
+        expect(proxy).to match(/def create!\(\*\)\n\s*record = build\n\s*record\.save\n\s*record\n\s*end/)
         expect(Prism.parse(proxy).success?).to be(true)
       end
     end
@@ -128,6 +128,15 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
     end
   end
 
+  describe "RBS for invented methods" do
+    it "declares run_before_validation_callbacks (not a real Rails method) in RBS" do
+      in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
+        rbs = source_of(described_class.new(app_dir: dir).build, "Assignment.rbs")
+        expect(rbs).to match(/class Assignment\n\s*def run_before_validation_callbacks: \(\) -> void\n\s*end/)
+      end
+    end
+  end
+
   describe "#generate (disk)" do
     it "writes one file per reopened class and removes a stale dir" do
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
@@ -136,7 +145,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         File.write(File.join(stale, "Old.rb"), "old")
 
         out = described_class.new(app_dir: dir).generate
-        expect(Dir.children(out).sort).to eq(["Assignment.rb", "Post.rb", "Post_Assignment.rb"])
+        expect(Dir.children(out).sort).to eq(["Assignment.rb", "Assignment.rbs", "Post.rb", "Post_Assignment.rb"])
       end
     end
 
