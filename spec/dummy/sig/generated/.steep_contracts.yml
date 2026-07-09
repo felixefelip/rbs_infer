@@ -19,6 +19,15 @@ methods:
           kind: self
         method: post
     enforced: false
+  Assignment#save:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: post
+    enforced: false
   Column#save:
     requires:
     - kind: not_nil
