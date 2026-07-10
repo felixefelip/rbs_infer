@@ -33,10 +33,12 @@ RSpec.describe RbsInfer::Inference::ConstantArgTypeResolver do
       expect(resolver.resolve(name: "Settings::CODE_LEN", namespace: "Widget")).to eq("Integer")
     end
 
-    it "keeps the bare name for a class/module reference" do
+    it "resolves a class/module reference to its singleton type" do
+      # `foo(User)` passes the class object, whose value type is
+      # `singleton(User)` — not the instance `User`.
       bridge = FakeBridge.new({}, ["User"])
       resolver = described_class.new(steep_bridge: bridge, caller_constant_types: {})
-      expect(resolver.resolve(name: "User", namespace: nil)).to eq("User")
+      expect(resolver.resolve(name: "User", namespace: nil)).to eq("singleton(User)")
     end
 
     it "returns nil for an unresolved constant (caller emits untyped, never a poisoning bare name)" do

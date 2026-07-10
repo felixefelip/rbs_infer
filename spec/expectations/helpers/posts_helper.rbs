@@ -1,6 +1,6 @@
 module PostsHelper
   def post_status_badge: ((Post & Post::Validated | Post) post) -> String
   def post_summary: ((Post & Post::Validated | Post) post, ?Integer length) -> String
-  def post_weights: (?Array[Integer] weights, ?Integer length, ?Palette klass) -> String
+  def post_weights: (?Array[Integer] weights, ?Integer length, ?singleton(Palette) klass) -> String
   def post_index_marker: (Post & Post::Validated post) -> String
 end
