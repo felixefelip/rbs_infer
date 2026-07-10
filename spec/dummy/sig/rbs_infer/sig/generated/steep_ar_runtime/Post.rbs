@@ -1,0 +1,3 @@
+class Post
+  def assignments: () -> Post_Assignment::ActiveRecord_Associations_CollectionProxy
+end

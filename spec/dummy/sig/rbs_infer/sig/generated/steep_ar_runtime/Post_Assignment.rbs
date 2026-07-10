@@ -1,0 +1,9 @@
+module Post_Assignment
+  class ActiveRecord_Associations_CollectionProxy
+    def initialize: (untyped klass, untyped owner) -> untyped
+    def owner: () -> untyped
+    def build: (*untyped) -> ::Assignment
+    def create: (*untyped) -> ::Assignment
+    def create!: (*untyped) -> ::Assignment
+  end
+end
