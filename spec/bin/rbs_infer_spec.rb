@@ -255,4 +255,49 @@ RSpec.describe "bin/rbs_infer" do
       expect(stderr).not_to include("Warning")
     end
   end
+
+  # ─── Callers fora do layout Rails (input entra no source_files) ──────
+  #
+  # `source_files` (o corpus de resolução de call-sites) precisa incluir os
+  # arquivos de input, não só `app/`/`engines/`/`lib/`. Quando o caller de um
+  # `.new` vive fora desse layout — p.ex. o pseudo-código AR-runtime sob
+  # `sig/` — o call-site tem que continuar visível, senão a inferência de
+  # param/getter degrada para `untyped`.
+  describe "com callers fora de app/ (input no source_files)" do
+    def setup_pseudo_project
+      write_file("pseudo/widget.rb", <<~RUBY)
+        class Widget
+          attr_reader :name
+
+          def initialize(name:)
+            self.name = name
+          end
+
+          private
+
+          attr_writer :name
+        end
+      RUBY
+
+      # O ÚNICO caller de `Widget.new` vive sob `pseudo/`, fora de app/lib/engines.
+      write_file("pseudo/factory.rb", <<~RUBY)
+        class Factory
+          def build
+            Widget.new(name: "hi")
+          end
+        end
+      RUBY
+    end
+
+    it "infere o param do initialize a partir de um caller fora de app/" do
+      setup_pseudo_project
+      stdout, _stderr, status = run_rbs_infer("pseudo", dir: @tmpdir)
+
+      expect(status).to be_success
+      # Sem o input no source_files, o call-site em pseudo/factory.rb some e o
+      # param cai para `untyped`. Com a correção, resolve para String.
+      expect(stdout).to include("def initialize: (name: String) -> void")
+      expect(stdout).not_to include("name: untyped")
+    end
+  end
 end
