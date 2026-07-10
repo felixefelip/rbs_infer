@@ -16,7 +16,13 @@ module RbsInfer::Project
         rescue Errno::ENOENT, Errno::EACCES
           next
         end
-        content.scan(/\b([A-Z][a-zA-Z0-9]*)\b/).flatten.uniq.each do |name|
+        # `_` faz parte do nome da constante: proxies de associação do
+        # rbs_rails (`Post_Assignment`, `ActiveRecord_Associations_CollectionProxy`)
+        # e código real tipo `HTTP_Client` são underscored. Sem o `_` na classe
+        # de caracteres, o token era quebrado/perdido e o arquivo nunca era
+        # indexado sob o nome cheio, degradando a resolução de `.new`/setter
+        # externo pra `untyped`.
+        content.scan(/\b([A-Z][a-zA-Z0-9_]*)\b/).flatten.uniq.each do |name|
           @index[name] << file
         end
       end
