@@ -186,9 +186,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     expect(result.diagnostics).to include(a_string_matching(/\(::Board \| nil\)` does not have method `user_name`/))
   end
 
-  # --- Documented known gaps (felixefelip/steep#53) ---------------------------
-
-  it "is a FALSE POSITIVE when board is set inside a factory (fact crosses no return boundary)" do
+  it "narrows across the return boundary when board is set inside a factory (build -> save)" do
     result = steep_scenario(MODELS + <<~RUBY)
       class Factory
         def self.build
@@ -198,7 +196,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
         end
 
         def self.run
-          column = build      # board is set, but the return type is just Column
+          column = build      # `build` establishes `board` on its return value
           column.save
         end
       end
@@ -226,9 +224,11 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     RBS
 
     expect(result.generated_rbs.chomp).to eq(expected_rbs.chomp)
-    # Runtime is safe; Steep still errors because "board is set" doesn't cross
-    # the method-return boundary (issue #53, F1). Locks the current behavior.
-    expect(result.diagnostics).to include(a_string_matching(/`save` requires `self\.board`/))
+    # `build` sets `c.board` and returns `c`; the inferred return-value
+    # postcondition (`returns.establishes: [board]`, felixefelip/steep#56)
+    # imports `column.board` non-nil at `column = build`, so `column.save`
+    # satisfies its precondition and the transitive body chain clears.
+    expect(result.diagnostics).to be_empty
   end
 
   it "is UNSOUND under aliasing (Steep passes though runtime would raise)" do

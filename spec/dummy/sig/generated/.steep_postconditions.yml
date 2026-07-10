@@ -1,6 +1,12 @@
 ---
 version: 1
 postconditions:
+- class: Post_Assignment::ActiveRecord_Associations_CollectionProxy
+  method: build
+  unconditional:
+    returns:
+      establishes:
+      - post
 - class: Posts::AssignmentsController
   method: create
   unconditional:

@@ -9,7 +9,6 @@ methods:
         receiver:
           kind: self
         method: post
-    enforced: false
   Assignment#run_before_validation_callbacks:
     requires:
     - kind: not_nil
@@ -18,7 +17,6 @@ methods:
         receiver:
           kind: self
         method: post
-    enforced: false
   Assignment#save:
     requires:
     - kind: not_nil
@@ -27,7 +25,6 @@ methods:
         receiver:
           kind: self
         method: post
-    enforced: false
   Column#save:
     requires:
     - kind: not_nil
