@@ -19,7 +19,8 @@ module PostsHelper
   # constant must take the constant's VALUE type, not its bare name (which
   # is invalid RBS for a value constant). `Palette::WEIGHTS` is `Array[Integer]`
   # and `Coupon::CODE_LENGTH` is `Integer` — both resolved cross-file via the
-  # RBS env. A class/module default (`Palette`) keeps its name.
+  # RBS env. A class/module default (`Palette`) is the class object, so it
+  # takes the `singleton(Palette)` type.
   def post_weights(weights = Palette::WEIGHTS, length = Coupon::CODE_LENGTH, klass = Palette)
     content_tag(:p, "#{weights.sum} #{length} #{klass}")
   end

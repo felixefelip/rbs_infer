@@ -1,13 +1,15 @@
 module RbsInfer::Inference
   # Resolves a constant used as a method ARGUMENT to its VALUE's RBS type
-  # (felixefelip/rbs_infer#46). A bare name is a valid type only for a
-  # class/module (`foo(User)` → `User`); a value constant (`CODE_LENGTH = 6`)
-  # is not, so it must resolve to its value's type (`Integer`).
+  # (felixefelip/rbs_infer#46). A class/module reference passed as an argument
+  # (`foo(User)`) is the class OBJECT, so its type is `singleton(User)` — NOT
+  # the instance `User`. A value constant (`CODE_LENGTH = 6`) resolves to its
+  # value's type (`Integer`).
   #
   # Two tiers: the referencing source's own constants (`constant_types`,
-  # precise), then the RBS environment (`constant_type_from_env`: stdlib,
-  # gems, generated `sig/`) for cross-file constants. A class/module isn't a
-  # constant declaration, so it resolves to nothing and keeps its name;
+  # precise — captures value `:casgn`s, not class defs), then the RBS
+  # environment (`constant_type_from_env`: stdlib, gems, generated `sig/`) for
+  # cross-file constants. A class/module isn't a value-constant declaration, so
+  # `constant_type_from_env` misses it and we emit `singleton(<name>)`;
   # anything else unresolved → nil → caller emits `untyped`.
   class ConstantArgTypeResolver
     # caller_constant_types: bare-name => type for constants defined in the
@@ -21,9 +23,10 @@ module RbsInfer::Inference
       @caller_constant_types = caller_constant_types
     end
 
-    # Returns a valid RBS type (value type, or the name for a class/module),
-    # or nil when nothing resolved — never an unresolved value-constant name,
-    # which is invalid RBS and poisons the shared env.
+    # Returns a valid RBS type (value type, or `singleton(...)` for a
+    # class/module reference), or nil when nothing resolved — never an
+    # unresolved value-constant name, which is invalid RBS and poisons the
+    # shared env.
     def resolve(name:, namespace:)
       return nil if name.nil?
 
@@ -39,7 +42,7 @@ module RbsInfer::Inference
       return nil unless @steep_bridge
 
       @steep_bridge.constant_type_from_env(bare, namespace: namespace) ||
-        (@steep_bridge.class_or_module?(bare, namespace: namespace) ? name : nil)
+        (@steep_bridge.class_or_module?(bare, namespace: namespace) ? "singleton(#{name})" : nil)
     end
   end
 end
