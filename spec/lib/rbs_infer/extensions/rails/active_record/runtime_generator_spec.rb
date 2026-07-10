@@ -66,7 +66,10 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       end
     end
 
-    it "emits no file for a model without before_validation callbacks" do
+    it "emits nothing when a has_many's element is not a scanned model" do
+      # POST has `has_many :assignments` but Assignment isn't provided here, so
+      # its class/proxy can't be modeled — the association is skipped, and with
+      # no before_validation callback either, nothing is emitted.
       in_app("app/models/post.rb" => POST) do |dir|
         expect(described_class.new(app_dir: dir).build).to be_empty
       end
@@ -121,10 +124,34 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       end
     end
 
-    it "emits no proxy when the element has no before_validation callback" do
+    it "emits the proxy for a plain has_many (no before_validation needed)" do
+      # rbs_infer owns the getter/proxy for every has_many now, so a plain
+      # element (no before_validation) still gets a proxy — with the
+      # construction flow, since it has an inverse belongs_to (`post`).
       plain = "class Assignment < ApplicationRecord\n  belongs_to :post\nend\n"
       in_app("app/models/assignment.rb" => plain, "app/models/post.rb" => POST) do |dir|
-        expect(described_class.new(app_dir: dir).build).to be_empty
+        files = described_class.new(app_dir: dir).build
+        proxy = source_of(files, "Post_Assignment.rb")
+        expect(proxy).not_to be_nil
+        expect(proxy).to match(/def build\(\*\)\n\s*record = Assignment\.new\n\s*record\.post = owner\n\s*record\n\s*end/)
+        # No save flow for the model — it has no before_validation callback.
+        expect(files.map(&:filename)).not_to include("Assignment.rb")
+        # The owner still gets the getter.
+        expect(source_of(files, "Post.rb")).to match(/def assignments\n/)
+      end
+    end
+
+    it "emits an owner-capture-only proxy for a has_many :through (no inverse belongs_to)" do
+      # `Post has_many :tags, through: :post_tags` — Tag has no `belongs_to
+      # :post`, so there's no inverse to establish: only `initialize`/`owner`.
+      post = "class Post < ApplicationRecord\n  has_many :tags, through: :post_tags\nend\n"
+      tag  = "class Tag < ApplicationRecord\n  has_many :posts, through: :post_tags\nend\n"
+      in_app("app/models/post.rb" => post, "app/models/tag.rb" => tag) do |dir|
+        proxy = source_of(described_class.new(app_dir: dir).build, "Post_Tag.rb")
+        expect(proxy).not_to be_nil
+        expect(proxy).to match(/def owner\n\s*@owner\n\s*end/)
+        expect(proxy).not_to include("def build")
+        expect(proxy).not_to include("record.save")
       end
     end
   end

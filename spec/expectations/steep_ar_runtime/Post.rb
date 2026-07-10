@@ -4,7 +4,19 @@
 # Regenerated on every run; do not edit.
 
 class Post
+  def comments
+    Post_Comment::ActiveRecord_Associations_CollectionProxy.new(Comment, self)
+  end
+
   def assignments
     Post_Assignment::ActiveRecord_Associations_CollectionProxy.new(Assignment, self)
+  end
+
+  def post_tags
+    Post_PostTag::ActiveRecord_Associations_CollectionProxy.new(PostTag, self)
+  end
+
+  def tags
+    Post_Tag::ActiveRecord_Associations_CollectionProxy.new(Tag, self)
   end
 end

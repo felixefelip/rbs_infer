@@ -40,7 +40,7 @@ module RbsInfer
             end
 
             # Returns [FileEntry], or [] when nothing qualifies (no model has a
-            # `before_validation` callback).
+            # `before_validation` callback nor a has_many to a known model).
             def build
               class_reopens + proxy_reopens
             end
@@ -50,9 +50,9 @@ module RbsInfer
             # --- class reopens (owner getters + model save flow, merged) -----
 
             # One reopen per class that needs either a save flow (it registers
-            # `before_validation` callbacks) or a `has_many` getter (it owns an
-            # association whose element has such callbacks). Both are merged into
-            # a single `<Class>.rb` when a class is both.
+            # `before_validation` callbacks) or a `has_many` getter (it owns a
+            # has_many association to a known model). Both are merged into a
+            # single `<Class>.rb` when a class is both.
             def class_reopens
               plan = reopen_plan
               plan.map do |class_name, info|
@@ -68,9 +68,13 @@ module RbsInfer
                 plan[model.class_name][:callbacks] = model.before_validation_callbacks if model.before_validation_callbacks.any?
 
                 model.has_many.each do |assoc|
+                  # Emit a getter for EVERY has_many whose element is a known
+                  # model — rbs_infer owns the getter now (rbs_rails stopped
+                  # emitting it), so `owner.<assoc>` types via this pseudo-code.
+                  # An element outside the scanned models can't be modeled
+                  # (its class/proxy may not exist), so it's skipped.
                   element = @by_class[assoc.class_name]
-                  next unless element && element.before_validation_callbacks.any?
-                  next unless element.inverse_belongs_to_for(model.class_name)
+                  next unless element
 
                   plan[model.class_name][:getters] << {
                     name: assoc.name,
@@ -105,50 +109,55 @@ module RbsInfer
 
             # --- proxy reopens -----------------------------------------------
 
-            # A proxy reopen per (owner has_many element) where the element has
-            # before_validation callbacks. Deduplicated by proxy namespace.
+            # A proxy reopen per (owner has_many element) to a known model,
+            # deduplicated by proxy namespace. Captures the owner (`initialize`/
+            # `owner`) so rbs_infer types `owner` from the getter call-site.
+            # When the element has an inverse belongs_to back at the owner, the
+            # proxy also gets the construction flow (`build`/`create`/`create!`);
+            # without one (e.g. a `has_many :through`), only owner capture is
+            # emitted and construction is inherited from the real proxy.
             def proxy_reopens
               seen = {}
               @models.flat_map do |owner|
                 owner.has_many.filter_map do |assoc|
                   element = @by_class[assoc.class_name]
-                  next unless element && element.before_validation_callbacks.any?
+                  next unless element
 
                   ns = proxy_namespace(owner.class_name, element.class_name)
                   next if seen[ns]
 
-                  inverse = element.inverse_belongs_to_for(owner.class_name)
-                  next unless inverse
-
                   seen[ns] = true
-                  FileEntry.new(filename: "#{ns}.rb", source: proxy_source(ns, element, inverse))
+                  inverse = element.inverse_belongs_to_for(owner.class_name)
+                  FileEntry.new(filename: "#{ns}.rb", source: proxy_source(ns, element.class_name, inverse))
                 end
               end
             end
 
-            def proxy_source(ns, element, inverse)
-              record = element.class_name
+            def proxy_source(ns, element_class, inverse)
               body = []
               # `initialize(klass, owner)` matches the real constructor arity
-              # `(untyped, untyped)`; `owner` returns the captured owner (its
-              # type comes from rbs_rails' `owner: () -> Owner`).
+              # `(untyped, untyped)`; `owner` returns the captured owner (whose
+              # type rbs_infer infers from the getter's `self`).
               body.concat(method_lines("initialize", "klass, owner") { ["@owner = owner"] })
               body << ""
               body.concat(method_lines("owner") { ["@owner"] })
-              body << ""
-              body.concat(method_lines("build", "*") do
-                ["record = #{record}.new", "record.#{inverse.name} = owner", "record"]
-              end)
-              body << ""
-              # `create`/`create!` = build + save. `build` is called with NO
-              # args so it matches the optional-arg overload of the RBS `build`.
-              body.concat(method_lines("create", "*") do
-                ["record = build", "record.save", "record"]
-              end)
-              body << ""
-              body.concat(method_lines("create!", "*") do
-                ["record = build", "record.save", "record"]
-              end)
+
+              if inverse
+                body << ""
+                body.concat(method_lines("build", "*") do
+                  ["record = #{element_class}.new", "record.#{inverse.name} = owner", "record"]
+                end)
+                body << ""
+                # `create`/`create!` = build + save. `build` is called with NO
+                # args so it matches the optional-arg overload of the RBS `build`.
+                body.concat(method_lines("create", "*") do
+                  ["record = build", "record.save", "record"]
+                end)
+                body << ""
+                body.concat(method_lines("create!", "*") do
+                  ["record = build", "record.save", "record"]
+                end)
+              end
 
               file(["class #{ns}::ActiveRecord_Associations_CollectionProxy", *body, "end"])
             end
