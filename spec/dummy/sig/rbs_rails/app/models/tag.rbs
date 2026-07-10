@@ -209,11 +209,9 @@ class ::Tag < ::ApplicationRecord
     alias id_value_for_database id_for_database
   end
   include ::Tag::GeneratedAliasAttributeMethods
-  def post_tags: () -> ::Tag_PostTag::ActiveRecord_Associations_CollectionProxy
   def post_tags=: (::PostTag::ActiveRecord_Associations_CollectionProxy | ::Array[::PostTag]) -> (::PostTag::ActiveRecord_Associations_CollectionProxy | ::Array[::PostTag])
   def post_tag_ids: () -> ::Array[::Integer]
   def post_tag_ids=: (::Array[::Integer]) -> ::Array[::Integer]
-  def posts: () -> ::Tag_Post::ActiveRecord_Associations_CollectionProxy
   def posts=: (::Post::ActiveRecord_Associations_CollectionProxy | ::Array[::Post]) -> (::Post::ActiveRecord_Associations_CollectionProxy | ::Array[::Post])
   def post_ids: () -> ::Array[::Integer]
   def post_ids=: (::Array[::Integer]) -> ::Array[::Integer]
@@ -257,13 +255,11 @@ end
 
 module Tag_PostTag
   class ActiveRecord_Associations_CollectionProxy < ::PostTag::ActiveRecord_Associations_CollectionProxy
-    def owner: () -> ::Tag
   end
 end
 
 module Tag_Post
   class ActiveRecord_Associations_CollectionProxy < ::Post::ActiveRecord_Associations_CollectionProxy
-    def owner: () -> ::Tag
   end
 end
 

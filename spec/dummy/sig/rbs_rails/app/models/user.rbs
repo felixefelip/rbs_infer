@@ -409,11 +409,9 @@ class ::User < ::ApplicationRecord
     alias id_value_for_database id_for_database
   end
   include ::User::GeneratedAliasAttributeMethods
-  def posts: () -> ::User_Post::ActiveRecord_Associations_CollectionProxy
   def posts=: (::Post::ActiveRecord_Associations_CollectionProxy | ::Array[::Post]) -> (::Post::ActiveRecord_Associations_CollectionProxy | ::Array[::Post])
   def post_ids: () -> ::Array[::Integer]
   def post_ids=: (::Array[::Integer]) -> ::Array[::Integer]
-  def comments: () -> ::User_Comment::ActiveRecord_Associations_CollectionProxy
   def comments=: (::Comment::ActiveRecord_Associations_CollectionProxy | ::Array[::Comment]) -> (::Comment::ActiveRecord_Associations_CollectionProxy | ::Array[::Comment])
   def comment_ids: () -> ::Array[::Integer]
   def comment_ids=: (::Array[::Integer]) -> ::Array[::Integer]
@@ -467,13 +465,11 @@ end
 
 module User_Post
   class ActiveRecord_Associations_CollectionProxy < ::Post::ActiveRecord_Associations_CollectionProxy
-    def owner: () -> ::User
   end
 end
 
 module User_Comment
   class ActiveRecord_Associations_CollectionProxy < ::Comment::ActiveRecord_Associations_CollectionProxy
-    def owner: () -> ::User
   end
 end
 

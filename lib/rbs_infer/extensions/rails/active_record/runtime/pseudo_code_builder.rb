@@ -42,7 +42,7 @@ module RbsInfer
             # Returns [FileEntry], or [] when nothing qualifies (no model has a
             # `before_validation` callback).
             def build
-              class_reopens + proxy_reopens + rbs_declarations
+              class_reopens + proxy_reopens
             end
 
             private
@@ -153,24 +153,11 @@ module RbsInfer
               file(["class #{ns}::ActiveRecord_Associations_CollectionProxy", *body, "end"])
             end
 
-            # --- RBS for the methods this generator INVENTS ------------------
-
-            # `run_before_validation_callbacks` is not a real Rails method (the
-            # real flow, `run_callbacks(:validation)`, is dynamic and untraceable
-            # by Steep), so we declare it in RBS — otherwise Steep flags it as an
-            # undeclared method / NoMethod. The reopened real methods (`save`,
-            # `build`, `owner`, the getter, …) already have RBS and are not
-            # (re)declared here.
-            def rbs_declarations
-              @models.select { |m| m.before_validation_callbacks.any? }.map do |model|
-                source = <<~RBS
-                  class #{model.class_name}
-                    def run_before_validation_callbacks: () -> void
-                  end
-                RBS
-                FileEntry.new(filename: "#{flat(model.class_name)}.rbs", source: source)
-              end
-            end
+            # NOTE: the synthetic `run_before_validation_callbacks` is defined in
+            # the emitted `.rb` (see `class_source`); rbs_infer infers its RBS
+            # from that pseudo-code, so this generator no longer hand-writes a
+            # `<Model>.rbs` for it. A hand-written declaration would collide with
+            # the inferred one (DuplicateMethodDefinition).
 
             # --- emit helpers ------------------------------------------------
 
