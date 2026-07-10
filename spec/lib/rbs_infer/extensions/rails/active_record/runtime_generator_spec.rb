@@ -130,10 +130,14 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
   end
 
   describe "RBS for invented methods" do
-    it "declares run_before_validation_callbacks (not a real Rails method) in RBS" do
+    it "does not hand-write a <Model>.rbs for run_before_validation_callbacks" do
+      # The synthetic method is defined in the emitted `.rb`; rbs_infer infers
+      # its RBS from that pseudo-code, so no `.rbs` is emitted here (a
+      # hand-written one would collide with the inferred declaration).
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
-        rbs = source_of(described_class.new(app_dir: dir).build, "Assignment.rbs")
-        expect(rbs).to match(/class Assignment\n\s*def run_before_validation_callbacks: \(\) -> void\n\s*end/)
+        files = described_class.new(app_dir: dir).build
+        expect(files.map(&:filename)).not_to include("Assignment.rbs")
+        expect(files.map(&:filename)).to all(end_with(".rb"))
       end
     end
   end
@@ -169,7 +173,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         File.write(File.join(stale, "Old.rb"), "old")
 
         out = described_class.new(app_dir: dir).generate
-        expect(Dir.children(out).sort).to eq(["Assignment.rb", "Assignment.rbs", "Post.rb", "Post_Assignment.rb"])
+        expect(Dir.children(out).sort).to eq(["Assignment.rb", "Post.rb", "Post_Assignment.rb"])
       end
     end
 
