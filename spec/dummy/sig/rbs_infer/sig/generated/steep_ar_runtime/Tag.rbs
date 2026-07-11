@@ -1,0 +1,4 @@
+class Tag
+  def post_tags: () -> Tag_PostTag::ActiveRecord_Associations_CollectionProxy
+  def posts: () -> Tag_Post::ActiveRecord_Associations_CollectionProxy
+end

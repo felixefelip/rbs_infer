@@ -1,7 +1,7 @@
 module Post_Assignment
   class ActiveRecord_Associations_CollectionProxy
     @owner: Post
-    def initialize: (Assignment klass, Post owner) -> void
+    def initialize: (singleton(Assignment) klass, Post owner) -> void
     def owner: () -> Post
     def build: (*untyped) -> ::Assignment
     def create: (*untyped) -> ::Assignment

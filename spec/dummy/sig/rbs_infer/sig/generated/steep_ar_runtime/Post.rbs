@@ -1,3 +1,6 @@
 class Post
+  def comments: () -> Post_Comment::ActiveRecord_Associations_CollectionProxy
   def assignments: () -> Post_Assignment::ActiveRecord_Associations_CollectionProxy
+  def post_tags: () -> Post_PostTag::ActiveRecord_Associations_CollectionProxy
+  def tags: () -> Post_Tag::ActiveRecord_Associations_CollectionProxy
 end
