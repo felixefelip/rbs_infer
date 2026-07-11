@@ -7,6 +7,18 @@ postconditions:
     returns:
       establishes:
       - post
+- class: Post_Comment::ActiveRecord_Associations_CollectionProxy
+  method: build
+  unconditional:
+    returns:
+      establishes:
+      - post
+- class: Post_PostTag::ActiveRecord_Associations_CollectionProxy
+  method: build
+  unconditional:
+    returns:
+      establishes:
+      - post
 - class: Posts::AssignmentsController
   method: create
   unconditional:
@@ -49,6 +61,24 @@ postconditions:
     ivars:
       "@comments": "::Comment::ActiveRecord_Relation"
     self: "::PostsController & ::PostsController::AfterShow"
+- class: Tag_PostTag::ActiveRecord_Associations_CollectionProxy
+  method: build
+  unconditional:
+    returns:
+      establishes:
+      - tag
+- class: User_Comment::ActiveRecord_Associations_CollectionProxy
+  method: build
+  unconditional:
+    returns:
+      establishes:
+      - user
+- class: User_Post::ActiveRecord_Associations_CollectionProxy
+  method: build
+  unconditional:
+    returns:
+      establishes:
+      - user
 - class: Users::AvatarsController
   method: set_user
   unconditional:

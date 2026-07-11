@@ -1,0 +1,7 @@
+module Tag_Post
+  class ActiveRecord_Associations_CollectionProxy
+    @owner: Tag
+    def initialize: (singleton(Post) klass, Tag owner) -> void
+    def owner: () -> Tag
+  end
+end
