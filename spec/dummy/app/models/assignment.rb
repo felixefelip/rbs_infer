@@ -23,6 +23,6 @@ class Assignment < ApplicationRecord
   private
 
   def log_post_user_name
-    Rails.logger.info("Post user name: #{post.user.name}")
+    Rails.logger.info("Post user name: #{post.user.name.camelize}")
   end
 end

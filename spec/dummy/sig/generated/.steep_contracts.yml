@@ -9,6 +9,23 @@ methods:
         receiver:
           kind: self
         method: post
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: post
+        chain:
+        - user
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: post
+        chain:
+        - user
+        - name
   Assignment#run_before_validation_callbacks:
     requires:
     - kind: not_nil
@@ -17,6 +34,23 @@ methods:
         receiver:
           kind: self
         method: post
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: post
+        chain:
+        - user
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: post
+        chain:
+        - user
+        - name
   Assignment#save:
     requires:
     - kind: not_nil
@@ -25,6 +59,23 @@ methods:
         receiver:
           kind: self
         method: post
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: post
+        chain:
+        - user
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: post
+        chain:
+        - user
+        - name
   Column#save:
     requires:
     - kind: not_nil
@@ -74,6 +125,44 @@ methods:
           kind: self
         method: user
     enforced: false
+  Post_Assignment::ActiveRecord_Associations_CollectionProxy#create:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: owner
+        chain:
+        - user
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: owner
+        chain:
+        - user
+        - name
+  Post_Assignment::ActiveRecord_Associations_CollectionProxy#create!:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: owner
+        chain:
+        - user
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: owner
+        chain:
+        - user
+        - name
   ProfileFormatter#call_without_check:
     requires:
     - kind: not_nil
@@ -91,4 +180,28 @@ methods:
         receiver:
           kind: self
         method: nickname
+    enforced: false
+  Test::Filtrable#filtrable?:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: created_at
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: updated_at
+    enforced: false
+  Test::Filtrable#teste:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: asdasd
     enforced: false

@@ -19,8 +19,10 @@ module RbsInfer
           #     nilable belongs_to inside them becomes reachable from `save`;
           #   * the OWNER — the `has_many` getter returns `Proxy.new(self)`, so
           #     the association `owner`'s type flows from `self` (inferred, not a
-          #     stub — and the base for the `Owner` / `Owner & Owner::Validated`
-          #     variation once the proxy is made generic over the owner);
+          #     stub). Capturing `owner` from the caller's `self` is the base for
+          #     refining it to `Owner & Owner::Validated` at a call site —
+          #     reachable via the Steep fork's contract machinery
+          #     (constructor-binding + return forwarding);
           #   * the owner-specific PROXY — `initialize(owner)` captures it,
           #     `owner` returns it; `build` establishes the inverse belongs_to
           #     from `owner`, and `create`/`create!` = build + save.
@@ -148,15 +150,25 @@ module RbsInfer
                   ["record = #{element_class}.new", "record.#{inverse.name} = owner", "record"]
                 end)
                 body << ""
-                # `create`/`create!` = build + save. `build` is called with NO
-                # args so it matches the optional-arg overload of the RBS `build`.
+                # `create` = build + save. `build` is called with NO args so it
+                # matches the optional-arg overload of the RBS `build`.
                 body.concat(method_lines("create", "*") do
                   ["record = build", "record.save", "record"]
                 end)
                 body << ""
-                body.concat(method_lines("create!", "*") do
-                  ["record = build", "record.save", "record"]
-                end)
+                # `create!` = `create or raise` — it delegates to `create`
+                # rather than repeating `build`/`save`. Emitting both
+                # independently forks the single `record.save` call site across
+                # two callers; when only one (`create!`) is reachable, the other
+                # (`create`) is dead but still counted, and — being statically
+                # indistinguishable from a framework entrypoint — cannot be
+                # discounted, so a precondition on `save` never enforces
+                # (felixefelip/steep#65). Delegating keeps the `save` site single
+                # and the caller chain linear (`save` <- `create` <- `create!`),
+                # so the reachable path alone decides enforcement. The `or raise`
+                # models the bang method's failure semantics (create! raises
+                # rather than returning a falsy record).
+                body.concat(method_lines("create!", "*") { ["create or raise ActiveRecord::RecordInvalid"] })
               end
 
               file(["class #{ns}::ActiveRecord_Associations_CollectionProxy", *body, "end"])
