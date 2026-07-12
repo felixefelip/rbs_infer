@@ -904,7 +904,10 @@ module RbsInfer::Signatures
         contracts: contracts_store,
         postconditions: postconditions_store,
         callbacks: callbacks_store,
-        delegation_registry: delegation_registry_store
+        delegation_registry: delegation_registry_store,
+        constructor_bindings: constructor_bindings_store,
+        return_forwarding: return_forwarding_store,
+        return_alias: return_alias_store
       )
     rescue Parser::SyntaxError
       nil
@@ -917,6 +920,18 @@ module RbsInfer::Signatures
     # we wouldn't be able to populate here anyway.
     def delegation_registry_store
       @delegation_registry_store ||= Steep::Project::DelegationRegistry.new
+    end
+
+    def constructor_bindings_store
+      @constructor_bindings_store ||= Steep::Project::ConstructorBindingRegistry.new
+    end
+
+    def return_forwarding_store
+      @return_forwarding_store ||= Steep::Project::ReturnForwardingRegistry.new
+    end
+
+    def return_alias_store
+      @return_alias_store ||= Steep::Project::ReturnAliasRegistry.new
     end
 
     # Loads Steep's auto-inferred precondition contracts from the project's
