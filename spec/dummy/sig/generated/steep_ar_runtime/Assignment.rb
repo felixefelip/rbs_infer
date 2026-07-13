@@ -11,5 +11,14 @@ class Assignment
 
   def run_before_validation_callbacks
     log_post_user_name
+    run_belongs_to_default_callbacks
+  end
+
+  def run_belongs_to_default_callbacks
+    run_belongs_to_default_owner
+  end
+
+  def run_belongs_to_default_owner
+    self.owner ||= post.user
   end
 end

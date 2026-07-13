@@ -51,6 +51,22 @@ methods:
         chain:
         - user
         - name
+  Assignment#run_belongs_to_default_callbacks:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: post
+  Assignment#run_belongs_to_default_owner:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: post
   Assignment#save:
     requires:
     - kind: not_nil
