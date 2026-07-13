@@ -1,6 +1,6 @@
 ---
-name: tzinfo
-version: '2.0'
+name: pstore
+version: '0.2'
 source:
   type: git
   name: ruby/gem_rbs_collection

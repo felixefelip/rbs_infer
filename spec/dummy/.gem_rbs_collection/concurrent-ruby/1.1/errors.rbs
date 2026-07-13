@@ -1,0 +1,7 @@
+module Concurrent
+  class Error < StandardError
+  end
+
+  class RejectedExecutionError < Error
+  end
+end

@@ -42,11 +42,16 @@ module ActiveRecord
     extend ::ActiveRecord::Validations::ClassMethods
     extend ::ActiveSupport::Callbacks::ClassMethods
 
-    # type belongs_to_default[T] = ^(T) [self: untyped] -> untyped
+    # The `default:` block runs via `owner.instance_exec(&block)`, so its self is
+    # the record — but binding self to the concrete model type would type-check
+    # the block body (e.g. `-> { post.user }`) and flag any nilable association
+    # deref inside it. The block is framework-driven and not something the app
+    # writes to a signature, so its self and result are left untyped.
+    type belongs_to_default = ^(untyped) [self: untyped] -> untyped
 
     def self.abstract_class=: (bool) -> void
     def self.scope: (Symbol, Proc) ?{ () -> untyped } -> void
-    def self.belongs_to: (Symbol, ?untyped, **untyped, ?default: (^(untyped) [self: untyped] -> untyped)) -> void
+    def self.belongs_to: (Symbol, ?untyped, **untyped, ?default: belongs_to_default) -> void
     def self.has_many: (Symbol, ?untyped, **untyped) -> void
     def self.has_one: (Symbol, ?untyped, **untyped) -> void
     def self.has_and_belongs_to_many: (untyped name, ?untyped? scope, **untyped options) ?{ () -> untyped } -> untyped
@@ -511,6 +516,49 @@ module ActiveRecord
       def count: () -> ::Integer
                | () { (Model) -> boolish } -> ::Integer
                | (Symbol | String column_name) -> ::Integer
+
+      # Array-positional & collection methods that `ActiveRecord::Delegation`
+      # delegates to `records` (an `Array[Model & ValidatedModel]`). `Enumerable`
+      # can't provide these (they aren't derivable from `each`), so they must be
+      # declared here to be type-checkable on every Relation and CollectionProxy.
+      def []: (Integer index) -> (Model & ValidatedModel)?
+            | (Integer start, Integer length) -> Array[Model & ValidatedModel]?
+            | (Range[Integer] range) -> Array[Model & ValidatedModel]?
+      def slice: (Integer index) -> (Model & ValidatedModel)?
+               | (Integer start, Integer length) -> Array[Model & ValidatedModel]?
+               | (Range[Integer] range) -> Array[Model & ValidatedModel]?
+      def length: () -> ::Integer
+      def size: () -> ::Integer
+      def to_ary: () -> Array[Model & ValidatedModel]
+      def index: (untyped value) -> ::Integer?
+               | () { (Model & ValidatedModel) -> boolish } -> ::Integer?
+      def rindex: (untyped value) -> ::Integer?
+                | () { (Model & ValidatedModel) -> boolish } -> ::Integer?
+      def sample: () -> (Model & ValidatedModel)?
+                | (Integer n, ?random: untyped) -> Array[Model & ValidatedModel]
+      def reverse: () -> Array[Model & ValidatedModel]
+      def rotate: (?Integer count) -> Array[Model & ValidatedModel]
+      def shuffle: (?random: untyped) -> Array[Model & ValidatedModel]
+      def &: (untyped other) -> Array[Model & ValidatedModel]
+      def -: (untyped other) -> Array[Model & ValidatedModel]
+      def |: (untyped other) -> Array[untyped]
+      def +: (untyped other) -> Array[untyped]
+      def intersect?: (untyped other) -> bool
+      def in_groups: (Integer number, ?untyped fill_with) -> Array[Array[(Model & ValidatedModel)?]]
+                   | (Integer number, ?untyped fill_with) { (Array[(Model & ValidatedModel)?]) -> void } -> Array[Array[(Model & ValidatedModel)?]]
+      def in_groups_of: (Integer number, ?untyped fill_with) -> Array[Array[(Model & ValidatedModel)?]]
+                      | (Integer number, ?untyped fill_with) { (Array[(Model & ValidatedModel)?]) -> void } -> Array[Array[(Model & ValidatedModel)?]]
+      def split: (?untyped value) -> Array[Array[Model & ValidatedModel]]
+               | () { (Model & ValidatedModel) -> boolish } -> Array[Array[Model & ValidatedModel]]
+
+      # Serialization / string rendering, also delegated to `records`.
+      def join: (?untyped separator) -> ::String
+      def to_sentence: (?untyped options) -> ::String
+      def to_fs: (?untyped format) -> ::String
+      def to_formatted_s: (?untyped format) -> ::String
+      def to_xml: (?untyped options) -> ::String
+      def as_json: (?untyped options) -> untyped
+      def encode_with: (untyped coder) -> void
     end
   end
 

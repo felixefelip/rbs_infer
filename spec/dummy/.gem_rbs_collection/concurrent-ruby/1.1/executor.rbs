@@ -23,4 +23,29 @@ module Concurrent
 
   def self.new_io_executor: (?Hash[Symbol, untyped] opts) -> ExecutorService
   def self.new_fast_executor: (?Hash[Symbol, untyped] opts) -> ExecutorService
+
+  class AbstractExecutorService
+    include ExecutorService
+
+    def shutdown: () -> void
+    def kill: () -> void
+    def wait_for_termination: (?Numeric? timeout) -> bool
+    def running?: () -> bool
+    def shuttingdown?: () -> bool
+    def shutdown?: () -> bool
+  end
+
+  class RubyExecutorService < AbstractExecutorService
+  end
+
+  class RubyThreadPoolExecutor < RubyExecutorService
+    def initialize: (?Hash[Symbol, untyped] opts) -> void
+  end
+
+  class ThreadPoolExecutor < RubyThreadPoolExecutor
+  end
+
+  class FixedThreadPool < ThreadPoolExecutor
+    def initialize: (Integer num_threads, ?Hash[Symbol, untyped] opts) -> void
+  end
 end
