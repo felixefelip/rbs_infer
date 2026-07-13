@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "active_support/core_ext/string/inflections"
+
 module RbsInfer
   module Extensions
     module Rails
@@ -58,7 +60,7 @@ module RbsInfer
             def class_reopens
               plan = reopen_plan
               plan.map do |class_name, info|
-                FileEntry.new(filename: "#{flat(class_name)}.rb", source: class_source(class_name, info))
+                FileEntry.new(filename: "#{file_name(class_name)}.rb", source: class_source(class_name, info))
               end
             end
 
@@ -160,7 +162,7 @@ module RbsInfer
 
                   seen[ns] = true
                   inverse = element.inverse_belongs_to_for(owner.class_name)
-                  FileEntry.new(filename: "#{ns}.rb", source: proxy_source(ns, element.class_name, inverse))
+                  FileEntry.new(filename: "#{file_name(ns)}.rb", source: proxy_source(ns, element.class_name, inverse))
                 end
               end
             end
@@ -240,6 +242,15 @@ module RbsInfer
 
             def flat(class_name)
               class_name.gsub("::", "_")
+            end
+
+            # The snake_case file name for a reopened constant, for visual
+            # uniformity with the rest of `sig/`. Only the FILE name is snaked —
+            # the reopened constant itself keeps its real casing (via `flat` /
+            # `proxy_namespace`), since it must be valid Ruby and match the
+            # rbs_rails namespace (`Post_Assignment`, not `post_assignment`).
+            def file_name(constant)
+              constant.underscore.gsub("/", "_")
             end
           end
         end
