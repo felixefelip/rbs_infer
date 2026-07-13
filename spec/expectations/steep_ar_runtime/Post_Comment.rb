@@ -25,8 +25,6 @@ class Post_Comment::ActiveRecord_Associations_CollectionProxy
   end
 
   def create!(*)
-    record = build
-    record.save
-    record
+    create or raise ActiveRecord::RecordInvalid
   end
 end

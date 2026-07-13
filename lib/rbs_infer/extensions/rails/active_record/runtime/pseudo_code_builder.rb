@@ -62,12 +62,20 @@ module RbsInfer
               end
             end
 
-            # class_name => { callbacks: [...], getters: [{ name:, proxy:, element: }, ...] }
+            # class_name => { callbacks: [...], belongs_to_defaults: [BelongsTo],
+            #                 getters: [{ name:, proxy:, element: }, ...] }
             def reopen_plan
-              plan = Hash.new { |h, k| h[k] = { callbacks: [], getters: [] } }
+              plan = Hash.new { |h, k| h[k] = { callbacks: [], belongs_to_defaults: [], getters: [] } }
 
               @models.each do |model|
                 plan[model.class_name][:callbacks] = model.before_validation_callbacks if model.before_validation_callbacks.any?
+
+                # A `belongs_to ... default: -> { expr }` runs `expr` in a
+                # before_validation callback with `self` = the record, so its
+                # nilable-belongs_to deref becomes reachable from `save` — the
+                # same flow as a named callback.
+                defaults = model.belongs_to.select(&:default_body)
+                plan[model.class_name][:belongs_to_defaults] = defaults if defaults.any?
 
                 model.has_many.each do |assoc|
                   # Emit a getter for EVERY has_many whose element is a known
@@ -91,13 +99,35 @@ module RbsInfer
 
             def class_source(class_name, info)
               body = []
-              if info[:callbacks].any?
+              defaults = info[:belongs_to_defaults]
+              if info[:callbacks].any? || defaults.any?
                 # `save(**)` matches the real `save: (?context:, ?validate:,
-                # ?touch:) -> bool`; it runs the before_validation callbacks so
-                # their nilable-belongs_to deref is reachable from `save`.
+                # ?touch:) -> bool`; it runs the before_validation callbacks (the
+                # named ones and the belongs_to `default:` lambdas) so their
+                # nilable-belongs_to deref is reachable from `save`.
+                rbvc = info[:callbacks].dup
+                rbvc << "run_belongs_to_default_callbacks" if defaults.any?
+
                 body.concat(method_lines("save", "**") { ["run_before_validation_callbacks", "true"] })
                 body << ""
-                body.concat(method_lines("run_before_validation_callbacks") { info[:callbacks] })
+                body.concat(method_lines("run_before_validation_callbacks") { rbvc })
+
+                if defaults.any?
+                  # `default: -> { expr }` sets the association if unset, so
+                  # `self.<assoc> ||= expr` models `writer(...) if reader.nil?`;
+                  # `expr`'s deref (`post.user`) narrows once `save` enforces the
+                  # inferred precondition, exactly like a named callback.
+                  body << ""
+                  body.concat(method_lines("run_belongs_to_default_callbacks") do
+                    defaults.map { |b| "run_belongs_to_default_#{b.name}" }
+                  end)
+                  defaults.each do |b|
+                    body << ""
+                    body.concat(method_lines("run_belongs_to_default_#{b.name}") do
+                      ["self.#{b.name} ||= #{b.default_body}"]
+                    end)
+                  end
+                end
               end
               info[:getters].each do |getter|
                 body << "" unless body.empty?

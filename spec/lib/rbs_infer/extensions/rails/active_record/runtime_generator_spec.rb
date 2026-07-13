@@ -66,6 +66,38 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       end
     end
 
+    it "reopens a belongs_to `default:` lambda as a before_validation callback" do
+      # `belongs_to :owner, default: -> { post.user }` runs its lambda in a
+      # before_validation callback (`self.owner ||= post.user`), so the deref of
+      # a nilable belongs_to inside it (`post.user`) becomes reachable from save
+      # and the contract machinery can narrow it — same flow as a named callback.
+      model_src = <<~RUBY
+        class Assignment < ApplicationRecord
+          belongs_to :post
+          belongs_to :owner, class_name: "User", default: -> { post.user }
+        end
+      RUBY
+      in_app("app/models/assignment.rb" => model_src, "app/models/post.rb" => POST) do |dir|
+        model = source_of(described_class.new(app_dir: dir).build, "Assignment.rb")
+
+        expect(model).to match(/def run_before_validation_callbacks\n\s*run_belongs_to_default_callbacks\n\s*end/)
+        expect(model).to match(/def run_belongs_to_default_callbacks\n\s*run_belongs_to_default_owner\n\s*end/)
+        expect(model).to match(/def run_belongs_to_default_owner\n\s*self\.owner \|\|= post\.user\n\s*end/)
+        expect(Prism.parse(model).success?).to be(true)
+      end
+    end
+
+    it "does not reopen a belongs_to without a `default:`" do
+      # A plain belongs_to has no default lambda to run, so no callback is emitted
+      # for it (only `belongs_to :owner, default:` would produce one).
+      plain = "class Assignment < ApplicationRecord\n  belongs_to :post\nend\n"
+      in_app("app/models/assignment.rb" => plain, "app/models/post.rb" => POST) do |dir|
+        model = source_of(described_class.new(app_dir: dir).build, "Assignment.rb")
+        # No save flow at all: no before_validation callback and no default lambda.
+        expect(model).to be_nil
+      end
+    end
+
     it "emits nothing when a has_many's element is not a scanned model" do
       # POST has `has_many :assignments` but Assignment isn't provided here, so
       # its class/proxy can't be modeled — the association is skipped, and with
@@ -101,9 +133,12 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         expect(proxy).to match(/def owner\n\s*@owner\n\s*end/)
         # build establishes the inverse belongs_to (`post`) from the owner.
         expect(proxy).to match(/def build\(\*\)\n\s*record = Assignment\.new\n\s*record\.post = owner\n\s*record\n\s*end/)
-        # create / create! = build (no args, matches the optional overload) + save.
+        # create = build (no args, matches the optional overload) + save.
         expect(proxy).to match(/def create\(\*\)\n\s*record = build\n\s*record\.save\n\s*record\n\s*end/)
-        expect(proxy).to match(/def create!\(\*\)\n\s*record = build\n\s*record\.save\n\s*record\n\s*end/)
+        # create! delegates to `create` (single `save` call site) rather than
+        # repeating build/save — keeps the caller chain linear so a precondition
+        # on `save` can enforce (felixefelip/steep#65).
+        expect(proxy).to match(/def create!\(\*\)\n\s*create or raise ActiveRecord::RecordInvalid\n\s*end/)
         expect(Prism.parse(proxy).success?).to be(true)
       end
     end

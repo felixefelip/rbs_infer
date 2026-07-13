@@ -8,7 +8,7 @@ module RbsInfer
     module Rails
       module ActiveRecord
         module Runtime
-          BelongsTo = Struct.new(:name, :class_name, keyword_init: true)
+          BelongsTo = Struct.new(:name, :class_name, :default_body, keyword_init: true)
           HasMany   = Struct.new(:name, :class_name, keyword_init: true)
 
           # One model's reflections relevant to the AR-runtime pseudo-code:
@@ -56,7 +56,11 @@ module RbsInfer
                 case call.name
                 when :belongs_to
                   name = first_symbol(call) or next
-                  belongs_to << BelongsTo.new(name: name, class_name: belongs_to_class(name, call))
+                  belongs_to << BelongsTo.new(
+                    name: name,
+                    class_name: belongs_to_class(name, call),
+                    default_body: default_expr_source(call)
+                  )
                 when :has_many
                   name = first_symbol(call) or next
                   has_many << HasMany.new(name: name, class_name: has_many_class(name, call))
@@ -105,6 +109,29 @@ module RbsInfer
 
             def belongs_to_class(name, call)
               string_kwarg(call, "class_name") || name.camelize
+            end
+
+            # The source of a `default: -> { expr }` lambda's single-expression
+            # body (`"post.user"`), for the AR-runtime generator to reopen as a
+            # real before_validation method (`self.<assoc> ||= post.user`) that
+            # the contract machinery can narrow (felixefelip/rbs_infer#XXX).
+            # nil unless `default:` is a one-expression lambda.
+            def default_expr_source(call)
+              hash = call.arguments.arguments.find { |a| a.is_a?(Prism::KeywordHashNode) }
+              return nil unless hash
+
+              assoc = hash.elements.find do |elem|
+                elem.is_a?(Prism::AssocNode) && elem.key.is_a?(Prism::SymbolNode) && elem.key.value.to_s == "default"
+              end
+              return nil unless assoc
+
+              node = assoc.value
+              return nil unless node.is_a?(Prism::LambdaNode)
+
+              body = node.body
+              return nil unless body.is_a?(Prism::StatementsNode) && body.body.size == 1
+
+              body.body.first.slice
             end
 
             def has_many_class(name, call)
