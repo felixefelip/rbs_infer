@@ -7,6 +7,12 @@ class Users::AvatarsController
   private
 
   def __rbs_infer__run_edit
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
     set_user
     return if performed?
 
@@ -14,6 +20,12 @@ class Users::AvatarsController
   end
 
   def __rbs_infer__run_update
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
     set_user
     return if performed?
 

@@ -7,6 +7,12 @@ class Posts::AssignmentsController
   private
 
   def __rbs_infer__run_create
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
     set_post
     return if performed?
 

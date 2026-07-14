@@ -7,10 +7,22 @@ class PostsController
   private
 
   def __rbs_infer__run_index
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
     index
   end
 
   def __rbs_infer__run_show
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
     set_post
     return if performed?
 
@@ -18,14 +30,32 @@ class PostsController
   end
 
   def __rbs_infer__run_new
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
     new
   end
 
   def __rbs_infer__run_create
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
     create
   end
 
   def __rbs_infer__run_update
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
     set_post
     return if performed?
 
@@ -33,6 +63,12 @@ class PostsController
   end
 
   def __rbs_infer__run_destroy
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
     set_post
     return if performed?
 
@@ -40,6 +76,12 @@ class PostsController
   end
 
   def __rbs_infer__run_publish
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
     set_post
     return if performed?
 

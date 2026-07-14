@@ -7,10 +7,22 @@ class UsersController
   private
 
   def __rbs_infer__run_index
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
     index
   end
 
   def __rbs_infer__run_show
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
     show
   end
 end

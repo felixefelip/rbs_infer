@@ -3,4 +3,7 @@ class ApplicationController < ActionController::Base
   private
 
   def current_user: () -> (User & User::Validated)?
+  def authenticate_user: () -> (User & User::Validated)?
+  def log_user_author_name: () -> untyped
+  def current_user_present?: () -> (true | bool | false)
 end
