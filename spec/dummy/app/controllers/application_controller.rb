@@ -14,7 +14,10 @@ class ApplicationController < ActionController::Base
   end
 
   def authenticate_user
-    redirect_to root_path unless current_user
+    unless current_user
+      redirect_to root_path
+      return
+    end
 
     Current.user = current_user
   end
