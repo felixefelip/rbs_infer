@@ -1,0 +1,8 @@
+module Posts
+  class AssignmentsController
+
+    private
+
+    def __rbs_infer__run_create: () -> void
+  end
+end

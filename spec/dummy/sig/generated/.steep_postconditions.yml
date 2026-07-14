@@ -1,6 +1,24 @@
 ---
 version: 1
 postconditions:
+- class: ActionController::Base
+  method: head
+  unconditional:
+    ivars:
+      "@__rbs_infer__halted": 'true'
+    self: "::ActionController::Base & ::ActionController::Base::AfterHead"
+- class: ActionController::Base
+  method: redirect_to
+  unconditional:
+    ivars:
+      "@__rbs_infer__halted": 'true'
+    self: "::ActionController::Base & ::ActionController::Base::AfterRedirectTo"
+- class: ActionController::Base
+  method: render
+  unconditional:
+    ivars:
+      "@__rbs_infer__halted": 'true'
+    self: "::ActionController::Base & ::ActionController::Base::AfterRender"
 - class: Post_Assignment::ActiveRecord_Associations_CollectionProxy
   method: build
   unconditional:

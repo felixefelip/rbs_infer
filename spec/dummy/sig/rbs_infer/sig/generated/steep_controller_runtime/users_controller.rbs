@@ -1,0 +1,7 @@
+class UsersController
+
+  private
+
+  def __rbs_infer__run_index: () -> void
+  def __rbs_infer__run_show: () -> void
+end

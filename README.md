@@ -107,10 +107,13 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 | `rake rbs_infer:rails_custom:all` | `RbsInfer::Extensions::Rails::CustomGenerator` | `sig/rbs_rails_custom/` |
 | `rake rbs_infer:erb:all` | `RbsInfer::Extensions::Rails::ErbConventionGenerator` | `sig/rbs_infer_erb/` |
 | `rake rbs_infer:module_self_types:all` | `RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator` | `sig/generated/.steep_module_self_types.yml` |
+| `rake rbs_infer:controller_runtime:all` | `RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator` | `sig/generated/steep_controller_runtime/` |
 
 **Enumerize generator** — walks `app/models/**/*.rb`, captures `enumerize :attr, in: [...]`, and emits per-attribute `Value` / `Attribute` classes plus instance/class accessors, predicate methods, and scope methods (shallow/deep).
 
 **Rails custom generator** — emits `application_controller.rbs` and `action_view_context.rbs` with framework-level mix-ins (`ApplicationHelper`, `ActionView::Helpers`, optionally `Kaminari::Helpers`, `_RbsRailsPathHelpers`) so controllers/views resolve helper methods.
+
+**Controller runtime generator** — emits *pseudo-code* (plain `.rb` Steep type-checks, same Forma-2 idea as the AR runtime sidecar) modelling what Rails does at request time, so the checker can *infer* what an action may assume on entry instead of being handed pre-derived facts. Per controller it reopens the class with a private `__rbs_infer__run_<action>` holding that action's effective `before_action` chain inlined — ancestors first, concerns' `included do` spliced at the include site, `only:`/`except:`/`skip_before_action` applied, `if:`/`unless:` emitted as literal Ruby conditions — each link followed by a halt check, and the action call last. A framework reopen gives `redirect_to`/`render`/`head` a body that records the halt. Consuming these bodies as proof (so `@post` set by `set_post`, or `Current.user` past a halting guard, narrow inside the action) needs felixefelip/steep#68; see felixefelip/rbs_infer#81.
 
 **ERB convention generator** — uses Steep's ERB module convention (`STEEP_ERB_CONVENTION=1`). For each `app/views/**/*.{html,turbo_stream}.erb`, it emits a corresponding `class ERB<Controller><Action>` (or `ERBPartial<Controller><Name>` for `_partial.html.erb`) with:
 - instance variables typed from the matching controller action,
