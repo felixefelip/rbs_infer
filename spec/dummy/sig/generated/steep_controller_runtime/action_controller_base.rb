@@ -23,5 +23,16 @@ module ActionController
     def performed?
       @__rbs_infer__halted
     end
+
+    # Stands for a callback condition we cannot name (a proc taking
+    # the controller, a multi-statement lambda): the link "may or may
+    # not run", so it proves nothing. The body is deliberately an
+    # opaque runtime predicate — the checker can type it (bool) but
+    # never decide it, which is exactly the semantics wanted. It
+    # needs A body at all because the analyzer, not this generator,
+    # emits the RBS.
+    def __rbs_infer__unknown_condition?
+      request.present?
+    end
   end
 end

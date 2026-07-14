@@ -1,0 +1,10 @@
+module ActionController
+  class Base
+    @__rbs_infer__halted: true?
+    def redirect_to: (*untyped) -> bool
+    def render: (*untyped) -> bool
+    def head: (*untyped) -> bool
+    def performed?: () -> true?
+    def __rbs_infer__unknown_condition?: () -> untyped
+  end
+end

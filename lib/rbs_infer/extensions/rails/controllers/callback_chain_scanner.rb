@@ -249,7 +249,7 @@ module RbsInfer
           end
 
           def callbacks(call, source, prepend:)
-            options = options_of(call)
+            options = options_of(call, source)
             handlers = symbol_args(call)
 
             entries = handlers.map do |handler|
@@ -264,7 +264,7 @@ module RbsInfer
           end
 
           def skips(call)
-            options = options_of(call)
+            options = options_of(call, nil)
             symbol_args(call).map do |handler|
               Skip.new(handler: handler, only: options[:only], except: options[:except])
             end
@@ -280,7 +280,7 @@ module RbsInfer
             source[body.location.start_offset...body.location.end_offset]
           end
 
-          def options_of(call)
+          def options_of(call, source)
             hash = call.arguments&.arguments&.grep(Prism::KeywordHashNode)&.first
             return { only: nil, except: nil, if_cond: nil, unless_cond: nil } unless hash
 
@@ -292,22 +292,42 @@ module RbsInfer
               case elem.key.value.to_s
               when "only" then opts[:only] = symbol_list(elem.value)
               when "except" then opts[:except] = symbol_list(elem.value)
-              when "if" then opts[:if_cond] = predicate(elem.value)
-              when "unless" then opts[:unless_cond] = predicate(elem.value)
+              when "if" then opts[:if_cond] = predicate(elem.value, source)
+              when "unless" then opts[:unless_cond] = predicate(elem.value, source)
               end
             end
 
             opts
           end
 
-          # A `if:`/`unless:` we can name (symbol/string) becomes a literal
-          # call in the pseudo-code; anything else is opaque.
-          def predicate(node)
+          # A `if:`/`unless:` condition, rendered as a Ruby expression the
+          # pseudo-code can splice into an `if`:
+          #
+          #   if: :authenticated?     => "authenticated?"  (a self-send)
+          #   if: -> { params[:id] }  => "(params[:id])"   (Rails instance_execs the
+          #                                                 lambda on the controller,
+          #                                                 so its body is valid as-is)
+          #
+          # Anything else — a lambda taking the controller as an argument, a proc
+          # held in a variable, a multi-statement body — cannot be spliced and
+          # becomes UNKNOWN_CONDITION.
+          def predicate(node, source)
             case node
             when Prism::SymbolNode then node.value.to_s
             when Prism::StringNode then node.unescaped
+            when Prism::LambdaNode then lambda_condition(node, source)
             else UNKNOWN_CONDITION
             end
+          end
+
+          # Source of a zero-arity, single-statement lambda body.
+          def lambda_condition(node, source)
+            return UNKNOWN_CONDITION if source.nil? || node.parameters
+
+            body = statements(node.body)
+            return UNKNOWN_CONDITION unless body.size == 1
+
+            "(#{source[body.first.location.start_offset...body.first.location.end_offset]})"
           end
 
           def symbol_args(call)

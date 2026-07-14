@@ -11,7 +11,7 @@ module RbsInfer
         # plain Ruby that models what Rails does at request time, so the Steep
         # fork can prove — by reading it — what an action may assume on entry.
         #
-        # Two kinds of file:
+        # Two kinds of file, both plain `.rb`:
         #
         #   * the FRAMEWORK reopen (`action_controller_base.rb`) — gives
         #     `redirect_to`/`render`/`head` a body that records the halt, and
@@ -22,6 +22,14 @@ module RbsInfer
         #     `__rbs_infer__run_<action>` per action, holding that action's
         #     effective before_action chain inlined, each link followed by the
         #     halt check, and the action call last.
+        #
+        # No `.rbs` is emitted: the RBS for these bodies is the analyzer's job
+        # (`rbs_infer sig/ --output`), exactly as for any other source. Emitting
+        # it here too would declare the same methods twice and RBS rejects that
+        # (`Non-overloading method definition of `performed?` … cannot be
+        # duplicated`). Everything the pseudo-code declares must therefore be
+        # INFERRABLE FROM A BODY — which is why the opaque condition below has
+        # one.
         #
         # The controller is REOPENED rather than wrapped in a `Runner` class for
         # two reasons: callbacks are private (an external caller could not invoke
@@ -60,8 +68,8 @@ module RbsInfer
             @scanner = scanner
           end
 
-          # => [FileEntry] (framework reopen first, then one .rb/.rbs pair per
-          # controller that has at least one action).
+          # => [FileEntry] (framework reopen first, then one .rb per controller
+          # that has at least one action).
           def build
             controllers = @scanner.controllers
             return [] if controllers.empty?
@@ -82,18 +90,15 @@ module RbsInfer
           # a fact — `@_response_body` is declared `untyped`, so refining it
           # would assert nothing.
           #
-          # `performed?` is declared here as `() -> bool`, overriding the
-          # inherited `() -> untyped` (AbstractController::Base /
-          # ActionController::Metal — an override, not a duplicate). A predicate
-          # returning `untyped` refines nothing when tested, so the `bool` is
-          # what makes `return if performed?` able to carry the proof.
+          # Giving `performed?` a body also re-types it: the analyzer infers
+          # `() -> true?` from it, replacing the inherited `() -> untyped`. That
+          # is what makes the predicate usable as a proof carrier — testing an
+          # `untyped` predicate refines nothing.
           #
           # `(*args)` (no `**kwargs`, which trips a Steep internal error) is
           # permissive enough for every framework signature, and each body ends
           # with a literal `true` so it satisfies the narrowest declared return
-          # among them (`head: (...) -> true`) as well as the `untyped`/`void`
-          # ones — the ivar-typed assignment alone would be `bool`, which `true`
-          # rejects.
+          # among them (`head: (...) -> true`).
           #
           # `redirect_to` keeps its FAITHFUL return type (whatever the framework
           # RBS says): modelling the halt as a non-returning `bot` would be both
@@ -123,43 +128,31 @@ module RbsInfer
                   def #{HALTED}
                     @__rbs_infer__halted
                   end
+
+                  # Stands for a callback condition we cannot name (a proc taking
+                  # the controller, a multi-statement lambda): the link "may or may
+                  # not run", so it proves nothing. The body is deliberately an
+                  # opaque runtime predicate — the checker can type it (bool) but
+                  # never decide it, which is exactly the semantics wanted. It
+                  # needs A body at all because the analyzer, not this generator,
+                  # emits the RBS.
+                  def #{UNKNOWN_CONDITION_METHOD}
+                    request.present?
+                  end
                 end
               end
             RUBY
 
-            # `__rbs_infer__unknown_condition?` is DECLARATION-ONLY (no body):
-            # it stands for a callback condition we cannot name (a lambda), so
-            # the chain says "this link may or may not run" and proves nothing
-            # from it. Giving it a body would invent a fact.
-            sig = <<~RBS
-              #{HEADER.gsub(/^# frozen_string_literal: true\n#\n/, "")}
-              module ActionController
-                class Base
-                  @__rbs_infer__halted: bool
-
-                  # Overrides the inherited `() -> untyped`: a predicate that
-                  # returns `untyped` refines nothing when tested.
-                  def #{HALTED}: () -> bool
-
-                  def #{UNKNOWN_CONDITION_METHOD}: () -> bool
-                end
-              end
-            RBS
-
-            [
-              FileEntry.new(filename: "action_controller_base.rb", source: body),
-              FileEntry.new(filename: "action_controller_base.rbs", source: sig),
-            ]
+            [FileEntry.new(filename: "action_controller_base.rb", source: body)]
           end
 
           def controller_files(class_name)
             actions = @scanner.actions_for(class_name)
-            base = filename_for(class_name)
 
-            [
-              FileEntry.new(filename: "#{base}.rb", source: controller_source(class_name, actions)),
-              FileEntry.new(filename: "#{base}.rbs", source: controller_signature(class_name, actions)),
-            ]
+            [FileEntry.new(
+              filename: "#{filename_for(class_name)}.rb",
+              source: controller_source(class_name, actions)
+            )]
           end
 
           def controller_source(class_name, actions)
@@ -226,22 +219,6 @@ module RbsInfer
 
           def predicate(cond)
             cond == Controllers::UNKNOWN_CONDITION ? UNKNOWN_CONDITION_METHOD : cond
-          end
-
-          # The runner methods are not in the app's RBS (they exist only for the
-          # checker), so declare them — otherwise Steep warns
-          # `Ruby::UndeclaredMethodDefinition` once per action.
-          def controller_signature(class_name, actions)
-            decls = actions.map { |action| "  def __rbs_infer__run_#{action}: () -> void" }
-
-            <<~RBS
-              #{HEADER.gsub(/^# frozen_string_literal: true\n#\n/, "")}
-              class #{class_name}
-                private
-
-              #{decls.join("\n")}
-              end
-            RBS
           end
 
           def filename_for(class_name)

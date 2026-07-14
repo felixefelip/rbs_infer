@@ -202,9 +202,9 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
       )
     end
 
-    # A lambda condition cannot be named, so the link is modelled as "may or
-    # may not run" — it proves nothing, rather than inventing a fact.
-    it "models an unnameable condition as an opaque predicate" do
+    # Rails instance_execs a lambda condition on the controller, so its body is
+    # valid pseudo-code as written — splice it rather than giving up on it.
+    it "inlines a zero-arity lambda condition" do
       result = build("app/controllers/posts_controller.rb" => <<~RUBY)
         class PostsController < ActionController::Base
           before_action :set_post, if: -> { params[:id].present? }
@@ -214,7 +214,28 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
       RUBY
 
       expect(runner(result, "posts_controller.rb", "show")).to include(
+        "set_post if (params[:id].present?)"
+      )
+    end
+
+    # A condition we cannot splice (a lambda taking the controller) is modelled
+    # as "may or may not run" — it proves nothing, rather than inventing a fact.
+    it "models an unnameable condition as an opaque predicate" do
+      result = build("app/controllers/posts_controller.rb" => <<~RUBY)
+        class PostsController < ActionController::Base
+          before_action :set_post, if: ->(controller) { controller.stale? }
+
+          def show; end
+        end
+      RUBY
+
+      expect(runner(result, "posts_controller.rb", "show")).to include(
         "set_post if __rbs_infer__unknown_condition?"
+      )
+      # It needs a BODY: the analyzer emits the RBS, and it can only declare
+      # what it can infer from one.
+      expect(source_of(result, "action_controller_base.rb")).to include(
+        "def __rbs_infer__unknown_condition?"
       )
     end
 
@@ -249,27 +270,31 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
       # Rails halts the chain with `performed?` (its callback terminator calls
       # exactly that), so the pseudo-code drives the real predicate.
       expect(source).to include("def performed?")
-      # `performed?` must be re-declared as `bool` (it is `untyped` upstream, and
-      # an untyped predicate refines nothing when tested); the opaque condition
-      # is declaration-only.
-      expect(source_of(result, "action_controller_base.rbs")).to include(
-        "@__rbs_infer__halted: bool",
-        "def performed?: () -> bool",
-        "def __rbs_infer__unknown_condition?: () -> bool"
-      )
     end
 
-    it "declares each runner method, privately" do
+    # The RBS for these bodies comes from the analyzer (`rbs_infer sig/`), not
+    # from here: emitting it in both places declares the same method twice, and
+    # RBS rejects that.
+    it "emits no .rbs of its own" do
       result = build("app/controllers/posts_controller.rb" => <<~RUBY)
         class PostsController < ActionController::Base
           def show; end
         end
       RUBY
 
-      expect(source_of(result, "posts_controller.rbs")).to include(
-        "private", "def __rbs_infer__run_show: () -> void"
+      expect(result.map(&:filename)).to all(end_with(".rb"))
+    end
+
+    it "defines the runner methods privately" do
+      result = build("app/controllers/posts_controller.rb" => <<~RUBY)
+        class PostsController < ActionController::Base
+          def show; end
+        end
+      RUBY
+
+      expect(source_of(result, "posts_controller.rb")).to include(
+        "private", "def __rbs_infer__run_show"
       )
-      expect(source_of(result, "posts_controller.rb")).to include("private")
     end
   end
 
