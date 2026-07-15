@@ -10,6 +10,8 @@ class PostsController
     authenticate_user
     return if performed?
 
+    current_user.full_name
+
     log_user_author_name if current_user_present?
     return if performed?
 

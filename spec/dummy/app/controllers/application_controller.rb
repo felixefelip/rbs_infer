@@ -19,6 +19,8 @@ class ApplicationController < ActionController::Base
       return
     end
 
+    current_user.full_name
+
     Current.user = current_user
   end
 
