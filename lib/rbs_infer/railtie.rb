@@ -13,6 +13,7 @@ module RbsInfer
       load File.expand_path("extensions/rails/tasks/rbs_infer_module_self_types.rake", __dir__)
       load File.expand_path("extensions/rails/tasks/rbs_infer_ar_runtime.rake", __dir__)
       load File.expand_path("extensions/rails/tasks/rbs_infer_controller_runtime.rake", __dir__)
+      load File.expand_path("extensions/rails/tasks/rbs_infer_current_runtime.rake", __dir__)
     end
   end
 end
