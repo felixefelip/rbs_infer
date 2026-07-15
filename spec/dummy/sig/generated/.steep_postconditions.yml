@@ -5,41 +5,41 @@ postconditions:
   method: head
   unconditional:
     ivars:
-      "@__rbs_infer__halted": 'true'
+      "@__rbs_infer__performed": 'true'
     self: "::ActionController::Base & ::ActionController::Base::AfterHead"
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
 - class: ActionController::Base
   method: performed?
   effects:
-    returns_ivar: "@__rbs_infer__halted"
+    returns_ivar: "@__rbs_infer__performed"
 - class: ActionController::Base
   method: redirect_to
   unconditional:
     ivars:
-      "@__rbs_infer__halted": 'true'
+      "@__rbs_infer__performed": 'true'
     self: "::ActionController::Base & ::ActionController::Base::AfterRedirectTo"
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
 - class: ActionController::Base
   method: render
   unconditional:
     ivars:
-      "@__rbs_infer__halted": 'true'
+      "@__rbs_infer__performed": 'true'
     self: "::ActionController::Base & ::ActionController::Base::AfterRender"
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
 - class: ApplicationController
   method: authenticate_user
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
   conditional_returns:
     current_user:
-      gate_ivar: "@__rbs_infer__halted"
+      gate_ivar: "@__rbs_infer__performed"
       type: "(::User & ::User::Validated)"
 - class: Board
   method: initialize
@@ -133,7 +133,7 @@ postconditions:
   method: __rbs_infer__run_create
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@assignment"
     - "@post"
 - class: Posts::AssignmentsController
@@ -144,7 +144,7 @@ postconditions:
     self: "::Posts::AssignmentsController & ::Posts::AssignmentsController::AfterCreate"
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@assignment"
 - class: Posts::AssignmentsController
   method: set_post
@@ -159,44 +159,44 @@ postconditions:
   method: __rbs_infer__run_create
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@post"
 - class: PostsController
   method: __rbs_infer__run_destroy
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@post"
 - class: PostsController
   method: __rbs_infer__run_index
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@posts"
 - class: PostsController
   method: __rbs_infer__run_new
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@post"
 - class: PostsController
   method: __rbs_infer__run_publish
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@post"
 - class: PostsController
   method: __rbs_infer__run_show
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@comments"
     - "@post"
 - class: PostsController
   method: __rbs_infer__run_update
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@post"
 - class: PostsController
   method: create
@@ -206,13 +206,13 @@ postconditions:
     self: "::PostsController & ::PostsController::AfterCreate"
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@post"
 - class: PostsController
   method: destroy
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
 - class: PostsController
   method: index
   unconditional:
@@ -235,7 +235,7 @@ postconditions:
   method: publish
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
 - class: PostsController
   method: set_post
   unconditional:
@@ -263,7 +263,7 @@ postconditions:
   method: update
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
 - class: ProfileFormatter
   method: initialize
   effects:
@@ -344,13 +344,13 @@ postconditions:
   method: __rbs_infer__run_edit
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@user"
 - class: Users::AvatarsController
   method: __rbs_infer__run_update
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@user"
 - class: Users::AvatarsController
   method: set_user
@@ -365,18 +365,18 @@ postconditions:
   method: update
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
 - class: UsersController
   method: __rbs_infer__run_index
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@users"
 - class: UsersController
   method: __rbs_infer__run_show
   effects:
     may_write:
-    - "@__rbs_infer__halted"
+    - "@__rbs_infer__performed"
     - "@posts"
     - "@user"
 - class: UsersController

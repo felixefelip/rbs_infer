@@ -266,7 +266,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
 
       source = source_of(result, "action_controller_base.rb")
 
-      expect(source).to include("def redirect_to(*args)", "@__rbs_infer__halted = true")
+      expect(source).to include("def redirect_to(*args)", "@__rbs_infer__performed = true")
       # Rails halts the chain with `performed?` (its callback terminator calls
       # exactly that), so the pseudo-code drives the real predicate.
       expect(source).to include("def performed?")
