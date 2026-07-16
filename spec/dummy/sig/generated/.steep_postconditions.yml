@@ -41,6 +41,13 @@ postconditions:
     current_user:
       gate_ivar: "@__rbs_infer__performed"
       type: "(::User & ::User::Validated)"
+  conditional_const_returns:
+    Current.author_name:
+      gate_ivar: "@__rbs_infer__performed"
+      type: "::String"
+    Current.user:
+      gate_ivar: "@__rbs_infer__performed"
+      type: "(::User & ::User::Validated)"
 - class: Board
   method: initialize
   effects:
@@ -399,3 +406,116 @@ postconditions:
     may_write:
     - "@posts"
     - "@user"
+method_entry_facts:
+- class: ApplicationController
+  method: log_user_author_name
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Posts::AssignmentsController
+  method: create
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Posts::AssignmentsController
+  method: set_post
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: create
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: destroy
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: index
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: new
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: publish
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: set_post
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: show
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: update
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Users::AvatarsController
+  method: edit
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Users::AvatarsController
+  method: set_user
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Users::AvatarsController
+  method: update
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: UsersController
+  method: index
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: UsersController
+  method: show
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"

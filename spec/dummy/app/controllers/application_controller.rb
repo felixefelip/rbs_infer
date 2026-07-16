@@ -19,14 +19,14 @@ class ApplicationController < ActionController::Base
       return
     end
 
-    current_user.full_name
+    current_user.full_name.camelize
 
     Current.user = current_user
   end
 
   def log_user_author_name
-    Rails.logger.info "User #{Current.user.id} accessed #{request.path}"
-    Rails.logger.info "User full name: #{Current.full_name} accessed #{request.path}"
+    Rails.logger.info "User #{Current.user.id}, full name: #{Current.user.name.camelize} accessed #{request.path}"
+    Rails.logger.info "User full name: #{Current.author_name.camelize} accessed #{request.path}"
   end
 
   def current_user_present?
