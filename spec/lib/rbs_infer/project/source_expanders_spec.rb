@@ -24,9 +24,9 @@ RSpec.describe RbsInfer::Project::SourceExpanders do
     described_class.unregister(noop_expander)
   end
 
-  it "registers the default CurrentAttributes expander" do
+  it "registers the default on_load expander" do
     expect(described_class.expanders)
-      .to include(RbsInfer::Extensions::Rails::CurrentAttributesExpander)
+      .to include(RbsInfer::Extensions::Rails::OnLoadExpander)
   end
 
   it "returns nil when no expander changes the source" do

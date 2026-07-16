@@ -1,19 +1,4 @@
 class Current < ActiveSupport::CurrentAttributes
-  @user: ((User & User::Validated) | User)?
-  @author_name: String?
-  module GeneratedAttributeMethods
-    def user: () -> ((User & User::Validated) | User)?
-    def user=: (((User & User::Validated)? | User?) value) -> ((User & User::Validated) | User)?
-    def author_name: () -> String?
-    def author_name=: (String? value) -> String?
-  end
-  include GeneratedAttributeMethods
-  def self.user: () -> (User | (User & User::Validated))?
-  def self.user=: (((User & User::Validated)? | User?) value) -> ((User & User::Validated) | User)?
-  def self.author_name: () -> String?
-  def self.author_name=: (String? value) -> String?
-  def self.set: (?user: ((User & User::Validated) | User)?, ?author_name: String?) ?{ (untyped) -> untyped } -> untyped
-  def self.with: (?user: (User & User::Validated)?, ?author_name: String?) ?{ (untyped) -> untyped } -> untyped
   def self.author_full_name: () -> String?
   def user=: (((User & User::Validated)? | User?) value) -> String
 end

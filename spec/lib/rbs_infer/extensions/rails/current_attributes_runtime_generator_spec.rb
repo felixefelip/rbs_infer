@@ -22,68 +22,87 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator do
     in_app(files) { |dir| described_class.new(app_dir: dir).build }
   end
 
-  it "reopens a CurrentAttributes subclass with a delegating singleton setter" do
-    result = build("app/models/current.rb" => <<~RUBY)
-      class Current < ActiveSupport::CurrentAttributes
-        attribute :user, :author_name
+  def source_for(files, filename = "current.rb")
+    build(files).find { |f| f[:filename] == filename }&.fetch(:source)
+  end
 
-        def user=(value)
-          super(value)
-          self.author_name = value&.full_name
-        end
+  WITH_OVERRIDE = <<~RUBY
+    class Current < ActiveSupport::CurrentAttributes
+      attribute :user, :author_name
+
+      def user=(value)
+        super(value)
+        self.author_name = value&.full_name
       end
-    RUBY
+    end
+  RUBY
 
-    source = result.find { |f| f[:filename] == "current.rb" }[:source]
-    expect(source).to include("class Current")
+  it "reopens the class (no superclass), mergeable with the real source" do
+    source = source_for("app/models/current.rb" => WITH_OVERRIDE)
+    expect(source).to include("class Current\n")
+    expect(source).not_to include("< ActiveSupport::CurrentAttributes")
+  end
+
+  it "emits instance accessors in an included GeneratedAttributeMethods module" do
+    source = source_for("app/models/current.rb" => WITH_OVERRIDE)
+    expect(source).to include("module GeneratedAttributeMethods")
+    expect(source).to include("include GeneratedAttributeMethods")
+    # the module is the `super` target for the override, so the instance
+    # accessor is emitted even for the overridden attribute
+    expect(source).to include("def user=(value)")
+  end
+
+  it "makes the singleton setter delegate to the instance" do
+    source = source_for("app/models/current.rb" => WITH_OVERRIDE)
     expect(source).to include("def self.user=(value)")
     expect(source).to include("instance.user = value")
   end
 
-  it "emits the delegation only for attributes the class overrides" do
-    # `author_name` has no instance setter override, so its singleton setter
-    # establishes nothing — no delegation needed.
-    result = build("app/models/current.rb" => <<~RUBY)
+  it "skips singleton accessors the class overrides itself" do
+    source = source_for("app/models/current.rb" => <<~RUBY)
       class Current < ActiveSupport::CurrentAttributes
-        attribute :user, :author_name
+        attribute :user
 
-        def user=(value)
-          super(value)
-          self.author_name = value&.full_name
+        def self.user=(value)
+          @user = value
         end
       end
     RUBY
 
-    source = result.find { |f| f[:filename] == "current.rb" }[:source]
-    expect(source).to include("def self.user=(value)")
-    expect(source).not_to include("def self.author_name=")
+    # the class defines self.user= itself, so it is not re-emitted
+    expect(source.scan("def self.user=").size).to eq(0)
+    # the instance module accessor is still emitted
+    expect(source).to include("def user=(value)")
   end
 
-  it "emits nothing for a subclass with no overridden setter" do
-    result = build("app/models/current.rb" => <<~RUBY)
+  it "emits set/with with the attributes as kwargs" do
+    source = source_for("app/models/current.rb" => WITH_OVERRIDE)
+    expect(source).to include("def self.set(user: nil, author_name: nil, &block)")
+    expect(source).to include("def self.with(user: nil, author_name: nil, &block)")
+  end
+
+  it "emits initialize for a default" do
+    source = source_for("app/models/current.rb" => <<~RUBY)
       class Current < ActiveSupport::CurrentAttributes
-        attribute :user
+        attribute :count, default: -> { 0 }
       end
     RUBY
 
-    expect(result).to be_empty
+    expect(source).to include("def initialize")
+    expect(source).to include("@count = 0")
   end
 
   it "ignores classes that are not CurrentAttributes subclasses" do
     expect(build("app/models/post.rb" => "class Post < ApplicationRecord\nend\n")).to be_empty
   end
 
+  it "emits nothing for a subclass with no attributes" do
+    expect(build("app/models/current.rb" => "class Current < ActiveSupport::CurrentAttributes\nend\n")).to be_empty
+  end
+
   describe "#generate" do
     it "writes the sidecar and removes a stale one" do
-      in_app("app/models/current.rb" => <<~RUBY) do |dir|
-        class Current < ActiveSupport::CurrentAttributes
-          attribute :user
-          def user=(value)
-            super(value)
-            self.author_name = value&.full_name
-          end
-        end
-      RUBY
+      in_app("app/models/current.rb" => WITH_OVERRIDE) do |dir|
         stale = File.join(dir, described_class::SIDECAR_DIR, "gone.rb")
         FileUtils.mkdir_p(File.dirname(stale))
         File.write(stale, "# stale")
