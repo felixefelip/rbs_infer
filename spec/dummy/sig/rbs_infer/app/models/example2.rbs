@@ -1,0 +1,25 @@
+class Example2
+  @name: String
+  @user: Example2::User?
+  def self.run: () -> String
+end
+
+class Example2
+  class User
+    attr_reader name: String
+    def initialize: (name: String) -> void
+  end
+end
+
+class Example2
+  class Foo
+    attr_reader user: untyped
+    attr_reader name: String
+    attr_writer name: String
+    def user=: (User value) -> String?
+
+    class AfterUser
+      attr_reader user: Example2::User
+    end
+  end
+end
