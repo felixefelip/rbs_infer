@@ -124,6 +124,34 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # Nested classes as their own targets, plus the singleton→instance
+  # delegation `Current` uses. Two things this pins down:
+  #
+  # - `Example3::User`/`Example3::Foo` are emitted as separate targets, not
+  #   flattened into `Example3` (which used to claim their `initialize`,
+  #   attrs, and `@name`).
+  # - `Foo.user = user` types `def self.user=`'s param. `attr_accessor :user`
+  #   exposes a SYNTHETIC writer whose param is named after the attr, but the
+  #   explicit `def user=(value)` overriding it names the param `value`; when
+  #   the synthetic name won, the call-site type was filed under `user` while
+  #   the signature said `value`, so the substitution missed and both setters
+  #   stayed `untyped`.
+  it "nested-class file matches expected RBS (targets + setter param names)" do
+    name = "models/example3"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example3.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # Multi-target file (felixefelip/rbs_infer#38): no target_class is
   # passed, so the analyzer discovers and emits every type the file
   # reopens — the `on_load` blocks (expanded to `ActiveStorage::Blob` /

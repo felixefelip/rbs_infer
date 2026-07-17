@@ -750,7 +750,15 @@ module RbsInfer
   # Inferir tipos de parâmetros de métodos via chamadas cross-class
   # Ex: PostPublisher chama notifier.notify(post.user, "msg") → user: User, message: String
   def infer_method_param_types_from_callers(extra_methods = {})
-    target_methods = extract_target_method_params.merge(extra_methods)
+    # `extra_methods` are SYNTHETIC writers standing in for `attr_accessor`-
+    # generated methods, and name their param after the attr (`user`). A real
+    # `def user=(value)` overriding that attr names it `value`, and the def is
+    # the authority: the inferred type is keyed by param name, and RbsBuilder
+    # substitutes it by matching that name in the signature. Letting the
+    # synthetic name win filed the type under `user` while the signature said
+    # `value`, so the substitution missed and the param stayed `untyped` even
+    # though the call-site had been read correctly.
+    target_methods = extra_methods.merge(extract_target_method_params)
     return {} if target_methods.empty?
 
     positional_params = extract_init_positional_params
