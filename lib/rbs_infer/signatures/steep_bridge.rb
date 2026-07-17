@@ -383,12 +383,12 @@ module RbsInfer::Signatures
       typing.each_typing do |node, type|
         next unless in_scope.include?(node.object_id)
         case node.type
-        when :ivasgn
-          rhs = node.children[1]
-          next unless rhs
+        when :ivasgn, :or_asgn, :and_asgn
+          parts = ivar_write_name_and_rhs(node)
+          next unless parts
+          var_name, rhs = parts
           rhs_type = intrinsic_type_of(rhs, typing)
           next unless rhs_type
-          var_name = node.children[0].to_s.sub(/\A@/, "")
           type_sets[var_name].add(format_type(rhs_type))
         when :send
           receiver, method_name, *args = node.children
@@ -652,6 +652,16 @@ module RbsInfer::Signatures
         node.children.each do |c|
           collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, result: result)
         end
+      when :or_asgn, :and_asgn
+        # `@x ||= v` / `@x &&= v`: the write `each_typing` will key on is this
+        # whole node, not its argument-less inner `:ivasgn`, so collect this
+        # id (felixefelip/rbs_infer#85).
+        if node.children[0].type == :ivasgn && class_scope_match?(namespace, target_class)
+          result << node.object_id
+        end
+        node.children.each do |c|
+          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, result: result)
+        end
       when :send
         receiver, method_name = node.children[0], node.children[1]
         if attr_writer_to_ivar.key?(method_name) &&
@@ -711,10 +721,11 @@ module RbsInfer::Signatures
       when :defs
         # Singleton `def self.X` — class-instance variable scope, not
         # relevant for the per-action narrowing this method serves.
-      when :ivasgn
-        rhs = node.children[1]
-        if current_method && rhs && class_scope_match?(namespace, target_class)
-          var_name = node.children[0].to_s.sub(/\A@/, "")
+      when :ivasgn, :or_asgn, :and_asgn
+        parts = ivar_write_name_and_rhs(node)
+        rhs = parts&.last
+        if current_method && parts && class_scope_match?(namespace, target_class)
+          var_name = parts.first
           # Use the RHS's INTRINSIC type, not what `typing` recorded.
           # When the ivar is already declared in RBS (e.g.,
           # `@name: String?`), Steep's `:ivasgn` synthesize widens
@@ -1025,6 +1036,28 @@ module RbsInfer::Signatures
     # Same pattern as `Steep::Postconditions::Inferrer#intrinsic_type_of`
     # (felixefelip/steep#35). Both call sites need to bypass the same
     # widening for the cross-receiver narrowing pipeline to fire.
+    # Instance-variable writes take two AST shapes. A plain `@x = v` is an
+    # `:ivasgn` carrying its RHS as the second child. A `@x ||= v` / `@x &&= v`
+    # wraps an argument-less `:ivasgn` (the name alone) in an `:or_asgn` /
+    # `:and_asgn` whose second child is the RHS — so walking down to the inner
+    # `:ivasgn` finds no RHS, which is why `||=` writes were silently dropped
+    # (felixefelip/rbs_infer#85). Returns `[name_without_@, rhs_node]` for any
+    # of the three, or nil for anything else — including the bare inner
+    # `:ivasgn` of an `||=`. `||=`/`&&=` assign approximately the RHS type, so
+    # callers type them exactly like a plain write; `:op_asgn` (`+=`, `<<=`) is
+    # deliberately excluded, since there the result type is the operator's, not
+    # the RHS's.
+    def ivar_write_name_and_rhs(node)
+      case node.type
+      when :ivasgn
+        name, rhs = node.children
+        [name.to_s.sub(/\A@/, ""), rhs] if rhs
+      when :or_asgn, :and_asgn
+        lhs, rhs = node.children
+        [lhs.children[0].to_s.sub(/\A@/, ""), rhs] if lhs.type == :ivasgn && rhs
+      end
+    end
+
     def intrinsic_type_of(node, typing)
       case node.type
       when :nil

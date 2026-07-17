@@ -281,7 +281,14 @@ module RbsInfer::Inference
     def collect_ivar_writes(node, known_return_types, type_sets, attr_names, param_types: {})
       queue = [node]
       while (current = queue.shift)
-        if current.is_a?(Prism::InstanceVariableWriteNode)
+        # `@x = v`, plus `@x ||= v` / `@x &&= v` — all carry `.name`/`.value`
+        # and assign approximately the RHS type. `||=`/`&&=` were dropped
+        # before (felixefelip/rbs_infer#85); `InstanceVariableOperatorWriteNode`
+        # (`+=`, `<<=`) stays out — its result type is the operator's, not
+        # `.value`'s.
+        if current.is_a?(Prism::InstanceVariableWriteNode) ||
+           current.is_a?(Prism::InstanceVariableOrWriteNode) ||
+           current.is_a?(Prism::InstanceVariableAndWriteNode)
           name = current.name.to_s.sub(/\A@/, "")
           unless attr_names.include?(name)
             inferred = basic_value_type(current.value, known_return_types)
