@@ -849,6 +849,55 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       expect(beta["shared"]).to eq("Integer?")
       expect(beta).not_to have_key("only_alpha")
     end
+
+    # A nested class is its own target, so its writes are not the enclosing
+    # class's. Scoping used to match any namespace under the target
+    # (`start_with?("#{target}::")`), which is right for a nested *module*
+    # (emitted in place by the owner mechanism, #22) but wrong for a class:
+    # `@name` from `Outer::User#initialize` surfaced as `Outer`'s.
+    context "com declarações aninhadas" do
+      let(:nested_code) do
+        <<~RUBY
+          class Outer
+            class User
+              def initialize
+                @name = "n"
+              end
+            end
+
+            module Generated
+              def configure
+                @setting = 1
+              end
+            end
+
+            def run
+              @ran = true
+            end
+          end
+        RUBY
+      end
+
+      it "não atribui os writes de uma classe aninhada à classe externa" do
+        outer = bridge.ivar_write_types(nested_code, target_class: "Outer")
+
+        expect(outer).not_to have_key("name")
+      end
+
+      it "atribui os writes de um módulo aninhado à classe externa" do
+        outer = bridge.ivar_write_types(nested_code, target_class: "Outer")
+
+        expect(outer).to have_key("setting")
+        expect(outer).to have_key("ran")
+      end
+
+      it "atribui os writes da classe aninhada ao seu próprio alvo" do
+        user = bridge.ivar_write_types(nested_code, target_class: "Outer::User")
+
+        expect(user).to have_key("name")
+        expect(user).not_to have_key("ran")
+      end
+    end
   end
 
   describe "#constant_types" do

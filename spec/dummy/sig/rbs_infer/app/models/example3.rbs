@@ -1,0 +1,27 @@
+class Example3
+  def self.run: () -> untyped
+end
+
+class Example3
+  class User
+    attr_reader name: String
+    def initialize: (name: String) -> void
+  end
+end
+
+class Example3
+  class Foo
+    module GeneratedAttributes
+      attr_accessor user: User?
+      attr_accessor name: untyped
+      attr_writer foo_instance: untyped
+    end
+    include GeneratedAttributes
+    def self.foo_instance: () -> Example3::Foo
+    def self.user: () -> Example3::User?
+    def self.user=: (untyped value) -> untyped
+    def self.name: () -> untyped
+    def self.name=: (untyped value) -> untyped
+    def user=: (untyped value) -> untyped
+  end
+end

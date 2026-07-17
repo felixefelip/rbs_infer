@@ -60,7 +60,7 @@ module RbsInfer::Inference
 
         unless steep_returns[:instance].empty? && steep_returns[:singleton].empty?
           # Build def map for nil-return detection
-          collector = RbsInfer::AST::DefCollector.new
+          collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
           parsed_target.tree.accept(collector)
           def_map = {}
           collector.defs.each { |d| def_map[d.name.to_s] = d if d.is_a?(Prism::DefNode) }
@@ -89,7 +89,7 @@ module RbsInfer::Inference
               next if steep_type == "nil" && !unconditional_nil_tail?(defn)
 
               # Instance methods returning the same class (or host class for concerns) → self
-              steep_type = "self" if self_types.include?(steep_type)
+              steep_type = "self" if self_return?(m, steep_type, self_types)
 
               # Check for early return nil in body
               if defn && has_nil_return?(defn)
@@ -127,7 +127,7 @@ module RbsInfer::Inference
             next unless steep_type.start_with?("{")
             next if current_type == steep_type
 
-            steep_type = "self" if self_types.include?(steep_type)
+            steep_type = "self" if self_return?(m, steep_type, self_types)
 
             defn = def_map[m.name]
             if defn && has_nil_return?(defn)
@@ -176,7 +176,7 @@ module RbsInfer::Inference
       # cover (e.g., parse failures or pure ivasgn that Steep can't type).
       known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
 
-      collector = RbsInfer::AST::DefCollector.new
+      collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
       parsed_target.tree.accept(collector)
 
       initialized_ivars = collect_prism_initialized_ivars(parsed_target.tree)
@@ -235,6 +235,19 @@ module RbsInfer::Inference
     # Same selection for the kind-split Steep map (`{instance:, singleton:}`).
     def steep_returns_for(member, steep_returns)
       member.kind == :class_method ? steep_returns[:singleton] : steep_returns[:instance]
+    end
+
+    # Whether a body typed `steep_type` should be emitted as RBS `self`.
+    #
+    # Only for instance methods. In RBS `self` is the type of the receiver, so
+    # in a singleton method it means `singleton(Klass)` — NOT an instance. A
+    # `def self.instance; @instance ||= Klass.new; end` returns an instance, so
+    # emitting `self` there declares a type the body doesn't have, and Steep
+    # rejects it: "Cannot allow method body have type `::Klass` because
+    # declared as type `self`". Mirrors the `own_kind != :class_method` guard
+    # in TypeMerger (felixefelip/rbs_infer#33/#34).
+    def self_return?(member, steep_type, self_types)
+      member.kind != :class_method && self_types.include?(steep_type)
     end
 
     # Verifica se o corpo do método contém `return nil` ou `return` (implícito nil)

@@ -71,6 +71,34 @@ postconditions:
     may_write:
     - "@delivery_method"
     - "@from_address"
+- class: Example2::Foo
+  method: user=
+  unconditional:
+    ivars:
+      "@user": "::Example2::User"
+    self: "::Example2::Foo & ::Example2::Foo::AfterUser"
+  effects:
+    may_write:
+    - "@user"
+- class: Example2::User
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
+- class: Example3::Foo
+  method: user=
+  unconditional:
+    ivars:
+      "@user": untyped
+    self: "::Example3::Foo & ::Example3::Foo::AfterUser"
+  effects:
+    may_write:
+    - "@user"
+- class: Example3::User
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
 - class: ParseXml
   method: initialize
   effects:

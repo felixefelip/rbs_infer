@@ -602,12 +602,30 @@ module RbsInfer::Signatures
     # `::` boundary keeps a sibling like `BoardMember` from matching
     # target `Board`. A nil `target_class` means "don't scope" (whole
     # file), preserved for callers with no single target.
+    # Whether a write at lexical `namespace` (a list of `[name, kind]` frames,
+    # outermost first) belongs to `target_class`.
+    #
+    # Frames strictly below the target only count while they are *modules*:
+    # a nested module's members are the target's, emitted in place by the
+    # owner mechanism (felixefelip/rbs_infer#22). A nested *class* is its own
+    # target, so its writes are not the target's — without this, `@name = name`
+    # in `Example3::User#initialize` surfaced as `@name: String` on `Example3`.
     def class_scope_match?(namespace, target_class)
       return true if target_class.nil?
 
       target = target_class.to_s.sub(/\A::/, "")
-      current = namespace.join("::")
-      current == target || current.start_with?("#{target}::")
+      current = namespace.map(&:first).join("::")
+      return true if current == target
+      return false unless current.start_with?("#{target}::")
+
+      namespace.drop(target.split("::").size).all? { |(_, kind)| kind == :module }
+    end
+
+    # A `[name, kind]` namespace frame for a `:class`/`:module` node, or the
+    # unchanged namespace for an anonymous one.
+    def push_namespace(namespace, node)
+      name = const_node_to_name(node.children[0])
+      name ? namespace + [[name, node.type]] : namespace
     end
 
     # Object-ids of the `:ivasgn` / attr-writer `:send` nodes that live
@@ -622,10 +640,9 @@ module RbsInfer::Signatures
 
       case node.type
       when :class, :module
-        name = const_node_to_name(node.children[0])
         body = node.type == :class ? node.children[2] : node.children[1]
         collect_scoped_write_node_ids(body, attr_writer_to_ivar, target_class,
-                                      namespace: name ? namespace + [name] : namespace,
+                                      namespace: push_namespace(namespace, node),
                                       result: result) if body
       when :sclass
         collect_scoped_write_node_ids(node.children[1], attr_writer_to_ivar, target_class,
@@ -665,12 +682,11 @@ module RbsInfer::Signatures
 
       case node.type
       when :class, :module
-        name = const_node_to_name(node.children[0])
         body = node.type == :class ? node.children[2] : node.children[1]
         collect_ivar_writes_per_method(body, typing: typing,
                                        attr_writer_to_ivar: attr_writer_to_ivar,
                                        current_method: nil,
-                                       namespace: name ? namespace + [name] : namespace,
+                                       namespace: push_namespace(namespace, node),
                                        target_class: target_class,
                                        result: result) if body
       when :sclass
@@ -769,10 +785,9 @@ module RbsInfer::Signatures
 
       case node.type
       when :class, :module
-        name = const_node_to_name(node.children[0])
         body = node.type == :class ? node.children[2] : node.children[1]
         walk_ivar_init_targets(body, in_init: false, in_class_body: true,
-                               namespace: name ? namespace + [name] : namespace,
+                               namespace: push_namespace(namespace, node),
                                target_class: target_class, result: result) if body
       when :sclass
         body = node.children[1]

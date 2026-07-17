@@ -1,6 +1,4 @@
 class Example2
-  @name: String
-  @user: Example2::User?
   def self.run: () -> String
 end
 
