@@ -9,6 +9,12 @@ module RbsInfer::Inference
   class ReturnTypeResolver
     include KnownReturnTypesBuilder
 
+    # Split of ivar inference by receiver scope. `instance` maps ivar name →
+    # type for plain instance variables (`@x: T`); `singleton` maps ivar name
+    # → type for class-instance variables written inside `def self.x` /
+    # `class << self` (`self.@x: T`) — felixefelip/rbs_infer#86.
+    IvarInference = Struct.new(:instance, :singleton)
+
     def initialize(target_file:, target_class:, method_type_resolver:, constant_resolver:, instance_types: [], steep_bridge: nil)
       @target_file = target_file
       @target_class = target_class
@@ -141,7 +147,7 @@ module RbsInfer::Inference
     end
 
     def infer_ivar_types(members, attr_types, parsed_target: nil, method_param_types: {})
-      return {} unless parsed_target
+      return IvarInference.new({}, {}) unless parsed_target
 
       # Nomes de attrs já declarados (attr_accessor, attr_reader) → pular
       attr_names = members.select { |m| [:attr_accessor, :attr_reader, :attr_writer].include?(m.kind) }
@@ -181,11 +187,25 @@ module RbsInfer::Inference
 
       initialized_ivars = collect_prism_initialized_ivars(parsed_target.tree)
       fallback_type_sets = Hash.new { |h, k| h[k] = IvarTypeSet.new }
+      # A `@x` written inside `def self.x` / `class << self` is a
+      # class-instance variable, declared `self.@x` in RBS — a distinct slot
+      # from the instance `@x`. Split the writes by the enclosing def's scope
+      # (DefCollector already knows which defs are singleton).
+      singleton_type_sets = Hash.new { |h, k| h[k] = IvarTypeSet.new }
 
       collector.defs.each do |defn|
         param_types = method_param_types[defn.name.to_s] || {}
-        collect_ivar_writes(defn, known_return_types, fallback_type_sets, attr_names, param_types: param_types)
+        target = collector.class_method?(defn) ? singleton_type_sets : fallback_type_sets
+        collect_ivar_writes(defn, known_return_types, target, attr_names, param_types: param_types)
       end
+
+      # Class-instance variables are also written directly in the class body
+      # (`@x = v` where `self` is the class) — the SAME `self.@x` slot as the
+      # singleton-method writes above, and the only definite initialization one
+      # can have (no constructor runs for them). Feeds both the type set and the
+      # set of names that are non-nilable (felixefelip/rbs_infer#86).
+      class_instance_initialized =
+        collect_class_body_ivar_writes(parsed_target.tree, known_return_types, singleton_type_sets, attr_names)
 
       fallback_type_sets.each do |name, type_set|
         next if ivar_types.key?(name)
@@ -197,7 +217,17 @@ module RbsInfer::Inference
         end
       end
 
-      ivar_types
+      singleton_ivar_types = {}
+      singleton_type_sets.each do |name, type_set|
+        # No constructor initializes a class-instance variable, so the
+        # definite-init rule keys off a class-body write (where `self` is the
+        # class) rather than `initialize` — nilable everywhere else.
+        force_nilable = !class_instance_initialized.include?(name)
+        emitted = type_set.emit(force_nilable: force_nilable)
+        singleton_ivar_types[name] = emitted if emitted
+      end
+
+      IvarInference.new(ivar_types, singleton_ivar_types)
     end
 
     # Returns Set[String] of ivar names (without `@`) assigned inside any
@@ -211,6 +241,61 @@ module RbsInfer::Inference
     end
 
     private
+
+    # Collects class-instance variables written directly in the target class's
+    # body (`@x = v` where `self` is the class). Adds each write's type to
+    # `type_sets` and returns the Set of names so written — the only definite
+    # initialization a class-instance variable can have, since no constructor
+    # runs for it (felixefelip/rbs_infer#86).
+    #
+    # Scoped to `@target_class`: a sibling class in the same file must not
+    # contribute here (the cross-class pooling of felixefelip/rbs_infer#38).
+    def collect_class_body_ivar_writes(tree, known_return_types, type_sets, attr_names)
+      result = Set.new
+      each_target_class_body(tree, class_path: []) do |body|
+        collect_body_level_ivar_writes(body, known_return_types, type_sets, attr_names, result)
+      end
+      result
+    end
+
+    # Yields the body node of every `class`/`module` in the file whose fully
+    # qualified path equals `@target_class` (reopens included).
+    def each_target_class_body(node, class_path:, &blk)
+      return unless node.is_a?(Prism::Node)
+
+      if node.is_a?(Prism::ClassNode) || node.is_a?(Prism::ModuleNode)
+        inner = class_path + [RbsInfer::Analyzer.extract_constant_path(node.constant_path)]
+        blk.call(node.body) if node.body && inner.join("::") == @target_class
+        each_target_class_body(node.body, class_path: inner, &blk) if node.body
+      else
+        node.compact_child_nodes.each { |c| each_target_class_body(c, class_path: class_path, &blk) }
+      end
+    end
+
+    # Walks a class body's statements collecting ivar writes at body level.
+    # Stops at any `def`/`class << self`/nested class/module: writes past those
+    # boundaries are a method's instance ivars, a singleton class's own ivars,
+    # or another class's — none of them THIS class's class-instance variables.
+    def collect_body_level_ivar_writes(node, known_return_types, type_sets, attr_names, result)
+      return unless node.is_a?(Prism::Node)
+
+      case node
+      when Prism::DefNode, Prism::SingletonClassNode, Prism::ClassNode, Prism::ModuleNode
+        # boundary — do not descend
+      when Prism::InstanceVariableWriteNode,
+           Prism::InstanceVariableOrWriteNode,
+           Prism::InstanceVariableAndWriteNode
+        name = node.name.to_s.sub(/\A@/, "")
+        unless attr_names.include?(name)
+          inferred = basic_value_type(node.value, known_return_types)
+          type_sets[name].add(inferred) if inferred
+          result << name
+        end
+        node.compact_child_nodes.each { |c| collect_body_level_ivar_writes(c, known_return_types, type_sets, attr_names, result) }
+      else
+        node.compact_child_nodes.each { |c| collect_body_level_ivar_writes(c, known_return_types, type_sets, attr_names, result) }
+      end
+    end
 
     attr_reader :method_type_resolver
 

@@ -15,6 +15,15 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
     )
   end
 
+  # `#build`'s data kwargs (`ivar_types:`, `singleton_ivar_types:`, `markers:`)
+  # are all required — the sole production caller always passes them, so a
+  # forgotten one is silent-wrong, not a valid empty case
+  # (docs/engineering/required-threaded-deps.md). This helper supplies the
+  # test-only empty defaults so examples state only what they exercise.
+  def build_rbs(builder, members, init_arg_types = {}, attr_types = {}, *rest, ivar_types: {}, singleton_ivar_types: {}, markers: [])
+    builder.build(members, init_arg_types, attr_types, *rest, ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, markers: markers)
+  end
+
   describe "#has_class_methods_module?", :dummy_app do
     let(:builder) do
       make_builder(target_class: "Foo", superclass_name: nil)
@@ -48,7 +57,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
         namespace_classes: Set.new  # Card::Eventable NÃO está no set → deve ser module
       )
 
-      result = builder.build([], {}, {})
+      result = build_rbs(builder, [], {}, {})
 
       expect(result).to include("module Card")
       expect(result).to include("module Eventable")
@@ -62,7 +71,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
         namespace_classes: Set.new(["Card::Eventable"])
       )
 
-      result = builder.build([], {}, {})
+      result = build_rbs(builder, [], {}, {})
 
       expect(result).to include("class Eventable")
       expect(result).not_to include("module Eventable")
@@ -77,7 +86,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
         RbsInfer::Inference::Member.new(kind: :include, name: "Storage::Totaled", signature: "", visibility: :public)
       ]
       builder = make_builder(target_class: "Account::Storage", superclass_name: nil)
-      result = builder.build(members, {}, {})
+      result = build_rbs(builder, members, {}, {})
 
       expect(result).to include("include ::Storage::Totaled")
     end
@@ -85,7 +94,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
     it "prefixa superclass com :: quando o nome coincide com parte do namespace" do
       # Account::Export < Export → dentro de class Account, Export resolve como Account::Export
       builder = make_builder(target_class: "Account::Export", superclass_name: "Export")
-      result = builder.build([], {}, {})
+      result = build_rbs(builder, [], {}, {})
 
       expect(result).to include("class Export < ::Export")
     end
@@ -95,7 +104,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
         RbsInfer::Inference::Member.new(kind: :include, name: "ActiveSupport::Concern", signature: "", visibility: :public)
       ]
       builder = make_builder(target_class: "Account::Storage", superclass_name: nil)
-      result = builder.build(members, {}, {})
+      result = build_rbs(builder, members, {}, {})
 
       expect(result).to include("include ActiveSupport::Concern")
       expect(result).not_to include("::ActiveSupport")
@@ -114,7 +123,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
         RbsInfer::Inference::Member.new(kind: :method, name: "priv", signature: "priv: () -> void", visibility: :private)
       ]
 
-      result = builder.build(members, {}, {})
+      result = build_rbs(builder, members, {}, {})
 
       expect(result).not_to include("protected")
       expect(result).to include("def pub: () -> void")
@@ -129,7 +138,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
         RbsInfer::Inference::Member.new(kind: :method, name: "with_http", signature: "with_http: () -> untyped", visibility: :private)
       ]
 
-      result = builder.build(members, {}, {})
+      result = build_rbs(builder, members, {}, {})
 
       expect { RBS::Parser.parse_signature(result) }.not_to raise_error
     end
@@ -150,7 +159,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
         const("DEFAULT_NAME", "String")
       ]
 
-      result = builder.build(members, {}, {})
+      result = build_rbs(builder, members, {}, {})
 
       expect(result).to include("  COLORS: Array[Color]\n")
       expect(result).to include("  MAX: Integer\n")
@@ -162,7 +171,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
 
     it "gera RBS parseável" do
       builder = make_builder(target_class: "Color", superclass_name: nil)
-      result = builder.build([const("MAX", "Integer")], {}, {})
+      result = build_rbs(builder, [const("MAX", "Integer")], {}, {})
 
       expect { RBS::Parser.parse_signature(result) }.not_to raise_error
     end
@@ -173,14 +182,14 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
         kind: :constant, name: "SEP", signature: "SEP: String", visibility: :public, owner: "Formatting"
       )
 
-      result = builder.build([member], {}, {})
+      result = build_rbs(builder, [member], {}, {})
 
       expect(result).to match(/module Formatting\n\s+SEP: String/)
     end
 
     it "emite constantes em escopo de módulo (is_module)" do
       builder = make_builder(target_class: "Settings", superclass_name: nil, is_module: true)
-      result = builder.build([const("VERSION", "String")], {}, {})
+      result = build_rbs(builder, [const("VERSION", "String")], {}, {})
 
       expect(result).to include("module Settings")
       expect(result).to include("  VERSION: String\n")
@@ -193,14 +202,14 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
         RbsInfer::Inference::Member.new(kind: :method, name: "name", signature: "name: () -> String", visibility: :public)
       ]
 
-      result = builder.build(members, {}, {})
+      result = build_rbs(builder, members, {}, {})
 
       expect(result).to include("  MAX: Integer\n\n  def name:")
     end
 
     it "NÃO adiciona linha em branco quando só há constantes (sem corpo após)" do
       builder = make_builder(target_class: "Color", superclass_name: nil)
-      result = builder.build([const("MAX", "Integer")], {}, {})
+      result = build_rbs(builder, [const("MAX", "Integer")], {}, {})
 
       # constante seguida direto do `end`, sem linha em branco pendurada
       expect(result).to include("  MAX: Integer\nend")
@@ -213,7 +222,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
         RbsInfer::Inference::Member.new(kind: :method, name: "helper", signature: "helper: () -> void", visibility: :private)
       ]
 
-      result = builder.build(members, {}, {})
+      result = build_rbs(builder, members, {}, {})
 
       expect(result).not_to include("\n\n\n")
       expect(result).to include("  MAX: Integer\n\n  private")
@@ -235,7 +244,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
     let(:builder) { make_builder(target_class: "Foo", superclass_name: nil) }
 
     it "downgrades attr_accessor to attr_reader when only the writer is overridden" do
-      result = builder.build([attr(:attr_accessor, "x"), meth("x=")], {}, {})
+      result = build_rbs(builder, [attr(:attr_accessor, "x"), meth("x=")], {}, {})
 
       expect(result).to include("attr_reader x: untyped")
       expect(result).not_to include("attr_accessor")
@@ -243,29 +252,56 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
     end
 
     it "downgrades attr_accessor to attr_writer when only the reader is overridden" do
-      result = builder.build([attr(:attr_accessor, "x"), meth("x")], {}, {})
+      result = build_rbs(builder, [attr(:attr_accessor, "x"), meth("x")], {}, {})
 
       expect(result).to include("attr_writer x: untyped")
       expect(result).not_to include("attr_accessor")
     end
 
     it "drops attr_writer entirely when the writer is defined explicitly" do
-      result = builder.build([attr(:attr_writer, "x"), meth("x=")], {}, {})
+      result = build_rbs(builder, [attr(:attr_writer, "x"), meth("x=")], {}, {})
 
       expect(result).not_to match(/attr_\w+ x/)
       expect(result).to include("def x=:")
     end
 
     it "drops attr_accessor entirely when both halves are overridden" do
-      result = builder.build([attr(:attr_accessor, "x"), meth("x"), meth("x=")], {}, {})
+      result = build_rbs(builder, [attr(:attr_accessor, "x"), meth("x"), meth("x=")], {}, {})
 
       expect(result).not_to match(/attr_\w+ x/)
     end
 
     it "leaves an attr untouched when no explicit def collides" do
-      result = builder.build([attr(:attr_accessor, "x")], {}, {})
+      result = build_rbs(builder, [attr(:attr_accessor, "x")], {}, {})
 
       expect(result).to include("attr_accessor x: untyped")
+    end
+  end
+
+  # Class-instance variables (`@x` in `def self.x`/class body) are declared on
+  # the singleton as `self.@x`, a slot separate from the instance `@x`
+  # (felixefelip/rbs_infer#86).
+  describe "#build with singleton (class-instance) ivars" do
+    let(:builder) { make_builder(target_class: "Foo", superclass_name: nil) }
+
+    it "emits singleton_ivar_types as self.@x" do
+      result = build_rbs(builder, [], {}, {}, singleton_ivar_types: { "config" => "String", "cache" => "Cache?" })
+
+      expect(result).to include("self.@config: String")
+      expect(result).to include("self.@cache: Cache?")
+    end
+
+    it "keeps instance and singleton ivars of the same name as distinct slots" do
+      result = build_rbs(builder, [], {}, {}, ivar_types: { "x" => "Integer" }, singleton_ivar_types: { "x" => "String?" })
+
+      expect(result).to include("@x: Integer")
+      expect(result).to include("self.@x: String?")
+    end
+
+    it "produces parseable RBS" do
+      result = build_rbs(builder, [], {}, {}, singleton_ivar_types: { "config" => "String?" })
+
+      expect { RBS::Parser.parse_signature(result) }.not_to raise_error
     end
   end
 end

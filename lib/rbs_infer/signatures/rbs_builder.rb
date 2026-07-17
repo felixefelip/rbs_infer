@@ -19,7 +19,7 @@ module RbsInfer::Signatures
 
     ATTR_KINDS = %i[attr_reader attr_writer attr_accessor].freeze
 
-    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {}, markers: [])
+    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types:, singleton_ivar_types:, markers:)
       members = reconcile_attrs_with_explicit_defs(members)
       parts = @target_class.split("::")
       class_name = parts.pop
@@ -41,6 +41,11 @@ module RbsInfer::Signatures
       # previous one by a single blank line (`add_group`). `body_start` marks
       # where the body begins so the first group never gets a leading blank.
       body_start = lines.size
+
+      # Class-instance variables written in `def self.x` / `class << self` /
+      # the class body. RBS declares these on the singleton as `self.@x` — a
+      # slot distinct from the instance `@x` above (felixefelip/rbs_infer#86).
+      add_group(lines, body_start, singleton_ivar_types.map { |name, type| "#{member_indent}self.@#{name}: #{type}" })
 
       # Instance variables (@post: Post, @posts: ...)
       add_group(lines, body_start, ivar_types.map { |name, type| "#{member_indent}@#{name}: #{type}" })

@@ -182,6 +182,35 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # Class-instance variables (felixefelip/rbs_infer#86). A `@x` written in a
+  # singleton method (`def self.x`, `class << self`) or directly in the class
+  # body is a class-instance variable — RBS declares it `self.@x`, a slot
+  # distinct from the instance `@x`. What this pins down:
+  #
+  # - `@instance_ivar` (written in `initialize`) stays `@instance_ivar: String`.
+  # - `@singleton_ivar` (`def self.build`) and `@label` (`class << self`) become
+  #   `self.@...: String?` — nilable, since no class-body write initializes them.
+  # - `@config` is written both in the class body (`@config = "default"`) and in
+  #   `def self.configure`; the class-body write is the definite initialization a
+  #   class-instance variable can have, so it's `self.@config: String` (non-nil)
+  #   and does NOT also leak out as an instance `@config`.
+  it "class-instance variables are emitted as self.@x, not instance ivars" do
+    name = "models/singleton_ivar_probe"
+    rbs = RbsInfer::Analyzer.new(
+      target_class: "SingletonIvarProbe",
+      target_file: "app/models/singleton_ivar_probe.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # Multi-target file (felixefelip/rbs_infer#38): no target_class is
   # passed, so the analyzer discovers and emits every type the file
   # reopens — the `on_load` blocks (expanded to `ActiveStorage::Blob` /

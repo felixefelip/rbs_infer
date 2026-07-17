@@ -1,0 +1,13 @@
+class SingletonIvarProbe
+  self.@config: String
+  self.@singleton_ivar: String?
+  self.@label: String?
+
+  @instance_ivar: String
+
+  def self.configure: () -> String
+  def self.build: () -> String
+  def self.label: () -> String
+
+  def initialize: () -> String
+end

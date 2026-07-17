@@ -635,7 +635,7 @@ module RbsInfer::Signatures
     # object-ids (not the nodes) sidesteps `Parser::AST::Node`'s
     # structural `==`, which would conflate two identical writes in
     # different classes.
-    def collect_scoped_write_node_ids(node, attr_writer_to_ivar, target_class, namespace: [], result: Set.new)
+    def collect_scoped_write_node_ids(node, attr_writer_to_ivar, target_class, namespace: [], in_def: false, result: Set.new)
       return result unless node.is_a?(::Parser::AST::Node)
 
       case node.type
@@ -643,38 +643,48 @@ module RbsInfer::Signatures
         body = node.type == :class ? node.children[2] : node.children[1]
         collect_scoped_write_node_ids(body, attr_writer_to_ivar, target_class,
                                       namespace: push_namespace(namespace, node),
-                                      result: result) if body
-      when :sclass
-        collect_scoped_write_node_ids(node.children[1], attr_writer_to_ivar, target_class,
-                                      namespace: namespace, result: result) if node.children[1]
+                                      in_def: false, result: result) if body
+      when :sclass, :defs
+        # Singleton scope (`class << self` / `def self.x`): `self` is the class,
+        # so every `@x = ...` inside is a class-instance variable (`self.@x`),
+        # never an instance ivar. Don't descend — these writes must not land in
+        # the instance-ivar map (felixefelip/rbs_infer#86). The Prism path in
+        # ReturnTypeResolver collects them separately.
+      when :def
+        body = node.children[2]
+        collect_scoped_write_node_ids(body, attr_writer_to_ivar, target_class,
+                                      namespace: namespace, in_def: true, result: result) if body
       when :ivasgn
-        result << node.object_id if class_scope_match?(namespace, target_class)
+        # Only writes inside an instance method are instance ivars. A bare
+        # `@x = v` in the class body (`in_def` false) is a class-instance
+        # variable — `self` is the class there too (felixefelip/rbs_infer#86).
+        result << node.object_id if in_def && class_scope_match?(namespace, target_class)
         node.children.each do |c|
-          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, result: result)
+          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def, result: result)
         end
       when :or_asgn, :and_asgn
         # `@x ||= v` / `@x &&= v`: the write `each_typing` will key on is this
         # whole node, not its argument-less inner `:ivasgn`, so collect this
         # id (felixefelip/rbs_infer#85).
-        if node.children[0].type == :ivasgn && class_scope_match?(namespace, target_class)
+        if in_def && node.children[0].type == :ivasgn && class_scope_match?(namespace, target_class)
           result << node.object_id
         end
         node.children.each do |c|
-          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, result: result)
+          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def, result: result)
         end
       when :send
         receiver, method_name = node.children[0], node.children[1]
-        if attr_writer_to_ivar.key?(method_name) &&
+        if in_def && attr_writer_to_ivar.key?(method_name) &&
            (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
            class_scope_match?(namespace, target_class)
           result << node.object_id
         end
         node.children.each do |c|
-          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, result: result)
+          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def, result: result)
         end
       else
         node.children.each do |c|
-          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, result: result)
+          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def, result: result)
         end
       end
 
