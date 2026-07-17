@@ -19,7 +19,7 @@ module RbsInfer::Signatures
 
     ATTR_KINDS = %i[attr_reader attr_writer attr_accessor].freeze
 
-    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {}, markers: [])
+    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types:, singleton_ivar_types:, markers:)
       members = reconcile_attrs_with_explicit_defs(members)
       parts = @target_class.split("::")
       class_name = parts.pop
@@ -40,6 +40,13 @@ module RbsInfer::Signatures
       # Emitir instance variables tipadas (@post: Post, @posts: ...)
       ivar_types.each do |name, type|
         lines << "#{member_indent}@#{name}: #{type}"
+      end
+
+      # Class-instance variables written in `def self.x` / `class << self` /
+      # the class body. RBS declares these on the singleton as `self.@x` — a
+      # slot distinct from the instance `@x` above (felixefelip/rbs_infer#86).
+      singleton_ivar_types.each do |name, type|
+        lines << "#{member_indent}self.@#{name}: #{type}"
       end
 
       # Emitir constantes (NOME: Tipo) em ordem de fonte — determinístico

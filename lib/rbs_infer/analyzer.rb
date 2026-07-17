@@ -177,7 +177,7 @@ module RbsInfer
       namespace_classes: resolve_namespace_classes(receiver),
       is_module: false,
       type_params: method_type_resolver.type_param_string(receiver)
-    ).build(members, {}, {})
+    ).build(members, {}, {}, ivar_types: {}, singleton_ivar_types: {}, markers: [])
   end
 
   def build_single_target_rbs
@@ -257,7 +257,12 @@ module RbsInfer
     # Inferir tipos de instance variables (@post, @posts, etc.)
     # method_param_types feeds `@x = param` when the param's type came
     # from cross-class call-sites (felixefelip/rbs_infer#19).
-    ivar_types = return_type_resolver.infer_ivar_types(target_members, attr_types, parsed_target: @parsed_target, method_param_types: method_param_types)
+    ivar_inference = return_type_resolver.infer_ivar_types(target_members, attr_types, parsed_target: @parsed_target, method_param_types: method_param_types)
+    ivar_types = ivar_inference.instance
+    # Class-instance variables (`@x` in `def self.x`) declared `self.@x`
+    # (felixefelip/rbs_infer#86). Threaded straight to the builder — the
+    # marker/widening machinery below is about instance ivars only.
+    singleton_ivar_types = ivar_inference.singleton
 
     # Params assigned directly to ivars (`def x=(v); @x = v; end`) accept
     # everything the ivar can hold — align `User` → `User?` when the ivar
@@ -296,7 +301,7 @@ module RbsInfer
 
     namespace_classes = resolve_namespace_classes
     rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class))
-    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, markers: markers)
+    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, markers: markers)
   end
 
   # Builds the marker class list to inject into the generated RBS.
