@@ -1,8 +1,8 @@
 class Current
+  self.@user: ((User & User::Validated) | User)?
+
   @user: ((User & User::Validated) | User)?
   @author_name: String?
-
-  self.@user: ((User & User::Validated) | User)?
 
   module GeneratedAttributeMethods
     def user: () -> ((User & User::Validated) | User)?

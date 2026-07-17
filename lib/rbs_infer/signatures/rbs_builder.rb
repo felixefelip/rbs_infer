@@ -42,6 +42,11 @@ module RbsInfer::Signatures
       # where the body begins so the first group never gets a leading blank.
       body_start = lines.size
 
+      # Class-instance variables written in `def self.x` / `class << self` /
+      # the class body. RBS declares these on the singleton as `self.@x` — a
+      # slot distinct from the instance `@x` above (felixefelip/rbs_infer#86).
+      add_group(lines, body_start, singleton_ivar_types.map { |name, type| "#{member_indent}self.@#{name}: #{type}" })
+
       # Instance variables (@post: Post, @posts: ...)
       add_group(lines, body_start, ivar_types.map { |name, type| "#{member_indent}@#{name}: #{type}" })
 
