@@ -12,6 +12,8 @@ end
 
 class Example3
   class Foo
+    self.@foo_instance: Foo?
+
     module GeneratedAttributes
       attr_accessor user: User?
       attr_accessor name: String

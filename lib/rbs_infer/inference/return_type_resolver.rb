@@ -149,9 +149,15 @@ module RbsInfer::Inference
     def infer_ivar_types(members, attr_types, parsed_target: nil, method_param_types: {})
       return IvarInference.new({}, {}) unless parsed_target
 
-      # Nomes de attrs já declarados (attr_accessor, attr_reader) → pular
-      attr_names = members.select { |m| [:attr_accessor, :attr_reader, :attr_writer].include?(m.kind) }
-                          .map(&:name).to_set
+      # Attr names already declared → the ivar they back is typed by the attr,
+      # so we skip re-emitting it. Split by receiver scope: an instance attr
+      # `x` covers the instance `@x`, but NOT the class-instance variable `@x`
+      # written in `def self.x` (a distinct `self.@x` slot). Only a singleton
+      # attr (`class << self; attr_accessor :x`) covers that one
+      # (felixefelip/rbs_infer#86).
+      attrs = members.select { |m| [:attr_accessor, :attr_reader, :attr_writer].include?(m.kind) }
+      instance_attr_names = attrs.reject(&:singleton).map(&:name).to_set
+      singleton_attr_names = attrs.select(&:singleton).map(&:name).to_set
 
       ivar_types = {}
 
@@ -169,7 +175,7 @@ module RbsInfer::Inference
       if @steep_bridge && parsed_target.source
         steep_ivars = @steep_bridge.ivar_write_types(parsed_target.source, target_class: @target_class)
         steep_ivars.each do |name, type|
-          next if attr_names.include?(name)
+          next if instance_attr_names.include?(name)
           if type == "nil"
             steep_nil_only << name
             next
@@ -195,8 +201,10 @@ module RbsInfer::Inference
 
       collector.defs.each do |defn|
         param_types = method_param_types[defn.name.to_s] || {}
-        target = collector.class_method?(defn) ? singleton_type_sets : fallback_type_sets
-        collect_ivar_writes(defn, known_return_types, target, attr_names, param_types: param_types)
+        singleton = collector.class_method?(defn)
+        target = singleton ? singleton_type_sets : fallback_type_sets
+        skip_names = singleton ? singleton_attr_names : instance_attr_names
+        collect_ivar_writes(defn, known_return_types, target, skip_names, param_types: param_types)
       end
 
       # Class-instance variables are also written directly in the class body
@@ -205,7 +213,7 @@ module RbsInfer::Inference
       # can have (no constructor runs for them). Feeds both the type set and the
       # set of names that are non-nilable (felixefelip/rbs_infer#86).
       class_instance_initialized =
-        collect_class_body_ivar_writes(parsed_target.tree, known_return_types, singleton_type_sets, attr_names)
+        collect_class_body_ivar_writes(parsed_target.tree, known_return_types, singleton_type_sets, singleton_attr_names)
 
       fallback_type_sets.each do |name, type_set|
         next if ivar_types.key?(name)

@@ -224,6 +224,28 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
       bar = collect(source).members.find { |m| m.name == "bar" }
       expect(bar.kind).not_to eq(:class_method)
     end
+
+    # A singleton attr (`class << self; attr_accessor :x`) backs the
+    # class-instance variable `@x`, a slot distinct from an instance attr of
+    # the same name; the `singleton` flag lets consumers tell them apart
+    # (felixefelip/rbs_infer#86).
+    it "marca attr de `class << self` com singleton: true" do
+      source = <<~RUBY
+        class Foo
+          attr_accessor :instance_one
+
+          class << self
+            attr_reader :singleton_one
+          end
+        end
+      RUBY
+
+      collector = collect(source)
+      instance_one = collector.members.find { |m| m.name == "instance_one" }
+      singleton_one = collector.members.find { |m| m.name == "singleton_one" }
+      expect(instance_one.singleton).to be_falsey
+      expect(singleton_one.singleton).to be(true)
+    end
   end
 
   describe "delegate parsing" do
