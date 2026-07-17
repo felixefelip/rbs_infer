@@ -937,8 +937,24 @@ module RbsInfer
     parts.pop
 
     classes = Set.new
+    own = own_file_declarations
+
     parts.each_index do |i|
       full_name = parts[0..i].join("::")
+
+      # A namespace the target file declares itself is answered by that
+      # declaration — no file has to be named after it. This is the normal
+      # shape once nested classes are targets: `class Holder; class User` in
+      # `scenario.rb` makes `Holder` the namespace of target `Holder::User`,
+      # and the file-name lookup below cannot find it (there is no
+      # `holder.rb`), so the wrapper would render as `module Holder` while
+      # `Holder`'s own block says `class` — RBS rejects the file with
+      # "Declaration of `::Holder` is duplicated".
+      if own.key?(full_name)
+        classes.add(full_name) unless own[full_name]
+        next
+      end
+
       class_path = RbsInfer.class_name_to_path(full_name)
       source_file = @file_index.find(class_path)
 
@@ -953,6 +969,19 @@ module RbsInfer
     end
 
     classes
+  end
+
+  # `{ "Holder" => false, "Holder::User" => false }` for the target file —
+  # every type it declares and whether it's a module. Empty before the target
+  # is parsed, and for consumers that never parse one.
+  def own_file_declarations
+    return {} unless @parsed_target
+
+    @own_file_declarations ||= begin
+      discovery = RbsInfer::AST::TargetDiscovery.new
+      @parsed_target.tree.accept(discovery)
+      discovery.declarations
+    end
   end
 
   end

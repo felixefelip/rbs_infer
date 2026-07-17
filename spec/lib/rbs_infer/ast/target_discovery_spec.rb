@@ -148,6 +148,42 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     ])
   end
 
+  # `declarations` answers "what kind is X?" for every type the file declares —
+  # wrappers and nested modules included, unlike `declaration_targets`. The
+  # analyzer renders a nested target's namespace from it; resolving that kind
+  # by hunting for a file named after the namespace fails whenever the file
+  # isn't named after its class, and the wrapper then renders as `module`
+  # against the class's own `class` block ("Declaration is duplicated").
+  it "records the kind of every declaration, including wrappers and nested modules" do
+    d = discover(<<~RUBY)
+      class Holder
+        class User
+          def name; end
+        end
+
+        module Helpers
+          def help; end
+        end
+
+        def self.run; end
+      end
+
+      module Admin
+        class Report
+          def rows; end
+        end
+      end
+    RUBY
+
+    expect(d.declarations).to eq({
+      "Holder" => false,
+      "Holder::User" => false,
+      "Holder::Helpers" => true,
+      "Admin" => true,
+      "Admin::Report" => false,
+    })
+  end
+
   it "collects Receiver.include calls as include targets" do
     d = discover(<<~RUBY)
       Foo::Bar.include Mixin

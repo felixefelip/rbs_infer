@@ -25,23 +25,31 @@ module RbsInfer::AST
   #   constant receiver. These reopen `Receiver` to mix in `Mod`; there is
   #   no class body to analyze, so the core synthesizes a reopen block.
   class TargetDiscovery < Prism::Visitor
-    attr_reader :declaration_targets, :include_targets
+    attr_reader :declaration_targets, :include_targets, :declarations
 
     def initialize
       # Enclosing declaration names, outermost first — qualifies nested
       # targets. Blocks don't push, so it doubles as the depth counter.
       @namespace = []
       @declaration_targets = []
+      # Every type the file declares, qualified name => is_module. Unlike
+      # `declaration_targets` this keeps namespace wrappers and nested
+      # modules: it answers "what kind is X?", not "what should we emit?".
+      # The analyzer needs it to render a nested target's namespace with the
+      # right keyword without hunting for a file named after it.
+      @declarations = {}
       # receiver name => ordered, de-duplicated list of included module names
       @include_targets = {}
     end
 
     def visit_module_node(node)
+      record_kind(node, is_module: true)
       record_declaration(node, is_module: true) if @namespace.empty?
       nest(node) { super }
     end
 
     def visit_class_node(node)
+      record_kind(node, is_module: false)
       record_declaration(node, is_module: false)
       nest(node) { super }
     end
@@ -61,6 +69,13 @@ module RbsInfer::AST
       yield
     ensure
       @namespace.pop if name && !name.empty?
+    end
+
+    def record_kind(node, is_module:)
+      name = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
+      return unless name && !name.empty?
+
+      @declarations[(@namespace + [name]).join("::")] = is_module
     end
 
     def record_declaration(node, is_module:)
