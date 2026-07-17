@@ -1,6 +1,7 @@
 class User
   module Recoverable
     extend ActiveSupport::Concern
+
     def deactivate!: () -> self
     def reactivate!: () -> self
     def toggle_active!: () -> self

@@ -65,6 +65,28 @@ postconditions:
   effects:
     may_write:
     - "@column_name"
+- class: Current
+  method: set
+  effects:
+    may_write:
+    - "@user"
+- class: Current
+  method: user
+  effects:
+    returns_ivar: "@user"
+- class: Current
+  method: user=
+  effects:
+    may_write:
+    - "@user"
+- class: Current
+  method: with
+  unconditional:
+    ivars:
+      "@user": "((::User & ::User::Validated) | nil)"
+  effects:
+    may_write:
+    - "@user"
 - class: EmailNotifier
   method: initialize
   effects:

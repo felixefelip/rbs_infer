@@ -6,7 +6,9 @@ class Post
       def tags_ordered_by_tag_name: () -> Post::ActiveRecord_Relation
       def touch_recently_tagged: () -> nil
     end
+
     extend ActiveSupport::Concern
+
     def tag_names: () -> Array[untyped]
     def tag_with: (untyped name) -> (Tag & Tag::Validated)
     def untag: (untyped name) -> untyped

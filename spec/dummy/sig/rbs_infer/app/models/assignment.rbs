@@ -1,5 +1,4 @@
 class Assignment < ApplicationRecord
-
   private
 
   def log_post_user_name: () -> untyped

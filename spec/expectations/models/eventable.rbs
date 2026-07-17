@@ -1,4 +1,5 @@
 module Eventable
   extend ActiveSupport::Concern
+
   def track_event: ((Symbol | String) action, **untyped) -> { action: (Symbol | String), particulars: untyped }
 end

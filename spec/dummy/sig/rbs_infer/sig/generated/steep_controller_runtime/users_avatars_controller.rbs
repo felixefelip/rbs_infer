@@ -1,6 +1,5 @@
 module Users
   class AvatarsController
-
     private
 
     def __rbs_infer__run_edit: () -> void

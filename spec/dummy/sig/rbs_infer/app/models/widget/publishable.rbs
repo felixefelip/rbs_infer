@@ -1,8 +1,10 @@
 class Widget
   module Publishable
     extend ActiveSupport::Concern
+
     alias was_just_published? published?
     alias just_published? published?
+
     def publish: () -> { action: Symbol | String, particulars: untyped }
     def published?: () -> bool
   end

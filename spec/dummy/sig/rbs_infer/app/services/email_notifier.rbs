@@ -1,6 +1,7 @@
 class EmailNotifier
   attr_reader from_address: String
   attr_reader delivery_method: Symbol
+
   def initialize: (?from_address: String, ?delivery_method: Symbol) -> void
   def notify: (User? user, String message) -> { body: String, from: String, sent_at: ActiveSupport::TimeWithZone, to: String? }
 end
