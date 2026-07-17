@@ -1,4 +1,5 @@
 class Current < ActiveSupport::CurrentAttributes
   def self.author_full_name: () -> String?
+
   def user=: (((User & User::Validated)? | User?) value) -> String
 end

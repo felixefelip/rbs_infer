@@ -1,6 +1,7 @@
 module Post_PostTag
   class ActiveRecord_Associations_CollectionProxy
     @owner: Post
+
     def initialize: (singleton(PostTag) klass, Post owner) -> void
     def owner: () -> Post
     def build: (*untyped) -> ::PostTag

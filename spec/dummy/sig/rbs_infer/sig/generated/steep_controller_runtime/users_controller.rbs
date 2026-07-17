@@ -1,5 +1,4 @@
 class UsersController
-
   private
 
   def __rbs_infer__run_index: () -> void

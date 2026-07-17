@@ -3,6 +3,7 @@ class Post < ApplicationRecord
   include ::Post::Taggable
   include ::Post::Notifiable
   include Test::Filtrable
+
   def summary: (?Integer length) -> String
   def test_status: () -> Post::EnumerizeStatusValue
   def was_archived?: () -> bool

@@ -1,6 +1,7 @@
 module User_Post
   class ActiveRecord_Associations_CollectionProxy
     @owner: User
+
     def initialize: (singleton(Post) klass, User owner) -> void
     def owner: () -> User
     def build: (*untyped) -> ::Post
