@@ -454,6 +454,52 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       expect(result["x"]).to eq("String?")
     end
 
+    # `@x ||= v` / `@x &&= v` are ivar writes too, but their AST parks the
+    # name in an argument-less inner `:ivasgn` and the RHS one level up in an
+    # `:or_asgn`/`:and_asgn`, so the collector used to walk past them and drop
+    # the write entirely (felixefelip/rbs_infer#85).
+    it "collects an `||=` memoization write (nilable, lazy by nature)" do
+      code = <<~RUBY
+        class Foo
+          def cache
+            @x ||= "hello"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code, target_class: "Foo")
+      expect(result["x"]).to eq("String?")
+    end
+
+    it "collects an `&&=` write" do
+      code = <<~RUBY
+        class Foo
+          def guard
+            @x &&= "hello"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code, target_class: "Foo")
+      expect(result["x"]).to eq("String?")
+    end
+
+    # `+=`/`<<=` are `InstanceVariableOperatorWriteNode` (`:op_asgn`): the
+    # result type is the operator's, not the RHS's, so the RHS-intrinsic
+    # approach doesn't apply. Left uncollected on purpose.
+    it "does not mis-type an `+=` operator write from its RHS literal" do
+      code = <<~RUBY
+        class Foo
+          def bump
+            @count += 1
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code, target_class: "Foo")
+      expect(result).not_to have_key("count")
+    end
+
     it "unions multiple distinct writes across non-initialize methods" do
       code = <<~RUBY
         class Foo
