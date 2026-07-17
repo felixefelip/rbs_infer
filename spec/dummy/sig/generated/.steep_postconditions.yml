@@ -108,14 +108,10 @@ postconditions:
     may_write:
     - "@name"
 - class: Example3::Foo
-  method: user=
-  unconditional:
-    ivars:
-      "@user": "::Example3::User"
-    self: "::Example3::Foo & ::Example3::Foo::AfterUser"
+  method: foo_instance
   effects:
     may_write:
-    - "@user"
+    - "@foo_instance"
 - class: Example3::User
   method: initialize
   effects:

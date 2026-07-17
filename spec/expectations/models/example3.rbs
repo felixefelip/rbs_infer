@@ -29,9 +29,5 @@ class Example3
     def self.name=: (String value) -> String
 
     def user=: (User value) -> String?
-
-    class AfterUser
-      attr_reader user: Example3::User
-    end
   end
 end

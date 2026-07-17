@@ -36,7 +36,7 @@ class Example3
 		end
 
 		def user=(value)
-			@user = value
+			super(value)
 
 			self.name = value.name
 		end
