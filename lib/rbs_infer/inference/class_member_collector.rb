@@ -12,7 +12,11 @@ module RbsInfer::Inference
   # `old_name` = para membros `:alias`/`:singleton_alias`, o método original
   # apontado pelo alias; o RBS resolve o tipo nativamente via `alias`
   # (felixefelip/rbs_infer#63).
-  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, keyword_init: true)
+  # `singleton` = para membros `:attr_*`, se o attr foi declarado dentro de
+  # `class << self` (attr de singleton, `self.attr x`). Distingue o attr de
+  # instância `x` da class-instance variable `@x` escrita em `def self.x`, que
+  # compartilham nome mas são slots diferentes (felixefelip/rbs_infer#86).
+  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, keyword_init: true)
 
   # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
   DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
@@ -395,7 +399,11 @@ module RbsInfer::Inference
           name: attr_name,
           signature: "#{attr_name}: #{type}",
           visibility: @current_visibility,
-          owner: current_owner
+          owner: current_owner,
+          # `class << self; attr_accessor :x` declares a singleton attr — its
+          # `@x` is a class-instance variable, a slot distinct from an instance
+          # attr of the same name (felixefelip/rbs_infer#86).
+          singleton: in_singleton_self?
         )
       end
     end

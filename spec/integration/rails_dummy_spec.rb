@@ -166,6 +166,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   #   the synthetic name won, the call-site type was filed under `user` while
   #   the signature said `value`, so the substitution missed and both setters
   #   stayed `untyped`.
+  # - `@foo_instance ||= Foo.new` in `def self.foo_instance` is a class-instance
+  #   variable → `self.@foo_instance: Foo?`. It shares its name with the instance
+  #   `attr_writer :foo_instance`, but that's an INSTANCE attr; only a singleton
+  #   attr would suppress the `self.@foo_instance` slot (felixefelip/rbs_infer#86).
   it "nested-class file matches expected RBS (targets + setter param names)" do
     name = "models/example3"
     rbs = RbsInfer::Analyzer.new(

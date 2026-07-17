@@ -326,6 +326,32 @@ postconditions:
   effects:
     may_write:
     - "@nickname"
+- class: SingletonIvarProbe
+  method: initialize
+  effects:
+    may_write:
+    - "@instance_ivar"
+- class: SingletonIvarProbe
+  method: build
+  unconditional:
+    ivars:
+      "@singleton_ivar": "::String"
+  effects:
+    may_write:
+    - "@singleton_ivar"
+- class: SingletonIvarProbe
+  method: configure
+  effects:
+    may_write:
+    - "@config"
+- class: SingletonIvarProbe
+  method: label
+  unconditional:
+    ivars:
+      "@label": "::String"
+  effects:
+    may_write:
+    - "@label"
 - class: TagDestroy
   method: atribui_user
   effects:
