@@ -1,6 +1,7 @@
 class User
   module Displayable
     extend ActiveSupport::Concern
+
     def initials: () -> String
     def display_name: () -> String?
     def gravatar_url: (?Integer size) -> String

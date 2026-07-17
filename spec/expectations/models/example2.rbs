@@ -5,6 +5,7 @@ end
 class Example2
   class User
     attr_reader name: String
+
     def initialize: (name: String) -> void
   end
 end
@@ -14,6 +15,7 @@ class Example2
     attr_reader user: untyped
     attr_reader name: String
     attr_writer name: String
+
     def user=: (User value) -> String?
 
     class AfterUser

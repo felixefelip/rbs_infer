@@ -1,6 +1,7 @@
 module User_Comment
   class ActiveRecord_Associations_CollectionProxy
     @owner: User
+
     def initialize: (singleton(Comment) klass, User owner) -> void
     def owner: () -> User
     def build: (*untyped) -> ::Comment

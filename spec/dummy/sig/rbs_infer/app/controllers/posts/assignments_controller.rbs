@@ -2,6 +2,7 @@ module Posts
   class AssignmentsController < ApplicationController
     @assignment: Assignment?
     @post: (Post & Post::Validated)?
+
     def create: () -> void
 
     private

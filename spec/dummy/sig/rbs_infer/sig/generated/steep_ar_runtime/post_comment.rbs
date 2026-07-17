@@ -1,6 +1,7 @@
 module Post_Comment
   class ActiveRecord_Associations_CollectionProxy
     @owner: Post
+
     def initialize: (singleton(Comment) klass, Post owner) -> void
     def owner: () -> Post
     def build: (*untyped) -> ::Comment

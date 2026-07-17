@@ -37,115 +37,57 @@ module RbsInfer::Signatures
       keyword = @is_module ? "module" : "class"
       lines << "#{base_indent}#{keyword} #{class_name}#{@type_params}#{!@is_module && @superclass_name ? " < #{qualify(@superclass_name)}" : ""}"
 
-      # Emitir instance variables tipadas (@post: Post, @posts: ...)
-      ivar_types.each do |name, type|
-        lines << "#{member_indent}@#{name}: #{type}"
-      end
+      # Each member group is emitted as its own block, separated from the
+      # previous one by a single blank line (`add_group`). `body_start` marks
+      # where the body begins so the first group never gets a leading blank.
+      body_start = lines.size
 
-      # Emitir constantes (NOME: Tipo) em ordem de fonte — determinístico
-      # (felixefelip/rbs_infer#37). `signature` já vem como "NOME: Tipo"
-      # do Analyzer (ConstantTypeResolver).
+      # Instance variables (@post: Post, @posts: ...)
+      add_group(lines, body_start, ivar_types.map { |name, type| "#{member_indent}@#{name}: #{type}" })
+
+      # Constants (NOME: Tipo) in source order — deterministic
+      # (felixefelip/rbs_infer#37). `signature` already comes as "NOME: Tipo"
+      # from the Analyzer (ConstantTypeResolver).
       direct_constants = members.select { |m| m.kind == :constant && m.owner.nil? }
-      direct_constants.each do |const|
-        lines << "#{member_indent}#{const.signature}"
-      end
-      # Posição logo após o bloco de constantes — usada no fim do `build`
-      # para inserir uma linha em branco separando-as do restante do corpo.
-      constants_anchor = lines.size
+      add_group(lines, body_start, direct_constants.map { |const| "#{member_indent}#{const.signature}" })
 
-      # Módulos aninhados definidos no corpo da classe-alvo
-      # (felixefelip/rbs_infer#22). Membros coletados com `owner` vêm de
-      # um `module X ... end` dentro da classe; reconstruímos o container
-      # aqui em vez de achatá-los (o que deixaria o `include X` pendurado).
-      # É por aqui que o `GeneratedAttributeMethods` do CurrentAttributes
-      # é emitido — agora vem do parsing do pseudo-source, sem o core
-      # conhecer a extensão (felixefelip/rbs_infer#19, #22).
-      emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types)
+      # Nested modules defined in the target's body (felixefelip/rbs_infer#22).
+      # Members collected with an `owner` come from a `module X ... end` inside
+      # the class; we rebuild the container here instead of flattening them
+      # (which would leave the `include X` dangling). This is also where the
+      # CurrentAttributes `GeneratedAttributeMethods` is emitted — now from
+      # parsing the pseudo-source, with the core unaware of the extension
+      # (felixefelip/rbs_infer#19, #22).
+      nested = []
+      emit_parsed_nested_modules(nested, members, member_indent, attr_types, method_param_types)
+      add_group(lines, body_start, nested)
 
-      # Emitir extend para módulos estendidos (e.g. ActiveSupport::Concern)
-      extends = members.select { |m| m.kind == :extend && m.owner.nil? }
-      extends.each do |ext|
-        lines << "#{member_indent}extend #{qualify(ext.name)}"
-      end
+      # Mixins: extend (e.g. ActiveSupport::Concern) + include (concerns),
+      # each include optionally followed by its `::ClassMethods` extend.
+      add_group(lines, body_start, mixin_lines(members, member_indent))
 
-      # Emitir include/extend para módulos incluídos (concerns)
-      includes = members.select { |m| m.kind == :include && m.owner.nil? }
-      includes.each do |inc|
-        qualified = qualify(inc.name)
-        lines << "#{member_indent}include #{qualified}"
-        if has_class_methods_module?(inc.name)
-          lines << "#{member_indent}extend #{qualified}::ClassMethods"
-        end
-      end
+      # Class methods (def self.foo) and aliases. Instance aliases sit here
+      # too — before the instance attrs/methods — preserving source order.
+      add_group(lines, body_start, class_level_lines(members, member_indent, method_param_types))
 
-      current_visibility = :public
-      has_private = members.any? { |m| m.visibility == :private }
-      has_protected = members.any? { |m| m.visibility == :protected }
+      # Instance attrs and methods, grouped attrs-then-methods per visibility,
+      # each block blank-separated.
+      emit_instance_members(lines, body_start, members, member_indent, init_arg_types, attr_types, method_param_types, optional_params)
 
-      # Emitir métodos de classe (def self.foo)
-      class_methods = members.select { |m| m.kind == :class_method && m.owner.nil? }
-      class_methods.each do |member|
-        sig = member.signature
-        # Param types inferred from call-sites also apply to singletons
-        # (`Current.user = x` → `def self.user=: (User? value)`) —
-        # felixefelip/rbs_infer#19.
-        if method_param_types[member.name]
-          sig = apply_inferred_param_types(sig, method_param_types[member.name])
-        end
-        lines << "#{member_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
-      end
-
-      # Aliases (`alias new old`) — o RBS resolve nativamente o tipo do
-      # método original, sem duplicar a assinatura (felixefelip/rbs_infer#63).
-      # Singletons recebem o prefixo `self.` nos dois nomes.
-      members.select { |m| m.kind == :singleton_alias && m.owner.nil? }.each do |a|
-        lines << "#{member_indent}alias self.#{a.name} self.#{a.old_name}"
-      end
-      members.select { |m| m.kind == :alias && m.owner.nil? }.each do |a|
-        lines << "#{member_indent}alias #{a.name} #{a.old_name}"
-      end
-
-      # Agrupar por visibilidade: public -> protected -> private
-      # RBS não suporta `protected`, então tratamos como public
-      [:public, :protected, :private].each do |vis|
-        vis_members = members.select { |m| m.visibility == vis && m.owner.nil? && ![:include, :extend, :class_method, :constant, :alias, :singleton_alias].include?(m.kind) }
-        next if vis_members.empty?
-
-        if vis == :private
-          lines << ""
-          lines << "#{member_indent}private"
-          lines << ""
-        end
-
-        vis_members.each do |member|
-          line = render_value_member(member, member_indent, init_arg_types, attr_types, method_param_types, optional_params)
-          lines << line if line
-        end
-      end
-
-      # Mailers: emitir método de classe send_mail (ActionMailer pattern)
+      # Mailers: emit the class method send_mail (ActionMailer pattern).
       if mailer_class?
         send_mail = members.find { |m| m.kind == :method && m.name == "send_mail" }
         if send_mail
-          lines << "#{member_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(send_mail.signature)}"
+          add_group(lines, body_start, ["#{member_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(send_mail.signature)}"])
         end
       end
 
-      # Marker classes para cross-receiver narrowing
-      # (felixefelip/rbs_infer#11). Cada um vira uma nested class
-      # `class AfterXxx ... end` com attr_reader overrides — Steep
-      # intersecta o receiver com ela após a chamada via
-      # `unconditional.self` no sidecar.
+      # Marker classes for cross-receiver narrowing (felixefelip/rbs_infer#11).
+      # Each becomes a nested `class AfterXxx ... end` with attr_reader
+      # overrides — Steep intersects the receiver with it after the call via
+      # `unconditional.self` in the sidecar. Each marker is its own group.
       markers.each do |marker|
-        emit_marker(lines, marker, member_indent)
-      end
-
-      # Linha em branco separando as constantes do restante do corpo, quando
-      # algo as segue (felixefelip/rbs_infer#37). Pulada quando a próxima
-      # linha já é em branco (ex.: o separador da seção `private`), para não
-      # duplicar; e quando nada segue (constantes são o último conteúdo).
-      if direct_constants.any? && lines.size > constants_anchor && lines[constants_anchor] != ""
-        lines.insert(constants_anchor, "")
+        add_group(lines, body_start, marker_lines(marker, member_indent))
       end
 
       lines << "#{base_indent}end"
@@ -157,6 +99,84 @@ module RbsInfer::Signatures
     end
 
     private
+
+    # Appends `group_lines` as a member block, preceded by a single blank line
+    # when the body already has content (never right after the `class X`
+    # opener, and never doubling an existing blank). A nil/empty group is a
+    # no-op, so a blank is only ever spent on a group that actually emits.
+    def add_group(lines, body_start, group_lines)
+      return if group_lines.nil? || group_lines.empty?
+
+      lines << "" if lines.size > body_start && !lines.last.to_s.empty?
+      lines.concat(group_lines)
+    end
+
+    # `extend X` (standalone) then each `include X`, an include optionally
+    # followed by its `extend X::ClassMethods`.
+    def mixin_lines(members, indent)
+      out = []
+      members.select { |m| m.kind == :extend && m.owner.nil? }.each do |ext|
+        out << "#{indent}extend #{qualify(ext.name)}"
+      end
+      members.select { |m| m.kind == :include && m.owner.nil? }.each do |inc|
+        qualified = qualify(inc.name)
+        out << "#{indent}include #{qualified}"
+        out << "#{indent}extend #{qualified}::ClassMethods" if has_class_methods_module?(inc.name)
+      end
+      out
+    end
+
+    # `def self.foo` singletons, then singleton and instance aliases. Aliases
+    # resolve the original method's type natively via RBS `alias`
+    # (felixefelip/rbs_infer#63); singletons prefix both names with `self.`.
+    # Instance aliases live here (before the instance attrs/methods) to
+    # preserve the historical source order.
+    def class_level_lines(members, indent, method_param_types)
+      out = []
+      members.select { |m| m.kind == :class_method && m.owner.nil? }.each do |member|
+        sig = member.signature
+        # Param types inferred from call-sites also apply to singletons
+        # (`Current.user = x` → `def self.user=: (User? value)`) —
+        # felixefelip/rbs_infer#19.
+        sig = apply_inferred_param_types(sig, method_param_types[member.name]) if method_param_types[member.name]
+        out << "#{indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
+      end
+      members.select { |m| m.kind == :singleton_alias && m.owner.nil? }.each do |a|
+        out << "#{indent}alias self.#{a.name} self.#{a.old_name}"
+      end
+      members.select { |m| m.kind == :alias && m.owner.nil? }.each do |a|
+        out << "#{indent}alias #{a.name} #{a.old_name}"
+      end
+      out
+    end
+
+    NON_INSTANCE_KINDS = %i[include extend class_method constant alias singleton_alias].freeze
+
+    # Instance attrs and methods, in visibility order (public, protected,
+    # private). RBS has no `protected`, so those are emitted keyword-less like
+    # public. Within each visibility the attrs form one block and the methods
+    # another, so an attr group and a method group are blank-separated
+    # (`attr_reader x` / `def foo`). `private` introduces its section with the
+    # keyword, itself blank-separated from what precedes and follows it.
+    def emit_instance_members(lines, body_start, members, indent, init_arg_types, attr_types, method_param_types, optional_params)
+      %i[public protected private].each do |vis|
+        vis_members = members.select { |m| m.visibility == vis && m.owner.nil? && !NON_INSTANCE_KINDS.include?(m.kind) }
+        next if vis_members.empty?
+
+        if vis == :private
+          lines << "" if lines.size > body_start && !lines.last.to_s.empty?
+          lines << "#{indent}private"
+        end
+
+        attrs, methods = vis_members.partition { |m| ATTR_KINDS.include?(m.kind) }
+        add_group(lines, body_start, render_members(attrs, indent, init_arg_types, attr_types, method_param_types, optional_params))
+        add_group(lines, body_start, render_members(methods, indent, init_arg_types, attr_types, method_param_types, optional_params))
+      end
+    end
+
+    def render_members(members, indent, init_arg_types, attr_types, method_param_types, optional_params)
+      members.filter_map { |m| render_value_member(m, indent, init_arg_types, attr_types, method_param_types, optional_params) }
+    end
 
     # `attr_accessor :x` declares `x` and `x=`; `attr_reader`/`attr_writer`
     # declares one of them. When the same class ALSO defines that method
@@ -266,14 +286,16 @@ module RbsInfer::Signatures
       end
     end
 
-    def emit_marker(lines, marker, member_indent)
+    # Lines for one marker class (`class AfterXxx ... end`). The blank
+    # separating it from the preceding group is added by `add_group`.
+    def marker_lines(marker, member_indent)
       override_indent = member_indent + "  "
-      lines << ""
-      lines << "#{member_indent}class #{marker.marker_name}"
+      out = ["#{member_indent}class #{marker.marker_name}"]
       marker.overrides.sort_by { |name, _| name }.each do |ivar_name, type_str|
-        lines << "#{override_indent}attr_reader #{ivar_name}: #{type_str}"
+        out << "#{override_indent}attr_reader #{ivar_name}: #{type_str}"
       end
-      lines << "#{member_indent}end"
+      out << "#{member_indent}end"
+      out
     end
 
     # Qualifica nomes de tipo que seriam ambíguos no contexto do namespace gerado.

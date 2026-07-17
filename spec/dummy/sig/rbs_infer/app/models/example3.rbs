@@ -5,6 +5,7 @@ end
 class Example3
   class User
     attr_reader name: String
+
     def initialize: (name: String) -> void
   end
 end
@@ -16,12 +17,15 @@ class Example3
       attr_accessor name: String
       attr_writer foo_instance: untyped
     end
+
     include GeneratedAttributes
+
     def self.foo_instance: () -> Example3::Foo
     def self.user: () -> Example3::User?
     def self.user=: (User value) -> User
     def self.name: () -> String
     def self.name=: (String value) -> String
+
     def user=: (User value) -> String?
 
     class AfterUser

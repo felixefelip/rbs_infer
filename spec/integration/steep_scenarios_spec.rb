@@ -87,14 +87,17 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     expected_rbs = <<~RBS
       class Column
         @name: String
+
         attr_accessor board: Board?
         attr_accessor user_name: String
+
         def initialize: (name: String) -> void
         def set_default_user_name: () -> String
       end
 
       class Board
         attr_reader user_name: String
+
         def initialize: (user_name: String) -> void
       end
 
@@ -121,8 +124,10 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     expected_rbs = <<~RBS
       class Column
         @name: String
+
         attr_accessor board: Board?
         attr_accessor user_name: String
+
         def initialize: (name: String) -> void
         def set_default_user_name: () -> String
         def save: () -> bool
@@ -130,6 +135,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
 
       class Board
         attr_reader user_name: String
+
         def initialize: (user_name: String) -> void
       end
 
@@ -161,8 +167,10 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     expected_rbs = <<~RBS
       class Column
         @name: String
+
         attr_accessor board: Board?
         attr_accessor user_name: String
+
         def initialize: (name: String) -> void
         def set_default_user_name: () -> String
         def save: () -> bool
@@ -170,6 +178,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
 
       class Board
         attr_reader user_name: String
+
         def initialize: (user_name: String) -> void
       end
 
@@ -205,8 +214,10 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     expected_rbs = <<~RBS
       class Column
         @name: String
+
         attr_accessor board: Board?
         attr_accessor user_name: String
+
         def initialize: (name: String) -> void
         def set_default_user_name: () -> String
         def save: () -> bool
@@ -214,6 +225,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
 
       class Board
         attr_reader user_name: String
+
         def initialize: (user_name: String) -> void
       end
 
@@ -269,11 +281,13 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     expected_rbs = <<~RBS
       class Board
         attr_reader user_name: String
+
         def initialize: (user_name: String) -> void
       end
 
       class Column
         attr_accessor board: (Board | nil)?
+
         def initialize: () -> untyped
       end
 
@@ -322,6 +336,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
       class Holder
         class User
           attr_reader name: String
+
           def initialize: (name: String) -> void
         end
       end
@@ -355,6 +370,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     expected_rbs = <<~RBS
       class Widget
         attr_reader user: Widget
+
         def user=: (Widget value) -> untyped
         def use: () -> Widget
       end
