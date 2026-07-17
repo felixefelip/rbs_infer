@@ -124,6 +124,36 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # Nested classes reached through an INSTANCE, the counterpart to the
+  # singleton delegation in example3. What this pins down:
+  #
+  # - `Example2::User`/`Example2::Foo` are emitted as separate targets, not
+  #   flattened into `Example2` — which used to claim their `initialize`,
+  #   both `name` attrs (colliding), and their `@name`/`@user` ivars.
+  # - `foo.user = user` in `Example2.run` types `def user=`'s param as `User`,
+  #   resolved relative to the enclosing namespace.
+  # - `self.name = value.name` then rides that param to `name: String`, and
+  #   `foo.name.upcase` makes `run` return `String` — the fixture's `# =>
+  #   "JOHN DOE"` comment, checked.
+  # - The setter synthesizes an `AfterUser` marker narrowing `user` to a
+  #   non-nil `Example2::User`, which is what keeps the bare `attr_reader
+  #   user: untyped` from being the last word.
+  it "nested-class file via instance receiver matches expected RBS" do
+    name = "models/example2"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example2.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # Nested classes as their own targets, plus the singleton→instance
   # delegation `Current` uses. Two things this pins down:
   #
