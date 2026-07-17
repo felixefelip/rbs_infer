@@ -286,4 +286,48 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     expect(result.generated_rbs.chomp).to eq(expected_rbs.chomp)
     expect(result.diagnostics).to be_empty # <- documents the unsoundness
   end
+
+  # Nested classes are their own targets, so the enclosing class becomes the
+  # NAMESPACE of each nested target and RbsBuilder re-declares it around every
+  # block. Its kind used to be resolved by looking for a file named after it
+  # (`Holder` -> `holder.rb`) — a Rails-convention assumption that holds for
+  # `Admin::User` in `admin/user.rb` but not here: the namespace lives in the
+  # SAME file, whose name is `scenario.rb`. The lookup missed, the wrapper
+  # rendered as `module Holder` against `Holder`'s own `class Holder` block,
+  # and Steep rejected the whole file with "Declaration of `::Holder` is
+  # duplicated". The dummy fixtures hide this because `example2.rb`/
+  # `example3.rb` happen to match their class by basename.
+  it "renders a nested target's namespace as `class` when the file isn't named after it" do
+    result = steep_scenario(<<~RUBY)
+      class Holder
+        class User
+          attr_reader :name
+
+          def initialize(name:)
+            @name = name
+          end
+        end
+
+        def self.run
+          User.new(name: "Jo").name.upcase
+        end
+      end
+    RUBY
+
+    expected_rbs = <<~RBS
+      class Holder
+        def self.run: () -> String
+      end
+
+      class Holder
+        class User
+          attr_reader name: String
+          def initialize: (name: String) -> void
+        end
+      end
+    RBS
+
+    expect(result.generated_rbs.chomp).to eq(expected_rbs.chomp)
+    expect(result.diagnostics).to be_empty
+  end
 end

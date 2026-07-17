@@ -750,7 +750,15 @@ module RbsInfer
   # Inferir tipos de parâmetros de métodos via chamadas cross-class
   # Ex: PostPublisher chama notifier.notify(post.user, "msg") → user: User, message: String
   def infer_method_param_types_from_callers(extra_methods = {})
-    target_methods = extract_target_method_params.merge(extra_methods)
+    # `extra_methods` are SYNTHETIC writers standing in for `attr_accessor`-
+    # generated methods, and name their param after the attr (`user`). A real
+    # `def user=(value)` overriding that attr names it `value`, and the def is
+    # the authority: the inferred type is keyed by param name, and RbsBuilder
+    # substitutes it by matching that name in the signature. Letting the
+    # synthetic name win filed the type under `user` while the signature said
+    # `value`, so the substitution missed and the param stayed `untyped` even
+    # though the call-site had been read correctly.
+    target_methods = extra_methods.merge(extract_target_method_params)
     return {} if target_methods.empty?
 
     positional_params = extract_init_positional_params
@@ -929,8 +937,24 @@ module RbsInfer
     parts.pop
 
     classes = Set.new
+    own = own_file_declarations
+
     parts.each_index do |i|
       full_name = parts[0..i].join("::")
+
+      # A namespace the target file declares itself is answered by that
+      # declaration — no file has to be named after it. This is the normal
+      # shape once nested classes are targets: `class Holder; class User` in
+      # `scenario.rb` makes `Holder` the namespace of target `Holder::User`,
+      # and the file-name lookup below cannot find it (there is no
+      # `holder.rb`), so the wrapper would render as `module Holder` while
+      # `Holder`'s own block says `class` — RBS rejects the file with
+      # "Declaration of `::Holder` is duplicated".
+      if own.key?(full_name)
+        classes.add(full_name) unless own[full_name]
+        next
+      end
+
       class_path = RbsInfer.class_name_to_path(full_name)
       source_file = @file_index.find(class_path)
 
@@ -945,6 +969,19 @@ module RbsInfer
     end
 
     classes
+  end
+
+  # `{ "Holder" => false, "Holder::User" => false }` for the target file —
+  # every type it declares and whether it's a module. Empty before the target
+  # is parsed, and for consumers that never parse one.
+  def own_file_declarations
+    return {} unless @parsed_target
+
+    @own_file_declarations ||= begin
+      discovery = RbsInfer::AST::TargetDiscovery.new
+      @parsed_target.tree.accept(discovery)
+      discovery.declarations
+    end
   end
 
   end

@@ -89,7 +89,7 @@ postconditions:
   method: user=
   unconditional:
     ivars:
-      "@user": untyped
+      "@user": "::Example3::User"
     self: "::Example3::Foo & ::Example3::Foo::AfterUser"
   effects:
     may_write:
