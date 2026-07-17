@@ -330,4 +330,37 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     expect(result.generated_rbs.chomp).to eq(expected_rbs.chomp)
     expect(result.diagnostics).to be_empty
   end
+
+  # `attr_accessor :user` declares `user` and `user=`; the explicit `def user=`
+  # in the same class redefines the writer (Ruby lets it win). Emitting both
+  # declared `user=` twice — invalid RBS, rejected with "Non-overloading method
+  # definition of `user=` cannot be duplicated". The builder now downgrades the
+  # accessor to `attr_reader` and keeps the explicit writer.
+  it "reconciles an attr_accessor with an explicit setter of the same name" do
+    result = steep_scenario(<<~RUBY)
+      class Widget
+        attr_accessor :user
+
+        def user=(value)
+          @user = value
+        end
+
+        def use
+          self.user = Widget.new
+          user
+        end
+      end
+    RUBY
+
+    expected_rbs = <<~RBS
+      class Widget
+        attr_reader user: Widget
+        def user=: (Widget value) -> untyped
+        def use: () -> Widget
+      end
+    RBS
+
+    expect(result.generated_rbs.chomp).to eq(expected_rbs.chomp)
+    expect(result.diagnostics).to be_empty
+  end
 end

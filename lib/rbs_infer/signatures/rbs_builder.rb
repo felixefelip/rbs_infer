@@ -17,7 +17,10 @@ module RbsInfer::Signatures
       @type_params = type_params
     end
 
+    ATTR_KINDS = %i[attr_reader attr_writer attr_accessor].freeze
+
     def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types: {}, markers: [])
+      members = reconcile_attrs_with_explicit_defs(members)
       parts = @target_class.split("::")
       class_name = parts.pop
       modules = parts
@@ -154,6 +157,54 @@ module RbsInfer::Signatures
     end
 
     private
+
+    # `attr_accessor :x` declares `x` and `x=`; `attr_reader`/`attr_writer`
+    # declares one of them. When the same class ALSO defines that method
+    # explicitly (`def x=`), Ruby lets the later definition win — but RBS has
+    # no such rule and rejects the duplicate ("Non-overloading method
+    # definition of `x=` cannot be duplicated"). Reconcile by dropping the
+    # generated half an explicit `def` replaces: downgrade an accessor to the
+    # surviving reader/writer, or drop the attr entirely when both halves are
+    # overridden.
+    #
+    # Scoped to the same owner: a `def x=` in the class legitimately overrides
+    # an `attr_accessor :x` mixed in from a nested module, and RBS models that
+    # as ordinary inheritance, not a duplicate — those must NOT reconcile.
+    def reconcile_attrs_with_explicit_defs(members)
+      defs_by_owner = Hash.new { |h, k| h[k] = Set.new }
+      members.each { |m| defs_by_owner[m.owner] << m.name if m.kind == :method }
+
+      members.flat_map do |m|
+        next [m] unless ATTR_KINDS.include?(m.kind)
+
+        kind = surviving_attr_kind(m, defs_by_owner[m.owner])
+        if kind.nil?
+          []
+        elsif kind == m.kind
+          [m]
+        else
+          [m.dup.tap { |copy| copy.kind = kind }]
+        end
+      end
+    end
+
+    # The attr kind left after an explicit `def name` / `def name=` replaces
+    # part of what the attr would generate, or nil when nothing survives.
+    def surviving_attr_kind(member, explicit_defs)
+      reader_overridden = explicit_defs.include?(member.name)
+      writer_overridden = explicit_defs.include?("#{member.name}=")
+
+      case member.kind
+      when :attr_reader then reader_overridden ? nil : :attr_reader
+      when :attr_writer then writer_overridden ? nil : :attr_writer
+      when :attr_accessor
+        if reader_overridden && writer_overridden then nil
+        elsif writer_overridden then :attr_reader
+        elsif reader_overridden then :attr_writer
+        else :attr_accessor
+        end
+      end
+    end
 
     # Renders a single value member (method / attr_*) as one RBS line, or
     # nil for other kinds. Shared between the class body and nested-module

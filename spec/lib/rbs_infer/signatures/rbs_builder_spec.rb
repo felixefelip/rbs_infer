@@ -219,4 +219,53 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
       expect(result).to include("  MAX: Integer\n\n  private")
     end
   end
+
+  # `attr_accessor :x` + an explicit `def x=` in the same class declare `x=`
+  # twice; RBS rejects the duplicate. The builder drops the generated half an
+  # explicit def replaces (felixefelip/rbs_infer, attr-writer reconciliation).
+  describe "#build attr/def reconciliation" do
+    def attr(kind, name)
+      RbsInfer::Inference::Member.new(kind: kind, name: name, signature: "#{name}: untyped", visibility: :public)
+    end
+
+    def meth(name)
+      RbsInfer::Inference::Member.new(kind: :method, name: name, signature: "#{name}: (untyped v) -> untyped", visibility: :public)
+    end
+
+    let(:builder) { make_builder(target_class: "Foo", superclass_name: nil) }
+
+    it "downgrades attr_accessor to attr_reader when only the writer is overridden" do
+      result = builder.build([attr(:attr_accessor, "x"), meth("x=")], {}, {})
+
+      expect(result).to include("attr_reader x: untyped")
+      expect(result).not_to include("attr_accessor")
+      expect(result.scan(/def x=|attr_\w+ x=/).size).to eq(1)
+    end
+
+    it "downgrades attr_accessor to attr_writer when only the reader is overridden" do
+      result = builder.build([attr(:attr_accessor, "x"), meth("x")], {}, {})
+
+      expect(result).to include("attr_writer x: untyped")
+      expect(result).not_to include("attr_accessor")
+    end
+
+    it "drops attr_writer entirely when the writer is defined explicitly" do
+      result = builder.build([attr(:attr_writer, "x"), meth("x=")], {}, {})
+
+      expect(result).not_to match(/attr_\w+ x/)
+      expect(result).to include("def x=:")
+    end
+
+    it "drops attr_accessor entirely when both halves are overridden" do
+      result = builder.build([attr(:attr_accessor, "x"), meth("x"), meth("x=")], {}, {})
+
+      expect(result).not_to match(/attr_\w+ x/)
+    end
+
+    it "leaves an attr untouched when no explicit def collides" do
+      result = builder.build([attr(:attr_accessor, "x")], {}, {})
+
+      expect(result).to include("attr_accessor x: untyped")
+    end
+  end
 end
