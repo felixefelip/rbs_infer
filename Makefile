@@ -36,6 +36,9 @@ rbs_infer_ar_runtime:
 rbs_infer_controller_runtime:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/controllers/runtime_generator'; RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator.new(app_dir: '.').generate"
 
+rbs_infer_current_runtime:
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/current_attributes_runtime_generator'; RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator.new(app_dir: '.').generate"
+
 rbs_generators_all:
 	make rbs_rails_generator
 	make rbs_rails_custom
@@ -44,6 +47,7 @@ rbs_generators_all:
 	make rbs_infer_module_self_types
 	make rbs_infer_ar_runtime
 	make rbs_infer_controller_runtime
+	make rbs_infer_current_runtime
 	make rbs_infer_erb
 
 ## Gerar RBS apenas para arquivo específico passado como argumento

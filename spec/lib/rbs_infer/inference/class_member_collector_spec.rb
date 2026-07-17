@@ -399,6 +399,82 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
     expect(collector.superclass_name).to eq("ApplicationRecord")
   end
 
+  describe "classes aninhadas" do
+    def collect_for(source, target_class:)
+      result = Prism.parse(source)
+      visitor = described_class.new(comments: result.comments, lines: source.lines, target_class: target_class)
+      result.value.accept(visitor)
+      visitor
+    end
+
+    let(:nested_source) do
+      <<~RUBY
+        class Example2
+          class User
+            attr_reader :name
+
+            def initialize(name:)
+              @name = name
+            end
+          end
+
+          def self.run; end
+        end
+      RUBY
+    end
+
+    # A nested class is its own target (TargetDiscovery promotes it), so its
+    # members belong to that target's pass. Attributing them to the enclosing
+    # class flattened them into it — Example2 would claim an `initialize(name:)`
+    # it does not have.
+    it "não atribui membros de uma classe aninhada à classe externa" do
+      collector = collect_for(nested_source, target_class: "Example2")
+
+      expect(collector.members.map(&:name)).to eq(["run"])
+    end
+
+    it "coleta os membros da classe aninhada como membros diretos do próprio alvo" do
+      collector = collect_for(nested_source, target_class: "Example2::User")
+
+      expect(collector.members.map(&:name)).to contain_exactly("name", "initialize")
+      expect(collector.members.map(&:owner).uniq).to eq([nil])
+    end
+
+    # `class << self` pushes a :singleton frame, not a :class one — its defs
+    # are the enclosing target's class methods and must keep being collected.
+    it "não confunde `class << self` com uma classe aninhada" do
+      source = <<~RUBY
+        class Report
+          class << self
+            def build; end
+          end
+        end
+      RUBY
+
+      collector = collect_for(source, target_class: "Report")
+      member = collector.members.find { |m| m.name == "build" }
+
+      expect(member.kind).to eq(:class_method)
+    end
+
+    # The owner mechanism (felixefelip/rbs_infer#22) still handles nested
+    # modules; only classes were promoted out of it.
+    it "mantém um módulo aninhado atribuído ao alvo via owner" do
+      source = <<~RUBY
+        class Report
+          module Formatting
+            def title; end
+          end
+        end
+      RUBY
+
+      collector = collect_for(source, target_class: "Report")
+      member = collector.members.find { |m| m.name == "title" }
+
+      expect(member.owner).to eq("Formatting")
+    end
+  end
+
   describe "constantes (felixefelip/rbs_infer#37)" do
     def constants(source, target_class: nil)
       result = Prism.parse(source)

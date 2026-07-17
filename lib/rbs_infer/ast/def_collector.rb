@@ -4,7 +4,13 @@ module RbsInfer::AST
 
     attr_reader :defs, :owners
 
-    # `target_class` anchors owner computation; nil = no ownership (flat).
+    # `target_class` scopes collection to that class's own defs and anchors
+    # owner computation. It stays defaulted rather than required (cf.
+    # docs/engineering/required-threaded-deps.md) because the caller-file
+    # consumers — CallerFileAnalyzer, CallerFileCache, MethodTypeResolver —
+    # legitimately walk a file with no target at all, and for them flat IS
+    # the correct behavior. Anything walking the *target* file must pass it:
+    # omitting it there collects nested classes' defs too (silent-wrong).
     def initialize(target_class: nil)
       @defs = []
       # def node => nested-module owner path (nil = direct class member),
@@ -46,6 +52,15 @@ module RbsInfer::AST
     end
 
     def visit_def_node(node)
+      # With a target set, only that target's defs are collected. A def in a
+      # nested class belongs to that class's own target (TargetDiscovery
+      # promotes every class), and its owner is nil — indistinguishable from
+      # a direct member — so consumers that don't cross-check against the
+      # member list would silently attribute it here: `@name = name` in
+      # `Example3::User#initialize` surfacing as `@name: String` on
+      # `Example3`. With no target (caller files), everything is collected.
+      return super unless inside_target?
+
       @defs << node
       @owners[node] = current_owner
       @class_methods[node] = class_method_def?(node)

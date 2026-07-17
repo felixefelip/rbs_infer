@@ -41,10 +41,14 @@ require_relative "rbs_infer/project/dependency_sorter"
 
 # Default source expanders (RbsInfer::Project::SourceExpanders plugins). Each one
 # registers itself on require; external gems can register their own
-# without touching the core. The CurrentAttributes expander is pure Prism
-# (no Rails at runtime) and self-gates on the superclass, so it is always
-# safe to load.
-require_relative "rbs_infer/extensions/rails/current_attributes_expander"
+# without touching the core.
+#
+# CurrentAttributes is NOT a source expander: its `attribute` macros are
+# desugared by `CurrentAttributesRuntimeGenerator`, which writes a
+# type-checkable reopen under `sig/generated/steep_current_runtime/` (both the
+# analyzer and the Steep fork read it) instead of rewriting the source
+# in-memory — felixefelip/rbs_infer#19, felixefelip/steep#68 item 5.
+#
 # The on_load expander rewrites `ActiveSupport.on_load :hook do ... end`
 # into a plain class reopening (felixefelip/rbs_infer#38) — pure Prism,
 # self-gates on the `on_load` substring, so it is always safe to load.

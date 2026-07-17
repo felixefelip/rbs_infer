@@ -5,110 +5,424 @@ postconditions:
   method: head
   unconditional:
     ivars:
-      "@__rbs_infer__halted": 'true'
+      "@__rbs_infer__performed": 'true'
     self: "::ActionController::Base & ::ActionController::Base::AfterHead"
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+- class: ActionController::Base
+  method: performed?
+  effects:
+    returns_ivar: "@__rbs_infer__performed"
 - class: ActionController::Base
   method: redirect_to
   unconditional:
     ivars:
-      "@__rbs_infer__halted": 'true'
+      "@__rbs_infer__performed": 'true'
     self: "::ActionController::Base & ::ActionController::Base::AfterRedirectTo"
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
 - class: ActionController::Base
   method: render
   unconditional:
     ivars:
-      "@__rbs_infer__halted": 'true'
+      "@__rbs_infer__performed": 'true'
     self: "::ActionController::Base & ::ActionController::Base::AfterRender"
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+- class: ApplicationController
+  method: authenticate_user
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+  conditional_returns:
+    current_user:
+      gate_ivar: "@__rbs_infer__performed"
+      type: "(::User & ::User::Validated)"
+  conditional_const_returns:
+    Current.author_name:
+      gate_ivar: "@__rbs_infer__performed"
+      type: "::String"
+    Current.user:
+      gate_ivar: "@__rbs_infer__performed"
+      type: "(::User & ::User::Validated)"
+- class: Board
+  method: initialize
+  effects:
+    may_write:
+    - "@user_name"
+- class: CborLike
+  method: initialize
+  effects:
+    may_write:
+    - "@depth"
+    - "@limit"
+    - "@max_depth"
+- class: Column
+  method: initialize
+  effects:
+    may_write:
+    - "@column_name"
+- class: EmailNotifier
+  method: initialize
+  effects:
+    may_write:
+    - "@delivery_method"
+    - "@from_address"
+- class: Example2::Foo
+  method: user=
+  unconditional:
+    ivars:
+      "@user": "::Example2::User"
+    self: "::Example2::Foo & ::Example2::Foo::AfterUser"
+  effects:
+    may_write:
+    - "@user"
+- class: Example2::User
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
+- class: Example3::Foo
+  method: user=
+  unconditional:
+    ivars:
+      "@user": untyped
+    self: "::Example3::Foo & ::Example3::Foo::AfterUser"
+  effects:
+    may_write:
+    - "@user"
+- class: Example3::User
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
+- class: ParseXml
+  method: initialize
+  effects:
+    may_write:
+    - "@xml"
+- class: PostPublisher
+  method: initialize
+  effects:
+    may_write:
+    - "@notifier"
+    - "@post"
 - class: Post_Assignment::ActiveRecord_Associations_CollectionProxy
   method: build
   unconditional:
     returns:
       establishes:
       - post
+- class: Post_Assignment::ActiveRecord_Associations_CollectionProxy
+  method: initialize
+  effects:
+    may_write:
+    - "@owner"
+- class: Post_Assignment::ActiveRecord_Associations_CollectionProxy
+  method: owner
+  effects:
+    returns_ivar: "@owner"
 - class: Post_Comment::ActiveRecord_Associations_CollectionProxy
   method: build
   unconditional:
     returns:
       establishes:
       - post
+- class: Post_Comment::ActiveRecord_Associations_CollectionProxy
+  method: initialize
+  effects:
+    may_write:
+    - "@owner"
+- class: Post_Comment::ActiveRecord_Associations_CollectionProxy
+  method: owner
+  effects:
+    returns_ivar: "@owner"
 - class: Post_PostTag::ActiveRecord_Associations_CollectionProxy
   method: build
   unconditional:
     returns:
       establishes:
       - post
+- class: Post_PostTag::ActiveRecord_Associations_CollectionProxy
+  method: initialize
+  effects:
+    may_write:
+    - "@owner"
+- class: Post_PostTag::ActiveRecord_Associations_CollectionProxy
+  method: owner
+  effects:
+    returns_ivar: "@owner"
+- class: Post_Tag::ActiveRecord_Associations_CollectionProxy
+  method: initialize
+  effects:
+    may_write:
+    - "@owner"
+- class: Post_Tag::ActiveRecord_Associations_CollectionProxy
+  method: owner
+  effects:
+    returns_ivar: "@owner"
+- class: Posts::AssignmentsController
+  method: __rbs_infer__run_create
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@assignment"
+    - "@post"
 - class: Posts::AssignmentsController
   method: create
   unconditional:
     ivars:
       "@assignment": "::Assignment"
     self: "::Posts::AssignmentsController & ::Posts::AssignmentsController::AfterCreate"
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@assignment"
 - class: Posts::AssignmentsController
   method: set_post
   unconditional:
     ivars:
       "@post": "(::Post & ::Post::Validated)"
     self: "::Posts::AssignmentsController & ::Posts::AssignmentsController::AfterSetPost"
+  effects:
+    may_write:
+    - "@post"
+- class: PostsController
+  method: __rbs_infer__run_create
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@post"
+- class: PostsController
+  method: __rbs_infer__run_destroy
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@post"
+- class: PostsController
+  method: __rbs_infer__run_index
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@posts"
+- class: PostsController
+  method: __rbs_infer__run_new
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@post"
+- class: PostsController
+  method: __rbs_infer__run_publish
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@post"
+- class: PostsController
+  method: __rbs_infer__run_show
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@comments"
+    - "@post"
+- class: PostsController
+  method: __rbs_infer__run_update
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@post"
 - class: PostsController
   method: create
   unconditional:
     ivars:
       "@post": "::Post"
     self: "::PostsController & ::PostsController::AfterCreate"
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@post"
+- class: PostsController
+  method: destroy
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
 - class: PostsController
   method: index
   unconditional:
     ivars:
       "@posts": "::Post::ActiveRecord_Relation"
     self: "::PostsController & ::PostsController::AfterIndex"
+  effects:
+    may_write:
+    - "@posts"
 - class: PostsController
   method: new
   unconditional:
     ivars:
       "@post": "::Post"
     self: "::PostsController & ::PostsController::AfterNew"
+  effects:
+    may_write:
+    - "@post"
+- class: PostsController
+  method: publish
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
 - class: PostsController
   method: set_post
   unconditional:
     ivars:
       "@post": "(::Post & ::Post::Validated)"
     self: "::PostsController & ::PostsController::AfterSetPost"
+  effects:
+    may_write:
+    - "@post"
+- class: PostsController
+  method: set_test
+  effects:
+    may_write:
+    - "@test"
 - class: PostsController
   method: show
   unconditional:
     ivars:
       "@comments": "::Comment::ActiveRecord_Relation"
     self: "::PostsController & ::PostsController::AfterShow"
+  effects:
+    may_write:
+    - "@comments"
+- class: PostsController
+  method: update
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+- class: ProfileFormatter
+  method: initialize
+  effects:
+    may_write:
+    - "@nickname"
+- class: TagDestroy
+  method: atribui_user
+  effects:
+    may_write:
+    - "@user"
+- class: TagDestroy
+  method: initialize
+  effects:
+    may_write:
+    - "@posts"
+    - "@tag"
+    - "@user"
+- class: TagDestroy
+  method: test_nokogiri
+  effects:
+    may_write:
+    - "@xml"
+- class: Tag_Post::ActiveRecord_Associations_CollectionProxy
+  method: initialize
+  effects:
+    may_write:
+    - "@owner"
+- class: Tag_Post::ActiveRecord_Associations_CollectionProxy
+  method: owner
+  effects:
+    returns_ivar: "@owner"
 - class: Tag_PostTag::ActiveRecord_Associations_CollectionProxy
   method: build
   unconditional:
     returns:
       establishes:
       - tag
+- class: Tag_PostTag::ActiveRecord_Associations_CollectionProxy
+  method: initialize
+  effects:
+    may_write:
+    - "@owner"
+- class: Tag_PostTag::ActiveRecord_Associations_CollectionProxy
+  method: owner
+  effects:
+    returns_ivar: "@owner"
 - class: User_Comment::ActiveRecord_Associations_CollectionProxy
   method: build
   unconditional:
     returns:
       establishes:
       - user
+- class: User_Comment::ActiveRecord_Associations_CollectionProxy
+  method: initialize
+  effects:
+    may_write:
+    - "@owner"
+- class: User_Comment::ActiveRecord_Associations_CollectionProxy
+  method: owner
+  effects:
+    returns_ivar: "@owner"
 - class: User_Post::ActiveRecord_Associations_CollectionProxy
   method: build
   unconditional:
     returns:
       establishes:
       - user
+- class: User_Post::ActiveRecord_Associations_CollectionProxy
+  method: initialize
+  effects:
+    may_write:
+    - "@owner"
+- class: User_Post::ActiveRecord_Associations_CollectionProxy
+  method: owner
+  effects:
+    returns_ivar: "@owner"
+- class: Users::AvatarsController
+  method: __rbs_infer__run_edit
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@user"
+- class: Users::AvatarsController
+  method: __rbs_infer__run_update
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@user"
 - class: Users::AvatarsController
   method: set_user
   unconditional:
     ivars:
       "@user": "(::User & ::User::Validated)"
     self: "::Users::AvatarsController & ::Users::AvatarsController::AfterSetUser"
+  effects:
+    may_write:
+    - "@user"
+- class: Users::AvatarsController
+  method: update
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+- class: UsersController
+  method: __rbs_infer__run_index
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@users"
+- class: UsersController
+  method: __rbs_infer__run_show
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@posts"
+    - "@user"
 - class: UsersController
   method: index
   unconditional:
     ivars:
       "@users": "::User::ActiveRecord_Relation"
     self: "::UsersController & ::UsersController::AfterIndex"
+  effects:
+    may_write:
+    - "@users"
 - class: UsersController
   method: show
   unconditional:
@@ -116,3 +430,120 @@ postconditions:
       "@posts": "::User_Post::ActiveRecord_Associations_CollectionProxy"
       "@user": "(::User & ::User::Validated)"
     self: "::UsersController & ::UsersController::AfterShow"
+  effects:
+    may_write:
+    - "@posts"
+    - "@user"
+method_entry_facts:
+- class: ApplicationController
+  method: log_user_author_name
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Posts::AssignmentsController
+  method: create
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Posts::AssignmentsController
+  method: set_post
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: create
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: destroy
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: index
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: new
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: publish
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: set_post
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: show
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
+  method: update
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Users::AvatarsController
+  method: edit
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Users::AvatarsController
+  method: set_user
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Users::AvatarsController
+  method: update
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: UsersController
+  method: index
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: UsersController
+  method: show
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"

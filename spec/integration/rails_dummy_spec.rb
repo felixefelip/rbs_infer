@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "rbs_infer/extensions/rails/current_attributes_runtime_generator"
 
 RSpec.describe "Rails dummy app integration", :dummy_app do
   let(:source_files) { Dir["app/**/*.rb"] }
@@ -79,25 +80,25 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/cbor_like", target_class: "CborLike", target_file: "app/models/cbor_like.rb")
   end
 
-  it "Current expansion (pseudo-code) matches expected source" do
-    # Snapshot of the desugar itself, separate from the RBS snapshot: a
-    # new bug points straight to the right layer — expansion changes →
-    # expander bug; identical expansion with a changed RBS → inference
-    # pipeline bug.
-    expanded = RbsInfer::Extensions::Rails::CurrentAttributesExpander.expand(
-      File.read("app/models/current.rb")
-    )
+  it "Current runtime reopen (pseudo-code) matches expected source" do
+    # Snapshot of the desugar itself, separate from the RBS snapshot: a new bug
+    # points straight to the right layer — reopen changes → generator bug;
+    # identical reopen with a changed RBS → inference pipeline bug. The
+    # `CurrentAttributesRuntimeGenerator` reopen is now BOTH the RBS-inference
+    # source and the Steep-checked pseudo-code (felixefelip/steep#68 item 5).
+    files = RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator.new(app_dir: ".").build
+    reopen = files.find { |f| f[:filename] == "current.rb" }
 
-    expect(expanded).not_to be_nil
-    expect(Prism.parse(expanded).success?).to be(true)
+    expect(reopen).not_to be_nil
+    expect(Prism.parse(reopen[:source]).success?).to be(true)
 
-    expectation_path = expectations_dir.join("expanded/current.rb")
+    expectation_path = expectations_dir.join("steep_current_runtime/current.rb")
     if ENV["UPDATE_EXPECTATIONS"]
       expectation_path.dirname.mkpath
-      expectation_path.write(expanded)
+      expectation_path.write(reopen[:source])
     end
 
-    expect(expanded).to eq(expectation_path.read)
+    expect(reopen[:source]).to eq(expectation_path.read)
   end
 
   # Multi-class fixture exercising the class-scoping fixes end to end

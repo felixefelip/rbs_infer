@@ -28,7 +28,7 @@ module RbsInfer::Inference
       return {} unless parsed_target
 
       # Pré-coletar parâmetros posicionais de todos os métodos
-      collector = RbsInfer::AST::DefCollector.new
+      collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
       parsed_target.tree.accept(collector)
       positional_params = {}
       collector.defs.each do |defn|

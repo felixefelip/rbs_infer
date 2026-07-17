@@ -126,8 +126,16 @@ module RbsInfer
 
     # The common case (one class/module, no reopen-includes) takes the
     # exact single-target path — the ClassNameExtractor pick already in
-    # @target_class — so existing output is untouched.
-    if decl_targets.size <= 1 && include_targets.empty?
+    # @target_class — so existing output is untouched. Discovering no
+    # target at all means the file is a pure namespace wrapper around a
+    # nested module (`class User; module Idade`), which is exactly the
+    # pick the extractor makes, so that path serves it too.
+    #
+    # A lone target that ISN'T the extractor's pick means the extractor
+    # landed elsewhere (e.g. on the `Outer` wrapper of `class Outer; class
+    # Inner`, matched by basename); emitting @target_class would flatten
+    # the real one, so fall through to the per-target path below.
+    if include_targets.empty? && (decl_targets.empty? || (decl_targets.size == 1 && decl_targets.first[:name] == @target_class))
       return nil unless @target_class
       return build_single_target_rbs
     end
@@ -419,7 +427,7 @@ module RbsInfer
   def widen_assigned_param_types(method_param_types, ivar_types)
     return if method_param_types.empty? || ivar_types.empty? || @parsed_target.nil?
 
-    collector = RbsInfer::AST::DefCollector.new
+    collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
     @parsed_target.tree.accept(collector)
 
     collector.defs.each do |defn|
@@ -785,7 +793,7 @@ module RbsInfer
   def extract_target_method_params
     return {} unless @parsed_target
 
-    collector = RbsInfer::AST::DefCollector.new
+    collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
     @parsed_target.tree.accept(collector)
 
     methods = {}
@@ -847,7 +855,7 @@ module RbsInfer
   def extract_init_positional_params
     return [] unless @parsed_target
 
-    collector = RbsInfer::AST::DefCollector.new
+    collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
     @parsed_target.tree.accept(collector)
 
     init_def = collector.defs.find { |d| d.name == :initialize }

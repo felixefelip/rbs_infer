@@ -1,0 +1,264 @@
+# frozen_string_literal: true
+
+require "fileutils"
+require "prism"
+
+module RbsInfer
+  module Extensions
+    module Rails
+      # Emits a plain-Ruby REOPEN of every ActiveSupport::CurrentAttributes
+      # subclass, desugaring its `attribute` macros into ordinary accessors —
+      # the single source of `Current`'s pseudo-code (felixefelip/rbs_infer#19,
+      # felixefelip/steep#68 item 5).
+      #
+      # Unlike the former in-memory `CurrentAttributesExpander` (which rewrote
+      # the source before the parse and dumped a hidden `.expanded/` copy), this
+      # writes a real `.rb` under `sig/generated/steep_current_runtime/` that:
+      #
+      #   * the rbs_infer analyzer reads to INFER the accessors' RBS (the
+      #     attribute type flows from `Current.user = @post.user` call-sites), and
+      #   * the Steep fork TYPE-CHECKS, so it can follow the singleton setter's
+      #     delegation into the instance override and prove transitively-set
+      #     constant attributes (`Current.author_name`).
+      #
+      # A reopen (`class Current`, no superclass) merges with the real source, so
+      # the class is never defined twice. Instance accessors live in an included
+      # `GeneratedAttributeMethods` module — the `super` target for an override
+      # (`def user=(value); super; self.author_name = value&.full_name; end`),
+      # mirroring Rails' `generated_attribute_methods`. Singleton setters write
+      # the same ivar (unifying the type pool) AND delegate to the instance
+      # (`instance.user = value`), so an override runs and its establishments
+      # are visible.
+      #
+      # Accessors the class OVERRIDES itself are not re-emitted at that level
+      # (the override IS the definition) — except the instance module accessors,
+      # which must exist as the `super` target.
+      class CurrentAttributesRuntimeGenerator
+        # NOT dot-prefixed: `.rb` SOURCE the analyzer and the Steep fork read via
+        # `sig/**/*.rb` (`**` skips hidden dirs).
+        SIDECAR_DIR = "sig/generated/steep_current_runtime"
+        MODEL_ROOTS = %w[app/models].freeze
+        SUPERCLASS_NAMES = ["ActiveSupport::CurrentAttributes", "::ActiveSupport::CurrentAttributes"].freeze
+
+        Reopen = Struct.new(:class_name, :names, :defaults, :overrides, keyword_init: true)
+
+        def initialize(app_dir:)
+          @app_dir = app_dir
+        end
+
+        # => [{ filename:, source: }] (empty when no CurrentAttributes subclass
+        # declares attributes).
+        def build
+          reopens.map do |reopen|
+            {
+              filename: "#{RbsInfer.class_name_to_path(reopen.class_name).tr("/", "_")}.rb",
+              source: reopen_source(reopen)
+            }
+          end
+        end
+
+        # Writes the sidecar dir (one file per reopen), removing a stale dir when
+        # nothing qualifies. Returns the sidecar dir path.
+        def generate
+          files = build
+          dir = File.join(@app_dir, SIDECAR_DIR)
+
+          FileUtils.rm_rf(dir)
+          unless files.empty?
+            FileUtils.mkdir_p(dir)
+            files.each { |file| File.write(File.join(dir, file[:filename]), file[:source]) }
+          end
+
+          dir
+        end
+
+        private
+
+        def reopens
+          MODEL_ROOTS.flat_map do |root|
+            Dir.glob(File.join(@app_dir, root, "**/*.rb")).sort.filter_map do |path|
+              source = File.read(path)
+              next unless source.include?("CurrentAttributes")
+
+              reopen_for(source)
+            end
+          end
+        end
+
+        def reopen_for(source)
+          result = Prism.parse(source)
+          return nil unless result.success?
+
+          klass = RbsInfer::Analyzer.find_all_nodes(result.value) { |n| n.is_a?(Prism::ClassNode) }
+                                    .find { |n| current_attributes_subclass?(n) }
+          return nil unless klass
+
+          class_name = RbsInfer::Analyzer.extract_constant_path(klass.constant_path)&.delete_prefix("::")
+          return nil unless class_name
+
+          calls = attribute_calls_in(klass)
+          return nil if calls.empty?
+
+          names = []
+          defaults = {}
+          calls.each do |call|
+            call_names, call_defaults = parse_attribute_call(source, call)
+            names.concat(call_names)
+            defaults.merge!(call_defaults)
+          end
+
+          Reopen.new(class_name: class_name, names: names.uniq, defaults: defaults, overrides: overrides(klass, names))
+        end
+
+        # --- source assembly -------------------------------------------------
+
+        def reopen_source(reopen)
+          blocks = [module_block(reopen.names)]
+          reopen.names.each { |name| blocks.concat(singleton_accessor_defs(name, reopen.overrides)) }
+          blocks.concat(initialize_def(reopen.defaults))
+          blocks.concat(set_with_defs(reopen.names))
+
+          <<~RUBY
+            # frozen_string_literal: true
+            #
+            # GENERATED by RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator.
+            # Regenerated on every run; do not edit.
+
+            class #{reopen.class_name}
+            #{blocks.map { |block| indent(block, 2) }.join("\n\n")}
+            end
+          RUBY
+        end
+
+        # `module GeneratedAttributeMethods … end; include …` — the instance
+        # accessors (always emitted; the module is the `super` target).
+        def module_block(names)
+          inner = names.flat_map { |name| instance_accessor_defs(name) }
+          [
+            "module GeneratedAttributeMethods",
+            *inner.flat_map { |defn| defn.map { |line| "  #{line}" } },
+            "end",
+            "include GeneratedAttributeMethods",
+          ]
+        end
+
+        def instance_accessor_defs(name)
+          [
+            ["def #{name}", "  @#{name}", "end"],
+            ["def #{name}=(value)", "  @#{name} = value", "end"],
+          ]
+        end
+
+        # Singleton accessors: the getter reads the shared ivar; the setter
+        # writes it (unifying the pool) AND delegates to the instance so an
+        # override runs. Skips the ones the class overrides at the singleton
+        # level.
+        def singleton_accessor_defs(name, overrides)
+          defs = []
+          defs << ["def self.#{name}", "  @#{name}", "end"] unless overrides.include?([true, name])
+          unless overrides.include?([true, "#{name}="])
+            defs << [
+              "def self.#{name}=(value)",
+              "  @#{name} = value",
+              "  instance.#{name} = value",
+              "end"
+            ]
+          end
+          defs
+        end
+
+        def initialize_def(defaults)
+          return [] if defaults.empty?
+
+          [["def initialize", *defaults.map { |name, expr| "  @#{name} = #{expr}" }, "end"]]
+        end
+
+        def set_with_defs(names)
+          kwargs = names.map { |n| "#{n}: nil" }.join(", ")
+          # The kwargs assignments are the point: they feed the attribute's type
+          # from `Current.with(user: ...)` call-sites. Ending in `block&.call(nil)`
+          # (rather than the last assignment) keeps set/with from LEAKING the
+          # attribute type into a caller's return — the method infers `-> nil`,
+          # which is harmless (set/with are called for their side effect). The
+          # reopen is now type-checked: `&block` is inferred optional and
+          # single-arg, so the safe-nav covers the optionality and the `nil` the
+          # arity (the pseudo-code never runs).
+          ["set", "with"].map do |method|
+            ["def self.#{method}(#{kwargs}, &block)", *names.map { |n| "  @#{n} = #{n}" }, "  block&.call(nil)", "end"]
+          end
+        end
+
+        def indent(block, spaces)
+          pad = " " * spaces
+          block.map { |line| line.empty? ? "" : "#{pad}#{line}" }.join("\n")
+        end
+
+        # --- parsing (moved from CurrentAttributesExpander) ------------------
+
+        def current_attributes_subclass?(klass)
+          superclass = klass.superclass
+          superclass && SUPERCLASS_NAMES.include?(RbsInfer::Analyzer.extract_constant_path(superclass))
+        end
+
+        def attribute_calls_in(klass)
+          statements(klass.body).select do |stmt|
+            stmt.is_a?(Prism::CallNode) && stmt.name == :attribute && stmt.receiver.nil? && stmt.arguments
+          end
+        end
+
+        # `attribute :user, :account, default: -> { ... }` =>
+        # [["user", "account"], { "user" => "<default source>", ... }]
+        def parse_attribute_call(source, call)
+          names = []
+          default_source = nil
+
+          call.arguments.arguments.each do |arg|
+            case arg
+            when Prism::SymbolNode
+              names << arg.value.to_s
+            when Prism::KeywordHashNode
+              arg.elements.each do |elem|
+                next unless elem.is_a?(Prism::AssocNode)
+                next unless elem.key.is_a?(Prism::SymbolNode) && elem.key.value.to_s == "default"
+
+                default_source = default_expression_source(source, elem.value)
+              end
+            end
+          end
+
+          defaults = default_source ? names.to_h { |n| [n, default_source] } : {}
+          [names, defaults]
+        end
+
+        def default_expression_source(source, node)
+          body = case node
+                 when Prism::LambdaNode then node.body
+                 when Prism::CallNode then node.block&.body if [:lambda, :proc].include?(node.name)
+                 end
+          expr = body || node
+          slice = source.byteslice(expr.location.start_offset, expr.location.end_offset - expr.location.start_offset)
+          expr.is_a?(Prism::StatementsNode) && expr.body.length > 1 ? "begin; #{slice}; end" : slice
+        end
+
+        # Set of [singleton?, method_name] the class body overrides itself.
+        def overrides(klass, names)
+          accessor_names = names.flat_map { |n| [n, "#{n}="] }.to_set
+
+          statements(klass.body).each_with_object(Set.new) do |stmt, acc|
+            next unless stmt.is_a?(Prism::DefNode) && accessor_names.include?(stmt.name.to_s)
+
+            acc << [stmt.receiver.is_a?(Prism::SelfNode), stmt.name.to_s]
+          end
+        end
+
+        def statements(body)
+          case body
+          when Prism::StatementsNode then body.body
+          when nil then []
+          else [body]
+          end
+        end
+      end
+    end
+  end
+end

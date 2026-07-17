@@ -6,22 +6,22 @@
 module ActionController
   class Base
     def redirect_to(*args)
-      @__rbs_infer__halted = true
+      @__rbs_infer__performed = true
       true
     end
 
     def render(*args)
-      @__rbs_infer__halted = true
+      @__rbs_infer__performed = true
       true
     end
 
     def head(*args)
-      @__rbs_infer__halted = true
+      @__rbs_infer__performed = true
       true
     end
 
     def performed?
-      @__rbs_infer__halted
+      @__rbs_infer__performed
     end
 
     # Stands for a callback condition we cannot name (a proc taking

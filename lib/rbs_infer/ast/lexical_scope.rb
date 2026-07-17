@@ -14,6 +14,13 @@ module RbsInfer::AST
   # (owner nil), not owned by a nested module. When `scope_target` is nil
   # or absent from the tree, nothing is owned (flat — safe default for
   # caller files and any consumer that doesn't need ownership).
+  #
+  # Ownership covers nested *modules* only. A nested class is its own
+  # target (TargetDiscovery promotes every class declaration), so members
+  # inside one belong to that target's pass and are not this target's at
+  # all — `inside_target?` reports false for them rather than handing them
+  # back with a nil owner, which is what used to flatten them into the
+  # enclosing class.
   module LexicalScope
     attr_accessor :scope_target
 
@@ -37,31 +44,43 @@ module RbsInfer::AST
       scope_target&.sub(/\A::/, "")
     end
 
-    # The nested-module path owning members at the current position
-    # (relative to the target scope), or nil for direct members of the
-    # target / positions outside it.
-    def current_owner
+    # Frames opened strictly inside the target declaration, or nil when the
+    # target frame isn't on the stack at all (position outside the target).
+    def frames_inside_target
       target = normalized_target
       return nil unless target
 
       target_idx = scope_stack.index { |f| f[:path] == target }
       return nil unless target_idx
 
-      mods = scope_stack[(target_idx + 1)..].select { |f| f[:kind] == :module && f[:name] }
+      scope_stack[(target_idx + 1)..] || []
+    end
+
+    # The nested-module path owning members at the current position
+    # (relative to the target scope), or nil for direct members of the
+    # target / positions outside it.
+    def current_owner
+      inside = frames_inside_target
+      return nil unless inside
+      return nil if inside.any? { |f| f[:kind] == :class }
+
+      mods = inside.select { |f| f[:kind] == :module && f[:name] }
       mods.empty? ? nil : mods.map { |f| f[:name] }.join("::")
     end
 
     # True when the current traversal position is lexically inside the
-    # target declaration (the target frame is open on the scope stack).
-    # Members collected outside it belong to a sibling target or are
-    # orphan defs (e.g. a `def` in a bare block) — the multi-target core
-    # must not attribute those to this target. With no target set, every
-    # position counts as "inside" (flat default, preserving DefCollector).
+    # target declaration (the target frame is open on the scope stack) and
+    # not inside a nested class of it. Members collected outside it belong
+    # to a sibling target, to a nested class target, or are orphan defs
+    # (e.g. a `def` in a bare block) — the multi-target core must not
+    # attribute those to this target. With no target set, every position
+    # counts as "inside" (flat default, preserving DefCollector).
     def inside_target?
       target = normalized_target
       return true unless target
 
-      scope_stack.any? { |f| f[:path] == target }
+      inside = frames_inside_target
+      !inside.nil? && inside.none? { |f| f[:kind] == :class }
     end
 
     # True when the innermost open scope IS the target declaration itself
