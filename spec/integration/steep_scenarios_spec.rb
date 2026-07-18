@@ -89,7 +89,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
         @name: String
 
         attr_accessor board: Board?
-        attr_accessor user_name: String
+        attr_accessor user_name: String?
 
         def initialize: (name: String) -> void
         def set_default_user_name: () -> String
@@ -126,7 +126,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
         @name: String
 
         attr_accessor board: Board?
-        attr_accessor user_name: String
+        attr_accessor user_name: String?
 
         def initialize: (name: String) -> void
         def set_default_user_name: () -> String
@@ -169,7 +169,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
         @name: String
 
         attr_accessor board: Board?
-        attr_accessor user_name: String
+        attr_accessor user_name: String?
 
         def initialize: (name: String) -> void
         def set_default_user_name: () -> String
@@ -216,7 +216,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
         @name: String
 
         attr_accessor board: Board?
-        attr_accessor user_name: String
+        attr_accessor user_name: String?
 
         def initialize: (name: String) -> void
         def set_default_user_name: () -> String
@@ -369,10 +369,18 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
 
     expected_rbs = <<~RBS
       class Widget
-        attr_reader user: Widget
+        attr_reader user: Widget?
 
         def user=: (Widget value) -> untyped
         def use: () -> Widget
+
+        class AfterUse
+          attr_reader user: Widget
+        end
+
+        class AfterUser
+          attr_reader user: Widget
+        end
       end
     RBS
 

@@ -2,10 +2,11 @@ class TagDestroy
   attr_reader tag: Tag & Tag::Validated
   attr_reader user: User & User::Validated
   attr_reader posts: Array[untyped]
-  attr_reader xml: Nokogiri::XML::Document
+  attr_reader xml: Nokogiri::XML::Document?
 
   def initialize: (untyped tag_id, untyped user_id) -> void
   def call: () -> bool
+  def call_xml: () -> Array[Array[untyped]]
 
   private
 
@@ -27,4 +28,8 @@ class TagDestroy
   def verify_multiples_returns_with_void_and_rescue: () -> String?
   def save_post: () -> void
   def user_posts: () -> User_Post::ActiveRecord_Associations_CollectionProxy
+
+  class AfterTestNokogiri
+    attr_reader xml: Nokogiri::XML::Document
+  end
 end

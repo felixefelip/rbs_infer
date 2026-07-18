@@ -13,12 +13,13 @@ end
 class Example2
   class Foo
     attr_reader user: untyped
-    attr_reader name: String
-    attr_writer name: String
+    attr_reader name: String?
+    attr_writer name: String?
 
     def user=: (User value) -> String?
 
     class AfterUser
+      attr_reader name: String
       attr_reader user: Example2::User
     end
   end

@@ -238,14 +238,97 @@ module RbsInfer::Inference
       IvarInference.new(ivar_types, singleton_ivar_types)
     end
 
-    # Returns Set[String] of ivar names (without `@`) assigned inside any
-    # `def initialize` or directly in a class body. Public so the analyzer
-    # can apply the definite-initialization rule to attr types inferred
-    # from external setter call-sites (felixefelip/rbs_infer#71).
+    # Returns Set[String] of ivar names (without `@`) definitely initialized in
+    # the TARGET class: assigned in its `def initialize`, directly in its class
+    # body, OR in a method that `initialize` invokes on `self` (transitively).
+    # Public so the analyzer can apply the definite-initialization rule to attr
+    # types (felixefelip/rbs_infer#71).
+    #
+    # Transitive reach: `@x` set in `atribui_user` counts as initialized when
+    # `initialize` calls `atribui_user` — a human reads such an ivar as non-nil
+    # (the constructor always runs it), so `TagDestroy#user` (set in
+    # `atribui_user`, called from `initialize`) stays non-nil instead of being
+    # wrongly nilablized. Follows the same optimistic style as the direct rule
+    # (a write reachable from `initialize` counts, without a strict
+    # unconditional-flow analysis).
+    #
+    # Scoped to `@target_class`: walking the whole file let a sibling class's
+    # `initialize` leak in — e.g. `Example3::User#initialize`'s `@name = name`
+    # made `Example3::Foo`'s never-initialized `name` look initialized, so the
+    # definite-init `?` was wrongly skipped (the cross-class pooling of
+    # felixefelip/rbs_infer#38, #69).
     def collect_prism_initialized_ivars(tree)
       result = Set.new
-      walk_prism_init_targets(tree, in_init: false, in_class_body: false, result: result)
+      method_defs = {}
+      bodies = []
+      each_target_class_body(tree, class_path: []) do |body|
+        bodies << body
+        collect_instance_method_defs(body, method_defs)
+      end
+      bodies.each do |body|
+        walk_prism_init_targets(body, in_init: false, in_class_body: true, result: result)
+      end
+      # Transitive: ivars written by methods reachable from `initialize` via
+      # self-calls (`atribui_user` → `@user = ...`).
+      (method_defs["initialize"] || []).each do |init_def|
+        next unless init_def.body
+        collect_transitive_init_ivars(init_def.body, method_defs, result, visited: Set.new(["initialize"]))
+      end
       result
+    end
+
+    # Indexes every instance method (`def foo`, receiver-less) of a class body
+    # into `acc` (`name => [DefNode, ...]`), stopping at nested class/module
+    # boundaries and not descending into method bodies. Reopens across bodies
+    # accumulate into the same map (felixefelip/rbs_infer#71).
+    def collect_instance_method_defs(node, acc)
+      return unless node.is_a?(Prism::Node)
+
+      case node
+      when Prism::DefNode
+        (acc[node.name.to_s] ||= []) << node if node.receiver.nil?
+      when Prism::ClassNode, Prism::ModuleNode, Prism::SingletonClassNode
+        # different scope — not this class's instance methods
+      else
+        node.compact_child_nodes.each { |c| collect_instance_method_defs(c, acc) }
+      end
+    end
+
+    # For every `self`-receiver (or implicit-self) call in `body`, if it names a
+    # method of the target class, folds that method's ivar writes into `result`
+    # and recurses through its own self-calls. `visited` guards against
+    # recursion cycles (felixefelip/rbs_infer#71).
+    def collect_transitive_init_ivars(body, method_defs, result, visited:)
+      call_names = Set.new
+      collect_self_call_names(body, call_names)
+      call_names.each do |name|
+        next if visited.include?(name)
+
+        visited << name
+        (method_defs[name] || []).each do |d|
+          next unless d.body
+
+          walk_prism_init_targets(d.body, in_init: true, in_class_body: false, result: result)
+          collect_transitive_init_ivars(d.body, method_defs, result, visited: visited)
+        end
+      end
+    end
+
+    # Collects the names of every non-setter call on `self` (explicit or
+    # implicit receiver) within `node`, without descending into nested method
+    # definitions (their calls belong to a different flow).
+    def collect_self_call_names(node, acc)
+      return unless node.is_a?(Prism::Node)
+
+      if node.is_a?(Prism::CallNode) &&
+         (node.receiver.nil? || node.receiver.is_a?(Prism::SelfNode)) &&
+         !node.name.to_s.end_with?("=")
+        acc << node.name.to_s
+      end
+
+      node.compact_child_nodes.each do |c|
+        collect_self_call_names(c, acc) unless c.is_a?(Prism::DefNode)
+      end
     end
 
     private
