@@ -117,11 +117,6 @@ postconditions:
   effects:
     may_write:
     - "@name"
-- class: ParseXml
-  method: initialize
-  effects:
-    may_write:
-    - "@xml"
 - class: PostPublisher
   method: initialize
   effects:
@@ -350,9 +345,18 @@ postconditions:
     - "@label"
 - class: TagDestroy
   method: atribui_user
+  unconditional:
+    ivars:
+      "@user": "(::User & ::User::Validated)"
+    self: "::TagDestroy & ::TagDestroy::AfterAtribuiUser"
   effects:
     may_write:
     - "@user"
+- class: TagDestroy
+  method: call_xml
+  effects:
+    may_write:
+    - "@xml"
 - class: TagDestroy
   method: initialize
   effects:
@@ -362,6 +366,10 @@ postconditions:
     - "@user"
 - class: TagDestroy
   method: test_nokogiri
+  unconditional:
+    ivars:
+      "@xml": "::Nokogiri::XML::Document"
+    self: "::TagDestroy & ::TagDestroy::AfterTestNokogiri"
   effects:
     may_write:
     - "@xml"

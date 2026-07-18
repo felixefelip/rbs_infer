@@ -197,6 +197,69 @@ methods:
           kind: self
         method: nickname
     enforced: false
+  TagDestroy#parse_xml:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: xml
+    enforced: false
+  TagDestroy#parse_xml_as_hash:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: xml
+    enforced: false
+  TagDestroy#parse_xml_as_hash_with_parse:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: xml
+    enforced: false
+  TagDestroy#test_array_with_array:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: xml
+    enforced: false
+  TagDestroy#test_array_with_array_with_elements_untyped:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: xml
+    enforced: false
+  TagDestroy#user_name:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: user
+    enforced: false
+  TagDestroy#verify_multiples_returns_with_void:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: user
+    enforced: false
   Test::Filtrable#filtrable?:
     requires:
     - kind: not_nil

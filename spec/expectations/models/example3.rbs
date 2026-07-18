@@ -16,7 +16,7 @@ class Example3
 
     module GeneratedAttributes
       attr_accessor user: User?
-      attr_accessor name: String
+      attr_accessor name: String?
       attr_writer foo_instance: untyped
     end
 
@@ -29,5 +29,9 @@ class Example3
     def self.name=: (String value) -> String
 
     def user=: (User value) -> String?
+
+    class AfterUser
+      attr_reader name: String
+    end
   end
 end

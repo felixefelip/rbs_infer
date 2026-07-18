@@ -13,6 +13,15 @@ class TagDestroy
 		tag.destroy
 	end
 
+  def call_xml
+	  test_nokogiri
+		parse_xml
+		parse_xml_as_hash
+		parse_xml_as_hash_with_parse
+		test_array_with_array
+		test_array_with_array_with_elements_untyped
+  end
+
 	private
 
 	def atribui_user(user_id)

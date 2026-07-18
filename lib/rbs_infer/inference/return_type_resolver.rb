@@ -238,13 +238,21 @@ module RbsInfer::Inference
       IvarInference.new(ivar_types, singleton_ivar_types)
     end
 
-    # Returns Set[String] of ivar names (without `@`) assigned inside any
-    # `def initialize` or directly in a class body. Public so the analyzer
-    # can apply the definite-initialization rule to attr types inferred
-    # from external setter call-sites (felixefelip/rbs_infer#71).
+    # Returns Set[String] of ivar names (without `@`) assigned inside the
+    # TARGET class's `def initialize` or directly in its class body. Public so
+    # the analyzer can apply the definite-initialization rule to attr types
+    # (felixefelip/rbs_infer#71).
+    #
+    # Scoped to `@target_class`: walking the whole file let a sibling class's
+    # `initialize` leak in — e.g. `Example3::User#initialize`'s `@name = name`
+    # made `Example3::Foo`'s never-initialized `name` look initialized, so the
+    # definite-init `?` was wrongly skipped (the cross-class pooling of
+    # felixefelip/rbs_infer#38, #69).
     def collect_prism_initialized_ivars(tree)
       result = Set.new
-      walk_prism_init_targets(tree, in_init: false, in_class_body: false, result: result)
+      each_target_class_body(tree, class_path: []) do |body|
+        walk_prism_init_targets(body, in_init: false, in_class_body: true, result: result)
+      end
       result
     end
 
