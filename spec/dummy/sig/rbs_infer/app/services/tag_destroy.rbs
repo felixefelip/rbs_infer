@@ -1,6 +1,6 @@
 class TagDestroy
   attr_reader tag: Tag & Tag::Validated
-  attr_reader user: (User & User::Validated)?
+  attr_reader user: User & User::Validated
   attr_reader posts: Array[untyped]
   attr_reader xml: Nokogiri::XML::Document?
 
@@ -24,14 +24,10 @@ class TagDestroy
   def test_hash: (untyped order_xml) -> { date: Nokogiri::XML::Node?, order: Nokogiri::XML::Node }
   def test_array_with_array: () -> Array[Array[untyped]]
   def test_array_with_array_with_elements_untyped: () -> Array[Array[untyped]]
-  def verify_multiples_returns_with_void: () -> String?
-  def verify_multiples_returns_with_void_and_rescue: () -> untyped
-  def save_post: () -> untyped
-  def user_posts: () -> untyped
-
-  class AfterAtribuiUser
-    attr_reader user: (User & User::Validated)
-  end
+  def verify_multiples_returns_with_void: () -> void
+  def verify_multiples_returns_with_void_and_rescue: () -> String?
+  def save_post: () -> void
+  def user_posts: () -> User_Post::ActiveRecord_Associations_CollectionProxy
 
   class AfterTestNokogiri
     attr_reader xml: Nokogiri::XML::Document

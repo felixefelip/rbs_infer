@@ -116,5 +116,39 @@ RSpec.describe RbsInfer::Inference::ReturnTypeResolver do
       # User writes @name in initialize → definitely initialized.
       expect(resolver_for("Outer::User").collect_prism_initialized_ivars(tree)).to include("name")
     end
+
+    # An ivar written in a method that `initialize` invokes on self is
+    # definitely initialized (the constructor always runs it) — a human reads
+    # it as non-nil, so the definite-init `?` must be skipped
+    # (felixefelip/rbs_infer#71: TagDestroy#user set in atribui_user).
+    it "reaches ivars set in a method invoked (transitively) from initialize" do
+      tree = Prism.parse(<<~RUBY).value
+        class Svc
+          def initialize(id)
+            @posts = []
+            assign_user(id)
+          end
+
+          def assign_user(id)
+            @user = User.find(id)
+            build_profile
+          end
+
+          def build_profile
+            @profile = Profile.new
+          end
+
+          def lazy_xml
+            @xml = parse
+          end
+        end
+      RUBY
+
+      init = resolver_for("Svc").collect_prism_initialized_ivars(tree)
+      # Direct + one hop (assign_user) + two hops (build_profile).
+      expect(init).to include("posts", "user", "profile")
+      # @xml is set only in lazy_xml, never reached from initialize → nilable.
+      expect(init).not_to include("xml")
+    end
   end
 end

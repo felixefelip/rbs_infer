@@ -242,24 +242,6 @@ methods:
           kind: self
         method: xml
     enforced: false
-  TagDestroy#user_name:
-    requires:
-    - kind: not_nil
-      expr:
-        kind: send
-        receiver:
-          kind: self
-        method: user
-    enforced: false
-  TagDestroy#verify_multiples_returns_with_void:
-    requires:
-    - kind: not_nil
-      expr:
-        kind: send
-        receiver:
-          kind: self
-        method: user
-    enforced: false
   Test::Filtrable#filtrable?:
     requires:
     - kind: not_nil

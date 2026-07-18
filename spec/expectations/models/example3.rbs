@@ -1,5 +1,5 @@
 class Example3
-  def self.run: () -> String
+  def self.run: () -> untyped
 end
 
 class Example3
@@ -25,7 +25,7 @@ class Example3
     def self.foo_instance: () -> Example3::Foo
     def self.user: () -> Example3::User?
     def self.user=: (User value) -> User
-    def self.name: () -> String
+    def self.name: () -> String?
     def self.name=: (String value) -> String
 
     def user=: (User value) -> String?

@@ -1,11 +1,12 @@
 class TagDestroy
   attr_reader tag: Tag & Tag::Validated
-  attr_reader user: (User & User::Validated)?
+  attr_reader user: User & User::Validated
   attr_reader posts: Array[untyped]
   attr_reader xml: Nokogiri::XML::Document?
 
   def initialize: (untyped tag_id, untyped user_id) -> void
   def call: () -> bool
+  def call_xml: () -> Array[Array[untyped]]
 
   private
 
@@ -20,17 +21,13 @@ class TagDestroy
   def parse_xml: () -> Array[Nokogiri::XML::Node]
   def parse_xml_as_hash: () -> Array[{ date: Nokogiri::XML::Node?, order: Nokogiri::XML::Node }]
   def parse_xml_as_hash_with_parse: () -> Array[{ order: Nokogiri::XML::Node? }]
-  def test_hash: (Nokogiri::XML::Node order_xml) -> { date: Nokogiri::XML::Node?, order: Nokogiri::XML::Node }
-  def test_array_with_array: () -> Array[Array[Nokogiri::XML::Node?]]
+  def test_hash: (untyped order_xml) -> { date: Nokogiri::XML::Node?, order: Nokogiri::XML::Node }
+  def test_array_with_array: () -> Array[Array[untyped]]
   def test_array_with_array_with_elements_untyped: () -> Array[Array[untyped]]
   def verify_multiples_returns_with_void: () -> void
   def verify_multiples_returns_with_void_and_rescue: () -> String?
   def save_post: () -> void
   def user_posts: () -> User_Post::ActiveRecord_Associations_CollectionProxy
-
-  class AfterAtribuiUser
-    attr_reader user: (User & User::Validated)
-  end
 
   class AfterTestNokogiri
     attr_reader xml: Nokogiri::XML::Document

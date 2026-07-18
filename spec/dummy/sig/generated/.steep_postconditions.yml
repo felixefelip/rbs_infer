@@ -345,10 +345,6 @@ postconditions:
     - "@label"
 - class: TagDestroy
   method: atribui_user
-  unconditional:
-    ivars:
-      "@user": "(::User & ::User::Validated)"
-    self: "::TagDestroy & ::TagDestroy::AfterAtribuiUser"
   effects:
     may_write:
     - "@user"
