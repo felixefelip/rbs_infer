@@ -117,6 +117,11 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: ParseXml
+  method: initialize
+  effects:
+    may_write:
+    - "@xml"
 - class: PostPublisher
   method: initialize
   effects:

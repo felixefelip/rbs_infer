@@ -205,7 +205,6 @@ methods:
         receiver:
           kind: self
         method: xml
-    enforced: false
   TagDestroy#parse_xml_as_hash:
     requires:
     - kind: not_nil
@@ -214,7 +213,6 @@ methods:
         receiver:
           kind: self
         method: xml
-    enforced: false
   TagDestroy#parse_xml_as_hash_with_parse:
     requires:
     - kind: not_nil
@@ -223,7 +221,6 @@ methods:
         receiver:
           kind: self
         method: xml
-    enforced: false
   TagDestroy#test_array_with_array:
     requires:
     - kind: not_nil
@@ -232,7 +229,6 @@ methods:
         receiver:
           kind: self
         method: xml
-    enforced: false
   TagDestroy#test_array_with_array_with_elements_untyped:
     requires:
     - kind: not_nil
@@ -241,7 +237,6 @@ methods:
         receiver:
           kind: self
         method: xml
-    enforced: false
   Test::Filtrable#filtrable?:
     requires:
     - kind: not_nil
