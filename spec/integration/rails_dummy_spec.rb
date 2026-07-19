@@ -186,6 +186,22 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  it "example4" do
+    name = "models/example4"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example4.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # Class-instance variables (felixefelip/rbs_infer#86). A `@x` written in a
   # singleton method (`def self.x`, `class << self`) or directly in the class
   # body is a class-instance variable — RBS declares it `self.@x`, a slot
