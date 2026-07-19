@@ -1,0 +1,12 @@
+class Example4
+  def run: () -> untyped
+end
+
+class Example4
+  class Foo
+    self.@name: String?
+
+    def self.name: () -> String?
+    def self.name=: (String value) -> untyped
+  end
+end
