@@ -15,7 +15,7 @@ end
 class Example4
   class Bar
     def foo_name_before: () -> untyped
-    def foo_name: () -> String?
+    def foo_name: () -> String
     def foo_name_after: () -> untyped
   end
 end

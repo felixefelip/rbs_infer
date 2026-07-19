@@ -121,6 +121,32 @@ module RbsInfer::Inference
             m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> #{steep_type}")
           end
 
+          # Narrow an already-inferred nilable return to Steep's non-nil type when
+          # Steep — with the postcondition / method-entry facts applied — proves the
+          # body can't return nil (e.g. `Foo.name.upcase` where a method-entry fact
+          # makes `Foo.name` non-nil at the callee's entry, felixefelip/steep#78).
+          # The first loop only upgrades `-> untyped`; this handles `T?` -> `T`.
+          # Restricted to a strict `nilablize(steep) == current` match, so an
+          # unrelated Steep type can never clobber a good signature, and skipped when
+          # the body has an explicit `nil` return (then nilable is the honest answer).
+          members.each do |m|
+            next unless method_member?(m)
+            next if m.name == "initialize"
+            current_type = m.signature[/->\s*(.+)$/, 1]&.strip
+            next unless current_type&.end_with?("?")
+
+            steep_type = steep_returns_for(m, steep_returns)[m.name]
+            next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
+            next if steep_type == current_type
+            next unless RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type) == current_type
+
+            defn = def_map[m.name]
+            next if defn && has_nil_return?(defn)
+
+            steep_type = "self" if self_return?(m, steep_type, self_types)
+            m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> #{steep_type}")
+          end
+
           # Refine record types containing untyped values using Steep's body type inference
           members.each do |m|
             next unless method_member?(m)

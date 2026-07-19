@@ -11,7 +11,6 @@ app/models/example3.rb:52:24: [error] Type `(::String | nil)` does not have meth
 app/models/example4.rb:14:25: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:22:25: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:27:23: [error] Type `(::String | nil)` does not have method `upcase`
-app/models/example4.rb:36:31: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:40:23: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/post/notifiable.rb:28:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/user/recoverable.rb:10:6: [error] Cannot allow method body have type `::User` because declared as type `self`

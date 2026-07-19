@@ -1,6 +1,6 @@
 class Example4
   def run: () -> untyped
-  def run_foo_name: () -> untyped
+  def run_foo_name: () -> String
 end
 
 class Example4
@@ -15,7 +15,7 @@ end
 class Example4
   class Bar
     def foo_name_before: () -> untyped
-    def foo_name: () -> String?
+    def foo_name: () -> String
     def foo_name_after: () -> untyped
   end
 end
