@@ -70,6 +70,12 @@ postconditions:
   unconditional:
     establishes_consts:
       author_name: "::String"
+      user: "((::User & ::User::Validated) | ::User)"
+- class: Current
+  method: author_name=
+  unconditional:
+    establishes_consts:
+      author_name: "::String"
 - class: Current
   method: set
   effects:
@@ -81,6 +87,9 @@ postconditions:
     returns_ivar: "@user"
 - class: Current
   method: user=
+  unconditional:
+    establishes_consts:
+      user: "((::User & ::User::Validated) | ::User)"
   effects:
     may_write:
     - "@user"
@@ -117,6 +126,7 @@ postconditions:
   unconditional:
     establishes_consts:
       name: "::String"
+      user: "::Example3::User"
 - class: Example3::Foo
   method: foo_instance
   effects:
@@ -133,6 +143,9 @@ postconditions:
     returns_ivar: "@name"
 - class: Example4::Foo
   method: name=
+  unconditional:
+    establishes_consts:
+      name: "::String"
   effects:
     may_write:
     - "@name"
