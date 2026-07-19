@@ -9,9 +9,13 @@ app/models/concerns/test/filtrable.rb:8:4: [error] Type `(singleton(::Test) & si
 app/models/example3.rb:50:11: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:51:24: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:52:24: [error] Type `(::String | nil)` does not have method `upcase`
-app/models/example4.rb:19:13: [error] Type `(::String | nil)` does not have method `upcase`
-app/models/example4.rb:22:13: [error] Type `(::String | nil)` does not have method `upcase`
-app/models/example4.rb:24:21: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example4.rb:14:25: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example4.rb:18:25: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example4.rb:22:25: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example4.rb:27:23: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example4.rb:32:23: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example4.rb:34:31: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example4.rb:38:23: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/post/notifiable.rb:28:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/user/recoverable.rb:10:6: [error] Cannot allow method body have type `::User` because declared as type `self`
 app/models/user/recoverable.rb:14:6: [error] Cannot allow method body have type `::User` because declared as type `self`

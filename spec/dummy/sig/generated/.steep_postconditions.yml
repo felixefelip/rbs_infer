@@ -133,9 +133,6 @@ postconditions:
     returns_ivar: "@name"
 - class: Example4::Foo
   method: name=
-  unconditional:
-    ivars:
-      "@name": "::String"
   effects:
     may_write:
     - "@name"
