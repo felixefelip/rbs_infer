@@ -47,9 +47,9 @@ class Example3
 
 		Foo.user = user
 
+		Foo.user.name.upcase
 		Foo.foo_instance.user.name.upcase
 		Foo.foo_instance.name.upcase
 		Foo.name.upcase # => "JOHN DOE"
-		Foo.user.name.upcase
 	end
 end

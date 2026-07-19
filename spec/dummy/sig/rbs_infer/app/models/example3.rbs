@@ -1,5 +1,5 @@
 class Example3
-  def self.run: () -> untyped
+  def self.run: () -> String
 end
 
 class Example3

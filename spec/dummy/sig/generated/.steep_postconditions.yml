@@ -66,6 +66,11 @@ postconditions:
     may_write:
     - "@column_name"
 - class: Current
+  method: user=
+  unconditional:
+    establishes_consts:
+      author_name: "::String"
+- class: Current
   method: set
   effects:
     may_write:
@@ -107,6 +112,11 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example3::Foo
+  method: user=
+  unconditional:
+    establishes_consts:
+      name: "::String"
 - class: Example3::Foo
   method: foo_instance
   effects:
