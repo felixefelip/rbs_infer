@@ -31,11 +31,17 @@ class Example4
     Example4::Foo.name = 'John Doe'
     Example4::Foo.name.upcase # => "JOHN DOE"
 
+    run_foo_name
+
     Example4::Bar.new.foo_name.upcase # => "JOHN DOE"
 
     Example4::Foo.name = nil
 
     Example4::Foo.name.upcase # error not method
     Example4::Bar.new.foo_name_after # error not method
+  end
+
+  def run_foo_name
+    Example4::Foo.name.upcase # => "JOHN DOE"
   end
 end

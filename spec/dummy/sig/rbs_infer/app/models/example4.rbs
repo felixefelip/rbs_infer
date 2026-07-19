@@ -1,5 +1,6 @@
 class Example4
   def run: () -> untyped
+  def run_foo_name: () -> untyped
 end
 
 class Example4
