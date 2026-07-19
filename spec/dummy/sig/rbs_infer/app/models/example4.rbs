@@ -10,3 +10,9 @@ class Example4
     def self.name=: (String value) -> untyped
   end
 end
+
+class Example4
+  class Bar
+    def foo_name: () -> String?
+  end
+end
