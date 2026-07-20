@@ -2,8 +2,39 @@ module RbsInfer::Inference
   class NewCallCollector < Prism::Visitor
     attr_reader :usages, :method_call_usages
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {})
+    # Collect the fully-qualified names of every class/module DEFINED in a
+    # parsed file, so `match_class?` can tell a bare `Foo` written inside
+    # `Example3` (→ `Example3::Foo`) apart from a same-named class elsewhere
+    # (`Example2::Foo`). Order-independent: gathered up front, not during the
+    # main call-collecting traversal.
+    def self.collect_defined_class_names(root_node)
+      names = Set.new
+      stack = []
+      walk = lambda do |node|
+        return unless node.is_a?(Prism::Node)
+        pushed = nil
+        if node.is_a?(Prism::ClassNode) || node.is_a?(Prism::ModuleNode)
+          segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
+          if segment
+            pushed = stack.empty? ? segment : "#{stack.last}::#{segment}"
+            names << pushed
+            stack.push(pushed)
+          end
+        end
+        node.compact_child_nodes.each { |child| walk.call(child) }
+        stack.pop if pushed
+      end
+      walk.call(root_node)
+      names
+    end
+
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {})
       @target_class = target_class
+      # FQNs of classes/modules defined in the file being scanned; disambiguates
+      # a relative receiver from a same-simple-name class elsewhere (see
+      # `match_class?`). Required (required-threaded-deps): a forgotten wire
+      # silently re-enables the cross-class conflation this guards against.
+      @defined_class_names = defined_class_names
       @method_return_types = method_return_types
       @local_var_types = local_var_types
       @method_type_resolver = method_type_resolver
@@ -133,10 +164,46 @@ module RbsInfer::Inference
       # Caderneta::Validated`); match if any component is the target.
       intersection_components(name).any? do |component|
         normalized_name = component.sub(/\A::/, "")
-        # Match exato ou referência relativa (ex: Email == Academico::Aluno::Email)
-        normalized_name == normalized_target ||
-          normalized_target.end_with?("::#{normalized_name}")
+        next true if normalized_name == normalized_target
+        relative_receiver_matches_target?(normalized_name, normalized_target)
       end
+    end
+
+    # A relative receiver spelling (`Foo`, `Bar::Baz`) matches a target whose
+    # full name ends with it (`Email` == `Academico::Aluno::Email`) — the
+    # whole-program unique-simple-name assumption the analyzer relies on when
+    # the receiver isn't fully qualified.
+    #
+    # The one exception: two classes sharing a simple name must not be
+    # conflated. A bare `Foo` written *inside* `class Example3` is
+    # `Example3::Foo` — Ruby resolves it against the lexical nesting — so it
+    # must not match target `Example2::Foo`. We can prove this soundly whenever
+    # the file being scanned itself defines the class the spelling resolves to:
+    # if `Foo` resolves to `Example3::Foo` (a class defined in this file) under
+    # the current nesting, it is that class, not the same-named target
+    # elsewhere. Absent such a local definition we keep the unique-name
+    # assumption (cross-file), which existing behaviour depends on.
+    def relative_receiver_matches_target?(relative_name, target)
+      return false unless target.end_with?("::#{relative_name}")
+      resolved = resolve_relative_in_file(relative_name)
+      return false if resolved && resolved != target
+      true
+    end
+
+    # Ruby-style constant lookup of a relative name against the current lexical
+    # nesting, restricted to classes DEFINED IN THIS FILE — the only
+    # whole-program-agnostic signal available locally. Walks the nesting
+    # innermost-first (`Example3::Foo` before top-level `Foo`) and returns the
+    # first candidate this file defines, or nil when the file defines no such
+    # class in scope.
+    def resolve_relative_in_file(relative_name)
+      return nil if @defined_class_names.empty?
+      parts = (@class_name_stack.last || @caller_class_name)&.split("::") || []
+      parts.length.downto(0) do |i|
+        candidate = (parts[0, i] + [relative_name]).join("::")
+        return candidate if @defined_class_names.include?(candidate)
+      end
+      nil
     end
 
     # Top-level components of an intersection type, respecting [] / ()
