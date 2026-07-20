@@ -38,7 +38,7 @@ class Example3
 		def user=(value)
 			super(value)
 
-			self.name = value.name
+			self.name = value&.name
 		end
 	end
 
@@ -52,7 +52,7 @@ class Example3
 		Foo.foo_instance.name.upcase
 		Foo.name.upcase # => "JOHN DOE"
 
-		# Foo.user = nil
+		Foo.user = nil
 
 		# Foo.user.name.upcase # error not method
 		# Foo.foo_instance.user.name.upcase # error not method
