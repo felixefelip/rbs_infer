@@ -82,7 +82,8 @@ module RbsInfer::Inference
         target_methods: @target_methods,
         match_bare_calls: match_bare,
         self_types_by_method: self_types_by_method,
-        constant_arg_resolver: constant_arg_resolver
+        constant_arg_resolver: constant_arg_resolver,
+        defined_class_names: NewCallCollector.collect_defined_class_names(result.value)
       )
       result.value.accept(visitor)
 
@@ -110,7 +111,9 @@ module RbsInfer::Inference
         target_methods: @target_methods,
         match_bare_calls: true,
         # Pre-converted ERB source has no constant defs of its own → {}.
-        constant_arg_resolver: ConstantArgTypeResolver.new(steep_bridge: @steep_bridge, caller_constant_types: {})
+        constant_arg_resolver: ConstantArgTypeResolver.new(steep_bridge: @steep_bridge, caller_constant_types: {}),
+        # ERB-converted source defines no classes → empty; nothing to disambiguate.
+        defined_class_names: NewCallCollector.collect_defined_class_names(result.value)
       )
       result.value.accept(visitor)
 

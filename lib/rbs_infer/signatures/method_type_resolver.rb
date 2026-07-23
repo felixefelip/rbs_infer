@@ -186,7 +186,8 @@ module RbsInfer::Signatures
           caller_class_name: caller_class_name,
           # Env-aware resolver so constant call-site args resolve to their value
           # type via the loaded RBS env, not a bare name (#46, #56).
-          constant_arg_resolver: @constant_resolver
+          constant_arg_resolver: @constant_resolver,
+          defined_class_names: RbsInfer::Inference::NewCallCollector.collect_defined_class_names(entry.result.value)
         )
         entry.result.value.accept(visitor)
         all_usages.concat(visitor.usages)
@@ -390,7 +391,8 @@ module RbsInfer::Signatures
           caller_class_name: caller_class_name,
           # Env-aware resolver so constant call-site args resolve to their value
           # type via the loaded RBS env, not a bare name (#46, #56).
-          constant_arg_resolver: @constant_resolver
+          constant_arg_resolver: @constant_resolver,
+          defined_class_names: RbsInfer::Inference::NewCallCollector.collect_defined_class_names(entry.result.value)
         )
         entry.result.value.accept(visitor)
 

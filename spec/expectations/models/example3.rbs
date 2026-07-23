@@ -1,5 +1,5 @@
 class Example3
-  def self.run: () -> String
+  def self.run: () -> nil
 end
 
 class Example3
@@ -15,7 +15,7 @@ class Example3
     self.@foo_instance: Foo?
 
     module GeneratedAttributes
-      attr_accessor user: User?
+      attr_accessor user: (User | nil)?
       attr_accessor name: String?
       attr_writer foo_instance: untyped
     end
@@ -23,15 +23,11 @@ class Example3
     include GeneratedAttributes
 
     def self.foo_instance: () -> Example3::Foo
-    def self.user: () -> Example3::User?
-    def self.user=: (User value) -> User
+    def self.user: () -> (Example3::User | nil)?
+    def self.user=: ((User | nil) value) -> (User | nil)
     def self.name: () -> String?
-    def self.name=: (String value) -> String
+    def self.name=: (String? value) -> String?
 
-    def user=: (User value) -> String?
-
-    class AfterUser
-      attr_reader name: String
-    end
+    def user=: ((User | nil) value) -> untyped
   end
 end

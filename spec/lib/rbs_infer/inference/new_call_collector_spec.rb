@@ -19,7 +19,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       target_class: target_class,
       method_return_types: method_return_types,
       local_var_types: local_var_types,
-      constant_arg_resolver: null_constant_resolver
+      constant_arg_resolver: null_constant_resolver,
+      defined_class_names: described_class.collect_defined_class_names(result.value)
     )
     result.value.accept(visitor)
     visitor.usages
@@ -87,7 +88,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
           method_return_types: {},
           local_var_types: {},
           method_type_resolver: resolver,
-          constant_arg_resolver: null_constant_resolver
+          constant_arg_resolver: null_constant_resolver,
+          defined_class_names: described_class.collect_defined_class_names(result.value)
         )
         result.value.accept(visitor)
         expect(visitor.usages.first["record"]).to eq("Record")
@@ -142,7 +144,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         caller_class_name: caller_class_name,
         init_positional_params: init_positional_params,
         self_types_by_method: self_types_by_method,
-        constant_arg_resolver: null_constant_resolver
+        constant_arg_resolver: null_constant_resolver,
+        defined_class_names: described_class.collect_defined_class_names(result.value)
       )
       result.value.accept(visitor)
       visitor.usages
@@ -256,7 +259,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         method_return_types: {},
         local_var_types: {},
         init_positional_params: ["owner"],
-        constant_arg_resolver: null_constant_resolver
+        constant_arg_resolver: null_constant_resolver,
+        defined_class_names: described_class.collect_defined_class_names(result.value)
       )
       result.value.accept(visitor)
       expect(visitor.usages.first["owner"]).to eq("untyped")
@@ -330,7 +334,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         method_return_types: { "caderneta" => "Caderneta & Caderneta::Validated", "v" => "Vacina" },
         local_var_types: {},
         target_methods: { "qtde_por_vacina" => ["vacina"] },
-        constant_arg_resolver: null_constant_resolver
+        constant_arg_resolver: null_constant_resolver,
+        defined_class_names: described_class.collect_defined_class_names(result.value)
       )
       result.value.accept(visitor)
 
@@ -386,7 +391,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
             caller_class_name: "Holder",
             target_methods: { "target_method" => ["arg"] },
             self_types_by_method: { "m" => "Holder & Holder::Validated" },
-            constant_arg_resolver: null_constant_resolver
+            constant_arg_resolver: null_constant_resolver,
+            defined_class_names: described_class.collect_defined_class_names(result.value)
           )
           result.value.accept(visitor)
 
@@ -406,7 +412,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         method_return_types: {},
         local_var_types: local_var_types,
         constant_arg_resolver: null_constant_resolver,
-        target_methods: target_methods
+        target_methods: target_methods,
+        defined_class_names: described_class.collect_defined_class_names(result.value)
       )
       result.value.accept(visitor)
       visitor.method_call_usages
@@ -442,6 +449,57 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         local_var_types: { "other" => "Widget", "assigned" => "Board" }
       )
       expect(usages).to be_empty
+    end
+  end
+
+  describe "same-simple-name classes are not conflated (cross-class leak)" do
+    def collect_method_usages(source, target_class:, target_methods:, local_var_types: {})
+      result = Prism.parse(source)
+      visitor = described_class.new(
+        target_class: target_class,
+        method_return_types: {},
+        local_var_types: local_var_types,
+        constant_arg_resolver: null_constant_resolver,
+        target_methods: target_methods,
+        defined_class_names: described_class.collect_defined_class_names(result.value)
+      )
+      result.value.accept(visitor)
+      visitor.method_call_usages
+    end
+
+    # Two classes share the simple name `Foo` in different namespaces. A bare
+    # `Foo.user = nil` written inside `Example3` is `Example3::Foo` (Ruby
+    # resolves it against the lexical nesting), so it must NOT leak into the
+    # unrelated `Example2::Foo` — the file defines `Example3::Foo`, which is the
+    # sound signal that the spelling is that class, not the same-named target.
+    SAME_NAME_SOURCE = <<~RUBY
+      class Example3
+        class Foo
+          def user=(value); end
+        end
+
+        def self.run
+          Foo.user = nil
+        end
+      end
+    RUBY
+
+    it "does not capture the call for a same-named sibling target" do
+      usages = collect_method_usages(
+        SAME_NAME_SOURCE,
+        target_class: "Example2::Foo",
+        target_methods: { "user=" => ["value"] }
+      )
+      expect(usages["user="]).to be_empty
+    end
+
+    it "still captures the call for the target the spelling actually resolves to" do
+      usages = collect_method_usages(
+        SAME_NAME_SOURCE,
+        target_class: "Example3::Foo",
+        target_methods: { "user=" => ["value"] }
+      )
+      expect(usages["user="]).to eq([{ "value" => "nil" }])
     end
   end
 end
