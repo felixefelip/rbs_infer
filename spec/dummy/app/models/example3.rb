@@ -54,9 +54,11 @@ class Example3
 
 		Foo.user = nil
 
-		# Foo.user.name.upcase # error not method
-		# Foo.foo_instance.user.name.upcase # error not method
-		# Foo.foo_instance.name.upcase # error not method
-		# Foo.name.upcase # error not method
+    Foo.user.name.upcase # error not method
+    Foo.foo_instance.user.name.upcase # error not method
+    Foo.foo_instance.name.upcase # error not method
+    Foo.name.upcase # error not method
+
+		nil
 	end
 end
