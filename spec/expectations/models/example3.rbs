@@ -1,5 +1,9 @@
 class Example3
   def self.run: () -> nil
+  def self.gap_alias_write: () -> String
+  def self.gap_conditional: (untyped cond) -> String
+  def self.gap_callee_mutation: () -> String
+  def self.gap_alias_read: () -> untyped
 end
 
 class Example3
@@ -27,6 +31,7 @@ class Example3
     def self.user=: ((User | nil) value) -> (User | nil)
     def self.name: () -> String?
     def self.name=: (String? value) -> String?
+    def self.clear_user: () -> nil
 
     def user=: ((User | nil) value) -> untyped
   end
