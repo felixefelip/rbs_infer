@@ -115,6 +115,7 @@ module RbsInfer
         def reopen_source(reopen)
           blocks = [module_block(reopen.names)]
           reopen.names.each { |name| blocks.concat(singleton_accessor_defs(name, reopen.overrides)) }
+          blocks.concat(instance_helper_defs(reopen.class_name, reopen.names, reopen.overrides))
           blocks.concat(initialize_def(reopen.defaults))
           blocks.concat(set_with_defs(reopen.names))
 
@@ -153,6 +154,13 @@ module RbsInfer
         # writes it (unifying the pool) AND delegates to the instance so an
         # override runs. Skips the ones the class overrides at the singleton
         # level.
+        #
+        # The delegation goes through `__rbs_infer_instance` (a memoized helper
+        # this generator emits, typed as the concrete subclass) rather than the
+        # framework `instance`, whose gem RBS is `() -> untyped`. That lets the
+        # Steep fork recognize the delegation by the receiver's RETURN TYPE (the
+        # same generic path a `@foo ||= Foo.new` accessor rides) instead of a
+        # hard-coded `instance` name in the checker core.
         def singleton_accessor_defs(name, overrides)
           defs = []
           defs << ["def self.#{name}", "  @#{name}", "end"] unless overrides.include?([true, name])
@@ -160,11 +168,28 @@ module RbsInfer
             defs << [
               "def self.#{name}=(value)",
               "  @#{name} = value",
-              "  instance.#{name} = value",
+              "  __rbs_infer_instance.#{name} = value",
               "end"
             ]
           end
           defs
+        end
+
+        # The memoized singleton-instance helper the singleton setters delegate
+        # through. Modeled as `@x ||= Klass.new` — the same shape Steep infers a
+        # concrete return type for — so `__rbs_infer_instance` types as the
+        # subclass and the delegation is recognized structurally, without the
+        # checker knowing the Rails `instance` name. Only emitted when at least
+        # one setter actually delegates (i.e. isn't overridden at the singleton
+        # level).
+        def instance_helper_defs(class_name, names, overrides)
+          return [] unless names.any? { |name| !overrides.include?([true, "#{name}="]) }
+
+          [[
+            "def self.__rbs_infer_instance",
+            "  @__rbs_infer_instance ||= #{class_name}.new",
+            "end"
+          ]]
         end
 
         def initialize_def(defaults)

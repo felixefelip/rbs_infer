@@ -26,7 +26,7 @@ class Current
 
   def self.user=(value)
     @user = value
-    instance.user = value
+    __rbs_infer_instance.user = value
   end
 
   def self.author_name
@@ -35,7 +35,11 @@ class Current
 
   def self.author_name=(value)
     @author_name = value
-    instance.author_name = value
+    __rbs_infer_instance.author_name = value
+  end
+
+  def self.__rbs_infer_instance
+    @__rbs_infer_instance ||= Current.new
   end
 
   def self.set(user: nil, author_name: nil, &block)
