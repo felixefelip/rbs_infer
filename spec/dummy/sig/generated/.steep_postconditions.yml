@@ -72,6 +72,11 @@ postconditions:
       author_name: "::String"
       user: "((::User & ::User::Validated) | ::User)"
 - class: Current
+  method: __rbs_infer_instance
+  effects:
+    may_write:
+    - "@__rbs_infer_instance"
+- class: Current
   method: author_name=
   unconditional:
     establishes_consts:

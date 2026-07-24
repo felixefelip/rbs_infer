@@ -52,10 +52,35 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator do
     expect(source).to include("def user=(value)")
   end
 
-  it "makes the singleton setter delegate to the instance" do
+  it "makes the singleton setter delegate through the typed __rbs_infer_instance helper" do
     source = source_for("app/models/current.rb" => WITH_OVERRIDE)
     expect(source).to include("def self.user=(value)")
-    expect(source).to include("instance.user = value")
+    # Delegation routes through the memoized helper (typed as the subclass),
+    # NOT the framework `instance` (typed `untyped` by gem RBS).
+    expect(source).to include("__rbs_infer_instance.user = value")
+    expect(source).not_to match(/(?<!__rbs_infer_)instance\.user = value/)
+  end
+
+  it "emits the memoized __rbs_infer_instance helper when a setter delegates" do
+    source = source_for("app/models/current.rb" => WITH_OVERRIDE)
+    # `@x ||= Klass.new` — the shape Steep infers a concrete return type for,
+    # so the delegation is recognized by return type, not by the `instance` name.
+    expect(source).to include("def self.__rbs_infer_instance")
+    expect(source).to include("@__rbs_infer_instance ||= Current.new")
+  end
+
+  it "omits the __rbs_infer_instance helper when no setter delegates" do
+    source = source_for("app/models/current.rb" => <<~RUBY)
+      class Current < ActiveSupport::CurrentAttributes
+        attribute :user
+
+        def self.user=(value)
+          @user = value
+        end
+      end
+    RUBY
+
+    expect(source).not_to include("__rbs_infer_instance")
   end
 
   it "skips singleton accessors the class overrides itself" do
