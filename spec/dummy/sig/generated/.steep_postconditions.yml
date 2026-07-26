@@ -168,6 +168,48 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example6::Foo
+  method: name
+  effects:
+    returns_ivar: "@name"
+- class: Example6::Foo
+  method: name=
+  unconditional:
+    ivars:
+      "@name": "::String"
+    establishes_consts:
+      name: "::String"
+  effects:
+    may_write:
+    - "@name"
+- class: Example7::Age
+  method: value
+  effects:
+    returns_ivar: "@value"
+- class: Example7::Age
+  method: value=
+  unconditional:
+    ivars:
+      "@value": "::Integer"
+    establishes_consts:
+      value: "::Integer"
+  effects:
+    may_write:
+    - "@value"
+- class: Example7::Foo
+  method: name
+  effects:
+    returns_ivar: "@name"
+- class: Example7::Foo
+  method: name=
+  unconditional:
+    ivars:
+      "@name": "::String"
+    establishes_consts:
+      name: "::String"
+  effects:
+    may_write:
+    - "@name"
 - class: ParseXml
   method: initialize
   effects:
@@ -341,6 +383,15 @@ postconditions:
     may_write:
     - "@__rbs_infer__performed"
 - class: PostsController
+  method: render
+  unconditional:
+    ivars:
+      "@__rbs_infer__performed": 'true'
+    self: "::PostsController & ::PostsController::AfterRender"
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+- class: PostsController
   method: set_post
   unconditional:
     ivars:
@@ -492,6 +543,15 @@ postconditions:
     - "@__rbs_infer__performed"
     - "@user"
 - class: Users::AvatarsController
+  method: render
+  unconditional:
+    ivars:
+      "@__rbs_infer__performed": 'true'
+    self: "::Users::AvatarsController & ::Users::AvatarsController::AfterRender"
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+- class: Users::AvatarsController
   method: set_user
   unconditional:
     ivars:
@@ -581,17 +641,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
-- class: ERBPostsNew
-  method: __rbs_infer__body
-  consts:
-    Current.author_name: "::String"
-    Current.user: "(::User & ::User::Validated)"
 - class: ERBPostsShow
-  method: __rbs_infer__body
-  consts:
-    Current.author_name: "::String"
-    Current.user: "(::User & ::User::Validated)"
-- class: ERBUsersAvatarsEdit
   method: __rbs_infer__body
   consts:
     Current.author_name: "::String"

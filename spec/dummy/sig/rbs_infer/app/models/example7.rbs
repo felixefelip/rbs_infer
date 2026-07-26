@@ -1,0 +1,28 @@
+class Example7
+  def run_name: () -> untyped
+  def run_age: () -> untyped
+end
+
+class Example7
+  class Foo
+    self.@name: String?
+
+    def self.name: () -> String?
+    def self.name=: (String value) -> untyped
+  end
+end
+
+class Example7
+  class Age
+    self.@value: Integer?
+
+    def self.value: () -> Integer?
+    def self.value=: (Integer value) -> untyped
+  end
+end
+
+class Example7
+  class Dispatcher
+    def show: (Symbol which) -> untyped
+  end
+end

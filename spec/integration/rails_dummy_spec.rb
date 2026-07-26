@@ -224,6 +224,50 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # Branch-sensitive flow-extraction gap ("peça (a)"): `run` establishes
+  # `Foo.name`, then calls `Bar#greet` from the `else` branch of an `if/else`.
+  # The fork's flow extractor walks only the `then` clause, so the else-branch
+  # call is never visited and `greet` never gets the entry fact — its read is a
+  # baselined error until the extractor descends into every branch. Same shape
+  # as `render :new` in the `else` of `if @post.save` (rbs_infer#104).
+  it "example6" do
+    name = "models/example6"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example6.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
+  # Argument-sensitive-facts gap ("peça (3)"): a shared `Dispatcher#show(which)`
+  # is called with `:name` where `Foo.name` is established and with `:age` where
+  # `Age.value` is established. `show`'s entry facts are the meet over both
+  # sites, so both facts drop and both `case` branches error. Closing it needs
+  # entry facts partitioned by the literal argument — what a single shared
+  # `render`/dispatcher needs to stay precise instead of the whole-app meet.
+  it "example7" do
+    name = "models/example7"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example7.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # Class-instance variables (felixefelip/rbs_infer#86). A `@x` written in a
   # singleton method (`def self.x`, `class << self`) or directly in the class
   # body is a class-instance variable — RBS declares it `self.@x`, a slot

@@ -1,0 +1,18 @@
+class Example6
+  def run: (untyped condition) -> untyped
+end
+
+class Example6
+  class Foo
+    self.@name: String?
+
+    def self.name: () -> String?
+    def self.name=: (String value) -> untyped
+  end
+end
+
+class Example6
+  class Bar
+    def greet: () -> untyped
+  end
+end
