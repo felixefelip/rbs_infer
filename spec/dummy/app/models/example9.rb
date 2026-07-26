@@ -31,22 +31,21 @@ class Example9
     # (`:name` -> `Foo.name`, `:age` -> `Age.value`) — verified directly against
     # the Runner.
     #
-    # The CONSUMER side is where it stops. Partitions are applied in
-    # `TypeInference::CaseWhen`, which only runs for a `case` node; an
+    # The CONSUMER side used to stop here: partitions were applied only in
+    # `TypeInference::CaseWhen`, which runs for a `case` node, and an
     # `if which == :name` test is an ordinary `:send` predicate that nothing
-    # correlates back to the `:name` partition. So both reads are baselined
-    # errors even though the facts needed to type them are sitting in the
-    # sidecar, already computed and correctly partitioned.
+    # correlated back to the `:name` partition. Both reads errored even though
+    # the facts were sitting in the sidecar, already computed and partitioned.
     #
-    # Closing it means recognizing an equality test against a literal on a
-    # method parameter as the same correlation `when :name` expresses, and
-    # merging that partition into the truthy branch's env — the `if` analogue of
-    # what CaseWhen.apply_argument_facts already does.
+    # Both shapes now go through `TypeInference::ArgumentFacts`: an equality test
+    # of a parameter against a literal selects the same partition `when :name`
+    # selects, merged into the TRUTHY branch only ("not this literal" pins the
+    # argument to nothing). `elsif` is a nested `if`, so it rides the same path.
     def show(which)
       if which == :name
-        Example9::Foo.name.upcase # should: "JOHN DOE"; actual: error (consumer gap)
+        Example9::Foo.name.upcase # => "JOHN DOE" (:name partition)
       elsif which == :age
-        Example9::Age.value.abs # should: 42;         actual: error (consumer gap)
+        Example9::Age.value.abs # => 42         (:age partition)
       end
     end
   end
