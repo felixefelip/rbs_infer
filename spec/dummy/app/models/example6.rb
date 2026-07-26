@@ -13,29 +13,31 @@ class Example6
     # Reached only from the `else` branch of `run`, where `Foo.name` is already
     # established — so a human reading the source sees this read as non-nil.
     def greet
-      Example6::Foo.name.upcase # should: "JOHN DOE"; actual: error (else-branch gap)
+      Example6::Foo.name.upcase # => "JOHN DOE" (else-branch call now carries the fact)
     end
   end
 
-  # BRANCH-SENSITIVE FLOW EXTRACTION gap ("peça (a)"). `Foo.name` is established
+  # BRANCH-SENSITIVE FLOW EXTRACTION ("peça (a)"). `Foo.name` is established
   # before the `if`, so it holds in BOTH branches; the `else` calls `greet` with
-  # a non-nil `Foo.name`. But the fork's flow extractor walks only ONE clause of
-  # a full `if/else` — `MethodEntryInferrer#call_target` returns the `then`
-  # clause when it is non-empty — so the `else`-branch call `Bar.new.greet` is
-  # never visited and `greet` never receives the entry fact. Its read is a
-  # baselined error until the extractor descends into every branch (recording
-  # each call with the branch-sensitive type `@typing` already computes).
+  # a non-nil `Foo.name`. The fork's flow extractor used to walk only ONE clause
+  # of a full `if/else` — `MethodEntryInferrer#call_target` returned the `then`
+  # clause when non-empty — so the `else`-branch call `Bar.new.greet` was never
+  # visited and `greet` never received the entry fact. Now the extractor descends
+  # into EVERY branch of a full `if/else` (and every `case/when`), recording each
+  # call with the branch-sensitive type `@typing` already computes, so `greet`
+  # narrows here just as the `then`-branch read does.
   #
   # This is the exact shape of `render :new` sitting in the `else` of
   # `if @post.save` (felixefelip/rbs_infer#104): the per-controller `render`
-  # override's dispatch stays inert until this same extraction lands.
+  # override's dispatch was inert until this extraction landed — now both the
+  # `then` and `else` render targets propagate their entry facts to the view.
   def run(condition)
     Example6::Foo.name = 'John Doe'
 
     if condition
-      Example6::Foo.name.upcase # then branch: narrows within `run` today
+      Example6::Foo.name.upcase # then branch: narrows within `run`
     else
-      Example6::Bar.new.greet # else branch: NOT walked -> greet errors (the gap)
+      Example6::Bar.new.greet # else branch: now walked -> greet carries the fact
     end
   end
 end
