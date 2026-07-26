@@ -532,6 +532,31 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+- class: ERBPostsIndex
+  method: __rbs_infer__body
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: ERBPostsNew
+  method: __rbs_infer__body
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: ERBPostsShow
+  method: __rbs_infer__body
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: ERBUsersAvatarsEdit
+  method: __rbs_infer__body
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: ERBUsersShow
+  method: __rbs_infer__body
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
 - class: Example4
   method: run_foo_name
   consts:
