@@ -3,6 +3,7 @@
 class ERBPostsIndex
   @posts: Post::ActiveRecord_Relation
   def params: () -> ActionController::Parameters
+  def __rbs_infer__body: () -> void
   include PostsHelper
   include ActionViewContext
 end

@@ -87,6 +87,13 @@ module RbsInfer
 
           lines << "  def params: () -> ActionController::Parameters"
 
+          # The template-as-method identity (Steep `@type self_method:`). At
+          # runtime ActionView compiles the template into a method; the
+          # controller-runtime "renders" the view by calling this, so guarded
+          # actions' method-entry facts (e.g. a populated `Current`) narrow reads
+          # in the view body (felixefelip/steep#85).
+          lines << "  def __rbs_infer__body: () -> void"
+
           helpers.each do |helper|
             lines << "  include #{helper}"
           end

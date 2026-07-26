@@ -2,6 +2,7 @@
 
 require "active_support/core_ext/string/inflections"
 require_relative "callback_chain_scanner"
+require_relative "../erb_convention_generator/view_path_naming"
 
 module RbsInfer
   module Extensions
@@ -64,8 +65,12 @@ module RbsInfer
             # Regenerated on every run; do not edit.
           RUBY
 
-          def initialize(scanner:)
+          # app_dir: used to check whether an action's convention view template
+          # exists (to emit the view render site). Required — a nil default would
+          # silently skip every view render site.
+          def initialize(scanner:, app_dir:)
             @scanner = scanner
+            @app_dir = app_dir
           end
 
           # => [FileEntry] (framework reopen first, then one .rb per controller
@@ -175,9 +180,41 @@ module RbsInfer
               link_lines(callback) + ["return if #{HALTED}", ""]
             end
 
-            body = (lines + [action]).map { |line| line.empty? ? "" : "    #{line}" }
+            body = (lines + [action] + view_render_lines(class_name, action))
+                     .map { |line| line.empty? ? "" : "    #{line}" }
 
             ["  def __rbs_infer__run_#{action}", *body, "  end"].join("\n") + "\n"
+          end
+
+          # After the action, model Rails' implicit convention render: unless the
+          # action already responded (`redirect_to`/explicit `render`/`head` set
+          # `performed?`), it renders `action`'s view. Calling the view's
+          # compiled-method body (`__rbs_infer__body`, felixefelip/steep#85) at
+          # this point — where the guard chain's facts hold — lets those facts
+          # narrow reads in the view. The `return if performed?` before it makes
+          # the redirect / explicit-render case a no-op automatically. Empty when
+          # the action has no convention template.
+          def view_render_lines(class_name, action)
+            erb_class = convention_view_class(class_name, action) or return []
+            ["", "return if #{HALTED}", "", "#{erb_class}.new.__rbs_infer__body"]
+          end
+
+          # The ERB class of `action`'s convention template, or nil when none
+          # exists. `PostsController#show` → `posts/show.html.erb` → `ERBPostsShow`.
+          def convention_view_class(class_name, action)
+            view_dir = class_name.sub(/Controller\z/, "").underscore
+            return nil if view_dir.empty?
+
+            fmt = %w[html turbo_stream].find do |f|
+              File.exist?(File.join(@app_dir, "app/views", view_dir, "#{action}.#{f}.erb"))
+            end
+            return nil unless fmt
+
+            view_path_naming.erb_class_name("#{view_dir}/#{action}.#{fmt}.erb")
+          end
+
+          def view_path_naming
+            @view_path_naming ||= Object.new.extend(ErbConventionGenerator::ViewPathNaming)
           end
 
           # A handler link is a self-send; a block link is the block's body

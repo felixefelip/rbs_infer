@@ -3,5 +3,6 @@
 class ERBPartialPostsComment
   attr_reader comment: Comment & Comment::Validated
   def params: () -> ActionController::Parameters
+  def __rbs_infer__body: () -> void
   include ActionViewContext
 end

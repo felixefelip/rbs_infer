@@ -3,5 +3,6 @@
 class ERBPartialPostsSummary
   attr_reader post: (Post & Post::Validated)
   def params: () -> ActionController::Parameters
+  def __rbs_infer__body: () -> void
   include ActionViewContext
 end

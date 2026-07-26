@@ -10,12 +10,14 @@ class PostsController
     authenticate_user
     return if performed?
 
-    current_user.full_name
-
     log_user_author_name if current_user_present?
     return if performed?
 
     index
+
+    return if performed?
+
+    ERBPostsIndex.new.__rbs_infer__body
   end
 
   def __rbs_infer__run_show
@@ -29,6 +31,10 @@ class PostsController
     return if performed?
 
     show
+
+    return if performed?
+
+    ERBPostsShow.new.__rbs_infer__body
   end
 
   def __rbs_infer__run_new
@@ -39,6 +45,10 @@ class PostsController
     return if performed?
 
     new
+
+    return if performed?
+
+    ERBPostsNew.new.__rbs_infer__body
   end
 
   def __rbs_infer__run_create

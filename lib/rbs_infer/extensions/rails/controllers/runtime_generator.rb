@@ -33,7 +33,7 @@ module RbsInfer
           # controller with actions). Public so the CLI/specs can inspect the
           # pseudo-code without touching disk.
           def build
-            PseudoCodeBuilder.new(scanner: CallbackChainScanner.new(app_dir: @app_dir)).build
+            PseudoCodeBuilder.new(scanner: CallbackChainScanner.new(app_dir: @app_dir), app_dir: @app_dir).build
           end
 
           # Writes the sidecar directory (one .rb/.rbs pair per controller, plus
