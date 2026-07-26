@@ -925,6 +925,18 @@ argument_entry_facts:
   pattern: ":name"
   consts:
     Example7::Foo.name: "::String"
+- class: Example8
+  method: show
+  param: which
+  pattern: ":age"
+  ivars:
+    "@value": "::Integer"
+- class: Example8
+  method: show
+  param: which
+  pattern: ":name"
+  ivars:
+    "@name": "::String"
 - class: Example9::Dispatcher
   method: show
   param: which
