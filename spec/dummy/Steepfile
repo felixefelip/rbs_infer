@@ -45,6 +45,14 @@ target :app do
   # rbs_infer's value here is the GENERATED RBS (felixefelip/rbs_infer#38),
   # validated by the snapshot test; the raw source is not type-checked.
   ignore "lib/rails_ext/**/*.rb"
+  # View-runtime pseudo-code (felixefelip/rbs_infer, ActionView runtime): the
+  # classes it defines are ALSO declared by the older `ErbConventionGenerator`
+  # under sig/rbs_infer_erb/, and the two disagree by construction — the old RBS
+  # has no `initialize` and types `render` as `String`, while the pseudo-code
+  # takes keyword locals and returns the partial it constructs. Both cannot be in
+  # scope at once, so the new files are held out until the switch retires the old
+  # generator; deleting this line is that switch.
+  ignore "sig/generated/steep_actionview_runtime/**/*.rb"
   signature "sig"
   signature "app"
   signature "lib"
