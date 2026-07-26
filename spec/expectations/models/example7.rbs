@@ -1,6 +1,6 @@
 class Example7
-  def run_name: () -> untyped
-  def run_age: () -> untyped
+  def run_name: () -> (String | Integer | nil)
+  def run_age: () -> (String | Integer | nil)
 end
 
 class Example7
@@ -23,6 +23,6 @@ end
 
 class Example7
   class Dispatcher
-    def show: (Symbol which) -> untyped
+    def show: (Symbol which) -> (String | Integer | nil)
   end
 end

@@ -27,21 +27,23 @@ class Example7
     # a human sees each read as non-nil.
     def show(which)
       case which
-      when :name then Example7::Foo.name.upcase # should: "JOHN DOE"; actual: error (meet gap)
-      when :age  then Example7::Age.value.abs   # should: 42;         actual: error (meet gap)
+      when :name then Example7::Foo.name.upcase # => "JOHN DOE" (:name partition)
+      when :age  then Example7::Age.value.abs   # => 42         (:age partition)
       end
     end
   end
 
-  # ARGUMENT-SENSITIVE FACTS gap ("peça (3)"). `show`'s entry facts are the meet
-  # over its call sites: `run_name` establishes `Foo.name`, `run_age`
+  # ARGUMENT-SENSITIVE FACTS ("peça (3)"). `show`'s WHOLE-METHOD entry facts are
+  # the meet over its call sites: `run_name` establishes `Foo.name`, `run_age`
   # establishes `Age.value`. Neither fact holds at BOTH sites, so the meet drops
-  # both — and inside `show` the `:name` and `:age` branches see nothing, so
-  # both reads error. Closing this needs entry facts partitioned by the literal
-  # argument: the `when :name` branch seeded from only the callers that passed
-  # `:name` (which establish `Foo.name`), the `when :age` branch from only the
-  # `:age` callers. This is what a single shared `render`/dispatcher needs to
-  # stay precise instead of collapsing to the whole-app meet.
+  # both — reading either const outside the `case` is still an error.
+  #
+  # The fork now also records entry facts PARTITIONED by the literal argument:
+  # the `:name` partition carries only what the callers passing `:name` proved
+  # (`Foo.name`), the `:age` partition only `Age.value`. Because a `when :name`
+  # branch is reachable only for those callers, the partition narrows the read
+  # inside that branch — and only there. This is what lets a single shared
+  # `render`/dispatcher stay precise instead of collapsing to the whole-app meet.
   def run_name
     Example7::Foo.name = 'John Doe'
     Example7::Dispatcher.new.show(:name)

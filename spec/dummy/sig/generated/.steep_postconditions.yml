@@ -866,3 +866,16 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+argument_entry_facts:
+- class: Example7::Dispatcher
+  method: show
+  param: which
+  pattern: ":age"
+  consts:
+    Example7::Age.value: "::Integer"
+- class: Example7::Dispatcher
+  method: show
+  param: which
+  pattern: ":name"
+  consts:
+    Example7::Foo.name: "::String"
