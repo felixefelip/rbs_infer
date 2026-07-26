@@ -341,6 +341,270 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
     end
   end
 
+  describe "the render override" do
+    # The stripped lines of the per-controller `render` override, or nil when
+    # the controller has none.
+    def render_override(result, filename)
+      source = source_of(result, filename) or return nil
+      body = source[/^  def render\(\*args\)\n(.*?)^  end$/m, 1] or return nil
+
+      body.lines.map(&:strip).reject(&:empty?)
+    end
+
+    # An action that renders a non-convention view (`create` failing to
+    # `render :new`) is modelled as a `render` that marks the shared halt marker
+    # and dispatches the view symbol to that view's compiled body, so the
+    # render's call-site facts reach the rendered view.
+    it "marks the halt and dispatches an explicit `render :view` to the view's body" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def create
+              render :new
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "<%= @post %>"
+      )
+
+      expect(render_override(result, "posts_controller.rb")).to eq(
+        [
+          "@__rbs_infer__performed = true",
+          "case args.first",
+          "when :new then ERBPostsNew.new.__rbs_infer__body",
+          "end",
+          "true",
+        ]
+      )
+    end
+
+    # The override marks the SAME halt marker the framework `render` sets, so
+    # `performed?` reads it back regardless of which render ran.
+    it "marks the same halt marker as the framework render" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def create
+              render :new
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "x"
+      )
+
+      framework = source_of(result, "action_controller_base.rb")
+      override = render_override(result, "posts_controller.rb")
+
+      expect(override).to include("@__rbs_infer__performed = true")
+      expect(framework).to include("@__rbs_infer__performed = true")
+    end
+
+    # The whole reason for reusing the real render call site: `render :new`
+    # sits in the `else` of `if @post.save`, where `@post` is the failed
+    # (non-`Validated`) record — the fact we want to carry into the view.
+    it "finds a `render :view` nested inside a branch" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def create
+              if @post.save
+                redirect_to @post
+              else
+                render :new
+              end
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "x"
+      )
+
+      expect(render_override(result, "posts_controller.rb")).to include(
+        "when :new then ERBPostsNew.new.__rbs_infer__body"
+      )
+    end
+
+    it "is public — declared before `private`" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def create
+              render :new
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "x"
+      )
+
+      source = source_of(result, "posts_controller.rb")
+      expect(source.index("def render(*args)")).to be < source.index("private")
+    end
+
+    it "de-duplicates and sorts the view symbols" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def create
+              render :new
+            end
+
+            def duplicate
+              render :new
+            end
+
+            def update
+              render :edit
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "x",
+        "app/views/posts/edit.html.erb" => "x"
+      )
+
+      whens = render_override(result, "posts_controller.rb").grep(/\Awhen/)
+      expect(whens).to eq(
+        [
+          "when :edit then ERBPostsEdit.new.__rbs_infer__body",
+          "when :new then ERBPostsNew.new.__rbs_infer__body",
+        ]
+      )
+    end
+
+    it "emits a `when` only for a view whose template exists" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def create
+              render :new
+            end
+
+            def update
+              render :edit
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "x"
+      )
+
+      override = render_override(result, "posts_controller.rb")
+      expect(override).to include("when :new then ERBPostsNew.new.__rbs_infer__body")
+      expect(override.join("\n")).not_to include(":edit")
+    end
+
+    it "omits the override when nothing is explicitly rendered" do
+      result = build("app/controllers/posts_controller.rb" => <<~RUBY)
+        class PostsController < ActionController::Base
+          def show; end
+        end
+      RUBY
+
+      expect(render_override(result, "posts_controller.rb")).to be_nil
+    end
+
+    it "omits the override when the rendered view has no template" do
+      result = build("app/controllers/posts_controller.rb" => <<~RUBY)
+        class PostsController < ActionController::Base
+          def create
+            render :new
+          end
+        end
+      RUBY
+
+      expect(render_override(result, "posts_controller.rb")).to be_nil
+    end
+
+    # Cross-controller render: `UsersController` renders another controller's
+    # view by absolute path. The dispatch stays on THIS controller (scoped
+    # meet), keyed by the string exactly as written, resolved by absolute path.
+    it "dispatches a foreign `render \"posts/new\"` by absolute path" do
+      result = build(
+        "app/controllers/users_controller.rb" => <<~RUBY,
+          class UsersController < ActionController::Base
+            def create
+              render "posts/new"
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "x"
+      )
+
+      expect(render_override(result, "users_controller.rb")).to include(
+        'when "posts/new" then ERBPostsNew.new.__rbs_infer__body'
+      )
+    end
+
+    it "treats a bare-string `render \"new\"` as controller-relative" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def create
+              render "new"
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "x"
+      )
+
+      expect(render_override(result, "posts_controller.rb")).to include(
+        'when "new" then ERBPostsNew.new.__rbs_infer__body'
+      )
+    end
+
+    it "omits a foreign render whose template does not exist" do
+      result = build("app/controllers/users_controller.rb" => <<~RUBY)
+        class UsersController < ActionController::Base
+          def create
+            render "posts/nope"
+          end
+        end
+      RUBY
+
+      expect(render_override(result, "users_controller.rb")).to be_nil
+    end
+
+    it "resolves a namespaced controller's view class" do
+      result = build(
+        "app/controllers/users/avatars_controller.rb" => <<~RUBY,
+          class Users::AvatarsController < ActionController::Base
+            def update
+              render :edit
+            end
+          end
+        RUBY
+        "app/views/users/avatars/edit.html.erb" => "x"
+      )
+
+      expect(render_override(result, "users_avatars_controller.rb")).to include(
+        "when :edit then ERBUsersAvatarsEdit.new.__rbs_infer__body"
+      )
+    end
+  end
+
+  # Snapshot of the generated pseudo-code against the real dummy app, mirroring
+  # the AR- and Current-runtime snapshots: a change in the emitted pseudo-code
+  # shows up as a reviewable diff, and a failure points at the right layer
+  # (reopen changed → generator bug; identical reopen with changed RBS →
+  # inference-pipeline bug).
+  #   Regenerate with: UPDATE_EXPECTATIONS=1 bundle exec rspec <this file>
+  describe "dummy snapshot" do
+    let(:expectations) { Pathname(DUMMY_APP_ROOT).dirname.join("expectations/steep_controller_runtime") }
+
+    it "matches the expected pseudo-code for every controller" do
+      files = described_class.new(app_dir: DUMMY_APP_ROOT).build
+
+      if ENV["UPDATE_EXPECTATIONS"]
+        expectations.rmtree if expectations.exist?
+        expectations.mkpath
+        files.each { |f| expectations.join(f.filename).write(f.source) }
+      end
+
+      aggregate_failures do
+        files.each { |f| expect(f.source).to eq(expectations.join(f.filename).read) }
+        # no stale/extra expectation files
+        expect(expectations.children.map { |p| p.basename.to_s }.sort).to eq(files.map(&:filename).sort)
+      end
+    end
+  end
+
   describe "#generate" do
     it "writes the sidecar and removes a stale one" do
       in_app("app/controllers/posts_controller.rb" => "class PostsController < ActionController::Base\n  def show; end\nend\n") do |dir|

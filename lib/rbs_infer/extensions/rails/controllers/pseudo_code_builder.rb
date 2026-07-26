@@ -22,7 +22,10 @@ module RbsInfer
         #   * one CONTROLLER reopen per controller — a private
         #     `__rbs_infer__run_<action>` per action, holding that action's
         #     effective before_action chain inlined, each link followed by the
-        #     halt check, and the action call last.
+        #     halt check, and the action call last; plus (when the controller has
+        #     explicit `render :view` calls) a public `render` override that
+        #     marks the shared halt marker and dispatches the view symbol to that
+        #     view's compiled body.
         #
         # No `.rbs` is emitted: the RBS for these bodies is the analyzer's job
         # (`rbs_infer sig/ --output`), exactly as for any other source. Emitting
@@ -57,6 +60,13 @@ module RbsInfer
           # runtime terminator, not an approximation of it.
           HALTED = "performed?"
           UNKNOWN_CONDITION_METHOD = "__rbs_infer__unknown_condition?"
+
+          # The tool-owned, `bool`-typed ivar that records the halt (see
+          # `framework_files`). A single constant so the framework `render`/
+          # `redirect_to`/`head`/`performed?` AND the per-controller `render`
+          # override all mark/read the SAME marker — the halt semantics have one
+          # source, even though (deliberately) modelled in more than one body.
+          PERFORMED_IVAR = "@__rbs_infer__performed"
 
           HEADER = <<~RUBY
             # frozen_string_literal: true
@@ -116,22 +126,22 @@ module RbsInfer
               module ActionController
                 class Base
                   def redirect_to(*args)
-                    @__rbs_infer__performed = true
+                    #{PERFORMED_IVAR} = true
                     true
                   end
 
                   def render(*args)
-                    @__rbs_infer__performed = true
+                    #{PERFORMED_IVAR} = true
                     true
                   end
 
                   def head(*args)
-                    @__rbs_infer__performed = true
+                    #{PERFORMED_IVAR} = true
                     true
                   end
 
                   def #{HALTED}
-                    @__rbs_infer__performed
+                    #{PERFORMED_IVAR}
                   end
 
                   # Stands for a callback condition we cannot name (a proc taking
@@ -163,14 +173,98 @@ module RbsInfer
           def controller_source(class_name, actions)
             runners = actions.map { |action| runner_method(class_name, action) }
 
+            members = []
+            members << render_override(class_name)&.chomp
+            members << "  private\n\n#{runners.join("\n").chomp}"
+            members.compact!
+
             <<~RUBY
               #{HEADER}
               class #{class_name}
-                private
-
-              #{runners.join("\n").chomp}
+              #{members.join("\n\n")}
               end
             RUBY
+          end
+
+          # A per-controller override of `render` modelling an explicit
+          # `render :view` (e.g. `create` falling through to `render :new` on a
+          # validation failure). It marks the response performed via the SHARED
+          # halt marker (`PERFORMED_IVAR`, same one the framework `render` sets),
+          # and dispatches on the rendered target to that view's compiled body
+          # (`__rbs_infer__body`, felixefelip/steep#85) — so the render's own
+          # call-site facts (here, `@post` after a failed `save`) narrow reads in
+          # the rendered view.
+          #
+          # The dispatch lives PER CONTROLLER, not on `ActionController::Base`,
+          # on purpose: a view's entry facts are the meet over its call sites, so
+          # a single shared dispatch on `Base` would meet EVERY render in the app
+          # into every view — the global-collapse we avoid. Each override carries
+          # only the targets its own controller renders (its symbols plus any
+          # foreign `render "posts/new"` paths), keeping the meet scoped.
+          #
+          # It cannot `super` into the framework `render`: `super` binds to the
+          # REAL Rails `ActionController::Base#render` (returns `String`, and
+          # would not set our ivar), so the halt is re-modelled inline against
+          # the shared marker instead — one source for the marker NAME, even
+          # though two bodies write it.
+          #
+          # Emitted PUBLIC (before `private`), matching the framework `render` it
+          # overrides. Only views whose template exists get a `when`, and the
+          # whole method is omitted when none do — the inherited framework
+          # `render` then applies unchanged.
+          #
+          # NOTE: fully consuming this needs the fork to record the render's
+          # facts from inside the branch it sits in — a full `if/else` (where the
+          # `render :new` lives) and this `case/when` — not just a modifier `if`.
+          # That branch-sensitive flow extraction is tracked separately; the
+          # pseudo-code is correct regardless — without it the dispatch is inert
+          # rather than wrong.
+          def render_override(class_name)
+            branches = @scanner.render_targets_for(class_name).filter_map do |form, value|
+              erb_class, key = resolve_render_target(class_name, form, value)
+              next unless erb_class
+
+              "    when #{key} then #{erb_class}.new.__rbs_infer__body"
+            end
+            return nil if branches.empty?
+
+            [
+              "  def render(*args)",
+              "    #{PERFORMED_IVAR} = true",
+              "    case args.first",
+              *branches,
+              "    end",
+              "    true",
+              "  end"
+            ].join("\n") + "\n"
+          end
+
+          # `[erb_class, case_key]` for a render target, or `[nil, _]` when no
+          # template resolves. A symbol (`render :new`) and a bare string
+          # (`render "new"`) are controller-relative; a `"dir/view"` string
+          # (`render "posts/new"`) is an absolute path that may name another
+          # controller's view. The `case_key` is the literal the `when` must
+          # match — a symbol for `:new`, a quoted string for `"posts/new"` — so
+          # it dispatches on the argument exactly as written at the call site.
+          def resolve_render_target(class_name, form, value)
+            if form == :symbol
+              [convention_view_class(class_name, value), ":#{value}"]
+            elsif value.include?("/")
+              [absolute_view_class(value), value.inspect]
+            else
+              [convention_view_class(class_name, value), value.inspect]
+            end
+          end
+
+          # The ERB class of an absolute view path (`"posts/new"` =>
+          # `ERBPostsNew`), or nil when no template exists.
+          def absolute_view_class(path)
+            fmt = %w[html turbo_stream].find do |f|
+              File.exist?(File.join(@app_dir, "app/views", "#{path}.#{f}.erb"))
+            end
+            return nil unless fmt
+
+            view_path_naming.erb_class_name("#{path}.#{fmt}.erb")
           end
 
           # The request flow of one action: every before_action link that runs

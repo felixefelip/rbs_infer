@@ -1,5 +1,9 @@
 module Users
   class AvatarsController
+    @__rbs_infer__performed: true?
+
+    def render: (*untyped) -> bool
+
     private
 
     def __rbs_infer__run_edit: () -> void
