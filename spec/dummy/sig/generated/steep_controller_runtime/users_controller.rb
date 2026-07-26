@@ -24,5 +24,9 @@ class UsersController
     return if performed?
 
     show
+
+    return if performed?
+
+    ERBUsersShow.new.__rbs_infer__body
   end
 end

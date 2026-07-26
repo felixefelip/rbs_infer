@@ -4,6 +4,7 @@ class ERBPostsShow
   @comments: Comment::ActiveRecord_Relation
   @post: (Post & Post::Validated)
   def params: () -> ActionController::Parameters
+  def __rbs_infer__body: () -> void
   include PostsHelper
   include ActionViewContext
 end

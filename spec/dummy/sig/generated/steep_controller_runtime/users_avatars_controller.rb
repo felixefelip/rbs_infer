@@ -17,6 +17,10 @@ class Users::AvatarsController
     return if performed?
 
     edit
+
+    return if performed?
+
+    ERBUsersAvatarsEdit.new.__rbs_infer__body
   end
 
   def __rbs_infer__run_update
