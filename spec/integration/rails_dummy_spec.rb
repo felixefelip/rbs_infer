@@ -268,6 +268,34 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # IVAR-ARGUMENT RESOLUTION gap (blocks felixefelip/rbs_infer#109). Pins the
+  # CURRENT, wrong output: `Example11::Partial#initialize` infers
+  # `(post: untyped)` although the call site passes `@post`, whose type the
+  # generated RBS of `Example11::View` declares one class above
+  # (`@post: Example11::Post`).
+  #
+  # `NewCallCollector#collect_class_ivar_types` records an ivar only when it is
+  # assigned from a CallNode, so `@post = post` (from a parameter) is skipped.
+  # When that is fixed this expectation flips to `Example11::Post` — which is the
+  # point of pinning it: the diff IS the fix landing.
+  #
+  # Not baselined in steep: `untyped` absorbs every call, so nothing errors there.
+  it "example11" do
+    name = "models/example11"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example11.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # Class-instance variables (felixefelip/rbs_infer#86). A `@x` written in a
   # singleton method (`def self.x`, `class << self`) or directly in the class
   # body is a class-instance variable — RBS declares it `self.@x`, a slot

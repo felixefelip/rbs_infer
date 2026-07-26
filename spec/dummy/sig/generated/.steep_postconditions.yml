@@ -106,6 +106,20 @@ postconditions:
   effects:
     may_write:
     - "@user"
+- class: ERBPartialsPostsForm
+  method: initialize
+  effects:
+    may_write:
+    - "@post"
+- class: ERBPostsEdit
+  method: initialize
+  unconditional:
+    ivars:
+      "@post": untyped
+    self: "::ERBPostsEdit & ::ERBPostsEdit::AfterInitialize"
+  effects:
+    may_write:
+    - "@post"
 - class: EmailNotifier
   method: initialize
   effects:
@@ -126,6 +140,16 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example11::Partial
+  method: initialize
+  effects:
+    may_write:
+    - "@post"
+- class: Example11::View
+  method: initialize
+  effects:
+    may_write:
+    - "@post"
 - class: Example2::Foo
   method: user=
   unconditional:
