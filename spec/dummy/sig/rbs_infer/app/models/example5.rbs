@@ -1,0 +1,19 @@
+class Example5
+  def run: () -> untyped
+end
+
+class Example5
+  class Foo
+    self.@name: String?
+
+    def self.name: () -> String?
+    def self.name=: (String value) -> untyped
+  end
+end
+
+class Example5
+  class Bar
+    def foo_name: () -> untyped
+    def deep_foo_name: () -> untyped
+  end
+end

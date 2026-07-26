@@ -202,6 +202,28 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # Second-hop transitive gap: `run` establishes `Foo.name` then calls
+  # `Bar#foo_name` (1st hop — narrows, like example4), which calls
+  # `Bar#deep_foo_name` (2nd hop — should narrow but doesn't, since the
+  # method-entry fact isn't seeded into `foo_name`'s body to reach its callee).
+  # The `deep_foo_name` read is a baselined error until a call-graph fixpoint
+  # lands (the piece that also unlocks view -> partial rendering).
+  it "example5" do
+    name = "models/example5"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example5.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # Class-instance variables (felixefelip/rbs_infer#86). A `@x` written in a
   # singleton method (`def self.x`, `class << self`) or directly in the class
   # body is a class-instance variable — RBS declares it `self.@x`, a slot
