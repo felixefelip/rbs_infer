@@ -210,6 +210,24 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example8
+  method: run_age
+  unconditional:
+    ivars:
+      "@value": "::Integer"
+    self: "::Example8 & ::Example8::AfterRunAge"
+  effects:
+    may_write:
+    - "@value"
+- class: Example8
+  method: run_name
+  unconditional:
+    ivars:
+      "@name": "::String"
+    self: "::Example8 & ::Example8::AfterRunName"
+  effects:
+    may_write:
+    - "@name"
 - class: ParseXml
   method: initialize
   effects:

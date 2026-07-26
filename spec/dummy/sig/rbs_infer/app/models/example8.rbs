@@ -1,0 +1,8 @@
+class Example8
+  @name: String?
+  @value: Integer?
+
+  def run_name: () -> untyped
+  def run_age: () -> untyped
+  def show: (Symbol which) -> untyped
+end
