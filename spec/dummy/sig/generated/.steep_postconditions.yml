@@ -154,6 +154,20 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example5::Foo
+  method: name
+  effects:
+    returns_ivar: "@name"
+- class: Example5::Foo
+  method: name=
+  unconditional:
+    ivars:
+      "@name": "::String"
+    establishes_consts:
+      name: "::String"
+  effects:
+    may_write:
+    - "@name"
 - class: ParseXml
   method: initialize
   effects:
@@ -532,6 +546,36 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+- class: Assignment
+  method: log_post_user_name
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Assignment
+  method: run_before_validation_callbacks
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Assignment
+  method: run_belongs_to_default_callbacks
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Assignment
+  method: run_belongs_to_default_owner
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Assignment
+  method: save
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Current
+  method: author_name
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
 - class: ERBPostsIndex
   method: __rbs_infer__body
   consts:
@@ -565,6 +609,59 @@ method_entry_facts:
   method: foo_name
   consts:
     Example4::Foo.name: "::String"
+- class: Example5::Bar
+  method: deep_foo_name
+  consts:
+    Example5::Foo.name: "::String"
+- class: Example5::Bar
+  method: foo_name
+  consts:
+    Example5::Foo.name: "::String"
+- class: Example5::Foo
+  method: name
+  consts:
+    Example5::Foo.name: "::String"
+- class: FilterConfiguration
+  method: configure_filter
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: FilterConfiguration
+  method: sanitize_filter
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Post
+  method: assignments
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Post_Assignment::ActiveRecord_Associations_CollectionProxy
+  method: build
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Post_Assignment::ActiveRecord_Associations_CollectionProxy
+  method: create
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Post_Assignment::ActiveRecord_Associations_CollectionProxy
+  method: create!
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Posts::AssignmentsController
+  method: assignment_params
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
 - class: Posts::AssignmentsController
   method: create
   self_methods:
@@ -608,6 +705,13 @@ method_entry_facts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
 - class: PostsController
+  method: post_params
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
   method: publish
   self_methods:
     current_user: "(::User & ::User::Validated)"
@@ -632,6 +736,11 @@ method_entry_facts:
   method: update
   self_methods:
     current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: User
+  method: recent_posts
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
