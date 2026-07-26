@@ -579,6 +579,32 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
     end
   end
 
+  # Snapshot of the generated pseudo-code against the real dummy app, mirroring
+  # the AR- and Current-runtime snapshots: a change in the emitted pseudo-code
+  # shows up as a reviewable diff, and a failure points at the right layer
+  # (reopen changed → generator bug; identical reopen with changed RBS →
+  # inference-pipeline bug).
+  #   Regenerate with: UPDATE_EXPECTATIONS=1 bundle exec rspec <this file>
+  describe "dummy snapshot" do
+    let(:expectations) { Pathname(DUMMY_APP_ROOT).dirname.join("expectations/steep_controller_runtime") }
+
+    it "matches the expected pseudo-code for every controller" do
+      files = described_class.new(app_dir: DUMMY_APP_ROOT).build
+
+      if ENV["UPDATE_EXPECTATIONS"]
+        expectations.rmtree if expectations.exist?
+        expectations.mkpath
+        files.each { |f| expectations.join(f.filename).write(f.source) }
+      end
+
+      aggregate_failures do
+        files.each { |f| expect(f.source).to eq(expectations.join(f.filename).read) }
+        # no stale/extra expectation files
+        expect(expectations.children.map { |p| p.basename.to_s }.sort).to eq(files.map(&:filename).sort)
+      end
+    end
+  end
+
   describe "#generate" do
     it "writes the sidecar and removes a stale one" do
       in_app("app/controllers/posts_controller.rb" => "class PostsController < ActionController::Base\n  def show; end\nend\n") do |dir|
