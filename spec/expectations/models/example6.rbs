@@ -1,5 +1,5 @@
 class Example6
-  def run: (untyped condition) -> untyped
+  def run: (untyped condition) -> String
 end
 
 class Example6
@@ -13,6 +13,6 @@ end
 
 class Example6
   class Bar
-    def greet: () -> untyped
+    def greet: () -> String
   end
 end

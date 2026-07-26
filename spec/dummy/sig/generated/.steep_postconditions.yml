@@ -636,12 +636,27 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+- class: ERBPostsEdit
+  method: __rbs_infer__body
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
 - class: ERBPostsIndex
   method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+- class: ERBPostsNew
+  method: __rbs_infer__body
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
 - class: ERBPostsShow
+  method: __rbs_infer__body
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: ERBUsersAvatarsEdit
   method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
@@ -671,6 +686,14 @@ method_entry_facts:
   method: name
   consts:
     Example5::Foo.name: "::String"
+- class: Example6::Bar
+  method: greet
+  consts:
+    Example6::Foo.name: "::String"
+- class: Example6::Foo
+  method: name
+  consts:
+    Example6::Foo.name: "::String"
 - class: FilterConfiguration
   method: configure_filter
   self_methods:
@@ -769,6 +792,13 @@ method_entry_facts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
 - class: PostsController
+  method: render
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: PostsController
   method: set_post
   self_methods:
     current_user: "(::User & ::User::Validated)"
@@ -796,6 +826,13 @@ method_entry_facts:
     Current.user: "(::User & ::User::Validated)"
 - class: Users::AvatarsController
   method: edit
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Users::AvatarsController
+  method: render
   self_methods:
     current_user: "(::User & ::User::Validated)"
   consts:
