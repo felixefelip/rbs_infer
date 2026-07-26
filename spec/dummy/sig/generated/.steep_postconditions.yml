@@ -228,6 +228,34 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example9::Age
+  method: value
+  effects:
+    returns_ivar: "@value"
+- class: Example9::Age
+  method: value=
+  unconditional:
+    ivars:
+      "@value": "::Integer"
+    establishes_consts:
+      value: "::Integer"
+  effects:
+    may_write:
+    - "@value"
+- class: Example9::Foo
+  method: name
+  effects:
+    returns_ivar: "@name"
+- class: Example9::Foo
+  method: name=
+  unconditional:
+    ivars:
+      "@name": "::String"
+    establishes_consts:
+      name: "::String"
+  effects:
+    may_write:
+    - "@name"
 - class: ParseXml
   method: initialize
   effects:
@@ -897,3 +925,15 @@ argument_entry_facts:
   pattern: ":name"
   consts:
     Example7::Foo.name: "::String"
+- class: Example9::Dispatcher
+  method: show
+  param: which
+  pattern: ":age"
+  consts:
+    Example9::Age.value: "::Integer"
+- class: Example9::Dispatcher
+  method: show
+  param: which
+  pattern: ":name"
+  consts:
+    Example9::Foo.name: "::String"
