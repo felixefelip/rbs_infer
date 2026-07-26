@@ -4,6 +4,15 @@
 # Regenerated on every run; do not edit.
 
 class PostsController
+  def render(*args)
+    @__rbs_infer__performed = true
+    case args.first
+    when :edit then ERBPostsEdit.new.__rbs_infer__body
+    when :new then ERBPostsNew.new.__rbs_infer__body
+    end
+    true
+  end
+
   private
 
   def __rbs_infer__run_index

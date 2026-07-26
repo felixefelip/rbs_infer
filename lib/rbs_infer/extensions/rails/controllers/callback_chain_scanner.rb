@@ -35,8 +35,20 @@ module RbsInfer
         # A controller class or a concern module, as read from source. Concerns
         # carry only the callbacks their `included do … end` block registers;
         # the `include` site splices them into the includer's chain in place.
+        #
+        # `render_targets` holds every explicit `render` view target found in the
+        # class's method bodies, each tagged by form:
+        #
+        #   `render :new`         => `[:symbol, "new"]`   (controller-relative)
+        #   `render "posts/new"`  => `[:string, "posts/new"]` (absolute view path)
+        #   `render "new"`        => `[:string, "new"]`   (controller-relative)
+        #
+        # so the pseudo-code can model that render as a call into the view's
+        # compiled body — resolving the ERB class relative to this controller for
+        # a symbol/bare string, or by absolute path for a `"dir/view"` string
+        # (which may name ANOTHER controller's view).
         Unit = Struct.new(
-          :name, :superclass_name, :kind, :actions, :body, keyword_init: true
+          :name, :superclass_name, :kind, :actions, :body, :render_targets, keyword_init: true
         )
 
         # `include SomeConcern` inside a class body, kept in declaration order
@@ -86,6 +98,15 @@ module RbsInfer
           # Public actions of `class_name`, in source order.
           def actions_for(class_name)
             units[class_name]&.actions || []
+          end
+
+          # The `[form, value]` render targets of `class_name`'s method bodies
+          # (see `Unit`), de-duplicated and sorted for a stable emission. Drives
+          # the per-controller `render` override — an action that renders a
+          # non-convention view (`create` failing to `render :new`, or a foreign
+          # `render "posts/new"`).
+          def render_targets_for(class_name)
+            (units[class_name]&.render_targets || []).uniq.sort
           end
 
           # The effective before_action chain of `class_name#action`, in run
@@ -193,12 +214,18 @@ module RbsInfer
           def class_unit(node, name, source)
             actions = []
             body = []
+            render_targets = []
             visibility = :public
 
             statements(node.body).each do |stmt|
               case stmt
               when Prism::DefNode
                 next unless stmt.receiver.nil?
+
+                # `render :view` can sit in any instance method (an action or a
+                # private helper it delegates to), so collect from every def.
+                render_targets.concat(render_targets_of(stmt))
+
                 # A routable action is a plain identifier; `foo?`/`foo!`/`foo=`
                 # are helpers that happen to be public.
                 next unless stmt.name.to_s.match?(/\A[a-z_][a-zA-Z0-9_]*\z/)
@@ -216,8 +243,26 @@ module RbsInfer
             Unit.new(
               name: name,
               superclass_name: node.superclass && RbsInfer::Analyzer.extract_constant_path(node.superclass)&.delete_prefix("::"),
-              kind: :class, actions: actions, body: body
+              kind: :class, actions: actions, body: body, render_targets: render_targets
             )
+          end
+
+          # The `[form, value]` targets of every `render` inside a def body,
+          # found at any depth (a `render :new` in the `else` of `if @post.save`).
+          # Only a leading positional symbol/string is recognized — `render
+          # action: …`, `render template: …`, `render partial: …` are future work.
+          def render_targets_of(def_node)
+            RbsInfer::Analyzer.find_all_nodes(def_node) do |n|
+              n.is_a?(Prism::CallNode) && n.name == :render && n.receiver.nil?
+            end.filter_map { |call| render_target_arg(call) }
+          end
+
+          def render_target_arg(call)
+            first = call.arguments&.arguments&.first
+            case first
+            when Prism::SymbolNode then [:symbol, first.value.to_s]
+            when Prism::StringNode then [:string, first.unescaped]
+            end
           end
 
           # A concern contributes only what its `included do … end` block
@@ -232,7 +277,7 @@ module RbsInfer
               end
             end
 
-            Unit.new(name: name, superclass_name: nil, kind: :module, actions: [], body: body)
+            Unit.new(name: name, superclass_name: nil, kind: :module, actions: [], body: body, render_targets: [])
           end
 
           def body_entries(call, source)
