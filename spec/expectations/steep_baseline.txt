@@ -6,6 +6,7 @@ app/models/concerns/test/filtrable.rb:7:24: [error] Type `(singleton(::Test) & s
 app/models/concerns/test/filtrable.rb:7:4: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `scope`
 app/models/concerns/test/filtrable.rb:8:26: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `where`
 app/models/concerns/test/filtrable.rb:8:4: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `scope`
+app/models/example10.rb:27:26: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example3.rb:122:11: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:63:13: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:64:26: [error] Type `(::Example3::User | nil)` does not have method `name`

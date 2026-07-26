@@ -112,6 +112,20 @@ postconditions:
     may_write:
     - "@delivery_method"
     - "@from_address"
+- class: Example10::Foo
+  method: name
+  effects:
+    returns_ivar: "@name"
+- class: Example10::Foo
+  method: name=
+  unconditional:
+    ivars:
+      "@name": "::String"
+    establishes_consts:
+      name: "::String"
+  effects:
+    may_write:
+    - "@name"
 - class: Example2::Foo
   method: user=
   unconditional:
