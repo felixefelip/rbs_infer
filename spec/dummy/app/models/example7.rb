@@ -27,8 +27,12 @@ class Example7
     # a human sees each read as non-nil.
     def show(which)
       case which
-      when :name then Example7::Foo.name.upcase # => "JOHN DOE" (:name partition)
-      when :age  then Example7::Age.value.abs   # => 42         (:age partition)
+      when :name
+        Example7::Age.value.abs # => error: `Age.value` is nil (:age partition)
+        Example7::Foo.name.upcase # => "JOHN DOE" (:name partition)
+      when :age
+        Example7::Foo.name.upcase # => error: `Foo.name` is nil (:name partition)
+        Example7::Age.value.abs   # => 42         (:age partition)
       end
     end
   end
