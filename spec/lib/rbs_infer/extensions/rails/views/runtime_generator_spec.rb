@@ -122,7 +122,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       expect(method_body(source_of(result, "posts/edit.rb"), "render")).to eq(
         "name = target.is_a?(::Hash) ? target[:partial] : target\n" \
         "case name\n" \
-        "when \"posts/form\" then ERBPartialPostsForm.new(post: @post)\n" \
+        "when \"posts/form\" then ERBPartialPostsForm.new(post: @post).__rbs_infer__body\n" \
         "end\n" \
         "nil"
       )
@@ -139,7 +139,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       expect(method_body(source_of(result, "posts/edit.rb"), "render")).to eq(
         "name = target.is_a?(::Hash) ? target[:partial] : target\n" \
         "case name\n" \
-        "when \"form\" then ERBPartialPostsForm.new(post: @post)\n" \
+        "when \"form\" then ERBPartialPostsForm.new(post: @post).__rbs_infer__body\n" \
         "end\n" \
         "nil"
       )
@@ -152,7 +152,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       )
 
       expect(method_body(source_of(result, "posts/show.rb"), "render")).to include(
-        "when \"posts/summary\" then ERBPartialPostsSummary.new(post: @post)"
+        "when \"posts/summary\" then ERBPartialPostsSummary.new(post: @post).__rbs_infer__body"
       )
     end
 
@@ -170,7 +170,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       )
 
       expect(method_body(source_of(result, "posts/show.rb"), "render")).to include(
-        "when \"comment\" then @comments.each { |comment| ERBPartialPostsComment.new(comment: comment) }"
+        "when \"comment\" then @comments.each { |comment| ERBPartialPostsComment.new(comment: comment).__rbs_infer__body }"
       )
     end
 
@@ -183,7 +183,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       )
 
       expect(method_body(source_of(result, "posts/show.rb"), "render")).to include(
-        "when \"comment\" then @comments.each { |comment| ERBPartialPostsComment.new(comment: comment) }"
+        "when \"comment\" then @comments.each { |comment| ERBPartialPostsComment.new(comment: comment).__rbs_infer__body }"
       )
     end
 
@@ -200,8 +200,8 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       expect(method_body(source_of(result, "posts/show.rb"), "render")).to eq(
         "name = target.is_a?(::Hash) ? target[:partial] : target\n" \
         "case name\n" \
-        "when \"comment\" then ERBPartialPostsComment.new(comment: @comment)\n" \
-        "when \"posts/summary\" then ERBPartialPostsSummary.new(post: @post)\n" \
+        "when \"comment\" then ERBPartialPostsComment.new(comment: @comment).__rbs_infer__body\n" \
+        "when \"posts/summary\" then ERBPartialPostsSummary.new(post: @post).__rbs_infer__body\n" \
         "end\n" \
         "nil"
       )

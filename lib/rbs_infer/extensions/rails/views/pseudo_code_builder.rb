@@ -200,10 +200,16 @@ module RbsInfer
             args = render.locals.map { |name, value| "#{name}: #{value}" }.join(", ")
             construct = args.empty? ? "#{klass}.new" : "#{klass}.new(#{args})"
 
+            # `.__rbs_infer__body` — rendering a partial RUNS it, and its body is the method
+            # the template compiles to (felixefelip/steep#85). Calling it is what puts the
+            # partial's body in this view's flow, so the facts holding here reach it; the
+            # controller-runtime override calls the view's body for the same reason.
+            rendered = "#{construct}.__rbs_infer__body"
+
             if (iteration = render.iteration)
-              "#{iteration[:receiver]}.each { |#{iteration[:param]}| #{construct} }"
+              "#{iteration[:receiver]}.each { |#{iteration[:param]}| #{rendered} }"
             else
-              construct
+              rendered
             end
           end
 
