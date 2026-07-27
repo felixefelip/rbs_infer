@@ -85,12 +85,6 @@ module RbsInfer
           # existing per controller rather than on the framework class.
           RENDER_TARGET_PARAM = "target"
 
-          # Sentinel default. A CONSTANT default is what makes the analyzer type the
-          # parameter `untyped` rather than narrowing it to the default's own type — a
-          # literal `nil` would infer `?nil` and reject every real `render :edit`. The
-          # parameter has to stay optional so a bare `render` in the user's own controller
-          # is still valid arity.
-          RENDER_NO_TARGET = "RBS_INFER_NO_RENDER_TARGET"
 
           HEADER = <<~RUBY
             # frozen_string_literal: true
@@ -149,10 +143,6 @@ module RbsInfer
               #{HEADER}
               module ActionController
                 class Base
-                  # Sentinel for "no view target given" (see RENDER_NO_TARGET). It lives on
-                  # the framework class so every controller override can name it.
-                  #{RENDER_NO_TARGET} = nil
-
                   def redirect_to(*args)
                     #{PERFORMED_IVAR} = true
                     true
@@ -257,7 +247,7 @@ module RbsInfer
             return nil if branches.empty?
 
             [
-              "  def render(#{RENDER_TARGET_PARAM} = #{RENDER_NO_TARGET}, *rest)",
+              "  def render(#{RENDER_TARGET_PARAM} = nil, *rest)",
               "    #{PERFORMED_IVAR} = true",
               "    case #{RENDER_TARGET_PARAM}",
               *branches,

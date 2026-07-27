@@ -434,16 +434,15 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
       )
 
       source = source_of(result, "posts_controller.rb")
-      expect(source).to include("def render(target = RBS_INFER_NO_RENDER_TARGET, *rest)")
+      expect(source).to include("def render(target = nil, *rest)")
       expect(source).to include("case target")
       expect(source).not_to include("case args.first")
     end
 
-    # The parameter stays OPTIONAL, and its default is a CONSTANT. Both matter: a bare
-    # `render` in the user's own controller must remain valid arity, and a literal default
-    # would have the analyzer infer the parameter as that literal's type (`?nil`), which
-    # then rejects every real `render :edit`. A constant default infers `?untyped`.
-    it "defaults the target to a constant the framework reopen defines" do
+    # The parameter stays OPTIONAL: a required one would make a bare `render` — or the
+    # very common `render json: {}`, whose kwargs never fill a positional in Ruby 3 — an
+    # arity error in the USER's controller, a false positive on their code.
+    it "keeps the target optional so a bare render stays valid arity" do
       result = build(
         "app/controllers/posts_controller.rb" => <<~RUBY,
           class PostsController < ActionController::Base
@@ -455,8 +454,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
         "app/views/posts/new.html.erb" => "x"
       )
 
-      expect(source_of(result, "action_controller_base.rb"))
-        .to include("RBS_INFER_NO_RENDER_TARGET = nil")
+      expect(source_of(result, "posts_controller.rb")).to include("def render(target = nil,")
     end
 
     # The override marks the SAME halt marker the framework `render` sets, so
@@ -517,7 +515,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
       )
 
       source = source_of(result, "posts_controller.rb")
-      expect(source.index("def render(target = RBS_INFER_NO_RENDER_TARGET, *rest)")).to be < source.index("private")
+      expect(source.index("def render(target = nil, *rest)")).to be < source.index("private")
     end
 
     it "de-duplicates and sorts the view symbols" do
