@@ -8,6 +8,7 @@ class UsersController
     @__rbs_infer__performed = true
     case target
     when :show then ERBUsersShow.new(posts: @posts, user: @user).__rbs_infer__body
+    when "posts/show" then ERBPostsShow.new(comments: @comments, post: @post).__rbs_infer__body
     end
     true
   end
@@ -36,5 +37,15 @@ class UsersController
     return if performed?
 
     render :show
+  end
+
+  def __rbs_infer__run_featured_post
+    authenticate_user
+    return if performed?
+
+    log_user_author_name if current_user_present?
+    return if performed?
+
+    featured_post
   end
 end

@@ -16,6 +16,7 @@ interface ::_RbsRailsPathHelpers
   def post_path: (*untyped) -> ::String
   def edit_user_avatar_path: (*untyped) -> ::String
   def user_avatar_path: (*untyped) -> ::String
+  def featured_post_user_path: (*untyped) -> ::String
   def users_path: (*untyped) -> ::String
   def user_path: (*untyped) -> ::String
   def rails_info_properties_url: (*untyped) -> ::String
@@ -33,6 +34,7 @@ interface ::_RbsRailsPathHelpers
   def post_url: (*untyped) -> ::String
   def edit_user_avatar_url: (*untyped) -> ::String
   def user_avatar_url: (*untyped) -> ::String
+  def featured_post_user_url: (*untyped) -> ::String
   def users_url: (*untyped) -> ::String
   def user_url: (*untyped) -> ::String
 end

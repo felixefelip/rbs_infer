@@ -2,7 +2,10 @@ class UsersController < ApplicationController
   @users: User::ActiveRecord_Relation?
   @user: (User & User::Validated)?
   @posts: User_Post::ActiveRecord_Associations_CollectionProxy?
+  @post: (Post & Post::Validated)?
+  @comments: Comment::ActiveRecord_Relation?
 
   def index: () -> void
   def show: () -> void
+  def featured_post: () -> void
 end

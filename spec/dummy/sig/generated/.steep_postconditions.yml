@@ -701,6 +701,13 @@ postconditions:
     may_write:
     - "@__rbs_infer__performed"
 - class: UsersController
+  method: __rbs_infer__run_featured_post
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@comments"
+    - "@post"
+- class: UsersController
   method: __rbs_infer__run_index
   effects:
     may_write:
@@ -713,6 +720,18 @@ postconditions:
     - "@__rbs_infer__performed"
     - "@posts"
     - "@user"
+- class: UsersController
+  method: featured_post
+  unconditional:
+    ivars:
+      "@comments": "::Comment::ActiveRecord_Relation"
+      "@post": "(::Post & ::Post::Validated)"
+    self: "::UsersController & ::UsersController::AfterFeaturedPost"
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@comments"
+    - "@post"
 - class: UsersController
   method: index
   unconditional:
@@ -1056,6 +1075,13 @@ method_entry_facts:
   ivars:
     "@user": "(::User & ::User::Validated)"
 - class: UsersController
+  method: featured_post
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: UsersController
   method: index
   self_methods:
     current_user: "(::User & ::User::Validated)"
@@ -1069,9 +1095,6 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
-  ivars:
-    "@posts": "::User_Post::ActiveRecord_Associations_CollectionProxy"
-    "@user": "(::User & ::User::Validated)"
 - class: UsersController
   method: show
   self_methods:
@@ -1160,6 +1183,13 @@ argument_entry_facts:
   pattern: ":edit"
   ivars:
     "@user": "(::User & ::User::Validated)"
+- class: UsersController
+  method: render
+  param: target
+  pattern: '"posts/show"'
+  ivars:
+    "@comments": "::Comment::ActiveRecord_Relation"
+    "@post": "(::Post & ::Post::Validated)"
 - class: UsersController
   method: render
   param: target
