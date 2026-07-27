@@ -6,7 +6,7 @@ module Users
 
     private
 
-    def __rbs_infer__run_edit: () -> nil
+    def __rbs_infer__run_edit: () -> bool?
     def __rbs_infer__run_update: () -> void
   end
 end

@@ -65,12 +65,7 @@ module RbsInfer::Inference
         steep_returns = @steep_bridge.method_return_types_by_kind(parsed_target.source)
 
         unless steep_returns[:instance].empty? && steep_returns[:singleton].empty?
-          # Build def map for nil-return detection
-          collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
-          parsed_target.tree.accept(collector)
-          def_map = {}
-          collector.defs.each { |d| def_map[d.name.to_s] = d if d.is_a?(Prism::DefNode) }
-
+          def_map = def_map(parsed_target)
           self_types = Set.new([@target_class] + @instance_types)
 
           still_untyped.each do |m|
@@ -169,6 +164,36 @@ module RbsInfer::Inference
             m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> #{steep_type}")
           end
         end
+      end
+    end
+
+    # A bare `return` (or `return nil`) yields nil, so nil belongs in the return union
+    # however the rest of the body was typed. Several passes substitute a return type
+    # (chain resolution here, Steep here, TypeMerger's tail-call passes after), and only
+    # the Steep ones widened — so `return if performed?` followed by a CALL came out
+    # `-> bool`, for a body that plainly returns nil on the guard. A literal tail was
+    # right only by accident, because it happened to take the Steep path.
+    #
+    # Applied ONCE, after every pass that can set a return type, rather than at each
+    # substitution site: the widening depends only on the body, so it is a property of
+    # the finished signature, and spreading it over the passes is how three of them came
+    # to disagree in the first place.
+    def apply_early_return_nilability(members, parsed_target: nil)
+      return unless parsed_target
+
+      members.each do |m|
+        next unless method_member?(m)
+        # `initialize` is `-> void` by convention, and a setter's return is the assigned
+        # value — neither is the body's own tail type, so neither is ours to widen.
+        next if m.name == "initialize" || setter_name?(m.name)
+
+        current = m.signature[/->\s*(.+)\z/, 1]&.strip
+        next if current.nil? || current == "untyped" || current == "void" || current.end_with?("?")
+
+        defn = def_map(parsed_target)[m.name]
+        next unless defn && has_nil_return?(defn)
+
+        m.signature = m.signature.sub(/-> #{Regexp.escape(current)}\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.nilablize(current)}")
       end
     end
 
@@ -450,6 +475,19 @@ module RbsInfer::Inference
     # in TypeMerger (felixefelip/rbs_infer#33/#34).
     def self_return?(member, steep_type, self_types)
       member.kind != :class_method && self_types.include?(steep_type)
+    end
+
+    # Method name → its `Prism::DefNode`, for the passes that need to read a body back
+    # (early-return detection). Memoized per target: both the chain-resolution pass and
+    # the Steep pass ask, and collecting is a full tree walk.
+    def def_map(parsed_target)
+      @def_map ||= begin
+        collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
+        parsed_target.tree.accept(collector)
+        collector.defs.each_with_object({}) do |d, map|
+          map[d.name.to_s] = d if d.is_a?(Prism::DefNode)
+        end
+      end
     end
 
     # Verifica se o corpo do método contém `return nil` ou `return` (implícito nil)

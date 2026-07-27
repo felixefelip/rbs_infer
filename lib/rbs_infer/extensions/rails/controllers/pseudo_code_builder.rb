@@ -204,21 +204,34 @@ module RbsInfer
             RUBY
           end
 
-          # A per-controller override of `render` modelling an explicit
-          # `render :view` (e.g. `create` falling through to `render :new` on a
-          # validation failure). It marks the response performed via the SHARED
-          # halt marker (`PERFORMED_IVAR`, same one the framework `render` sets),
-          # and dispatches on the rendered target to that view's compiled body
-          # (`__rbs_infer__body`, felixefelip/steep#85) — so the render's own
-          # call-site facts (here, `@post` after a failed `save`) narrow reads in
-          # the rendered view.
+          # A per-controller override of `render`: the ONE place a view of this
+          # controller is constructed. It marks the response performed via the
+          # SHARED halt marker (`PERFORMED_IVAR`, same one the framework `render`
+          # sets), and dispatches on the rendered target to that view's compiled
+          # body (`__rbs_infer__body`, felixefelip/steep#85) — so the render's
+          # own call-site facts (`@post` after `set_post`, or after a failed
+          # `save`) narrow reads in the rendered view.
+          #
+          # It covers EVERY view of the controller, not only the targets an
+          # explicit `render :view` names, because both renders route through
+          # here: the implicit convention render at the end of an action is
+          # emitted as `render(:show)` (see `view_render_lines`), exactly as
+          # Rails ends an action with `render action_name`. A `case` carrying
+          # only the explicit targets would leave that call dispatching to no
+          # branch, and the view would lose every argument that types it.
+          #
+          # Routing both through one dispatcher is what makes the two renders of
+          # a view meet: `render :edit` from `update`'s failure branch and an
+          # implicit `render(:edit)` are two call sites of the SAME method, so
+          # the fork's argument-sensitive entry facts key both partitions on
+          # `target == :edit` and the view sees what holds on both paths.
           #
           # The dispatch lives PER CONTROLLER, not on `ActionController::Base`,
           # on purpose: a view's entry facts are the meet over its call sites, so
           # a single shared dispatch on `Base` would meet EVERY render in the app
           # into every view — the global-collapse we avoid. Each override carries
-          # only the targets its own controller renders (its symbols plus any
-          # foreign `render "posts/new"` paths), keeping the meet scoped.
+          # only its own controller's views plus any foreign `render "posts/new"`
+          # path it names, keeping the meet scoped.
           #
           # It cannot `super` into the framework `render`: `super` binds to the
           # REAL Rails `ActionController::Base#render` (returns `String`, and
@@ -227,23 +240,10 @@ module RbsInfer
           # though two bodies write it.
           #
           # Emitted PUBLIC (before `private`), matching the framework `render` it
-          # overrides. Only views whose template exists get a `when`, and the
-          # whole method is omitted when none do — the inherited framework
-          # `render` then applies unchanged.
-          #
-          # NOTE: fully consuming this needs the fork to record the render's
-          # facts from inside the branch it sits in — a full `if/else` (where the
-          # `render :new` lives) and this `case/when` — not just a modifier `if`.
-          # That branch-sensitive flow extraction is tracked separately; the
-          # pseudo-code is correct regardless — without it the dispatch is inert
-          # rather than wrong.
+          # overrides. The whole method is omitted when the controller has no
+          # view at all — the inherited framework `render` then applies unchanged.
           def render_override(class_name)
-            branches = @scanner.render_targets_for(class_name).filter_map do |form, value|
-              erb_class, key, view_relative = resolve_render_target(class_name, form, value)
-              next unless erb_class
-
-              "    when #{key} then #{view_constructor(erb_class, view_relative)}.__rbs_infer__body"
-            end
+            branches = render_branches(class_name)
             return nil if branches.empty?
 
             [
@@ -255,6 +255,52 @@ module RbsInfer
               "    true",
               "  end"
             ].join("\n") + "\n"
+          end
+
+          # One `when` per view this controller can render: every template in its
+          # view directory (keyed by the symbol Rails would use — the action
+          # name), then any explicit target not already covered, which is how a
+          # foreign `render "posts/new"` from another controller gets a branch.
+          #
+          # Keyed by the `when` literal so the two sources dedup: an explicit
+          # `render :new` names a view the directory sweep already found, and
+          # emitting it twice would make the second branch dead.
+          def render_branches(class_name)
+            views = {}
+
+            controller_views(class_name).each do |name, erb_class, relative|
+              views[":#{name}"] ||= [erb_class, relative]
+            end
+
+            @scanner.render_targets_for(class_name).each do |form, value|
+              erb_class, key, relative = resolve_render_target(class_name, form, value)
+              next unless erb_class
+
+              views[key] ||= [erb_class, relative]
+            end
+
+            views.map do |key, (erb_class, relative)|
+              "    when #{key} then #{view_constructor(erb_class, relative)}.__rbs_infer__body"
+            end
+          end
+
+          # `[view_name, erb_class, relative_path]` for every non-partial template
+          # in the controller's own view directory, sorted so the emitted file is
+          # stable. A leading `_` is a partial: it is never a render TARGET of an
+          # action — the view that renders it constructs it, from the view-runtime
+          # pseudo-code's own `render`.
+          def controller_views(class_name)
+            view_dir = class_name.sub(/Controller\z/, "").underscore
+            return [] if view_dir.empty?
+
+            pattern = File.join(@app_dir, "app/views", view_dir, "*.{html,turbo_stream}.erb")
+            Dir[pattern].sort.filter_map do |path|
+              basename = File.basename(path)
+              next if basename.start_with?("_")
+
+              relative = "#{view_dir}/#{basename}"
+              [basename.sub(/\.(html|turbo_stream)\.erb\z/, ""), view_path_naming.erb_class_name(relative), relative]
+            end
           end
 
           # `[erb_class, case_key]` for a render target, or `[nil, _]` when no
@@ -304,17 +350,22 @@ module RbsInfer
 
           # After the action, model Rails' implicit convention render: unless the
           # action already responded (`redirect_to`/explicit `render`/`head` set
-          # `performed?`), it renders `action`'s view. Calling the view's
-          # compiled-method body (`__rbs_infer__body`, felixefelip/steep#85) at
-          # this point — where the guard chain's facts hold — lets those facts
-          # narrow reads in the view. The `return if performed?` before it makes
-          # the redirect / explicit-render case a no-op automatically. Empty when
-          # the action has no convention template.
+          # `performed?`), it renders `action`'s view. The `return if performed?`
+          # before it makes the redirect / explicit-render case a no-op
+          # automatically. Empty when the action has no convention template.
+          #
+          # Emitted as `render(:show)` — the call Rails itself makes — rather
+          # than by constructing the view here. Constructing it inline made the
+          # implicit render a SECOND, separate call site of the view's
+          # constructor, so a view reachable both implicitly and by an explicit
+          # `render :edit` was built in two places whose facts never met. Going
+          # through the dispatcher makes them two call sites of one method,
+          # which is the shape the fork's argument-sensitive entry facts read.
           def view_render_lines(class_name, action)
-            erb_class, view_relative = convention_view(class_name, action)
+            erb_class, = convention_view(class_name, action)
             return [] unless erb_class
 
-            ["", "return if #{HALTED}", "", "#{view_constructor(erb_class, view_relative)}.__rbs_infer__body"]
+            ["", "return if #{HALTED}", "", "render(:#{action})"]
           end
 
           # The ERB class of `action`'s convention template, or nil when none

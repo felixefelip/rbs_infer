@@ -656,6 +656,124 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
         "when :edit then ERBUsersAvatarsEdit.new.__rbs_infer__body"
       )
     end
+
+    # Every view of the controller gets a branch, not only the ones an explicit
+    # `render :view` names: the implicit convention render is emitted as
+    # `render(:show)` too, so a `case` limited to explicit targets would leave
+    # it dispatching nowhere and the view would lose the arguments that type it.
+    it "covers every view of the controller, not only the explicitly rendered ones" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def show; end
+
+            def create
+              render :new
+            end
+          end
+        RUBY
+        "app/views/posts/show.html.erb" => "<%= @post %>",
+        "app/views/posts/new.html.erb" => "<%= @post %>",
+        "app/views/posts/index.html.erb" => "<%= @posts %>"
+      )
+
+      expect(render_override(result, "posts_controller.rb").grep(/\Awhen/)).to eq(
+        [
+          "when :index then ERBPostsIndex.new(posts: @posts).__rbs_infer__body",
+          "when :new then ERBPostsNew.new(post: @post).__rbs_infer__body",
+          "when :show then ERBPostsShow.new(post: @post).__rbs_infer__body",
+        ]
+      )
+    end
+
+    # A partial is never an action's render target — the VIEW that renders it
+    # constructs it, from the view-runtime pseudo-code's own `render`.
+    it "skips partials when sweeping the view directory" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def show; end
+          end
+        RUBY
+        "app/views/posts/show.html.erb" => "x",
+        "app/views/posts/_form.html.erb" => "x"
+      )
+
+      whens = render_override(result, "posts_controller.rb").grep(/\Awhen/)
+      expect(whens).to eq(["when :show then ERBPostsShow.new.__rbs_infer__body"])
+    end
+
+    # The directory sweep and the explicit targets both name `:new`; a second
+    # branch for it would be dead code.
+    it "emits one branch when an explicit render names a view the sweep found" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def create
+              render :new
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "x"
+      )
+
+      whens = render_override(result, "posts_controller.rb").grep(/\Awhen/)
+      expect(whens).to eq(["when :new then ERBPostsNew.new.__rbs_infer__body"])
+    end
+
+    # A controller that renders nothing explicitly still needs the override:
+    # its actions' implicit renders go through it.
+    it "emits the override for a controller with a view but no explicit render" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def show; end
+          end
+        RUBY
+        "app/views/posts/show.html.erb" => "x"
+      )
+
+      expect(render_override(result, "posts_controller.rb")).to include(
+        "when :show then ERBPostsShow.new.__rbs_infer__body"
+      )
+    end
+  end
+
+  # Rails ends an action with `render action_name`. Emitting that call — rather
+  # than constructing the view inline — makes the implicit and explicit renders
+  # of a view two call sites of ONE method, which is the shape the fork's
+  # argument-sensitive entry facts read. Constructed inline they were two
+  # separate constructor call sites whose facts never met.
+  describe "the implicit convention render" do
+    it "ends the runner with `render(:action)`, not a view constructor" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def show; end
+          end
+        RUBY
+        "app/views/posts/show.html.erb" => "<%= @post %>"
+      )
+
+      source = source_of(result, "posts_controller.rb")
+
+      expect(source).to include("render(:show)")
+      expect(source).not_to include("ERBPostsShow.new(post: @post).__rbs_infer__body\n  end")
+    end
+
+    it "emits no implicit render when the action has no convention template" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def destroy; end
+          end
+        RUBY
+        "app/views/posts/show.html.erb" => "x"
+      )
+
+      body = source_of(result, "posts_controller.rb")[/def __rbs_infer__run_destroy\n(.*?)^  end$/m, 1]
+      expect(body).not_to include("render(")
+    end
   end
 
   # Snapshot of the generated pseudo-code against the real dummy app, mirroring
