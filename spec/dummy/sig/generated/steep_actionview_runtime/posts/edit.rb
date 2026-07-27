@@ -11,8 +11,12 @@ class ERBPostsEdit
     @post = post
   end
 
-  def render(*args)
-    ERBPartialPostsForm.new(post: @post)
+  def render(target = nil, *rest)
+    case target
+    when "posts/form" then ERBPartialPostsForm.new(post: @post)
+    when "posts/summary" then ERBPartialPostsSummary.new(post: @post)
+    end
+    nil
   end
 
   def params

@@ -119,8 +119,12 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
         "app/views/posts/edit.html.erb" => "<%= render partial: \"posts/form\", locals: { post: @post } %>\n"
       )
 
-      expect(method_body(source_of(result, "posts/edit.rb"), "render"))
-        .to eq("ERBPartialPostsForm.new(post: @post)")
+      expect(method_body(source_of(result, "posts/edit.rb"), "render")).to eq(
+        "case target\n" \
+        "when \"posts/form\" then ERBPartialPostsForm.new(post: @post)\n" \
+        "end\n" \
+        "nil"
+      )
     end
 
     it "resolves a partial named relative to the rendering template's directory" do
@@ -129,8 +133,14 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
         "app/views/posts/edit.html.erb" => "<%= render partial: \"form\", locals: { post: @post } %>\n"
       )
 
-      expect(method_body(source_of(result, "posts/edit.rb"), "render"))
-        .to eq("ERBPartialPostsForm.new(post: @post)")
+      # The `when` key is the name AS WRITTEN at the call site (so a shorthand
+      # `render "form"` matches it), while the class comes from the resolved path.
+      expect(method_body(source_of(result, "posts/edit.rb"), "render")).to eq(
+        "case target\n" \
+        "when \"form\" then ERBPartialPostsForm.new(post: @post)\n" \
+        "end\n" \
+        "nil"
+      )
     end
 
     it "reads the shorthand form where locals are plain keyword arguments" do
@@ -139,8 +149,9 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
         "app/views/posts/show.html.erb" => "<%= render \"posts/summary\", post: @post %>\n"
       )
 
-      expect(method_body(source_of(result, "posts/show.rb"), "render"))
-        .to eq("ERBPartialPostsSummary.new(post: @post)")
+      expect(method_body(source_of(result, "posts/show.rb"), "render")).to include(
+        "when \"posts/summary\" then ERBPartialPostsSummary.new(post: @post)"
+      )
     end
 
     it "reproduces the enclosing iteration so the local gets the element type" do
@@ -156,8 +167,9 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
         ERB
       )
 
-      expect(method_body(source_of(result, "posts/show.rb"), "render"))
-        .to eq("@comments.each { |comment| ERBPartialPostsComment.new(comment: comment) }")
+      expect(method_body(source_of(result, "posts/show.rb"), "render")).to include(
+        "when \"comment\" then @comments.each { |comment| ERBPartialPostsComment.new(comment: comment) }"
+      )
     end
 
     it "models a collection render as the equivalent iteration" do
@@ -168,8 +180,9 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
         "app/views/posts/show.html.erb" => "<%= render partial: \"comment\", collection: @comments %>\n"
       )
 
-      expect(method_body(source_of(result, "posts/show.rb"), "render"))
-        .to eq("@comments.each { |comment| ERBPartialPostsComment.new(comment: comment) }")
+      expect(method_body(source_of(result, "posts/show.rb"), "render")).to include(
+        "when \"comment\" then @comments.each { |comment| ERBPartialPostsComment.new(comment: comment) }"
+      )
     end
 
     it "emits one call per render, in template order" do
@@ -183,22 +196,26 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       )
 
       expect(method_body(source_of(result, "posts/show.rb"), "render")).to eq(
-        "ERBPartialPostsComment.new(comment: @comment)\n" \
-        "ERBPartialPostsSummary.new(post: @post)"
+        "case target\n" \
+        "when \"comment\" then ERBPartialPostsComment.new(comment: @comment)\n" \
+        "when \"posts/summary\" then ERBPartialPostsSummary.new(post: @post)\n" \
+        "end\n" \
+        "nil"
       )
     end
 
-    it "does not dispatch on the argument" do
-      # The controller override can `case args.first when :edit` because an action
-      # renders by symbol. A template renders by `render partial: "x", locals: {…}`,
-      # where `args.first` is a HASH — a `when "x"` branch would be dead code. Only the
-      # presence of the call site matters for inference.
+    it "dispatches on a named target parameter, not on `args.first`" do
+      # Only a named positional parameter with a `case` reading it plainly is legible to
+      # the fork's argument-sensitive entry facts; `*args` + `args.first` is not.
       result = build(
         "app/views/posts/_form.html.erb" => "<%= post %>\n",
         "app/views/posts/edit.html.erb" => "<%= render partial: \"posts/form\", locals: { post: @post } %>\n"
       )
 
-      expect(source_of(result, "posts/edit.rb")).not_to include("case args")
+      source = source_of(result, "posts/edit.rb")
+      expect(source).to include("def render(target = nil, *rest)")
+      expect(source).to include("case target")
+      expect(source).not_to include("args.first")
     end
 
     it "is omitted for a template that renders nothing" do
@@ -236,7 +253,9 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       files = described_class.new(app_dir: DUMMY_APP_ROOT).build
 
       if ENV["UPDATE_EXPECTATIONS"]
-        expectations.rmtree if expectations.exist?
+        # `.rb` only: the inferred `.rbs` snapshots share this directory
+        # (spec/integration/rails_dummy_spec.rb) and rmtree would take them out.
+        expectations.glob("**/*.rb").each(&:delete) if expectations.exist?
         files.each do |f|
           path = expectations.join(f.filename)
           path.dirname.mkpath

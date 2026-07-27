@@ -143,14 +143,41 @@ module RbsInfer
             ["  def initialize(#{params})", *assigns, "  end"].join("\n")
           end
 
-          # Hosts one constructor call per partial this template renders. An iteration-bound
-          # render is re-emitted AS the loop, so the local's type is the collection's element
-          # type — derived by the pipeline, not unwrapped here.
+          # Models the template's renders as a dispatch on the partial name, mirroring what
+          # ActionView does and mirroring the controller-runtime override. One `when` per
+          # partial, keyed by the name AS THE TEMPLATE WRITES IT, so a shorthand
+          # `render "posts/summary"` matches its own branch.
+          #
+          # The target is a NAMED optional parameter (`def render(target = nil, ...)`), not
+          # `*args` + `args.first`: only that shape is legible to the fork's
+          # argument-sensitive entry facts, which key a partition on a named positional
+          # parameter and correlate only a `case` whose subject is a plain read of it. Its
+          # default stays `nil` — the parameter has to remain optional, and a `nil` default
+          # infers `untyped` rather than narrowing the parameter to the default's own type.
+          #
+          # A render written in the `partial:`/`locals:` form passes a HASH as the first
+          # argument, so its branch never matches at the template's own call site. That
+          # costs nothing here: what inference needs is that the constructor call SITE
+          # exists, and a branch body is still a call site. The dispatch is what makes the
+          # generated code read like the render it stands for.
+          #
+          # Two renders of the same partial collapse into one branch — a duplicate `when`
+          # key would be dead after the first.
           def render_method(scan, caller_dir)
-            calls = scan.renders.filter_map { |render| render_call(render, caller_dir) }
-            return nil if calls.empty?
+            branches = scan.renders.filter_map { |render|
+              call = render_call(render, caller_dir) or next
+              [render.partial, call]
+            }.uniq(&:first)
+            return nil if branches.empty?
 
-            ["  def render(*args)", *calls, "  end"].join("\n")
+            body = branches.map { |name, call| "    when #{name.inspect} then #{call}" }
+            # Closes with an explicit `nil`, as the controller override closes with `true`.
+            # Without it the method's value is the `case`, whose type is the union of every
+            # branch plus `nil` (there is no `else`) — and the analyzer types the method from
+            # the last branch alone, so the RBS it writes contradicts the body Steep checks.
+            # Nothing consumes this return: the constructors are here to BE call sites, and
+            # the real `render` returns a String this pseudo-code does not model.
+            ["  def render(target = nil, *rest)", "    case target", *body, "    end", "    nil", "  end"].join("\n")
           end
 
           def render_call(render, caller_dir)
@@ -164,9 +191,9 @@ module RbsInfer
             construct = args.empty? ? "#{klass}.new" : "#{klass}.new(#{args})"
 
             if (iteration = render.iteration)
-              "    #{iteration[:receiver]}.each { |#{iteration[:param]}| #{construct} }"
+              "#{iteration[:receiver]}.each { |#{iteration[:param]}| #{construct} }"
             else
-              "    #{construct}"
+              construct
             end
           end
 
