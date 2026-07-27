@@ -297,6 +297,129 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # IVAR partitions by literal argument (felixefelip/steep#91). `run_name` and
+  # `run_age` each establish a DIFFERENT ivar before dispatching, so the
+  # whole-method meet proves neither and only the per-literal partition keeps each
+  # branch readable. The return type is the give-away: it resolves rather than
+  # collapsing to `untyped`, which is what the branch reads failing would produce.
+  it "example8" do
+    name = "models/example8"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example8.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
+  # `if`/`elsif` consumption of the same partitions (felixefelip/steep#90).
+  # Byte-for-byte example7's dispatcher with `case/when` swapped for
+  # `if <param> == <literal>`, which isolates the consumer to that one variable.
+  it "example9" do
+    name = "models/example9"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example9.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
+  # CONST-WRITE RHS. `Const.attr = <rhs>` classifies as a write and the RHS is
+  # walked for calls first, so a callee reached only from there — `Bar.new.greet`
+  # — still receives the facts established above it.
+  it "example10" do
+    name = "models/example10"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example10.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
+  # SECOND-HOP argument facts (felixefelip/steep#95). example8 with one hop
+  # inserted between the establishing write and the dispatch; the fix seeds each
+  # flow with its owner's entry facts so the fact survives the hop.
+  it "example12" do
+    name = "models/example12"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example12.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
+  # The RBS the analyzer derives FROM the runtime pseudo-code, snapshotted next to
+  # the pseudo-code itself. The two together localize a regression: the `.rb`
+  # changed => generator bug; identical `.rb` with a different `.rbs` => inference
+  # pipeline bug.
+  #
+  # These are the whole point of the view reformulation — the view's ivars and the
+  # partial's locals are DERIVED from the render call sites rather than computed by
+  # a generator, so a drift in the chain
+  # `action -> view ivar -> partial local` shows up here first.
+  #
+  # `source_files` has to span `app/` AND `sig/`, matching how the CLI is invoked
+  # (`rbs_infer app/ sig/`): the call sites that type a view live in the controller
+  # runtime under `sig/`, not in `app/`.
+  describe "runtime pseudo-code RBS" do
+    let(:source_files) { Dir["app/**/*.rb"] + Dir["sig/**/*.rb"] }
+
+    def assert_runtime_rbs(dir)
+      pseudo_code = Dir["sig/generated/#{dir}/**/*.rb"].sort
+      expect(pseudo_code).not_to be_empty, "no pseudo-code found under sig/generated/#{dir}"
+
+      aggregate_failures do
+        pseudo_code.each do |path|
+          relative = path.sub("sig/generated/#{dir}/", "").sub(/\.rb\z/, "")
+          rbs = RbsInfer::Analyzer.new(target_file: path, source_files: source_files).generate_rbs
+
+          expectation = expectations_dir.join("#{dir}/#{relative}.rbs")
+          if ENV["UPDATE_EXPECTATIONS"]
+            expectation.dirname.mkpath
+            expectation.write(rbs)
+          end
+
+          expect(rbs.chomp).to eq(expectation.read.chomp), "#{dir}/#{relative}"
+        end
+      end
+    end
+
+    it "controller runtime" do
+      assert_runtime_rbs("steep_controller_runtime")
+    end
+
+    it "view runtime" do
+      assert_runtime_rbs("steep_actionview_runtime")
+    end
+  end
+
   # Class-instance variables (felixefelip/rbs_infer#86). A `@x` written in a
   # singleton method (`def self.x`, `class << self`) or directly in the class
   # body is a class-instance variable — RBS declares it `self.@x`, a slot

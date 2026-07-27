@@ -1,0 +1,10 @@
+class ERBUsersShow
+  @posts: User_Post::ActiveRecord_Associations_CollectionProxy
+  @user: (User & User::Validated)
+
+  include ActionViewContext
+
+  def initialize: (posts: User_Post::ActiveRecord_Associations_CollectionProxy, user: (::User & ::User::Validated)) -> void
+  def params: () -> ActionController::Parameters
+  def __rbs_infer__body: () -> nil
+end

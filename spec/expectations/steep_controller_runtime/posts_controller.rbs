@@ -1,0 +1,15 @@
+class PostsController
+  @__rbs_infer__performed: true?
+
+  def render: (?untyped target, *untyped) -> bool
+
+  private
+
+  def __rbs_infer__run_index: () -> nil
+  def __rbs_infer__run_show: () -> nil
+  def __rbs_infer__run_new: () -> nil
+  def __rbs_infer__run_create: () -> void
+  def __rbs_infer__run_update: () -> void
+  def __rbs_infer__run_destroy: () -> void
+  def __rbs_infer__run_publish: () -> void
+end
