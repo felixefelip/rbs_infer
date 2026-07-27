@@ -2,9 +2,9 @@ class Example12
   @name: String?
   @value: Integer?
 
-  def run_name: () -> untyped
-  def run_age: () -> untyped
-  def dispatch_name: () -> untyped
-  def dispatch_age: () -> untyped
-  def show: (Symbol which) -> untyped
+  def run_name: () -> (String | Integer | nil)
+  def run_age: () -> (String | Integer | nil)
+  def dispatch_name: () -> (String | Integer | nil)
+  def dispatch_age: () -> (String | Integer | nil)
+  def show: (Symbol which) -> (String | Integer | nil)
 end

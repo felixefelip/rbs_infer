@@ -4,9 +4,9 @@
 # Regenerated on every run; do not edit.
 
 class PostsController
-  def render(*args)
+  def render(target = RBS_INFER_NO_RENDER_TARGET, *rest)
     @__rbs_infer__performed = true
-    case args.first
+    case target
     when :edit then ERBPostsEdit.new(post: @post).__rbs_infer__body
     when :new then ERBPostsNew.new(post: @post).__rbs_infer__body
     end

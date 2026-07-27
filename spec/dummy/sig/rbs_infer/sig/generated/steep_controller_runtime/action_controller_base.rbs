@@ -2,6 +2,8 @@ module ActionController
   class Base
     @__rbs_infer__performed: true?
 
+    RBS_INFER_NO_RENDER_TARGET: nil
+
     def redirect_to: (*untyped) -> bool
     def render: (*untyped) -> bool
     def head: (*untyped) -> bool

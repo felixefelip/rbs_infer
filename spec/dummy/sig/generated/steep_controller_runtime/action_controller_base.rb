@@ -5,6 +5,10 @@
 
 module ActionController
   class Base
+    # Sentinel for "no view target given" (see RENDER_NO_TARGET). It lives on
+    # the framework class so every controller override can name it.
+    RBS_INFER_NO_RENDER_TARGET = nil
+
     def redirect_to(*args)
       @__rbs_infer__performed = true
       true

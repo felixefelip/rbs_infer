@@ -4,9 +4,9 @@
 # Regenerated on every run; do not edit.
 
 class Users::AvatarsController
-  def render(*args)
+  def render(target = RBS_INFER_NO_RENDER_TARGET, *rest)
     @__rbs_infer__performed = true
-    case args.first
+    case target
     when :edit then ERBUsersAvatarsEdit.new(user: @user).__rbs_infer__body
     end
     true

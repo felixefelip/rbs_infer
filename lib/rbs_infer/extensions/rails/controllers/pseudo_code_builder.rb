@@ -69,6 +69,29 @@ module RbsInfer
           # source, even though (deliberately) modelled in more than one body.
           PERFORMED_IVAR = "@__rbs_infer__performed"
 
+          # The view target is a NAMED leading parameter, and the dispatch cases on it —
+          # not `def render(*args)` + `case args.first`.
+          #
+          # Both spellings type-check the same, but only this one is legible to the fork's
+          # argument-sensitive entry facts (felixefelip/steep#89, #91, #95). That machinery
+          # partitions a shared dispatcher's facts by the literal each caller passed, and it
+          # needs both halves: the producer keys a partition on a named positional parameter
+          # (a bare `*args` offers none), and the consumer only correlates a `case` whose
+          # subject is a plain read of that parameter (`args.first` is a method call on a
+          # local, not a parameter read).
+          #
+          # With this shape, `render :edit` from an action that ran `set_post` carries
+          # `@post` into the `:edit` branch — which is the whole point of the override
+          # existing per controller rather than on the framework class.
+          RENDER_TARGET_PARAM = "target"
+
+          # Sentinel default. A CONSTANT default is what makes the analyzer type the
+          # parameter `untyped` rather than narrowing it to the default's own type — a
+          # literal `nil` would infer `?nil` and reject every real `render :edit`. The
+          # parameter has to stay optional so a bare `render` in the user's own controller
+          # is still valid arity.
+          RENDER_NO_TARGET = "RBS_INFER_NO_RENDER_TARGET"
+
           HEADER = <<~RUBY
             # frozen_string_literal: true
             #
@@ -126,6 +149,10 @@ module RbsInfer
               #{HEADER}
               module ActionController
                 class Base
+                  # Sentinel for "no view target given" (see RENDER_NO_TARGET). It lives on
+                  # the framework class so every controller override can name it.
+                  #{RENDER_NO_TARGET} = nil
+
                   def redirect_to(*args)
                     #{PERFORMED_IVAR} = true
                     true
@@ -230,9 +257,9 @@ module RbsInfer
             return nil if branches.empty?
 
             [
-              "  def render(*args)",
+              "  def render(#{RENDER_TARGET_PARAM} = #{RENDER_NO_TARGET}, *rest)",
               "    #{PERFORMED_IVAR} = true",
-              "    case args.first",
+              "    case #{RENDER_TARGET_PARAM}",
               *branches,
               "    end",
               "    true",

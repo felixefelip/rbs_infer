@@ -2,7 +2,7 @@ module Users
   class AvatarsController
     @__rbs_infer__performed: true?
 
-    def render: (*untyped) -> bool
+    def render: (?untyped target, *untyped) -> bool
 
     private
 
