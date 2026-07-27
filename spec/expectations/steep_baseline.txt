@@ -7,6 +7,8 @@ app/models/concerns/test/filtrable.rb:7:4: [error] Type `(singleton(::Test) & si
 app/models/concerns/test/filtrable.rb:8:26: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `where`
 app/models/concerns/test/filtrable.rb:8:4: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `scope`
 app/models/example10.rb:27:26: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example12.rb:51:12: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example12.rb:53:13: [error] Type `(::Integer | nil)` does not have method `abs`
 app/models/example3.rb:122:11: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:63:13: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:64:26: [error] Type `(::Example3::User | nil)` does not have method `name`
@@ -28,3 +30,12 @@ app/services/profile_formatter.rb:31:4: [error] `format_nickname` requires `self
 app/services/profile_formatter.rb:37:13: [error] Type `(::String | nil)` does not have method `upcase`
 app/services/tag_destroy.rb:110:6: [error] Cannot allow method body have type `(void | ::String)` because declared as type `(::String | nil)`
 app/services/tag_destroy.rb:98:7: [error] Type `::TagDestroy` does not have method `untyped`
+app/views/posts/_form.html.erb:2:13: [error] Type `(::Post | (::Post & ::Post::Validated) | nil)` does not have method `errors`
+app/views/posts/_form.html.erb:4:29: [error] Type `(::Post | (::Post & ::Post::Validated) | nil)` does not have method `errors`
+app/views/posts/_form.html.erb:6:16: [error] Type `(::Post | (::Post & ::Post::Validated) | nil)` does not have method `errors`
+app/views/users/avatars/edit.html.erb:15:14: [error] Type `((::User & ::User::Validated) | nil)` does not have method `avatar`
+app/views/users/avatars/edit.html.erb:17:26: [error] Type `((::User & ::User::Validated) | nil)` does not have method `avatar`
+app/views/users/avatars/edit.html.erb:1:30: [error] Type `((::User & ::User::Validated) | nil)` does not have method `name`
+app/views/users/avatars/edit.html.erb:4:14: [error] Type `((::User & ::User::Validated) | nil)` does not have method `errors`
+app/views/users/avatars/edit.html.erb:6:30: [error] Type `((::User & ::User::Validated) | nil)` does not have method `errors`
+app/views/users/avatars/edit.html.erb:8:17: [error] Type `((::User & ::User::Validated) | nil)` does not have method `errors`
