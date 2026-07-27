@@ -735,6 +735,10 @@ postconditions:
     - "@user"
 method_entry_facts:
 - class: ApplicationController
+  method: current_user
+  ivars:
+    "@__rbs_infer__performed": 'true'
+- class: ApplicationController
   method: log_user_author_name
   self_methods:
     current_user: "(::User & ::User::Validated)"
@@ -801,6 +805,14 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+- class: Example12
+  method: dispatch_age
+  ivars:
+    "@value": "::Integer"
+- class: Example12
+  method: dispatch_name
+  ivars:
+    "@name": "::String"
 - class: Example4
   method: run_foo_name
   consts:
@@ -870,6 +882,8 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+  ivars:
+    "@post": "(::Post & ::Post::Validated)"
 - class: Posts::AssignmentsController
   method: create
   self_methods:
@@ -877,6 +891,8 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+  ivars:
+    "@post": "(::Post & ::Post::Validated)"
 - class: Posts::AssignmentsController
   method: set_post
   self_methods:
@@ -898,6 +914,8 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+  ivars:
+    "@post": "(::Post & ::Post::Validated)"
 - class: PostsController
   method: index
   self_methods:
@@ -926,6 +944,8 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+  ivars:
+    "@post": "(::Post & ::Post::Validated)"
 - class: PostsController
   method: render
   self_methods:
@@ -933,6 +953,8 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+  ivars:
+    "@__rbs_infer__performed": 'true'
 - class: PostsController
   method: set_post
   self_methods:
@@ -947,6 +969,8 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+  ivars:
+    "@post": "(::Post & ::Post::Validated)"
 - class: PostsController
   method: update
   self_methods:
@@ -954,6 +978,37 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+  ivars:
+    "@post": "(::Post & ::Post::Validated)"
+- class: TagDestroy
+  method: atribui_user
+  ivars:
+    "@posts": "::Array[untyped]"
+    "@tag": "(::Tag & ::Tag::Validated)"
+- class: TagDestroy
+  method: parse_xml
+  ivars:
+    "@xml": "::Nokogiri::XML::Document"
+- class: TagDestroy
+  method: parse_xml_as_hash
+  ivars:
+    "@xml": "::Nokogiri::XML::Document"
+- class: TagDestroy
+  method: parse_xml_as_hash_with_parse
+  ivars:
+    "@xml": "::Nokogiri::XML::Document"
+- class: TagDestroy
+  method: test_array_with_array
+  ivars:
+    "@xml": "::Nokogiri::XML::Document"
+- class: TagDestroy
+  method: test_array_with_array_with_elements_untyped
+  ivars:
+    "@xml": "::Nokogiri::XML::Document"
+- class: TagDestroy
+  method: test_hash
+  ivars:
+    "@xml": "::Nokogiri::XML::Document"
 - class: User
   method: recent_posts
   consts:
@@ -966,6 +1021,8 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+  ivars:
+    "@user": "(::User & ::User::Validated)"
 - class: Users::AvatarsController
   method: render
   self_methods:
@@ -973,6 +1030,9 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+  ivars:
+    "@__rbs_infer__performed": 'true'
+    "@user": "(::User & ::User::Validated)"
 - class: Users::AvatarsController
   method: set_user
   self_methods:
@@ -987,6 +1047,8 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+  ivars:
+    "@user": "(::User & ::User::Validated)"
 - class: UsersController
   method: index
   self_methods:
