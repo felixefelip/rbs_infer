@@ -183,6 +183,24 @@ postconditions:
   effects:
     may_write:
     - "@post"
+- class: Example12
+  method: run_age
+  unconditional:
+    ivars:
+      "@value": "::Integer"
+    self: "::Example12 & ::Example12::AfterRunAge"
+  effects:
+    may_write:
+    - "@value"
+- class: Example12
+  method: run_name
+  unconditional:
+    ivars:
+      "@name": "::String"
+    self: "::Example12 & ::Example12::AfterRunName"
+  effects:
+    may_write:
+    - "@name"
 - class: Example2::Foo
   method: user=
   unconditional:
