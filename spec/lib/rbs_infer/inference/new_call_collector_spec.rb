@@ -729,7 +729,39 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         target_class: "View", target_methods: { "render" => ["target"] }
       )
 
-      expect(usages["render"].first["target"]).to eq("Hash[Symbol, String]")
+      expect(usages["render"].first["target"]).to eq("{ partial: String }")
+    end
+
+    # A record keeps each key bound to its own value type. `Hash[Symbol, String | Post]`
+    # says only "some symbol maps to one of these", which loses which is which.
+    it "types it as a record, not a flattened key/value Hash" do
+      usages = collect_calls(
+        'View.new.render(partial: "posts/form", count: 2)',
+        target_class: "View", target_methods: { "render" => ["target"] }
+      )
+
+      expect(usages["render"].first["target"]).to eq("{ partial: String, count: Integer }")
+    end
+
+    it "builds a record for a nested hash too, so `locals:` keeps its own keys" do
+      usages = collect_calls(
+        'View.new.render(partial: "posts/form", locals: { count: 2 })',
+        target_class: "View", target_methods: { "render" => ["target"] }
+      )
+
+      expect(usages["render"].first["target"])
+        .to eq("{ partial: String, locals: { count: Integer } }")
+    end
+
+    # A record type can only describe all-symbol keys; anything else keeps `Hash[K, V]`.
+    it "falls back to a Hash when a nested key is not a symbol" do
+      usages = collect_calls(
+        'View.new.render(partial: "posts/form", locals: { "count" => 2 })',
+        target_class: "View", target_methods: { "render" => ["target"] }
+      )
+
+      expect(usages["render"].first["target"])
+        .to eq("{ partial: String, locals: Hash[String, untyped] }")
     end
 
     it "keeps a real keyword argument as a keyword" do

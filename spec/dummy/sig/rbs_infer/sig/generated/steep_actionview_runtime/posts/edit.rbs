@@ -5,7 +5,7 @@ class ERBPostsEdit
   include PostsHelper
 
   def initialize: (post: Post & ::Post::Validated) -> void
-  def render: (?Hash[Symbol, String | { post: untyped }] target, *untyped) -> nil
+  def render: (?{ partial: String, locals: { post: Post & Post::Validated } } target, *untyped) -> nil
   def params: () -> ActionController::Parameters
   def __rbs_infer__body: () -> nil
 end
