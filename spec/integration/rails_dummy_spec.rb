@@ -418,6 +418,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     it "view runtime" do
       assert_runtime_rbs("steep_actionview_runtime")
     end
+
+    it "ActiveRecord runtime" do
+      assert_runtime_rbs("steep_ar_runtime")
+    end
   end
 
   # Class-instance variables (felixefelip/rbs_infer#86). A `@x` written in a
