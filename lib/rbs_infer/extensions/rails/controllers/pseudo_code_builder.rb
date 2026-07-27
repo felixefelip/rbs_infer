@@ -3,6 +3,7 @@
 require "active_support/core_ext/string/inflections"
 require_relative "callback_chain_scanner"
 require_relative "../erb_convention_generator/view_path_naming"
+require_relative "../views/template_scanner"
 
 module RbsInfer
   module Extensions
@@ -221,10 +222,10 @@ module RbsInfer
           # rather than wrong.
           def render_override(class_name)
             branches = @scanner.render_targets_for(class_name).filter_map do |form, value|
-              erb_class, key = resolve_render_target(class_name, form, value)
+              erb_class, key, view_relative = resolve_render_target(class_name, form, value)
               next unless erb_class
 
-              "    when #{key} then #{erb_class}.new.__rbs_infer__body"
+              "    when #{key} then #{view_constructor(erb_class, view_relative)}.__rbs_infer__body"
             end
             return nil if branches.empty?
 
@@ -248,23 +249,27 @@ module RbsInfer
           # it dispatches on the argument exactly as written at the call site.
           def resolve_render_target(class_name, form, value)
             if form == :symbol
-              [convention_view_class(class_name, value), ":#{value}"]
+              klass, path = convention_view(class_name, value)
+              [klass, ":#{value}", path]
             elsif value.include?("/")
-              [absolute_view_class(value), value.inspect]
+              klass, path = absolute_view(value)
+              [klass, value.inspect, path]
             else
-              [convention_view_class(class_name, value), value.inspect]
+              klass, path = convention_view(class_name, value)
+              [klass, value.inspect, path]
             end
           end
 
           # The ERB class of an absolute view path (`"posts/new"` =>
           # `ERBPostsNew`), or nil when no template exists.
-          def absolute_view_class(path)
+          def absolute_view(path)
             fmt = %w[html turbo_stream].find do |f|
               File.exist?(File.join(@app_dir, "app/views", "#{path}.#{f}.erb"))
             end
             return nil unless fmt
 
-            view_path_naming.erb_class_name("#{path}.#{fmt}.erb")
+            relative = "#{path}.#{fmt}.erb"
+            [view_path_naming.erb_class_name(relative), relative]
           end
 
           # The request flow of one action: every before_action link that runs
@@ -289,13 +294,15 @@ module RbsInfer
           # the redirect / explicit-render case a no-op automatically. Empty when
           # the action has no convention template.
           def view_render_lines(class_name, action)
-            erb_class = convention_view_class(class_name, action) or return []
-            ["", "return if #{HALTED}", "", "#{erb_class}.new.__rbs_infer__body"]
+            erb_class, view_relative = convention_view(class_name, action)
+            return [] unless erb_class
+
+            ["", "return if #{HALTED}", "", "#{view_constructor(erb_class, view_relative)}.__rbs_infer__body"]
           end
 
           # The ERB class of `action`'s convention template, or nil when none
           # exists. `PostsController#show` → `posts/show.html.erb` → `ERBPostsShow`.
-          def convention_view_class(class_name, action)
+          def convention_view(class_name, action)
             view_dir = class_name.sub(/Controller\z/, "").underscore
             return nil if view_dir.empty?
 
@@ -304,7 +311,33 @@ module RbsInfer
             end
             return nil unless fmt
 
-            view_path_naming.erb_class_name("#{view_dir}/#{action}.#{fmt}.erb")
+            relative = "#{view_dir}/#{action}.#{fmt}.erb"
+            [view_path_naming.erb_class_name(relative), relative]
+          end
+
+          # `ERBPostsShow.new(comments: @comments, post: @post)` — the view's
+          # constructor call carrying the ivars ITS TEMPLATE READS, which are the
+          # keywords the view-runtime pseudo-code declares on `initialize`.
+          #
+          # Passing them is what gives those parameters a type at all: the
+          # analyzer reads this call site, so the action's `@post` — narrowed by
+          # the guard chain emitted above — flows into the view, and from the
+          # view's `render` into every partial it constructs. Without arguments
+          # the view's ivars infer `untyped` and so does every partial local.
+          def view_constructor(erb_class, view_relative)
+            ivars = view_ivars(view_relative)
+            return "#{erb_class}.new" if ivars.empty?
+
+            "#{erb_class}.new(#{ivars.map { |n| "#{n}: @#{n}" }.join(", ")})"
+          end
+
+          def view_ivars(view_relative)
+            return [] unless view_relative
+
+            path = File.join(@app_dir, "app/views", view_relative)
+            return [] unless File.exist?(path)
+
+            Views::TemplateScanner.scan(File.read(path)).ivars
           end
 
           def view_path_naming

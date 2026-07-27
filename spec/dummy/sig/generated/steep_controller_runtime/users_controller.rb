@@ -27,6 +27,6 @@ class UsersController
 
     return if performed?
 
-    ERBUsersShow.new.__rbs_infer__body
+    ERBUsersShow.new(posts: @posts, user: @user).__rbs_infer__body
   end
 end

@@ -51,7 +51,11 @@ rbs_generators_all:
 	make rbs_infer_ar_runtime
 	make rbs_infer_controller_runtime
 	make rbs_infer_current_runtime
-	make rbs_infer_erb
+	make rbs_infer_actionview_runtime
+# `rbs_infer_erb` (ErbConventionGenerator) is deliberately NOT part of this
+# chain: it declares the same ERB* classes the view-runtime pseudo-code does,
+# and the two disagree by construction. The target is kept so the old generator
+# can still be run standalone while it is being retired.
 
 ## Gerar RBS apenas para arquivo específico passado como argumento
 

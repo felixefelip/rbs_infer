@@ -1,0 +1,11 @@
+class ERBPartialPostsComment
+  include ActionViewContext
+
+  def initialize: (comment: untyped) -> void
+  def params: () -> ActionController::Parameters
+  def __rbs_infer__body: () -> nil
+
+  private
+
+  attr_reader comment: untyped
+end
