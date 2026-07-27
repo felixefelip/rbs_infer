@@ -56,9 +56,10 @@ module RbsInfer::Signatures
       types = {}
       includes = []
       class_method_types = {}
-      extract_members(decl.members, types, includes, class_method_types, normalized)
+      ivar_types = {}
+      extract_members(decl.members, types, includes, class_method_types, normalized, ivar_types)
 
-      RbsClassInfo.new(superclass:, types:, includes:, class_method_types:)
+      RbsClassInfo.new(superclass:, types:, includes:, class_method_types:, ivar_types:)
     end
 
     # Extrai superclass, tipos de método, includes e class methods de declarations já parseadas.
@@ -69,13 +70,14 @@ module RbsInfer::Signatures
       types = {}
       includes = []
       class_method_types = {}
+      ivar_types = {}
 
       find_declaration(declarations, normalized) do |decl|
         superclass = extract_superclass(decl)
-        extract_members(decl.members, types, includes, class_method_types, normalized)
+        extract_members(decl.members, types, includes, class_method_types, normalized, ivar_types)
       end
 
-      RbsClassInfo.new(superclass:, types:, includes:, class_method_types:)
+      RbsClassInfo.new(superclass:, types:, includes:, class_method_types:, ivar_types:)
     end
 
     # Extrai superclass, tipos de método, includes e class methods de uma classe/módulo.
@@ -131,7 +133,7 @@ module RbsInfer::Signatures
       decl.super_class&.name&.to_s&.sub(/\A::/, "")
     end
 
-    def extract_members(members, types, includes, class_method_types, parent_fqn)
+    def extract_members(members, types, includes, class_method_types, parent_fqn, ivar_types = {})
       members.each do |member|
         case member
         when RBS::AST::Members::MethodDefinition
@@ -154,6 +156,13 @@ module RbsInfer::Signatures
         when RBS::AST::Members::AttrReader, RBS::AST::Members::AttrAccessor, RBS::AST::Members::AttrWriter
           type_str = member.type.to_s
           types[member.name.to_s] ||= type_str unless type_str == "untyped"
+        when RBS::AST::Members::InstanceVariable
+          # `@post: Post`. Keyed WITH the `@`, matching how a Prism
+          # InstanceVariableReadNode names it. Class-instance variables
+          # (`self.@x`, ClassInstanceVariable) are a different slot and are not
+          # collected here.
+          type_str = member.type.to_s
+          ivar_types[member.name.to_s] ||= type_str unless type_str == "untyped"
         end
       end
     end

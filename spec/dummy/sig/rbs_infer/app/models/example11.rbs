@@ -1,0 +1,30 @@
+class Example11
+  class Post
+    def title: () -> String
+  end
+end
+
+class Example11
+  class Caller
+    def run: () -> Example11::View
+  end
+end
+
+class Example11
+  class View
+    @post: Example11::Post
+
+    def initialize: (post: Example11::Post) -> void
+    def render: () -> Example11::Partial
+  end
+end
+
+class Example11
+  class Partial
+    def initialize: (post: Example11::Post) -> void
+
+    private
+
+    attr_reader post: Example11::Post
+  end
+end

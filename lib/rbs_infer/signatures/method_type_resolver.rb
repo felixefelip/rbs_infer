@@ -126,6 +126,19 @@ module RbsInfer::Signatures
       lookup_class_methods(class_name)
     end
 
+    # Declared instance-variable types of a class, keyed WITH the `@`
+    # (`{"@post" => "Post"}`), read from its RBS (felixefelip/rbs_infer#111).
+    #
+    # A previous pass already wrote `@post: Post` for the class; this lets a call
+    # site that passes `@post` as an argument READ that instead of re-deriving it
+    # from the assignment's shape — which only ever recognized `@x = Foo.new`.
+    def resolve_ivar_types(class_name)
+      return {} unless class_name && class_name != "untyped"
+
+      @ivar_types_cache ||= {}
+      @ivar_types_cache[class_name] ||= @rbs_type_lookup.lookup_ivar_types(class_name)
+    end
+
     # Retorna os tipos dos parâmetros do initialize inferidos via call-sites
     # Ex: Entity.new(nome: "x", email: "y") → {"nome" => "String", "email" => "String"}
     def resolve_init_param_types(class_name)

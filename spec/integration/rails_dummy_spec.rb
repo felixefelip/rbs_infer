@@ -268,6 +268,35 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # IVAR-ARGUMENT RESOLUTION (unblocks felixefelip/rbs_infer#109).
+  # `Example11::Partial#initialize` infers `(post: Example11::Post)` from a call
+  # site that passes `@post`, whose type `Example11::View`'s generated RBS
+  # declares one class above.
+  #
+  # Guards two things that were both wrong: an ivar assigned from a PARAMETER is
+  # now resolvable at a call site (the syntactic collector only recorded
+  # `@x = Foo.new`), and it resolves against the LEXICALLY ENCLOSING class — here
+  # `Example11::View`, not the file's top-level `Example11`, which declares no
+  # `@post`.
+  #
+  # Not baselined in steep: `untyped` absorbs every call, so this never errored
+  # there. The generated RBS is the only place it shows.
+  it "example11" do
+    name = "models/example11"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example11.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # Class-instance variables (felixefelip/rbs_infer#86). A `@x` written in a
   # singleton method (`def self.x`, `class << self`) or directly in the class
   # body is a class-instance variable — RBS declares it `self.@x`, a slot
