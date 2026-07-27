@@ -493,6 +493,12 @@ module RbsInfer::Inference
     end
 
     def resolve_value_type(node)
+      # A hash literal is handled here, ahead of the generic literal inferrer, so its VALUES
+      # resolve with what this collector knows — ivars, locals, method returns. The generic
+      # inferrer builds the same record shape but sees none of that, so `{ post: @post }`
+      # came out `{ post: untyped }` even where `@post` is a known `Post & Post::Validated`.
+      return hash_literal_type(node) if record_shaped?(node)
+
       literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: @constant_arg_resolver)
       return literal if literal
 
@@ -684,17 +690,27 @@ module RbsInfer::Inference
       keys.none? { |k| param_names.include?(k) }
     end
 
-    # `Hash[Symbol, <union of the value types>]` for a literal keyword hash.
+    # A non-empty hash literal whose keys are ALL plain symbols — the only shape a record
+    # type can describe. Anything else (string/dynamic keys, `**splat`) keeps the generic
+    # inferrer's `Hash[K, V]`, which handles those.
+    def record_shaped?(node)
+      return false unless node.is_a?(Prism::HashNode) || node.is_a?(Prism::KeywordHashNode)
+      return false if node.elements.empty?
+
+      node.elements.all? { |e| e.is_a?(Prism::AssocNode) && extract_symbol_key(e.key) }
+    end
+
+    # `{ key: Type, ... }` for a literal keyword hash.
     def hash_literal_type(node)
-      values = node.elements.filter_map do |e|
+      pairs = node.elements.filter_map do |e|
         next unless e.is_a?(Prism::AssocNode)
-        t = resolve_value_type(e.value)
-        t unless t.nil? || t == "untyped"
-      end.uniq
+        key = extract_symbol_key(e.key) or next
+        "#{key}: #{resolve_value_type(e.value) || "untyped"}"
+      end
 
-      return "Hash[Symbol, untyped]" if values.empty?
+      return "Hash[Symbol, untyped]" if pairs.empty?
 
-      "Hash[Symbol, #{values.size == 1 ? values.first : values.join(" | ")}]"
+      "{ #{pairs.join(", ")} }"
     end
   end
 end

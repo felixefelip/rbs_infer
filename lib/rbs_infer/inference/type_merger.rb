@@ -31,18 +31,31 @@ module RbsInfer::Inference
       resolved = flat.reject { |t| t == "untyped" }
       resolved = flat if resolved.empty?
 
-      # Dedup by the normalized form (no leading `::`), keeping the original
-      # form of the first occurrence — a single type is emitted verbatim, so
-      # absolute names (`::MyApp::Entity`) stay intact.
+      # Dedup by the canonical form, keeping the original spelling of the first
+      # occurrence — a single type is emitted verbatim, so absolute names
+      # (`::MyApp::Entity`) stay intact.
       seen = {}
       unique = []
       resolved.each do |type|
-        key = type.sub(/\A::/, "")
+        key = canonical_key(type)
         next if seen[key]
         seen[key] = true
         unique << type
       end
       unique.size == 1 ? unique.first : "(#{unique.join(" | ")})"
+    end
+
+    # The identity of a type for dedup purposes, so two SPELLINGS of one type collapse.
+    # A textual key does not: the same intersection reaches the merger as
+    # `(Post & Post::Validated)` when read back from an RBS declaration and as
+    # `Post & Post::Validated` from Steep, and unioning them yielded
+    # `((Post & Post::Validated) | Post & Post::Validated)`. The RBS parser already
+    # canonicalizes redundant parens; the `::` strip stays because it is a naming
+    # convention (cross-class output omits the prefix), not something the parser touches.
+    def self.canonical_key(type)
+      RBS::Parser.parse_type(type).to_s.sub(/\A::/, "")
+    rescue RBS::ParsingError, RBS::BaseError
+      type.sub(/\A::/, "")
     end
 
     # Flattens a type into its set of top-level union members.

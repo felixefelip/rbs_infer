@@ -397,9 +397,12 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   #
   # `source_files` has to span `app/` AND `sig/`, matching how the CLI is invoked
   # (`rbs_infer app/ sig/`): the call sites that type a view live in the controller
-  # runtime under `sig/`, not in `app/`.
+  # runtime under `sig/`, not in `app/`. The `.erb` glob matters for the same reason —
+  # a view's own `render partial:` call site lives in the TEMPLATE, so without it the
+  # snapshot showed `render: (?untyped target, ...)` and was blind to the second half
+  # of the very chain it exists to guard.
   describe "runtime pseudo-code RBS" do
-    let(:source_files) { Dir["app/**/*.rb"] + Dir["sig/**/*.rb"] }
+    let(:source_files) { Dir["app/**/*.rb"] + Dir["app/**/*.erb"] + Dir["sig/**/*.rb"] }
 
     def assert_runtime_rbs(dir)
       pseudo_code = Dir["sig/generated/#{dir}/**/*.rb"].sort

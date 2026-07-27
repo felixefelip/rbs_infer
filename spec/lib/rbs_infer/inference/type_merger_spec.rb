@@ -58,6 +58,18 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
     it "drops untyped when at least one resolved type exists" do
       expect(described_class.union_types(["untyped", "String"])).to eq("String")
     end
+
+    # The same intersection arrives parenthesized when read back from an RBS declaration
+    # and bare from Steep. A textual key made them two members of a bogus union.
+    it "collapses two spellings of the same type" do
+      expect(described_class.union_types(["(Post & Post::Validated)", "Post & Post::Validated"]))
+        .to eq("(Post & Post::Validated)")
+    end
+
+    it "collapses spellings differing only in the absolute prefix" do
+      expect(described_class.union_types(["User & ::User::Validated", "(::User & ::User::Validated)"]))
+        .to eq("User & ::User::Validated")
+    end
   end
 
   describe "#resolve_method_return_types_from_attrs" do

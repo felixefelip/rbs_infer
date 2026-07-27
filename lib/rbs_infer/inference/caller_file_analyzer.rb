@@ -39,8 +39,14 @@ module RbsInfer::Inference
       # (infere attrs sem anotação via keyword defaults e call-sites)
       caller_visitor = RbsInfer::AST::ClassNameExtractor.new(file_path: file)
       result.value.accept(caller_visitor)
-      if caller_visitor.class_name
-        caller_types = @method_type_resolver.resolve_all(caller_visitor.class_name)
+      # A source that does not NAME its class still belongs to one: an ERB template is the
+      # body of `ERBPostsEdit`. Everything below is keyed on the caller's class — its
+      # methods, its ivar declarations, its callback/postcondition facts — so with no name
+      # a template resolved none of them, and `@post` in `locals: { post: @post }` came out
+      # `untyped` while the class's own RBS declared it `Post & Post::Validated`.
+      caller_class_name = caller_visitor.class_name || RbsInfer::Project::SourceOwners.owner_class(file)
+      if caller_class_name
+        caller_types = @method_type_resolver.resolve_all(caller_class_name)
         caller_types.each do |name, type|
           method_return_types[name] ||= type
         end
@@ -88,8 +94,8 @@ module RbsInfer::Inference
       # `self` types from the callback sidecar (felixefelip/steep#27) — the
       # narrowing isn't readable from Steep's per-node typing.
       self_types_by_method =
-        if @steep_bridge && caller_visitor.class_name
-          @steep_bridge.callback_self_types(caller_visitor.class_name)
+        if @steep_bridge && caller_class_name
+          @steep_bridge.callback_self_types(caller_class_name)
         else
           {}
         end
@@ -99,8 +105,8 @@ module RbsInfer::Inference
       # resolve `@post` to the narrowed type instead of the class-wide declared
       # one, which is nilable because the ivar is never assigned in `initialize`.
       established_ivars_by_method =
-        if @steep_bridge && caller_visitor.class_name
-          @steep_bridge.postcondition_established_ivars(caller_visitor.class_name)
+        if @steep_bridge && caller_class_name
+          @steep_bridge.postcondition_established_ivars(caller_class_name)
         else
           {}
         end
@@ -108,8 +114,8 @@ module RbsInfer::Inference
       # Argument-sensitive partitions: inside a `when :edit` branch of a `case <param>`,
       # the facts the callers passing `:edit` established hold.
       argument_partitions_by_method =
-        if @steep_bridge && caller_visitor.class_name
-          @steep_bridge.argument_entry_partitions(caller_visitor.class_name)
+        if @steep_bridge && caller_class_name
+          @steep_bridge.argument_entry_partitions(caller_class_name)
         else
           {}
         end
@@ -119,7 +125,7 @@ module RbsInfer::Inference
         method_return_types: method_return_types,
         local_var_types: local_var_types,
         method_type_resolver: @method_type_resolver,
-        caller_class_name: caller_visitor.class_name,
+        caller_class_name: caller_class_name,
         init_positional_params: @init_positional_params,
         target_methods: @target_methods,
         match_bare_calls: match_bare,
