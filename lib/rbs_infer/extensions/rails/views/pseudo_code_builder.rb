@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "template_scanner"
-require_relative "../erb_convention_generator/view_path_naming"
+require_relative "path_naming"
 
 module RbsInfer
   module Extensions
@@ -11,13 +11,13 @@ module RbsInfer
         # what ActionView does at render time, so the ANALYZER derives the view's RBS the
         # same way it derives any other class's.
         #
-        # This replaces hand-rolled inference with the generic pipeline. The previous
-        # generator (`ErbConventionGenerator`) emitted `.rbs` directly and had to compute
-        # the types itself: `PartialLocalsCollector` walked every `render` call site, mapped
-        # Prism nodes to type strings by hand, resolved collection element types, and merged
-        # results with `merge_types` — a UNION OVER EVERY CALL SITE IN THE APP, built by
-        # string concatenation. A partial rendered from two actions got the union of both,
-        # with no way to say "on this path it is the narrowed one".
+        # This replaces hand-rolled inference with the generic pipeline. The generator it
+        # retired (`ErbConventionGenerator`, removed once this shipped) emitted `.rbs`
+        # directly and had to compute the types itself: it walked every `render` call site,
+        # mapped Prism nodes to type strings by hand, resolved collection element types, and
+        # merged the results by STRING CONCATENATION — a union over every call site in the
+        # app. A partial rendered from two actions got the union of both, with no way to say
+        # "on this path it is the narrowed one".
         #
         # Emitting Ruby instead makes each render a real call site:
         #
@@ -44,7 +44,7 @@ module RbsInfer
         # dispatch would be dead code. Since only the presence of the call site matters for
         # inference, the calls are emitted unconditionally.
         class PseudoCodeBuilder
-          include ErbConventionGenerator::ViewPathNaming
+          include PathNaming
 
           FileEntry = Struct.new(:filename, :source, keyword_init: true)
 

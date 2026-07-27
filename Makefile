@@ -24,9 +24,6 @@ rbs_collection_update:
 rbs_rails_generator:
 	cd $(DUMMY_DIR) && bundle exec rake rbs_rails:all
 
-rbs_infer_erb:
-	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/extensions/rails/erb_convention_generator'; RbsInfer::Extensions::Rails::ErbConventionGenerator.new(app_dir: '.', output_dir: 'sig/rbs_infer_erb', source_files: Dir['app/**/*.rb']).generate_all"
-
 rbs_infer_module_self_types:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/extensions/rails/module_self_type_generator'; RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator.new(app_dir: '.').generate"
 
@@ -52,10 +49,6 @@ rbs_generators_all:
 	make rbs_infer_controller_runtime
 	make rbs_infer_current_runtime
 	make rbs_infer_actionview_runtime
-# `rbs_infer_erb` (ErbConventionGenerator) is deliberately NOT part of this
-# chain: it declares the same ERB* classes the view-runtime pseudo-code does,
-# and the two disagree by construction. The target is kept so the old generator
-# can still be run standalone while it is being retired.
 
 ## Gerar RBS apenas para arquivo específico passado como argumento
 

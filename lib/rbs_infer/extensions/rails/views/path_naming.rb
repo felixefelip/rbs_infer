@@ -3,8 +3,11 @@
 module RbsInfer
   module Extensions
     module Rails
-      class ErbConventionGenerator
-        module ViewPathNaming
+      module Views
+        # The ERB naming convention: view path <-> class name, and the controller/action a
+        # view belongs to. Shared by the view- and controller-runtime pseudo-code builders
+        # and by the CurrentAttributes callbacks generator.
+        module PathNaming
           # Convert view relative path to ERB class name.
           #   "posts/show.html.erb"               → "ERBPostsShow"
           #   "posts/_form.html.erb"              → "ERBPartialPostsForm"

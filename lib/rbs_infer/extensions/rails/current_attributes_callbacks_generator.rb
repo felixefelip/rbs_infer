@@ -7,7 +7,7 @@ require "prism"
 require "active_support/core_ext/string/inflections"
 require_relative "before_action_scanner"
 require_relative "partial_render_graph"
-require_relative "erb_convention_generator/view_path_naming"
+require_relative "views/path_naming"
 require_relative "../../ast/param_guarded_self_writes"
 require_relative "../../signatures/rbs_parser_util"
 require_relative "../../signatures/method_type_resolver"
@@ -340,10 +340,10 @@ module RbsInfer
           end
         end
 
-        # Stateless holder for `ViewPathNaming#erb_class_name` (view path →
+        # Stateless holder for `Views::PathNaming#erb_class_name` (view path →
         # ERB class name), reused without dragging in the ERB generator.
         def view_path_naming
-          @view_path_naming ||= Object.new.extend(ErbConventionGenerator::ViewPathNaming)
+          @view_path_naming ||= Object.new.extend(Views::PathNaming)
         end
 
         def marker_name(constant)

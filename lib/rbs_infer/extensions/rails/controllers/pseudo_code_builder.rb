@@ -2,7 +2,7 @@
 
 require "active_support/core_ext/string/inflections"
 require_relative "callback_chain_scanner"
-require_relative "../erb_convention_generator/view_path_naming"
+require_relative "../views/path_naming"
 require_relative "../views/template_scanner"
 
 module RbsInfer
@@ -358,7 +358,7 @@ module RbsInfer
           end
 
           def view_path_naming
-            @view_path_naming ||= Object.new.extend(ErbConventionGenerator::ViewPathNaming)
+            @view_path_naming ||= Object.new.extend(Views::PathNaming)
           end
 
           # A handler link is a self-send; a block link is the block's body

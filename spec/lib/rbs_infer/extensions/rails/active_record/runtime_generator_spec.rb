@@ -222,7 +222,11 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       aggregate_failures do
         files.each { |f| expect(f.source).to eq(expectations.join(f.filename).read) }
         # no stale/extra expectation files
-        expect(expectations.children.map { |p| p.basename.to_s }.sort).to eq(files.map(&:filename).sort)
+        # `.rb` only: the inferred `.rbs` snapshots live in this same directory
+        # (spec/integration/rails_dummy_spec.rb, "runtime pseudo-code RBS") and are
+        # not this generator's output.
+        pseudo_code = expectations.children.select { |p| p.extname == ".rb" }
+        expect(pseudo_code.map { |p| p.basename.to_s }.sort).to eq(files.map(&:filename).sort)
       end
     end
   end
