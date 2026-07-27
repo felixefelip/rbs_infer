@@ -753,7 +753,7 @@ module RbsInfer
   def find_new_calls
     positional_params = extract_init_positional_params
     target_methods = extract_target_method_params
-    analyzer = RbsInfer::Inference::CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, init_positional_params: positional_params, target_methods: target_methods, steep_bridge: steep_bridge)
+    analyzer = RbsInfer::Inference::CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, target_file: @target_file, init_positional_params: positional_params, target_methods: target_methods, steep_bridge: steep_bridge)
     @source_index.files_referencing(@target_class).flat_map { |file| analyzer.analyze(file) }
   end
 
@@ -774,6 +774,7 @@ module RbsInfer
     positional_params = extract_init_positional_params
     analyzer = RbsInfer::Inference::CallerFileAnalyzer.new(
       target_class: @target_class,
+      target_file: @target_file,
       method_type_resolver: method_type_resolver,
       init_positional_params: positional_params,
       target_methods: target_methods,

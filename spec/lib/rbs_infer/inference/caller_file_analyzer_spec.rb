@@ -2,10 +2,15 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Inference::CallerFileAnalyzer do
+  # Test-only default for the required `target_file` (which gates bare-call matching
+  # for a class reopened across files). These examples exercise a private string
+  # helper and never reach that path, so any path serves — the production API stays
+  # strict so a forgotten wiring fails loudly instead of widening types.
   let(:analyzer) do
     described_class.new(
       target_class: "Foo",
-      method_type_resolver: nil
+      method_type_resolver: nil,
+      target_file: "app/models/foo.rb"
     )
   end
 

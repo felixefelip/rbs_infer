@@ -1523,4 +1523,90 @@ RSpec.describe RbsInfer::Analyzer do
     end
   end
 
+
+  # ─── optarg from call sites across a reopened class ─────────────
+
+  describe "#generate_rbs typing an optional parameter from call sites" do
+    around do |ex|
+      Dir.mktmpdir { |dir| Dir.chdir(dir) { ex.run } }
+    end
+    before { RbsInfer::Signatures::RbsTypeLookup.reset! }
+
+    def write(path, content)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, content)
+      path
+    end
+
+    # A class REOPENED across files reaches its own methods with a bare call, so those
+    # call sites have to count. This is the controller-runtime shape: the pseudo-code
+    # defines `render`, the app's own controller file calls `render :new`. Only the
+    # `include` spelling used to match, so the parameter stayed `untyped`.
+    it "reads a bare self-call from another file that reopens the class" do
+      target = write("app/def.rb", <<~RUBY)
+        class Reopened
+          def handle(target = nil, *rest)
+            target
+          end
+        end
+      RUBY
+      write("app/call.rb", <<~RUBY)
+        class Reopened
+          def run
+            handle(:edit)
+          end
+        end
+      RUBY
+
+      rbs = described_class.new(target_class: "Reopened", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
+
+      expect(rbs).to include("def handle: (?Symbol target")
+    end
+
+    # The target's OWN file is already covered by IntraClassCallAnalyzer. Counting it
+    # again through the caller sweep resolves the receiver a second, different way and
+    # widens the parameter into a union — which is what `target_file` gates against.
+    it "does not double-count a self-call in the target's own file" do
+      target = write("app/only.rb", <<~RUBY)
+        class Solo
+          attr_reader :tag
+
+          def run
+            handle(tag)
+          end
+
+          def handle(value)
+            value
+          end
+
+          def build
+            @tag = Tag.new
+          end
+        end
+
+        class Tag
+        end
+      RUBY
+
+      rbs = described_class.new(target_class: "Solo", target_file: target, source_files: [target]).generate_rbs
+
+      expect(rbs).to include("def handle: (Tag value)")
+      expect(rbs).not_to match(/def handle: \(\(Tag \| /)
+    end
+
+    it "leaves the parameter untyped when no call site pins it" do
+      target = write("app/lonely.rb", <<~RUBY)
+        class Lonely
+          def handle(target = nil)
+            target
+          end
+        end
+      RUBY
+
+      rbs = described_class.new(target_class: "Lonely", target_file: target, source_files: [target]).generate_rbs
+
+      expect(rbs).to include("def handle: (?untyped target)")
+    end
+  end
+
 end

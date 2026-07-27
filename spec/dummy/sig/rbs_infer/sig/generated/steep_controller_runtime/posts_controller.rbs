@@ -1,7 +1,7 @@
 class PostsController
   @__rbs_infer__performed: true?
 
-  def render: (?untyped target, *untyped) -> bool
+  def render: (?Symbol target, *untyped) -> bool
 
   private
 

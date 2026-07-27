@@ -4,8 +4,14 @@ module RbsInfer::Inference
 
     attr_reader :method_call_usages
 
-    def initialize(target_class:, method_type_resolver:, init_positional_params: [], target_methods: {}, steep_bridge: nil)
+    # `target_file`: the file being analyzed. REQUIRED, not defaulted: it gates bare-call
+    # matching for a class reopened across files, and the target's own file is already
+    # covered by `IntraClassCallAnalyzer`. Omitting it would double-count every same-file
+    # self-call — the two paths resolve the receiver differently, so the parameter widens
+    # into a union instead of failing loudly (required-threaded-deps).
+    def initialize(target_class:, method_type_resolver:, target_file:, init_positional_params: [], target_methods: {}, steep_bridge: nil)
       @target_class = target_class
+      @target_file = target_file
       @method_type_resolver = method_type_resolver
       @init_positional_params = init_positional_params
       @target_methods = target_methods
@@ -58,7 +64,15 @@ module RbsInfer::Inference
       # proved can reach the target's methods (the host and its sibling
       # concerns), which never name the concern themselves (#64).
       short_name = @target_class.split("::").last
-      match_bare = force_bare || source.match?(/\binclude\b.*\b#{Regexp.escape(short_name)}\b/)
+      # A file that REOPENS the target class reaches its methods with a bare call too —
+      # `render :new` inside `class PostsController` is a self-call, wherever that reopen
+      # lives. Without this only the `include` shape counted, so a class split across files
+      # (the controller-runtime pseudo-code defines the method, the app's own file calls it)
+      # left every such call site invisible and its parameters `untyped`.
+      reopens_target = caller_visitor.class_name == @target_class.sub(/\A::/, "") &&
+                       File.expand_path(file.to_s) != File.expand_path(@target_file.to_s)
+      match_bare = force_bare || reopens_target ||
+                   source.match?(/\binclude\b.*\b#{Regexp.escape(short_name)}\b/)
 
       # After-validation callback narrowing: inside e.g. an `after_create`
       # handler, `self` is the validated record, so `Foo.new(self)` should
