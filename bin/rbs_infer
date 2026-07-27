@@ -72,11 +72,22 @@ end
 # `app/`/`engines/`/`lib/` — p.ex. o pseudo-código AR-runtime sob `sig/` —
 # o call-site ficava invisível e a inferência de param/getter degradava
 # para `untyped`. Unir input + layout padrão cobre os dois casos.
-source_files = (files + Dir["app/**/*.rb", "engines/**/*.rb", "lib/**/*.rb"]).uniq
+# `.erb` sits alongside `.rb` here because ParseCache reads it as a source format,
+# not because of anything Rails: a template's calls are call sites like any other, and
+# leaving them out is what made a helper's parameters (and a view's `render`) `untyped`.
+source_files = (
+  files +
+  Dir["app/**/*.rb", "engines/**/*.rb", "lib/**/*.rb"] +
+  Dir["app/**/*.erb", "engines/**/*.erb", "lib/**/*.erb"]
+).uniq
 
 rails_project = Gem::Specification.find_by_name("rails") rescue nil
 
 if rails_project
+  # Registers the ERB path -> class convention, so a template is selected as a caller of
+  # the class it is the body of (the core reads it as Ruby either way).
+  require "rbs_infer/extensions/rails/views/erb_source_owner"
+
   require "rbs_infer/extensions/rails/erb_caller_resolver"
   erb_caller_resolver = RbsInfer::Extensions::Rails::ErbCallerResolver.new(
     app_dir: Dir.pwd,

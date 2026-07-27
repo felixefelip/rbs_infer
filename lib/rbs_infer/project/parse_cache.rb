@@ -1,3 +1,5 @@
+require_relative "source_reader"
+
 module RbsInfer::Project
   # Cache de parse compartilhado por análise.
   # Garante que cada arquivo seja lido do disco e parseado pelo Prism apenas uma vez.
@@ -13,11 +15,19 @@ module RbsInfer::Project
       return @cache[file] if @cache.key?(file)
 
       @cache[file] = begin
-        source = File.read(file)
-        Entry.new(source: source, result: Prism.parse(source))
+        source = RbsInfer::Project::SourceReader.read(file)
+        source && Entry.new(source: source, result: Prism.parse(source))
       rescue Errno::ENOENT, Errno::EACCES
         nil
       end
+    end
+
+
+    def extract_ruby(source)
+      require "herb"
+      Herb.extract_ruby(source, comments: true)
+    rescue LoadError, StandardError
+      nil
     end
   end
 end

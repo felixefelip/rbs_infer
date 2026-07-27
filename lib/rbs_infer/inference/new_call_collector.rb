@@ -637,11 +637,23 @@ module RbsInfer::Inference
       args = {}
       return args unless call_node.arguments
 
-      # Args posicionais
+      # Args posicionais. Um `KeywordHashNode` normalmente é keyword — mas em Ruby 3,
+      # quando o método NÃO aceita keywords, as keywords do call-site viram um Hash
+      # POSICIONAL (`render partial: "x"` chega em `def render(target = nil, *rest)` como
+      # `target = {partial: "x"}`). Reconhecemos isso quando nenhuma chave corresponde a um
+      # parâmetro e ainda há slot posicional livre: sem isso o argumento desaparece, e o
+      # parâmetro é tipado só pelos OUTROS call-sites — estreito demais, não apenas impreciso.
       index = 0
       call_node.arguments.arguments.each do |arg|
         break if index >= param_names.size
-        next if arg.is_a?(Prism::KeywordHashNode)
+
+        if arg.is_a?(Prism::KeywordHashNode)
+          next unless collapses_to_positional?(arg, param_names)
+
+          args[param_names[index]] = hash_literal_type(arg)
+          index += 1
+          next
+        end
 
         args[param_names[index]] = resolve_value_type(arg)
         index += 1
@@ -650,6 +662,7 @@ module RbsInfer::Inference
       # Args keyword
       call_node.arguments.arguments.each do |arg|
         next unless arg.is_a?(Prism::KeywordHashNode)
+        next if collapses_to_positional?(arg, param_names)
 
         arg.elements.each do |elem|
           next unless elem.is_a?(Prism::AssocNode)
@@ -660,6 +673,28 @@ module RbsInfer::Inference
       end
 
       args
+    end
+
+    # Whether a keyword hash at the call site is really a positional Hash: no key names a
+    # parameter, so the callee cannot be receiving them as keywords.
+    def collapses_to_positional?(node, param_names)
+      keys = node.elements.filter_map { |e| e.is_a?(Prism::AssocNode) ? extract_symbol_key(e.key) : nil }
+      return false if keys.empty?
+
+      keys.none? { |k| param_names.include?(k) }
+    end
+
+    # `Hash[Symbol, <union of the value types>]` for a literal keyword hash.
+    def hash_literal_type(node)
+      values = node.elements.filter_map do |e|
+        next unless e.is_a?(Prism::AssocNode)
+        t = resolve_value_type(e.value)
+        t unless t.nil? || t == "untyped"
+      end.uniq
+
+      return "Hash[Symbol, untyped]" if values.empty?
+
+      "Hash[Symbol, #{values.size == 1 ? values.first : values.join(" | ")}]"
     end
   end
 end
