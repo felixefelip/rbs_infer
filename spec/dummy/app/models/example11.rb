@@ -23,34 +23,32 @@ class Example11
     end
 
     # A human reads `@post` here as `Example11::Post`: the only caller passes
-    # `Post.new`, and nothing reassigns it. The analyzer agrees at the CLASS
-    # level — the generated RBS declares `@post: Example11::Post` — but not at
-    # this CALL SITE.
+    # `Post.new`, and nothing reassigns it. The analyzer now agrees at this CALL
+    # SITE too, by reading the type off the class's own RBS.
     def render
       Example11::Partial.new(post: @post)
     end
   end
 
-  # IVAR-ARGUMENT RESOLUTION gap. `Partial#initialize` should infer
-  # `(post: Example11::Post)` from the call site above, but infers
-  # `(post: untyped)`.
+  # IVAR-ARGUMENT RESOLUTION. `Partial#initialize` infers
+  # `(post: Example11::Post)` from the call site above.
   #
-  # Cause: `NewCallCollector#collect_class_ivar_types` records an ivar only when
-  # it is assigned from a CallNode (`@post = Post.new`, `@post = Foo.bar`). An
-  # ivar assigned from a PARAMETER is skipped, so `lookup_ivar_type` finds
-  # nothing and the argument resolves to `untyped`.
+  # It used to infer `(post: untyped)`. `NewCallCollector#collect_class_ivar_types`
+  # records an ivar only when it is assigned from a CallNode
+  # (`@post = Post.new`, `@post = Foo.bar`); an ivar assigned from a PARAMETER —
+  # the commonest shape there is, and the one the view-runtime pseudo-code emits —
+  # was skipped, so `lookup_ivar_type` found nothing.
   #
-  # The fact is not missing — it is discarded. `Example11::View`'s own generated
-  # RBS already declares `@post: Example11::Post`; the collector does not consult
-  # it and re-derives with narrower logic. Swapping the assignment to
-  # `@post = Example11::Post.new` makes this partial infer `Example11::Post`,
-  # which isolates the cause to the assignment SHAPE, not to anything about the
-  # call site.
+  # The fact was never missing, only discarded: `Example11::View`'s own generated
+  # RBS already declared `@post: Example11::Post`. The fix reads that back instead
+  # of teaching the syntactic collector one more assignment shape — and resolves
+  # it against the LEXICALLY ENCLOSING class, since the caller class tracked per
+  # file names the outer `Example11`, whose RBS declares no `@post` at all.
   #
-  # This blocks the view-RBS reformulation: every partial local depends on this
-  # second hop, so all of them infer `untyped` until it resolves. Note the gap is
-  # invisible to `steep check` — `untyped` absorbs every method call, so nothing
-  # errors. The evidence is the generated RBS snapshot.
+  # Note this gap was invisible to `steep check`: `untyped` absorbs every method
+  # call, so nothing errored. The evidence is the generated RBS snapshot, which is
+  # why this fixture is pinned by an integration expectation rather than by the
+  # steep baseline.
   class Partial
     def initialize(post:)
       @post = post

@@ -132,7 +132,31 @@ module RbsInfer::Inference
     # for in-class ivars).
     def lookup_ivar_type(node)
       full = node.name.to_s
-      @local_var_types[full] || @local_var_types[full.sub(/\A@/, "")]
+      @local_var_types[full] || @local_var_types[full.sub(/\A@/, "")] || declared_ivar_type(full)
+    end
+
+    # The type the ENCLOSING class's RBS declares for this ivar
+    # (felixefelip/rbs_infer#111).
+    #
+    # `collect_class_ivar_types` only records an ivar assigned from a CallNode
+    # (`@post = Post.new`), so `@post = post` — storing a constructor argument, the
+    # commonest shape there is — left the ivar unknown and every call site passing it
+    # resolved to `untyped`. The fact was never missing: a previous stabilization pass
+    # already wrote `@post: Post` into the class's own RBS. This reads it back rather
+    # than teaching the syntactic collector one more assignment shape.
+    # Resolved against the LEXICALLY ENCLOSING class, not the file's top-level one:
+    # `@caller_class_name` is per-file, so in a file of nested classes it names the
+    # outer one, whose RBS declares none of the inner `@x`. Reading the wrong class's
+    # declaration would be worse than reading none — two nested classes may each
+    # declare `@post` at different types.
+    def declared_ivar_type(name)
+      return nil unless @method_type_resolver
+
+      class_name = @class_name_stack.last || @caller_class_name
+      return nil unless class_name
+
+      type = @method_type_resolver.resolve_ivar_types(class_name)[name]
+      type if type && type != "untyped"
     end
 
     def collect_class_ivar_types(class_node)

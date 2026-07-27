@@ -122,6 +122,55 @@ RSpec.describe RbsInfer::Signatures::RbsTypeLookup do
     end
   end
 
+  # felixefelip/rbs_infer#111. Reads back what an earlier pass wrote, so a call
+  # site passing `@post` resolves against the class's declared ivar type.
+  describe "#lookup_ivar_types" do
+    around do |ex|
+      Dir.mktmpdir { |dir| Dir.chdir(dir) { ex.run } }
+    end
+    before { described_class.reset! }
+
+    def write_rbs(path, content)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, content)
+    end
+
+    it "finds ivars in a file matching the class path" do
+      write_rbs("sig/view.rbs", "class View\n  @post: Post\nend\n")
+
+      expect(lookup.lookup_ivar_types("View")).to eq("@post" => "Post")
+    end
+
+    it "finds ivars of a nested class the filename does not name" do
+      # The shape the analyzer emits for `class Outer; class View; end; end` —
+      # one .rbs per source file, several classes inside it.
+      write_rbs("sig/outer.rbs", <<~RBS)
+        class Outer
+          class View
+            @post: Outer::Post
+          end
+        end
+      RBS
+
+      expect(lookup.lookup_ivar_types("Outer::View")).to eq("@post" => "Outer::Post")
+    end
+
+    it "returns empty for a class with no declared ivars" do
+      write_rbs("sig/view.rbs", "class View\n  def render: () -> void\nend\n")
+
+      expect(lookup.lookup_ivar_types("View")).to be_empty
+    end
+
+    it "does not inherit a superclass's ivar declaration" do
+      # An ivar is the class's own slot; attributing the parent's declaration to
+      # the child would hand out a type the child may not hold.
+      write_rbs("sig/parent.rbs", "class Parent\n  @post: Post\nend\n")
+      write_rbs("sig/child.rbs", "class Child < Parent\nend\n")
+
+      expect(lookup.lookup_ivar_types("Child")).to be_empty
+    end
+  end
+
   # Run-wide caches shared across instances (felixefelip/rbs_infer#47). Each
   # example runs in its own tmpdir (a distinct Dir.pwd), so the pwd-scoped
   # cache is naturally isolated; reset! is belt-and-suspenders.

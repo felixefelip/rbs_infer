@@ -268,18 +268,19 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
-  # IVAR-ARGUMENT RESOLUTION gap (blocks felixefelip/rbs_infer#109). Pins the
-  # CURRENT, wrong output: `Example11::Partial#initialize` infers
-  # `(post: untyped)` although the call site passes `@post`, whose type the
-  # generated RBS of `Example11::View` declares one class above
-  # (`@post: Example11::Post`).
+  # IVAR-ARGUMENT RESOLUTION (unblocks felixefelip/rbs_infer#109).
+  # `Example11::Partial#initialize` infers `(post: Example11::Post)` from a call
+  # site that passes `@post`, whose type `Example11::View`'s generated RBS
+  # declares one class above.
   #
-  # `NewCallCollector#collect_class_ivar_types` records an ivar only when it is
-  # assigned from a CallNode, so `@post = post` (from a parameter) is skipped.
-  # When that is fixed this expectation flips to `Example11::Post` — which is the
-  # point of pinning it: the diff IS the fix landing.
+  # Guards two things that were both wrong: an ivar assigned from a PARAMETER is
+  # now resolvable at a call site (the syntactic collector only recorded
+  # `@x = Foo.new`), and it resolves against the LEXICALLY ENCLOSING class — here
+  # `Example11::View`, not the file's top-level `Example11`, which declares no
+  # `@post`.
   #
-  # Not baselined in steep: `untyped` absorbs every call, so nothing errors there.
+  # Not baselined in steep: `untyped` absorbs every call, so this never errored
+  # there. The generated RBS is the only place it shows.
   it "example11" do
     name = "models/example11"
     rbs = RbsInfer::Analyzer.new(

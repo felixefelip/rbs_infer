@@ -6,7 +6,15 @@ module RbsInfer::Signatures
   #
   # Extraído de MethodTypeResolver para manter responsabilidades separadas.
 
-  RbsClassInfo = Data.define(:superclass, :types, :includes, :class_method_types)
+  # `ivar_types` maps an instance variable name (WITH the `@`) to its declared type,
+  # from `@post: Post` members. Needed to resolve an ivar passed as an argument at a
+  # call site (felixefelip/rbs_infer#111): the enclosing class's RBS already states the
+  # type, so the collector reads it instead of re-deriving one.
+  RbsClassInfo = Data.define(:superclass, :types, :includes, :class_method_types, :ivar_types) do
+    def initialize(superclass:, types:, includes:, class_method_types:, ivar_types: {})
+      super
+    end
+  end
 
   class RbsTypeLookup
     # Run-wide caches shared across every instance. A fresh RbsTypeLookup is
@@ -108,6 +116,34 @@ module RbsInfer::Signatures
       end
 
       return types, superclass, all_includes
+    end
+
+    # Declared instance-variable types of a class (`{"@post" => "Post"}`), merged over
+    # the RBS files that declare it. Same two-phase file search as `lookup_rbs_types`:
+    # by path first, then by scanning for an inner class.
+    #
+    # Unlike methods, ivars are NOT inherited here: a subclass's `@x` is its own slot
+    # and the superclass walk (`lookup_inherited_types`) would attribute the wrong
+    # declaration when both declare it.
+    def lookup_ivar_types(class_name)
+      normalized = class_name.sub(/\A::/, "")
+      ivars = {}
+
+      class_path = RbsInfer.class_name_to_path(normalized)
+      self.class.glob("sig/**/*.rbs").each do |rbs_file|
+        next unless rbs_file.end_with?("#{class_path}.rbs")
+        class_info_from_file(rbs_file, normalized).ivar_types.each { |name, type| ivars[name] ||= type }
+      end
+
+      if ivars.empty?
+        short_name = normalized.split("::").last
+        self.class.glob("sig/**/*.rbs").each do |rbs_file|
+          next unless cached_content_for(rbs_file).include?(short_name)
+          class_info_from_file(rbs_file, normalized).ivar_types.each { |name, type| ivars[name] ||= type }
+        end
+      end
+
+      ivars
     end
 
     # Parseia um arquivo RBS e extrai métodos, superclass e includes de uma classe específica.

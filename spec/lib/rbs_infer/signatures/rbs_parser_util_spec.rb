@@ -4,6 +4,49 @@ require "rbs"
 
 RSpec.describe RbsInfer::Signatures::RbsParserUtil do
   describe ".class_info_from_rbs" do
+    # felixefelip/rbs_infer#111: instance-variable members used to be parsed and
+    # dropped, so a call site passing `@post` had nothing to resolve against even
+    # though the class's own RBS stated the type.
+    it "extrai tipos de instance variables, com o `@`" do
+      rbs = <<~RBS
+        class View
+          @post: Post
+          @count: Integer
+          def render: () -> void
+        end
+      RBS
+
+      info = described_class.class_info_from_rbs(rbs, "View")
+
+      expect(info.ivar_types).to eq("@post" => "Post", "@count" => "Integer")
+    end
+
+    it "ignora instance variable declarada como untyped" do
+      rbs = <<~RBS
+        class View
+          @post: untyped
+        end
+      RBS
+
+      expect(described_class.class_info_from_rbs(rbs, "View").ivar_types).to be_empty
+    end
+
+    it "não confunde instance variable com attr_reader de mesmo nome" do
+      # `attr_reader post: Post` is a METHOD (`types`); `@post: Post` is the ivar
+      # slot. They are keyed separately so a reader never masks the ivar lookup.
+      rbs = <<~RBS
+        class View
+          @post: Post
+          attr_reader post: String
+        end
+      RBS
+
+      info = described_class.class_info_from_rbs(rbs, "View")
+
+      expect(info.ivar_types).to eq("@post" => "Post")
+      expect(info.types).to include("post" => "String")
+    end
+
     it "extrai informações de classe simples" do
       rbs = <<~RBS
         class User
