@@ -12,9 +12,13 @@ class ERBPostsShow
     @post = post
   end
 
-  def render(*args)
-    @comments.each { |comment| ERBPartialPostsComment.new(comment: comment) }
-    ERBPartialPostsSummary.new(post: @post)
+  def render(target = nil, *rest)
+    name = target.is_a?(::Hash) ? target[:partial] : target
+    case name
+    when "comment" then @comments.each { |comment| ERBPartialPostsComment.new(comment: comment).__rbs_infer__body }
+    when "posts/summary" then ERBPartialPostsSummary.new(post: @post).__rbs_infer__body
+    end
+    nil
   end
 
   def params

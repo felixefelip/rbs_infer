@@ -143,14 +143,51 @@ module RbsInfer
             ["  def initialize(#{params})", *assigns, "  end"].join("\n")
           end
 
-          # Hosts one constructor call per partial this template renders. An iteration-bound
-          # render is re-emitted AS the loop, so the local's type is the collection's element
-          # type — derived by the pipeline, not unwrapped here.
+          # Models the template's renders as a dispatch on the partial name, mirroring what
+          # ActionView does and mirroring the controller-runtime override. One `when` per
+          # partial, keyed by the name AS THE TEMPLATE WRITES IT, so a shorthand
+          # `render "posts/summary"` matches its own branch.
+          #
+          # The dispatch keys on the partial NAME, taken the way ActionView takes it: from
+          # `partial:` when render is called with options, from the first positional in the
+          # shorthand form. Without that step the `partial:`/`locals:` form — the common one
+          # — passes a HASH as the first argument and no branch could ever match it, so the
+          # `case` would be describing a dispatch the template never performs.
+          #
+          # (Unlike the controller override, this does not need the subject to be a bare
+          # parameter read: the fork's argument-sensitive entry facts key partitions on
+          # literal arguments, and a template calls `render partial: "x"` — no literal in a
+          # positional slot — so views produce no partitions to stay legible to. Measured:
+          # zero partitions for ERB classes in the dummy.)
+          #
+          # The locals were already faithful: `locals: { post: @post }` is desugared into the
+          # constructor arguments, which is what makes them a call site the analyzer types.
+          #
+          # Two renders of the same partial collapse into one branch — a duplicate `when`
+          # key would be dead after the first.
           def render_method(scan, caller_dir)
-            calls = scan.renders.filter_map { |render| render_call(render, caller_dir) }
-            return nil if calls.empty?
+            branches = scan.renders.filter_map { |render|
+              call = render_call(render, caller_dir) or next
+              [render.partial, call]
+            }.uniq(&:first)
+            return nil if branches.empty?
 
-            ["  def render(*args)", *calls, "  end"].join("\n")
+            body = branches.map { |name, call| "    when #{name.inspect} then #{call}" }
+            # Closes with an explicit `nil`, as the controller override closes with `true`.
+            # Without it the method's value is the `case`, whose type is the union of every
+            # branch plus `nil` (there is no `else`) — and the analyzer types the method from
+            # the last branch alone, so the RBS it writes contradicts the body Steep checks.
+            # Nothing consumes this return: the constructors are here to BE call sites, and
+            # the real `render` returns a String this pseudo-code does not model.
+            [
+              "  def render(target = nil, *rest)",
+              "    name = target.is_a?(::Hash) ? target[:partial] : target",
+              "    case name",
+              *body,
+              "    end",
+              "    nil",
+              "  end"
+            ].join("\n")
           end
 
           def render_call(render, caller_dir)
@@ -163,10 +200,16 @@ module RbsInfer
             args = render.locals.map { |name, value| "#{name}: #{value}" }.join(", ")
             construct = args.empty? ? "#{klass}.new" : "#{klass}.new(#{args})"
 
+            # `.__rbs_infer__body` — rendering a partial RUNS it, and its body is the method
+            # the template compiles to (felixefelip/steep#85). Calling it is what puts the
+            # partial's body in this view's flow, so the facts holding here reach it; the
+            # controller-runtime override calls the view's body for the same reason.
+            rendered = "#{construct}.__rbs_infer__body"
+
             if (iteration = render.iteration)
-              "    #{iteration[:receiver]}.each { |#{iteration[:param]}| #{construct} }"
+              "#{iteration[:receiver]}.each { |#{iteration[:param]}| #{rendered} }"
             else
-              "    #{construct}"
+              rendered
             end
           end
 

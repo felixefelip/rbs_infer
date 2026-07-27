@@ -671,7 +671,9 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
       files = described_class.new(app_dir: DUMMY_APP_ROOT).build
 
       if ENV["UPDATE_EXPECTATIONS"]
-        expectations.rmtree if expectations.exist?
+        # `.rb` only: the inferred `.rbs` snapshots share this directory
+        # (spec/integration/rails_dummy_spec.rb) and rmtree would take them out.
+        expectations.glob("**/*.rb").each(&:delete) if expectations.exist?
         expectations.mkpath
         files.each { |f| expectations.join(f.filename).write(f.source) }
       end

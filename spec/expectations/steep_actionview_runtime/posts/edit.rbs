@@ -5,7 +5,7 @@ class ERBPostsEdit
   include PostsHelper
 
   def initialize: (post: Post & ::Post::Validated) -> void
-  def render: (*untyped) -> ERBPartialPostsForm
+  def render: (?untyped target, *untyped) -> nil
   def params: () -> ActionController::Parameters
   def __rbs_infer__body: () -> nil
 end
