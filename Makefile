@@ -36,6 +36,9 @@ rbs_infer_ar_runtime:
 rbs_infer_controller_runtime:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/controllers/runtime_generator'; RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator.new(app_dir: '.').generate"
 
+rbs_infer_actionview_runtime:
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/views/runtime_generator'; RbsInfer::Extensions::Rails::Views::RuntimeGenerator.new(app_dir: '.').generate"
+
 rbs_infer_current_runtime:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/current_attributes_runtime_generator'; RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator.new(app_dir: '.').generate"
 
@@ -48,7 +51,11 @@ rbs_generators_all:
 	make rbs_infer_ar_runtime
 	make rbs_infer_controller_runtime
 	make rbs_infer_current_runtime
-	make rbs_infer_erb
+	make rbs_infer_actionview_runtime
+# `rbs_infer_erb` (ErbConventionGenerator) is deliberately NOT part of this
+# chain: it declares the same ERB* classes the view-runtime pseudo-code does,
+# and the two disagree by construction. The target is kept so the old generator
+# can still be run standalone while it is being retired.
 
 ## Gerar RBS apenas para arquivo específico passado como argumento
 

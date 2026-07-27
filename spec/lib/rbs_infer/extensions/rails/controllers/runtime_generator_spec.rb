@@ -371,11 +371,48 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
         [
           "@__rbs_infer__performed = true",
           "case args.first",
-          "when :new then ERBPostsNew.new.__rbs_infer__body",
+          "when :new then ERBPostsNew.new(post: @post).__rbs_infer__body",
           "end",
           "true",
         ]
       )
+    end
+
+    # The constructor carries the ivars the VIEW'S TEMPLATE reads, which are the
+    # keywords the view-runtime pseudo-code declares on `initialize`. Passing them
+    # is what gives those parameters a type: the analyzer reads this call site, so
+    # the controller's `@post` flows into the view and on into its partials
+    # (felixefelip/rbs_infer#109). Without arguments they all infer `untyped`.
+    it "passes the ivars the rendered template reads, sorted" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def create
+              render :new
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "<%= @post.title %> <%= @author %>"
+      )
+
+      expect(render_override(result, "posts_controller.rb"))
+        .to include("when :new then ERBPostsNew.new(author: @author, post: @post).__rbs_infer__body")
+    end
+
+    it "emits a bare constructor for a template that reads no ivars" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def create
+              render :new
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "<h1>static</h1>"
+      )
+
+      expect(render_override(result, "posts_controller.rb"))
+        .to include("when :new then ERBPostsNew.new.__rbs_infer__body")
     end
 
     # The override marks the SAME halt marker the framework `render` sets, so

@@ -1,0 +1,9 @@
+class ERBUsersAvatarsEdit
+  @user: (User & User::Validated)?
+
+  include ActionViewContext
+
+  def initialize: (user: ((User & User::Validated)? | (::User & ::User::Validated))) -> void
+  def params: () -> ActionController::Parameters
+  def __rbs_infer__body: () -> nil
+end

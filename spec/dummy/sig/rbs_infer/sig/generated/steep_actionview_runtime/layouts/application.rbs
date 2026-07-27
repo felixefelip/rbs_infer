@@ -1,0 +1,6 @@
+class ERBLayoutsApplication
+  include ActionViewContext
+
+  def params: () -> ActionController::Parameters
+  def __rbs_infer__body: () -> nil
+end

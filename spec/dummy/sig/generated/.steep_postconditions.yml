@@ -106,20 +106,53 @@ postconditions:
   effects:
     may_write:
     - "@user"
-- class: ERBPartialsPostsForm
+- class: ERBPartialPostsComment
+  method: initialize
+  effects:
+    may_write:
+    - "@comment"
+- class: ERBPartialPostsForm
+  method: initialize
+  effects:
+    may_write:
+    - "@post"
+- class: ERBPartialPostsSummary
   method: initialize
   effects:
     may_write:
     - "@post"
 - class: ERBPostsEdit
   method: initialize
-  unconditional:
-    ivars:
-      "@post": untyped
-    self: "::ERBPostsEdit & ::ERBPostsEdit::AfterInitialize"
   effects:
     may_write:
     - "@post"
+- class: ERBPostsIndex
+  method: initialize
+  effects:
+    may_write:
+    - "@posts"
+- class: ERBPostsNew
+  method: initialize
+  effects:
+    may_write:
+    - "@post"
+- class: ERBPostsShow
+  method: initialize
+  effects:
+    may_write:
+    - "@comments"
+    - "@post"
+- class: ERBUsersAvatarsEdit
+  method: initialize
+  effects:
+    may_write:
+    - "@user"
+- class: ERBUsersShow
+  method: initialize
+  effects:
+    may_write:
+    - "@posts"
+    - "@user"
 - class: EmailNotifier
   method: initialize
   effects:

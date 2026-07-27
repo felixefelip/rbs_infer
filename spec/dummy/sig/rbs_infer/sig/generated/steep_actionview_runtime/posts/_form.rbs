@@ -1,0 +1,11 @@
+class ERBPartialPostsForm
+  include ActionViewContext
+
+  def initialize: (post: (Post | (Post & Post::Validated))?) -> void
+  def params: () -> ActionController::Parameters
+  def __rbs_infer__body: () -> nil
+
+  private
+
+  attr_reader post: (Post | (Post & Post::Validated))?
+end

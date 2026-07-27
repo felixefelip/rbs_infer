@@ -28,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {})
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {})
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -50,6 +50,11 @@ module RbsInfer::Inference
       # SteepBridge#callback_self_types). Preferred over the lexical class
       # name when resolving `self` inside such a method.
       @self_types_by_method = self_types_by_method
+      # `{ "set_post" => { "@post" => "(::Post & ::Post::Validated)" } }` — ivars a
+      # self-method proves populated once it has run (postconditions sidecar). Applied
+      # in source order by `visit_call_node`, so only call sites AFTER the establishing
+      # call see the narrowed type (felixefelip/rbs_infer#109).
+      @established_ivars_by_method = established_ivars_by_method
       @usages = []
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
       # Lexically-enclosing class names (fully qualified) and whether the
@@ -90,6 +95,8 @@ module RbsInfer::Inference
     end
 
     def visit_call_node(node)
+      apply_established_ivars(node)
+
       if node.name == :new && node.receiver
         receiver_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
         if receiver_name && match_class?(receiver_name)
@@ -157,6 +164,23 @@ module RbsInfer::Inference
 
       type = @method_type_resolver.resolve_ivar_types(class_name)[name]
       type if type && type != "untyped"
+    end
+
+    # A self-call to a method whose postcondition establishes ivars narrows them for
+    # everything that follows IN THIS BODY. Visiting happens in source order, so
+    # recording into `@local_var_types` here is enough to order the effect: a
+    # `.new(post: @post)` written before the `set_post` call still sees the declared
+    # type. `visit_def_node` saves/restores the table, so the narrowing does not leak
+    # into a sibling method.
+    #
+    # Only a bare (implicit-self) call counts — `other.set_post` writes another
+    # object's ivars, not ours.
+    def apply_established_ivars(node)
+      return if @established_ivars_by_method.empty?
+      return unless node.receiver.nil?
+
+      established = @established_ivars_by_method[node.name.to_s] or return
+      established.each { |ivar, type| @local_var_types[ivar] = type }
     end
 
     def collect_class_ivar_types(class_node)

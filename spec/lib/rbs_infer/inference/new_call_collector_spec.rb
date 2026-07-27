@@ -502,4 +502,108 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       expect(usages["user="]).to eq([{ "value" => "nil" }])
     end
   end
+
+  # felixefelip/rbs_infer#109. A controller's declared `@post` is nilable (the
+  # ivar is assigned in `set_post`, not in `initialize`), but past the `set_post`
+  # call it is narrowed. The narrowing is a FLOW fact the analyzer cannot derive,
+  # so it is read from the postconditions sidecar and applied in SOURCE ORDER.
+  describe "ivars established by a self-call (postconditions sidecar)" do
+    def collect_with_established(source, target_class:, established:)
+      result = Prism.parse(source)
+      visitor = described_class.new(
+        target_class: target_class,
+        method_return_types: {},
+        local_var_types: {},
+        constant_arg_resolver: null_constant_resolver,
+        defined_class_names: described_class.collect_defined_class_names(result.value),
+        established_ivars_by_method: established
+      )
+      result.value.accept(visitor)
+      visitor.usages
+    end
+
+    let(:established) { { "set_post" => { "@post" => "(Post & Post::Validated)" } } }
+
+    it "narrows an ivar argument after the establishing call" do
+      source = <<~RUBY
+        class PostsController
+          def run
+            set_post
+            View.new(post: @post)
+          end
+        end
+      RUBY
+
+      usages = collect_with_established(source, target_class: "View", established: established)
+
+      expect(usages.first["post"]).to eq("(Post & Post::Validated)")
+    end
+
+    it "does not narrow a call site written BEFORE the establishing call" do
+      # The ivar is not populated yet at that point, so claiming the narrowed
+      # type there would be a fact the source does not support.
+      source = <<~RUBY
+        class PostsController
+          def run
+            View.new(post: @post)
+            set_post
+          end
+        end
+      RUBY
+
+      usages = collect_with_established(source, target_class: "View", established: established)
+
+      expect(usages.first["post"]).to eq("untyped")
+    end
+
+    it "does not leak the narrowing into a sibling method" do
+      source = <<~RUBY
+        class PostsController
+          def one
+            set_post
+          end
+
+          def two
+            View.new(post: @post)
+          end
+        end
+      RUBY
+
+      usages = collect_with_established(source, target_class: "View", established: established)
+
+      expect(usages.first["post"]).to eq("untyped")
+    end
+
+    it "ignores an establishing call made on another object" do
+      # `other.set_post` writes THAT object's ivars, not ours.
+      source = <<~RUBY
+        class PostsController
+          def run
+            other.set_post
+            View.new(post: @post)
+          end
+        end
+      RUBY
+
+      usages = collect_with_established(source, target_class: "View", established: established)
+
+      expect(usages.first["post"]).to eq("untyped")
+    end
+
+    it "leaves the argument alone when no method establishes it" do
+      source = <<~RUBY
+        class PostsController
+          def run
+            set_post
+            View.new(other: @other)
+          end
+        end
+      RUBY
+
+      usages = collect_with_established(source, target_class: "View", established: established)
+
+      expect(usages.first["other"]).to eq("untyped")
+    end
+  end
+
 end

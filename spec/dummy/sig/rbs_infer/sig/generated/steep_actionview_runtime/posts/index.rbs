@@ -1,0 +1,10 @@
+class ERBPostsIndex
+  @posts: Post::ActiveRecord_Relation
+
+  include ActionViewContext
+  include PostsHelper
+
+  def initialize: (posts: Post::ActiveRecord_Relation) -> void
+  def params: () -> ActionController::Parameters
+  def __rbs_infer__body: () -> nil
+end
