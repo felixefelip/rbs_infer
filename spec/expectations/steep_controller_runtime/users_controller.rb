@@ -4,6 +4,14 @@
 # Regenerated on every run; do not edit.
 
 class UsersController
+  def render(target = nil, *rest)
+    @__rbs_infer__performed = true
+    case target
+    when :show then ERBUsersShow.new(posts: @posts, user: @user).__rbs_infer__body
+    end
+    true
+  end
+
   private
 
   def __rbs_infer__run_index
@@ -27,6 +35,6 @@ class UsersController
 
     return if performed?
 
-    ERBUsersShow.new(posts: @posts, user: @user).__rbs_infer__body
+    render :show
   end
 end

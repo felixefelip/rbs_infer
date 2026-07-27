@@ -5,7 +5,7 @@ class ERBPostsShow
   include ActionViewContext
   include PostsHelper
 
-  def initialize: (comments: Comment::ActiveRecord_Relation, post: (::Post & ::Post::Validated)) -> void
+  def initialize: (comments: Comment::ActiveRecord_Relation, post: Post & ::Post::Validated) -> void
   def render: (?({ partial: String, locals: { comment: (Comment & Comment::Validated) } } | String) target, *untyped) -> nil
   def params: () -> ActionController::Parameters
   def __rbs_infer__body: () -> nil

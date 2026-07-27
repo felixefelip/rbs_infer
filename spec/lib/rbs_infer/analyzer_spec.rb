@@ -507,6 +507,60 @@ RSpec.describe RbsInfer::Analyzer do
       end
     end
 
+    # The `?` used to depend on WHICH pass typed the method: a literal tail fell
+    # through to the Steep pass (which widened) while a CALL tail was resolved by
+    # chain resolution or TypeMerger (which did not), so the same guard produced
+    # `-> bool?` or `-> bool` depending on the shape after it. The widening is now
+    # one pass over the finished signatures.
+    it "anota com ? um early return seguido de tail que é uma CHAMADA" do
+      files = {
+        "guard.rb" => <<~RUBY
+          class Guard
+            def tail_is_literal
+              return if performed?
+
+              true
+            end
+
+            def tail_is_call
+              return if performed?
+
+              do_render
+            end
+
+            def no_early_return
+              do_render
+            end
+
+            def value_return_only
+              return 1 if performed?
+
+              2
+            end
+
+            def performed?
+              false
+            end
+
+            def do_render
+              true
+            end
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |_dir, paths|
+        rbs = described_class.new(target_file: paths.first, source_files: paths).generate_rbs
+
+        expect(rbs).to include("def tail_is_literal: () -> bool?")
+        expect(rbs).to include("def tail_is_call: () -> bool?")
+        # No early return → no widening.
+        expect(rbs).to include("def no_early_return: () -> bool")
+        # `return 1` is not a nil return.
+        expect(rbs).to include("def value_return_only: () -> Integer")
+      end
+    end
+
     # Regression: block generic resolution (`.map { ... }`) lives in the
     # same loop that updates already-typed methods. Singleton methods
     # need that loop to fire on them too — otherwise `.map`'s

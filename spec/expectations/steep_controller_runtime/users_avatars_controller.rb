@@ -28,7 +28,7 @@ class Users::AvatarsController
 
     return if performed?
 
-    ERBUsersAvatarsEdit.new(user: @user).__rbs_infer__body
+    render :edit
   end
 
   def __rbs_infer__run_update

@@ -282,6 +282,11 @@ module RbsInfer
     # param types and ivar types (ivar getters/setters — rbs_infer#19)
     type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target, method_param_types: method_param_types, ivar_types: ivar_types)
 
+    # A body with an early `return` can return nil however its tail was typed. Runs
+    # AFTER every pass that sets a return type — each used to widen (or forget to) on
+    # its own, so which passes a method took decided whether the `?` appeared.
+    return_type_resolver.apply_early_return_nilability(target_members, parsed_target: @parsed_target)
+
     # Resolver tipos das constantes de classe/módulo (NOME = ...).
     # Feito aqui, no Analyzer, porque a inferência de cadeias usa o
     # SteepBridge e o new→classe-alvo precisa do target_class

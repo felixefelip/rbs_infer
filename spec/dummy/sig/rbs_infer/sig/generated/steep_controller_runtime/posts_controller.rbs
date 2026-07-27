@@ -5,9 +5,9 @@ class PostsController
 
   private
 
-  def __rbs_infer__run_index: () -> nil
-  def __rbs_infer__run_show: () -> nil
-  def __rbs_infer__run_new: () -> nil
+  def __rbs_infer__run_index: () -> bool?
+  def __rbs_infer__run_show: () -> bool?
+  def __rbs_infer__run_new: () -> bool?
   def __rbs_infer__run_create: () -> void
   def __rbs_infer__run_update: () -> void
   def __rbs_infer__run_destroy: () -> void

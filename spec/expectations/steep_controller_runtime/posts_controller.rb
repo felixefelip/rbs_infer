@@ -8,7 +8,9 @@ class PostsController
     @__rbs_infer__performed = true
     case target
     when :edit then ERBPostsEdit.new(post: @post).__rbs_infer__body
+    when :index then ERBPostsIndex.new(posts: @posts).__rbs_infer__body
     when :new then ERBPostsNew.new(post: @post).__rbs_infer__body
+    when :show then ERBPostsShow.new(comments: @comments, post: @post).__rbs_infer__body
     end
     true
   end
@@ -26,7 +28,7 @@ class PostsController
 
     return if performed?
 
-    ERBPostsIndex.new(posts: @posts).__rbs_infer__body
+    render :index
   end
 
   def __rbs_infer__run_show
@@ -43,7 +45,7 @@ class PostsController
 
     return if performed?
 
-    ERBPostsShow.new(comments: @comments, post: @post).__rbs_infer__body
+    render :show
   end
 
   def __rbs_infer__run_new
@@ -57,7 +59,7 @@ class PostsController
 
     return if performed?
 
-    ERBPostsNew.new(post: @post).__rbs_infer__body
+    render :new
   end
 
   def __rbs_infer__run_create

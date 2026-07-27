@@ -723,6 +723,15 @@ postconditions:
     may_write:
     - "@users"
 - class: UsersController
+  method: render
+  unconditional:
+    ivars:
+      "@__rbs_infer__performed": 'true'
+    self: "::UsersController & ::UsersController::AfterRender"
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+- class: UsersController
   method: show
   unconditional:
     ivars:
@@ -953,8 +962,6 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
-  ivars:
-    "@__rbs_infer__performed": 'true'
 - class: PostsController
   method: set_post
   self_methods:
@@ -1031,7 +1038,6 @@ method_entry_facts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
   ivars:
-    "@__rbs_infer__performed": 'true'
     "@user": "(::User & ::User::Validated)"
 - class: Users::AvatarsController
   method: set_user
@@ -1056,6 +1062,16 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+- class: UsersController
+  method: render
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+  ivars:
+    "@posts": "::User_Post::ActiveRecord_Associations_CollectionProxy"
+    "@user": "(::User & ::User::Validated)"
 - class: UsersController
   method: show
   self_methods:
@@ -1122,14 +1138,32 @@ argument_entry_facts:
 - class: PostsController
   method: render
   param: target
+  pattern: ":index"
+  ivars:
+    "@posts": "::Post::ActiveRecord_Relation"
+- class: PostsController
+  method: render
+  param: target
   pattern: ":new"
   ivars:
-    "@__rbs_infer__performed": 'true'
     "@post": "::Post"
+- class: PostsController
+  method: render
+  param: target
+  pattern: ":show"
+  ivars:
+    "@comments": "::Comment::ActiveRecord_Relation"
+    "@post": "(::Post & ::Post::Validated)"
 - class: Users::AvatarsController
   method: render
   param: target
   pattern: ":edit"
   ivars:
-    "@__rbs_infer__performed": 'true'
+    "@user": "(::User & ::User::Validated)"
+- class: UsersController
+  method: render
+  param: target
+  pattern: ":show"
+  ivars:
+    "@posts": "::User_Post::ActiveRecord_Associations_CollectionProxy"
     "@user": "(::User & ::User::Validated)"
