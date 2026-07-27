@@ -1064,6 +1064,18 @@ method_entry_facts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
 argument_entry_facts:
+- class: Example12
+  method: show
+  param: which
+  pattern: ":age"
+  ivars:
+    "@value": "::Integer"
+- class: Example12
+  method: show
+  param: which
+  pattern: ":name"
+  ivars:
+    "@name": "::String"
 - class: Example7::Dispatcher
   method: show
   param: which
