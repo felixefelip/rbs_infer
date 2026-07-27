@@ -12,7 +12,8 @@ class ERBPostsNew
   end
 
   def render(target = nil, *rest)
-    case target
+    name = target.is_a?(::Hash) ? target[:partial] : target
+    case name
     when "posts/form" then ERBPartialPostsForm.new(post: @post)
     end
     nil

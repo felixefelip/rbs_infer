@@ -120,7 +120,8 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       )
 
       expect(method_body(source_of(result, "posts/edit.rb"), "render")).to eq(
-        "case target\n" \
+        "name = target.is_a?(::Hash) ? target[:partial] : target\n" \
+        "case name\n" \
         "when \"posts/form\" then ERBPartialPostsForm.new(post: @post)\n" \
         "end\n" \
         "nil"
@@ -136,7 +137,8 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       # The `when` key is the name AS WRITTEN at the call site (so a shorthand
       # `render "form"` matches it), while the class comes from the resolved path.
       expect(method_body(source_of(result, "posts/edit.rb"), "render")).to eq(
-        "case target\n" \
+        "name = target.is_a?(::Hash) ? target[:partial] : target\n" \
+        "case name\n" \
         "when \"form\" then ERBPartialPostsForm.new(post: @post)\n" \
         "end\n" \
         "nil"
@@ -196,7 +198,8 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       )
 
       expect(method_body(source_of(result, "posts/show.rb"), "render")).to eq(
-        "case target\n" \
+        "name = target.is_a?(::Hash) ? target[:partial] : target\n" \
+        "case name\n" \
         "when \"comment\" then ERBPartialPostsComment.new(comment: @comment)\n" \
         "when \"posts/summary\" then ERBPartialPostsSummary.new(post: @post)\n" \
         "end\n" \
@@ -204,9 +207,10 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       )
     end
 
-    it "dispatches on a named target parameter, not on `args.first`" do
-      # Only a named positional parameter with a `case` reading it plainly is legible to
-      # the fork's argument-sensitive entry facts; `*args` + `args.first` is not.
+    it "takes the partial name the way ActionView does, from either call form" do
+      # The `partial:`/`locals:` form passes a HASH as the first argument, so dispatching on
+      # it directly would describe a branch the template can never reach. Modelling the
+      # extraction keeps both call forms live.
       result = build(
         "app/views/posts/_form.html.erb" => "<%= post %>\n",
         "app/views/posts/edit.html.erb" => "<%= render partial: \"posts/form\", locals: { post: @post } %>\n"
@@ -214,7 +218,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
 
       source = source_of(result, "posts/edit.rb")
       expect(source).to include("def render(target = nil, *rest)")
-      expect(source).to include("case target")
+      expect(source).to include("case name")
       expect(source).not_to include("args.first")
     end
 

@@ -13,7 +13,8 @@ class ERBPostsShow
   end
 
   def render(target = nil, *rest)
-    case target
+    name = target.is_a?(::Hash) ? target[:partial] : target
+    case name
     when "comment" then @comments.each { |comment| ERBPartialPostsComment.new(comment: comment) }
     when "posts/summary" then ERBPartialPostsSummary.new(post: @post)
     end
