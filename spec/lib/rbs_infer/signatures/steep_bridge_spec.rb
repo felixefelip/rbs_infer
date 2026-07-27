@@ -462,6 +462,40 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
     end
   end
 
+  describe "#argument_entry_partitions" do
+    # Argument-sensitive partitions (felixefelip/steep#89, #91, #95): per (method,
+    # parameter, literal), what the callers passing that literal had established. The
+    # dummy's controller-runtime `render` override dispatches `case target when :edit`.
+    it "maps a method to its per-literal partitions" do
+      result = bridge.argument_entry_partitions("PostsController")
+
+      edit = result["render"].find { |p| p[:pattern] == ":edit" }
+      expect(edit).not_to be_nil
+      expect(edit[:param]).to eq("target")
+      expect(edit[:ivars]["@post"]).to eq("::Post & ::Post::Validated")
+    end
+
+    it "keeps each literal's partition separate" do
+      result = bridge.argument_entry_partitions("PostsController")
+
+      new_partition = result["render"].find { |p| p[:pattern] == ":new" }
+      expect(new_partition[:ivars]["@post"]).to eq("::Post")
+    end
+
+    it "normalizes a leading :: in the class name" do
+      expect(bridge.argument_entry_partitions("::PostsController"))
+        .to eq(bridge.argument_entry_partitions("PostsController"))
+    end
+
+    it "returns an empty result for a class with no partitions" do
+      expect(bridge.argument_entry_partitions("Foo")).to be_empty
+    end
+
+    it "returns an empty result for nil" do
+      expect(bridge.argument_entry_partitions(nil)).to eq({})
+    end
+  end
+
   describe "#ivar_write_types" do
     # Cobertura da regra introduzida em felixefelip/rbs_infer#4:
     # coleta todas as escritas, deduplica, e adiciona `| nil` quando a

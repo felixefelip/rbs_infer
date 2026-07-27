@@ -28,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {})
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {})
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -55,6 +55,9 @@ module RbsInfer::Inference
       # in source order by `visit_call_node`, so only call sites AFTER the establishing
       # call see the narrowed type (felixefelip/rbs_infer#109).
       @established_ivars_by_method = established_ivars_by_method
+      # `{ "render" => [{ param:, pattern:, ivars: }] }` — argument-sensitive partitions
+      # (felixefelip/steep#89, #91, #95). Applied per `when` branch by `visit_case_node`.
+      @argument_partitions_by_method = argument_partitions_by_method
       @usages = []
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
       # Lexically-enclosing class names (fully qualified) and whether the
@@ -92,6 +95,39 @@ module RbsInfer::Inference
       @current_method = old_method
       @in_singleton_method = old_singleton
       @local_var_types = old_vars
+    end
+
+    # A `case <param> ... when <literal>` branch is reachable only for callers who passed
+    # that literal, so the facts the fork recorded for that (param, literal) partition hold
+    # inside it — and only inside it. Each branch body is visited with those ivars merged
+    # in, then the table is restored, so a sibling branch and everything after the `case`
+    # are unaffected.
+    #
+    # This is what lets a shared dispatcher stay precise: a controller's `render` override
+    # is one method reached from every action, so its ivars are the meet over all of them;
+    # the partition is what says "on the :edit path, `@post` was established".
+    def visit_case_node(node)
+      partitions = partitions_for_case(node)
+      return super if partitions.empty?
+
+      node.conditions.each do |clause|
+        next unless clause.is_a?(Prism::WhenNode)
+
+        ivars = clause.conditions.filter_map { |c| partitions[literal_key(c)] }.reduce({}, :merge)
+        if ivars.empty?
+          clause.statements&.accept(self)
+          next
+        end
+
+        saved = @local_var_types.dup
+        ivars.each { |name, type| @local_var_types[name] = type }
+        clause.statements&.accept(self)
+        @local_var_types = saved
+      end
+
+      node.else_clause&.accept(self)
+      node.predicate&.accept(self)
+      nil
     end
 
     def visit_call_node(node)
@@ -181,6 +217,39 @@ module RbsInfer::Inference
 
       established = @established_ivars_by_method[node.name.to_s] or return
       established.each { |ivar, type| @local_var_types[ivar] = type }
+    end
+
+    # `{ literal_key => ivars }` for the partitions keyed on this `case`'s subject, or `{}`.
+    # Only a bare read of a METHOD PARAMETER qualifies: the correlation is between the
+    # caller's argument and the branch, and a `case` on anything else says nothing about
+    # what the caller passed.
+    def partitions_for_case(node)
+      return {} if @argument_partitions_by_method.empty?
+      return {} unless @current_method
+
+      predicate = node.predicate
+      return {} unless predicate.is_a?(Prism::LocalVariableReadNode)
+
+      param = predicate.name.to_s
+      (@argument_partitions_by_method[@current_method] || []).each_with_object({}) do |partition, acc|
+        next unless partition[:param] == param
+
+        acc[partition[:pattern]] = partition[:ivars]
+      end
+    end
+
+    # The canonical literal string the fork's `Postconditions::LiteralKey` produces, so a
+    # `when` pattern here matches the `pattern` recorded there. Both sides must spell the
+    # same literal the same way or nothing correlates.
+    def literal_key(node)
+      case node
+      when Prism::SymbolNode then ":#{node.value}"
+      when Prism::StringNode then node.unescaped.inspect
+      when Prism::IntegerNode, Prism::FloatNode then node.slice
+      when Prism::TrueNode then "true"
+      when Prism::FalseNode then "false"
+      when Prism::NilNode then "nil"
+      end
     end
 
     def collect_class_ivar_types(class_node)

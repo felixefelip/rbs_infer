@@ -83,6 +83,15 @@ module RbsInfer::Inference
           {}
         end
 
+      # Argument-sensitive partitions: inside a `when :edit` branch of a `case <param>`,
+      # the facts the callers passing `:edit` established hold.
+      argument_partitions_by_method =
+        if @steep_bridge && caller_visitor.class_name
+          @steep_bridge.argument_entry_partitions(caller_visitor.class_name)
+        else
+          {}
+        end
+
       visitor = NewCallCollector.new(
         target_class: @target_class,
         method_return_types: method_return_types,
@@ -94,6 +103,7 @@ module RbsInfer::Inference
         match_bare_calls: match_bare,
         self_types_by_method: self_types_by_method,
         established_ivars_by_method: established_ivars_by_method,
+        argument_partitions_by_method: argument_partitions_by_method,
         constant_arg_resolver: constant_arg_resolver,
         defined_class_names: NewCallCollector.collect_defined_class_names(result.value)
       )
