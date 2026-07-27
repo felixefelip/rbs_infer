@@ -1,0 +1,12 @@
+module Users
+  class AvatarsController
+    @__rbs_infer__performed: true?
+
+    def render: (?untyped target, *untyped) -> bool
+
+    private
+
+    def __rbs_infer__run_edit: () -> nil
+    def __rbs_infer__run_update: () -> void
+  end
+end
