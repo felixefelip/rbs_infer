@@ -146,10 +146,10 @@ module RbsInfer::Inference
     # comment, so it changes nothing for Prism, and it is what the ERB convention would
     # inject if the source went through `Steep::Source.parse` with its real path.
     def with_self_method_annotation(source, file)
-      owner = RbsInfer::Project::SourceOwners.owner_class(file) or return source
+      self_method = RbsInfer::Project::SourceOwners.self_method(file) or return source
       return source if source.include?("@type self_method:")
 
-      "#{source}\n# @type self_method: #{owner}#__rbs_infer__body\n"
+      "#{source}\n# @type self_method: #{self_method}\n"
     end
 
     def analyze_source(source, local_var_types: {})

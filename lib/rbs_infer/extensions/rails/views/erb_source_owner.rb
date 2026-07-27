@@ -28,6 +28,15 @@ module RbsInfer
             erb_class_name(relative)
           end
 
+          # The template compiles to a method at runtime, and both the view-runtime
+          # generator and Steep's ERB convention name it `__rbs_infer__body`. That name is
+          # this convention's, so it is stated here rather than assembled by the core.
+          def self_method(path)
+            klass = owner_class(path) or return nil
+
+            "#{klass}#__rbs_infer__body"
+          end
+
           RbsInfer::Project::SourceOwners.register(self)
         end
       end
