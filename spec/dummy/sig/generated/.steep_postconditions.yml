@@ -1112,3 +1112,24 @@ argument_entry_facts:
   pattern: ":name"
   consts:
     Example9::Foo.name: "::String"
+- class: PostsController
+  method: render
+  param: target
+  pattern: ":edit"
+  ivars:
+    "@__rbs_infer__performed": 'true'
+    "@post": "(::Post & ::Post::Validated)"
+- class: PostsController
+  method: render
+  param: target
+  pattern: ":new"
+  ivars:
+    "@__rbs_infer__performed": 'true'
+    "@post": "::Post"
+- class: Users::AvatarsController
+  method: render
+  param: target
+  pattern: ":edit"
+  ivars:
+    "@__rbs_infer__performed": 'true'
+    "@user": "(::User & ::User::Validated)"

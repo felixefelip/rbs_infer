@@ -50,6 +50,14 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         @constant_default_params[param.name.to_s] = value
         "untyped"
+      when Prism::NilNode
+        # A `nil` default says the parameter is OPTIONAL, not that its type is `nil`.
+        # Taking it literally emits `?nil`, which means "you may only ever pass nil" and
+        # rejects every real call — `def render(target = nil)` typed `?nil target` made
+        # `render :edit` fail with "Cannot pass ::Symbol as an argument of type nil".
+        # Nothing is lost by widening: a parameter genuinely only ever passed nil is
+        # degenerate, and `untyped` still admits it.
+        "untyped"
       else
         infer_node_type(value) || "untyped"
       end

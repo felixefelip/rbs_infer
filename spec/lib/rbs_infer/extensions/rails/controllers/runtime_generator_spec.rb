@@ -346,7 +346,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
     # the controller has none.
     def render_override(result, filename)
       source = source_of(result, filename) or return nil
-      body = source[/^  def render\(\*args\)\n(.*?)^  end$/m, 1] or return nil
+      body = source[/^  def render\(.*?\)\n(.*?)^  end$/m, 1] or return nil
 
       body.lines.map(&:strip).reject(&:empty?)
     end
@@ -370,7 +370,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
       expect(render_override(result, "posts_controller.rb")).to eq(
         [
           "@__rbs_infer__performed = true",
-          "case args.first",
+          "case target",
           "when :new then ERBPostsNew.new(post: @post).__rbs_infer__body",
           "end",
           "true",
@@ -413,6 +413,48 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
 
       expect(render_override(result, "posts_controller.rb"))
         .to include("when :new then ERBPostsNew.new.__rbs_infer__body")
+    end
+
+    # The view target is a NAMED optional parameter and the dispatch cases on it, rather
+    # than `def render(*args)` + `case args.first`. Both type-check the same; only this
+    # shape is legible to the fork's argument-sensitive entry facts, which key a partition
+    # on a named positional parameter and correlate only a `case` whose subject is a plain
+    # read of it. With it, `render :edit` from an action that ran `set_post` carries `@post`
+    # into the `:edit` branch.
+    it "takes the view target as a named optional parameter and cases on it" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def create
+              render :new
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "x"
+      )
+
+      source = source_of(result, "posts_controller.rb")
+      expect(source).to include("def render(target = nil, *rest)")
+      expect(source).to include("case target")
+      expect(source).not_to include("case args.first")
+    end
+
+    # The parameter stays OPTIONAL: a required one would make a bare `render` — or the
+    # very common `render json: {}`, whose kwargs never fill a positional in Ruby 3 — an
+    # arity error in the USER's controller, a false positive on their code.
+    it "keeps the target optional so a bare render stays valid arity" do
+      result = build(
+        "app/controllers/posts_controller.rb" => <<~RUBY,
+          class PostsController < ActionController::Base
+            def create
+              render :new
+            end
+          end
+        RUBY
+        "app/views/posts/new.html.erb" => "x"
+      )
+
+      expect(source_of(result, "posts_controller.rb")).to include("def render(target = nil,")
     end
 
     # The override marks the SAME halt marker the framework `render` sets, so
@@ -473,7 +515,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
       )
 
       source = source_of(result, "posts_controller.rb")
-      expect(source.index("def render(*args)")).to be < source.index("private")
+      expect(source.index("def render(target = nil, *rest)")).to be < source.index("private")
     end
 
     it "de-duplicates and sorts the view symbols" do

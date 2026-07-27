@@ -705,4 +705,41 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
       expect(collect(source).members.any? { |m| m.kind == :alias }).to be(false)
     end
   end
+
+  describe "optional positional parameter defaults" do
+    def signature_of(source, method_name)
+      collect(source).members.find { |m| m.name == method_name }&.signature
+    end
+
+    it "widens a `nil` default to untyped rather than typing the parameter `nil`" do
+      # A `nil` default says the parameter is OPTIONAL, not that its type is `nil`.
+      # `?nil` means "you may only ever pass nil" and rejects every real call — it made
+      # `render :edit` fail with "Cannot pass ::Symbol as an argument of type nil".
+      source = <<~RUBY
+        class Foo
+          def render(target = nil, *rest)
+            target
+          end
+        end
+      RUBY
+
+      expect(signature_of(source, "render")).to include("?untyped target")
+      expect(signature_of(source, "render")).not_to include("?nil")
+    end
+
+    it "still narrows a literal default to its own type" do
+      # Only `nil` is degenerate; a real literal default is genuine information.
+      source = <<~RUBY
+        class Foo
+          def page(limit = 10, label = "x")
+            limit
+          end
+        end
+      RUBY
+
+      expect(signature_of(source, "page")).to include("?Integer limit")
+      expect(signature_of(source, "page")).to include("?String label")
+    end
+  end
+
 end
