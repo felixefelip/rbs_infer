@@ -157,7 +157,11 @@ module RbsInfer::Signatures
         next if type_str == "untyped" || type_str == "nil" || type_str == "bot"
 
         var_name = node.children[0].to_s
-        method_name = find_enclosing_method(node, typing)
+        # A body checked with `@type self_method:` has no enclosing `def` — an ERB template
+        # compiles to a method at runtime, so its code is top-level in the source. Dropping
+        # those locals loses every block param a template binds (`@posts.each do |post|`),
+        # which is what types a helper's argument at the call site.
+        method_name = find_enclosing_method(node, typing) || self_method_name(typing)
         next unless method_name
 
         result[method_name][var_name] = type_str
@@ -1204,6 +1208,18 @@ module RbsInfer::Signatures
       end
 
       str
+    end
+
+    # The method a top-level body stands for, from its `@type self_method:` annotation
+    # (felixefelip/steep#85), or nil when the body carries none.
+    def self_method_name(typing)
+      root = typing.source.node or return nil
+      (typing.source.mapping[root] || []).each do |annot|
+        return annot.method_name.to_s if annot.is_a?(Steep::AST::Annotation::SelfMethod)
+      end
+      nil
+    rescue StandardError
+      nil
     end
 
     def find_enclosing_method(node, typing)

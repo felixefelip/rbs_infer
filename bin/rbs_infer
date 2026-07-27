@@ -88,12 +88,6 @@ if rails_project
   # the class it is the body of (the core reads it as Ruby either way).
   require "rbs_infer/extensions/rails/views/erb_source_owner"
 
-  require "rbs_infer/extensions/rails/erb_caller_resolver"
-  erb_caller_resolver = RbsInfer::Extensions::Rails::ErbCallerResolver.new(
-    app_dir: Dir.pwd,
-    source_files: source_files
-  )
-
   # Emit the module/concern self-type sidecar up front so that every Steep
   # type-check during this run (target *and* caller files) sees the
   # `@type self:`/`@type instance:` annotations (felixefelip/rbs_infer#52).
@@ -113,9 +107,6 @@ generate = lambda do |inputs_to_process, silent: false|
              { target_class: input, source_files: source_files }
            end
 
-    if erb_caller_resolver && input.include?("helpers/")
-      args[:extra_caller_sources] = erb_caller_resolver
-    end
 
     analyzer = RbsInfer::Analyzer.new(**args)
     rbs = analyzer.generate_rbs
@@ -183,11 +174,6 @@ if output
     # path or changed content) is re-globbed/re-parsed on the next level/pass
     # (felixefelip/rbs_infer#47).
     RbsInfer::Signatures::RbsTypeLookup.reset!
-    # ErbCallerResolver caches controller-ivar lookups per (class, action).
-    # Without this reset, pass 2 would return the empty result that pass 1
-    # computed when ApplicationHelper had no RBS, losing the inferred types
-    # from the freshly-written file.
-    erb_caller_resolver&.reset_cache!
   end
 
   all_changed = []

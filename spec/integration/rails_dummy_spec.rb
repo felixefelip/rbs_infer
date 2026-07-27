@@ -2,9 +2,19 @@
 
 require "spec_helper"
 require "rbs_infer/extensions/rails/current_attributes_runtime_generator"
+# Registers the ERB path -> class convention (`Project::SourceOwners`). The CLI requires
+# it for real runs; the in-process specs have to do the same, or templates are read as
+# sources but belong to no class and are never selected as callers.
+require "rbs_infer/extensions/rails/views/erb_source_owner"
 
 RSpec.describe "Rails dummy app integration", :dummy_app do
-  let(:source_files) { Dir["app/**/*.rb"] }
+  # `.erb` belongs here for the same reason `.rb` does: a template's calls are call sites,
+  # and since the ERB-as-source-format work they are read like any other source. Helper
+  # parameters are typed from exactly those call sites.
+  # Mirrors how the CLI is invoked (`rbs_infer app/ sig/`): `.erb` because a template's
+  # calls are call sites like any other, and `sig/` because the runtime pseudo-code lives
+  # there — it is what gives a template's class its ivars and its `include`s.
+  let(:source_files) { Dir["app/**/*.rb"] + Dir["app/**/*.erb"] + Dir["sig/**/*.rb"] }
   let(:expectations_dir) { Pathname.new(File.expand_path("../expectations", __dir__)) }
 
   # Generate sig/rbs_rails/ types once before running snapshot tests
@@ -643,19 +653,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   end
 
   it "ApplicationHelper matches expected RBS" do
-    require "rbs_infer/extensions/rails/erb_caller_resolver"
-    erb_resolver = RbsInfer::Extensions::Rails::ErbCallerResolver.new(app_dir: Dir.pwd, source_files: source_files)
-    assert_snapshot("helpers/application_helper", target_class: "ApplicationHelper", target_file: "app/helpers/application_helper.rb", extra_caller_sources: erb_resolver)
+    assert_snapshot("helpers/application_helper", target_class: "ApplicationHelper", target_file: "app/helpers/application_helper.rb")
   end
 
   it "PostsHelper matches expected RBS" do
-    require "rbs_infer/extensions/rails/erb_caller_resolver"
-    erb_resolver = RbsInfer::Extensions::Rails::ErbCallerResolver.new(app_dir: Dir.pwd, source_files: source_files)
-    assert_snapshot("helpers/posts_helper", target_class: "PostsHelper", target_file: "app/helpers/posts_helper.rb", extra_caller_sources: erb_resolver)
+    assert_snapshot("helpers/posts_helper", target_class: "PostsHelper", target_file: "app/helpers/posts_helper.rb")
   end
 
-  # Regression for the ivar-vs-local name collision in `ErbCallerResolver`
-  # combined with the `?` outer-unwrap in `extract_element_type`. The
+  # Regression for the ivar-vs-local name collision, combined with the `?` outer-unwrap in `extract_element_type`. The
   # `post_index_marker` helper is called ONLY from `posts/index.html.erb`
   # inside `@posts.each |post|`, so its parameter must come from the
   # block-element resolution (`Post::ActiveRecord_Relation?` →
@@ -663,15 +668,12 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # (which has a wide nilable union and would pollute the local lookup
   # without the namespace separation).
   it "narrows helper param via block-param resolution (ivar/local name-collision regression)" do
-    require "rbs_infer/extensions/rails/erb_caller_resolver"
-    erb_resolver = RbsInfer::Extensions::Rails::ErbCallerResolver.new(app_dir: Dir.pwd, source_files: source_files)
     rbs = generate_rbs(
       target_class: "PostsHelper",
       target_file: "app/helpers/posts_helper.rb",
-      extra_caller_sources: erb_resolver
     )
 
-    expect(rbs).to include("def post_index_marker: (Post & Post::Validated post)")
+    expect(rbs).to include("def post_index_marker: ((Post & Post::Validated) post)")
   end
 
   it "ApplicationController rails_custom matches expected RBS" do

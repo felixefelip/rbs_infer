@@ -24,6 +24,7 @@ module RbsInfer::Inference
 
     def analyze(file, force_bare: false)
       source = RbsInfer::Project::SourceReader.read(file) or return []
+      source = with_self_method_annotation(source, file)
       result = Prism.parse(source)
       comments = result.comments
       method_return_types = extract_method_return_types(source, comments, result.value)
@@ -139,6 +140,18 @@ module RbsInfer::Inference
 
     # Analyze pre-converted source code (e.g. ERB → Ruby) with known local/ivar types.
     # Matches bare calls against target_methods (for included module methods).
+    # A source whose class identity is not written in it gets `@type self_method:` appended,
+    # so Steep types its body against the owner — an ERB template's `@posts.each do |post|`
+    # only yields an element type once `self` is `ERBPostsIndex`. The annotation is a
+    # comment, so it changes nothing for Prism, and it is what the ERB convention would
+    # inject if the source went through `Steep::Source.parse` with its real path.
+    def with_self_method_annotation(source, file)
+      self_method = RbsInfer::Project::SourceOwners.self_method(file) or return source
+      return source if source.include?("@type self_method:")
+
+      "#{source}\n# @type self_method: #{self_method}\n"
+    end
+
     def analyze_source(source, local_var_types: {})
       result = Prism.parse(source)
 
