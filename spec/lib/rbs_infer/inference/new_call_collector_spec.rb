@@ -606,4 +606,101 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     end
   end
 
+
+  # Argument-sensitive partitions (felixefelip/steep#89, #91, #95). A `case <param>` branch
+  # is reachable only for callers who passed that literal, so the facts those callers
+  # established hold inside it — and only inside it. This is what keeps a shared dispatcher
+  # (a controller's `render` override, reached from every action) from collapsing to the
+  # meet over all its callers.
+  describe "ivars from an argument partition" do
+    def collect_with_partitions(source, target_class:, partitions:)
+      result = Prism.parse(source)
+      visitor = described_class.new(
+        target_class: target_class,
+        method_return_types: {},
+        local_var_types: {},
+        constant_arg_resolver: null_constant_resolver,
+        defined_class_names: described_class.collect_defined_class_names(result.value),
+        argument_partitions_by_method: partitions
+      )
+      result.value.accept(visitor)
+      visitor.usages
+    end
+
+    let(:partitions) do
+      {
+        "render" => [
+          { param: "target", pattern: ":edit", ivars: { "@post" => "Post & Post::Validated" } },
+          { param: "target", pattern: ":new", ivars: { "@post" => "Post" } }
+        ]
+      }
+    end
+
+    def render_source(body)
+      <<~RUBY
+        class PostsController
+          def render(target = nil, *rest)
+            #{body}
+          end
+        end
+      RUBY
+    end
+
+    it "applies the matching literal's partition inside its branch" do
+      usages = collect_with_partitions(
+        render_source("case target\nwhen :edit then View.new(post: @post)\nend"),
+        target_class: "View", partitions: partitions
+      )
+
+      expect(usages.first["post"]).to eq("Post & Post::Validated")
+    end
+
+    it "gives each branch its own partition" do
+      usages = collect_with_partitions(
+        render_source("case target\nwhen :edit then View.new(post: @post)\nwhen :new then View.new(post: @post)\nend"),
+        target_class: "View", partitions: partitions
+      )
+
+      expect(usages.map { |u| u["post"] }).to contain_exactly("Post & Post::Validated", "Post")
+    end
+
+    it "does not leak a partition past the case" do
+      usages = collect_with_partitions(
+        render_source("case target\nwhen :edit then nil\nend\nView.new(post: @post)"),
+        target_class: "View", partitions: partitions
+      )
+
+      expect(usages.first["post"]).to eq("untyped")
+    end
+
+    it "ignores a branch whose literal has no partition" do
+      usages = collect_with_partitions(
+        render_source("case target\nwhen :other then View.new(post: @post)\nend"),
+        target_class: "View", partitions: partitions
+      )
+
+      expect(usages.first["post"]).to eq("untyped")
+    end
+
+    it "ignores a case on something that is not the partitioned parameter" do
+      # The correlation is between the CALLER's argument and the branch. A `case` on
+      # anything else says nothing about what the caller passed.
+      usages = collect_with_partitions(
+        render_source("case rest\nwhen :edit then View.new(post: @post)\nend"),
+        target_class: "View", partitions: partitions
+      )
+
+      expect(usages.first["post"]).to eq("untyped")
+    end
+
+    it "leaves the else branch alone" do
+      usages = collect_with_partitions(
+        render_source("case target\nwhen :edit then nil\nelse View.new(post: @post)\nend"),
+        target_class: "View", partitions: partitions
+      )
+
+      expect(usages.first["post"]).to eq("untyped")
+    end
+  end
+
 end

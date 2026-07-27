@@ -605,6 +605,41 @@ module RbsInfer::Signatures
       result
     end
 
+    # `{ "render" => [{ param: "target", pattern: ":edit", ivars: { "@post" => "..." } }] }`
+    # — the argument-sensitive partitions of `class_name`'s methods
+    # (felixefelip/steep#89, #91, #95).
+    #
+    # The fork records, per (method, parameter, literal), what the callers passing that
+    # literal had established. Inside a `when :edit` branch the facts of the `:edit`
+    # partition hold, which is how a shared dispatcher like a controller's `render`
+    # override stays precise instead of collapsing to the meet over all its callers.
+    # rbs_infer needs it for the same reason it needs `postcondition_established_ivars`:
+    # the narrowing is a flow fact and the analyzer has no flow analysis.
+    def argument_entry_partitions(class_name)
+      return {} unless class_name
+
+      store = postconditions_store
+      return {} if store.nil? || store.empty?
+
+      key = class_name.to_s.sub(/\A::/, "")
+      result = Hash.new { |h, k| h[k] = [] }
+      store.argument_entry_facts.each do |(entry_class, method_name), partitions|
+        next unless entry_class == key
+
+        partitions.each do |partition|
+          ivars = partition[:ivars]
+          next if ivars.nil? || ivars.empty?
+
+          result[method_name.to_s] << {
+            param: partition[:param_name].to_s,
+            pattern: partition[:pattern].to_s,
+            ivars: ivars.transform_keys(&:to_s).transform_values(&:to_s)
+          }
+        end
+      end
+      result
+    end
+
     private
 
     # Renders a whitequark `:const` node into a dotted class-path string:
