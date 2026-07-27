@@ -7,7 +7,7 @@ class Users::AvatarsController
   def render(*args)
     @__rbs_infer__performed = true
     case args.first
-    when :edit then ERBUsersAvatarsEdit.new.__rbs_infer__body
+    when :edit then ERBUsersAvatarsEdit.new(user: @user).__rbs_infer__body
     end
     true
   end
@@ -28,7 +28,7 @@ class Users::AvatarsController
 
     return if performed?
 
-    ERBUsersAvatarsEdit.new.__rbs_infer__body
+    ERBUsersAvatarsEdit.new(user: @user).__rbs_infer__body
   end
 
   def __rbs_infer__run_update

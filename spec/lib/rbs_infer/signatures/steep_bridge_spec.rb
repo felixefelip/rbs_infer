@@ -422,6 +422,46 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
     end
   end
 
+  describe "#postcondition_established_ivars" do
+    # Reads the postconditions sidecar so call-site inference can use a FLOW
+    # fact the analyzer cannot derive: a controller's declared `@post` is
+    # nilable (assigned in `set_post`, not in `initialize`), but past the
+    # `set_post` call it is narrowed. The dummy's sidecar declares
+    # `PostsController#set_post` → `@post: (::Post & ::Post::Validated)`.
+    it "maps a method to the ivars it proves populated" do
+      result = bridge.postcondition_established_ivars("PostsController")
+
+      expect(result["set_post"]).to eq("@post" => "(::Post & ::Post::Validated)")
+    end
+
+    it "keys ivars with the `@`, matching how Prism names an ivar read" do
+      result = bridge.postcondition_established_ivars("PostsController")
+
+      expect(result["set_post"].keys).to all(start_with("@"))
+    end
+
+    it "normalizes a leading :: in the class name" do
+      expect(bridge.postcondition_established_ivars("::PostsController"))
+        .to eq(bridge.postcondition_established_ivars("PostsController"))
+    end
+
+    it "omits methods whose postcondition establishes no ivar" do
+      # An entry can carry only a `self:` refinement or a returns-establishment;
+      # those say nothing about an ivar and must not appear as an empty map.
+      result = bridge.postcondition_established_ivars("PostsController")
+
+      expect(result.values).to all(satisfy { |ivars| !ivars.empty? })
+    end
+
+    it "returns an empty hash for a class with no entries" do
+      expect(bridge.postcondition_established_ivars("Foo")).to eq({})
+    end
+
+    it "returns an empty hash for nil" do
+      expect(bridge.postcondition_established_ivars(nil)).to eq({})
+    end
+  end
+
   describe "#ivar_write_types" do
     # Cobertura da regra introduzida em felixefelip/rbs_infer#4:
     # coleta todas as escritas, deduplica, e adiciona `| nil` quando a
