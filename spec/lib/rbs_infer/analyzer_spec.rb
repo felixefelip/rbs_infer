@@ -1422,4 +1422,105 @@ RSpec.describe RbsInfer::Analyzer do
       end
     end
   end
+
+  # ─── ivar passed as an argument (felixefelip/rbs_infer#111) ─────
+
+  describe "#generate_rbs resolving an ivar argument against the declaring class" do
+    # The type is read from the RBS an earlier stabilization pass wrote, so each
+    # example lays down a `sig/` and runs from that directory.
+    around do |ex|
+      Dir.mktmpdir { |dir| Dir.chdir(dir) { ex.run } }
+    end
+    before { RbsInfer::Signatures::RbsTypeLookup.reset! }
+
+    def write(path, content)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, content)
+      path
+    end
+
+    it "types a `.new` argument from the enclosing class's declared ivar" do
+      # `@post = post` assigns from a PARAMETER. The syntactic collector only ever
+      # recognized `@x = Foo.new`, so this used to resolve to `untyped` even though
+      # the class's own RBS states the type.
+      write("sig/view.rbs", "class View\n  @post: Post\nend\n")
+      source = write("app/view.rb", <<~RUBY)
+        class View
+          def initialize(post:)
+            @post = post
+          end
+
+          def render
+            Partial.new(post: @post)
+          end
+        end
+
+        class Partial
+          def initialize(post:)
+            @post = post
+          end
+        end
+      RUBY
+
+      rbs = described_class.new(target_class: "Partial", target_file: source, source_files: [source]).generate_rbs
+
+      expect(rbs).to include("def initialize: (post: Post) -> void")
+    end
+
+    it "resolves against the lexically enclosing class, not the file's outer one" do
+      # `caller_class_name` is per FILE. In a file of nested classes it names the
+      # OUTER class, whose RBS declares no `@post` — and, worse, could declare one
+      # at a different type. The lookup has to follow the lexical nesting.
+      write("sig/outer.rbs", <<~RBS)
+        class Outer
+          @post: String
+          class View
+            @post: Outer::Post
+          end
+        end
+      RBS
+      source = write("app/outer.rb", <<~RUBY)
+        class Outer
+          class View
+            def render
+              Outer::Partial.new(post: @post)
+            end
+          end
+
+          class Partial
+            def initialize(post:)
+              @post = post
+            end
+          end
+        end
+      RUBY
+
+      rbs = described_class.new(target_class: "Outer::Partial", target_file: source, source_files: [source]).generate_rbs
+
+      expect(rbs).to include("def initialize: (post: Outer::Post) -> void")
+      expect(rbs).not_to include("String")
+    end
+
+    it "leaves the argument untyped when no ivar is declared" do
+      write("sig/view.rbs", "class View\n  def render: () -> void\nend\n")
+      source = write("app/view.rb", <<~RUBY)
+        class View
+          def render
+            Partial.new(post: @post)
+          end
+        end
+
+        class Partial
+          def initialize(post:)
+            @post = post
+          end
+        end
+      RUBY
+
+      rbs = described_class.new(target_class: "Partial", target_file: source, source_files: [source]).generate_rbs
+
+      expect(rbs).to include("def initialize: (post: untyped) -> void")
+    end
+  end
+
 end
