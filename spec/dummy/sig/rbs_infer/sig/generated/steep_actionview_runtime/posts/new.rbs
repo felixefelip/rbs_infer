@@ -5,7 +5,7 @@ class ERBPostsNew
   include PostsHelper
 
   def initialize: (post: Post) -> void
-  def render: (?untyped target, *untyped) -> nil
+  def render: (?Hash[Symbol, String | { post: untyped }] target, *untyped) -> nil
   def params: () -> ActionController::Parameters
   def __rbs_infer__body: () -> nil
 end

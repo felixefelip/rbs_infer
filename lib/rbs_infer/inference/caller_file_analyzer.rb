@@ -1,3 +1,6 @@
+require_relative "../project/source_reader"
+require_relative "../project/source_owners"
+
 module RbsInfer::Inference
   class CallerFileAnalyzer
     include RbsInfer::Signatures::RbsAnnotationParser
@@ -20,7 +23,7 @@ module RbsInfer::Inference
     end
 
     def analyze(file, force_bare: false)
-      source = File.read(file)
+      source = RbsInfer::Project::SourceReader.read(file) or return []
       result = Prism.parse(source)
       comments = result.comments
       method_return_types = extract_method_return_types(source, comments, result.value)
@@ -69,7 +72,11 @@ module RbsInfer::Inference
       # lives. Without this only the `include` shape counted, so a class split across files
       # (the controller-runtime pseudo-code defines the method, the app's own file calls it)
       # left every such call site invisible and its parameters `untyped`.
-      reopens_target = caller_visitor.class_name == @target_class.sub(/\A::/, "") &&
+      target_name = @target_class.sub(/\A::/, "")
+      # A file the target OWNS is its body — an ERB template IS `ERBPostsEdit`, so the
+      # calls it makes are self-calls, exactly like a reopen.
+      owned_by_target = RbsInfer::Project::SourceOwners.owner_class(file) == target_name
+      reopens_target = (caller_visitor.class_name == target_name || owned_by_target) &&
                        File.expand_path(file.to_s) != File.expand_path(@target_file.to_s)
       match_bare = force_bare || reopens_target ||
                    source.match?(/\binclude\b.*\b#{Regexp.escape(short_name)}\b/)

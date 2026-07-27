@@ -703,4 +703,54 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     end
   end
 
+
+  # Ruby 3: when the callee accepts NO keyword parameters, keywords at the call site are
+  # passed as a positional Hash. Skipping them made the argument vanish, so the parameter
+  # was typed from the OTHER call sites alone — narrow enough to reject real calls, which
+  # is worse than imprecise.
+  describe "a keyword hash that collapses to a positional argument" do
+    def collect_calls(source, target_class:, target_methods:)
+      result = Prism.parse(source)
+      visitor = described_class.new(
+        target_class: target_class,
+        method_return_types: {},
+        local_var_types: {},
+        constant_arg_resolver: null_constant_resolver,
+        defined_class_names: described_class.collect_defined_class_names(result.value),
+        target_methods: target_methods
+      )
+      result.value.accept(visitor)
+      visitor.method_call_usages
+    end
+
+    it "binds it to the free positional parameter when no key names one" do
+      usages = collect_calls(
+        'View.new.render(partial: "posts/form")',
+        target_class: "View", target_methods: { "render" => ["target"] }
+      )
+
+      expect(usages["render"].first["target"]).to eq("Hash[Symbol, String]")
+    end
+
+    it "keeps a real keyword argument as a keyword" do
+      # `partial` IS a parameter here, so the call site is passing keywords for real.
+      usages = collect_calls(
+        'View.new.render(partial: "posts/form")',
+        target_class: "View", target_methods: { "render" => ["partial"] }
+      )
+
+      expect(usages["render"].first["partial"]).to eq("String")
+      expect(usages["render"].first).not_to have_key("target")
+    end
+
+    it "does not consume a positional slot already filled" do
+      usages = collect_calls(
+        'View.new.render("posts/summary", post: 1)',
+        target_class: "View", target_methods: { "render" => ["target"] }
+      )
+
+      expect(usages["render"].first["target"]).to eq("String")
+    end
+  end
+
 end

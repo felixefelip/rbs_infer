@@ -1,3 +1,5 @@
+require_relative "source_owners"
+
 module RbsInfer::Project
 
   # Índice reverso de source files para lookup eficiente por nome de classe.
@@ -24,6 +26,14 @@ module RbsInfer::Project
         # externo pra `untyped`.
         content.scan(/\b([A-Z][a-zA-Z0-9_]*)\b/).flatten.uniq.each do |name|
           @index[name] << file
+        end
+
+        # A file whose class identity is not written in it (an ERB template is the body of
+        # `ERBPostsEdit`, but never spells that) would otherwise be read and then never
+        # selected as a caller. `SourceOwners` lets an extension state the convention.
+        if (owner = RbsInfer::Project::SourceOwners.owner_class(file))
+          short = owner.split("::").last
+          @index[short] << file unless @index[short].include?(file)
         end
       end
       @index.each_value(&:freeze)
