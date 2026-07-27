@@ -35,6 +35,6 @@ class UsersController
 
     return if performed?
 
-    render(:show)
+    render :show
   end
 end

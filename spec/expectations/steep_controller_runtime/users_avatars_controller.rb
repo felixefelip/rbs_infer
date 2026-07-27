@@ -28,7 +28,7 @@ class Users::AvatarsController
 
     return if performed?
 
-    render(:edit)
+    render :edit
   end
 
   def __rbs_infer__run_update

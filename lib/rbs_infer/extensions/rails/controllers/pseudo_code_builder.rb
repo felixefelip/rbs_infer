@@ -215,7 +215,7 @@ module RbsInfer
           # It covers EVERY view of the controller, not only the targets an
           # explicit `render :view` names, because both renders route through
           # here: the implicit convention render at the end of an action is
-          # emitted as `render(:show)` (see `view_render_lines`), exactly as
+          # emitted as `render :show` (see `view_render_lines`), exactly as
           # Rails ends an action with `render action_name`. A `case` carrying
           # only the explicit targets would leave that call dispatching to no
           # branch, and the view would lose every argument that types it.
@@ -354,7 +354,7 @@ module RbsInfer
           # before it makes the redirect / explicit-render case a no-op
           # automatically. Empty when the action has no convention template.
           #
-          # Emitted as `render(:show)` — the call Rails itself makes — rather
+          # Emitted as `render :show` — the call Rails itself makes — rather
           # than by constructing the view here. Constructing it inline made the
           # implicit render a SECOND, separate call site of the view's
           # constructor, so a view reachable both implicitly and by an explicit
@@ -365,7 +365,7 @@ module RbsInfer
             erb_class, = convention_view(class_name, action)
             return [] unless erb_class
 
-            ["", "return if #{HALTED}", "", "render(:#{action})"]
+            ["", "return if #{HALTED}", "", "render :#{action}"]
           end
 
           # The ERB class of `action`'s convention template, or nil when none

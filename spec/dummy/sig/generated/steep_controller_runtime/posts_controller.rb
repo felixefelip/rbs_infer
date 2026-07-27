@@ -28,7 +28,7 @@ class PostsController
 
     return if performed?
 
-    render(:index)
+    render :index
   end
 
   def __rbs_infer__run_show
@@ -45,7 +45,7 @@ class PostsController
 
     return if performed?
 
-    render(:show)
+    render :show
   end
 
   def __rbs_infer__run_new
@@ -59,7 +59,7 @@ class PostsController
 
     return if performed?
 
-    render(:new)
+    render :new
   end
 
   def __rbs_infer__run_create

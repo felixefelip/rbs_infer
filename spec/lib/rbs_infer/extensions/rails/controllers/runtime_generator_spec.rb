@@ -745,7 +745,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
   # argument-sensitive entry facts read. Constructed inline they were two
   # separate constructor call sites whose facts never met.
   describe "the implicit convention render" do
-    it "ends the runner with `render(:action)`, not a view constructor" do
+    it "ends the runner with `render :action`, not a view constructor" do
       result = build(
         "app/controllers/posts_controller.rb" => <<~RUBY,
           class PostsController < ActionController::Base
@@ -757,7 +757,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
 
       source = source_of(result, "posts_controller.rb")
 
-      expect(source).to include("render(:show)")
+      expect(source).to include("    render :show\n  end")
       expect(source).not_to include("ERBPostsShow.new(post: @post).__rbs_infer__body\n  end")
     end
 
@@ -772,7 +772,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
       )
 
       body = source_of(result, "posts_controller.rb")[/def __rbs_infer__run_destroy\n(.*?)^  end$/m, 1]
-      expect(body).not_to include("render(")
+      expect(body).not_to match(/^\s*render\b/)
     end
   end
 
