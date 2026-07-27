@@ -575,6 +575,36 @@ module RbsInfer::Signatures
       result
     end
 
+    # `{ "set_post" => { "@post" => "(::Post & ::Post::Validated)" } }` — for each
+    # instance method of `class_name`, the ivars its postcondition proves populated
+    # once it has run.
+    #
+    # rbs_infer needs this for the same reason it needs `callback_self_types`: the
+    # narrowing is a FLOW fact, and the analyzer has no flow analysis. A controller's
+    # declared `@post` is `(Post | (Post & Post::Validated))?` — nilable, because the
+    # ivar is assigned in `set_post` rather than in `initialize` — but at a call site
+    # that the pseudo-code shows running AFTER `set_post`, the narrowed type holds.
+    # Reading the same sidecar Steep consumes lets call-site inference use it
+    # (felixefelip/rbs_infer#109).
+    def postcondition_established_ivars(class_name)
+      return {} unless class_name
+
+      store = postconditions_store
+      return {} if store.nil? || store.empty?
+
+      key = class_name.to_s.sub(/\A::/, "")
+      result = {}
+      store.entries.each do |(entry_class, method_name), entry|
+        next unless entry_class == key
+
+        types = entry.unconditional&.ivar_type_strings
+        next if types.nil? || types.empty?
+
+        result[method_name.to_s] = types.transform_keys(&:to_s)
+      end
+      result
+    end
+
     private
 
     # Renders a whitequark `:const` node into a dotted class-path string:

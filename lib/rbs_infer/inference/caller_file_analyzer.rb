@@ -72,6 +72,17 @@ module RbsInfer::Inference
           {}
         end
 
+      # Ivars each self-method proves populated once it has run (postconditions
+      # sidecar). Lets a call site that the source shows running AFTER `set_post`
+      # resolve `@post` to the narrowed type instead of the class-wide declared
+      # one, which is nilable because the ivar is never assigned in `initialize`.
+      established_ivars_by_method =
+        if @steep_bridge && caller_visitor.class_name
+          @steep_bridge.postcondition_established_ivars(caller_visitor.class_name)
+        else
+          {}
+        end
+
       visitor = NewCallCollector.new(
         target_class: @target_class,
         method_return_types: method_return_types,
@@ -82,6 +93,7 @@ module RbsInfer::Inference
         target_methods: @target_methods,
         match_bare_calls: match_bare,
         self_types_by_method: self_types_by_method,
+        established_ivars_by_method: established_ivars_by_method,
         constant_arg_resolver: constant_arg_resolver,
         defined_class_names: NewCallCollector.collect_defined_class_names(result.value)
       )

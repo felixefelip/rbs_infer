@@ -4,7 +4,7 @@ class ERBPostsNew
   include ActionViewContext
   include PostsHelper
 
-  def initialize: (post: (Post | (Post & Post::Validated))?) -> void
+  def initialize: (post: ((Post | (Post & Post::Validated))? | Post)) -> void
   def render: (*untyped) -> ERBPartialPostsForm
   def params: () -> ActionController::Parameters
   def __rbs_infer__body: () -> nil
