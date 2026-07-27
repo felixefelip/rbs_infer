@@ -47,6 +47,8 @@ module RbsInfer::Project
     end
 
     def build(source_files)
+      owned = {} #: Hash[String, String]
+
       source_files.each do |file|
         entry = @parse_cache.get(file)
         next unless entry
@@ -54,10 +56,30 @@ module RbsInfer::Project
         extractor = RbsInfer::AST::ClassNameExtractor.new(file_path: file)
         entry.result.value.accept(extractor)
         class_name = extractor.class_name
-        next unless class_name
+
+        unless class_name
+          # A source that does not NAME its class still belongs to one — an ERB template is
+          # the body of `ERBPostsIndex`. Resolved in a second pass, because the file that
+          # DEFINES that class (and carries its `include`s) may come later.
+          if (owner = SourceOwners.owner_class(file))
+            owned[file] = owner.split("::").last
+          end
+          next
+        end
 
         @files_defining[class_name.split("::").last] << file
         @included_shorts[file] = include_short_names(entry.result.value)
+      end
+
+      # A template's bare calls reach whatever its OWNER includes: `post_status_badge(post)`
+      # in `posts/index.html.erb` reaches `PostsHelper` because `ERBPostsIndex` includes it.
+      # The include lives in the class's own file, never in the template.
+      owned.each do |file, owner_short|
+        inherited = Set.new
+        @files_defining[owner_short].each do |definer|
+          inherited.merge(@included_shorts.fetch(definer, EMPTY))
+        end
+        @included_shorts[file] = inherited unless inherited.empty?
       end
     end
 
