@@ -85,7 +85,7 @@ module RbsInfer
                   # emitting it), so `owner.<assoc>` types via this pseudo-code.
                   # An element outside the scanned models can't be modeled
                   # (its class/proxy may not exist), so it's skipped.
-                  element = @by_class[assoc.class_name]
+                  element = resolve_element(model.class_name, assoc.class_name)
                   next unless element
 
                   plan[model.class_name][:getters] << {
@@ -154,7 +154,7 @@ module RbsInfer
               seen = {}
               @models.flat_map do |owner|
                 owner.has_many.filter_map do |assoc|
-                  element = @by_class[assoc.class_name]
+                  element = resolve_element(owner.class_name, assoc.class_name)
                   next unless element
 
                   ns = proxy_namespace(owner.class_name, element.class_name)
@@ -228,6 +228,28 @@ module RbsInfer
                 ""
               ]
               "#{(header + lines).join("\n")}\n"
+            end
+
+            # The model an association names, resolved the way Ruby (and therefore
+            # `ActiveRecord::Base.compute_type`) resolves the constant: from the owner's
+            # namespace outward. `has_many :recomendacao_vacinas` inside `Caderneta` is
+            # `Caderneta::RecomendacaoVacina` when that exists, and only then the top-level
+            # `RecomendacaoVacina` (felixefelip/rbs_infer#128).
+            #
+            # Matching on the bare `classify` alone silently dropped the association: the
+            # element was not among the scanned models under that name, so neither the
+            # reader nor the proxy reopen was emitted, and `caderneta.recomendacao_vacinas`
+            # had no type at all.
+            def resolve_element(owner_class, element_class)
+              return @by_class[element_class] if element_class.start_with?("::")
+
+              parts = owner_class.split("::")
+              parts.length.downto(0) do |i|
+                candidate = (parts.first(i) + [element_class]).join("::")
+                found = @by_class[candidate]
+                return found if found
+              end
+              nil
             end
 
             # `<Owner>_<Element>` — matches rbs_rails' owner-specific proxy
