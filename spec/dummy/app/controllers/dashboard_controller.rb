@@ -24,6 +24,7 @@
 class DashboardController < ApplicationController
   before_action :authenticate_account!
   before_action :set_current_account
+  before_action :set_current_viewer
 
   def show
     @account = current_account
@@ -34,5 +35,14 @@ class DashboardController < ApplicationController
 
   def set_current_account
     Current.account = current_account
+  end
+
+  # Mirrors the shape a real app writes: a plain `before_action` (no halt) whose write
+  # must ALSO prove what `Current#user=`'s override establishes transitively —
+  # `author_name` and `viewer_name`. Under a HALTING guard that expansion already
+  # happened, so the same write proved more or less depending on its neighbour
+  # (felixefelip/steep#103).
+  def set_current_viewer
+    Current.user = current_user
   end
 end
