@@ -2,11 +2,11 @@
   <h2><%= post.title %></h2>
   <p><%= post.body %></p>
 
-  <%# felixefelip/steep#96. `authenticate_user` proves `Current.user` non-nil past its
-      halt guard, and the view that renders this partial sees that fact — the IDENTICAL
-      read in posts/show.html.erb type-checks. Here it does not: `each_method_def` walks
-      only `def` nodes, so a template contributes no flow and the facts stop at the view
-      body, never reaching the partial it renders. Expected in the steep baseline until
-      #96 lands; when it does, this line and its control in show.html.erb agree. %>
+  <%# felixefelip/steep#96 regression guard. `authenticate_user` proves `Current.user`
+      non-nil past its halt guard, and that fact reaches this partial only because the
+      view body that renders it counts as a flow — a template has no `def`, so before #96
+      the chain died at the view and this read was an error in the steep baseline. The
+      IDENTICAL read in posts/show.html.erb is the control: if only this one regresses,
+      the template-body flow broke; if both do, the guard upstream did. %>
   <p class="viewer"><%= Current.user.name %></p>
 </div>

@@ -4,10 +4,10 @@
   <span>Por <%= @post.author_name %></span>
   <%= post_status_badge(@post) %>
 
-  <%# Control for the same read in posts/_summary.html.erb (felixefelip/steep#96): the
-      IDENTICAL `Current.user.name` type-checks HERE, in the view body, because the
-      controller's render call site carries `authenticate_user`'s facts into it. If this
-      line ever starts erroring, the gap is upstream of #96, not in it. %>
+  <%# Control for the same read in posts/_summary.html.erb (felixefelip/steep#96): this
+      one type-checks because the controller's render call site carries
+      `authenticate_user`'s facts into the view body directly, one hop short of the
+      partial. If this line ever starts erroring, the gap is upstream of #96, not in it. %>
   <span class="viewer"><%= Current.user.name %></span>
 </div>
 

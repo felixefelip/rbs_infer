@@ -28,4 +28,3 @@ app/services/profile_formatter.rb:31:4: [error] `format_nickname` requires `self
 app/services/profile_formatter.rb:37:13: [error] Type `(::String | nil)` does not have method `upcase`
 app/services/tag_destroy.rb:110:6: [error] Cannot allow method body have type `(void | ::String)` because declared as type `(::String | nil)`
 app/services/tag_destroy.rb:98:7: [error] Type `::TagDestroy` does not have method `untyped`
-app/views/posts/_summary.html.erb:11:37: [error] Type `((::User & ::User::Validated) | ::User | nil)` does not have method `name`
