@@ -3,4 +3,8 @@ class DashboardController < ApplicationController
   @recent_posts: Post::ActiveRecord_Relation?
 
   def show: () -> void
+
+  private
+
+  def set_current_account: () -> (Account & Account::Validated)
 end

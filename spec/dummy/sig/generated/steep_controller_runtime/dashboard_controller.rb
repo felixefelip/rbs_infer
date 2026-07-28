@@ -24,6 +24,9 @@ class DashboardController
     authenticate_account!
     return if performed?
 
+    set_current_account
+    return if performed?
+
     show
 
     return if performed?

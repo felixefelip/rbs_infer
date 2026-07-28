@@ -646,6 +646,30 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       end
     end
 
+    # Why Rails::CurrentAttributesCallbacksGenerator is still load-bearing, and what would
+    # make it removable. `DashboardController#set_current_account` writes
+    # `Current.account = current_account` under the Devise guard. Everything downstream of
+    # a populated Current is generic — it is exactly how `Current.user` reaches the actions
+    # and views today — but it needs the ATTRIBUTE to have a type, and this one has none:
+    #
+    #   MethodTypeResolver can't resolve `current_account` from DashboardController (the
+    #   helpers are included into ActionController::Base, which it resolves from
+    #   steep_controller_runtime/action_controller_base.rb alone)
+    #     -> `Current.account = current_account` types the attribute `untyped`
+    #     -> `Current.account=`'s param is `untyped`, so it establishes no const
+    #     -> no `Current.account` entry fact at `show`'s entry.
+    #
+    # So the marker is what proves it, and `Current.account.label` in the view rides on it.
+    # When this expectation starts failing because `Current.account` is no longer `untyped`,
+    # re-measure whether the generator can go — the sidecar would be redundant.
+    it "still needs the marker: Current.account is untyped without it" do
+      rbs = Pathname.new("sig/rbs_infer/sig/generated/steep_current_runtime/current.rbs").read
+
+      expect(rbs).to include("def self.account: () -> untyped")
+      expect(Pathname.new("sig/rbs_infer_current_attributes/populated_markers.rbs").read)
+        .to include("def account: () -> (Account & Account::Validated)")
+    end
+
     # DashboardController declares the guard itself; ApplicationController does not. If the
     # guard ever migrated up, EVERY controller would be affected and this would catch it.
     it "finds only the controller that declares the guard" do

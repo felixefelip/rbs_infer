@@ -10,6 +10,8 @@ class Current
     def user=: (((User & User::Validated)? | User?) value) -> ((User & User::Validated) | User)?
     def author_name: () -> String?
     def author_name=: (String? value) -> String?
+    def account: () -> untyped
+    def account=: (untyped value) -> untyped
   end
 
   include GeneratedAttributeMethods
@@ -18,7 +20,9 @@ class Current
   def self.user=: (((User & User::Validated)? | User?) value) -> ((User & User::Validated)? | User?)
   def self.author_name: () -> String?
   def self.author_name=: (String? value) -> String?
+  def self.account: () -> untyped
+  def self.account=: (untyped value) -> untyped
   def self.__rbs_infer_instance: () -> Current
-  def self.set: (?user: ((User & User::Validated) | User)?, ?author_name: String?) ?{ (untyped) -> untyped } -> nil
-  def self.with: (?user: (User & User::Validated)?, ?author_name: String?) ?{ (untyped) -> untyped } -> nil
+  def self.set: (?user: ((User & User::Validated) | User)?, ?author_name: String?, ?account: untyped) ?{ (untyped) -> untyped } -> nil
+  def self.with: (?user: (User & User::Validated)?, ?author_name: String?, ?account: untyped) ?{ (untyped) -> untyped } -> nil
 end

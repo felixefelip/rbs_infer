@@ -1,0 +1,12 @@
+---
+version: 1
+callbacks:
+- class: DashboardController
+  applies_constants:
+    Current: singleton(Current) & Current::AccountPopulated
+  runs_before:
+  - show
+- class: ERBDashboardShow
+  applies_constants:
+    Current: singleton(Current) & Current::AccountPopulated
+  toplevel: true

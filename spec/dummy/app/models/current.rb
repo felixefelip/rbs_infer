@@ -6,7 +6,7 @@
 # `Current.with(user: ...)` in ProfileFormatterJob), unlocking the type
 # of the derived method `self.author_full_name`.
 class Current < ActiveSupport::CurrentAttributes
-  attribute :user, :author_name
+  attribute :user, :author_name, :account
 
   # Rails-guides pattern: accessor override calling `super` and deriving
   # another attribute. The expander skips generating this accessor and

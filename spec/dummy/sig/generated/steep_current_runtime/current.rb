@@ -17,6 +17,12 @@ class Current
     def author_name=(value)
       @author_name = value
     end
+    def account
+      @account
+    end
+    def account=(value)
+      @account = value
+    end
   end
   include GeneratedAttributeMethods
 
@@ -38,19 +44,30 @@ class Current
     __rbs_infer_instance.author_name = value
   end
 
+  def self.account
+    @account
+  end
+
+  def self.account=(value)
+    @account = value
+    __rbs_infer_instance.account = value
+  end
+
   def self.__rbs_infer_instance
     @__rbs_infer_instance ||= Current.new
   end
 
-  def self.set(user: nil, author_name: nil, &block)
+  def self.set(user: nil, author_name: nil, account: nil, &block)
     @user = user
     @author_name = author_name
+    @account = account
     block&.call(nil)
   end
 
-  def self.with(user: nil, author_name: nil, &block)
+  def self.with(user: nil, author_name: nil, account: nil, &block)
     @user = user
     @author_name = author_name
+    @account = account
     block&.call(nil)
   end
 end

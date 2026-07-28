@@ -862,6 +862,14 @@ method_entry_facts:
     "@account": "(::Account & ::Account::Validated)"
     "@recent_posts": "::Post::ActiveRecord_Relation"
 - class: DashboardController
+  method: set_current_account
+  self_methods:
+    current_account: "(::Account & ::Account::Validated)"
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: DashboardController
   method: show
   self_methods:
     current_account: "(::Account & ::Account::Validated)"

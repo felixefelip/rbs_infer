@@ -10,6 +10,11 @@
   <%# Same read as posts/show.html.erb: this controller stacks Devise on TOP of the
       inherited `authenticate_user` chain, so both layers' facts reach the view. %>
   <p class="viewer"><%= Current.user.name %></p>
+
+  <%# The CurrentAttributes half. `set_current_account` runs after the Devise guard and
+      writes `Current.account = current_account`; that write is what proves the attribute
+      populated all the way into this template. No nil check, on purpose. %>
+  <p class="current-account"><%= Current.account.label %></p>
 </div>
 
 <div class="recent-posts">
