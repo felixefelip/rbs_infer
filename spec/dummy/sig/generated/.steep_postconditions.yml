@@ -137,6 +137,11 @@ postconditions:
     may_write:
     - "@__rbs_infer__performed"
 - class: DashboardController
+  method: set_current_account
+  unconditional:
+    consts:
+      Current.account: "(::Account & ::Account::Validated)"
+- class: DashboardController
   method: show
   unconditional:
     ivars:
@@ -215,6 +220,11 @@ postconditions:
     may_write:
     - "@delivery_method"
     - "@from_address"
+- class: Example10
+  method: run
+  unconditional:
+    consts:
+      Example10::Foo.name: "::String"
 - class: Example10::Foo
   method: name
   effects:
@@ -271,6 +281,31 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example3
+  method: gap_alias_read
+  unconditional:
+    consts:
+      Foo.user: "::Example3::User"
+- class: Example3
+  method: gap_alias_write
+  unconditional:
+    consts:
+      Foo.user: "::Example3::User"
+- class: Example3
+  method: gap_callee_mutation
+  unconditional:
+    consts:
+      Foo.user: "::Example3::User"
+- class: Example3
+  method: gap_conditional
+  unconditional:
+    consts:
+      Foo.user: "::Example3::User"
+- class: Example3
+  method: run
+  unconditional:
+    consts:
+      Foo.user: "::Example3::User"
 - class: Example3::Foo
   method: user=
   unconditional:
@@ -287,6 +322,11 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example4
+  method: run
+  unconditional:
+    consts:
+      Example4::Foo.name: "::String"
 - class: Example4::Foo
   method: name
   effects:
@@ -299,6 +339,11 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example5
+  method: run
+  unconditional:
+    consts:
+      Example5::Foo.name: "::String"
 - class: Example5::Foo
   method: name
   effects:
@@ -313,6 +358,11 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example6
+  method: run
+  unconditional:
+    consts:
+      Example6::Foo.name: "::String"
 - class: Example6::Foo
   method: name
   effects:
@@ -327,6 +377,16 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example7
+  method: run_age
+  unconditional:
+    consts:
+      Example7::Age.value: "::Integer"
+- class: Example7
+  method: run_name
+  unconditional:
+    consts:
+      Example7::Foo.name: "::String"
 - class: Example7::Age
   method: value
   effects:
@@ -373,6 +433,16 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example9
+  method: run_age
+  unconditional:
+    consts:
+      Example9::Age.value: "::Integer"
+- class: Example9
+  method: run_name
+  unconditional:
+    consts:
+      Example9::Foo.name: "::String"
 - class: Example9::Age
   method: value
   effects:
@@ -570,6 +640,9 @@ postconditions:
     - "@post"
 - class: PostsController
   method: publish
+  unconditional:
+    consts:
+      Current.user: "(::User & ::User::Validated)"
   effects:
     may_write:
     - "@__rbs_infer__performed"
@@ -821,6 +894,7 @@ method_entry_facts:
 - class: Account
   method: label
   consts:
+    Current.account: "(::Account & ::Account::Validated)"
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
 - class: ApplicationController
@@ -862,6 +936,7 @@ method_entry_facts:
 - class: Current
   method: account
   consts:
+    Current.account: "(::Account & ::Account::Validated)"
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
 - class: Current
@@ -875,6 +950,7 @@ method_entry_facts:
     current_account: "(::Account & ::Account::Validated)"
     current_user: "(::User & ::User::Validated)"
   consts:
+    Current.account: "(::Account & ::Account::Validated)"
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
   ivars:
@@ -894,6 +970,7 @@ method_entry_facts:
     current_account: "(::Account & ::Account::Validated)"
     current_user: "(::User & ::User::Validated)"
   consts:
+    Current.account: "(::Account & ::Account::Validated)"
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
 - class: DeviseScopedHelpers
@@ -913,6 +990,7 @@ method_entry_facts:
 - class: ERBDashboardShow
   method: __rbs_infer__body
   consts:
+    Current.account: "(::Account & ::Account::Validated)"
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
 - class: ERBPartialPostsComment

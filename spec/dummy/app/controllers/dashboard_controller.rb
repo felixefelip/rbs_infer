@@ -13,12 +13,14 @@
 # `Current.user` read in the view needs a nil check.
 #
 # `set_current_account` runs AFTER the guard, so `current_account` is proven present at its
-# entry and `Current.account` SHOULD be proven populated from there on — including inside
-# the view `show` renders. It is not, and that is deliberate: the marker sidecar that used
-# to assert it is gone (felixefelip/rbs_infer#125), so the read in dashboard/show.html.erb
-# sits in the steep baseline as the open gap. What is missing is one link — a plain handler
-# writing another class's constant attribute gets no establishing postcondition, unlike a
-# handler that halts (`authenticate_user`) or a setter writing its own (`Current#user=`).
+# entry, and since the handler cannot halt it establishes `Current.account` on every exit
+# (felixefelip/steep#100). That fact reaches the action and the view `show` renders, which
+# is why `Current.account.label` in dashboard/show.html.erb needs no nil check.
+#
+# Nothing asserts any of that. A sidecar used to (`Rails::CurrentAttributesCallbacks
+# Generator`, removed in felixefelip/rbs_infer#125) by re-deriving the callback chain and
+# scanning for a `Validated` marker; now the guard's own body, the finder's signature and
+# the handler's own write are what prove it.
 class DashboardController < ApplicationController
   before_action :authenticate_account!
   before_action :set_current_account

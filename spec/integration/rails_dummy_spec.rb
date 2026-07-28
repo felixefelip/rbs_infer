@@ -635,44 +635,54 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       end
     end
 
-    # The gap that remains once the marker sidecar is gone (felixefelip/rbs_infer#125).
+    # The whole chain, with nothing pre-derived anywhere in it.
     # `DashboardController#set_current_account` writes `Current.account = current_account`
-    # under the Devise guard, and two of the three links hold on their own:
+    # under the Devise guard, and every link is now inferred:
     #
     #   1. `current_account` resolves from DashboardController — the helpers are included
-    #      into ActionController::Base by the Devise sidecar, a reopening the resolver now
-    #      unions (felixefelip/rbs_infer#124), so
-    #   2. the attribute is typed from that call site and `Current.account=` establishes
-    #      the const, but
-    #   3. `set_current_account` gets NO postcondition, so the fact never reaches `show`.
-    #      The inferrer records a const establishment for a method that halts
-    #      (`authenticate_user` -> `conditional_const_returns`) or that writes its OWN
-    #      attribute (`Current#user=`), not for a plain handler writing another class's.
+    #      into ActionController::Base by the Devise sidecar, a reopening the resolver
+    #      unions (felixefelip/rbs_infer#124);
+    #   2. the attribute is typed from that call site, so `Current.account=` establishes
+    #      the const;
+    #   3. `set_current_account` cannot halt, so it establishes `Current.account`
+    #      unconditionally (felixefelip/steep#100) and the fact reaches the action AND the
+    #      view it renders.
     #
-    # Link 3 is why `Current.account.label` in dashboard/show.html.erb is in the steep
-    # baseline. When it lands in the Steep fork, that entry leaves the baseline and this
-    # expectation flips — check the FACTS, not just that `steep check` is clean: while the
-    # attribute was still `untyped` the same read type-checked vacuously.
-    it "types Current.account from the call site, but carries the fact nowhere" do
+    # Link 3 is what `Rails::CurrentAttributesCallbacksGenerator` used to assert by hand,
+    # and #125 removed it to leave the gap in the steep baseline. That entry is gone now,
+    # which is what makes this the regression guard for all three at once.
+    #
+    # Asserted on the FACTS, not on `steep check` being clean: while the attribute was
+    # still `untyped` the same read type-checked vacuously, and that read a clean run as
+    # proof once already.
+    it "carries a populated Current from the handler into the action and its view" do
       current_rbs = Pathname.new("sig/rbs_infer/sig/generated/steep_current_runtime/current.rbs").read
       postconditions = YAML.safe_load(Pathname.new("sig/generated/.steep_postconditions.yml").read)
+      account_type = "(::Account & ::Account::Validated)"
 
       # Links 1 + 2.
       expect(current_rbs).to include("def self.account: () -> (Account & Account::Validated)?")
       expect(postconditions["postconditions"]).to include(
         a_hash_including("class" => "Current", "method" => "account=",
                          "unconditional" => a_hash_including(
-                           "establishes_consts" => { "account" => "(::Account & ::Account::Validated)" }
+                           "establishes_consts" => { "account" => account_type }
                          ))
       )
 
-      # Link 3, missing: no method establishes the populated constant, and no entry fact
-      # carries it.
-      expect(postconditions["postconditions"]).not_to include(
-        a_hash_including("class" => "DashboardController", "method" => "set_current_account")
+      # Link 3: the handler establishes it, with no gate to key it on...
+      expect(postconditions["postconditions"]).to include(
+        a_hash_including("class" => "DashboardController", "method" => "set_current_account",
+                         "unconditional" => { "consts" => { "Current.account" => account_type } })
       )
-      carriers = (postconditions["method_entry_facts"] || []).select { |e| (e["consts"] || {}).key?("Current.account") }
-      expect(carriers).to be_empty
+
+      # ...and it lands at the action, at the render dispatch, and in the template body —
+      # the last one being why `Current.account.label` in dashboard/show.html.erb needs no
+      # nil check.
+      carriers = (postconditions["method_entry_facts"] || [])
+                   .select { |e| (e["consts"] || {})["Current.account"] == account_type }
+                   .map { |e| "#{e["class"]}##{e["method"]}" }
+      expect(carriers).to include("DashboardController#show", "DashboardController#render",
+                                  "ERBDashboardShow#__rbs_infer__body")
     end
   end
 
