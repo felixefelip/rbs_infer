@@ -36,6 +36,53 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
     lines[(start + 1)...(start + finish)].map { |l| l.sub(/\A    /, "") }.join("\n")
   end
 
+  # felixefelip/rbs_infer#123. A template is read as a CALLER file, and checking one goes
+  # through its `@type self_method: ERBFoo#__rbs_infer__body` annotation — which makes Steep
+  # build `ERBFoo`. Before the analyzer has inferred that class there is nothing to build,
+  # and RBS answers an unknown name by raising, not by reporting. A brand-new template could
+  # therefore never bootstrap: the run that would have generated its RBS was the run that
+  # died. Declaring the class next to the pseudo-code breaks the cycle.
+  describe "the class declarations" do
+    it "declares every class the pseudo-code defines" do
+      in_app(
+        "app/views/posts/show.html.erb" => "<%= @post.title %>",
+        "app/views/posts/_row.html.erb" => "<%= post.title %>"
+      ) do |dir|
+        generator = described_class.new(app_dir: dir)
+        generator.generate
+
+        rbs = File.read(File.join(dir, described_class::SIDECAR_DIR, described_class::DECLARATIONS_FILE))
+
+        expect(rbs).to include("class ERBPostsShow
+end")
+        expect(rbs).to include("class ERBPartialPostsRow
+end")
+        expect { RBS::Parser.parse_signature(rbs) }.not_to raise_error
+      end
+    end
+
+    # Empty on purpose: every member comes from the analyzer, and RBS merges the two
+    # declarations. A stub with members would fight the inferred ones.
+    it "declares them empty" do
+      in_app("app/views/posts/show.html.erb" => "<%= @post.title %>") do |dir|
+        described_class.new(app_dir: dir).generate
+
+        rbs = File.read(File.join(dir, described_class::SIDECAR_DIR, described_class::DECLARATIONS_FILE))
+
+        expect(rbs).not_to include("def ")
+        expect(rbs).not_to include("include ")
+      end
+    end
+
+    it "writes nothing when the app has no templates" do
+      in_app("app/models/post.rb" => "class Post; end") do |dir|
+        described_class.new(app_dir: dir).generate
+
+        expect(File.exist?(File.join(dir, described_class::SIDECAR_DIR, described_class::DECLARATIONS_FILE))).to be(false)
+      end
+    end
+  end
+
   describe "the view class" do
     it "takes the template's ivars as keyword arguments and assigns them" do
       # The view declares what it needs; the controller-runtime render override then

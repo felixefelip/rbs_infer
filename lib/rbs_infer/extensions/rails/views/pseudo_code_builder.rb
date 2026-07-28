@@ -46,7 +46,10 @@ module RbsInfer
         class PseudoCodeBuilder
           include PathNaming
 
-          FileEntry = Struct.new(:filename, :source, keyword_init: true)
+          # `class_name` is carried so the generator can DECLARE the class alongside the
+          # pseudo-code (felixefelip/rbs_infer#123) — a template is a caller file, and
+          # type-checking it needs the class its `@type self_method:` names to exist.
+          FileEntry = Struct.new(:filename, :source, :class_name, keyword_init: true)
 
           HEADER = <<~HEADER
             # frozen_string_literal: true
@@ -79,7 +82,8 @@ module RbsInfer
 
             FileEntry.new(
               filename: view_relative.sub(/\.(html|turbo_stream)\.erb\z/, ".rb"),
-              source: source_for(class_name, view_relative, scan, caller_dir)
+              source: source_for(class_name, view_relative, scan, caller_dir),
+              class_name: class_name
             )
           end
 

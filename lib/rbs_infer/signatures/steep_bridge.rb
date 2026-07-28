@@ -1001,6 +1001,8 @@ module RbsInfer::Signatures
       return nil unless subtyping
 
       source = Steep::Source.parse(source_code, path: Pathname("(rbs_infer)"), factory: subtyping.factory)
+      return nil unless self_type_declared?(source, subtyping)
+
       Steep::Services::TypeCheckService.type_check(
         source: source,
         subtyping: subtyping,
@@ -1016,6 +1018,31 @@ module RbsInfer::Signatures
       )
     rescue Parser::SyntaxError
       nil
+    end
+
+    # Whether the source's `@type self:` / `@type self_method:` names a class the loaded
+    # RBS environment actually declares (felixefelip/rbs_infer#123).
+    #
+    # Type-checking a body with such an annotation makes Steep build that class, and RBS
+    # answers an unknown name with a bare `RuntimeError` — not a diagnostic. Raised from
+    # here it killed the whole `--output` batch, mid-write, naming a class the user never
+    # typed: one new ERB template and 3 of ~60 files had been written when the run died.
+    #
+    # Checked BEFORE the type-check rather than rescued after, so a genuine RuntimeError
+    # from the checker still surfaces. A caller that fails this degrades to "no local var
+    # types from this file" — what it was before the file could be checked at all — instead
+    # of taking every other file with it.
+    private def self_type_declared?(source, subtyping)
+      node = source.node or return true
+      annotations = source.annotations(block: node, factory: subtyping.factory, context: nil)
+      type = annotations.self_type or return true
+      return true unless type.respond_to?(:name)
+
+      subtyping.factory.env.class_decls.key?(type.name)
+    rescue StandardError
+      # Annotation parsing is not this method's job to police; if it can't be read, let
+      # the type-check proceed and report whatever it reports.
+      true
     end
 
     # rbs_infer runs Steep's inferrers in isolation per-source, with

@@ -162,6 +162,35 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
     end
   end
 
+  # felixefelip/rbs_infer#123. RBS answers an unknown name in `build_instance` with a bare
+  # RuntimeError, not a diagnostic — so a source whose `@type self_method:` names a class
+  # that has no RBS yet used to kill the entire `--output` batch, mid-write, naming a class
+  # the user never typed. That is the normal state of a BRAND-NEW ERB template: the run
+  # that would generate its RBS was the run that died.
+  describe "an unresolvable self-type annotation" do
+    it "degrades that source instead of raising" do
+      code = <<~RUBY
+        # @type self_method: ERBNeverDeclared#__rbs_infer__body
+        post = Post.find(1)
+      RUBY
+
+      expect { bridge.local_var_types_per_method(code) }.not_to raise_error
+      expect(bridge.local_var_types_per_method(code)).to eq({})
+    end
+
+    it "still checks a source whose annotated class IS declared" do
+      # The guard must not swallow the working case — this is the same shape, with a class
+      # the dummy's generated RBS declares.
+      code = <<~RUBY
+        # @type self_method: ERBPostsShow#__rbs_infer__body
+        post = Post.find(1)
+      RUBY
+
+      expect(bridge.local_var_types_per_method(code)["__rbs_infer__body"]["post"])
+        .to eq("(Post & Post::Validated)")
+    end
+  end
+
   describe "#method_return_types" do
     it "resolves method return types from body expressions" do
       code = <<~RUBY
