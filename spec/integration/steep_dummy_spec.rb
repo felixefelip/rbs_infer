@@ -54,18 +54,36 @@ RSpec.describe "Steep type check on dummy app", :dummy_app do
   # and the trailing "Detected N problems" summary.
   STEEP_ERROR_LINE = /\A(?<path>[^\s:]+\.[a-z]+):(?<line>\d+):(?<col>\d+):\s+\[(?<severity>error|warning)\]\s+(?<message>.+)\z/.freeze
 
-  def run_steep
-    env = {
-      "STEEP_ERB_CONVENTION" => "1",
-      "STEEP_MODULE_CONVENTION" => "1"
-    }
+  # `steep check` on the dummy takes ~35s and BOTH examples need its result — one reads
+  # the sidecar it regenerates, the other its diagnostics. Run once and share.
+  #
+  # Memoized on the example GROUP, not in a `let` (per-example, so it would run twice) and
+  # not in `before(:all)` (which would tie the two examples to one hook and re-run the
+  # check for any future example that doesn't need it). Both examples observe the same
+  # process, which is also more faithful than two runs: the sidecar checked below is
+  # exactly the one the diagnostics were produced with.
+  #
+  # Safe to share because the run has no inputs either example varies — the dummy's files
+  # are fixed by the `before(:all)` generator sweep above, and neither example writes to
+  # them. `UPDATE_*` env vars only change what is done with the OUTPUT.
+  def self.steep_output
+    @steep_output ||= begin
+      env = {
+        "STEEP_ERB_CONVENTION" => "1",
+        "STEEP_MODULE_CONVENTION" => "1"
+      }
 
-    Bundler.with_unbundled_env do
-      Dir.chdir(DUMMY_APP_ROOT) do
-        stdout, _stderr, _status = Open3.capture3(env, "bundle", "exec", "steep", "check")
-        stdout
+      Bundler.with_unbundled_env do
+        Dir.chdir(DUMMY_APP_ROOT) do
+          stdout, _stderr, _status = Open3.capture3(env, "bundle", "exec", "steep", "check")
+          stdout
+        end
       end
     end
+  end
+
+  def run_steep
+    self.class.steep_output
   end
 
   def parse_errors(steep_output)
