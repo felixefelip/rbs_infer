@@ -18,6 +18,12 @@ rbs_infer_enumerize:
 rbs_infer_carrierwave:
 	cd $(DUMMY_DIR) && bundle exec rake rbs_infer:carrierwave:all
 
+## Must run AFTER rbs_rails_generator: the devise generator decorates
+## `current_<scope>` with `<Model>::Validated` only when that marker is already
+## on disk, and rbs_rails is what emits it.
+rbs_infer_devise:
+	cd $(DUMMY_DIR) && bundle exec rake rbs_infer:devise:all
+
 rbs_collection_update:
 	cd $(DUMMY_DIR) && rbs collection update
 
@@ -44,6 +50,7 @@ rbs_generators_all:
 	make rbs_rails_custom
 	make rbs_infer_enumerize
 	make rbs_infer_carrierwave
+	make rbs_infer_devise
 	make rbs_infer_module_self_types
 	make rbs_infer_ar_runtime
 	make rbs_infer_controller_runtime

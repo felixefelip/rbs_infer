@@ -5,8 +5,19 @@ interface ::_RbsRailsPathHelpers
   def rails_info_routes_path: (*untyped) -> ::String
   def rails_info_notes_path: (*untyped) -> ::String
   def rails_info_path: (*untyped) -> ::String
+  def new_account_session_path: (*untyped) -> ::String
+  def account_session_path: (*untyped) -> ::String
+  def destroy_account_session_path: (*untyped) -> ::String
+  def new_account_password_path: (*untyped) -> ::String
+  def edit_account_password_path: (*untyped) -> ::String
+  def account_password_path: (*untyped) -> ::String
+  def cancel_account_registration_path: (*untyped) -> ::String
+  def new_account_registration_path: (*untyped) -> ::String
+  def edit_account_registration_path: (*untyped) -> ::String
+  def account_registration_path: (*untyped) -> ::String
   def rails_health_check_path: (*untyped) -> ::String
   def root_path: (*untyped) -> ::String
+  def dashboard_path: (*untyped) -> ::String
   def post_comments_path: (*untyped) -> ::String
   def post_comment_path: (*untyped) -> ::String
   def post_assignments_path: (*untyped) -> ::String
@@ -23,8 +34,19 @@ interface ::_RbsRailsPathHelpers
   def rails_info_routes_url: (*untyped) -> ::String
   def rails_info_notes_url: (*untyped) -> ::String
   def rails_info_url: (*untyped) -> ::String
+  def new_account_session_url: (*untyped) -> ::String
+  def account_session_url: (*untyped) -> ::String
+  def destroy_account_session_url: (*untyped) -> ::String
+  def new_account_password_url: (*untyped) -> ::String
+  def edit_account_password_url: (*untyped) -> ::String
+  def account_password_url: (*untyped) -> ::String
+  def cancel_account_registration_url: (*untyped) -> ::String
+  def new_account_registration_url: (*untyped) -> ::String
+  def edit_account_registration_url: (*untyped) -> ::String
+  def account_registration_url: (*untyped) -> ::String
   def rails_health_check_url: (*untyped) -> ::String
   def root_url: (*untyped) -> ::String
+  def dashboard_url: (*untyped) -> ::String
   def post_comments_url: (*untyped) -> ::String
   def post_comment_url: (*untyped) -> ::String
   def post_assignments_url: (*untyped) -> ::String

@@ -104,6 +104,7 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 | Task | Source generator | Output dir |
 |---|---|---|
 | `rake rbs_infer:enumerize:all` | `RbsInfer::Extensions::Enumerize::Generator` | `sig/rbs_enumerize/` |
+| `rake rbs_infer:devise:all` | `RbsInfer::Extensions::Devise::Generator` | `sig/rbs_infer_devise/` |
 | `rake rbs_infer:rails_custom:all` | `RbsInfer::Extensions::Rails::CustomGenerator` | `sig/rbs_rails_custom/` |
 | `rake rbs_infer:module_self_types:all` | `RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator` | `sig/generated/.steep_module_self_types.yml` |
 | `rake rbs_infer:controller_runtime:all` | `RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator` | `sig/generated/steep_controller_runtime/` |
@@ -111,6 +112,8 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 | `rake rbs_infer:actionview_runtime:all` | `RbsInfer::Extensions::Rails::Views::RuntimeGenerator` | `sig/generated/steep_actionview_runtime/` |
 
 **Enumerize generator** — walks `app/models/**/*.rb`, captures `enumerize :attr, in: [...]`, and emits per-attribute `Value` / `Attribute` classes plus instance/class accessors, predicate methods, and scope methods (shallow/deep).
+
+**Devise generator** — reads the `devise_for` declarations in `config/routes.rb` (the only statically readable trace of a Devise scope; the helpers themselves are `class_eval`'d at boot) and emits `current_<scope>` / `authenticate_<scope>!` / `<scope>_signed_in?` / `<scope>_session`, plus a `<Scope>Authenticated` marker and a `.steep_callbacks.yml` that intersects it into `self` for the actions of every controller guarded by `before_action :authenticate_<scope>!` — so `current_<scope>` is proven non-nil at entry there. Must run **after** `rake rbs_rails:all`: the resource type is decorated with `<Model>::Validated` only when that marker is already on disk.
 
 **Rails custom generator** — emits `application_controller.rbs` and `action_view_context.rbs` with framework-level mix-ins (`ApplicationHelper`, `ActionView::Helpers`, optionally `Kaminari::Helpers`, `_RbsRailsPathHelpers`) so controllers/views resolve helper methods.
 
@@ -176,6 +179,7 @@ make rbs_helpers          # spec/dummy/app/helpers/
 make rbs_rails_generator  # cd spec/dummy && rake rbs_rails:all
 make rbs_rails_custom     # ApplicationController + ActionViewContext
 make rbs_infer_enumerize  # rake rbs_infer:enumerize:all
+make rbs_infer_devise     # rake rbs_infer:devise:all (after rbs_rails_generator)
 make rbs_generators_all   # every generator above, in order
 
 make test                 # bundle exec rspec

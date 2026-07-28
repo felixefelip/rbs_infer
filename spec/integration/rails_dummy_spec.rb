@@ -62,6 +62,13 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/post", target_class: "Post", target_file: "app/models/post.rb")
   end
 
+  # Everything Devise contributes to this model is invisible to the parser — `devise`
+  # mixes its modules in at class-definition time. What the snapshot pins is that the
+  # analyzer emits the model's OWN members and nothing speculative for the macro.
+  it "Account model matches expected RBS" do
+    assert_snapshot("models/account", target_class: "Account", target_file: "app/models/account.rb")
+  end
+
   it "Comment model matches expected RBS" do
     assert_snapshot("models/comment", target_class: "Comment", target_file: "app/models/comment.rb")
   end
@@ -532,6 +539,13 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("controllers/users/avatars_controller", target_class: "Users::AvatarsController", target_file: "app/controllers/users/avatars_controller.rb")
   end
 
+  # The Devise consumer. `@account = current_account` gets its type from the generated
+  # `DeviseScopedHelpers` — nothing in the source names `Account` — so this snapshot is
+  # what would catch the scoped helpers silently reverting to `untyped`.
+  it "DashboardController matches expected RBS" do
+    assert_snapshot("controllers/dashboard_controller", target_class: "DashboardController", target_file: "app/controllers/dashboard_controller.rb")
+  end
+
   it "AvatarUploader matches expected RBS" do
     assert_snapshot("uploaders/avatar_uploader", target_class: "AvatarUploader", target_file: "app/uploaders/avatar_uploader.rb")
   end
@@ -586,6 +600,48 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
         expect(File.exist?(File.join(tmpdir, "app/models/post.rbs"))).to be false
         expect(File.exist?(File.join(tmpdir, "app/models/comment.rbs"))).to be false
+      end
+    end
+  end
+
+  describe "Devise scoped helpers generator" do
+    require "rbs_infer/extensions/devise/generator"
+    require "tmpdir"
+
+    # The unit specs drive this generator with synthetic fixtures. Here it runs against
+    # the real dummy, so what it reads is the actual `devise_for :accounts` in
+    # config/routes.rb and the actual `Account::Validated` marker rbs_rails emitted — the
+    # two inputs a fixture can silently get wrong.
+    it "emits per-scope helpers and the guarded-controller sidecar" do
+      Dir.mktmpdir do |tmpdir|
+        generator = RbsInfer::Extensions::Devise::Generator.new(app_dir: Dir.pwd, output_dir: tmpdir)
+        scopes = generator.generate_all
+
+        expect(scopes).to eq([{ scope: "account", class_name: "Account" }])
+
+        rbs = File.read(File.join(tmpdir, "devise_scoped_helpers.rbs"))
+        sidecar = File.read(File.join(tmpdir, ".steep_callbacks.yml"))
+
+        if ENV["UPDATE_EXPECTATIONS"]
+          path = expectations_dir.join("devise/devise_scoped_helpers.rbs")
+          path.dirname.mkpath
+          path.write(rbs)
+          expectations_dir.join("devise/steep_callbacks.yml").write(sidecar)
+        end
+
+        expect(rbs.chomp).to eq(expected_rbs("devise/devise_scoped_helpers").chomp)
+        expect(sidecar.chomp).to eq(expectations_dir.join("devise/steep_callbacks.yml").read.chomp)
+      end
+    end
+
+    # DashboardController declares the guard itself; ApplicationController does not. If the
+    # guard ever migrated up, EVERY controller would be narrowed and this would catch it.
+    it "narrows only the controller that declares the guard" do
+      Dir.mktmpdir do |tmpdir|
+        generator = RbsInfer::Extensions::Devise::Generator.new(app_dir: Dir.pwd, output_dir: tmpdir)
+        guarded = generator.build_scanner.guarded_controllers
+
+        expect(guarded).to eq([{ class_name: "DashboardController", scope: "account", actions: ["show"] }])
       end
     end
   end

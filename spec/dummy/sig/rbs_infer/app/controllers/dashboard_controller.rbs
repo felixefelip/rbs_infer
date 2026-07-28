@@ -1,0 +1,6 @@
+class DashboardController < ApplicationController
+  @account: (Account & Account::Validated)?
+  @recent_posts: Post::ActiveRecord_Relation?
+
+  def show: () -> void
+end

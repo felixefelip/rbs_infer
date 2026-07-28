@@ -101,6 +101,14 @@ gems:
   version: 0.3.0
   source:
     type: rubygems
+- name: bcrypt
+  version: '3.1'
+  source:
+    type: git
+    name: ruby/gem_rbs_collection
+    revision: 4d9d8513381f344add6de90fac339953a57d142c
+    remote: https://github.com/felixefelip/gem_rbs_collection.git
+    repo_dir: gems
 - name: benchmark
   version: '0'
   source:
@@ -165,6 +173,14 @@ gems:
   version: '0'
   source:
     type: stdlib
+- name: devise
+  version: '4.9'
+  source:
+    type: git
+    name: ruby/gem_rbs_collection
+    revision: 4d9d8513381f344add6de90fac339953a57d142c
+    remote: https://github.com/felixefelip/gem_rbs_collection.git
+    repo_dir: gems
 - name: digest
   version: '0'
   source:

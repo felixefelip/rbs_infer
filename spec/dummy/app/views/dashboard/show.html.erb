@@ -1,0 +1,20 @@
+<h1>Dashboard</h1>
+
+<div class="account">
+  <%# `@account` is `current_account` under `before_action :authenticate_account!`, so it
+      arrives here non-nil and `label` resolves without a check. The Devise generator's
+      `AccountAuthenticated` marker is what proves it — nothing in app/models/account.rb
+      says so. %>
+  <p class="account-label"><%= @account.label %></p>
+
+  <%# Same read as posts/show.html.erb: this controller stacks Devise on TOP of the
+      inherited `authenticate_user` chain, so both layers' facts reach the view. %>
+  <p class="viewer"><%= Current.user.name %></p>
+</div>
+
+<div class="recent-posts">
+  <% @recent_posts.each do |post| %>
+    <h3><%= link_to post.title, post %></h3>
+    <span><%= post.author_name %></span>
+  <% end %>
+</div>

@@ -106,6 +106,39 @@ postconditions:
   effects:
     may_write:
     - "@user"
+- class: DashboardController
+  method: __rbs_infer__run_show
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+    - "@account"
+    - "@recent_posts"
+- class: DashboardController
+  method: render
+  unconditional:
+    ivars:
+      "@__rbs_infer__performed": 'true'
+    self: "::DashboardController & ::DashboardController::AfterRender"
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+- class: DashboardController
+  method: show
+  unconditional:
+    ivars:
+      "@account": "(::Account & ::Account::Validated)"
+      "@recent_posts": "::Post::ActiveRecord_Relation"
+    self: "::DashboardController & ::DashboardController::AfterShow"
+  effects:
+    may_write:
+    - "@account"
+    - "@recent_posts"
+- class: ERBDashboardShow
+  method: initialize
+  effects:
+    may_write:
+    - "@account"
+    - "@recent_posts"
 - class: ERBPartialPostsComment
   method: initialize
   effects:
@@ -762,6 +795,11 @@ postconditions:
     - "@posts"
     - "@user"
 method_entry_facts:
+- class: Account
+  method: label
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
 - class: ApplicationController
   method: current_user
   ivars:
@@ -800,6 +838,28 @@ method_entry_facts:
     Current.user: "(::User & ::User::Validated)"
 - class: Current
   method: author_name
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: DashboardController
+  method: render
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+  ivars:
+    "@account": "(::Account & ::Account::Validated)"
+    "@recent_posts": "::Post::ActiveRecord_Relation"
+- class: DashboardController
+  method: show
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: ERBDashboardShow
+  method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
@@ -1153,6 +1213,13 @@ method_entry_facts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
 argument_entry_facts:
+- class: DashboardController
+  method: render
+  param: target
+  pattern: ":show"
+  ivars:
+    "@account": "(::Account & ::Account::Validated)"
+    "@recent_posts": "::Post::ActiveRecord_Relation"
 - class: Example12
   method: show
   param: which

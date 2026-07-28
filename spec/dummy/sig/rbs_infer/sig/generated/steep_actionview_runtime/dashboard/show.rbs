@@ -1,0 +1,10 @@
+class ERBDashboardShow
+  @account: (Account & Account::Validated)
+  @recent_posts: Post::ActiveRecord_Relation
+
+  include ActionViewContext
+
+  def initialize: (account: Account & ::Account::Validated, recent_posts: Post::ActiveRecord_Relation) -> void
+  def params: () -> ActionController::Parameters
+  def __rbs_infer__body: () -> nil
+end

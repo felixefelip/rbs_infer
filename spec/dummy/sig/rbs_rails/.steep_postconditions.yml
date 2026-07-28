@@ -1,5 +1,38 @@
 ---
 postconditions:
+- class: Account
+  method: email_required?
+  when_true:
+    self: Account & Account::ValidatedAsEmailRequired
+- class: Account
+  method: save
+  when_true:
+    self: Account & Account::Validated
+  when_false:
+    drops:
+    - Account::Validated
+- class: Account
+  method: save!
+  when_true:
+    self: Account & Account::Validated
+- class: Account
+  method: update
+  when_true:
+    self: Account & Account::Validated
+  when_false:
+    drops:
+    - Account::Validated
+- class: Account
+  method: update!
+  when_true:
+    self: Account & Account::Validated
+- class: Account
+  method: valid?
+  when_true:
+    self: Account & Account::Validated
+  when_false:
+    drops:
+    - Account::Validated
 - class: Assignment
   method: save
   when_true:

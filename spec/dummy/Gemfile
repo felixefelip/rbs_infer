@@ -13,6 +13,8 @@ gem "enumerize"
 
 gem "carrierwave", "~> 3.0"
 
+gem "devise"
+
 # RBS type signatures
 gem "rbs_infer", path: "../.."
 gem "rbs_rails", path: "/home/felipefelix/workspaces/rbs_rails", require: false
