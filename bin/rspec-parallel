@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+#
+# Runs the spec suite as two concurrent RSpec processes, split by what they
+# WRITE rather than by how long they take.
+#
+#   lane "dummy"    spec/integration/rails_dummy_spec.rb
+#                   spec/integration/steep_dummy_spec.rb
+#   lane "isolated" spec/lib  spec/bin  spec/integration/steep_scenarios_spec.rb
+#
+# The two dummy specs run generators (`rake rbs_rails:all`, `rbs collection
+# install`, the rbs_infer sidecar tasks) that write into spec/dummy/sig/. They
+# write the SAME files, so running them against each other risks a torn read —
+# they share a lane and stay serial within it. Everything else builds its own
+# tmpdir per example (`Dir.mktmpdir`, `in_app`, TempFileHelpers) and only ever
+# READS spec/dummy, so it is safe alongside them.
+#
+# That is also why the split is not "integration vs unit", the obvious cut:
+# spec/lib is ~9s against ~87s of integration, so that split saves almost
+# nothing. Moving the isolated integration file across is what balances it.
+#
+#     bin/rspec-parallel                 # whole suite, two lanes
+#     bin/rspec-parallel --seed 1234     # extra args go to BOTH lanes
+#
+# Exit status is non-zero if either lane fails. Output is buffered per lane and
+# printed when that lane finishes, so the two processes never interleave
+# mid-line; the summary at the end says which lane failed.
+set -uo pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+
+# Snapshot-refreshing runs write to spec/expectations/ from BOTH lanes (the
+# dummy specs and the unit generator specs each own part of that tree), so a
+# parallel refresh is a race on the deliverable itself. Refuse loudly rather
+# than produce a half-updated tree that looks fine.
+for var in UPDATE_EXPECTATIONS UPDATE_STEEP_BASELINE UPDATE_STEEP_CONTRACTS; do
+  if [[ -n "${!var:-}" ]]; then
+    echo "error: $var is set — refreshing snapshots must run serially." >&2
+    echo "       use: $var=1 bundle exec rspec" >&2
+    exit 2
+  fi
+done
+
+DUMMY_SPECS=(
+  spec/integration/rails_dummy_spec.rb
+  spec/integration/steep_dummy_spec.rb
+)
+ISOLATED_SPECS=(
+  spec/lib
+  spec/bin
+  spec/integration/steep_scenarios_spec.rb
+)
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+run_lane() {
+  local name="$1"; shift
+  local start
+  start=$(date +%s)
+  bundle exec rspec "$@" >"$tmp/$name.out" 2>&1
+  echo "$?" >"$tmp/$name.status"
+  echo "$(($(date +%s) - start))" >"$tmp/$name.time"
+}
+
+run_lane dummy "${DUMMY_SPECS[@]}" "$@" &
+dummy_pid=$!
+run_lane isolated "${ISOLATED_SPECS[@]}" "$@" &
+isolated_pid=$!
+
+wait "$dummy_pid"
+wait "$isolated_pid"
+
+overall=0
+for lane in dummy isolated; do
+  status="$(cat "$tmp/$lane.status")"
+  echo "════════ lane: $lane (${status/0/ok} — $(cat "$tmp/$lane.time")s) ════════"
+  cat "$tmp/$lane.out"
+  echo
+  if [[ "$status" -ne 0 ]]; then overall="$status"; fi
+done
+
+echo "════════ summary ════════"
+for lane in dummy isolated; do
+  status="$(cat "$tmp/$lane.status")"
+  if [[ "$status" -eq 0 ]]; then
+    printf '  %-10s passed  (%ss)\n' "$lane" "$(cat "$tmp/$lane.time")"
+  else
+    printf '  %-10s FAILED (exit %s, %ss)\n' "$lane" "$status" "$(cat "$tmp/$lane.time")"
+  fi
+done
+
+exit "$overall"

@@ -57,6 +57,12 @@ rbs_generators_all:
 test:
 	bundle exec rspec
 
+## Mesma suíte em dois processos concorrentes (~114s -> ~75s).
+## Não use para regravar snapshots — bin/rspec-parallel recusa UPDATE_* e
+## explica o porquê.
+test_parallel:
+	./bin/rspec-parallel
+
 ## Análise de tipos com Steep no dummy
 steep:
 	cd $(DUMMY_DIR) && STEEP_ERB_CONVENTION=1 STEEP_MODULE_CONVENTION=1 bundle exec steep check
