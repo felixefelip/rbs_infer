@@ -487,6 +487,11 @@ postconditions:
   effects:
     may_write:
     - "@xml"
+- class: Post::Archiver
+  method: initialize
+  effects:
+    may_write:
+    - "@post"
 - class: PostPublisher
   method: initialize
   effects:

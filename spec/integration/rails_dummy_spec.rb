@@ -89,6 +89,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/palette", target_class: "Palette", target_file: "app/models/palette.rb")
   end
 
+  # A namespaced service object called by its BARE name from the model that
+  # encloses it (felixefelip/rbs_infer#129). The interesting half is `Post#archive` /
+  # `#archive_via_singleton` in the Post snapshot above: `Archiver` there is
+  # `Post::Archiver`, resolved from the enclosing namespace outward.
+  it "Post::Archiver (namespaced service) matches expected RBS" do
+    assert_snapshot("models/post/archiver", target_class: "Post::Archiver", target_file: "app/models/post/archiver.rb")
+  end
+
   it "Coupon::Code (constant argument) matches expected RBS" do
     assert_snapshot("models/coupon/code", target_class: "Coupon::Code", target_file: "app/models/coupon/code.rb")
   end

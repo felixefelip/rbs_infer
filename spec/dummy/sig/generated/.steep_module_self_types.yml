@@ -8,6 +8,10 @@ app/models/coupon/code.rb:
   anchor: Code
   annotations:
   - "# @type instance: Coupon & Coupon::Code"
+app/models/post/archiver.rb:
+  anchor: Archiver
+  annotations:
+  - "# @type instance: Post & Post::Archiver"
 app/models/post/notifiable.rb:
   anchor: Notifiable
   annotations:

@@ -92,6 +92,19 @@ class Post < ApplicationRecord
     end
   end
 
+  # `Archiver` is `Post::Archiver` — written bare, as Ruby resolves it from the
+  # enclosing namespace outward. Both the instance path (`.new(...).call`, a
+  # CHAINED call) and the singleton path (`.run`, a direct constant receiver)
+  # have to find it; matching the bare name against top-level `Archiver` finds
+  # nothing and silently yields `untyped` (felixefelip/rbs_infer#129).
+  def archive
+    Archiver.new(self).call
+  end
+
+  def archive_via_singleton
+    Archiver.run(self)
+  end
+
   def test_enumerize_status
     Post.status
   end

@@ -210,4 +210,91 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
       expect(resolver.resolve("(LeftClass & RightClass)", "shared")).to eq("Symbol")
     end
   end
+
+  # felixefelip/rbs_infer#129: a namespaced service called by its bare name from
+  # the model that encloses it — `Archiver.new(self).call` inside `class Post`,
+  # where the class is `Post::Archiver`.
+  describe "#qualify_constant" do
+    let(:namespaced_service) do
+      {
+        "post.rb" => <<~RUBY,
+          class Post
+            def archive
+              Archiver.new(self).call
+            end
+          end
+        RUBY
+        "post/archiver.rb" => <<~RUBY
+          class Post
+            class Archiver
+              #: -> String
+              def call
+                "archived"
+              end
+            end
+          end
+        RUBY
+      }
+    end
+
+    it "resolves a bare constant against the enclosing namespace" do
+      with_temp_files(namespaced_service) do |dir, paths|
+        resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+        expect(resolver.qualify_constant("Archiver", enclosing: "Post")).to eq("Post::Archiver")
+      end
+    end
+
+    # The sharp case: a top-level class shares the short name, so the SAME written
+    # constant names two different classes depending on where it is written. Without
+    # the enclosing scope there is no answer to give — only a coin flip.
+    it "gives the same written name two answers, one per enclosing scope" do
+      files = namespaced_service.merge(
+        "archiver.rb" => <<~RUBY,
+          class Archiver
+            #: -> Integer
+            def call
+              0
+            end
+          end
+        RUBY
+        "comment.rb" => <<~RUBY
+          class Comment
+            def archive
+              Archiver.new.call
+            end
+          end
+        RUBY
+      )
+
+      with_temp_files(files) do |dir, paths|
+        resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+
+        expect(resolver.qualify_constant("Archiver", enclosing: "Post")).to eq("Post::Archiver")
+        expect(resolver.qualify_constant("Archiver", enclosing: "Comment")).to eq("Archiver")
+
+        # Only the qualified name reaches the RBS declaration, which is where a
+        # real project's types come from (rbs_rails output, a previous pass's
+        # `sig/`). The source fallback is more forgiving — `FileIndex` matches on a
+        # path SUFFIX, so even a bare `Archiver` finds `post/archiver.rb` — which is
+        # precisely why this miss went unnoticed: it degraded only on the RBS path.
+        expect(resolver.resolve("Post::Archiver", "call")).to eq("String")
+      end
+    end
+
+    it "keeps a constant that is not the enclosing namespace's" do
+      with_temp_files(namespaced_service) do |dir, paths|
+        resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+        expect(resolver.qualify_constant("Post", enclosing: "Post")).to eq("Post")
+      end
+    end
+
+    # An unknown constant (stdlib, a gem, something generated at runtime) has to
+    # flow through untouched, so the resolvers that CAN see it still get a chance.
+    it "returns the written name when no candidate is known" do
+      with_temp_files(namespaced_service) do |dir, paths|
+        resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+        expect(resolver.qualify_constant("Time", enclosing: "Post")).to eq("Time")
+      end
+    end
+  end
 end
