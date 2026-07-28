@@ -188,58 +188,6 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
     end
   end
 
-  # Still exposed — Rails::CurrentAttributesCallbacksGenerator narrows `Current.user` off
-  # the same scanner, and Current is not a Devise concern.
-  it "exposes the proven resource types for downstream generators" do
-    Dir.mktmpdir do |dir|
-      FileUtils.mkdir_p(File.join(dir, "config"))
-      File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
-
-      generator = described_class.new(app_dir: dir, output_dir: File.join(dir, "sig"))
-
-      expect(generator.proven_resource_types).to eq("user" => "User")
-    end
-  end
-
-  it "decorates the proven resource type with the Validated marker when rbs_rails emitted it" do
-    Dir.mktmpdir do |dir|
-      FileUtils.mkdir_p(File.join(dir, "config"))
-      File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
-      FileUtils.mkdir_p(File.join(dir, "sig/rbs_rails/app/models"))
-      File.write(File.join(dir, "sig/rbs_rails/app/models/user.rbs"), <<~RBS)
-        class User < ApplicationRecord
-        end
-
-        class ::User::Validated
-        end
-      RBS
-
-      generator = described_class.new(app_dir: dir, output_dir: File.join(dir, "sig"))
-
-      expect(generator.proven_resource_types).to eq("user" => "(User & User::Validated)")
-    end
-  end
-
-  it "exposes a scanner that finds the guarded controllers" do
-    Dir.mktmpdir do |dir|
-      FileUtils.mkdir_p(File.join(dir, "config"))
-      File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
-      FileUtils.mkdir_p(File.join(dir, "app/controllers"))
-      File.write(File.join(dir, "app/controllers/posts_controller.rb"), <<~RUBY)
-        class PostsController < ApplicationController
-          before_action :authenticate_user!
-
-          def index; end
-        end
-      RUBY
-
-      generator = described_class.new(app_dir: dir, output_dir: File.join(dir, "sig"))
-
-      expect(generator.build_scanner.guarded_controllers)
-        .to eq([{ class_name: "PostsController", scope: "user", actions: ["index"] }])
-    end
-  end
-
   it "dedupes repeated devise_for of the same resource" do
     scopes, = generate(<<~RUBY)
       Rails.application.routes.draw do

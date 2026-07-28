@@ -3,8 +3,6 @@
 require "prism"
 require "fileutils"
 require "active_support/core_ext/string/inflections"
-require_relative "../rails/before_action_scanner"
-require_relative "../../signatures/rbs_parser_util"
 
 module RbsInfer
   module Extensions
@@ -44,9 +42,9 @@ module RbsInfer
       # effective callback chain with a halt check after each link, is what carries that to
       # the action. Nothing here states a type or names a controller.
       #
-      # `proven_resource_types` / `build_scanner` survive for a different consumer,
-      # `Rails::CurrentAttributesCallbacksGenerator` — Current narrowing is not a Devise
-      # concern and still works off the scanner.
+      # Nothing derived survives: `Rails::CurrentAttributesCallbacksGenerator`, the last
+      # consumer of the re-derived callback chain and of the `<Model>::Validated` file
+      # scan, is gone with it (felixefelip/rbs_infer#125).
       class Generator
         MODULE_NAME = "DeviseScopedHelpers"
 
@@ -88,19 +86,6 @@ module RbsInfer
           end
 
           parse_scopes
-        end
-
-        # ── Auth-layer facts consumed by other generators ─────────────
-        # (e.g. Rails::CurrentAttributesCallbacksGenerator)
-
-        def build_scanner(scopes = parse_scopes)
-          Rails::BeforeActionScanner.new(app_dir: app_dir, scopes: scopes.map { |s| s[:scope] })
-        end
-
-        # { "user" => "(User & User::Validated)" } — the proven (non-nil)
-        # type of `current_<scope>` under the guard.
-        def proven_resource_types(scopes = parse_scopes)
-          scopes.to_h { |s| [s[:scope], RbsInfer::Signatures::RbsParserUtil.parenthesize_compound(resource_type(s[:class_name]))] }
         end
 
         # Extracts [{scope:, class_name:}, ...] from `devise_for` calls.
@@ -230,29 +215,6 @@ module RbsInfer
         # Warden's session key for a scope (`warden.user.account.key`).
         def session_key(scope)
           "warden.user.#{scope}.key"
-        end
-
-        # The resource comes from the DB (warden → serialize_from_session
-        # → finder), the same provenance that makes the fork's finders
-        # return `Model & Model::Validated`. Decorate identically — but
-        # only when rbs_rails actually emitted the marker (models without
-        # unconditional validations have no `::Validated`; referencing a
-        # missing type would poison the RBS environment).
-        def resource_type(class_name)
-          validated_marker?(class_name) ? "#{class_name} & #{class_name}::Validated" : class_name
-        end
-
-        def validated_marker?(class_name)
-          @validated_markers ||= {}
-          return @validated_markers[class_name] if @validated_markers.key?(class_name)
-
-          target = "#{class_name}::Validated"
-          @validated_markers[class_name] = Dir[File.join(app_dir, "sig/**/*.rbs")].any? do |rbs_file|
-            content = File.read(rbs_file)
-            next false unless content.include?("::Validated")
-
-            RbsInfer::Signatures::RbsParserUtil.build_declaration_index(RbsInfer::Signatures::RbsParserUtil.parse_declarations(content)).key?(target)
-          end
         end
       end
     end

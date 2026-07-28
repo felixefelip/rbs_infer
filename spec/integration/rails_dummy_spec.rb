@@ -635,37 +635,25 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       end
     end
 
-    # `proven_resource_types` is the one thing still derived rather than inferred, because
-    # Rails::CurrentAttributesCallbacksGenerator consumes it. It reads the marker off
-    # rbs_rails' output, so it only holds once that ran.
-    it "resolves the proven resource type from rbs_rails' marker" do
-      Dir.mktmpdir do |tmpdir|
-        generator = RbsInfer::Extensions::Devise::Generator.new(app_dir: Dir.pwd, output_dir: tmpdir)
-
-        expect(generator.proven_resource_types).to eq("account" => "(Account & Account::Validated)")
-      end
-    end
-
-    # How far the chain that would retire Rails::CurrentAttributesCallbacksGenerator gets
-    # on its own. `DashboardController#set_current_account` writes
-    # `Current.account = current_account` under the Devise guard, and two of the three
-    # links now hold without any sidecar:
+    # The gap that remains once the marker sidecar is gone (felixefelip/rbs_infer#125).
+    # `DashboardController#set_current_account` writes `Current.account = current_account`
+    # under the Devise guard, and two of the three links hold on their own:
     #
     #   1. `current_account` resolves from DashboardController — the helpers are included
     #      into ActionController::Base by the Devise sidecar, a reopening the resolver now
     #      unions (felixefelip/rbs_infer#124), so
     #   2. the attribute is typed from that call site and `Current.account=` establishes
     #      the const, but
-    #   3. `set_current_account` gets NO postcondition: the inferrer records a const
-    #      establishment for a method that halts (`authenticate_user` →
-    #      `conditional_const_returns`) or that writes its own attribute (`Current#user=`),
-    #      not for a plain handler writing another class's. So the fact never reaches
-    #      `show`, and `Current.account.label` in the view still rides on the marker.
+    #   3. `set_current_account` gets NO postcondition, so the fact never reaches `show`.
+    #      The inferrer records a const establishment for a method that halts
+    #      (`authenticate_user` -> `conditional_const_returns`) or that writes its OWN
+    #      attribute (`Current#user=`), not for a plain handler writing another class's.
     #
-    # When link 3 lands in the Steep fork, drop the sidecar and re-measure — checking the
-    # FACTS, not just that `steep check` is clean: with the attribute untyped the read used
-    # to type-check vacuously.
-    it "types Current.account from the call site, but still needs the marker to narrow it" do
+    # Link 3 is why `Current.account.label` in dashboard/show.html.erb is in the steep
+    # baseline. When it lands in the Steep fork, that entry leaves the baseline and this
+    # expectation flips — check the FACTS, not just that `steep check` is clean: while the
+    # attribute was still `untyped` the same read type-checked vacuously.
+    it "types Current.account from the call site, but carries the fact nowhere" do
       current_rbs = Pathname.new("sig/rbs_infer/sig/generated/steep_current_runtime/current.rbs").read
       postconditions = YAML.safe_load(Pathname.new("sig/generated/.steep_postconditions.yml").read)
 
@@ -678,23 +666,13 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
                          ))
       )
 
-      # Link 3, still missing — no entry fact carries the populated constant.
+      # Link 3, missing: no method establishes the populated constant, and no entry fact
+      # carries it.
+      expect(postconditions["postconditions"]).not_to include(
+        a_hash_including("class" => "DashboardController", "method" => "set_current_account")
+      )
       carriers = (postconditions["method_entry_facts"] || []).select { |e| (e["consts"] || {}).key?("Current.account") }
       expect(carriers).to be_empty
-
-      expect(Pathname.new("sig/rbs_infer_current_attributes/populated_markers.rbs").read)
-        .to include("def account: () -> (Account & Account::Validated)")
-    end
-
-    # DashboardController declares the guard itself; ApplicationController does not. If the
-    # guard ever migrated up, EVERY controller would be affected and this would catch it.
-    it "finds only the controller that declares the guard" do
-      Dir.mktmpdir do |tmpdir|
-        generator = RbsInfer::Extensions::Devise::Generator.new(app_dir: Dir.pwd, output_dir: tmpdir)
-        guarded = generator.build_scanner.guarded_controllers
-
-        expect(guarded).to eq([{ class_name: "DashboardController", scope: "account", actions: ["show"] }])
-      end
     end
   end
 
