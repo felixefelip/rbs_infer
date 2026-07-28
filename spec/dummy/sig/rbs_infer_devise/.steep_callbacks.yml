@@ -1,7 +1,0 @@
----
-version: 1
-callbacks:
-- class: DashboardController
-  applies_self: DashboardController & DeviseScopedHelpers::AccountAuthenticated
-  runs_before:
-  - show

@@ -442,6 +442,13 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     it "ActiveRecord runtime" do
       assert_runtime_rbs("steep_ar_runtime")
     end
+
+    # The Devise helpers' RBS is now INFERRED from their pseudo-code — this snapshot is
+    # where `current_account: () -> (Account & Account::Validated)?` shows up without the
+    # generator ever having written a type.
+    it "Devise runtime" do
+      assert_runtime_rbs("steep_devise_runtime")
+    end
   end
 
   # Class-instance variables (felixefelip/rbs_infer#86). A `@x` written in a
@@ -608,35 +615,40 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     require "rbs_infer/extensions/devise/generator"
     require "tmpdir"
 
-    # The unit specs drive this generator with synthetic fixtures. Here it runs against
-    # the real dummy, so what it reads is the actual `devise_for :accounts` in
-    # config/routes.rb and the actual `Account::Validated` marker rbs_rails emitted — the
-    # two inputs a fixture can silently get wrong.
-    it "emits per-scope helpers and the guarded-controller sidecar" do
+    # The unit specs drive this generator with synthetic fixtures. Here it runs against the
+    # real dummy, so what it reads is the actual `devise_for :accounts` in config/routes.rb.
+    # The emitted pseudo-code is snapshotted as the dummy's own file (it IS the checked-in
+    # sig/generated/steep_devise_runtime/), which is also what `steep check` consumes.
+    it "emits the pseudo-code checked into the dummy" do
       Dir.mktmpdir do |tmpdir|
         generator = RbsInfer::Extensions::Devise::Generator.new(app_dir: Dir.pwd, output_dir: tmpdir)
         scopes = generator.generate_all
 
         expect(scopes).to eq([{ scope: "account", class_name: "Account" }])
 
-        rbs = File.read(File.join(tmpdir, "devise_scoped_helpers.rbs"))
-        sidecar = File.read(File.join(tmpdir, ".steep_callbacks.yml"))
+        source = File.read(File.join(tmpdir, RbsInfer::Extensions::Devise::Generator::FILENAME))
+        checked_in = Pathname.new(RbsInfer::Extensions::Devise::Generator::SIDECAR_DIR)
+                             .join(RbsInfer::Extensions::Devise::Generator::FILENAME)
 
-        if ENV["UPDATE_EXPECTATIONS"]
-          path = expectations_dir.join("devise/devise_scoped_helpers.rbs")
-          path.dirname.mkpath
-          path.write(rbs)
-          expectations_dir.join("devise/steep_callbacks.yml").write(sidecar)
-        end
+        expect(source).to eq(checked_in.read),
+                          "sig/generated/steep_devise_runtime/ is stale — re-run `rake rbs_infer:devise:all`"
+      end
+    end
 
-        expect(rbs.chomp).to eq(expected_rbs("devise/devise_scoped_helpers").chomp)
-        expect(sidecar.chomp).to eq(expectations_dir.join("devise/steep_callbacks.yml").read.chomp)
+    # `proven_resource_types` is the one thing still derived rather than inferred, because
+    # Rails::CurrentAttributesCallbacksGenerator consumes it. It reads the marker off
+    # rbs_rails' output, so it only holds once that ran.
+    it "resolves the proven resource type from rbs_rails' marker" do
+      Dir.mktmpdir do |tmpdir|
+        generator = RbsInfer::Extensions::Devise::Generator.new(app_dir: Dir.pwd, output_dir: tmpdir)
+
+        expect(generator.proven_resource_types).to eq("account" => "(Account & Account::Validated)")
       end
     end
 
     # DashboardController declares the guard itself; ApplicationController does not. If the
-    # guard ever migrated up, EVERY controller would be narrowed and this would catch it.
-    it "narrows only the controller that declares the guard" do
+    # guard ever migrated up, EVERY controller would be affected and this would catch it.
+    it "finds only the controller that declares the guard" do
       Dir.mktmpdir do |tmpdir|
         generator = RbsInfer::Extensions::Devise::Generator.new(app_dir: Dir.pwd, output_dir: tmpdir)
         guarded = generator.build_scanner.guarded_controllers

@@ -1,0 +1,12 @@
+module DeviseScopedHelpers
+  def current_account: () -> (Account & Account::Validated)?
+  def authenticate_account!: () -> (Account & Account::Validated)?
+  def account_signed_in?: () -> bool
+  def account_session: () -> untyped
+end
+
+module ActionController
+  class Base
+    include DeviseScopedHelpers
+  end
+end

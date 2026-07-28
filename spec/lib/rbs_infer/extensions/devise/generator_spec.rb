@@ -10,22 +10,16 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
       FileUtils.mkdir_p(File.join(dir, "config"))
       File.write(File.join(dir, "config/routes.rb"), routes_source)
 
-      output_dir = File.join(dir, "sig/rbs_infer_devise")
-      generator = described_class.new(app_dir: dir, output_dir: output_dir)
-      scopes = generator.generate_all
+      output_dir = File.join(dir, described_class::SIDECAR_DIR)
+      scopes = described_class.new(app_dir: dir, output_dir: output_dir).generate_all
 
-      helpers_path = File.join(output_dir, "devise_scoped_helpers.rbs")
-      controller_path = File.join(output_dir, "application_controller.rbs")
-      rbs = [helpers_path, controller_path]
-              .select { |p| File.exist?(p) }
-              .map { |p| File.read(p) }
-              .join("\n")
-      [scopes, rbs.empty? ? nil : rbs]
+      path = File.join(output_dir, described_class::FILENAME)
+      [scopes, File.exist?(path) ? File.read(path) : nil]
     end
   end
 
   it "generates the four helpers for a basic devise_for" do
-    scopes, rbs = generate(<<~RUBY)
+    scopes, source = generate(<<~RUBY)
       Rails.application.routes.draw do
         devise_for :users
         root "home#index"
@@ -33,43 +27,68 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
     RUBY
 
     expect(scopes).to eq([{ scope: "user", class_name: "User" }])
-    expect(rbs).to include("def current_user: () -> User?")
-    expect(rbs).to include("def authenticate_user!: (?::Hash[::Symbol, untyped] opts) -> User")
-    expect(rbs).to include("def user_signed_in?: () -> bool")
-    expect(rbs).to include("def user_session: () -> untyped")
-    expect(rbs).to include("class ApplicationController\n  include DeviseScopedHelpers\nend")
+    expect(source).to include("def current_user")
+    expect(source).to include("def authenticate_user!")
+    expect(source).to include("def user_signed_in?")
+    expect(source).to include("def user_session")
   end
 
-  it "produces parseable RBS in both files" do
-    _, rbs = generate("Rails.application.routes.draw { devise_for :users }")
+  it "emits parseable Ruby" do
+    _, source = generate("Rails.application.routes.draw { devise_for :users }")
 
-    expect { RBS::Parser.parse_signature(rbs) }.not_to raise_error
+    expect(Prism.parse(source)).to be_success
   end
 
-  it "emits the ApplicationController reopen in its own filename-matching file" do
-    # MethodTypeResolver's RBS lookup matches sig files by class-name
-    # path; the include is invisible if it lives under another filename.
-    Dir.mktmpdir do |dir|
-      FileUtils.mkdir_p(File.join(dir, "config"))
-      File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
+  # The point of the pseudo-code rewrite: the generator states no type at all. Everything
+  # the old `.rbs` spelled out — the resource type, its `Validated` decoration, the
+  # non-nil narrowing under the guard — is now inferred from these bodies.
+  it "states no type anywhere" do
+    _, source = generate("Rails.application.routes.draw { devise_for :users }")
 
-      output_dir = File.join(dir, "sig/rbs_infer_devise")
-      described_class.new(app_dir: dir, output_dir: output_dir).generate_all
+    expect(source).not_to include("::Validated")
+    expect(source).not_to include("->")
+    expect(source.lines.grep(/@type/)).to eq(["  # @type instance: ActionController::Base\n"])
+  end
 
-      controller_rbs = File.read(File.join(output_dir, "application_controller.rbs"))
-      expect(controller_rbs).to include("class ApplicationController\n  include DeviseScopedHelpers\nend")
-    end
+  it "reads the resource through a finder, which is what types it" do
+    _, source = generate("Rails.application.routes.draw { devise_for :users }")
+
+    expect(source).to include(%(User.find_by(id: session["warden.user.user.key"])))
+  end
+
+  # The halt on the nil branch is the whole mechanism: the postconditions inferrer reads
+  # it as "past this, `current_user` is non-nil", and the controller-runtime pseudo-code's
+  # `return if performed?` after the callback promotes that to unconditional.
+  it "halts on the unauthenticated branch" do
+    _, source = generate("Rails.application.routes.draw { devise_for :users }")
+
+    expect(source).to include(<<~RUBY.rstrip)
+      def authenticate_user!
+          unless current_user
+            redirect_to("/")
+            return
+          end
+    RUBY
+  end
+
+  # Devise's own host. Naming ApplicationController would both be less faithful and drag
+  # the app's base controller into a generated file.
+  it "includes the module into ActionController::Base, not ApplicationController" do
+    _, source = generate("Rails.application.routes.draw { devise_for :users }")
+
+    expect(source).to include("module ActionController\n  class Base\n    include DeviseScopedHelpers\n  end\nend")
+    expect(source).not_to include("ApplicationController")
   end
 
   it "honors class_name:" do
-    scopes, rbs = generate(<<~RUBY)
+    scopes, source = generate(<<~RUBY)
       Rails.application.routes.draw do
         devise_for :users, class_name: "Account", controllers: { registrations: "users/registrations" }
       end
     RUBY
 
     expect(scopes).to eq([{ scope: "user", class_name: "Account" }])
-    expect(rbs).to include("def current_user: () -> Account?")
+    expect(source).to include("Account.find_by(")
   end
 
   it "honors singular:" do
@@ -85,7 +104,7 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
   end
 
   it "handles multiple scopes across calls and within one call" do
-    scopes, rbs = generate(<<~RUBY)
+    scopes, source = generate(<<~RUBY)
       Rails.application.routes.draw do
         devise_for :users, :admins
         devise_for :members
@@ -97,8 +116,9 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
       { scope: "admin", class_name: "Admin" },
       { scope: "member", class_name: "Member" }
     )
-    expect(rbs).to include("def current_admin: () -> Admin?")
-    expect(rbs).to include("def current_member: () -> Member?")
+    expect(source).to include("def current_admin")
+    expect(source).to include("def current_member")
+    expect(source.scan(/^module DeviseScopedHelpers$/).size).to eq(1)
   end
 
   it "classifies namespaced resources" do
@@ -108,14 +128,14 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
   end
 
   it "writes nothing when routes have no devise_for" do
-    scopes, rbs = generate(<<~RUBY)
+    scopes, source = generate(<<~RUBY)
       Rails.application.routes.draw do
         root "home#index"
       end
     RUBY
 
     expect(scopes).to eq([])
-    expect(rbs).to be_nil
+    expect(source).to be_nil
   end
 
   it "writes nothing when routes.rb is absent" do
@@ -126,47 +146,27 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
     end
   end
 
-  it "decorates the resource with the Validated marker when rbs_rails emitted it" do
+  # Losing the `devise_for` should leave no stale pseudo-code behind claiming helpers the
+  # app no longer has.
+  it "removes a stale sidecar dir when the app stops using devise" do
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, "config"))
-      File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
-      # Marker emitido pelo rbs_rails para models com validação incondicional
-      FileUtils.mkdir_p(File.join(dir, "sig/rbs_rails/app/models"))
-      File.write(File.join(dir, "sig/rbs_rails/app/models/user.rbs"), <<~RBS)
-        class User < ApplicationRecord
-        end
+      routes = File.join(dir, "config/routes.rb")
+      output_dir = File.join(dir, described_class::SIDECAR_DIR)
 
-        class ::User::Validated
-        end
-      RBS
-
-      output_dir = File.join(dir, "sig/rbs_infer_devise")
+      File.write(routes, "devise_for :users")
       described_class.new(app_dir: dir, output_dir: output_dir).generate_all
+      expect(File.exist?(File.join(output_dir, described_class::FILENAME))).to be(true)
 
-      rbs = File.read(File.join(output_dir, "devise_scoped_helpers.rbs"))
-      expect(rbs).to include("def current_user: () -> (User & User::Validated)?")
-      expect(rbs).to include("def authenticate_user!: (?::Hash[::Symbol, untyped] opts) -> (User & User::Validated)")
-      expect(rbs).to include("    def current_user: () -> (User & User::Validated)\n") # marker, não-nil
-      expect { RBS::Parser.parse_signature(rbs) }.not_to raise_error
+      File.write(routes, 'root "home#index"')
+      described_class.new(app_dir: dir, output_dir: output_dir).generate_all
+      expect(Dir.exist?(output_dir)).to be(false)
     end
   end
 
-  it "falls back to the plain class when no Validated marker exists" do
-    _, rbs = generate("Rails.application.routes.draw { devise_for :users }")
-
-    expect(rbs).to include("def current_user: () -> User?")
-    expect(rbs).not_to include("User::Validated")
-  end
-
-  it "emits the per-scope Authenticated marker inside the helpers module" do
-    _, rbs = generate("Rails.application.routes.draw { devise_for :users }")
-
-    expect(rbs).to include("module UserAuthenticated")
-    expect(rbs).to include("    def current_user: () -> User")
-    expect(rbs).to include("    def user_signed_in?: () -> true")
-  end
-
-  it "emits the callbacks sidecar for before_action-guarded controllers" do
+  # The `.steep_callbacks.yml` marker sidecar is gone: the guard's own body now proves the
+  # resource present, so nothing has to pre-derive which controllers are narrowed.
+  it "emits no callbacks sidecar for guarded controllers" do
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, "config"))
       File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
@@ -179,47 +179,17 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
         end
       RUBY
 
-      output_dir = File.join(dir, "sig/rbs_infer_devise")
+      output_dir = File.join(dir, described_class::SIDECAR_DIR)
       described_class.new(app_dir: dir, output_dir: output_dir).generate_all
 
-      sidecar = YAML.safe_load(File.read(File.join(output_dir, ".steep_callbacks.yml")))
-      expect(sidecar["callbacks"]).to eq([
-        {
-          "class" => "PostsController",
-          "applies_self" => "PostsController & DeviseScopedHelpers::UserAuthenticated",
-          "runs_before" => ["index"],
-        },
-      ])
+      expect(Dir.glob(File.join(output_dir, "**/*"), File::FNM_DOTMATCH).map { |p| File.basename(p) })
+        .not_to include(".steep_callbacks.yml")
+      expect(Dir.glob(File.join(output_dir, "*.rbs"))).to be_empty
     end
   end
 
-  it "does not emit CurrentAttributes narrowing (that's the rails generator's domain)" do
-    Dir.mktmpdir do |dir|
-      FileUtils.mkdir_p(File.join(dir, "config"))
-      File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
-      FileUtils.mkdir_p(File.join(dir, "app/controllers"))
-      File.write(File.join(dir, "app/controllers/application_controller.rb"), <<~RUBY)
-        class ApplicationController < ActionController::Base
-          before_action :authenticate_user!
-          before_action :set_authenticated_user
-
-          private
-
-          def set_authenticated_user
-            Current.user = current_user
-          end
-        end
-      RUBY
-
-      output_dir = File.join(dir, "sig/rbs_infer_devise")
-      described_class.new(app_dir: dir, output_dir: output_dir).generate_all
-
-      sidecar = File.read(File.join(output_dir, ".steep_callbacks.yml"))
-      expect(sidecar).not_to include("applies_constants")
-      expect(File.exist?(File.join(output_dir, "populated_markers.rbs"))).to be(false)
-    end
-  end
-
+  # Still exposed — Rails::CurrentAttributesCallbacksGenerator narrows `Current.user` off
+  # the same scanner, and Current is not a Devise concern.
   it "exposes the proven resource types for downstream generators" do
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, "config"))
@@ -231,15 +201,42 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
     end
   end
 
-  it "omits the callbacks sidecar when no controller is guarded" do
+  it "decorates the proven resource type with the Validated marker when rbs_rails emitted it" do
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, "config"))
       File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
+      FileUtils.mkdir_p(File.join(dir, "sig/rbs_rails/app/models"))
+      File.write(File.join(dir, "sig/rbs_rails/app/models/user.rbs"), <<~RBS)
+        class User < ApplicationRecord
+        end
 
-      output_dir = File.join(dir, "sig/rbs_infer_devise")
-      described_class.new(app_dir: dir, output_dir: output_dir).generate_all
+        class ::User::Validated
+        end
+      RBS
 
-      expect(File.exist?(File.join(output_dir, ".steep_callbacks.yml"))).to be(false)
+      generator = described_class.new(app_dir: dir, output_dir: File.join(dir, "sig"))
+
+      expect(generator.proven_resource_types).to eq("user" => "(User & User::Validated)")
+    end
+  end
+
+  it "exposes a scanner that finds the guarded controllers" do
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p(File.join(dir, "config"))
+      File.write(File.join(dir, "config/routes.rb"), "devise_for :users")
+      FileUtils.mkdir_p(File.join(dir, "app/controllers"))
+      File.write(File.join(dir, "app/controllers/posts_controller.rb"), <<~RUBY)
+        class PostsController < ApplicationController
+          before_action :authenticate_user!
+
+          def index; end
+        end
+      RUBY
+
+      generator = described_class.new(app_dir: dir, output_dir: File.join(dir, "sig"))
+
+      expect(generator.build_scanner.guarded_controllers)
+        .to eq([{ class_name: "PostsController", scope: "user", actions: ["index"] }])
     end
   end
 

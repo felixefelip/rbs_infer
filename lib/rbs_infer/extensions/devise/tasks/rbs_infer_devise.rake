@@ -5,13 +5,14 @@ require_relative "../../rails/current_attributes_callbacks_generator"
 
 namespace :rbs_infer do
   namespace :devise do
-    desc "Generate RBS for Devise per-scope controller helpers (current_user, etc.)"
+    desc "Generate pseudo-code for Devise per-scope controller helpers (current_user, etc.)"
     task :all do
       app_dir = defined?(Rails) ? Rails.root.to_s : Dir.pwd
+      sidecar_dir = RbsInfer::Extensions::Devise::Generator::SIDECAR_DIR
 
       generator = RbsInfer::Extensions::Devise::Generator.new(
         app_dir: app_dir,
-        output_dir: File.join(app_dir, "sig/rbs_infer_devise")
+        output_dir: File.join(app_dir, sidecar_dir)
       )
       scopes = generator.generate_all
 
@@ -20,7 +21,7 @@ namespace :rbs_infer do
         next
       end
 
-      puts "Generated Devise scoped helpers RBS in sig/rbs_infer_devise/ (scopes: #{scopes.map { |s| s[:scope] }.join(", ")})"
+      puts "Generated Devise scoped helpers pseudo-code in #{sidecar_dir}/ (scopes: #{scopes.map { |s| s[:scope] }.join(", ")})"
 
       # CurrentAttributes consumer of the auth-layer facts: handlers that
       # populate globals (`Current.user = current_user`) under the guard

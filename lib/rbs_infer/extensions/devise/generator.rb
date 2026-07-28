@@ -2,7 +2,6 @@
 
 require "prism"
 require "fileutils"
-require "yaml"
 require "active_support/core_ext/string/inflections"
 require_relative "../rails/before_action_scanner"
 require_relative "../../signatures/rbs_parser_util"
@@ -10,30 +9,56 @@ require_relative "../../signatures/rbs_parser_util"
 module RbsInfer
   module Extensions
     module Devise
-      # Generates RBS for Devise's per-scope controller helpers.
+      # Emits *pseudo-code* (one plain `.rb` under `sig/generated/steep_devise_runtime/`)
+      # for Devise's per-scope controller helpers — the same Forma-2 idea as the AR,
+      # controller and view runtime sidecars.
       #
       # `Devise::Controllers::Helpers.define_helpers(mapping)` class_evals
-      # `current_#{scope}`, `authenticate_#{scope}!`, `#{scope}_signed_in?`
-      # and `#{scope}_session` at boot — one set per `devise_for` mapping —
-      # so no `def` ever exists in source and static analysis can't see
-      # them. The scopes themselves ARE statically readable from
-      # `devise_for` declarations in config/routes.rb, and the helper
-      # types are mechanical per scope:
-      #
-      #   devise_for :users   →  def current_user: () -> User?
-      #                          def authenticate_user!: (...) -> User
-      #                          def user_signed_in?: () -> bool
-      #                          def user_session: () -> untyped
+      # `current_#{scope}`, `authenticate_#{scope}!`, `#{scope}_signed_in?` and
+      # `#{scope}_session` at boot — one set per `devise_for` mapping, into a module
+      # included in `ActionController::Base` — so no `def` ever exists in source and
+      # static analysis can't see them. The scopes themselves ARE statically readable from
+      # `devise_for` declarations in config/routes.rb.
       #
       # Scope/class derivation mirrors Devise::Mapping#initialize:
       # singular = options[:singular] || resource.singularize;
       # class    = options[:class_name] || resource.classify.
       #
-      # Complements the static `DeviseCustom` module emitted by the
-      # rails_custom extension (scope-independent helpers: `resource`,
-      # path helpers, etc.).
+      # ## Why pseudo-code and not RBS
+      #
+      # The generator used to emit the helpers' RBS directly, plus a `<Scope>Authenticated`
+      # marker module and a `.steep_callbacks.yml` intersecting that marker into `self` for
+      # the actions of every guarded controller. That meant *computing* two facts it had no
+      # business computing:
+      #
+      #   * the resource's proven type — it scanned `sig/**/*.rbs` for a `<Model>::Validated`
+      #     marker to decide whether to decorate it;
+      #   * which controllers may assume the resource is present — it re-derived the
+      #     `before_action` chain, `only:`/`except:` and `skip_before_action` itself.
+      #
+      # Written as the plain Ruby it behaves like, BOTH fall out of machinery that already
+      # exists. `current_<scope>` is a finder, so rbs_rails' signature is what makes it
+      # `(Model & Model::Validated)?`. `authenticate_<scope>!` halts on the nil branch, so
+      # the postconditions inferrer is what turns "did not halt" into `current_<scope>`
+      # being non-nil — and the controller-runtime pseudo-code, which already inlines the
+      # effective callback chain with a halt check after each link, is what carries that to
+      # the action. Nothing here states a type or names a controller.
+      #
+      # `proven_resource_types` / `build_scanner` survive for a different consumer,
+      # `Rails::CurrentAttributesCallbacksGenerator` — Current narrowing is not a Devise
+      # concern and still works off the scanner.
       class Generator
         MODULE_NAME = "DeviseScopedHelpers"
+
+        # The host Devise itself includes the helpers into
+        # (`ActiveSupport.on_load(:action_controller)`), which is also why this generator
+        # never has to name ApplicationController.
+        HOST_CLASS = "ActionController::Base"
+
+        # NOT dot-prefixed: `.rb` SOURCE the analyzer and the Steep fork read via
+        # `sig/**/*.rb` (`**` skips hidden dirs).
+        SIDECAR_DIR = "sig/generated/steep_devise_runtime"
+        FILENAME = "devise_scoped_helpers.rb"
 
         attr_reader :app_dir, :output_dir, :routes_path
 
@@ -43,59 +68,26 @@ module RbsInfer
           @routes_path = routes_path || File.join(app_dir, "config/routes.rb")
         end
 
-        # Returns the list of generated scopes ([] when the app has no
-        # `devise_for` — nothing is written in that case).
-        #
-        # The ApplicationController reopen lives in its own
-        # `application_controller.rbs`: MethodTypeResolver's RBS lookup
-        # matches sig files by class-name path first, so the include is
-        # only discovered when the filename matches the class (same
-        # convention as the rails_custom extension).
-        def generate_all
+        # => [{ filename:, source: }] (empty when the app has no `devise_for`).
+        def build
           scopes = parse_scopes
           return [] if scopes.empty?
 
-          FileUtils.mkdir_p(output_dir)
-          File.write(File.join(output_dir, "devise_scoped_helpers.rbs"), helpers_rbs(scopes))
-          File.write(File.join(output_dir, "application_controller.rbs"), controller_rbs)
-          write_callbacks_sidecar(scopes)
-          scopes
+          [{ filename: FILENAME, source: pseudo_code(scopes) }]
         end
 
-        # `.steep_callbacks.yml` (felixefelip/steep#27): inside actions
-        # guarded by `before_action :authenticate_<scope>!`, `self` is
-        # narrowed with the `<Scope>Authenticated` marker — so
-        # `current_<scope>` is proven non-nil right at method entry, the
-        # same mechanism as the AR after-validation narrowing.
-        def write_callbacks_sidecar(scopes)
-          scanner = build_scanner(scopes)
-          sidecar_path = File.join(output_dir, ".steep_callbacks.yml")
+        # Writes the sidecar dir, removing a stale one when nothing qualifies. Returns the
+        # list of generated scopes ([] when the app has no `devise_for`).
+        def generate_all
+          files = build
+          FileUtils.rm_rf(output_dir)
 
-          # Actions of guarded controllers + before_action handlers declared
-          # after the guard (e.g. `set_authenticated_user` runs with
-          # current_user proven present). CurrentAttributes narrowing
-          # (`applies_constants`) is NOT emitted here — that's the
-          # Rails::CurrentAttributesCallbacksGenerator's domain; this
-          # sidecar carries only the Devise self-narrowing.
-          entries =
-            scanner.guarded_controllers.map { |e| callback_entry(e[:class_name], e[:scope], e[:actions]) } +
-            scanner.guarded_handlers.map { |e| callback_entry(e[:class_name], e[:scope], e[:handlers]) }
-
-          if entries.empty?
-            FileUtils.rm_f(sidecar_path)
-            return
+          unless files.empty?
+            FileUtils.mkdir_p(output_dir)
+            files.each { |file| File.write(File.join(output_dir, file[:filename]), file[:source]) }
           end
 
-          File.write(sidecar_path, { "version" => 1, "callbacks" => entries }.to_yaml)
-        end
-
-        def callback_entry(class_name, scope, methods)
-          marker = "#{MODULE_NAME}::#{authenticated_marker_name(scope)}"
-          {
-            "class" => class_name,
-            "applies_self" => "#{class_name} & #{marker}",
-            "runs_before" => methods,
-          }
+          parse_scopes
         end
 
         # ── Auth-layer facts consumed by other generators ─────────────
@@ -165,55 +157,79 @@ module RbsInfer
           end
         end
 
-        def helpers_rbs(scopes)
+        def pseudo_code(scopes)
           lines = []
-          lines << "# Generated by rbs_infer (devise)"
+          lines << "# frozen_string_literal: true"
           lines << "#"
-          lines << "# Per-scope Devise controller helpers. Devise class_evals these at"
-          lines << "# boot (Devise::Controllers::Helpers.define_helpers), so they are"
-          lines << "# invisible to static analysis; the scopes come from `devise_for`"
-          lines << "# declarations in config/routes.rb."
+          lines << "# GENERATED by RbsInfer::Extensions::Devise::Generator."
+          lines << "# Regenerated on every run; do not edit."
+          lines << "#"
+          lines << "# Devise class_evals one set of these per `devise_for` mapping at boot"
+          lines << "# (Devise::Controllers::Helpers.define_helpers), so no `def` exists in source."
+          lines << "# This is that module written as the plain Ruby it behaves like: the analyzer"
+          lines << "# reads it to INFER the helpers' RBS, and the checker reads it to INFER what an"
+          lines << "# action guarded by `authenticate_<scope>!` may assume on entry."
+          lines << "#"
+          lines << "# Nothing below states a type."
           lines << ""
           lines << "module #{MODULE_NAME}"
-          scopes.each_with_index do |entry, idx|
-            scope = entry[:scope]
-            resource = resource_type(entry[:class_name])
-            lines << "" if idx.positive?
-            # `current_*` is nil when unauthenticated; `authenticate_*!`
-            # either returns the resource or throws :warden (redirect).
-            lines << "  def current_#{scope}: () -> #{optional(resource)}"
-            lines << ""
-            lines << "  def authenticate_#{scope}!: (?::Hash[::Symbol, untyped] opts) -> #{wrap(resource)}"
-            lines << ""
-            lines << "  def #{scope}_signed_in?: () -> bool"
-            lines << ""
-            lines << "  def #{scope}_session: () -> untyped"
-          end
+          # Warden's helpers run as controller instance methods. Without this, `self` in
+          # the module body is BasicObject and neither `session` nor the `redirect_to`
+          # that records the halt resolves — the halt is the whole point.
+          lines << "  # @type instance: #{HOST_CLASS}"
           scopes.each do |entry|
             lines << ""
-            lines.concat(authenticated_marker_lines(entry))
+            lines.concat(scope_lines(entry))
           end
+          lines << "end"
+          lines << ""
+          # Where Devise puts them: `ActiveSupport.on_load(:action_controller)`. Reopening
+          # the framework class (rather than ApplicationController) also means the app's
+          # own base controller is never named, let alone rewritten.
+          lines << "module ActionController"
+          lines << "  class Base"
+          lines << "    include #{MODULE_NAME}"
+          lines << "  end"
           lines << "end"
           lines.join("\n") + "\n"
         end
 
-        # Marker intersected into `self` by the callbacks sidecar (and
-        # available to any future `unconditional.self` postcondition):
-        # under `authenticate_<scope>!`, the resource is proven present.
-        def authenticated_marker_lines(entry)
+        def scope_lines(entry)
           scope = entry[:scope]
           [
-            "  # Receiver narrowed under `authenticate_#{scope}!`.",
-            "  module #{authenticated_marker_name(scope)}",
-            "    def current_#{scope}: () -> #{wrap(resource_type(entry[:class_name]))}",
+            # Warden deserializes the record from the session on first read. A finder is
+            # what it amounts to, and it is where the resource's type comes from — nilable
+            # because an unauthenticated request has no record.
+            "  def current_#{scope}",
+            "    #{entry[:class_name]}.find_by(id: session[#{session_key(scope).inspect}])",
+            "  end",
             "",
-            "    def #{scope}_signed_in?: () -> true",
+            # `warden.authenticate!` throws :warden, which Devise turns into a redirect to
+            # the sign-in page. `redirect_to` is the vocabulary the controller-runtime
+            # pseudo-code already uses for "this halts the request", and the halt is what
+            # the postconditions inferrer reads: past it, `current_#{scope}` is non-nil.
+            "  def authenticate_#{scope}!",
+            "    unless current_#{scope}",
+            "      redirect_to(\"/\")",
+            "      return",
+            "    end",
+            "",
+            "    current_#{scope}",
+            "  end",
+            "",
+            "  def #{scope}_signed_in?",
+            "    current_#{scope} ? true : false",
+            "  end",
+            "",
+            "  def #{scope}_session",
+            "    session",
             "  end",
           ]
         end
 
-        def authenticated_marker_name(scope)
-          "#{scope.camelize}Authenticated"
+        # Warden's session key for a scope (`warden.user.account.key`).
+        def session_key(scope)
+          "warden.user.#{scope}.key"
         end
 
         # The resource comes from the DB (warden → serialize_from_session
@@ -237,25 +253,6 @@ module RbsInfer
 
             RbsInfer::Signatures::RbsParserUtil.build_declaration_index(RbsInfer::Signatures::RbsParserUtil.parse_declarations(content)).key?(target)
           end
-        end
-
-        # Intersections need parens in method-type position and before `?`.
-        def wrap(type)
-          type.include?("&") ? "(#{type})" : type
-        end
-
-        def optional(type)
-          "#{wrap(type)}?"
-        end
-
-        def controller_rbs
-          <<~RBS
-            # Generated by rbs_infer (devise)
-
-            class ApplicationController
-              include #{MODULE_NAME}
-            end
-          RBS
         end
       end
     end

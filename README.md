@@ -104,7 +104,7 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 | Task | Source generator | Output dir |
 |---|---|---|
 | `rake rbs_infer:enumerize:all` | `RbsInfer::Extensions::Enumerize::Generator` | `sig/rbs_enumerize/` |
-| `rake rbs_infer:devise:all` | `RbsInfer::Extensions::Devise::Generator` | `sig/rbs_infer_devise/` |
+| `rake rbs_infer:devise:all` | `RbsInfer::Extensions::Devise::Generator` | `sig/generated/steep_devise_runtime/` |
 | `rake rbs_infer:rails_custom:all` | `RbsInfer::Extensions::Rails::CustomGenerator` | `sig/rbs_rails_custom/` |
 | `rake rbs_infer:module_self_types:all` | `RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator` | `sig/generated/.steep_module_self_types.yml` |
 | `rake rbs_infer:controller_runtime:all` | `RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator` | `sig/generated/steep_controller_runtime/` |
@@ -113,7 +113,9 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 
 **Enumerize generator** — walks `app/models/**/*.rb`, captures `enumerize :attr, in: [...]`, and emits per-attribute `Value` / `Attribute` classes plus instance/class accessors, predicate methods, and scope methods (shallow/deep).
 
-**Devise generator** — reads the `devise_for` declarations in `config/routes.rb` (the only statically readable trace of a Devise scope; the helpers themselves are `class_eval`'d at boot) and emits `current_<scope>` / `authenticate_<scope>!` / `<scope>_signed_in?` / `<scope>_session`, plus a `<Scope>Authenticated` marker and a `.steep_callbacks.yml` that intersects it into `self` for the actions of every controller guarded by `before_action :authenticate_<scope>!` — so `current_<scope>` is proven non-nil at entry there. Must run **after** `rake rbs_rails:all`: the resource type is decorated with `<Model>::Validated` only when that marker is already on disk.
+**Devise generator** — emits *pseudo-code* for the per-scope controller helpers Devise `class_eval`s at boot (`current_<scope>`, `authenticate_<scope>!`, `<scope>_signed_in?`, `<scope>_session`), read from the `devise_for` declarations in `config/routes.rb` — the only statically readable trace of a scope. One module included into `ActionController::Base`, exactly where Devise puts it, so the app's own controllers are never named.
+
+Nothing in the emitted file states a type. `current_<scope>` is written as the finder warden amounts to, so rbs_rails' signature is what makes it `(Model & Model::Validated)?`; `authenticate_<scope>!` halts on the nil branch, so the postconditions inferrer is what turns "did not halt" into `current_<scope>` being non-nil, and the controller-runtime pseudo-code — which already inlines the effective callback chain with a halt check after each link — is what carries that into the action. It used to emit the helpers' RBS directly plus a `<Scope>Authenticated` marker and a `.steep_callbacks.yml` naming every guarded controller; all three are now inferred instead of derived.
 
 **Rails custom generator** — emits `application_controller.rbs` and `action_view_context.rbs` with framework-level mix-ins (`ApplicationHelper`, `ActionView::Helpers`, optionally `Kaminari::Helpers`, `_RbsRailsPathHelpers`) so controllers/views resolve helper methods.
 

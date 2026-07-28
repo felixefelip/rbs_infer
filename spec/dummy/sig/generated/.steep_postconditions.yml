@@ -133,6 +133,15 @@ postconditions:
     may_write:
     - "@account"
     - "@recent_posts"
+- class: DeviseScopedHelpers
+  method: authenticate_account!
+  effects:
+    may_write:
+    - "@__rbs_infer__performed"
+  conditional_returns:
+    current_account:
+      gate_ivar: "@__rbs_infer__performed"
+      type: "(::Account & ::Account::Validated)"
 - class: ERBDashboardShow
   method: initialize
   effects:
@@ -844,6 +853,7 @@ method_entry_facts:
 - class: DashboardController
   method: render
   self_methods:
+    current_account: "(::Account & ::Account::Validated)"
     current_user: "(::User & ::User::Validated)"
   consts:
     Current.author_name: "::String"
@@ -853,6 +863,21 @@ method_entry_facts:
     "@recent_posts": "::Post::ActiveRecord_Relation"
 - class: DashboardController
   method: show
+  self_methods:
+    current_account: "(::Account & ::Account::Validated)"
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: DeviseScopedHelpers
+  method: authenticate_account!
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: DeviseScopedHelpers
+  method: current_account
   self_methods:
     current_user: "(::User & ::User::Validated)"
   consts:
