@@ -77,6 +77,18 @@ postconditions:
     may_write:
     - "@__rbs_infer_instance"
 - class: Current
+  method: account
+  effects:
+    returns_ivar: "@account"
+- class: Current
+  method: account=
+  unconditional:
+    establishes_consts:
+      account: "(::Account & ::Account::Validated)"
+  effects:
+    may_write:
+    - "@account"
+- class: Current
   method: author_name=
   unconditional:
     establishes_consts:
@@ -85,6 +97,7 @@ postconditions:
   method: set
   effects:
     may_write:
+    - "@account"
     - "@user"
 - class: Current
   method: user
@@ -105,6 +118,7 @@ postconditions:
       "@user": "((::User & ::User::Validated) | nil)"
   effects:
     may_write:
+    - "@account"
     - "@user"
 - class: DashboardController
   method: __rbs_infer__run_show

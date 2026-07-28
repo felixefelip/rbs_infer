@@ -58,6 +58,27 @@ module RbsInfer::Signatures
         caches[:globs][pattern] ||= Dir[pattern]
       end
 
+      # `"ActionController::Base" => [file, file, ...]` over `sig/**/*.rbs` — every file
+      # declaring that exact name, in glob order.
+      #
+      # Unioning a class across its reopenings needs the OTHER files that declare it, and
+      # the obvious way to find them (`content.include?(short_name)` per file, per lookup)
+      # costs ~20% of a run: it re-scans the whole tree for every class. The per-file
+      # declaration index already knows the answer — it is keyed by fully-qualified name —
+      # so inverting it once is both exact (no substring false positives) and O(1) per
+      # lookup. Built off the same mtime-keyed `file_entry`, and dropped by `reset!` with
+      # the glob cache, since new .rbs appear between dependency levels.
+      def files_declaring(class_name)
+        index = caches[:declarers] ||= begin
+          map = Hash.new { |h, k| h[k] = [] }
+          glob("sig/**/*.rbs").each do |rbs_file|
+            file_entry(rbs_file)[:index].each_key { |name| map[name] << rbs_file }
+          end
+          map
+        end
+        index[class_name] || []
+      end
+
       # Clears the run-wide caches. Called alongside `SteepBridge.reset!`
       # between dependency levels so freshly-written sig is picked up.
       def reset!
@@ -73,7 +94,7 @@ module RbsInfer::Signatures
       def caches
         dir = Dir.pwd
         if @caches.nil? || @caches[:dir] != dir
-          @caches = { dir: dir, files: {}, globs: {} }
+          @caches = { dir: dir, files: {}, globs: {}, declarers: nil }
         end
         @caches
       end
@@ -86,36 +107,47 @@ module RbsInfer::Signatures
 
     # Busca tipos em arquivos .rbs gerados (ex: rbs_rails para AR models)
     # Retorna [types_hash, superclass_name, includes_array]
+    #
+    # A class is the UNION of every declaration of it, across every file. Ruby reopens
+    # freely and so does generated RBS: `ActionController::Base` is declared by the
+    # controller-runtime sidecar (`redirect_to`, `render`, the halt predicate) AND reopened
+    # by the Devise sidecar purely to `include DeviseScopedHelpers`. Stopping at the
+    # filename-matching file finds the first and never the second, so `current_<scope>`
+    # resolves nowhere (felixefelip/rbs_infer#124).
+    #
+    # Precedence is still the filename-matching file's: `||=` means first writer wins, and
+    # phase 1 runs first. Phase 2 only ADDS what no earlier file declared.
     def lookup_rbs_types(class_name)
       types = {}
       superclass = nil
       all_includes = []
       normalized = class_name.sub(/\A::/, "")
+      seen = Set.new
 
-      # 1. Tentar match por nome de arquivo (caso simples: uma classe por arquivo)
+      # 1. Match por nome de arquivo (caso simples: uma classe por arquivo) — tem
+      #    precedência sobre qualquer reabertura.
       class_path = RbsInfer.class_name_to_path(normalized)
       self.class.glob("sig/**/*.rbs").each do |rbs_file|
         next unless rbs_file.end_with?("#{class_path}.rbs")
+        seen.add(rbs_file)
         info = class_info_from_file(rbs_file, normalized)
         superclass ||= info.superclass
         info.types.each { |name, type| types[name] ||= type }
         all_includes.concat(info.includes)
       end
 
-      # 2. Buscar inner classes dentro de todos os rbs files
-      if types.empty? && superclass.nil?
-        short_name = normalized.split("::").last
-        self.class.glob("sig/**/*.rbs").each do |rbs_file|
-          next unless cached_content_for(rbs_file).include?(short_name)
-          info = class_info_from_file(rbs_file, normalized)
-          next if info.types.empty? && info.superclass.nil? && info.includes.empty?
-          superclass ||= info.superclass
-          info.types.each { |name, type| types[name] ||= type }
-          all_includes.concat(info.includes)
-        end
+      # 2. Toda outra declaração da mesma classe — uma inner class, ou uma reabertura
+      #    num arquivo com outro nome.
+      self.class.files_declaring(normalized).each do |rbs_file|
+        next if seen.include?(rbs_file)
+        info = class_info_from_file(rbs_file, normalized)
+        next if info.types.empty? && info.superclass.nil? && info.includes.empty?
+        superclass ||= info.superclass
+        info.types.each { |name, type| types[name] ||= type }
+        all_includes.concat(info.includes)
       end
 
-      return types, superclass, all_includes
+      return types, superclass, all_includes.uniq
     end
 
     # Declared instance-variable types of a class (`{"@post" => "Post"}`), merged over
@@ -129,18 +161,20 @@ module RbsInfer::Signatures
       normalized = class_name.sub(/\A::/, "")
       ivars = {}
 
+      seen = Set.new
       class_path = RbsInfer.class_name_to_path(normalized)
       self.class.glob("sig/**/*.rbs").each do |rbs_file|
         next unless rbs_file.end_with?("#{class_path}.rbs")
+        seen.add(rbs_file)
         class_info_from_file(rbs_file, normalized).ivar_types.each { |name, type| ivars[name] ||= type }
       end
 
-      if ivars.empty?
-        short_name = normalized.split("::").last
-        self.class.glob("sig/**/*.rbs").each do |rbs_file|
-          next unless cached_content_for(rbs_file).include?(short_name)
-          class_info_from_file(rbs_file, normalized).ivar_types.each { |name, type| ivars[name] ||= type }
-        end
+      # Merged for the same reason as `lookup_rbs_types`: one class, many declarations.
+      # The "ivars are not inherited" caveat above is about the SUPERCLASS walk, not about
+      # reopenings — a reopening declares the same slot.
+      self.class.files_declaring(normalized).each do |rbs_file|
+        next if seen.include?(rbs_file)
+        class_info_from_file(rbs_file, normalized).ivar_types.each { |name, type| ivars[name] ||= type }
       end
 
       ivars
@@ -193,15 +227,17 @@ module RbsInfer::Signatures
       #     devise_scoped_helpers.rbs → DeviseScopedHelpers). Sem isso,
       #     tipos herdados via include desses shims ficam invisíveis
       #     (felixefelip/rbs_infer#19 follow-up: current_user do Devise).
+      #
+      #     Delegates to `lookup_rbs_types` rather than re-globbing: that one already
+      #     unions EVERY declaration of the class, and this walk needs the same union.
+      #     Doing its own filename-match pass is what made an inherited
+      #     `ActionController::Base` see only the controller-runtime sidecar and never the
+      #     Devise reopen next to it (felixefelip/rbs_infer#124).
       if types.empty? && parent_superclass.nil?
-        class_path = RbsInfer.class_name_to_path(normalized)
-        self.class.glob("sig/**/*.rbs").each do |rbs_file|
-          next unless RbsInfer.file_matches_class_path?(rbs_file, class_path, ext: ".rbs")
-          info = class_info_from_file(rbs_file, normalized)
-          parent_superclass ||= info.superclass
-          info.types.each { |name, type| types[name] ||= type }
-          all_includes.concat(info.includes)
-        end
+        sig_types, sig_superclass, sig_includes = lookup_rbs_types(normalized)
+        parent_superclass ||= sig_superclass
+        sig_types.each { |name, type| types[name] ||= type }
+        all_includes.concat(sig_includes)
       end
 
       # 2. Buscar em .gem_rbs_collection/
@@ -226,6 +262,26 @@ module RbsInfer::Signatures
               break
             end
           end
+        end
+      end
+
+      # 2c. Lexical outward lookup, the way Ruby resolves a constant. An `include Foo`
+      #     written inside `module A` is recorded with its lexical prefix (`A::Foo`) —
+      #     correct, but `A::Foo` usually does not exist and the constant IS the
+      #     top-level `::Foo`. Peel the enclosing scopes off and take the first that
+      #     resolves, which is exactly Ruby's rule (felixefelip/rbs_infer#124: the Devise
+      #     sidecar's `module ActionController; class Base; include DeviseScopedHelpers`).
+      if types.empty? && parent_superclass.nil? && all_includes.empty?
+        parts = normalized.split("::")
+        (1...parts.size).each do |i|
+          candidate = parts[i..].join("::")
+          next if visited.include?(candidate)
+
+          outer = lookup_inherited_types(candidate, visited)
+          next if outer.empty?
+
+          types = outer.dup
+          break
         end
       end
 

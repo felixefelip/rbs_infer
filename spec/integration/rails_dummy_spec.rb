@@ -646,26 +646,42 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       end
     end
 
-    # Why Rails::CurrentAttributesCallbacksGenerator is still load-bearing, and what would
-    # make it removable. `DashboardController#set_current_account` writes
-    # `Current.account = current_account` under the Devise guard. Everything downstream of
-    # a populated Current is generic — it is exactly how `Current.user` reaches the actions
-    # and views today — but it needs the ATTRIBUTE to have a type, and this one has none:
+    # How far the chain that would retire Rails::CurrentAttributesCallbacksGenerator gets
+    # on its own. `DashboardController#set_current_account` writes
+    # `Current.account = current_account` under the Devise guard, and two of the three
+    # links now hold without any sidecar:
     #
-    #   MethodTypeResolver can't resolve `current_account` from DashboardController (the
-    #   helpers are included into ActionController::Base, which it resolves from
-    #   steep_controller_runtime/action_controller_base.rb alone)
-    #     -> `Current.account = current_account` types the attribute `untyped`
-    #     -> `Current.account=`'s param is `untyped`, so it establishes no const
-    #     -> no `Current.account` entry fact at `show`'s entry.
+    #   1. `current_account` resolves from DashboardController — the helpers are included
+    #      into ActionController::Base by the Devise sidecar, a reopening the resolver now
+    #      unions (felixefelip/rbs_infer#124), so
+    #   2. the attribute is typed from that call site and `Current.account=` establishes
+    #      the const, but
+    #   3. `set_current_account` gets NO postcondition: the inferrer records a const
+    #      establishment for a method that halts (`authenticate_user` →
+    #      `conditional_const_returns`) or that writes its own attribute (`Current#user=`),
+    #      not for a plain handler writing another class's. So the fact never reaches
+    #      `show`, and `Current.account.label` in the view still rides on the marker.
     #
-    # So the marker is what proves it, and `Current.account.label` in the view rides on it.
-    # When this expectation starts failing because `Current.account` is no longer `untyped`,
-    # re-measure whether the generator can go — the sidecar would be redundant.
-    it "still needs the marker: Current.account is untyped without it" do
-      rbs = Pathname.new("sig/rbs_infer/sig/generated/steep_current_runtime/current.rbs").read
+    # When link 3 lands in the Steep fork, drop the sidecar and re-measure — checking the
+    # FACTS, not just that `steep check` is clean: with the attribute untyped the read used
+    # to type-check vacuously.
+    it "types Current.account from the call site, but still needs the marker to narrow it" do
+      current_rbs = Pathname.new("sig/rbs_infer/sig/generated/steep_current_runtime/current.rbs").read
+      postconditions = YAML.safe_load(Pathname.new("sig/generated/.steep_postconditions.yml").read)
 
-      expect(rbs).to include("def self.account: () -> untyped")
+      # Links 1 + 2.
+      expect(current_rbs).to include("def self.account: () -> (Account & Account::Validated)?")
+      expect(postconditions["postconditions"]).to include(
+        a_hash_including("class" => "Current", "method" => "account=",
+                         "unconditional" => a_hash_including(
+                           "establishes_consts" => { "account" => "(::Account & ::Account::Validated)" }
+                         ))
+      )
+
+      # Link 3, still missing — no entry fact carries the populated constant.
+      carriers = (postconditions["method_entry_facts"] || []).select { |e| (e["consts"] || {}).key?("Current.account") }
+      expect(carriers).to be_empty
+
       expect(Pathname.new("sig/rbs_infer_current_attributes/populated_markers.rbs").read)
         .to include("def account: () -> (Account & Account::Validated)")
     end

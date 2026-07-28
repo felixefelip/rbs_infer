@@ -6,5 +6,5 @@ class DashboardController < ApplicationController
 
   private
 
-  def set_current_account: () -> (Account & Account::Validated)
+  def set_current_account: () -> (Account & Account::Validated)?
 end
