@@ -1025,6 +1025,7 @@ end
 require_relative "project/parse_cache"
 require_relative "project/file_index"
 require_relative "project/caller_file_cache"
+require_relative "ast/lexical_constant_resolver"
 require_relative "ast/node_type_inferrer"
 require_relative "ast/constructor_type_inferrer"
 require_relative "inference/known_return_types_builder"

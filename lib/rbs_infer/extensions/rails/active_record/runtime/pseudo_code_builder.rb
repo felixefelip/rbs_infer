@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "active_support/core_ext/string/inflections"
+require_relative "../../../../ast/lexical_constant_resolver"
 
 module RbsInfer
   module Extensions
@@ -239,17 +240,15 @@ module RbsInfer
             # Matching on the bare `classify` alone silently dropped the association: the
             # element was not among the scanned models under that name, so neither the
             # reader nor the proxy reopen was emitted, and `caderneta.recomendacao_vacinas`
-            # had no type at all.
+            # had no type at all. The walk itself lives in `LexicalConstantResolver` —
+            # shared with every other site that turns a written constant into a class
+            # (felixefelip/rbs_infer#129); the scanned-model table is the oracle.
             def resolve_element(owner_class, element_class)
-              return @by_class[element_class] if element_class.start_with?("::")
+              found = RbsInfer::AST::LexicalConstantResolver.resolve(
+                name: element_class, enclosing: owner_class
+              ) { |candidate| @by_class.key?(candidate) }
 
-              parts = owner_class.split("::")
-              parts.length.downto(0) do |i|
-                candidate = (parts.first(i) + [element_class]).join("::")
-                found = @by_class[candidate]
-                return found if found
-              end
-              nil
+              found && @by_class[found]
             end
 
             # `<Owner>_<Element>` — matches rbs_rails' owner-specific proxy

@@ -156,7 +156,7 @@ module RbsInfer::Inference
 
         # 2. Klass.new(...) na última expressão
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.name == :new && last_stmt.receiver
-          class_name = RbsInfer::Analyzer.extract_constant_path(last_stmt.receiver)
+          class_name = constant_receiver_class(last_stmt.receiver, method_type_resolver)
           if class_name
             member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(class_name)}")
             own_return_types[method_name] = class_name
@@ -281,6 +281,17 @@ module RbsInfer::Inference
       return node.name.to_s if node.receiver.nil? || node.receiver.is_a?(Prism::SelfNode)
     end
 
+    # The class a constant receiver names, resolved the way Ruby resolves it:
+    # from the enclosing class outward, so `Archiver.new(...)` written inside
+    # `Post` is `Post::Archiver` when that exists (felixefelip/rbs_infer#129).
+    # `@target_class` IS the lexical scope of every body this merger walks.
+    def constant_receiver_class(node, method_type_resolver)
+      name = RbsInfer::Analyzer.extract_constant_path(node) or return nil
+      return name unless method_type_resolver
+
+      method_type_resolver.qualify_constant(name, enclosing: @target_class)
+    end
+
     # Resolve return type de receiver.method() ou method() com args
     def infer_call_return_type(call_node, self_ctx, method_type_resolver, local_types: {})
       result = if call_node.attribute_write?
@@ -302,7 +313,7 @@ module RbsInfer::Inference
       elsif call_node.name == :new && call_node.receiver
         # `Foo.new` → instance of Foo; `self.new` → instance of the class
         # being generated (felixefelip/rbs_infer#35).
-        RbsInfer::Analyzer.extract_constant_path(call_node.receiver) ||
+        constant_receiver_class(call_node.receiver, method_type_resolver) ||
           (call_node.receiver.is_a?(Prism::SelfNode) ? self_ctx.target_class : nil)
       else
         # receiver.method → resolver tipo do receiver, depois do method
@@ -347,7 +358,7 @@ module RbsInfer::Inference
         elsif node.name == :new && node.receiver
           # `Foo.new` → instance of Foo; `self.new` → instance of the class
           # being generated (felixefelip/rbs_infer#35).
-          RbsInfer::Analyzer.extract_constant_path(node.receiver) ||
+          constant_receiver_class(node.receiver, method_type_resolver) ||
             (node.receiver.is_a?(Prism::SelfNode) ? self_ctx.target_class : nil)
         else
           parent_type = resolve_receiver_type(node.receiver, self_ctx, method_type_resolver, local_types: local_types)
@@ -365,7 +376,7 @@ module RbsInfer::Inference
       when Prism::SelfNode
         nil
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        RbsInfer::Analyzer.extract_constant_path(node)
+        constant_receiver_class(node, method_type_resolver)
       when Prism::LocalVariableReadNode
         local_types[node.name.to_s] || self_ctx.own_types[node.name.to_s]
       end

@@ -35,6 +35,27 @@ module RbsInfer::Signatures
       @rbs_definition_resolver.type_param_string(class_name)
     end
 
+    # A constant as WRITTEN in source, resolved to the class it actually names.
+    # Ruby searches the lexical scope from the inside out, so `Archiver` written
+    # inside `Post` is `Post::Archiver` when that exists (felixefelip/rbs_infer#129).
+    #
+    # `enclosing` is required, not defaulted: a call site that forgets to pass its
+    # lexical context does not fail — it resolves the bare name against the top
+    # level, finds nothing, and yields `untyped`. That silent degradation is
+    # exactly how this bug survived three pointwise fixes
+    # (docs/engineering/required-threaded-deps.md).
+    #
+    # Returns `name` unchanged when no candidate is known, so a constant this
+    # project cannot see (stdlib, a gem, a dynamically defined class) keeps
+    # flowing to the resolvers that can.
+    def qualify_constant(name, enclosing:)
+      return name unless name
+
+      RbsInfer::AST::LexicalConstantResolver.resolve(name: name, enclosing: enclosing) do |candidate|
+        known_class?(candidate)
+      end || name
+    end
+
     def resolve(class_name, method_name, block_body_type: nil)
       return nil unless class_name && class_name != "untyped"
 
@@ -428,6 +449,18 @@ module RbsInfer::Signatures
     def find_class_file(class_name)
       class_path = RbsInfer.class_name_to_path(class_name)
       @file_index.find(class_path)
+    end
+
+    # Existence oracle for `qualify_constant`: a class this project can see, either
+    # as a source file or as an RBS declaration (rbs_rails output, a gem shim, a
+    # previous pass's `sig/`). Memoized — the walk asks about the same candidates
+    # repeatedly across a file's methods.
+    def known_class?(candidate)
+      @known_class_cache ||= {}
+      return @known_class_cache[candidate] if @known_class_cache.key?(candidate)
+
+      @known_class_cache[candidate] =
+        !find_class_file(candidate).nil? || RbsTypeLookup.files_declaring(candidate).any?
     end
 
     # Inferir return type a partir de literais ou Klass.new na última expressão

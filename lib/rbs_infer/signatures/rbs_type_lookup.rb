@@ -1,4 +1,5 @@
 require_relative "rbs_parser_util"
+require_relative "../ast/lexical_constant_resolver"
 
 module RbsInfer::Signatures
   # Busca e parseia arquivos RBS para resolver tipos de classes,
@@ -268,14 +269,18 @@ module RbsInfer::Signatures
       # 2c. Lexical outward lookup, the way Ruby resolves a constant. An `include Foo`
       #     written inside `module A` is recorded with its lexical prefix (`A::Foo`) —
       #     correct, but `A::Foo` usually does not exist and the constant IS the
-      #     top-level `::Foo`. Peel the enclosing scopes off and take the first that
-      #     resolves, which is exactly Ruby's rule (felixefelip/rbs_infer#124: the Devise
-      #     sidecar's `module ActionController; class Base; include DeviseScopedHelpers`).
+      #     top-level `::Foo`. Drop the enclosing scopes from the inside out and take
+      #     the first that resolves, which is exactly Ruby's rule (felixefelip/rbs_infer
+      #     #124: the Devise sidecar's `module ActionController; class Base; include
+      #     DeviseScopedHelpers`).
+      #
+      #     Shared with every other site that resolves a written constant
+      #     (felixefelip/rbs_infer#129). The hand-rolled version here peeled segments off
+      #     the FRONT (`A::B::Foo` → `B::Foo` → `Foo`), which is not Ruby's order:
+      #     `B::Foo` is not a candidate at all, and a real `A::Foo` was never tried.
       if types.empty? && parent_superclass.nil? && all_includes.empty?
-        parts = normalized.split("::")
-        (1...parts.size).each do |i|
-          candidate = parts[i..].join("::")
-          next if visited.include?(candidate)
+        RbsInfer::AST::LexicalConstantResolver.candidates_for(normalized).each do |candidate|
+          next if candidate == normalized || visited.include?(candidate)
 
           outer = lookup_inherited_types(candidate, visited)
           next if outer.empty?
