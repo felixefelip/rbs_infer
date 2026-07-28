@@ -23,6 +23,12 @@ class Current
     def account=(value)
       @account = value
     end
+    def viewer_name
+      @viewer_name
+    end
+    def viewer_name=(value)
+      @viewer_name = value
+    end
   end
   include GeneratedAttributeMethods
 
@@ -53,21 +59,32 @@ class Current
     __rbs_infer_instance.account = value
   end
 
+  def self.viewer_name
+    @viewer_name
+  end
+
+  def self.viewer_name=(value)
+    @viewer_name = value
+    __rbs_infer_instance.viewer_name = value
+  end
+
   def self.__rbs_infer_instance
     @__rbs_infer_instance ||= Current.new
   end
 
-  def self.set(user: nil, author_name: nil, account: nil, &block)
+  def self.set(user: nil, author_name: nil, account: nil, viewer_name: nil, &block)
     @user = user
     @author_name = author_name
     @account = account
+    @viewer_name = viewer_name
     block&.call(nil)
   end
 
-  def self.with(user: nil, author_name: nil, account: nil, &block)
+  def self.with(user: nil, author_name: nil, account: nil, viewer_name: nil, &block)
     @user = user
     @author_name = author_name
     @account = account
+    @viewer_name = viewer_name
     block&.call(nil)
   end
 end

@@ -6,7 +6,7 @@
 # `Current.with(user: ...)` in ProfileFormatterJob), unlocking the type
 # of the derived method `self.author_full_name`.
 class Current < ActiveSupport::CurrentAttributes
-  attribute :user, :author_name, :account
+  attribute :user, :author_name, :account, :viewer_name
 
   # Rails-guides pattern: accessor override calling `super` and deriving
   # another attribute. The expander skips generating this accessor and
@@ -16,6 +16,15 @@ class Current < ActiveSupport::CurrentAttributes
   def user=(value)
     super(value)
     self.author_name = value&.full_name
+
+    # Same transitive establishment as `author_name`, in the shape a real app writes it:
+    # guarded by `unless value.nil?` instead of `&.`, and reading an attribute that is
+    # nilable on a plain `User` but PROVEN on `User::Validated` (rbs_rails emits both).
+    # The param is `(User & User::Validated)?`, so answering `name` from the first member
+    # of the intersection alone loses the marker's stronger type.
+    unless value.nil?
+      self.viewer_name = value.name
+    end
   end
 
   # `&.` because the attribute is honestly nilable (per-request reset);

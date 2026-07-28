@@ -48,6 +48,9 @@ postconditions:
     Current.user:
       gate_ivar: "@__rbs_infer__performed"
       type: "(::User & ::User::Validated)"
+    Current.viewer_name:
+      gate_ivar: "@__rbs_infer__performed"
+      type: "::String"
 - class: Board
   method: initialize
   effects:
@@ -71,6 +74,7 @@ postconditions:
     establishes_consts:
       author_name: "::String"
       user: "((::User & ::User::Validated) | ::User)"
+      viewer_name: "::String"
 - class: Current
   method: __rbs_infer_instance
   effects:
@@ -141,6 +145,13 @@ postconditions:
   unconditional:
     consts:
       Current.account: "(::Account & ::Account::Validated)"
+- class: DashboardController
+  method: set_current_viewer
+  unconditional:
+    consts:
+      Current.author_name: "::String"
+      Current.user: "(::User & ::User::Validated)"
+      Current.viewer_name: "::String"
 - class: DashboardController
   method: show
   unconditional:
@@ -642,7 +653,9 @@ postconditions:
   method: publish
   unconditional:
     consts:
+      Current.author_name: "::String"
       Current.user: "(::User & ::User::Validated)"
+      Current.viewer_name: "::String"
   effects:
     may_write:
     - "@__rbs_infer__performed"
@@ -897,6 +910,7 @@ method_entry_facts:
     Current.account: "(::Account & ::Account::Validated)"
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ApplicationController
   method: current_user
   ivars:
@@ -908,42 +922,50 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Assignment
   method: log_post_user_name
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Assignment
   method: run_before_validation_callbacks
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Assignment
   method: run_belongs_to_default_callbacks
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Assignment
   method: run_belongs_to_default_owner
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Assignment
   method: save
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Current
   method: account
   consts:
     Current.account: "(::Account & ::Account::Validated)"
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Current
   method: author_name
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: DashboardController
   method: render
   self_methods:
@@ -953,6 +975,7 @@ method_entry_facts:
     Current.account: "(::Account & ::Account::Validated)"
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
   ivars:
     "@account": "(::Account & ::Account::Validated)"
     "@recent_posts": "::Post::ActiveRecord_Relation"
@@ -964,6 +987,17 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
+- class: DashboardController
+  method: set_current_viewer
+  self_methods:
+    current_account: "(::Account & ::Account::Validated)"
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.account: "(::Account & ::Account::Validated)"
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: DashboardController
   method: show
   self_methods:
@@ -973,6 +1007,7 @@ method_entry_facts:
     Current.account: "(::Account & ::Account::Validated)"
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: DeviseScopedHelpers
   method: authenticate_account!
   self_methods:
@@ -980,6 +1015,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: DeviseScopedHelpers
   method: current_account
   self_methods:
@@ -987,72 +1023,86 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBDashboardShow
   method: __rbs_infer__body
   consts:
     Current.account: "(::Account & ::Account::Validated)"
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBPartialPostsComment
   method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBPartialPostsForm
   method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBPartialPostsSummary
   method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBPostsEdit
   method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBPostsEdit
   method: render
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBPostsIndex
   method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBPostsNew
   method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBPostsNew
   method: render
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBPostsShow
   method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBPostsShow
   method: render
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBUsersAvatarsEdit
   method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ERBUsersShow
   method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Example12
   method: dispatch_age
   ivars:
@@ -1096,6 +1146,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: FilterConfiguration
   method: sanitize_filter
   self_methods:
@@ -1103,31 +1154,37 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Post
   method: assignments
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Post
   method: summary
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Post_Assignment::ActiveRecord_Associations_CollectionProxy
   method: build
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Post_Assignment::ActiveRecord_Associations_CollectionProxy
   method: create
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Post_Assignment::ActiveRecord_Associations_CollectionProxy
   method: create!
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Posts::AssignmentsController
   method: assignment_params
   self_methods:
@@ -1135,6 +1192,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
   ivars:
     "@post": "(::Post & ::Post::Validated)"
 - class: Posts::AssignmentsController
@@ -1144,6 +1202,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
   ivars:
     "@post": "(::Post & ::Post::Validated)"
 - class: Posts::AssignmentsController
@@ -1153,6 +1212,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: PostsController
   method: create
   self_methods:
@@ -1160,6 +1220,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: PostsController
   method: destroy
   self_methods:
@@ -1167,6 +1228,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
   ivars:
     "@post": "(::Post & ::Post::Validated)"
 - class: PostsController
@@ -1176,6 +1238,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: PostsController
   method: new
   self_methods:
@@ -1183,6 +1246,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: PostsController
   method: post_params
   self_methods:
@@ -1190,6 +1254,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: PostsController
   method: publish
   self_methods:
@@ -1197,6 +1262,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
   ivars:
     "@post": "(::Post & ::Post::Validated)"
 - class: PostsController
@@ -1206,6 +1272,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: PostsController
   method: set_post
   self_methods:
@@ -1213,6 +1280,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: PostsController
   method: show
   self_methods:
@@ -1220,6 +1288,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
   ivars:
     "@post": "(::Post & ::Post::Validated)"
 - class: PostsController
@@ -1229,6 +1298,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
   ivars:
     "@post": "(::Post & ::Post::Validated)"
 - class: PostsHelper
@@ -1236,16 +1306,19 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: PostsHelper
   method: post_status_badge
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: PostsHelper
   method: post_summary
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: TagDestroy
   method: atribui_user
   ivars:
@@ -1280,6 +1353,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Users::AvatarsController
   method: edit
   self_methods:
@@ -1287,6 +1361,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
   ivars:
     "@user": "(::User & ::User::Validated)"
 - class: Users::AvatarsController
@@ -1296,6 +1371,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
   ivars:
     "@user": "(::User & ::User::Validated)"
 - class: Users::AvatarsController
@@ -1305,6 +1381,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: Users::AvatarsController
   method: update
   self_methods:
@@ -1312,6 +1389,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
   ivars:
     "@user": "(::User & ::User::Validated)"
 - class: UsersController
@@ -1321,6 +1399,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: UsersController
   method: index
   self_methods:
@@ -1328,6 +1407,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: UsersController
   method: render
   self_methods:
@@ -1335,6 +1415,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: UsersController
   method: show
   self_methods:
@@ -1342,6 +1423,7 @@ method_entry_facts:
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 argument_entry_facts:
 - class: DashboardController
   method: render

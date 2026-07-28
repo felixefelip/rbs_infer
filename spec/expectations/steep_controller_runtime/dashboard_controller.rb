@@ -27,6 +27,9 @@ class DashboardController
     set_current_account
     return if performed?
 
+    set_current_viewer
+    return if performed?
+
     show
 
     return if performed?
