@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative "../generator"
-require_relative "../../rails/current_attributes_callbacks_generator"
 
 namespace :rbs_infer do
   namespace :devise do
@@ -22,33 +21,6 @@ namespace :rbs_infer do
       end
 
       puts "Generated Devise scoped helpers pseudo-code in #{sidecar_dir}/ (scopes: #{scopes.map { |s| s[:scope] }.join(", ")})"
-
-      # CurrentAttributes consumer of the auth-layer facts: handlers that
-      # populate globals (`Current.user = current_user`) under the guard
-      # get their own markers + applies_constants sidecar, in a separate
-      # sig dir — Current is not a Devise concern.
-      # Same source universe the rest of rbs_infer resolves against, so
-      # transitive-write types (`Current.caderneta = value.caderneta`)
-      # match (felixefelip/rbs_infer#41).
-      source_files = Dir[
-        File.join(app_dir, "app/**/*.rb"),
-        File.join(app_dir, "lib/**/*.rb"),
-        File.join(app_dir, "engines/**/*.rb")
-      ]
-
-      current = RbsInfer::Extensions::Rails::CurrentAttributesCallbacksGenerator.new(
-        app_dir: app_dir,
-        output_dir: File.join(app_dir, "sig/rbs_infer_current_attributes"),
-        scanner: generator.build_scanner(scopes),
-        resource_types: generator.proven_resource_types(scopes),
-        source_files: source_files
-      )
-      populated = current.generate_all
-
-      unless populated.empty?
-        consts = populated.map { |p| "#{p[:const_name]}.#{p[:attr]}" }.uniq.join(", ")
-        puts "Generated CurrentAttributes callback narrowing in sig/rbs_infer_current_attributes/ (#{consts})"
-      end
     end
   end
 end

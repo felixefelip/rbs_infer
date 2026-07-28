@@ -860,6 +860,11 @@ method_entry_facts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
 - class: Current
+  method: account
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+- class: Current
   method: author_name
   consts:
     Current.author_name: "::String"

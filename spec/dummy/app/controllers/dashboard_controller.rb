@@ -12,11 +12,13 @@
 # and `current_account` is non-nil from this one, which is why neither `@account` nor the
 # `Current.user` read in the view needs a nil check.
 #
-# `set_current_account` runs AFTER the guard, so `current_account` is proven present at
-# its entry and `Current.account` is proven populated from there on — including inside the
-# view `show` renders. That chain used to be pre-derived into a `.steep_callbacks.yml` by
-# `Rails::CurrentAttributesCallbacksGenerator`; it now falls out of the ordinary
-# const-write postcondition, which is what makes this controller that generator's test.
+# `set_current_account` runs AFTER the guard, so `current_account` is proven present at its
+# entry and `Current.account` SHOULD be proven populated from there on — including inside
+# the view `show` renders. It is not, and that is deliberate: the marker sidecar that used
+# to assert it is gone (felixefelip/rbs_infer#125), so the read in dashboard/show.html.erb
+# sits in the steep baseline as the open gap. What is missing is one link — a plain handler
+# writing another class's constant attribute gets no establishing postcondition, unlike a
+# handler that halts (`authenticate_user`) or a setter writing its own (`Current#user=`).
 class DashboardController < ApplicationController
   before_action :authenticate_account!
   before_action :set_current_account
