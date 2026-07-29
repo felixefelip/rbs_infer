@@ -318,6 +318,10 @@ postconditions:
   effects:
     may_write:
     - "@halted"
+  conditional_const_returns:
+    Example13::Registry.user:
+      gate_ivar: "@halted"
+      type: "::Example13Viewer"
 - class: Example13::Guarded
   method: guard_supported
   effects:
@@ -1252,6 +1256,10 @@ method_entry_facts:
     "@name": "::String"
 - class: Example13::Guarded
   method: act_const_tested
+  consts:
+    Example13::Registry.user: "::Example13Viewer"
+- class: Example13::Guarded
+  method: act_safe_navigation
   consts:
     Example13::Registry.user: "::Example13Viewer"
 - class: Example13::Guarded

@@ -7,7 +7,6 @@ app/models/concerns/test/filtrable.rb:7:4: [error] Type `(singleton(::Test) & si
 app/models/concerns/test/filtrable.rb:8:26: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `where`
 app/models/concerns/test/filtrable.rb:8:4: [error] Type `(singleton(::Test) & singleton(::Test::Filtrable))` does not have method `scope`
 app/models/example10.rb:27:26: [error] Type `(::String | nil)` does not have method `upcase`
-app/models/example13.rb:156:20: [error] Type `(::Example13Viewer | nil)` does not have method `name`
 app/models/example13.rb:179:20: [error] Type `(::Example13Viewer | nil)` does not have method `name`
 app/models/example13.rb:207:6: [error] `act_implicit_return` requires `self.current_user.name` to be non-nil here
 app/models/example13.rb:207:6: [error] `act_implicit_return` requires `self.current_user` to be non-nil here
