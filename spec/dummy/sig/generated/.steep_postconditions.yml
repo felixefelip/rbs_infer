@@ -950,6 +950,21 @@ postconditions:
   method: owner
   effects:
     returns_ivar: "@owner"
+- class: User_Notification::ActiveRecord_Associations_CollectionProxy
+  method: build
+  unconditional:
+    returns:
+      establishes:
+      - user
+- class: User_Notification::ActiveRecord_Associations_CollectionProxy
+  method: initialize
+  effects:
+    may_write:
+    - "@owner"
+- class: User_Notification::ActiveRecord_Associations_CollectionProxy
+  method: owner
+  effects:
+    returns_ivar: "@owner"
 - class: User_Post::ActiveRecord_Associations_CollectionProxy
   method: build
   unconditional:

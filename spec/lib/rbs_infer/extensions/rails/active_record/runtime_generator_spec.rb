@@ -162,6 +162,176 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       end
     end
 
+  # felixefelip/rbs_infer#139. An association is as often declared in a concern's
+  # `included do` as in the model's own body (`has_many :notifications` inside
+  # `User::Notifiable`). rbs_rails sees it — it reflects at runtime, where the
+  # concern is already included — but this generator reads SOURCE, and reading
+  # `user.rb` alone saw no `has_many` at all: no getter, no proxy reopen, and
+  # `user.notifications` with no type.
+  describe "associations from a concern" do
+    NOTIFIABLE = <<~RUBY
+      module User::Notifiable
+        extend ActiveSupport::Concern
+
+        included do
+          has_many :notifications, dependent: :destroy
+        end
+      end
+    RUBY
+
+    USER = <<~RUBY
+      class User < ApplicationRecord
+        include User::Notifiable
+      end
+    RUBY
+
+    NOTIFICATION = <<~RUBY
+      class Notification < ApplicationRecord
+        belongs_to :user
+      end
+    RUBY
+
+    def concern_app(extra = {})
+      in_app({
+        "app/models/user.rb" => USER,
+        "app/models/user/notifiable.rb" => NOTIFIABLE,
+        "app/models/notification.rb" => NOTIFICATION
+      }.merge(extra)) { |dir| yield described_class.new(app_dir: dir).build }
+    end
+
+    it "emits the getter on the includer, not on the concern" do
+      concern_app do |files|
+        expect(source_of(files, "user.rb")).to match(
+          /class User\n.*def notifications\n\s*User_Notification::ActiveRecord_Associations_CollectionProxy\.new\(Notification, self\)\n\s*end/m
+        )
+        # The concern is not a model — it owns no association of its own.
+        expect(files.map(&:filename)).not_to include("user_notifiable.rb")
+      end
+    end
+
+    it "emits the proxy reopen with the construction flow" do
+      concern_app do |files|
+        proxy = source_of(files, "user_notification.rb")
+        expect(proxy).to include("class User_Notification::ActiveRecord_Associations_CollectionProxy\n")
+        expect(proxy).to match(/def build\(\*\)\n\s*record = Notification\.new\n\s*record\.user = owner\n\s*record\n\s*end/)
+      end
+    end
+
+    it "resolves a concern written by its bare name from the host's namespace" do
+      # `include Notifiable` inside `class User` is `User::Notifiable` — Ruby
+      # searches the lexical scope outward, and a concern is conventionally
+      # nested under its host.
+      concern_app("app/models/user.rb" => "class User < ApplicationRecord\n  include Notifiable\nend\n") do |files|
+        expect(source_of(files, "user.rb")).to match(/def notifications\n/)
+      end
+    end
+
+    it "honours class_name: on a concern's has_many" do
+      bundled = <<~RUBY
+        module User::Notifiable
+          extend ActiveSupport::Concern
+
+          included do
+            has_many :notification_bundles, class_name: "Notification::Bundle", dependent: :destroy
+          end
+        end
+      RUBY
+      concern_app(
+        "app/models/user/notifiable.rb" => bundled,
+        "app/models/notification/bundle.rb" => "class Notification::Bundle < ApplicationRecord\n  belongs_to :user\nend\n"
+      ) do |files|
+        expect(source_of(files, "user.rb")).to match(
+          /def notification_bundles\n\s*User_Notification_Bundle::ActiveRecord_Associations_CollectionProxy\.new\(Notification::Bundle, self\)/
+        )
+      end
+    end
+
+    it "splices a concern's before_validation callbacks at the include site" do
+      # Rails registers a concern's callbacks when the `include` runs, so they
+      # sit between the class's own declarations — the order the pseudo-code
+      # must reproduce, since `run_before_validation_callbacks` calls them in
+      # sequence.
+      concern = <<~RUBY
+        module Notification::Stampable
+          extend ActiveSupport::Concern
+
+          included do
+            before_validation :stamp
+          end
+        end
+      RUBY
+      model = <<~RUBY
+        class Notification < ApplicationRecord
+          before_validation :first
+          include Notification::Stampable
+          before_validation :last
+        end
+      RUBY
+      concern_app(
+        "app/models/notification.rb" => model,
+        "app/models/notification/stampable.rb" => concern
+      ) do |files|
+        expect(source_of(files, "notification.rb")).to match(
+          /def run_before_validation_callbacks\n\s*first\n\s*stamp\n\s*last\n\s*end/
+        )
+      end
+    end
+
+    it "keeps a single getter when the concern and the class declare the same association" do
+      # A redeclaration replaces the reflection at runtime; emitting both would
+      # define `notifications` twice in the reopen, which collides in the
+      # inferred RBS.
+      both = "class User < ApplicationRecord\n  include User::Notifiable\n  has_many :notifications, dependent: :destroy\nend\n"
+      concern_app("app/models/user.rb" => both) do |files|
+        expect(source_of(files, "user.rb").scan(/def notifications\n/).size).to eq(1)
+      end
+    end
+
+    it "follows a concern that includes another concern" do
+      outer = <<~RUBY
+        module User::Notifiable
+          extend ActiveSupport::Concern
+          include User::Bundling
+        end
+      RUBY
+      inner = <<~RUBY
+        module User::Bundling
+          extend ActiveSupport::Concern
+
+          included do
+            has_many :notifications, dependent: :destroy
+          end
+        end
+      RUBY
+      concern_app(
+        "app/models/user/notifiable.rb" => outer,
+        "app/models/user/bundling.rb" => inner
+      ) do |files|
+        expect(source_of(files, "user.rb")).to match(/def notifications\n/)
+      end
+    end
+
+    it "ignores an include naming something outside the scanned models" do
+      # A gem's concern has no source here to read; contributing nothing beats
+      # inventing an association.
+      concern_app("app/models/user.rb" => "class User < ApplicationRecord\n  include Devise::Models::Trackable\nend\n") do |files|
+        expect(files.map(&:filename)).not_to include("user.rb")
+      end
+    end
+
+    it "does not loop on mutually including concerns" do
+      a = "module User::A\n  extend ActiveSupport::Concern\n  include User::B\nend\n"
+      b = "module User::B\n  extend ActiveSupport::Concern\n  include User::A\n  included do\n    has_many :notifications\n  end\nend\n"
+      concern_app(
+        "app/models/user.rb" => "class User < ApplicationRecord\n  include User::A\nend\n",
+        "app/models/user/a.rb" => a,
+        "app/models/user/b.rb" => b
+      ) do |files|
+        expect(source_of(files, "user.rb")).to match(/def notifications\n/)
+      end
+    end
+  end
+
   describe "proxy reopen (construction flow)" do
     it "captures the owner and reopens with build/new/create/create!" do
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|

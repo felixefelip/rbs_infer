@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_28_040145) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_29_000001) do
   create_table "accounts", force: :cascade do |t|
     t.string "display_name", default: "", null: false
     t.string "email", default: "", null: false
@@ -41,6 +41,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_28_040145) do
     t.datetime "updated_at", null: false
     t.index ["post_id"], name: "index_comments_on_post_id"
     t.index ["user_id"], name: "index_comments_on_user_id"
+  end
+
+  create_table "notifications", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "title", null: false
+    t.datetime "read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
   create_table "post_tags", force: :cascade do |t|
@@ -90,6 +99,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_28_040145) do
   add_foreign_key "assignments", "users", column: "owner_id"
   add_foreign_key "comments", "posts"
   add_foreign_key "comments", "users"
+  add_foreign_key "notifications", "users"
   add_foreign_key "post_tags", "posts"
   add_foreign_key "post_tags", "tags"
   add_foreign_key "posts", "users"

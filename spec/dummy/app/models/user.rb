@@ -3,6 +3,9 @@
 class User < ApplicationRecord
   include User::Recoverable
   include User::Displayable
+  # Contributes `has_many :notifications` — declared only in the concern's
+  # `included do`, never here (felixefelip/rbs_infer#139).
+  include User::Notifiable
 
   mount_uploader :avatar, AvatarUploader
 
@@ -40,5 +43,11 @@ class User < ApplicationRecord
   # matched the target. `post` is typed here only because both were fixed.
   def posts_titled_like(post)
     posts.where(title: post.title).count
+  end
+
+  # The same deref as in `User::Notifiable`, but from the HOST body — the getter
+  # has to be on `User`, not on the concern, which is where the runtime puts it.
+  def unread_notifications_count
+    notifications.unread.count
   end
 end

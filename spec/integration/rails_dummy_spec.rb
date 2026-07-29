@@ -77,6 +77,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/tag", target_class: "Tag", target_file: "app/models/tag.rb")
   end
 
+  it "Notification model matches expected RBS" do
+    assert_snapshot("models/notification", target_class: "Notification", target_file: "app/models/notification.rb")
+  end
+
   it "PostTag model matches expected RBS" do
     assert_snapshot("models/post_tag", target_class: "PostTag", target_file: "app/models/post_tag.rb")
   end
@@ -767,6 +771,15 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   it "User::Recoverable concern matches expected RBS" do
     assert_snapshot("models/user/recoverable", target_class: "User::Recoverable", target_file: "app/models/user/recoverable.rb")
+  end
+
+  # felixefelip/rbs_infer#139. `has_many :notifications` is declared ONLY in this
+  # concern's `included do`, so every method below derefs an association the
+  # AR-runtime generator can emit only by reading the concern and attributing it
+  # to `User`. Before the fix the getter did not exist and all four came out
+  # `untyped`; the snapshot is where that regression would resurface.
+  it "User::Notifiable concern (has_many from a concern) matches expected RBS" do
+    assert_snapshot("models/user/notifiable", target_class: "User::Notifiable", target_file: "app/models/user/notifiable.rb")
   end
 
   it "User::Displayable concern matches expected RBS" do

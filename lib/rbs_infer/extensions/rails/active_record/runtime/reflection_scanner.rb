@@ -11,28 +11,82 @@ module RbsInfer
           BelongsTo = Struct.new(:name, :class_name, :default_body, keyword_init: true)
           HasMany   = Struct.new(:name, :class_name, keyword_init: true)
 
-          # One model's reflections relevant to the AR-runtime pseudo-code:
-          # the associations (to wire construction) and the `before_validation`
-          # callback method names (the flow that derefs a nilable belongs_to).
+          # `before_validation :a, :b` — one entry per macro call, so the
+          # declaration ORDER survives the concern splice (Rails runs the
+          # callbacks in registration order, and a concern registers at the
+          # point of `include`).
+          BeforeValidation = Struct.new(:names, keyword_init: true)
+
+          # `include SomeConcern` in a class or module body, kept in place
+          # among the macros so the concern's own declarations splice in at
+          # exactly the position Rails registers them.
+          Include = Struct.new(:name, keyword_init: true)
+
+          # One class's (or concern's) reflections relevant to the AR-runtime
+          # pseudo-code: the associations (to wire construction), the
+          # `before_validation` callback names (the flow that derefs a nilable
+          # belongs_to), and the `include`s that contribute more of both.
+          #
+          # `body` is the ORDERED entry list as written; the readers below are
+          # the resolved view of it. A class's body still holds `Include`
+          # entries until `ConcernResolver` expands them.
           ModelReflections = Struct.new(
-            :path,                        # project-relative source path
-            :class_name,                  # "Assignment"
-            :belongs_to,                  # [BelongsTo]
-            :has_many,                    # [HasMany]
-            :before_validation_callbacks, # ["log_post_user_name", ...]
+            :path,       # project-relative source path
+            :class_name, # "Assignment"
+            :kind,       # :class | :module (a concern)
+            :body,       # [BelongsTo | HasMany | BeforeValidation | Include]
             keyword_init: true
           ) do
+            # A later declaration of the same association REPLACES the earlier
+            # one (Rails redefines the reflection), so the class's own macro
+            # wins over one a concern registered at include time — and a
+            # `has_many` declared in BOTH places yields a single getter rather
+            # than two colliding ones.
+            def belongs_to
+              last_per_name(body.grep(BelongsTo))
+            end
+
+            def has_many
+              last_per_name(body.grep(HasMany))
+            end
+
+            def before_validation_callbacks
+              body.grep(BeforeValidation).flat_map(&:names)
+            end
+
+            def includes
+              body.grep(Include).map(&:name)
+            end
+
+            # Nothing for the generator to model.
+            def empty?
+              belongs_to.empty? && has_many.empty? && before_validation_callbacks.empty?
+            end
+
             # The `belongs_to` on this model whose target is `owner_class` — the
             # inverse the association-construction path sets (`record.post =
             # owner`). nil when no belongs_to points back at the owner.
             def inverse_belongs_to_for(owner_class)
               belongs_to.find { |b| b.class_name == owner_class }
             end
+
+            private
+
+            # Keeps the LAST declaration of each name, at its own position.
+            def last_per_name(assocs)
+              assocs.reverse.uniq(&:name).reverse
+            end
           end
 
-          # Parses a model source into `ModelReflections` (one per class in the
-          # file). Returns [] when the file defines no class with associations
-          # or before_validation callbacks.
+          # Parses a model source into `ModelReflections` (one per class AND per
+          # module in the file). Returns [] when the file declares nothing the
+          # generator cares about.
+          #
+          # A module is scanned because an Active Record association just as
+          # often comes from a concern as from the model's own body
+          # (`has_many :notifications` inside `User::Notifiable`); its entries
+          # are spliced into each includer by `ConcernResolver`, which is the
+          # side that can see across files.
           module ReflectionScanner
             module_function
 
@@ -40,59 +94,75 @@ module RbsInfer
               result = Prism.parse(source)
               return [] unless result.success?
 
-              RbsInfer::Analyzer.find_all_nodes(result.value) { |n| n.is_a?(Prism::ClassNode) }
-                                .filter_map { |klass| reflections_for(path, source, klass) }
+              RbsInfer::Analyzer.find_all_nodes(result.value) do |n|
+                n.is_a?(Prism::ClassNode) || n.is_a?(Prism::ModuleNode)
+              end.filter_map { |node| reflections_for(path, node) }
             end
 
-            def reflections_for(path, source, klass)
-              class_name = RbsInfer::Analyzer.extract_constant_path(klass.constant_path)&.delete_prefix("::")
+            def reflections_for(path, node)
+              class_name = RbsInfer::Analyzer.extract_constant_path(node.constant_path)&.delete_prefix("::")
               return nil unless class_name
 
-              belongs_to = []
-              has_many = []
-              callbacks = []
-
-              macro_calls(klass).each do |call|
-                case call.name
-                when :belongs_to
-                  name = first_symbol(call) or next
-                  belongs_to << BelongsTo.new(
-                    name: name,
-                    class_name: belongs_to_class(name, call),
-                    default_body: default_expr_source(call)
-                  )
-                when :has_many
-                  name = first_symbol(call) or next
-                  has_many << HasMany.new(name: name, class_name: has_many_class(name, call))
-                when :before_validation
-                  callbacks.concat(symbol_args(call))
-                end
-              end
-
-              return nil if belongs_to.empty? && has_many.empty? && callbacks.empty?
+              is_class = node.is_a?(Prism::ClassNode)
+              body = is_class ? class_body(node) : concern_body(node)
+              return nil if body.empty?
 
               ModelReflections.new(
                 path: path,
                 class_name: class_name,
-                belongs_to: belongs_to,
-                has_many: has_many,
-                before_validation_callbacks: callbacks
+                kind: is_class ? :class : :module,
+                body: body
               )
             end
 
-            # Receiverless macro calls at class-body level (a call nested in a
-            # def/block is not the AR class macro).
-            def macro_calls(klass)
-              body = klass.body
-              statements = case body
-                           when Prism::StatementsNode then body.body
-                           when nil then []
-                           else [body]
-                           end
+            # Entries from receiverless macro calls at class-body level (a call
+            # nested in a def or an unrelated block is not the AR class macro).
+            def class_body(klass)
+              statements(klass.body).flat_map { |stmt| entries_for(stmt) }
+            end
 
-              statements.select do |stmt|
-                stmt.is_a?(Prism::CallNode) && stmt.receiver.nil? &&
-                  %i[belongs_to has_many before_validation].include?(stmt.name) && stmt.arguments
+            # A concern contributes its `included do … end` macros — which Rails
+            # runs against the includer — plus any module-level `include`, which
+            # ActiveSupport::Concern propagates to the includer as well. Its
+            # plain method defs are just methods, reachable as self-sends.
+            def concern_body(mod)
+              statements(mod.body).flat_map do |stmt|
+                next [] unless stmt.is_a?(Prism::CallNode)
+                next entries_for(stmt) unless stmt.name == :included && stmt.block
+
+                statements(stmt.block.body).flat_map { |inner| entries_for(inner) }
+              end
+            end
+
+            def entries_for(stmt)
+              return [] unless stmt.is_a?(Prism::CallNode) && stmt.receiver.nil? && stmt.arguments
+
+              case stmt.name
+              when :belongs_to
+                name = first_symbol(stmt) or return []
+                [BelongsTo.new(
+                  name: name,
+                  class_name: belongs_to_class(name, stmt),
+                  default_body: default_expr_source(stmt)
+                )]
+              when :has_many
+                name = first_symbol(stmt) or return []
+                [HasMany.new(name: name, class_name: has_many_class(name, stmt))]
+              when :before_validation
+                names = symbol_args(stmt)
+                names.empty? ? [] : [BeforeValidation.new(names: names)]
+              when :include
+                constant_args(stmt).map { |const| Include.new(name: const) }
+              else
+                []
+              end
+            end
+
+            def statements(body)
+              case body
+              when Prism::StatementsNode then body.body
+              when nil then []
+              else [body]
               end
             end
 
@@ -105,6 +175,16 @@ module RbsInfer
             # → ["a", "b"]); stops at the first non-symbol (the kwargs hash).
             def symbol_args(call)
               call.arguments.arguments.take_while { |a| a.is_a?(Prism::SymbolNode) }.map { |a| a.value.to_s }
+            end
+
+            # `include Post::Taggable` → ["Post::Taggable"]. A non-constant
+            # argument (`include Module.new { … }`) names nothing to splice.
+            def constant_args(call)
+              call.arguments.arguments.filter_map do |arg|
+                next unless arg.is_a?(Prism::ConstantReadNode) || arg.is_a?(Prism::ConstantPathNode)
+
+                RbsInfer::Analyzer.extract_constant_path(arg)&.delete_prefix("::")
+              end
             end
 
             def belongs_to_class(name, call)

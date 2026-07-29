@@ -1,0 +1,4 @@
+class Notification < ApplicationRecord
+  def read?: () -> bool
+  def headline: () -> String
+end

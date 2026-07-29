@@ -409,6 +409,9 @@ class ::User < ::ApplicationRecord
     alias id_value_for_database id_for_database
   end
   include ::User::GeneratedAliasAttributeMethods
+  def notifications=: (::Notification::ActiveRecord_Associations_CollectionProxy | ::Array[::Notification]) -> (::Notification::ActiveRecord_Associations_CollectionProxy | ::Array[::Notification])
+  def notification_ids: () -> ::Array[::Integer]
+  def notification_ids=: (::Array[::Integer]) -> ::Array[::Integer]
   def posts=: (::Post::ActiveRecord_Associations_CollectionProxy | ::Array[::Post]) -> (::Post::ActiveRecord_Associations_CollectionProxy | ::Array[::Post])
   def post_ids: () -> ::Array[::Integer]
   def post_ids=: (::Array[::Integer]) -> ::Array[::Integer]
@@ -463,6 +466,11 @@ class ::User < ::ApplicationRecord
   end
 end
 
+module User_Notification
+  class ActiveRecord_Associations_CollectionProxy < ::Notification::ActiveRecord_Associations_CollectionProxy
+  end
+end
+
 module User_Post
   class ActiveRecord_Associations_CollectionProxy < ::Post::ActiveRecord_Associations_CollectionProxy
   end
@@ -474,6 +482,10 @@ module User_Comment
 end
 
 class ::ApplicationRecord < ::ActiveRecord::Base
+end
+class ::Notification < ::ApplicationRecord
+end
+class ::Notification::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
 end
 class ::Post < ::ApplicationRecord
 end

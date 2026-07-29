@@ -1,0 +1,11 @@
+class User
+  module Notifiable
+    extend ActiveSupport::Concern
+
+    def unread_notifications: () -> Notification::ActiveRecord_Relation
+    def notifications_count: () -> Integer
+    def notify!: (String title) -> Notification
+    def notify_welcome!: () -> Notification
+    def latest_notification_headline: () -> String?
+  end
+end
