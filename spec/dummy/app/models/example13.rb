@@ -1,20 +1,4 @@
 class Example13
-  # ---------------------------------------------------------------------------
-  # Halting-guard gaps (felixefelip/steep#105). Every `guard_*` below is a guard
-  # a human reads as "past this line the slot is populated" — the same sentence
-  # `ApplicationController#authenticate_user` gets right today. Each varies ONE
-  # thing from that working shape, so the file reads as a bisection of what the
-  # guard grammar accepts.
-  #
-  # Each pair is the runner shape the controller pseudo-code emits: `run_*` is
-  # the flow (call the guard, check the halt, call the action) and `act_*` is the
-  # action whose ENTRY the fact has to reach. The split is not cosmetic — entry
-  # facts are attributed to the methods a flow calls after the halt check, not to
-  # the remainder of the flow's own body.
-  #
-  # `# should:` vs `# actual:` records today's behavior and flips when the fork
-  # closes the gap. Errors are pinned by spec/expectations/steep_baseline.txt.
-  # ---------------------------------------------------------------------------
   # Byte-for-byte example3's memoized-singleton holder, which is what
   # `ActiveSupport::CurrentAttributes` amounts to: `Registry.user` is a constant
   # attribute with a nilable reader, reachable by the const-path machinery.
@@ -54,6 +38,23 @@ class Example13
     end
   end
 
+  # ---------------------------------------------------------------------------
+  # Halting-guard grammar (felixefelip/steep#105). Every `guard_*` below is a
+  # guard a human reads as "past this line the slot is populated" — the same
+  # sentence `ApplicationController#authenticate_user` gets right. Each varies
+  # ONE thing from that working shape, so the file reads as a bisection of what
+  # the grammar accepts.
+  #
+  # Each pair is the runner shape the controller pseudo-code emits: `run_*` is
+  # the flow (call the guard, check the halt, call the action) and `act_*` is the
+  # action whose ENTRY the fact has to reach. The split is not cosmetic — entry
+  # facts are attributed to the methods a flow calls after the halt check, not to
+  # the remainder of the flow's own body.
+  #
+  # `# should:` vs `# actual:` records today's behavior and flips when the fork
+  # closes a gap; a closed one stays here as its regression guard. Errors are
+  # pinned by spec/expectations/steep_baseline.txt.
+  # ---------------------------------------------------------------------------
   class Guarded
     def initialize(name:)
       @name = name
@@ -102,13 +103,16 @@ class Example13
     end
 
     # -------------------------------------------------------------------------
-    # GAP 1 — the guard TESTS the constant instead of writing it.
+    # GAP 1 — CLOSED by felixefelip/steep#107. The guard TESTS the constant
+    # instead of writing it.
     #
     # The only difference from the control is that the fact is read off the
     # condition rather than off a subsequent assignment. `presence_condition_
-    # method` accepts only a bare self-send, so a const-rooted receiver proves
-    # nothing — and `conditional_const_returns` is populated exclusively from
-    # writes, which means there is NO path at all from a guard that tests.
+    # method` accepted only a bare self-send and returned a method NAME, so a
+    # const-rooted receiver had nowhere to go — and `conditional_const_returns`
+    # was populated exclusively from writes, so there was no path from a guard
+    # that tests even in principle. The condition decoder now returns a list of
+    # tagged facts.
     #
     # Testing is the far commoner shape: a guard normally asserts what someone
     # else already populated. It is the entire proof that `Current.user` is
@@ -129,14 +133,17 @@ class Example13
     end
 
     def act_const_tested
-      Registry.user.name.upcase # should: no error; actual: error (gap 1)
+      Registry.user.name.upcase # should: no error; actual: no error
     end
 
     # -------------------------------------------------------------------------
-    # GAP 1b — safe-navigation truthiness. `&.` on nil yields nil, so a truthy
-    # `Registry.user&.active?` proves the receiver non-nil EXACTLY,
-    # with no knowledge of what `active?` returns. Blocked by the same
-    # `presence_condition_method` shape check as gap 1.
+    # GAP 1b — CLOSED by felixefelip/steep#108. Safe-navigation truthiness:
+    # `&.` on nil yields nil, so a truthy `Registry.user&.active?` proves the
+    # receiver non-nil EXACTLY, with no knowledge of what `active?` returns.
+    #
+    # Stating the fact as being about the RECEIVER is what made the arguments of
+    # the safe-navigated call irrelevant, and what makes a chain (`a&.b&.c`)
+    # prove its innermost nameable slot.
     # -------------------------------------------------------------------------
     def guard_safe_navigation
       unless Registry.user&.active?
@@ -153,13 +160,19 @@ class Example13
     end
 
     def act_safe_navigation
-      Registry.user.name.upcase # should: no error; actual: error (gap 1b)
+      Registry.user.name.upcase # should: no error; actual: no error
     end
 
     # -------------------------------------------------------------------------
-    # GAP 1c — conjunction. `A && B` truthy proves each conjunct truthy, so both
-    # facts are available; an un-decodable conjunct should be skipped, not sink
-    # the whole condition. Today the `and` node isn't a send, so nothing is read.
+    # GAP 1c — CLOSED by felixefelip/steep#109. Conjunction: `A && B` is truthy
+    # only if both are, so it proves everything either conjunct does. An
+    # un-decodable conjunct is skipped rather than sinking the whole condition,
+    # and `||` deliberately distributes to nothing — a truthy disjunction says
+    # only that at least ONE operand was, with no way to tell which.
+    #
+    # The sharp edge is the `!` that turns `if !x` into "x is truthy here": it
+    # belongs to the whole condition, and re-applying it per conjunct would make
+    # `A && !B` claim `B` present when it is provably falsy.
     # -------------------------------------------------------------------------
     def guard_conjunction
       unless Registry.tenant && Registry.user
@@ -176,7 +189,7 @@ class Example13
     end
 
     def act_conjunction
-      Registry.user.name.upcase # should: no error; actual: error (gap 1c)
+      Registry.user.name.upcase # should: no error; actual: no error
     end
 
     # -------------------------------------------------------------------------
