@@ -51,9 +51,11 @@ class Example13
   # facts are attributed to the methods a flow calls after the halt check, not to
   # the remainder of the flow's own body.
   #
-  # `# should:` vs `# actual:` records today's behavior and flips when the fork
-  # closes a gap; a closed one stays here as its regression guard. Errors are
-  # pinned by spec/expectations/steep_baseline.txt.
+  # Every gap here is now CLOSED (felixefelip/steep#106 through #111), so the file
+  # produces no errors at all and its whole job is to be the regression guard: the
+  # baseline check fails on any NEW error, so a gap reopening surfaces as itself
+  # rather than as a number going up. Each block below records what closed it, and
+  # the `# should:` / `# actual:` markers are what flip if one comes back.
   # ---------------------------------------------------------------------------
   class Guarded
     def initialize(name:)
@@ -193,19 +195,24 @@ class Example13
     end
 
     # -------------------------------------------------------------------------
-    # GAP 2 — no explicit `return`. The condition is the CONTROL's bare
-    # self-send; the only change is that the guard is the method's last
-    # statement, so falling off the end is exactly a return. `clause_returns?`
-    # walks for a `:return` node and finds none.
+    # GAP 2 — CLOSED by felixefelip/steep#111. No explicit `return`: the
+    # condition is the CONTROL's bare self-send, and the only change is that the
+    # guard is the method's last statement, so falling off the end is exactly a
+    # return. `clause_returns?` walked for a `:return` node and found none.
     #
-    # The fix has to stay narrow — "the guard is the final statement", not
-    # "returns are optional". A halting clause that is not last does NOT halt
-    # the method; execution continues past it.
+    # The rule stayed narrow on purpose — "the guard is the FINAL statement", not
+    # "returns are optional". A halting clause with code after it does not end
+    # the method; execution continues past the `if`, and proving anything there
+    # would be a fact about a path that keeps going. That is the only place in
+    # this grammar where being too permissive yields a WRONG proof rather than a
+    # missing one, so the boundary is pinned on the fork side by a pair of tests:
+    # the same clause proves nothing with a statement after it, and proves again
+    # as soon as an explicit `return` is put back.
     #
-    # Because the condition tests a SELF-METHOD, the failure also surfaces one
+    # Because the condition tests a SELF-METHOD, the failure also surfaced one
     # frame up, as a precondition contract error on the call to the action
-    # (`requires `self.current_user` to be non-nil here`) — the checker
-    # naming the exact fact the guard was supposed to supply.
+    # (`requires `self.current_user` to be non-nil here`) — the checker naming
+    # the exact fact the guard was supposed to supply.
     # -------------------------------------------------------------------------
     def guard_implicit_return
       unless current_user
@@ -221,7 +228,7 @@ class Example13
     end
 
     def act_implicit_return
-      current_user.name.upcase # should: no error; actual: error (gap 2)
+      current_user.name.upcase # should: no error; actual: no error
     end
 
     # -------------------------------------------------------------------------
@@ -270,6 +277,10 @@ class Example13
     # framework names removed: a conjunction of const-rooted tests, one through
     # `&.`, halting inside a block, with no `return` because the guard is the
     # method's last statement.
+    #
+    # It was the last thing in this file to go green, and it needed every one of
+    # the five fixes: it kept failing while any single gap remained open, which
+    # is exactly why the file bisects them instead of leading with this.
     # -------------------------------------------------------------------------
     def guard_composite
       unless Registry.tenant && Registry.user&.active?
@@ -287,7 +298,7 @@ class Example13
     end
 
     def act_composite
-      Registry.user.name.upcase # should: no error; actual: error (composite)
+      Registry.user.name.upcase # should: no error; actual: no error
     end
   end
 
