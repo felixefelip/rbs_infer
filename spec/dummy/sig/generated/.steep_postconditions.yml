@@ -298,6 +298,13 @@ postconditions:
   effects:
     may_write:
     - "@halted"
+  conditional_const_returns:
+    Example13::Registry.tenant:
+      gate_ivar: "@halted"
+      type: "::Example13Tenant"
+    Example13::Registry.user:
+      gate_ivar: "@halted"
+      type: "::Example13Viewer"
 - class: Example13::Guarded
   method: guard_conjunction
   effects:
@@ -324,6 +331,10 @@ postconditions:
   effects:
     may_write:
     - "@halted"
+  conditional_returns:
+    current_user:
+      gate_ivar: "@halted"
+      type: "::Example13Viewer"
 - class: Example13::Guarded
   method: guard_safe_navigation
   effects:
@@ -1270,6 +1281,11 @@ method_entry_facts:
   self_methods:
     current_user: "::Example13Viewer"
 - class: Example13::Guarded
+  method: act_composite
+  consts:
+    Example13::Registry.tenant: "::Example13Tenant"
+    Example13::Registry.user: "::Example13Viewer"
+- class: Example13::Guarded
   method: act_conjunction
   consts:
     Example13::Registry.tenant: "::Example13Tenant"
@@ -1279,6 +1295,10 @@ method_entry_facts:
   consts:
     Example13::Registry.user: "::Example13Viewer"
 - class: Example13::Guarded
+  method: act_implicit_return
+  self_methods:
+    current_user: "::Example13Viewer"
+- class: Example13::Guarded
   method: act_safe_navigation
   consts:
     Example13::Registry.user: "::Example13Viewer"
@@ -1286,6 +1306,14 @@ method_entry_facts:
   method: act_supported
   self_methods:
     current_user: "::Example13Viewer"
+  consts:
+    Example13::Registry.user: "::Example13Viewer"
+- class: Example13::Guarded
+  method: current_user
+  self_methods:
+    current_user: "::Example13Viewer"
+- class: Example13::Registry
+  method: user
   consts:
     Example13::Registry.user: "::Example13Viewer"
 - class: Example4

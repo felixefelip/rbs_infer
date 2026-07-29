@@ -1,5 +1,5 @@
 class Example13
-  def self.run: () -> untyped
+  def self.run: () -> String?
 end
 
 class Example13
@@ -50,8 +50,8 @@ class Example13
     def run_block_halt: () -> String?
     def act_block_halt: () -> String
     def guard_composite: () -> untyped
-    def run_composite: () -> untyped
-    def act_composite: () -> untyped
+    def run_composite: () -> String?
+    def act_composite: () -> String
   end
 end
 
