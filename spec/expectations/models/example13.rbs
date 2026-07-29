@@ -1,0 +1,69 @@
+class Example13
+  def self.run: () -> untyped
+end
+
+class Example13
+  class Guarded
+    @name: String
+    @halted: false | true
+
+    def initialize: (name: String) -> bool
+    def current_user: () -> Example13Viewer?
+    def halt: () -> bool
+    def with_format: () ?{ (untyped) -> untyped } -> untyped
+    def guard_supported: () -> Example13Viewer?
+    def run_supported: () -> String?
+    def act_supported: () -> String
+    def guard_const_tested: () -> untyped
+    def run_const_tested: () -> untyped
+    def act_const_tested: () -> untyped
+    def guard_safe_navigation: () -> untyped
+    def run_safe_navigation: () -> untyped
+    def act_safe_navigation: () -> untyped
+    def guard_conjunction: () -> untyped
+    def run_conjunction: () -> untyped
+    def act_conjunction: () -> untyped
+    def guard_implicit_return: () -> bool?
+    def run_implicit_return: () -> String?
+    def act_implicit_return: () -> String
+    def guard_block_halt: () -> untyped
+    def run_block_halt: () -> String?
+    def act_block_halt: () -> String
+    def guard_composite: () -> untyped
+    def run_composite: () -> untyped
+    def act_composite: () -> untyped
+  end
+end
+
+class Example13Registry
+  self.@registry_instance: Example13Registry?
+
+  module GeneratedAttributes
+    attr_accessor user: (Example13Viewer? | nil)?
+    attr_accessor tenant: (Example13Tenant | nil)?
+    attr_writer registry_instance: untyped
+  end
+
+  include GeneratedAttributes
+
+  def self.registry_instance: () -> Example13Registry
+  def self.user: () -> (Example13Viewer? | nil)?
+  def self.user=: ((Example13Viewer? | nil) value) -> (Example13Viewer? | nil)
+  def self.tenant: () -> (Example13Tenant | nil)?
+  def self.tenant=: ((Example13Tenant | nil) value) -> (Example13Tenant | nil)
+end
+
+class Example13Viewer
+  def self.find: (String name) -> Example13Viewer?
+
+  attr_reader name: String
+
+  def initialize: (name: String) -> void
+  def active?: () -> bool
+end
+
+class Example13Tenant
+  attr_reader label: String
+
+  def initialize: (label: String) -> void
+end

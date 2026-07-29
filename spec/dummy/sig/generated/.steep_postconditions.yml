@@ -278,6 +278,124 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example13
+  method: run
+  unconditional:
+    consts:
+      Example13Registry.tenant: "::Example13Tenant"
+      Example13Registry.user: nil
+- class: Example13::Guarded
+  method: guard_block_halt
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: guard_composite
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: guard_conjunction
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: guard_const_tested
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: guard_implicit_return
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: guard_safe_navigation
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: guard_supported
+  effects:
+    may_write:
+    - "@halted"
+  conditional_returns:
+    current_user:
+      gate_ivar: "@halted"
+      type: "::Example13Viewer"
+  conditional_const_returns:
+    Example13Registry.user:
+      gate_ivar: "@halted"
+      type: "::Example13Viewer"
+- class: Example13::Guarded
+  method: halt
+  unconditional:
+    ivars:
+      "@halted": 'true'
+    self: "::Example13::Guarded & ::Example13::Guarded::AfterHalt"
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: initialize
+  unconditional:
+    ivars:
+      "@halted": 'false'
+    self: "::Example13::Guarded & ::Example13::Guarded::AfterInitialize"
+  effects:
+    may_write:
+    - "@halted"
+    - "@name"
+- class: Example13::Guarded
+  method: run_block_halt
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: run_composite
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: run_conjunction
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: run_const_tested
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: run_implicit_return
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: run_safe_navigation
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13::Guarded
+  method: run_supported
+  effects:
+    may_write:
+    - "@halted"
+- class: Example13Registry
+  method: registry_instance
+  effects:
+    may_write:
+    - "@registry_instance"
+- class: Example13Tenant
+  method: initialize
+  effects:
+    may_write:
+    - "@label"
+- class: Example13Viewer
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
 - class: Example2::Foo
   method: user=
   unconditional:
@@ -1123,6 +1241,12 @@ method_entry_facts:
   method: dispatch_name
   ivars:
     "@name": "::String"
+- class: Example13::Guarded
+  method: act_supported
+  self_methods:
+    current_user: "::Example13Viewer"
+  consts:
+    Example13Registry.user: "::Example13Viewer"
 - class: Example4
   method: run_foo_name
   consts:
