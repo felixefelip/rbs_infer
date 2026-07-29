@@ -4,6 +4,10 @@
 # Regenerated on every run; do not edit.
 
 class User
+  def notifications
+    User_Notification::ActiveRecord_Associations_CollectionProxy.new(Notification, self)
+  end
+
   def posts
     User_Post::ActiveRecord_Associations_CollectionProxy.new(Post, self)
   end

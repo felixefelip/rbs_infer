@@ -91,6 +91,35 @@ postconditions:
   when_false:
     drops:
     - Comment::Validated
+- class: Notification
+  method: save
+  when_true:
+    self: Notification & Notification::Validated
+  when_false:
+    drops:
+    - Notification::Validated
+- class: Notification
+  method: save!
+  when_true:
+    self: Notification & Notification::Validated
+- class: Notification
+  method: update
+  when_true:
+    self: Notification & Notification::Validated
+  when_false:
+    drops:
+    - Notification::Validated
+- class: Notification
+  method: update!
+  when_true:
+    self: Notification & Notification::Validated
+- class: Notification
+  method: valid?
+  when_true:
+    self: Notification & Notification::Validated
+  when_false:
+    drops:
+    - Notification::Validated
 - class: Post
   method: save
   when_true:

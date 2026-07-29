@@ -2,6 +2,7 @@
 
 require "fileutils"
 require_relative "runtime/reflection_scanner"
+require_relative "runtime/concern_resolver"
 require_relative "runtime/pseudo_code_builder"
 
 module RbsInfer
@@ -62,8 +63,13 @@ module RbsInfer
 
           private
 
+          # Every class AND concern under the model roots, with each class's
+          # `include`s expanded — an association declared in a concern's
+          # `included do` belongs to the includer as much as one written in its
+          # own body, and the scan is per-file so only this level can see both
+          # (felixefelip/rbs_infer#139).
           def scan_models
-            MODEL_ROOTS.flat_map do |root|
+            units = MODEL_ROOTS.flat_map do |root|
               Dir.glob(File.join(@app_dir, root, "**/*.rb")).sort.flat_map do |abs|
                 Runtime::ReflectionScanner.scan(path: relative(abs), source: File.read(abs))
               rescue StandardError => e
@@ -71,6 +77,8 @@ module RbsInfer
                 []
               end
             end
+
+            Runtime::ConcernResolver.resolve(units)
           end
 
           def relative(abs)

@@ -1,4 +1,5 @@
 class User
+  def notifications: () -> User_Notification::ActiveRecord_Associations_CollectionProxy
   def posts: () -> User_Post::ActiveRecord_Associations_CollectionProxy
   def comments: () -> User_Comment::ActiveRecord_Associations_CollectionProxy
 end
