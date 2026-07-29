@@ -916,6 +916,13 @@ method_entry_facts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
     Current.viewer_name: "::String"
+- class: Account
+  method: matches?
+  consts:
+    Current.account: "(::Account & ::Account::Validated)"
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: ApplicationController
   method: current_user
   ivars:
@@ -1353,6 +1360,13 @@ method_entry_facts:
   method: test_hash
   ivars:
     "@xml": "::Nokogiri::XML::Document"
+- class: User
+  method: posts_titled_like
+  consts:
+    Current.account: "(::Account & ::Account::Validated)"
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
 - class: User
   method: recent_posts
   consts:

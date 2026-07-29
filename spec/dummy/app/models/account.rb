@@ -19,4 +19,11 @@ class Account < ApplicationRecord
   def label
     "#{display_name} <#{email}>"
   end
+
+  # The other half of the same gap, isolated: the receiver here is a plain view ivar
+  # (`@account`), so the nilable-receiver fix is not what this needs — only the
+  # candidate-caller one. The template still never writes `Account`.
+  def matches?(post)
+    display_name == post.title
+  end
 end

@@ -277,12 +277,45 @@ module RbsInfer::Inference
 
     def match_class?(name)
       normalized_target = @target_class.sub(/\A::/, "")
-      # A marker-decorated receiver is an intersection (`Caderneta &
-      # Caderneta::Validated`); match if any component is the target.
-      intersection_components(name).any? do |component|
+      receiver_components(name).any? do |component|
         normalized_name = component.sub(/\A::/, "")
         next true if normalized_name == normalized_target
         relative_receiver_matches_target?(normalized_name, normalized_target)
+      end
+    end
+
+    # Every nominal type the receiver could hold at the moment of the call.
+    #
+    # An intersection is the marker-decorated shape (`Caderneta &
+    # Caderneta::Validated`) — any component identifies the receiver. A union is
+    # every branch the ivar was written with. And `T?` is `T`: the call is being
+    # MADE on it, so at runtime it is a `T` or the program raises — the same
+    # optimism `MethodTypeResolver#resolve` already applies when it drops the `?`
+    # before looking a method up.
+    #
+    # Decomposing only the intersection is what silently dropped every
+    # `Current.<attr>.method(arg)` call site: a CurrentAttributes reader is
+    # honestly nilable (per-request reset), so its type arrives as
+    # `(Caderneta & Caderneta::Validated)?` and the whole string was compared
+    # against `Caderneta` (felixefelip/rbs_infer#131).
+    def receiver_components(type_str)
+      flatten_receiver_type(RBS::Parser.parse_type(type_str))
+    rescue RBS::ParsingError, RBS::BaseError
+      # A spelling RBS cannot parse still gets the legacy intersection split, so
+      # nothing that matched before stops matching.
+      intersection_components(type_str)
+    end
+
+    def flatten_receiver_type(type)
+      case type
+      when RBS::Types::Union, RBS::Types::Intersection
+        type.types.flat_map { |t| flatten_receiver_type(t) }
+      when RBS::Types::Optional
+        flatten_receiver_type(type.type)
+      when RBS::Types::Bases::Nil
+        []
+      else
+        [type.to_s]
       end
     end
 

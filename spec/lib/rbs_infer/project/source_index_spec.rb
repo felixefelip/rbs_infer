@@ -78,6 +78,56 @@ RSpec.describe RbsInfer::Project::SourceIndex do
     ).to contain_exactly(caller)
   end
 
+  # felixefelip/rbs_infer#131: a caller that reaches the target through a value —
+  # a view ivar, a local, a `Current.<attr>` — never spells the class name, so the
+  # constant index cannot find it. The method name is the only trace left.
+  describe "#files_calling" do
+    it "encontra o caller por método chamado, sem a constante no arquivo" do
+      view = write_file("show.html.erb", "<%= Current.caderneta.qtde_por_vacina(vacina) %>")
+
+      index = described_class.new([view])
+
+      expect(index.files_referencing("Caderneta")).to be_empty
+      expect(index.files_calling("qtde_por_vacina")).to contain_exactly(view)
+    end
+
+    it "indexa cada elo de uma cadeia de chamadas" do
+      f = write_file("a.rb", "Current.user.posts_titled_like(post)")
+
+      index = described_class.new([f])
+
+      expect(index.files_calling("user")).to contain_exactly(f)
+      expect(index.files_calling("posts_titled_like")).to contain_exactly(f)
+    end
+
+    it "indexa predicados e bangs" do
+      f = write_file("a.rb", "account.matches?(post); record.save!")
+
+      index = described_class.new([f])
+
+      expect(index.files_calling("matches?")).to contain_exactly(f)
+      expect(index.files_calling("save!")).to contain_exactly(f)
+    end
+
+    # Only explicit-receiver calls. A bare call has no `.` and is covered by the
+    # mixin graph (`files_reaching`), which knows which hosts a module reaches.
+    it "não indexa chamadas sem receiver" do
+      f = write_file("a.rb", "qtde_por_vacina(vacina)")
+
+      index = described_class.new([f])
+
+      expect(index.files_calling("qtde_por_vacina")).to be_empty
+    end
+
+    it "retorna array vazio para método não chamado" do
+      f = write_file("a.rb", "puts 'hello'")
+
+      index = described_class.new([f])
+
+      expect(index.files_calling("whatever")).to be_empty
+    end
+  end
+
   it "não confunde constantes CamelCase adjacentes a underscores" do
     # `Foo_Bar` é uma constante distinta de `Foo` e de `Bar`; o lookup por
     # `Foo` não deve casar o arquivo que só referencia `Foo_Bar`.

@@ -32,4 +32,13 @@ class User < ApplicationRecord
   def recent_posts(limit = 5)
     posts.order(created_at: :desc).limit(limit)
   end
+
+  # Called from ONE place: dashboard/show.html.erb, on a `Current.user` receiver,
+  # inside `@recent_posts.each do |post|`. Both halves of that call site used to be
+  # invisible (felixefelip/rbs_infer#131) — the template never spells `User`, so it
+  # was not a candidate caller, and `Current.user` is nilable, so its type never
+  # matched the target. `post` is typed here only because both were fixed.
+  def posts_titled_like(post)
+    posts.where(title: post.title).count
+  end
 end
