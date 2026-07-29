@@ -41,8 +41,8 @@ class Example13
     def run_safe_navigation: () -> String?
     def act_safe_navigation: () -> String
     def guard_conjunction: () -> untyped
-    def run_conjunction: () -> untyped
-    def act_conjunction: () -> untyped
+    def run_conjunction: () -> String?
+    def act_conjunction: () -> String
     def guard_implicit_return: () -> bool?
     def run_implicit_return: () -> String?
     def act_implicit_return: () -> String
