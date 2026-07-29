@@ -400,6 +400,28 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # Halting-guard grammar (felixefelip/steep#105). What the fixture DEMONSTRATES is
+  # a steep behavior, pinned by spec/expectations/steep_baseline.txt; this snapshot
+  # pins the premise instead. Every gap there shows up as a nil-deref error, which
+  # only happens while `Example13Registry.user` is nilable — if inference ever made
+  # that reader non-nil the ten baseline entries would vanish and read as ten gaps
+  # closed. Here the nilability is explicit, so the two failures can't be confused.
+  it "example13" do
+    name = "models/example13"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example13.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # The RBS the analyzer derives FROM the runtime pseudo-code, snapshotted next to
   # the pseudo-code itself. The two together localize a regression: the `.rb`
   # changed => generator bug; identical `.rb` with a different `.rbs` => inference
