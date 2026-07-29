@@ -3,6 +3,26 @@ class Example13
 end
 
 class Example13
+  class Registry
+    self.@registry_instance: Registry?
+
+    module GeneratedAttributes
+      attr_accessor user: (Example13Viewer? | nil)?
+      attr_accessor tenant: (Example13Tenant | nil)?
+      attr_writer registry_instance: untyped
+    end
+
+    include GeneratedAttributes
+
+    def self.registry_instance: () -> Example13::Registry
+    def self.user: () -> (Example13Viewer? | nil)?
+    def self.user=: ((Example13Viewer? | nil) value) -> (Example13Viewer? | nil)
+    def self.tenant: () -> (Example13Tenant | nil)?
+    def self.tenant=: ((Example13Tenant | nil) value) -> (Example13Tenant | nil)
+  end
+end
+
+class Example13
   class Guarded
     @name: String
     @halted: false | true
@@ -33,24 +53,6 @@ class Example13
     def run_composite: () -> untyped
     def act_composite: () -> untyped
   end
-end
-
-class Example13Registry
-  self.@registry_instance: Example13Registry?
-
-  module GeneratedAttributes
-    attr_accessor user: (Example13Viewer? | nil)?
-    attr_accessor tenant: (Example13Tenant | nil)?
-    attr_writer registry_instance: untyped
-  end
-
-  include GeneratedAttributes
-
-  def self.registry_instance: () -> Example13Registry
-  def self.user: () -> (Example13Viewer? | nil)?
-  def self.user=: ((Example13Viewer? | nil) value) -> (Example13Viewer? | nil)
-  def self.tenant: () -> (Example13Tenant | nil)?
-  def self.tenant=: ((Example13Tenant | nil) value) -> (Example13Tenant | nil)
 end
 
 class Example13Viewer

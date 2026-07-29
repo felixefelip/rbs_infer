@@ -15,6 +15,45 @@ class Example13
   # `# should:` vs `# actual:` records today's behavior and flips when the fork
   # closes the gap. Errors are pinned by spec/expectations/steep_baseline.txt.
   # ---------------------------------------------------------------------------
+  # Byte-for-byte example3's memoized-singleton holder, which is what
+  # `ActiveSupport::CurrentAttributes` amounts to: `Registry.user` is a constant
+  # attribute with a nilable reader, reachable by the const-path machinery.
+  #
+  # Nested, like its example3 counterpart. It could not be until
+  # felixefelip/steep#106: the guard's fact was written to the sidecar under the
+  # SOURCE SPELLING (`Registry.user`) while the read resolved
+  # `Example13::Registry.user`, so the two never met and the CONTROL failed for a
+  # keying reason rather than a guard-grammar one. Now that both sides resolve,
+  # this also stands as the regression guard for that fix.
+  class Registry
+    module GeneratedAttributes
+      attr_accessor :user, :tenant
+      attr_writer :registry_instance
+    end
+
+    include GeneratedAttributes
+
+    def self.registry_instance
+      @registry_instance ||= Registry.new
+    end
+
+    def self.user
+      registry_instance.user
+    end
+
+    def self.user=(value)
+      registry_instance.user = value
+    end
+
+    def self.tenant
+      registry_instance.tenant
+    end
+
+    def self.tenant=(value)
+      registry_instance.tenant = value
+    end
+  end
+
   class Guarded
     def initialize(name:)
       @name = name
@@ -48,7 +87,7 @@ class Example13
         return
       end
 
-      Example13Registry.user = current_user
+      Registry.user = current_user
     end
 
     def run_supported
@@ -59,7 +98,7 @@ class Example13
     end
 
     def act_supported
-      Example13Registry.user.name.upcase # should: no error; actual: no error
+      Registry.user.name.upcase # should: no error; actual: no error
     end
 
     # -------------------------------------------------------------------------
@@ -76,7 +115,7 @@ class Example13
     # non-nil in a real app's authorization layer.
     # -------------------------------------------------------------------------
     def guard_const_tested
-      unless Example13Registry.user
+      unless Registry.user
         halt
         return
       end
@@ -90,17 +129,17 @@ class Example13
     end
 
     def act_const_tested
-      Example13Registry.user.name.upcase # should: no error; actual: error (gap 1)
+      Registry.user.name.upcase # should: no error; actual: error (gap 1)
     end
 
     # -------------------------------------------------------------------------
     # GAP 1b — safe-navigation truthiness. `&.` on nil yields nil, so a truthy
-    # `Example13Registry.user&.active?` proves the receiver non-nil EXACTLY,
+    # `Registry.user&.active?` proves the receiver non-nil EXACTLY,
     # with no knowledge of what `active?` returns. Blocked by the same
     # `presence_condition_method` shape check as gap 1.
     # -------------------------------------------------------------------------
     def guard_safe_navigation
-      unless Example13Registry.user&.active?
+      unless Registry.user&.active?
         halt
         return
       end
@@ -114,7 +153,7 @@ class Example13
     end
 
     def act_safe_navigation
-      Example13Registry.user.name.upcase # should: no error; actual: error (gap 1b)
+      Registry.user.name.upcase # should: no error; actual: error (gap 1b)
     end
 
     # -------------------------------------------------------------------------
@@ -123,7 +162,7 @@ class Example13
     # the whole condition. Today the `and` node isn't a send, so nothing is read.
     # -------------------------------------------------------------------------
     def guard_conjunction
-      unless Example13Registry.tenant && Example13Registry.user
+      unless Registry.tenant && Registry.user
         halt
         return
       end
@@ -137,7 +176,7 @@ class Example13
     end
 
     def act_conjunction
-      Example13Registry.user.name.upcase # should: no error; actual: error (gap 1c)
+      Registry.user.name.upcase # should: no error; actual: error (gap 1c)
     end
 
     # -------------------------------------------------------------------------
@@ -216,7 +255,7 @@ class Example13
     # method's last statement.
     # -------------------------------------------------------------------------
     def guard_composite
-      unless Example13Registry.tenant && Example13Registry.user&.active?
+      unless Registry.tenant && Registry.user&.active?
         with_format do |_format|
           halt
         end
@@ -231,62 +270,20 @@ class Example13
     end
 
     def act_composite
-      Example13Registry.user.name.upcase # should: no error; actual: error (composite)
+      Registry.user.name.upcase # should: no error; actual: error (composite)
     end
   end
 
   # The call site. Pins `name` to `String` and — exactly as example3 does — makes
-  # both `Example13Registry` slots nilable by writing nil to them, so the
+  # both `Registry` slots nilable by writing nil to them, so the
   # nilability comes from the code rather than from an annotation.
   def self.run
-    Example13Registry.tenant = Example13Tenant.new(label: 'acme')
+    Registry.tenant = Example13Tenant.new(label: 'acme')
 
-    Example13Registry.user = nil
-    Example13Registry.tenant = nil
+    Registry.user = nil
+    Registry.tenant = nil
 
     Guarded.new(name: 'John Doe').run_composite
-  end
-end
-
-# Byte-for-byte example3's memoized-singleton holder, which is what
-# `ActiveSupport::CurrentAttributes` amounts to: `Example13Registry.user` is a
-# constant attribute with a nilable reader, reachable by the const-path
-# machinery.
-#
-# TOP-LEVEL ON PURPOSE, unlike its example3 counterpart. Nested inside
-# `Example13`, the CONTROL below fails too — the guard's fact is written to the
-# sidecar under the SOURCE SPELLING (`Registry.user`, measured) while the read is
-# resolved to `Example13::Registry.user`, so the two never meet. That is a
-# separate gap from the ones this file is about, and a real app rarely hits it
-# because `Current` is top-level; an engine's `MyEngine::Current` would. Kept
-# out of the way here so every failure below is attributable to the guard
-# grammar and nothing else.
-class Example13Registry
-  module GeneratedAttributes
-    attr_accessor :user, :tenant
-    attr_writer :registry_instance
-  end
-
-  include GeneratedAttributes
-
-  def self.registry_instance
-    @registry_instance ||= Example13Registry.new
-  end
-
-  def self.user
-    registry_instance.user
-  end
-
-  def self.user=(value)
-    registry_instance.user = value
-  end
-
-  def self.tenant
-    registry_instance.tenant
-  end
-
-  def self.tenant=(value)
-    registry_instance.tenant = value
   end
 end
 

@@ -282,8 +282,8 @@ postconditions:
   method: run
   unconditional:
     consts:
-      Example13Registry.tenant: "::Example13Tenant"
-      Example13Registry.user: nil
+      Example13::Registry.tenant: "::Example13Tenant"
+      Example13::Registry.user: nil
 - class: Example13::Guarded
   method: guard_block_halt
   effects:
@@ -324,7 +324,7 @@ postconditions:
       gate_ivar: "@halted"
       type: "::Example13Viewer"
   conditional_const_returns:
-    Example13Registry.user:
+    Example13::Registry.user:
       gate_ivar: "@halted"
       type: "::Example13Viewer"
 - class: Example13::Guarded
@@ -381,7 +381,7 @@ postconditions:
   effects:
     may_write:
     - "@halted"
-- class: Example13Registry
+- class: Example13::Registry
   method: registry_instance
   effects:
     may_write:
@@ -414,27 +414,32 @@ postconditions:
   method: gap_alias_read
   unconditional:
     consts:
-      Foo.user: "::Example3::User"
+      Example3::Foo.name: "::String"
+      Example3::Foo.user: "::Example3::User"
 - class: Example3
   method: gap_alias_write
   unconditional:
     consts:
-      Foo.user: "::Example3::User"
+      Example3::Foo.name: "::String"
+      Example3::Foo.user: "::Example3::User"
 - class: Example3
   method: gap_callee_mutation
   unconditional:
     consts:
-      Foo.user: "::Example3::User"
+      Example3::Foo.name: "::String"
+      Example3::Foo.user: "::Example3::User"
 - class: Example3
   method: gap_conditional
   unconditional:
     consts:
-      Foo.user: "::Example3::User"
+      Example3::Foo.name: "::String"
+      Example3::Foo.user: "::Example3::User"
 - class: Example3
   method: run
   unconditional:
     consts:
-      Foo.user: "::Example3::User"
+      Example3::Foo.name: "::String"
+      Example3::Foo.user: "::Example3::User"
 - class: Example3::Foo
   method: user=
   unconditional:
@@ -1246,7 +1251,7 @@ method_entry_facts:
   self_methods:
     current_user: "::Example13Viewer"
   consts:
-    Example13Registry.user: "::Example13Viewer"
+    Example13::Registry.user: "::Example13Viewer"
 - class: Example4
   method: run_foo_name
   consts:
