@@ -289,6 +289,10 @@ postconditions:
   effects:
     may_write:
     - "@halted"
+  conditional_returns:
+    current_user:
+      gate_ivar: "@halted"
+      type: "::Example13Viewer"
 - class: Example13::Guarded
   method: guard_composite
   effects:
@@ -1261,6 +1265,10 @@ method_entry_facts:
   method: dispatch_name
   ivars:
     "@name": "::String"
+- class: Example13::Guarded
+  method: act_block_halt
+  self_methods:
+    current_user: "::Example13Viewer"
 - class: Example13::Guarded
   method: act_conjunction
   consts:

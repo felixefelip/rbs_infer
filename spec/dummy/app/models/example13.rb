@@ -225,20 +225,24 @@ class Example13
     end
 
     # -------------------------------------------------------------------------
-    # GAP 3 — the halt sits inside a block. Also the CONTROL's condition, also
-    # with the literal `return`; only the halt moved one block in.
+    # GAP 3 — CLOSED by felixefelip/steep#110. The halt sits inside a block.
+    # Also the CONTROL's condition, also with the literal `return`; only the halt
+    # moved one block in.
     #
-    # `walk_sends` already handles block-nested sends, so the guard IS
-    # recognized — but `halting_gate` returns the FIRST bare self-send it walks
-    # to, which here is the block-taking `with_format`, not the `halt` inside.
-    # `Runner#resolve_gates!` then looks for the ivar `with_format` writes,
-    # finds none, and drops the spec. The gate should be a list of candidates,
-    # with the runner keeping the first that resolves.
+    # The guard WAS recognized — `walk_sends` has always handled block-nested
+    # sends. What failed was naming the gate: `halting_gate` committed to the
+    # FIRST bare self-send, here the block-taking `with_format`, which writes
+    # nothing, so `Runner#resolve_gates!` found no ivar and dropped the spec.
     #
-    # Because the condition tests a SELF-METHOD, the failure also surfaces one
+    # No position is reliably the halt: this shape puts it last, while
+    # `redirect_to root_path` puts it first (the second send is an argument). So
+    # the gate became a list of candidates in source order, resolved by the
+    # Runner — which is the side that knows which of them writes what.
+    #
+    # Because the condition tests a SELF-METHOD, the failure also surfaced one
     # frame up, as a precondition contract error on the call to the action
-    # (`requires `self.current_user` to be non-nil here`) — the checker
-    # naming the exact fact the guard was supposed to supply.
+    # (`requires `self.current_user` to be non-nil here`) — the checker naming
+    # the exact fact the guard was supposed to supply.
     # -------------------------------------------------------------------------
     def guard_block_halt
       unless current_user
@@ -257,7 +261,7 @@ class Example13
     end
 
     def act_block_halt
-      current_user.name.upcase # should: no error; actual: error (gap 3)
+      current_user.name.upcase # should: no error; actual: no error
     end
 
     # -------------------------------------------------------------------------

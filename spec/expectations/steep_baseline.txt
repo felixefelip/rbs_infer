@@ -10,10 +10,7 @@ app/models/example10.rb:27:26: [error] Type `(::String | nil)` does not have met
 app/models/example13.rb:220:6: [error] `act_implicit_return` requires `self.current_user.name` to be non-nil here
 app/models/example13.rb:220:6: [error] `act_implicit_return` requires `self.current_user` to be non-nil here
 app/models/example13.rb:224:19: [error] Type `(::Example13Viewer | nil)` does not have method `name`
-app/models/example13.rb:256:6: [error] `act_block_halt` requires `self.current_user.name` to be non-nil here
-app/models/example13.rb:256:6: [error] `act_block_halt` requires `self.current_user` to be non-nil here
-app/models/example13.rb:260:19: [error] Type `(::Example13Viewer | nil)` does not have method `name`
-app/models/example13.rb:286:20: [error] Type `(::Example13Viewer | nil)` does not have method `name`
+app/models/example13.rb:290:20: [error] Type `(::Example13Viewer | nil)` does not have method `name`
 app/models/example3.rb:122:11: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:63:13: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:64:26: [error] Type `(::Example3::User | nil)` does not have method `name`

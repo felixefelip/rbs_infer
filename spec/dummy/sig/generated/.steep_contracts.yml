@@ -124,41 +124,7 @@ methods:
         receiver:
           kind: self
         method: body
-  Example13::Guarded#act_block_halt:
-    requires:
-    - kind: not_nil
-      expr:
-        kind: send
-        receiver:
-          kind: self
-        method: current_user
-    - kind: not_nil
-      expr:
-        kind: send
-        receiver:
-          kind: self
-        method: current_user
-        chain:
-        - name
-    enforced: false
   Example13::Guarded#act_implicit_return:
-    requires:
-    - kind: not_nil
-      expr:
-        kind: send
-        receiver:
-          kind: self
-        method: current_user
-    - kind: not_nil
-      expr:
-        kind: send
-        receiver:
-          kind: self
-        method: current_user
-        chain:
-        - name
-    enforced: false
-  Example13::Guarded#run_block_halt:
     requires:
     - kind: not_nil
       expr:
