@@ -304,6 +304,10 @@ postconditions:
   effects:
     may_write:
     - "@halted"
+  conditional_const_returns:
+    Example13::Registry.user:
+      gate_ivar: "@halted"
+      type: "::Example13Viewer"
 - class: Example13::Guarded
   method: guard_implicit_return
   effects:
@@ -1246,6 +1250,10 @@ method_entry_facts:
   method: dispatch_name
   ivars:
     "@name": "::String"
+- class: Example13::Guarded
+  method: act_const_tested
+  consts:
+    Example13::Registry.user: "::Example13Viewer"
 - class: Example13::Guarded
   method: act_supported
   self_methods:

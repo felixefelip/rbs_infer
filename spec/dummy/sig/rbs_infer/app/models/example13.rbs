@@ -35,8 +35,8 @@ class Example13
     def run_supported: () -> String?
     def act_supported: () -> String
     def guard_const_tested: () -> untyped
-    def run_const_tested: () -> untyped
-    def act_const_tested: () -> untyped
+    def run_const_tested: () -> String?
+    def act_const_tested: () -> String
     def guard_safe_navigation: () -> untyped
     def run_safe_navigation: () -> untyped
     def act_safe_navigation: () -> untyped
