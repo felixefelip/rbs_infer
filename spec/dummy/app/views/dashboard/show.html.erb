@@ -21,5 +21,12 @@
   <% @recent_posts.each do |post| %>
     <h3><%= link_to post.title, post %></h3>
     <span><%= post.author_name %></span>
+
+    <%# Two call sites into models that this template never names. `post` is the block
+        parameter of the iteration above, so its type comes from the collection element
+        — the argument side always worked; what did not was the template being read as
+        a caller at all (felixefelip/rbs_infer#131). %>
+    <span><%= Current.user.posts_titled_like(post) %></span>
+    <span><%= @account.matches?(post) %></span>
   <% end %>
 </div>

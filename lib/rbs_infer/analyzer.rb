@@ -792,7 +792,15 @@ module RbsInfer
     # constant-reference index misses them. For a module target, fold in the
     # mixin graph and force bare-call matching on those files (#64).
     reaching = @is_module ? mixin_index.files_reaching(@target_class).to_set : Set.new
-    (referencing.to_set | reaching).each do |file|
+
+    # A caller that reaches the target through a VALUE — an ivar, a local, a
+    # `Current.<attr>` — never spells the class name, so the constant index above
+    # does not return it. Add the files that call one of the target's own methods
+    # on some receiver; `match_class?` still has to prove that receiver is the
+    # target before the call site is used (felixefelip/rbs_infer#131).
+    calling = target_methods.keys.flat_map { |m| @source_index.files_calling(m) }.to_set
+
+    (referencing.to_set | reaching | calling).each do |file|
       analyzer.analyze(file, force_bare: reaching.include?(file))
     end
 

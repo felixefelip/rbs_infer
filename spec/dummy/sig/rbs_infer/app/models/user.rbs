@@ -8,4 +8,5 @@ class User < ApplicationRecord
   def active?: () -> bool?
   def posts_count: () -> Integer
   def recent_posts: (?Integer limit) -> User_Post::ActiveRecord_Associations_CollectionProxy
+  def posts_titled_like: ((Post & Post::Validated) post) -> Integer
 end

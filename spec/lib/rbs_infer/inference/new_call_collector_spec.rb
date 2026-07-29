@@ -342,6 +342,66 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       expect(visitor.method_call_usages["qtde_por_vacina"]).to eq([{ "vacina" => "Vacina" }])
     end
 
+    # felixefelip/rbs_infer#131. Decomposing only the intersection left every
+    # NILABLE receiver unmatched, and a CurrentAttributes reader is honestly nilable
+    # (per-request reset) — so `Current.<attr>.method(arg)` never contributed an
+    # argument type anywhere in the app, silently.
+    {
+      "nilable" => "(Caderneta & Caderneta::Validated)?",
+      "union of the ivar's write shapes" => "((Caderneta & Caderneta::Validated) | Caderneta)?",
+      "plain nilable, no marker" => "Caderneta?"
+    }.each do |shape, receiver_type|
+      it "matches a target call whose receiver resolves to a #{shape} type" do
+        source = "caderneta.qtde_por_vacina(v)"
+        result = Prism.parse(source)
+        visitor = described_class.new(
+          target_class: "Caderneta",
+          method_return_types: { "caderneta" => receiver_type, "v" => "Vacina" },
+          local_var_types: {},
+          target_methods: { "qtde_por_vacina" => ["vacina"] },
+          constant_arg_resolver: null_constant_resolver,
+          defined_class_names: described_class.collect_defined_class_names(result.value)
+        )
+        result.value.accept(visitor)
+
+        expect(visitor.method_call_usages["qtde_por_vacina"]).to eq([{ "vacina" => "Vacina" }])
+      end
+    end
+
+    it "still refuses a receiver that is not the target" do
+      source = "vacina.qtde_por_vacina(v)"
+      result = Prism.parse(source)
+      visitor = described_class.new(
+        target_class: "Caderneta",
+        method_return_types: { "vacina" => "(Vacina & Vacina::Validated)?", "v" => "Vacina" },
+        local_var_types: {},
+        target_methods: { "qtde_por_vacina" => ["vacina"] },
+        constant_arg_resolver: null_constant_resolver,
+        defined_class_names: described_class.collect_defined_class_names(result.value)
+      )
+      result.value.accept(visitor)
+
+      expect(visitor.method_call_usages).to be_empty
+    end
+
+    # `singleton(Caderneta)` is the CLASS, not an instance of it. A class-method
+    # call must not be read as a call on an instance.
+    it "does not match a singleton receiver against the instance target" do
+      source = "klass.qtde_por_vacina(v)"
+      result = Prism.parse(source)
+      visitor = described_class.new(
+        target_class: "Caderneta",
+        method_return_types: { "klass" => "singleton(Caderneta)", "v" => "Vacina" },
+        local_var_types: {},
+        target_methods: { "qtde_por_vacina" => ["vacina"] },
+        constant_arg_resolver: null_constant_resolver,
+        defined_class_names: described_class.collect_defined_class_names(result.value)
+      )
+      result.value.accept(visitor)
+
+      expect(visitor.method_call_usages).to be_empty
+    end
+
     # Peça A: inside a method whose `self` is callback-refined, a
     # `self.<association>` used as the receiver OR as an argument resolves
     # against that refined self (the marker-decorated reader), not the base
