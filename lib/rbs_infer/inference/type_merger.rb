@@ -131,7 +131,12 @@ module RbsInfer::Inference
         owner = collector.owner_of(defn)
         member = members.find { |m| m.kind == kind && m.name == method_name && m.owner == owner }
         next unless member
-        next unless member.signature.end_with?("-> untyped")
+        # A record assembled by the syntax-only pass may retain an `untyped`
+        # field even though the RHS of its enclosing assignment is resolvable.
+        # Keep those members in this pass so an indexed write such as
+        # `cookies[:token] = { value: session.signed_id }` can refine the
+        # record from the typed RHS rather than from the (untyped) writer.
+        next unless member.signature.end_with?("-> untyped") || unresolved_record_return?(member.signature)
         next if method_name == "initialize"
 
         # 0. Direct ivar read/write as the last expression
@@ -186,7 +191,7 @@ module RbsInfer::Inference
           self_ctx = self_return_type_context(known_return_types, class_return_types, kind)
           resolved = infer_call_return_type(last_stmt, self_ctx, method_type_resolver, local_types: local_types)
           if resolved
-            member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(resolved)}")
+            replace_return_type(member, resolved)
             own_return_types[method_name] = resolved
             next
           end
@@ -268,11 +273,43 @@ module RbsInfer::Inference
       rhs = call_node.arguments&.arguments&.last
       return nil unless rhs
 
-      type = infer_literal_type(rhs) ||
+      type = resolved_record_type(rhs, self_ctx, method_type_resolver, local_types: local_types) ||
+             infer_literal_type(rhs) ||
              resolve_receiver_type(rhs, self_ctx, method_type_resolver, local_types: local_types)
       return nil if type.nil? || type == "untyped"
 
       call_node.safe_navigation? ? RbsInfer::Signatures::RbsParserUtil.nilablize(type) : type
+    end
+
+    # The generic type of an assignment expression follows its writer, which is
+    # often `untyped` for framework objects (e.g. `cookies[...] = value`). Ruby
+    # nevertheless evaluates assignment syntax to its RHS. For record RHSs,
+    # resolve each field here so calls such as `session.signed_id` don't remain
+    # `untyped` merely because they are nested inside a hash literal.
+    def resolved_record_type(node, self_ctx, method_type_resolver, local_types:)
+      return unless node.is_a?(Prism::HashNode)
+      return if node.elements.any? { |element| element.is_a?(Prism::AssocSplatNode) }
+
+      assocs = node.elements.select { |element| element.is_a?(Prism::AssocNode) }
+      return if assocs.empty? || !assocs.all? { |assoc| assoc.key.is_a?(Prism::SymbolNode) }
+
+      pairs = assocs.map do |assoc|
+        type = infer_literal_type(assoc.value) ||
+               resolve_receiver_type(assoc.value, self_ctx, method_type_resolver, local_types: local_types)
+        return if type.nil? || type == "untyped"
+
+        "#{assoc.key.unescaped}: #{type}"
+      end
+
+      "{ #{pairs.join(", ")} }"
+    end
+
+    def unresolved_record_return?(signature)
+      signature.match?(/-> \{.*\buntyped\b.*\}\z/)
+    end
+
+    def replace_return_type(member, type)
+      member.signature = member.signature.sub(/-> .+\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(type)}")
     end
 
     # Extrai nome do método quando o receiver é self implícito ou explícito

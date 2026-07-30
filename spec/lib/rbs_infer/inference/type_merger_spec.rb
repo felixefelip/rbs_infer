@@ -73,6 +73,33 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
   end
 
   describe "#resolve_method_return_types_from_attrs" do
+    it "refines record fields in the RHS of an indexed assignment" do
+      source = <<~RUBY
+        class CookieWriter
+          def set_current_session(session)
+            cookies[:session_token] = { value: session.signed_id, httponly: true, same_site: :lax }
+          end
+        end
+      RUBY
+      result = Prism.parse(source)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
+      result.value.accept(collector)
+      member = collector.members.find { |candidate| candidate.name == "set_current_session" }
+      resolver = instance_double("MethodTypeResolver")
+      allow(resolver).to receive(:resolve).with("Session", "signed_id").and_return("String")
+
+      merger.resolve_method_return_types_from_attrs(
+        collector.members,
+        {},
+        method_type_resolver: resolver,
+        parsed_target: parsed_target,
+        method_param_types: { "set_current_session" => { "session" => "Session" } }
+      )
+
+      expect(member.signature).to end_with("-> { value: String, httponly: bool, same_site: Symbol }")
+    end
+
     it "não corrompe assinatura de método com bloco ao resolver return type" do
       source = <<~RUBY
         class Foo
