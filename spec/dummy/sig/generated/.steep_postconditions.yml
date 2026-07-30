@@ -432,6 +432,40 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example14
+  method: halt
+  unconditional:
+    ivars:
+      "@halted": 'true'
+    self: "::Example14 & ::Example14::AfterHalt"
+  effects:
+    may_write:
+    - "@halted"
+- class: Example14
+  method: run
+  effects:
+    may_write:
+    - "@halted"
+    - "@user"
+- class: Example14
+  method: set_user
+  unconditional:
+    ivars:
+      "@user": "::Example14::User"
+    self: "::Example14 & ::Example14::AfterSetUser"
+  effects:
+    may_write:
+    - "@user"
+- class: Example14
+  method: verify
+  effects:
+    may_write:
+    - "@halted"
+    - "@user"
+- class: Example14::User
+  method: initialize
+  effects:
+    returns_ivar: "@name"
 - class: Example2::Foo
   method: user=
   unconditional:
@@ -1342,6 +1376,10 @@ method_entry_facts:
   method: user
   consts:
     Example13::Registry.user: "::Example13Viewer"
+- class: Example14
+  method: halt
+  ivars:
+    "@user": "::Example14::User"
 - class: Example4
   method: run_foo_name
   consts:
