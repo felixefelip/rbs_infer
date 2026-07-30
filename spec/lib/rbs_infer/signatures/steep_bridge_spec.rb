@@ -4,6 +4,45 @@ require "rbs_infer"
 RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
   subject(:bridge) { described_class.new }
 
+  describe "#local_var_read_types" do
+    # felixefelip/rbs_infer#142. The per-method map holds one type per variable
+    # and so cannot express narrowing; the per-read map is where Steep's
+    # narrowing actually lives.
+    it "gives the narrowed type at a read the per-method map reports as nilable" do
+      code = <<~RUBY
+        class Foo
+          def bar
+            if user = User.where(active: true).first
+              puts user
+            end
+          end
+        end
+      RUBY
+
+      expect(bridge.local_var_types_per_method(code)["bar"]["user"])
+        .to eq("(User & User::Validated)?")
+
+      reads = bridge.local_var_read_types(code)
+      expect(reads.values).to include("(User & User::Validated)")
+      expect(reads.values).not_to include("(User & User::Validated)?")
+    end
+
+    it "keys by line and character column" do
+      code = <<~RUBY
+        class Foo
+          def bar
+            user = User.where(active: true).first
+            puts user
+          end
+        end
+      RUBY
+
+      reads = bridge.local_var_read_types(code)
+      # `puts user` on line 4, `user` starting at column 9 (0-based).
+      expect(reads[[4, 9]]).to eq("(User & User::Validated)?")
+    end
+  end
+
   describe "#local_var_types_per_method" do
     it "resolves constant receiver method calls" do
       code = <<~RUBY
