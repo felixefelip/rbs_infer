@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
+require "set"
 require "active_support/core_ext/string/inflections"
 require_relative "../../../../ast/lexical_constant_resolver"
+require_relative "reflection_scanner"
 
 module RbsInfer
   module Extensions
@@ -42,6 +44,7 @@ module RbsInfer
             def initialize(models:)
               @models = models
               @by_class = models.to_h { |m| [m.class_name, m] }
+              @elements = {}
             end
 
             # Returns [FileEntry], or [] when nothing qualifies (no model has a
@@ -86,7 +89,7 @@ module RbsInfer
                   # emitting it), so `owner.<assoc>` types via this pseudo-code.
                   # An element outside the scanned models can't be modeled
                   # (its class/proxy may not exist), so it's skipped.
-                  element = resolve_element(model.class_name, assoc.class_name)
+                  element = element_for(model, assoc)
                   next unless element
 
                   plan[model.class_name][:getters] << {
@@ -149,23 +152,48 @@ module RbsInfer
             # `owner`) so rbs_infer types `owner` from the getter call-site.
             # When the element has an inverse belongs_to back at the owner, the
             # proxy also gets the construction flow (`build`/`create`/`create!`);
-            # without one (e.g. a `has_many :through`), only owner capture is
-            # emitted and construction is inherited from the real proxy.
+            # without one, only owner capture is emitted and construction is
+            # inherited from the real proxy.
             def proxy_reopens
-              seen = {}
-              @models.flat_map do |owner|
-                owner.has_many.filter_map do |assoc|
-                  element = resolve_element(owner.class_name, assoc.class_name)
+              proxy_plan.map do |ns, info|
+                FileEntry.new(filename: "#{file_name(ns)}.rb", source: proxy_source(ns, info[:element], info[:inverse]))
+              end
+            end
+
+            # ns => { element:, inverse: }.
+            #
+            # The namespace is per (owner, ELEMENT) pair, so several associations
+            # can land on the same one — `comments` and `accessible_comments` are
+            # both User -> Comment. The candidate that models construction wins
+            # whatever the declaration order is: a concern's `include` sits above
+            # the class's own macros, so `accessible_comments` is reached first,
+            # and taking the first would strip `user.comments.create` of its
+            # construction flow.
+            def proxy_plan
+              plan = {}
+
+              @models.each do |owner|
+                owner.has_many.each do |assoc|
+                  element = element_for(owner, assoc)
                   next unless element
 
                   ns = proxy_namespace(owner.class_name, element.class_name)
-                  next if seen[ns]
-
-                  seen[ns] = true
-                  inverse = element.inverse_belongs_to_for(owner.class_name)
-                  FileEntry.new(filename: "#{file_name(ns)}.rb", source: proxy_source(ns, element.class_name, inverse))
+                  inverse = inverse_for(owner, assoc, element)
+                  plan[ns] = { element: element.class_name, inverse: inverse } if inverse || !plan.key?(ns)
                 end
               end
+
+              plan
+            end
+
+            # The belongs_to that `build` establishes from the owner — none for a
+            # `through:` association: Active Record builds the element WITHOUT
+            # pointing it back at the owner there (`user.accessible_cards.build`
+            # leaves `creator` unset, since the row that links them lives on the
+            # join). Emitting `record.creator = owner` would hand the contract
+            # machinery a fact the runtime never establishes.
+            def inverse_for(owner, assoc, element)
+              element.inverse_belongs_to_for(owner.class_name) unless assoc.through
             end
 
             def proxy_source(ns, element_class, inverse)
@@ -231,8 +259,80 @@ module RbsInfer
               "#{(header + lines).join("\n")}\n"
             end
 
-            # The model an association names, resolved the way Ruby (and therefore
-            # `ActiveRecord::Base.compute_type`) resolves the constant: from the owner's
+            # --- element resolution ------------------------------------------
+
+            # The model a `has_many`'s elements are, resolved the way Active
+            # Record resolves it: by walking the `through:` chain when there is
+            # one, and otherwise from the written (or conventional) class name.
+            # nil when the element is outside the scanned models — neither its
+            # class nor its proxy would exist, so it cannot be modeled.
+            #
+            # Deriving it from the ASSOCIATION NAME alone dropped every through
+            # association whose name is not the element's: `has_many
+            # :accessible_cards, through: :boards, source: :cards` guessed
+            # `AccessibleCard`, found no such model, and emitted neither the
+            # getter nor the proxy — `user.accessible_cards` had no type at all
+            # (felixefelip/rbs_infer#141).
+            def element_for(owner, assoc, seen = Set.new)
+              key = [owner.class_name, assoc.name]
+              return @elements[key] if @elements.key?(key)
+              return nil unless seen.add?(key)
+
+              @elements[key] =
+                if assoc.through
+                  # `class_name:` is not what names a through association's
+                  # element (Active Record takes it from the source reflection),
+                  # so the chain decides. The conventional name is the fallback
+                  # for a `through:` this scan cannot follow — a `has_one`, or an
+                  # association declared in a gem.
+                  through_element(owner, assoc, seen) || resolve_constant(assoc.class_name, owner.class_name)
+                else
+                  resolve_constant(assoc.class_name, owner.class_name)
+                end
+            end
+
+            # `has_many :accessible_cards, through: :boards, source: :cards` is
+            # `Card`: hop to the owner's `boards` — itself possibly a through,
+            # hence the recursion, since `accessible_comments` goes through
+            # `accessible_cards` — then read `cards` off THAT model, which is
+            # where the element's name (and any `class_name:` on it) lives.
+            def through_element(owner, assoc, seen)
+              hop = association_named(owner, assoc.through)
+              return nil unless hop
+
+              hop_model = association_element(owner, hop, seen)
+              return nil unless hop_model
+
+              source = source_association(hop_model, assoc)
+              source && association_element(hop_model, source, seen)
+            end
+
+            # The source reflection Active Record looks for: the `source:` name
+            # when given, and otherwise the association's own name in singular
+            # then plural. `has_many :assignees, through: :assignments` reads
+            # `assignee` off `Assignment` — which is where `class_name: "User"`
+            # is written, and why guessing from `assignees` cannot work.
+            def source_association(hop_model, assoc)
+              names = assoc.source ? [assoc.source] : [assoc.name.singularize, assoc.name].uniq
+              names.filter_map { |name| association_named(hop_model, name) }.first
+            end
+
+            def association_named(model, name)
+              model.has_many.find { |a| a.name == name } || model.belongs_to.find { |b| b.name == name }
+            end
+
+            # A hop lands on a model either through a collection — recursing,
+            # since a `through:` can chain — or through a `belongs_to`, which
+            # names its element directly.
+            def association_element(owner, assoc, seen)
+              case assoc
+              when HasMany then element_for(owner, assoc, seen)
+              when BelongsTo then resolve_constant(assoc.class_name, owner.class_name)
+              end
+            end
+
+            # The model a written constant names, resolved the way Ruby (and therefore
+            # `ActiveRecord::Base.compute_type`) resolves it: from the owner's
             # namespace outward. `has_many :recomendacao_vacinas` inside `Caderneta` is
             # `Caderneta::RecomendacaoVacina` when that exists, and only then the top-level
             # `RecomendacaoVacina` (felixefelip/rbs_infer#128).
@@ -243,7 +343,7 @@ module RbsInfer
             # had no type at all. The walk itself lives in `LexicalConstantResolver` —
             # shared with every other site that turns a written constant into a class
             # (felixefelip/rbs_infer#129); the scanned-model table is the oracle.
-            def resolve_element(owner_class, element_class)
+            def resolve_constant(element_class, owner_class)
               found = RbsInfer::AST::LexicalConstantResolver.resolve(
                 name: element_class, enclosing: owner_class
               ) { |candidate| @by_class.key?(candidate) }

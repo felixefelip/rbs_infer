@@ -9,7 +9,14 @@ module RbsInfer
       module ActiveRecord
         module Runtime
           BelongsTo = Struct.new(:name, :class_name, :default_body, keyword_init: true)
-          HasMany   = Struct.new(:name, :class_name, keyword_init: true)
+
+          # `through`/`source` are the `has_many :through` options, kept raw
+          # because the element's class is NOT knowable from this file: it lives
+          # on the model the chain hops to (`has_many :assignees, through:
+          # :assignments` is `User`, because `Assignment belongs_to :assignee,
+          # class_name: "User"`). `class_name` here is the conventional guess
+          # from the association name, which the resolver only falls back to.
+          HasMany   = Struct.new(:name, :class_name, :through, :source, keyword_init: true)
 
           # `before_validation :a, :b` — one entry per macro call, so the
           # declaration ORDER survives the concern splice (Rails runs the
@@ -58,11 +65,6 @@ module RbsInfer
               body.grep(Include).map(&:name)
             end
 
-            # Nothing for the generator to model.
-            def empty?
-              belongs_to.empty? && has_many.empty? && before_validation_callbacks.empty?
-            end
-
             # The `belongs_to` on this model whose target is `owner_class` — the
             # inverse the association-construction path sets (`record.post =
             # owner`). nil when no belongs_to points back at the owner.
@@ -105,7 +107,17 @@ module RbsInfer
 
               is_class = node.is_a?(Prism::ClassNode)
               body = is_class ? class_body(node) : concern_body(node)
-              return nil if body.empty?
+
+              # A CLASS is kept even when it declares nothing, because the set of
+              # scanned classes is also the ORACLE the element resolver consults:
+              # `has_many :data_exports, class_name: "User::DataExport"` is only
+              # modelable if `User::DataExport` is in it, and that model declares
+              # no association of its own (felixefelip/rbs_infer#141). It still
+              # produces no reopen — the builder emits for what needs one.
+              #
+              # A concern that declares nothing has nothing to splice, and is not
+              # a model, so it is dropped here.
+              return nil if !is_class && body.empty?
 
               ModelReflections.new(
                 path: path,
@@ -147,7 +159,12 @@ module RbsInfer
                 )]
               when :has_many
                 name = first_symbol(stmt) or return []
-                [HasMany.new(name: name, class_name: has_many_class(name, stmt))]
+                [HasMany.new(
+                  name: name,
+                  class_name: has_many_class(name, stmt),
+                  through: symbol_kwarg(stmt, "through"),
+                  source: symbol_kwarg(stmt, "source")
+                )]
               when :before_validation
                 names = symbol_args(stmt)
                 names.empty? ? [] : [BeforeValidation.new(names: names)]
@@ -219,13 +236,25 @@ module RbsInfer
             end
 
             def string_kwarg(call, key)
+              node = kwarg(call, key)
+              node.is_a?(Prism::StringNode) ? node.unescaped : nil
+            end
+
+            # `through: :boards` -> "boards". A non-literal (`source: SOURCE`)
+            # names nothing this scan can follow.
+            def symbol_kwarg(call, key)
+              node = kwarg(call, key)
+              node.is_a?(Prism::SymbolNode) ? node.value.to_s : nil
+            end
+
+            def kwarg(call, key)
               hash = call.arguments.arguments.find { |a| a.is_a?(Prism::KeywordHashNode) }
               return nil unless hash
 
               assoc = hash.elements.find do |elem|
                 elem.is_a?(Prism::AssocNode) && elem.key.is_a?(Prism::SymbolNode) && elem.key.value.to_s == key
               end
-              assoc&.value.is_a?(Prism::StringNode) ? assoc.value.unescaped : nil
+              assoc&.value
             end
           end
         end
