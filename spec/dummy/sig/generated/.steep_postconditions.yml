@@ -126,6 +126,12 @@ postconditions:
     - "@user"
 - class: DashboardController
   method: __rbs_infer__run_show
+  unconditional:
+    consts:
+      Current.account: "(::Account & ::Account::Validated)"
+      Current.author_name: "::String"
+      Current.user: "(::User & ::User::Validated)"
+      Current.viewer_name: "::String"
   effects:
     may_write:
     - "@__rbs_infer__performed"
@@ -757,6 +763,11 @@ postconditions:
     - "@post"
 - class: PostsController
   method: __rbs_infer__run_publish
+  unconditional:
+    consts:
+      Current.author_name: "::String"
+      Current.user: "(::User & ::User::Validated)"
+      Current.viewer_name: "::String"
   effects:
     may_write:
     - "@__rbs_infer__performed"
