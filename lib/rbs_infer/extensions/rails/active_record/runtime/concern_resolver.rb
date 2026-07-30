@@ -46,20 +46,43 @@ module RbsInfer
             module_function
 
             # units: every `ModelReflections` scanned, classes and modules.
-            # Returns the CLASS units only, each with its includes expanded and
-            # the ones left with nothing to model dropped.
+            # Returns the CLASS units only, each with its includes expanded.
+            #
+            # A class left with nothing to model is KEPT: this list is also the
+            # table the element resolver looks classes up in, and a model that
+            # declares no association of its own is still a valid element for
+            # someone else's `has_many` (felixefelip/rbs_infer#141). Emitting
+            # nothing for it is the builder's call, not this one's.
             def resolve(units)
-              by_name = units.to_h { |unit| [unit.class_name, unit] }
+              concerns = index_concerns(units)
 
-              units.select { |unit| unit.kind == :class }.filter_map do |unit|
-                resolved = ModelReflections.new(
-                  path: unit.path,
-                  class_name: unit.class_name,
-                  kind: :class,
-                  body: expand(unit, by_name, Set.new)
-                )
-                resolved unless resolved.empty?
-              end
+              units.select { |unit| unit.kind == :class }
+                .group_by(&:class_name)
+                .map { |class_name, reopens| merge(class_name, reopens, concerns) }
+            end
+
+            # Every reopen of the same class is ONE model: Ruby reopens a class
+            # rather than replacing it, so `class Post` written in two files
+            # registers the associations of both.
+            #
+            # Indexing by name and letting one win dropped the other's
+            # reflections: `class Post` reopened only to nest `Post::Archiver`
+            # erased Post's own `belongs_to :user`, and with it the construction
+            # flow of every proxy whose `build` needed that inverse.
+            def merge(class_name, reopens, concerns)
+              ModelReflections.new(
+                path: reopens.first.path,
+                class_name: class_name,
+                kind: :class,
+                body: reopens.flat_map { |unit| expand(unit, concerns, Set.new) }
+              )
+            end
+
+            # Only MODULES are ever spliced, so only modules are in the lookup
+            # table — which also settles what a class and a concern sharing a
+            # name resolve to, without the answer depending on scan order.
+            def index_concerns(units)
+              units.select { |unit| unit.kind == :module }.to_h { |unit| [unit.class_name, unit] }
             end
 
             # The unit's body with every `Include` replaced by the included
@@ -70,7 +93,7 @@ module RbsInfer
             # `visited` makes a re-include a no-op, matching Ruby (a module
             # already in the ancestor chain is not inserted twice) and cutting
             # any cycle a mutually-including pair would create.
-            def expand(unit, by_name, visited)
+            def expand(unit, concerns, visited)
               return [] if visited.include?(unit.class_name)
 
               visited << unit.class_name
@@ -78,20 +101,20 @@ module RbsInfer
               unit.body.flat_map do |entry|
                 next [entry] unless entry.is_a?(Include)
 
-                concern = lookup(entry.name, unit.class_name, by_name)
-                concern && concern.kind == :module ? expand(concern, by_name, visited) : []
+                concern = lookup(entry.name, unit.class_name, concerns)
+                concern ? expand(concern, concerns, visited) : []
               end
             end
 
             # `include Taggable` inside `class Post` is `Post::Taggable` when that
             # exists — Ruby resolves a bare constant from the enclosing namespace
             # outward, and a concern is conventionally nested under its host.
-            def lookup(name, enclosing, by_name)
+            def lookup(name, enclosing, concerns)
               found = RbsInfer::AST::LexicalConstantResolver.resolve(
                 name: name, enclosing: enclosing
-              ) { |candidate| by_name.key?(candidate) }
+              ) { |candidate| concerns.key?(candidate) }
 
-              found && by_name[found]
+              found && concerns[found]
             end
           end
         end

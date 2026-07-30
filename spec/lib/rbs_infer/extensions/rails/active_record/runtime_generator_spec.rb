@@ -332,6 +332,161 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
     end
   end
 
+  # felixefelip/rbs_infer#141. A `has_many :through`'s element class is not
+  # knowable from the association's name: `has_many :accessible_cards, through:
+  # :boards, source: :cards` is `Card`. Guessing `AccessibleCard` found no
+  # scanned model, so the association was dropped whole — no getter, no proxy,
+  # and `user.accessible_cards` with no type at all. 11 of fizzy's 64 has_many
+  # were going out this way.
+  describe "has_many :through element resolution" do
+    ACCESS = "class Access < ApplicationRecord\n  belongs_to :user\n  belongs_to :board\nend\n"
+    BOARD = "class Board < ApplicationRecord\n  has_many :cards\nend\n"
+    CARD = "class Card < ApplicationRecord\n  belongs_to :board\n  has_many :comments\nend\n"
+    CARD_COMMENT = "class Comment < ApplicationRecord\n  belongs_to :card\nend\n"
+
+    ACCESSOR = <<~RUBY
+      class User < ApplicationRecord
+        has_many :accesses
+        has_many :boards, through: :accesses
+        has_many :accessible_cards, through: :boards, source: :cards
+        has_many :accessible_comments, through: :accessible_cards, source: :comments
+      end
+    RUBY
+
+    def accessor_app(extra = {})
+      in_app({
+        "app/models/user.rb" => ACCESSOR,
+        "app/models/access.rb" => ACCESS,
+        "app/models/board.rb" => BOARD,
+        "app/models/card.rb" => CARD,
+        "app/models/comment.rb" => CARD_COMMENT
+      }.merge(extra)) { |dir| yield described_class.new(app_dir: dir).build }
+    end
+
+    it "reads the element off the `source:` association of the through model" do
+      accessor_app do |files|
+        expect(source_of(files, "user.rb")).to match(
+          /def accessible_cards\n\s*User_Card::ActiveRecord_Associations_CollectionProxy\.new\(Card, self\)/
+        )
+      end
+    end
+
+    it "follows a through whose target is itself a through" do
+      # `accessible_comments` hops to `accessible_cards` — a through association
+      # too — so the walk has to recurse before it can read `comments` off Card.
+      accessor_app do |files|
+        expect(source_of(files, "user.rb")).to match(
+          /def accessible_comments\n\s*User_Comment::ActiveRecord_Associations_CollectionProxy\.new\(Comment, self\)/
+        )
+      end
+    end
+
+    it "honours class_name: on the source reflection, with no `source:` written" do
+      # `has_many :assignees, through: :assignments` takes its element from
+      # `Assignment`'s `assignee` reflection — where `class_name: "User"` is
+      # written. Nothing in the owner's file spells `User`, which is why the
+      # name-based guess (`Assignee`) cannot work even in principle.
+      in_app(
+        "app/models/post.rb" => "class Post < ApplicationRecord\n  has_many :assignments\n  has_many :assignees, through: :assignments\nend\n",
+        "app/models/assignment.rb" => "class Assignment < ApplicationRecord\n  belongs_to :post\n  belongs_to :assignee, class_name: \"User\"\nend\n",
+        "app/models/user.rb" => "class User < ApplicationRecord\nend\n"
+      ) do |dir|
+        expect(source_of(described_class.new(app_dir: dir).build, "post.rb")).to match(
+          /def assignees\n\s*Post_User::ActiveRecord_Associations_CollectionProxy\.new\(User, self\)/
+        )
+      end
+    end
+
+    it "resolves an element that declares no association of its own" do
+      # `User::DataExport` is a model with nothing but methods. It was absent
+      # from the scanned-model table, so `has_many :data_exports` resolved to
+      # nothing — the element has to be a known CLASS, not a known association
+      # holder.
+      in_app(
+        "app/models/user.rb" => "class User < ApplicationRecord\n  has_many :data_exports, class_name: \"User::DataExport\"\nend\n",
+        "app/models/user/data_export.rb" => "class User::DataExport < Export\n  def filename\n    \"x.zip\"\n  end\nend\n"
+      ) do |dir|
+        files = described_class.new(app_dir: dir).build
+        expect(source_of(files, "user.rb")).to match(
+          /def data_exports\n\s*User_User_DataExport::ActiveRecord_Associations_CollectionProxy\.new\(User::DataExport, self\)/
+        )
+        # It needs no reopen of its own — no callbacks, no has_many.
+        expect(files.map(&:filename)).not_to include("user_data_export.rb")
+      end
+    end
+
+    it "falls back to the conventional name when the through cannot be followed" do
+      # `through:` naming a `has_one` (not scanned) or a gem's association leaves
+      # the chain unresolvable; the name-based guess is still right for the common
+      # `has_many :tags, through: :taggings` shape, so it stays as the fallback.
+      in_app(
+        "app/models/post.rb" => "class Post < ApplicationRecord\n  has_many :tags, through: :taggings\nend\n",
+        "app/models/tag.rb" => "class Tag < ApplicationRecord\n  belongs_to :post\nend\n"
+      ) do |dir|
+        expect(source_of(described_class.new(app_dir: dir).build, "post.rb")).to match(
+          /def tags\n\s*Post_Tag::ActiveRecord_Associations_CollectionProxy\.new\(Tag, self\)/
+        )
+      end
+    end
+
+    it "does not loop on associations that go through each other" do
+      # Neither resolves (Rails would raise on this too); the point is that it
+      # terminates rather than recursing forever.
+      in_app("app/models/loop.rb" => "class Loop < ApplicationRecord\n  has_many :as, through: :bs\n  has_many :bs, through: :as\nend\n") do |dir|
+        expect(described_class.new(app_dir: dir).build).to be_empty
+      end
+    end
+  end
+
+  describe "construction flow through a has_many :through" do
+    # `user.pinned_cards.build` does NOT set `card.user` — the row that links
+    # them lives on the join, so Active Record leaves the element's belongs_to
+    # alone. Emitting `record.user = owner` would hand the contract machinery a
+    # fact the runtime never establishes.
+    PIN = "class Pin < ApplicationRecord\n  belongs_to :user\n  belongs_to :card\nend\n"
+    OWNED_CARD = "class Card < ApplicationRecord\n  belongs_to :user\nend\n"
+
+    it "omits build when the only association reaching the element is a through" do
+      through_only = "class User < ApplicationRecord\n  has_many :pins\n  has_many :pinned_cards, through: :pins, source: :card\nend\n"
+      in_app("app/models/user.rb" => through_only, "app/models/pin.rb" => PIN, "app/models/card.rb" => OWNED_CARD) do |dir|
+        proxy = source_of(described_class.new(app_dir: dir).build, "user_card.rb")
+
+        expect(proxy).to match(/def owner\n\s*@owner\n\s*end/)
+        expect(proxy).not_to include("def build")
+        expect(proxy).not_to include("record.user = owner")
+      end
+    end
+
+    it "keeps build when a direct association shares the proxy namespace" do
+      # The namespace is per (owner, element) pair, so `cards` and `pinned_cards`
+      # are both `User_Card`. The through one is declared first — as a concern's
+      # would be, sitting above the class's own macros — and taking the first
+      # candidate would cost `user.cards.create` its construction flow.
+      both = "class User < ApplicationRecord\n  has_many :pins\n  has_many :pinned_cards, through: :pins, source: :card\n  has_many :cards\nend\n"
+      in_app("app/models/user.rb" => both, "app/models/pin.rb" => PIN, "app/models/card.rb" => OWNED_CARD) do |dir|
+        proxy = source_of(described_class.new(app_dir: dir).build, "user_card.rb")
+
+        expect(proxy).to match(/def build\(\*\)\n\s*record = Card\.new\n\s*record\.user = owner\n\s*record\n\s*end/)
+      end
+    end
+  end
+
+  describe "a class reopened in several files" do
+    it "keeps the reflections of every reopen" do
+      # Ruby reopens a class rather than replacing it, so both files register.
+      # Indexing by name and letting one win dropped the other's reflections: a
+      # `class Post` opened only to nest `Post::Archiver` erased Post's own
+      # `belongs_to :user`, and with it `build`'s inverse.
+      in_app(
+        "app/models/user.rb" => "class User < ApplicationRecord\n  has_many :posts\nend\n",
+        "app/models/post.rb" => "class Post < ApplicationRecord\n  belongs_to :user\nend\n",
+        "app/models/post/archiver.rb" => "class Post\n  class Archiver\n  end\nend\n"
+      ) do |dir|
+        expect(source_of(described_class.new(app_dir: dir).build, "user_post.rb")).to include("record.user = owner")
+      end
+    end
+  end
+
   describe "proxy reopen (construction flow)" do
     it "captures the owner and reopens with build/new/create/create!" do
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
