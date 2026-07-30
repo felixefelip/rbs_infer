@@ -13,6 +13,21 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     RbsInfer::Inference::ConstantArgTypeResolver.new(steep_bridge: nil, caller_constant_types: {})
   end
 
+  # [line, character column] of the LAST read of `name` in the tree — the
+  # argument, not the assignment that precedes it.
+  def read_position(tree, name)
+    found = nil
+    walk = lambda do |node|
+      return unless node.is_a?(Prism::Node)
+      if node.is_a?(Prism::LocalVariableReadNode) && node.name.to_s == name
+        found = [node.location.start_line, node.location.start_character_column]
+      end
+      node.compact_child_nodes.each { |child| walk.call(child) }
+    end
+    walk.call(tree)
+    found
+  end
+
   def collect_usages(source, target_class:, method_return_types: {}, local_var_types: {})
     result = Prism.parse(source)
     visitor = described_class.new(
@@ -24,6 +39,66 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     )
     result.value.accept(visitor)
     visitor.usages
+  end
+
+  # felixefelip/rbs_infer#142. Two methods, two different locals both named
+  # `session`. The caller-side map used to be flattened across the whole file,
+  # first-wins, so the type of one method's variable was handed to the other's.
+  it "não empresta o tipo de um local de outro método" do
+    source = <<~RUBY
+      class Caller
+        def one
+          session = build
+          Foo.new(session: session)
+        end
+
+        def two
+          [1].each do |session|
+            Foo.new(session: session)
+          end
+        end
+      end
+    RUBY
+
+    result = Prism.parse(source)
+    visitor = described_class.new(
+      target_class: "Foo",
+      method_return_types: {},
+      local_var_types: { "session" => "Session" },
+      local_var_types_by_method: { "one" => { "session" => "Session" } },
+      constant_arg_resolver: null_constant_resolver,
+      defined_class_names: described_class.collect_defined_class_names(result.value)
+    )
+    result.value.accept(visitor)
+
+    types = visitor.usages.map { |u| u["session"] }
+    expect(types).to contain_exactly("Session", "untyped")
+  end
+
+  it "usa o tipo da LEITURA do local quando Steep o conhece" do
+    source = <<~RUBY
+      class Caller
+        def one
+          session = build
+          Foo.new(session: session)
+        end
+      end
+    RUBY
+
+    result = Prism.parse(source)
+    visitor = described_class.new(
+      target_class: "Foo",
+      method_return_types: {},
+      local_var_types: { "session" => "Session?" },
+      # Keyed by the position of the READ, located rather than hard-coded so the
+      # spec keeps pinning the real contract if the fixture is reformatted.
+      local_var_read_types: { read_position(result.value, "session") => "Session" },
+      constant_arg_resolver: null_constant_resolver,
+      defined_class_names: described_class.collect_defined_class_names(result.value)
+    )
+    result.value.accept(visitor)
+
+    expect(visitor.usages.first["session"]).to eq("Session")
   end
 
   it "coleta kwargs de chamadas .new com literais" do

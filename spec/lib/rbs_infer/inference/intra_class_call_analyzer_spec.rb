@@ -9,6 +9,35 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
     visitor
   end
 
+  # felixefelip/rbs_infer#142. The argument is narrowed at the point it is
+  # passed, and the callee's parameter must not be typed as if it were not:
+  # a nilable parameter makes every downstream fact about it unprovable.
+  it "usa o tipo NARROWED do local no call-site, não o da atribuição", :dummy_app do
+    source = <<~RUBY
+      class Foo
+        def call
+          if user = User.where(active: true).first
+            publish(user)
+          end
+        end
+
+        def publish(user)
+        end
+      end
+    RUBY
+
+    bridge = RbsInfer::Signatures::SteepBridge.new
+    result = Prism.parse(source)
+    visitor = described_class.new(
+      steep_bridge: bridge,
+      source_code: source,
+      method_positional_params: { "publish" => ["user"] }
+    )
+    result.value.accept(visitor)
+
+    expect(visitor.inferred_param_types["publish"]["user"]).to eq("(User & User::Validated)")
+  end
+
   it "infere tipo de kwarg via local variable = Klass.new(...)" do
     source = <<~RUBY
       class Foo

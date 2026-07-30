@@ -56,9 +56,17 @@ module RbsInfer::Inference
 
       # Use Steep to resolve local var types (including block params)
       caller_constant_types = {}
+      # Per-READ types (felixefelip/rbs_infer#142). `local_var_types` below is
+      # flattened across every method in the file, first-wins, so one variable
+      # name carries one type for the whole FILE — coarser even than the
+      # per-method map it comes from, and blind to narrowing either way.
+      local_var_read_types = {}
+      local_var_types_by_method = {}
       if @steep_bridge
         steep_vars = @steep_bridge.local_var_types_per_method(source)
+        local_var_types_by_method = steep_vars
         steep_vars.each_value { |vars| local_var_types.merge!(vars) { |_k, old, _new| old } }
+        local_var_read_types = @steep_bridge.local_var_read_types(source)
         caller_constant_types = @steep_bridge.constant_types(source)
       end
       constant_arg_resolver = ConstantArgTypeResolver.new(
@@ -124,6 +132,8 @@ module RbsInfer::Inference
         target_class: @target_class,
         method_return_types: method_return_types,
         local_var_types: local_var_types,
+        local_var_read_types: local_var_read_types,
+        local_var_types_by_method: local_var_types_by_method,
         method_type_resolver: @method_type_resolver,
         caller_class_name: caller_class_name,
         init_positional_params: @init_positional_params,

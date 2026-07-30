@@ -170,6 +170,42 @@ module RbsInfer::Signatures
       result
     end
 
+    # Types of local variable READS, keyed by `[line, column]` of the read.
+    #
+    # `local_var_types_per_method` above answers "what type does this variable
+    # have in this method": one answer per variable, which therefore cannot
+    # express narrowing, a positional property. Steep has already computed the
+    # narrowed type — it is sitting on the `:lvar` node:
+    #
+    #   if session = find_session_by_cookie   # :lvasgn -> (Session & Validated)?
+    #     set_current_session session          # :lvar   -> (Session & Validated)
+    #   end
+    #
+    # Reading the assignment's type for that argument is what had a caller
+    # passing "possibly nil" where the code cannot (felixefelip/rbs_infer#142).
+    #
+    # Keyed by line and CHARACTER column so a Prism node can look itself up:
+    # Prism counts columns in bytes (`start_column`) and in characters
+    # (`start_character_column`), while Parser counts characters — matching on
+    # the character column is what keeps a source with multibyte text aligned.
+    def local_var_read_types(source_code)
+      typing = type_check(source_code)
+      return {} unless typing
+
+      result = {}
+      typing.each_typing do |node, type|
+        next unless node.type == :lvar
+
+        type_str = format_type(type)
+        # An unusable answer defers to the per-method map rather than
+        # overriding it with nothing.
+        next if type_str == "untyped" || type_str == "bot"
+
+        result[[node.loc.line, node.loc.column]] = type_str
+      end
+      result
+    end
+
     # Returns { "method_name" => "ReturnType" } for all def nodes.
     # The return type is inferred from the body of the method.
     # Return types of instance methods (`def x`), keyed by name. Singleton

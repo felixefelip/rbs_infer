@@ -17,6 +17,9 @@ module RbsInfer::Inference
       @current_param_names = Set.new
       @method_positional_params = method_positional_params
       @steep_local_var_types = steep_bridge && source_code ? steep_bridge.local_var_types_per_method(source_code) : {}
+      # Per-READ types, which carry Steep's narrowing; `@steep_local_var_types`
+      # is per-method and cannot (felixefelip/rbs_infer#142).
+      @steep_lvar_read_types = steep_bridge && source_code ? steep_bridge.local_var_read_types(source_code) : {}
       # Constant args resolve to their value type (#46); intra-class
       # constants are in this same source, covered by the same-file tier.
       @constant_arg_resolver = ConstantArgTypeResolver.new(
@@ -188,13 +191,22 @@ module RbsInfer::Inference
       nil
     end
 
+    # Steep's type for a specific local-variable read, or nil. Prism's
+    # character column matches Parser's, which is how the two ASTs line up.
+    def lvar_read_type(node)
+      @steep_lvar_read_types[[node.location.start_line, node.location.start_character_column]]
+    end
+
     def resolve_value_type(node)
       literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: @constant_arg_resolver)
       return literal if literal
 
       case node
       when Prism::LocalVariableReadNode
-        @local_var_types[node.name.to_s] || "untyped"
+        # The type AT THIS READ first: inside `if x = maybe`, `x` is not nilable,
+        # and passing it to a method must not say it is. Falls back to the
+        # per-method type where Steep has no answer for the node.
+        lvar_read_type(node) || @local_var_types[node.name.to_s] || "untyped"
       when Prism::ImplicitNode
         resolve_value_type(node.value)
       when Prism::CallNode
