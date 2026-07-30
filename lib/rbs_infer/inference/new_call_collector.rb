@@ -28,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {})
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {})
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -37,6 +37,20 @@ module RbsInfer::Inference
       @defined_class_names = defined_class_names
       @method_return_types = method_return_types
       @local_var_types = local_var_types
+      # Steep's type AT each local-variable read, keyed by [line, column]. The
+      # map above is a scratchpad this collector MUTATES to model flow (it
+      # stores ivars in there too); this one is a fact about a position, so it
+      # answers first and the scratchpad remains the fallback
+      # (felixefelip/rbs_infer#142).
+      @local_var_read_types = local_var_read_types
+      # Locals keyed by the method they belong to. `local_var_types` above is
+      # flattened across the whole file, first-wins, so a name used in two
+      # methods carries ONE type — and the wrong method's, at that
+      # (felixefelip/rbs_infer#142). Entering a `def` swaps the file-wide names
+      # for that method's own; a source with no `def` at all (an ERB template
+      # is one method's body) keeps the flat map, which is all it ever had.
+      @local_var_types_by_method = local_var_types_by_method
+      @method_scoped_var_names = local_var_types_by_method.each_value.flat_map(&:keys).to_set
       @method_type_resolver = method_type_resolver
       @caller_class_name = caller_class_name
       # Required: omitting it silently re-emits the invalid bare-constant
@@ -90,6 +104,10 @@ module RbsInfer::Inference
       # `def self.foo` carries a receiver; plain `def foo` does not.
       @in_singleton_method = !node.receiver.nil?
       @current_method = node.name.to_s
+      unless @method_scoped_var_names.empty?
+        @local_var_types = @local_var_types.reject { |name, _| @method_scoped_var_names.include?(name) }
+        @local_var_types.merge!(@local_var_types_by_method[@current_method] || {})
+      end
       collect_local_assignments(node)
       super
       @current_method = old_method
@@ -525,6 +543,12 @@ module RbsInfer::Inference
       nil
     end
 
+    # Steep's type for this particular read, or nil. Prism's character column
+    # matches Parser's; the byte column would drift on multibyte source.
+    def lvar_read_type(node)
+      @local_var_read_types[[node.location.start_line, node.location.start_character_column]]
+    end
+
     def resolve_value_type(node)
       # A hash literal is handled here, ahead of the generic literal inferrer, so its VALUES
       # resolve with what this collector knows — ivars, locals, method returns. The generic
@@ -537,7 +561,7 @@ module RbsInfer::Inference
 
       case node
       when Prism::LocalVariableReadNode
-        @local_var_types[node.name.to_s] || "untyped"
+        lvar_read_type(node) || @local_var_types[node.name.to_s] || "untyped"
       when Prism::InstanceVariableReadNode
         lookup_ivar_type(node) || "untyped"
       when Prism::CallNode
