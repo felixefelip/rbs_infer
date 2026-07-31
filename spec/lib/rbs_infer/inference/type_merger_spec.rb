@@ -100,6 +100,40 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
       expect(member.signature).to end_with("-> { value: String, httponly: bool, same_site: Symbol }")
     end
 
+    # O spec abaixo ("não corrompe assinatura...") só inspeciona a saída do
+    # ClassMemberCollector — nunca chega a `resolve_method_return_types_from_attrs`,
+    # que é onde a substituição do return acontece. Este dirige esse caminho.
+    it "preserva o bloco ao refinar o record de uma atribuição indexada" do
+      source = <<~RUBY
+        class CookieWriter
+          def write(session, &block)
+            cookies[:session_token] = { value: session.signed_id, httponly: true }
+          end
+        end
+      RUBY
+      result = Prism.parse(source)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
+      result.value.accept(collector)
+      member = collector.members.find { |candidate| candidate.name == "write" }
+      expect(member.signature).to include("?{ (untyped) -> untyped } -> untyped")
+
+      resolver = instance_double("MethodTypeResolver")
+      allow(resolver).to receive(:resolve).with("Session", "signed_id").and_return("String")
+
+      merger.resolve_method_return_types_from_attrs(
+        collector.members,
+        {},
+        method_type_resolver: resolver,
+        parsed_target: parsed_target,
+        method_param_types: { "write" => { "session" => "Session" } }
+      )
+
+      # O `-> untyped` do BLOCO tem de sobreviver; só o return final muda.
+      expect(member.signature)
+        .to eq("write: (untyped session) ?{ (untyped) -> untyped } -> { value: String, httponly: bool }")
+    end
+
     it "não corrompe assinatura de método com bloco ao resolver return type" do
       source = <<~RUBY
         class Foo

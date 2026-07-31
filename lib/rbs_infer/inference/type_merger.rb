@@ -308,8 +308,20 @@ module RbsInfer::Inference
       signature.match?(/-> \{.*\buntyped\b.*\}\z/)
     end
 
+    # The trailing return type, and only that. `-> .+\z` is greedy AND
+    # leftmost, so it matched from the FIRST arrow: a signature carrying a block
+    # (`() { (Integer) -> void } -> untyped`) came out as
+    # `() { (Integer) -> String`, unbalanced and unparseable.
+    #
+    # The alternation names exactly the two shapes that can reach here — the
+    # original `-> untyped`, and the partially resolved record
+    # `-> { value: untyped }` — and both are anchored at the end, so an arrow
+    # inside a block type can never be the match. A signature matching neither
+    # is left alone rather than mangled.
+    RETURN_TYPE_SUFFIX = /-> (?:untyped|\{.*\})\z/
+
     def replace_return_type(member, type)
-      member.signature = member.signature.sub(/-> .+\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(type)}")
+      member.signature = member.signature.sub(RETURN_TYPE_SUFFIX, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(type)}")
     end
 
     # Extrai nome do método quando o receiver é self implícito ou explícito
