@@ -78,6 +78,23 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
     end
   end
 
+  describe "#build com prepend" do
+    # felixefelip/rbs_infer#144. A mixin whose method must WIN over the host's
+    # own — the only way a sidecar can model a method the app also defines,
+    # since RBS refuses two declarations of one method on one owner.
+    it "emite prepend, e antes do include" do
+      members = [
+        RbsInfer::Inference::Member.new(kind: :include, name: "Included", signature: "", visibility: :public),
+        RbsInfer::Inference::Member.new(kind: :prepend, name: "Prepended", signature: "", visibility: :public)
+      ]
+      builder = make_builder(target_class: "Host", superclass_name: nil)
+      result = build_rbs(builder, members, {}, {})
+
+      expect(result).to include("prepend Prepended")
+      expect(result.index("prepend Prepended")).to be < result.index("include Included")
+    end
+  end
+
   describe "#build com qualify (include/extend ambíguos)" do
     it "prefixa include com :: quando o nome coincide com parte do namespace" do
       # Account::Storage inclui Storage::Totaled → dentro de class Account { module Storage }

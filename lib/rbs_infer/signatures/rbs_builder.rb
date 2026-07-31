@@ -123,6 +123,9 @@ module RbsInfer::Signatures
       members.select { |m| m.kind == :extend && m.owner.nil? }.each do |ext|
         out << "#{indent}extend #{qualify(ext.name)}"
       end
+      members.select { |m| m.kind == :prepend && m.owner.nil? }.each do |pre|
+        out << "#{indent}prepend #{qualify(pre.name)}"
+      end
       members.select { |m| m.kind == :include && m.owner.nil? }.each do |inc|
         qualified = qualify(inc.name)
         out << "#{indent}include #{qualified}"
@@ -266,6 +269,9 @@ module RbsInfer::Signatures
 
         mod_members.select { |m| m.kind == :constant }.each do |const|
           lines << "#{inner_indent}#{const.signature}"
+        end
+        mod_members.select { |m| m.kind == :prepend }.each do |pre|
+          lines << "#{inner_indent}prepend #{qualify(pre.name)}"
         end
         mod_members.select { |m| m.kind == :include }.each do |inc|
           lines << "#{inner_indent}include #{qualify(inc.name)}"
