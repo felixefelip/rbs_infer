@@ -1,0 +1,33 @@
+class Example16
+  @halted: true?
+
+  def show: () -> String
+  def call: () -> String?
+
+  private
+
+  def authenticate: () -> untyped
+  def resume: () -> Example16::User?
+  def from_token: () -> (Example16::User | bool)
+  def deny: () -> bool
+  def halt: () -> bool
+  def cookie?: () -> bool
+  def token?: () -> bool
+end
+
+class Example16
+  class User
+    attr_reader name: String
+
+    def initialize: (name: String) -> void
+  end
+end
+
+class Example16
+  class Registry
+    self.@user: User?
+
+    def self.user: () -> Example16::User?
+    def self.user=: (User value) -> untyped
+  end
+end
