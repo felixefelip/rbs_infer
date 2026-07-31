@@ -4,7 +4,7 @@ require "rbs_infer"
 RSpec.describe RbsInfer::Inference::TypeMerger do
   let(:merger) { described_class.new(target_file: nil, constant_resolver: fake_constant_resolver) }
 
-  it "prioriza tipos resolvidos sobre untyped" do
+  it "prioritises resolved types over untyped" do
     usages = [
       { "nome" => "String", "email" => "untyped" },
       { "nome" => "String", "email" => "String" },
@@ -15,7 +15,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
     expect(result["email"]).to eq("String")
   end
 
-  it "gera union type quando há tipos diferentes" do
+  it "builds a union type when the types differ" do
     usages = [
       { "value" => "String" },
       { "value" => "Integer" },
@@ -25,7 +25,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
     expect(result["value"]).to eq("(String | Integer)")
   end
 
-  it "normaliza :: prefix e deduplica" do
+  it "normalises the :: prefix and deduplicates" do
     usages = [
       { "cpf" => "::Shared::Cpf" },
       { "cpf" => "Shared::Cpf" },
@@ -73,7 +73,70 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
   end
 
   describe "#resolve_method_return_types_from_attrs" do
-    it "não corrompe assinatura de método com bloco ao resolver return type" do
+    it "refines record fields in the RHS of an indexed assignment" do
+      source = <<~RUBY
+        class CookieWriter
+          def set_current_session(session)
+            cookies[:session_token] = { value: session.signed_id, httponly: true, same_site: :lax }
+          end
+        end
+      RUBY
+      result = Prism.parse(source)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
+      result.value.accept(collector)
+      member = collector.members.find { |candidate| candidate.name == "set_current_session" }
+      resolver = instance_double("MethodTypeResolver")
+      allow(resolver).to receive(:resolve).with("Session", "signed_id").and_return("String")
+
+      merger.resolve_method_return_types_from_attrs(
+        collector.members,
+        {},
+        method_type_resolver: resolver,
+        parsed_target: parsed_target,
+        method_param_types: { "set_current_session" => { "session" => "Session" } }
+      )
+
+      expect(member.signature).to end_with("-> { value: String, httponly: bool, same_site: Symbol }")
+    end
+
+    # The "does not corrupt a block-bearing signature..." spec below only
+    # inspects what
+    # ClassMemberCollector produced — it never reaches
+    # `resolve_method_return_types_from_attrs`, where the return type is actually
+    # substituted. This one drives that path.
+    it "preserves the block when refining the record of an indexed assignment" do
+      source = <<~RUBY
+        class CookieWriter
+          def write(session, &block)
+            cookies[:session_token] = { value: session.signed_id, httponly: true }
+          end
+        end
+      RUBY
+      result = Prism.parse(source)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
+      result.value.accept(collector)
+      member = collector.members.find { |candidate| candidate.name == "write" }
+      expect(member.signature).to include("?{ (untyped) -> untyped } -> untyped")
+
+      resolver = instance_double("MethodTypeResolver")
+      allow(resolver).to receive(:resolve).with("Session", "signed_id").and_return("String")
+
+      merger.resolve_method_return_types_from_attrs(
+        collector.members,
+        {},
+        method_type_resolver: resolver,
+        parsed_target: parsed_target,
+        method_param_types: { "write" => { "session" => "Session" } }
+      )
+
+      # The BLOCK's `-> untyped` has to survive; only the final return changes.
+      expect(member.signature)
+        .to eq("write: (untyped session) ?{ (untyped) -> untyped } -> { value: String, httponly: bool }")
+    end
+
+    it "does not corrupt a block-bearing signature when resolving the return type" do
       source = <<~RUBY
         class Foo
           def wrapper(&block)

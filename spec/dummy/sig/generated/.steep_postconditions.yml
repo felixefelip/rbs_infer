@@ -126,6 +126,12 @@ postconditions:
     - "@user"
 - class: DashboardController
   method: __rbs_infer__run_show
+  unconditional:
+    consts:
+      Current.account: "(::Account & ::Account::Validated)"
+      Current.author_name: "::String"
+      Current.user: "(::User & ::User::Validated)"
+      Current.viewer_name: "::String"
   effects:
     may_write:
     - "@__rbs_infer__performed"
@@ -422,6 +428,84 @@ postconditions:
     may_write:
     - "@label"
 - class: Example13Viewer
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
+- class: Example14
+  method: halt
+  unconditional:
+    ivars:
+      "@halted": 'true'
+    self: "::Example14 & ::Example14::AfterHalt"
+  effects:
+    may_write:
+    - "@halted"
+- class: Example14
+  method: run
+  effects:
+    may_write:
+    - "@halted"
+    - "@user"
+- class: Example14
+  method: set_user
+  unconditional:
+    ivars:
+      "@user": "::Example14::User"
+    self: "::Example14 & ::Example14::AfterSetUser"
+  effects:
+    may_write:
+    - "@user"
+- class: Example14
+  method: verify
+  effects:
+    may_write:
+    - "@halted"
+    - "@user"
+- class: Example14::User
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
+- class: Example15
+  method: halt
+  unconditional:
+    ivars:
+      "@halted": 'true'
+    self: "::Example15 & ::Example15::AfterHalt"
+  effects:
+    may_write:
+    - "@halted"
+- class: Example15
+  method: run
+  effects:
+    may_write:
+    - "@halted"
+- class: Example15
+  method: set_user
+  unconditional:
+    consts:
+      Example15::Registry.user: "::Example15::User"
+- class: Example15
+  method: verify
+  effects:
+    may_write:
+    - "@halted"
+- class: Example15::Registry
+  method: user
+  effects:
+    returns_ivar: "@user"
+- class: Example15::Registry
+  method: user=
+  unconditional:
+    ivars:
+      "@user": "::Example15::User"
+    establishes_consts:
+      user: "::Example15::User"
+  effects:
+    may_write:
+    - "@user"
+- class: Example15::User
   method: initialize
   effects:
     may_write:
@@ -757,6 +841,11 @@ postconditions:
     - "@post"
 - class: PostsController
   method: __rbs_infer__run_publish
+  unconditional:
+    consts:
+      Current.author_name: "::String"
+      Current.user: "(::User & ::User::Validated)"
+      Current.viewer_name: "::String"
   effects:
     may_write:
     - "@__rbs_infer__performed"
@@ -1331,6 +1420,14 @@ method_entry_facts:
   method: user
   consts:
     Example13::Registry.user: "::Example13Viewer"
+- class: Example14
+  method: halt
+  ivars:
+    "@user": "::Example14::User"
+- class: Example15
+  method: halt
+  consts:
+    Example15::Registry.user: "::Example15::User"
 - class: Example4
   method: run_foo_name
   consts:

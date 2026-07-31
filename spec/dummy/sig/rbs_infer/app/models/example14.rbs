@@ -1,0 +1,20 @@
+class Example14
+  @halted: true?
+  @user: Example14::User?
+
+  def run: () -> String?
+
+  private
+
+  def halt: () -> bool
+  def verify: () -> Example14::User
+  def set_user: () -> User
+end
+
+class Example14
+  class User
+    attr_reader name: String
+
+    def initialize: (name: String) -> void
+  end
+end
