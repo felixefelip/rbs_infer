@@ -100,9 +100,10 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
       expect(member.signature).to end_with("-> { value: String, httponly: bool, same_site: Symbol }")
     end
 
-    # O spec abaixo ("não corrompe assinatura...") só inspeciona a saída do
-    # ClassMemberCollector — nunca chega a `resolve_method_return_types_from_attrs`,
-    # que é onde a substituição do return acontece. Este dirige esse caminho.
+    # The "não corrompe assinatura..." spec below only inspects what
+    # ClassMemberCollector produced — it never reaches
+    # `resolve_method_return_types_from_attrs`, where the return type is actually
+    # substituted. This one drives that path.
     it "preserva o bloco ao refinar o record de uma atribuição indexada" do
       source = <<~RUBY
         class CookieWriter
@@ -129,7 +130,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         method_param_types: { "write" => { "session" => "Session" } }
       )
 
-      # O `-> untyped` do BLOCO tem de sobreviver; só o return final muda.
+      # The BLOCK's `-> untyped` has to survive; only the final return changes.
       expect(member.signature)
         .to eq("write: (untyped session) ?{ (untyped) -> untyped } -> { value: String, httponly: bool }")
     end
