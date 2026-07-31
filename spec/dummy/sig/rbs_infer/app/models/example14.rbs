@@ -13,7 +13,7 @@ end
 
 class Example14
   class User
-    attr_reader name: untyped
+    attr_reader name: String
 
     def initialize: (name: String) -> void
   end

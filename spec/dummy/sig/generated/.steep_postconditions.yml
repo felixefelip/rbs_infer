@@ -465,7 +465,8 @@ postconditions:
 - class: Example14::User
   method: initialize
   effects:
-    returns_ivar: "@name"
+    may_write:
+    - "@name"
 - class: Example15
   method: halt
   unconditional:
@@ -507,7 +508,8 @@ postconditions:
 - class: Example15::User
   method: initialize
   effects:
-    returns_ivar: "@name"
+    may_write:
+    - "@name"
 - class: Example2::Foo
   method: user=
   unconditional:
