@@ -4,7 +4,7 @@ require "rbs_infer"
 RSpec.describe RbsInfer::Inference::TypeMerger do
   let(:merger) { described_class.new(target_file: nil, constant_resolver: fake_constant_resolver) }
 
-  it "prioriza tipos resolvidos sobre untyped" do
+  it "prioritises resolved types over untyped" do
     usages = [
       { "nome" => "String", "email" => "untyped" },
       { "nome" => "String", "email" => "String" },
@@ -15,7 +15,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
     expect(result["email"]).to eq("String")
   end
 
-  it "gera union type quando há tipos diferentes" do
+  it "builds a union type when the types differ" do
     usages = [
       { "value" => "String" },
       { "value" => "Integer" },
@@ -25,7 +25,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
     expect(result["value"]).to eq("(String | Integer)")
   end
 
-  it "normaliza :: prefix e deduplica" do
+  it "normalises the :: prefix and deduplicates" do
     usages = [
       { "cpf" => "::Shared::Cpf" },
       { "cpf" => "Shared::Cpf" },
@@ -100,11 +100,12 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
       expect(member.signature).to end_with("-> { value: String, httponly: bool, same_site: Symbol }")
     end
 
-    # The "não corrompe assinatura..." spec below only inspects what
+    # The "does not corrupt a block-bearing signature..." spec below only
+    # inspects what
     # ClassMemberCollector produced — it never reaches
     # `resolve_method_return_types_from_attrs`, where the return type is actually
     # substituted. This one drives that path.
-    it "preserva o bloco ao refinar o record de uma atribuição indexada" do
+    it "preserves the block when refining the record of an indexed assignment" do
       source = <<~RUBY
         class CookieWriter
           def write(session, &block)
@@ -135,7 +136,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         .to eq("write: (untyped session) ?{ (untyped) -> untyped } -> { value: String, httponly: bool }")
     end
 
-    it "não corrompe assinatura de método com bloco ao resolver return type" do
+    it "does not corrupt a block-bearing signature when resolving the return type" do
       source = <<~RUBY
         class Foo
           def wrapper(&block)
