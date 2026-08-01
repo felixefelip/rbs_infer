@@ -44,7 +44,7 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector::BlockSignature do
     # Passing a nil block along is legal Ruby, and a helper that forwards to
     # `tag.section` or `items.each` is called without one all the time.
     it "is optional when the body only FORWARDS the block" do
-      expect(signature_for("def m(&block); other(&block); end")).to eq("?{ (untyped) -> untyped }")
+      expect(signature_for("def m(&block); other(&block); end")).to eq("?{ (*untyped) -> untyped }")
     end
   end
 
@@ -61,6 +61,35 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector::BlockSignature do
       expect(signature_for("def m(&block); block.call(1); block.call(1, 2); end"))
         .to eq("{ (*untyped) -> untyped }")
     end
+
+    # A guarded block is just as callable, so the body decides its arity too —
+    # this read `?{ (untyped) -> untyped }` whatever the body did.
+    it "reads the body for an OPTIONAL block as well" do
+      expect(signature_for("def m(&block); block.call(1, 2) if block; end"))
+        .to eq("?{ (untyped, untyped) -> untyped }")
+    end
+  end
+
+  # The types at those sites are the checker's answer, so this only records
+  # where to look — line and CHARACTER column, which is what a Parser-based
+  # lookup is keyed by.
+  describe "#arg_positions" do
+    def positions_for(source)
+      def_node = Prism.parse(source).value.statements.body.first
+      described_class.new(def_node.parameters, body: def_node.body).arg_positions
+    end
+
+    it "points at each argument the body passes to the block" do
+      expect(positions_for("def m(&block)\n  block.call(x, y)\nend")).to eq([[[2, 13]], [[2, 16]]])
+    end
+
+    it "collects every site for the same parameter, so they can be unioned" do
+      expect(positions_for("def m\n  yield 1\n  yield 2\nend")).to eq([[[2, 8], [3, 8]]])
+    end
+
+    it "has nothing to say when the arity itself is unknown" do
+      expect(positions_for("def m(&block); other(&block); end")).to eq([])
+    end
   end
 
   it "is absent when the method neither takes nor yields a block" do
@@ -69,6 +98,6 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector::BlockSignature do
 
   it "reads the body, not the parameter list: no body means no answer to give" do
     def_node = Prism.parse("def m(&block); end").value.statements.body.first
-    expect(described_class.new(def_node.parameters, body: nil).call).to eq("?{ (untyped) -> untyped }")
+    expect(described_class.new(def_node.parameters, body: nil).call).to eq("?{ (*untyped) -> untyped }")
   end
 end

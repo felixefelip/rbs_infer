@@ -994,10 +994,15 @@ RSpec.describe RbsInfer::Analyzer do
         rbs = analyzer.generate_rbs
 
         aggregate_failures do
-          # Block should be outside parentheses
-          expect(rbs).to include("def wrapper: (id: untyped, name: untyped, ?data: untyped, **untyped) ?{ (untyped) -> untyped } -> untyped")
-          expect(rbs).to include("def simple_yield: () ?{ (untyped) -> untyped } -> untyped")
-          expect(rbs).to include("def mixed: (untyped items, label: untyped) ?{ (untyped) -> untyped } -> untyped")
+          # Block should be outside parentheses.
+          #
+          # Its arity is read off the body: a forwarded block
+          # (`tag.section(&block)`, `items.each(&block)`) says nothing about how
+          # it gets called, hence `*untyped`, while a bare `yield` says plainly
+          # that it is called with nothing.
+          expect(rbs).to include("def wrapper: (id: untyped, name: untyped, ?data: untyped, **untyped) ?{ (*untyped) -> untyped } -> untyped")
+          expect(rbs).to include("def simple_yield: () ?{ () -> untyped } -> untyped")
+          expect(rbs).to include("def mixed: (untyped items, label: untyped) ?{ (*untyped) -> untyped } -> untyped")
 
           # Block must NEVER be inside parentheses
           expect(rbs).not_to include(", ?{")
@@ -1026,9 +1031,10 @@ RSpec.describe RbsInfer::Analyzer do
         rbs = analyzer.generate_rbs
 
         aggregate_failures do
-          # Return types should be resolved correctly
-          expect(rbs).to include("def wrapper: () ?{ (untyped) -> untyped } -> String")
-          expect(rbs).to include("def count_items: (untyped items) ?{ (untyped) -> untyped } -> Integer")
+          # Return types should be resolved correctly. Neither body ever calls
+          # its block, so there is no arity to read — `*untyped`.
+          expect(rbs).to include("def wrapper: () ?{ (*untyped) -> untyped } -> String")
+          expect(rbs).to include("def count_items: (untyped items) ?{ (*untyped) -> untyped } -> Integer")
 
           # The -> untyped inside the block must not be replaced
           expect(rbs).not_to include("-> String }")

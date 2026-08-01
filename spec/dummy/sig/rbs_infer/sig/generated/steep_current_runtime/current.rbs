@@ -29,6 +29,6 @@ class Current
   def self.viewer_name: () -> untyped
   def self.viewer_name=: (untyped value) -> untyped
   def self.__rbs_infer_instance: () -> Current
-  def self.set: (?user: ((User & User::Validated) | User)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: untyped) ?{ (untyped) -> untyped } -> nil
-  def self.with: (?user: (User & User::Validated)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: untyped) ?{ (untyped) -> untyped } -> nil
+  def self.set: (?user: ((User & User::Validated) | User)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: untyped) ?{ () -> untyped } -> nil
+  def self.with: (?user: (User & User::Validated)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: untyped) ?{ () -> untyped } -> nil
 end

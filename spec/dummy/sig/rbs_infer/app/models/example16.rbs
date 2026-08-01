@@ -6,7 +6,7 @@ class Example16
 
   private
 
-  def authenticate: () -> untyped
+  def authenticate: () -> (Example16::User | bool)
   def resume: () -> Example16::User?
   def from_token: () -> (Example16::User | bool)
   def deny: () -> bool

@@ -16,7 +16,10 @@ module RbsInfer::Inference
   # `class << self` (attr de singleton, `self.attr x`). Distingue o attr de
   # instância `x` da class-instance variable `@x` escrita em `def self.x`, que
   # compartilham nome mas são slots diferentes (felixefelip/rbs_infer#86).
-  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, keyword_init: true)
+  # `block_arg_positions` = para membros `:method`/`:class_method`, onde ficam
+  # os argumentos que o corpo passa para o bloco, um item por parâmetro do
+  # bloco; o tipo de cada um vem do Steep, no Analyzer (#148).
+  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, :block_arg_positions, keyword_init: true)
 
   # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
   DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
@@ -139,7 +142,8 @@ module RbsInfer::Inference
         owner: current_owner,
         # Only when we synthesized the signature — an explicit `#:`/`@rbs`
         # annotation is authoritative and must not be overridden.
-        param_constant_defaults: sig ? nil : extractor.constant_default_params
+        param_constant_defaults: sig ? nil : extractor.constant_default_params,
+        block_arg_positions: sig ? nil : extractor.block_arg_positions
       )
       super
     end

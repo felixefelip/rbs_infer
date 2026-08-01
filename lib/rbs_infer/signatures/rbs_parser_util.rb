@@ -262,6 +262,44 @@ module RbsInfer::Signatures
       found
     end
 
+    # Fills in a block's parameter types on a whole method signature
+    # (`name: (params) { (untyped, untyped) -> untyped } -> ret`), which is how
+    # the collector emits them: the arity comes from the body's use sites, the
+    # types from the checker, and only the Analyzer has the checker (#148).
+    #
+    # Deliberately narrow. It only rewrites a list that is still entirely
+    # `untyped` and whose length matches — anything else (an `*untyped` block of
+    # unknown arity, a signature already refined, a hand-written `#:`
+    # annotation) is left exactly as it is rather than guessed at.
+    BLOCK_PARAM_LIST = /(?<open>\??\{ \()(?<params>untyped(?:, untyped)*)(?<close>\) -> )/
+
+    def replace_block_param_types(method_sig, types)
+      return method_sig if method_sig.nil? || types.nil? || types.none? { |type| usable_type?(type) }
+
+      method_sig.sub(BLOCK_PARAM_LIST) do
+        match = Regexp.last_match
+        next match[0] unless match[:params].split(", ").size == types.size
+
+        # A block's parameter list is unambiguous — `(String | Integer, Integer)`
+        # is two parameters, not one — so a union needs none of the wrapping a
+        # RETURN type does (there a bare `|` is an overload separator). Types
+        # arrive pre-wrapped from `TypeMerger.union_types`, and keeping that
+        # would emit `((String | Integer))`.
+        filled = types.map { |type| usable_type?(type) ? unparenthesized(type) : "untyped" }
+        "#{match[:open]}#{filled.join(", ")}#{match[:close]}"
+      end
+    end
+
+    def usable_type?(type)
+      !type.nil? && type != "untyped"
+    end
+
+    # Drops one redundant outer pair. `(A & B)?` and `Array[A | B]` are not
+    # outer-parenthesized, so they pass through untouched.
+    def unparenthesized(type)
+      outer_parenthesized?(type) ? type[1..-2] : type
+    end
+
     # Appends `?` to a type, parenthesizing compounds first — a bare
     # `A & B?` binds the `?` to the LAST component only (semantically
     # wrong) and is a syntax error in return position. No-op when the

@@ -30,7 +30,7 @@ class Example13
     def initialize: (name: String) -> bool
     def current_user: () -> Example13Viewer?
     def halt: () -> bool
-    def with_format: () ?{ (untyped) -> untyped } -> untyped
+    def with_format: () ?{ (Symbol) -> untyped } -> untyped
     def guard_supported: () -> Example13Viewer?
     def run_supported: () -> String?
     def act_supported: () -> String
