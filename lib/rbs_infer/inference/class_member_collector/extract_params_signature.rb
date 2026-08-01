@@ -15,6 +15,13 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
     # value-position constant itself (felixefelip/rbs_infer#56).
     def constant_resolver = nil
 
+    # Where the body's block arguments sit, for the Analyzer to type by the
+    # same deferral: the block's parameters are emitted `untyped` here and
+    # filled from the checker there (felixefelip/rbs_infer#148).
+    def block_arg_positions
+      block_signature.arg_positions
+    end
+
     # `body` decides whether a block is required, and whether a method that only
     # `yield`s takes one at all — neither is visible from the parameters alone.
     def initialize(params, body: nil)
@@ -101,11 +108,15 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
 
     # The block half lives in its own object: it is decided by the BODY, not
     # by the parameter list, and it is about to learn more (the callee's own
-    # requirement, the types at the use sites) that has no business here.
+    # requirement) that has no business here.
     def block_sig
       return @block_sig if defined?(@block_sig)
 
-      @block_sig = BlockSignature.new(@params, body: @body).call
+      @block_sig = block_signature.call
+    end
+
+    def block_signature
+      @block_signature ||= BlockSignature.new(@params, body: @body)
     end
   end
 end

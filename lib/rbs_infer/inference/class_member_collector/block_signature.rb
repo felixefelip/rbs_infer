@@ -18,6 +18,12 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
   # view of the callee this object does not have. Recorded rather than guessed
   # at.
   #
+  # The block's PARAMETERS come from the same places: `yield x, y` and
+  # `block.call(x, y)` say how many the block takes, and — once someone types
+  # those expressions — what they are. Only the count is settled here; the
+  # types are looked up in the Analyzer, which owns the checker
+  # (felixefelip/rbs_infer#148).
+  #
   # Declaring every block optional made `block.call` a call on `Proc | nil`, so
   # the checker refused the one line such a method exists for; and a method that
   # only `yield`s declared no block at all, which is how a caller passing one got
@@ -33,7 +39,20 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
     def call
       return nil unless block_param_name || yields?
 
-      required? ? "{ (#{block_params}) -> untyped }" : "?{ (untyped) -> untyped }"
+      "#{"?" unless required?}{ (#{block_params}) -> untyped }"
+    end
+
+    # Where the values the body hands to the block sit in the source, one entry
+    # per block parameter: `[[[line, column], …], …]`, columns in CHARACTERS so
+    # a Parser-based lookup lines up (felixefelip/rbs_infer#142).
+    #
+    # Only the positions: the TYPES there are the checker's answer, and the
+    # checker belongs to the Analyzer. This object is structural, like the rest
+    # of the collector — same split as `constant_default_params`.
+    def arg_positions
+      return [] unless arity
+
+      Array.new(arity) { |slot| use_sites.filter_map { |args| position_of(args[slot]) } }
     end
 
     private
@@ -62,34 +81,49 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       end
     end
 
-    # The arity the body uses the block with, as `untyped` params. Fixed at one
-    # before, which nothing checked while every block was optional — a required
-    # block IS checked, and `login_procedure.call(token, options)` against a
-    # one-parameter block is `Unexpected positional argument`.
+    # The arity the body uses the block with, as `untyped` params — the types
+    # are filled in later, from the same use sites (see `arg_positions`).
     #
-    # The types are still `untyped`: the arity comes from the use sites, and the
-    # types could come from the same place, which is the next thing to do here.
+    # Fixed at one before, which nothing checked while every block was optional
+    # — a required block IS checked, and `login_procedure.call(token, options)`
+    # against a one-parameter block is `Unexpected positional argument`. An
+    # optional block is just as checkable at the call site, so it reads the body
+    # too rather than keeping the old guess.
     def block_params
-      arities = []
-      walk_nodes do |node|
-        arities << argument_count(node) if node.is_a?(Prism::YieldNode)
-        next unless node.is_a?(Prism::CallNode) && node.name == :call && block_param_name
-        next unless reads_block?(node.receiver, block_param_name)
-
-        arities << argument_count(node)
-      end
-
-      # `*untyped` for both kinds of not-knowing: use sites that disagree, and a
-      # body that only FORWARDS the block, which says nothing about its arity.
-      # Defaulting those to one parameter made the forward itself a mismatch
-      # against a callee that takes two.
-      return "*untyped" if arities.uniq.size != 1
-
-      Array.new(arities.first, "untyped").join(", ")
+      arity ? Array.new(arity, "untyped").join(", ") : "*untyped"
     end
 
-    def argument_count(node)
-      node.arguments&.arguments&.size || 0
+    # `nil` for both kinds of not-knowing: use sites that disagree, and a body
+    # that only FORWARDS the block, which says nothing about its arity.
+    # Defaulting those to one parameter made the forward itself a mismatch
+    # against a callee that takes two — `*untyped` is the honest answer.
+    def arity
+      arities = use_sites.map(&:size).uniq
+
+      arities.first if arities.size == 1
+    end
+
+    # Every place the body hands values to the block, as its argument nodes.
+    # `block&.call` counts here though it does not count as *requiring* a block:
+    # a guarded call still shows what the block is called WITH.
+    def use_sites
+      @use_sites ||= [].tap do |sites|
+        walk_nodes do |node|
+          sites << arguments_of(node) if node.is_a?(Prism::YieldNode)
+          next unless node.is_a?(Prism::CallNode) && node.name == :call && block_param_name
+          next unless reads_block?(node.receiver, block_param_name)
+
+          sites << arguments_of(node)
+        end
+      end
+    end
+
+    def arguments_of(node)
+      node.arguments&.arguments || []
+    end
+
+    def position_of(node)
+      [node.location.start_line, node.location.start_character_column] if node
     end
 
     # Anything that asks whether the block is there.

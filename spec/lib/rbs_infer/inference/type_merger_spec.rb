@@ -118,7 +118,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)
       member = collector.members.find { |candidate| candidate.name == "write" }
-      expect(member.signature).to include("?{ (untyped) -> untyped } -> untyped")
+      expect(member.signature).to include("?{ (*untyped) -> untyped } -> untyped")
 
       resolver = instance_double("MethodTypeResolver")
       allow(resolver).to receive(:resolve).with("Session", "signed_id").and_return("String")
@@ -133,7 +133,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
 
       # The BLOCK's `-> untyped` has to survive; only the final return changes.
       expect(member.signature)
-        .to eq("write: (untyped session) ?{ (untyped) -> untyped } -> { value: String, httponly: bool }")
+        .to eq("write: (untyped session) ?{ (*untyped) -> untyped } -> { value: String, httponly: bool }")
     end
 
     it "does not corrupt a block-bearing signature when resolving the return type" do
@@ -153,9 +153,9 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
       result.value.accept(collector)
 
       member = collector.members.find { |m| m.name == "wrapper" }
-      # Signature should have block: "wrapper: () ?{ (untyped) -> untyped } -> String"
+      # Signature should have block: "wrapper: () ?{ (*untyped) -> untyped } -> String"
       # The block's -> untyped should NOT be replaced
-      expect(member.signature).to include("?{ (untyped) -> untyped } -> String")
+      expect(member.signature).to include("?{ (*untyped) -> untyped } -> String")
       expect(member.signature).not_to include("-> untyped } -> String } -> String")
     end
   end

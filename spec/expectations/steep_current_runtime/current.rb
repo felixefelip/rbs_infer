@@ -77,7 +77,7 @@ class Current
     @author_name = author_name
     @account = account
     @viewer_name = viewer_name
-    block&.call(nil)
+    block&.call
   end
 
   def self.with(user: nil, author_name: nil, account: nil, viewer_name: nil, &block)
@@ -85,6 +85,6 @@ class Current
     @author_name = author_name
     @account = account
     @viewer_name = viewer_name
-    block&.call(nil)
+    block&.call
   end
 end

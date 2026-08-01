@@ -299,6 +299,12 @@ module RbsInfer
     # SteepBridge/env (felixefelip/rbs_infer#46).
     resolve_constant_default_param_types(target_members, method_param_types)
 
+    # Tipar os parâmetros do bloco a partir do que o corpo passa para ele
+    # (`login_procedure.call(token, options)`). O collector deferiu do mesmo
+    # jeito: gravou só as posições, porque quem responde o tipo é o Steep
+    # (felixefelip/rbs_infer#148).
+    resolve_block_param_types(target_members)
+
     # Identificar parâmetros opcionais do initialize
     optional_params = extract_optional_init_params
 
@@ -555,6 +561,42 @@ module RbsInfer
         (method_param_types[member.name] ||= {})[param_name] = type
       end
     end
+  end
+
+  # A block's parameters are whatever the method PASSES to it, so the sites
+  # that use the block are the evidence — and Steep has already typed those
+  # expressions while checking the file. `authenticate` calls
+  # `login_procedure.call(token, options)`, and asking about those two
+  # positions answers `String` and `ActiveSupport::HashWithIndifferentAccess?`
+  # for a block signature that was `{ (untyped, untyped) -> untyped }`.
+  #
+  # Positions come from the collector (structural, no bridge there); the types
+  # come from here, the same division as constant defaults above.
+  def resolve_block_param_types(target_members)
+    return if @parsed_target.nil?
+
+    members = target_members.select do |m|
+      [:method, :class_method].include?(m.kind) && m.block_arg_positions && !m.block_arg_positions.empty?
+    end
+    return if members.empty?
+
+    expression_types = steep_bridge.all_expression_types(@parsed_target.source)
+    return if expression_types.empty?
+
+    members.each do |member|
+      types = member.block_arg_positions.map { |positions| block_param_type(positions, expression_types) }
+      member.signature = RbsInfer::Signatures::RbsParserUtil.replace_block_param_types(member.signature, types)
+    end
+  end
+
+  # One block parameter, across every site that uses the block: a method that
+  # yields an Integer in one branch and a String in another gives its block a
+  # union, exactly as the sites say.
+  def block_param_type(positions, expression_types)
+    types = positions.filter_map { |line, column| expression_types["#{line}:#{column}"] }.uniq
+    return nil if types.empty?
+
+    RbsInfer::Inference::TypeMerger.union_types(types)
   end
 
   # ─── Extrair nomes dos keyword params opcionais do initialize ─────

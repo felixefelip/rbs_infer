@@ -21,7 +21,7 @@ module ActiveStorage
     def bearer_token_authenticatable_request?: () -> bool
     def publicly_accessible_blob?: () -> untyped
     def ensure_accessible: () -> untyped
-    def http_cache_forever: (?public: untyped) ?{ (untyped) -> untyped } -> untyped
+    def http_cache_forever: (?public: untyped) ?{ (*untyped) -> untyped } -> untyped
   end
 end
 

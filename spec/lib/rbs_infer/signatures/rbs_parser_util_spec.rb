@@ -376,4 +376,59 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
       expect(described_class.nilablize(nil)).to be_nil
     end
   end
+
+  describe ".replace_block_param_types" do
+    it "fills in the block's parameters, leaving the rest of the signature alone" do
+      expect(described_class.replace_block_param_types(
+        "authenticate: (untyped controller) { (untyped, untyped) -> untyped } -> untyped",
+        ["String", "ActiveSupport::HashWithIndifferentAccess[untyped, untyped]?"]
+      )).to eq("authenticate: (untyped controller) { (String, ActiveSupport::HashWithIndifferentAccess[untyped, untyped]?) -> untyped } -> untyped")
+    end
+
+    it "fills an optional block too" do
+      expect(described_class.replace_block_param_types("m: () ?{ (untyped) -> untyped } -> untyped", ["String"]))
+        .to eq("m: () ?{ (String) -> untyped } -> untyped")
+    end
+
+    # A parameter no site could type stays `untyped` rather than dragging the
+    # whole block down with it.
+    it "fills the parameters it knows and keeps the others" do
+      expect(described_class.replace_block_param_types("m: () { (untyped, untyped) -> untyped } -> untyped", [nil, "Integer"]))
+        .to eq("m: () { (untyped, Integer) -> untyped } -> untyped")
+    end
+
+    # A parameter list is unambiguous, unlike return position, so the wrapping
+    # `TypeMerger` adds is redundant here — `(String | Integer, Integer)` reads
+    # as two parameters either way.
+    it "drops the redundant parens a merged union arrives with" do
+      expect(described_class.replace_block_param_types("m: () { (untyped, untyped) -> untyped } -> untyped", ["(String | Integer)", "Integer"]))
+        .to eq("m: () { (String | Integer, Integer) -> untyped } -> untyped")
+    end
+
+    it "keeps parens that are part of the type" do
+      expect(described_class.replace_block_param_types("m: () { (untyped) -> untyped } -> untyped", ["(A & B)?"]))
+        .to eq("m: () { ((A & B)?) -> untyped } -> untyped")
+    end
+
+    # Narrow on purpose: anything that isn't the shape the collector emits is
+    # someone else's answer, and overwriting it would be a regression.
+    it "leaves alone what it cannot account for" do
+      [
+        # arity unknown
+        ["m: () { (*untyped) -> untyped } -> untyped", ["String"]],
+        # length disagrees with the types on offer
+        ["m: () { (untyped, untyped) -> untyped } -> untyped", ["String"]],
+        # already refined, or hand-written
+        ["m: () { (String) -> untyped } -> untyped", ["Integer"]],
+        # no block at all
+        ["m: (untyped a) -> untyped", ["String"]],
+        # nothing to say
+        ["m: () { (untyped) -> untyped } -> untyped", [nil]],
+        ["m: () { (untyped) -> untyped } -> untyped", ["untyped"]],
+        ["m: () { (untyped) -> untyped } -> untyped", []]
+      ].each do |sig, types|
+        expect(described_class.replace_block_param_types(sig, types)).to eq(sig)
+      end
+    end
+  end
 end

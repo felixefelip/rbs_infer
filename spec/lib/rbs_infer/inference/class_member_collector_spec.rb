@@ -378,7 +378,9 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
 
     collector = collect(source)
     member = collector.members.find { |m| m.name == "tag" }
-    expect(member.signature).to eq("tag: (id: untyped, name: untyped, **untyped) ?{ (untyped) -> untyped } -> untyped")
+    # `*untyped`: an empty body never calls the block, so there is no arity to
+    # read off it — this example is about WHERE the block goes.
+    expect(member.signature).to eq("tag: (id: untyped, name: untyped, **untyped) ?{ (*untyped) -> untyped } -> untyped")
     expect(member.signature).not_to include(", ?{")
   end
 
@@ -392,7 +394,7 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
 
     collector = collect(source)
     member = collector.members.find { |m| m.name == "each" }
-    expect(member.signature).to eq("each: () ?{ (untyped) -> untyped } -> untyped")
+    expect(member.signature).to eq("each: () ?{ (*untyped) -> untyped } -> untyped")
   end
 
   it "gera assinatura com params posicionais e bloco" do
@@ -405,7 +407,7 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
 
     collector = collect(source)
     member = collector.members.find { |m| m.name == "map" }
-    expect(member.signature).to eq("map: (untyped items) ?{ (untyped) -> untyped } -> untyped")
+    expect(member.signature).to eq("map: (untyped items) ?{ (*untyped) -> untyped } -> untyped")
   end
 
   it "não sobrescreve superclass com a de uma classe aninhada" do

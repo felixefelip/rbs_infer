@@ -15,6 +15,11 @@
 # `with_optional` is the contrast the fix has to respect: guarded by `if block`,
 # optional is the correct answer there. And `with_yield` shows a second gap —
 # a method that yields is inferred as taking no block at all.
+#
+# The block's PARAMETERS come from the same evidence: whatever the body hands
+# to the block is what the block receives. `with_pair` and `with_either` below
+# pin that (felixefelip/rbs_infer#148) — including the case where the argument
+# is not a literal, which is the shape the Rails chain has.
 class Example17
   # Required: called unconditionally.
   def with_token(&block)
@@ -29,6 +34,29 @@ class Example17
   # Yields rather than naming the block.
   def with_yield
     yield "token"
+  end
+
+  # The block's PARAMETER TYPES are whatever the method passes to it, which is
+  # a question about expressions the checker has already typed — here a local
+  # assigned from a call, not a literal, which is the shape Rails' own
+  # `login_procedure.call(token, options)` has.
+  def with_pair(&block)
+    label = name.upcase
+    block.call(label, label.length)
+  end
+
+  # Two sites, two types, one block parameter: the union is what both sites
+  # agree the block must accept.
+  def with_either(flag)
+    if flag
+      yield "text"
+    else
+      yield 42
+    end
+  end
+
+  def name
+    "example"
   end
 
   def run

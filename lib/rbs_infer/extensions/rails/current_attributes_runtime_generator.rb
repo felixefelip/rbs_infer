@@ -201,15 +201,19 @@ module RbsInfer
         def set_with_defs(names)
           kwargs = names.map { |n| "#{n}: nil" }.join(", ")
           # The kwargs assignments are the point: they feed the attribute's type
-          # from `Current.with(user: ...)` call-sites. Ending in `block&.call(nil)`
+          # from `Current.with(user: ...)` call-sites. Ending in the block call
           # (rather than the last assignment) keeps set/with from LEAKING the
           # attribute type into a caller's return — the method infers `-> nil`,
-          # which is harmless (set/with are called for their side effect). The
-          # reopen is now type-checked: `&block` is inferred optional and
-          # single-arg, so the safe-nav covers the optionality and the `nil` the
-          # arity (the pseudo-code never runs).
+          # which is harmless (set/with are called for their side effect).
+          #
+          # No argument, like `CurrentAttributes#set` itself, which plainly
+          # `yield`s. It used to pass `nil` to satisfy a block inference that was
+          # hardcoded to one parameter; the arity now comes from this very line
+          # (felixefelip/rbs_infer#147), so the placeholder became the block's
+          # declared parameter TYPE — `?{ (nil) -> untyped }`, which is no type
+          # for a caller's block parameter to have.
           ["set", "with"].map do |method|
-            ["def self.#{method}(#{kwargs}, &block)", *names.map { |n| "  @#{n} = #{n}" }, "  block&.call(nil)", "end"]
+            ["def self.#{method}(#{kwargs}, &block)", *names.map { |n| "  @#{n} = #{n}" }, "  block&.call", "end"]
           end
         end
 

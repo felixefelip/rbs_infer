@@ -1,6 +1,9 @@
 class Example17
-  def with_token: () { (untyped) -> untyped } -> untyped
-  def with_optional: () ?{ (untyped) -> untyped } -> untyped
-  def with_yield: () { (untyped) -> untyped } -> untyped
+  def with_token: () { (String) -> untyped } -> untyped
+  def with_optional: () ?{ (String) -> untyped } -> untyped
+  def with_yield: () { (String) -> untyped } -> untyped
+  def with_pair: () { (String, Integer) -> untyped } -> untyped
+  def with_either: (untyped flag) { (String | Integer) -> untyped } -> untyped
+  def name: () -> String
   def run: () -> untyped
 end

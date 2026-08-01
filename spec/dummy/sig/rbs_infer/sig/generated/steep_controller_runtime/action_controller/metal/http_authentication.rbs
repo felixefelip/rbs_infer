@@ -1,11 +1,11 @@
 module ActionController
   module HttpAuthentication
     module Token::ControllerMethods
-      def authenticate_or_request_with_http_token: (?String realm, ?untyped message) ?{ (untyped) -> untyped } -> untyped
-      def authenticate_with_http_token: () ?{ (untyped) -> untyped } -> untyped
+      def authenticate_or_request_with_http_token: (?String realm, ?untyped message) ?{ (*untyped) -> untyped } -> untyped
+      def authenticate_with_http_token: () ?{ (*untyped) -> untyped } -> untyped
     end
     module Token
-      def authenticate: (untyped controller) { (untyped, untyped) -> untyped } -> untyped
+      def authenticate: (untyped controller) { (String, ActiveSupport::HashWithIndifferentAccess[untyped, untyped]?) -> untyped } -> untyped
     end
   end
 end
