@@ -5,7 +5,14 @@ require "tmpdir"
 require "rbs_infer/extensions/rails/controllers/framework_source_transcriber"
 
 RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscriber do
-  subject(:source) { described_class.new.build }
+  subject(:source) { files.map { |f| f[:source] }.join("\n") }
+
+  let(:files) { described_class.new.build }
+
+  it "mirrors the gem's own path, so provenance is readable from it" do
+    expect(files.map { |f| f[:filename] })
+      .to contain_exactly("action_controller/metal/http_authentication.rb")
+  end
 
   # The point of transcribing rather than modelling is that the body is the
   # gem's, whatever version happens to be installed. So the assertions below
@@ -68,8 +75,9 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
       quiet = RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator.new(app_dir: dir)
       asked = RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator.new(app_dir: dir, transcribe_framework: true)
 
-      expect(quiet.build.map(&:filename)).not_to include(described_class::FILENAME)
-      expect(asked.build.map(&:filename)).to include(described_class::FILENAME)
+      transcribed = "action_controller/metal/http_authentication.rb"
+      expect(quiet.build.map(&:filename)).not_to include(transcribed)
+      expect(asked.build.map(&:filename)).to include(transcribed)
     end
   end
 
@@ -82,6 +90,6 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
       )]
     )
 
-    expect(described_class.new.build).to be_nil
+    expect(described_class.new.build).to be_empty
   end
 end

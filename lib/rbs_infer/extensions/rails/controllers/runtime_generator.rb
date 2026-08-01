@@ -57,7 +57,14 @@ module RbsInfer
             FileUtils.rm_rf(dir)
             unless files.empty?
               FileUtils.mkdir_p(dir)
-              files.each { |file| File.write(File.join(dir, file.filename), file.source) }
+              files.each do |file|
+                path = File.join(dir, file.filename)
+                # A transcription mirrors the gem's layout, so its filename is a
+                # PATH — `action_controller/metal/http_authentication.rb` — and
+                # its directory has to exist before the write.
+                FileUtils.mkdir_p(File.dirname(path))
+                File.write(path, file.source)
+              end
             end
 
             dir
@@ -73,10 +80,9 @@ module RbsInfer
           def framework_source_files
             return [] unless @transcribe_framework
 
-            source = FrameworkSourceTranscriber.new.build
-            return [] unless source
-
-            [PseudoCodeBuilder::FileEntry.new(filename: FrameworkSourceTranscriber::FILENAME, source: source)]
+            FrameworkSourceTranscriber.new.build.map do |file|
+              PseudoCodeBuilder::FileEntry.new(filename: file[:filename], source: file[:source])
+            end
           end
         end
       end

@@ -7,7 +7,8 @@
 # the checker can follow the flow an RBS signature cannot express
 # (felixefelip/rbs_infer#144). Bodies are verbatim: the
 # bodies land in the owner they were written in, so their constant
-# references resolve by the same lexical nesting the gem relies on.
+# references resolve by the same lexical nesting the gem relies on,
+# and the file mirrors the gem's own path.
 
 module ActionController
   module HttpAuthentication
