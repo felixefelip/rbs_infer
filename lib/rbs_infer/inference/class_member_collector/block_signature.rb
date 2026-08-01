@@ -55,6 +55,18 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       Array.new(arity) { |slot| use_sites.filter_map { |args| position_of(args[slot]) } }
     end
 
+    # True when the body hands the block to someone else and says nothing more
+    # about it: no call of its own, no guard. Only then is the CALLEE's own
+    # requirement the best evidence available, and the Analyzer goes looking for
+    # it (felixefelip/rbs_infer#149).
+    #
+    # Both exclusions are the point. A guard is the author stating the block is
+    # optional whatever the callee wants, and a direct call has already answered
+    # the question with better evidence than a callee's declaration.
+    def open_forward?
+      !block_param_name.nil? && use_sites.empty? && forwards_block? && !guards_block?
+    end
+
     private
 
     def required?
@@ -115,6 +127,15 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
 
           sites << arguments_of(node)
         end
+      end
+    end
+
+    # `foo(&block)` — the block leaving this method for another one.
+    def forwards_block?
+      name = block_param_name or return false
+
+      walk_body do |node|
+        node.is_a?(Prism::BlockArgumentNode) && reads_block?(node.expression, name)
       end
     end
 

@@ -426,6 +426,27 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # Blocks, whose signature is decided by the body rather than the parameter
+  # list: required or not (#147), the parameter types read off the sites that
+  # use it (#148), and — for a body that only forwards — the callee's own
+  # requirement (#149). The three readings sit side by side in one class
+  # precisely because a fix for any of them can break the others.
+  it "example17" do
+    name = "models/example17"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example17.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # The RBS the analyzer derives FROM the runtime pseudo-code, snapshotted next to
   # the pseudo-code itself. The two together localize a regression: the `.rb`
   # changed => generator bug; identical `.rb` with a different `.rbs` => inference

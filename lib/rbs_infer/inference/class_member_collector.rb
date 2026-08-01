@@ -19,7 +19,10 @@ module RbsInfer::Inference
   # `block_arg_positions` = para membros `:method`/`:class_method`, onde ficam
   # os argumentos que o corpo passa para o bloco, um item por parâmetro do
   # bloco; o tipo de cada um vem do Steep, no Analyzer (#148).
-  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, :block_arg_positions, keyword_init: true)
+  # `block_open_forward` = o corpo só repassa o bloco (`foo(&block)`), sem
+  # chamá-lo nem testá-lo, então quem decide se ele é obrigatório é o callee —
+  # também resolvido no Analyzer (#149).
+  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, :block_arg_positions, :block_open_forward, keyword_init: true)
 
   # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
   DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
@@ -143,7 +146,8 @@ module RbsInfer::Inference
         # Only when we synthesized the signature — an explicit `#:`/`@rbs`
         # annotation is authoritative and must not be overridden.
         param_constant_defaults: sig ? nil : extractor.constant_default_params,
-        block_arg_positions: sig ? nil : extractor.block_arg_positions
+        block_arg_positions: sig ? nil : extractor.block_arg_positions,
+        block_open_forward: sig ? nil : extractor.block_open_forward?
       )
       super
     end

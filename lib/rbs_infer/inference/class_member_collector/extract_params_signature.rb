@@ -22,6 +22,12 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       block_signature.arg_positions
     end
 
+    # Whether the block's requirement is still open for the callee to settle
+    # (felixefelip/rbs_infer#149).
+    def block_open_forward?
+      block_signature.open_forward?
+    end
+
     # `body` decides whether a block is required, and whether a method that only
     # `yield`s takes one at all — neither is visible from the parameters alone.
     def initialize(params, body: nil)

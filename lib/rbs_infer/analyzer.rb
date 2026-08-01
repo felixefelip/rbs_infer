@@ -305,6 +305,11 @@ module RbsInfer
     # (felixefelip/rbs_infer#148).
     resolve_block_param_types(target_members)
 
+    # Métodos que só repassam o bloco (`foo(&block)`) herdam do callee a
+    # obrigatoriedade e o formato dele — pergunta que só o Steep responde,
+    # porque depende de qual sobrecarga se aplica (felixefelip/rbs_infer#149).
+    resolve_forwarded_block_requirements(target_members)
+
     # Identificar parâmetros opcionais do initialize
     optional_params = extract_optional_init_params
 
@@ -597,6 +602,33 @@ module RbsInfer
     return nil if types.empty?
 
     RbsInfer::Inference::TypeMerger.union_types(types)
+  end
+
+  # A method that forwards its block cannot say on its own whether one is
+  # needed: `items.each(&block)` runs fine without it, `Token.authenticate`
+  # does not. The callee decides, and the checker is what knows the callee —
+  # including which of its overloads a possibly-nil proc selects.
+  #
+  # Only members the collector left open are touched: no call of their own, no
+  # guard, nothing but the forward (`?{ (*untyped) -> untyped }`).
+  def resolve_forwarded_block_requirements(target_members)
+    return if @parsed_target.nil?
+
+    members = target_members.select do |m|
+      [:method, :class_method].include?(m.kind) && m.block_open_forward
+    end
+    return if members.empty?
+
+    requirements = steep_bridge.forwarded_block_requirements(@parsed_target.source)
+    return if requirements.empty?
+
+    members.each do |member|
+      key = member.kind == :class_method ? "self.#{member.name}" : member.name
+      requirement = requirements[key]
+      next unless requirement
+
+      member.signature = RbsInfer::Signatures::RbsParserUtil.require_block(member.signature, requirement[:params])
+    end
   end
 
   # ─── Extrair nomes dos keyword params opcionais do initialize ─────

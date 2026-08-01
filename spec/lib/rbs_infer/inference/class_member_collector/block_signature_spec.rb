@@ -92,6 +92,36 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector::BlockSignature do
     end
   end
 
+  # Forwarding proves nothing by itself, so the question is left open for the
+  # callee to answer — but only when the body says nothing else at all.
+  describe "#open_forward?" do
+    def open_forward?(source)
+      def_node = Prism.parse(source).value.statements.body.first
+      described_class.new(def_node.parameters, body: def_node.body).open_forward?
+    end
+
+    it "is open when the body does nothing but forward" do
+      expect(open_forward?("def m(&block); other(&block); end")).to be(true)
+    end
+
+    it "is closed by a guard, which says optional whatever the callee wants" do
+      expect(open_forward?("def m(&block); other(&block) if block; end")).to be(false)
+    end
+
+    it "is closed by the body calling the block itself — better evidence" do
+      expect(open_forward?("def m(&block); block.call(1); other(&block); end")).to be(false)
+    end
+
+    it "is closed when nothing is forwarded" do
+      expect(open_forward?("def m(&block); other(1); end")).to be(false)
+    end
+
+    # `&:upcase` builds a proc on the spot; it is not this method's block.
+    it "is closed when the method has no block parameter" do
+      expect(open_forward?("def m(items); items.map(&:upcase); end")).to be(false)
+    end
+  end
+
   it "is absent when the method neither takes nor yields a block" do
     expect(signature_for("def m(a, b); a + b; end")).to be_nil
   end
