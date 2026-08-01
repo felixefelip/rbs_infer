@@ -15,21 +15,23 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
     # value-position constant itself (felixefelip/rbs_infer#56).
     def constant_resolver = nil
 
-    def initialize(params)
+    # `body` decides whether a block is required, and whether a method that only
+    # `yield`s takes one at all — neither is visible from the parameters alone.
+    def initialize(params, body: nil)
 			@params = params
+      @body = body
       @parts = []
       @constant_default_params = {}
     end
 
     def call
-      return "()" unless @params
-
-      extract_positional_params_signature
-      extract_keyword_params_signature
+      if @params
+        extract_positional_params_signature
+        extract_keyword_params_signature
+      end
 
       result = "(#{@parts.join(", ")})"
-      result = "#{result} #{block_sig}" if block_sig
-      result
+      block_sig ? "#{result} #{block_sig}" : result
     end
 
     private
@@ -97,13 +99,13 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       end
     end
 
+    # The block half lives in its own object: it is decided by the BODY, not
+    # by the parameter list, and it is about to learn more (the callee's own
+    # requirement, the types at the use sites) that has no business here.
     def block_sig
-      # Block — in RBS, the block goes after the closing paren, not inside it
-      @block_sig||= begin
-        if @params.respond_to?(:block) && @params.block
-          "?{ (untyped) -> untyped }"
-        end
-      end
+      return @block_sig if defined?(@block_sig)
+
+      @block_sig = BlockSignature.new(@params, body: @body).call
     end
   end
 end

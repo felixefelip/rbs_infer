@@ -117,7 +117,7 @@ module RbsInfer::Inference
       name = node.name.to_s
       sig = find_rbs_signature(@comments, @lines, node.location.start_line)
 
-      extractor = ExtractParamsSignature.new(node.parameters)
+      extractor = ExtractParamsSignature.new(node.parameters, body: node.body)
       params_sig = extractor.call
 
       signature = if sig

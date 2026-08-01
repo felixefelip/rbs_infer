@@ -1,0 +1,6 @@
+class Example17
+  def with_token: () { (untyped) -> untyped } -> untyped
+  def with_optional: () ?{ (untyped) -> untyped } -> untyped
+  def with_yield: () { (untyped) -> untyped } -> untyped
+  def run: () -> untyped
+end
