@@ -431,4 +431,27 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
       end
     end
   end
+
+  describe ".require_block" do
+    it "adopts the callee's block: required, and shaped like theirs" do
+      expect(described_class.require_block("m: () ?{ (*untyped) -> untyped } -> untyped", ["String", "Integer"]))
+        .to eq("m: () { (String, Integer) -> untyped } -> untyped")
+    end
+
+    it "still requires one when the callee's shape is unreadable" do
+      expect(described_class.require_block("m: () ?{ (*untyped) -> untyped } -> untyped", nil))
+        .to eq("m: () { (*untyped) -> untyped } -> untyped")
+    end
+
+    # Only the "I just forward it" spelling is up for grabs; every other block
+    # was settled by the body itself or by a hand-written annotation.
+    it "touches nothing else" do
+      [
+        "m: () ?{ (untyped) -> untyped } -> untyped",
+        "m: () { (*untyped) -> untyped } -> untyped",
+        "m: () ?{ (String) -> untyped } -> untyped",
+        "m: (untyped a) -> untyped"
+      ].each { |sig| expect(described_class.require_block(sig, ["String"])).to eq(sig) }
+    end
+  end
 end

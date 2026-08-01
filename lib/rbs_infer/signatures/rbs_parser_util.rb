@@ -294,6 +294,21 @@ module RbsInfer::Signatures
       !type.nil? && type != "untyped"
     end
 
+    # Turns the "I only forward it" block into the callee's own — required, and
+    # shaped like whatever the callee declares (#149).
+    #
+    # `?{ (*untyped) -> untyped }` is exactly what the collector emits when the
+    # body forwards a block and says nothing else about it, which is why that
+    # shape alone is rewritten: any other spelling was settled by better
+    # evidence (the body itself, or a hand-written annotation).
+    OPEN_FORWARD_BLOCK = "?{ (*untyped) -> untyped }"
+
+    def require_block(method_sig, params)
+      return method_sig unless method_sig&.include?(OPEN_FORWARD_BLOCK)
+
+      method_sig.sub(OPEN_FORWARD_BLOCK, "{ (#{params&.join(", ") || "*untyped"}) -> untyped }")
+    end
+
     # Drops one redundant outer pair. `(A & B)?` and `Array[A | B]` are not
     # outer-parenthesized, so they pass through untouched.
     def unparenthesized(type)

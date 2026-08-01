@@ -55,6 +55,25 @@ class Example17
     end
   end
 
+  # Forwarding says nothing on its own, so the CALLEE settles it: `with_token`
+  # cannot run without a block, so neither can this — and it inherits the shape
+  # too (felixefelip/rbs_infer#149).
+  def forward_required(&block)
+    with_token(&block)
+  end
+
+  # The same forward into a callee that tolerates no block stays optional.
+  def forward_optional(&block)
+    with_optional(&block)
+  end
+
+  # And a guard outranks the callee: the author is saying the block is optional
+  # here whatever `with_token` demands, and they are right — with no block the
+  # call never happens.
+  def forward_guarded(&block)
+    with_token(&block) if block
+  end
+
   def name
     "example"
   end
