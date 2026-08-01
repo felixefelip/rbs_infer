@@ -33,46 +33,33 @@ module RbsInfer
         # stage 1 of #144, and it exists so stages 2 and 3 have real code to be
         # right about instead of a hand-written summary to agree with.
         class FrameworkSourceTranscriber
-          # Where a transcription may land is decided by the collection: RBS
-          # refuses two declarations of one method on one owner, and the
-          # collection already declares this family. So each seed names an owner
-          # DIFFERENT from the declaring one, chosen so resolution still favours
-          # the transcription:
+          # A body is transcribed into ITS OWN OWNER, and the owner is read off
+          # the method rather than chosen. The choice looked free and is not: a
+          # body carries references that resolve by the lexical nesting of where
+          # it was WRITTEN. `Token.authenticate(self, &login_procedure)` moved
+          # into `ActionController::Base` stops resolving, because the nesting
+          # there is `[Base, ActionController]` and no `ActionController::Token`
+          # exists — Ruby raises the same NameError the checker reports.
           #
-          #   * the two controller methods are declared on
-          #     `HttpAuthentication::Token::ControllerMethods`, a module
-          #     `ActionController::Base` includes — and a class's own method wins
-          #     over an included module's;
-          #   * `Token.authenticate` is declared as an INSTANCE method of `Token`,
-          #     reachable because `Token` extends itself — and a singleton method
-          #     defined directly wins over one obtained by `extend`.
-          #
-          # Both were measured against Steep's own resolution before being relied
-          # on. `as_singleton` rewrites the `def` line (`def authenticate` ->
-          # `def self.authenticate`) and nothing else: the body stays verbatim.
-          Seed = Struct.new(:receiver, :method_name, :singleton, :namespace, :as_singleton, keyword_init: true)
+          # Keeping the owner means the transcription is verbatim, with no `def`
+          # line rewritten, and it means the RBS collection must stop declaring
+          # what is transcribed: RBS refuses two declarations of one method on
+          # one owner, and now there is only one place the method can live.
+          # Declarations have a free owner; bodies do not.
+          Seed = Struct.new(:receiver, :method_name, keyword_init: true)
 
           SEEDS = [
             Seed.new(
-              receiver: "ActionController::Base",
-              method_name: :authenticate_or_request_with_http_token,
-              singleton: false,
-              namespace: ["ActionController", "Base"],
-              as_singleton: false
+              receiver: "ActionController::HttpAuthentication::Token::ControllerMethods",
+              method_name: :authenticate_or_request_with_http_token
             ),
             Seed.new(
-              receiver: "ActionController::Base",
-              method_name: :authenticate_with_http_token,
-              singleton: false,
-              namespace: ["ActionController", "Base"],
-              as_singleton: false
+              receiver: "ActionController::HttpAuthentication::Token::ControllerMethods",
+              method_name: :authenticate_with_http_token
             ),
             Seed.new(
               receiver: "ActionController::HttpAuthentication::Token",
-              method_name: :authenticate,
-              singleton: true,
-              namespace: ["ActionController", "HttpAuthentication", "Token"],
-              as_singleton: true
+              method_name: :authenticate
             )
           ].freeze
 
@@ -84,12 +71,8 @@ module RbsInfer
           # than raised on: a generator that dies on a framework upgrade is worse
           # than one that emits less.
           def build
-            blocks = SEEDS.group_by(&:namespace).filter_map do |namespace, seeds|
-              defs = seeds.filter_map { |seed| transcribe(seed) }
-              next if defs.empty?
-
-              wrap(namespace, defs)
-            end
+            transcribed = SEEDS.filter_map { |seed| transcribe(seed) }
+            blocks = transcribed.group_by(&:first).map { |namespace, pairs| wrap(namespace, pairs.map(&:last)) }
             return nil if blocks.empty?
 
             <<~HEADER + blocks.join("\n")
@@ -100,29 +83,30 @@ module RbsInfer
               #
               # The framework's own source, transcribed from the installed gem so
               # the checker can follow the flow an RBS signature cannot express
-              # (felixefelip/rbs_infer#144). Bodies are verbatim; only a `def`
-              # line may be rewritten, to place the method on an owner that does
-              # not collide with the signature the RBS collection already ships.
+              # (felixefelip/rbs_infer#144). Bodies are verbatim: the
+              # bodies land in the owner they were written in, so their constant
+              # references resolve by the same lexical nesting the gem relies on.
 
             HEADER
           end
 
           private
 
-          # The method's source, dedented, or nil when it cannot be reached.
+          # `[namespace, source]` for a seed, or nil when it cannot be reached.
+          # The namespace is the method's OWNER, so the body lands back in the
+          # nesting it was written in.
           def transcribe(seed)
             method = resolve(seed) or return nil
+            owner = method.owner.name or return nil
             file, line = method.source_location
             return nil unless file && line && File.file?(file)
 
             node = def_node_at(file, line) or return nil
-            source = dedent(node.slice, node.location.start_column)
-            seed.as_singleton ? singleton_def(source, seed.method_name) : source
+            [owner.split("::"), dedent(node.slice, node.location.start_column)]
           end
 
           def resolve(seed)
-            receiver = Object.const_get(seed.receiver)
-            seed.singleton ? receiver.method(seed.method_name) : receiver.instance_method(seed.method_name)
+            Object.const_get(seed.receiver).instance_method(seed.method_name)
           rescue NameError
             nil
           end
@@ -135,14 +119,6 @@ module RbsInfer
 
             RbsInfer::Analyzer.find_all_nodes(result.value) { |n| n.is_a?(Prism::DefNode) }
                               .find { |n| n.location.start_line == line }
-          end
-
-          # `def authenticate(...)` -> `def self.authenticate(...)`, first line
-          # only. The method is reached as `Token.authenticate` because the module
-          # extends itself; declaring it as the singleton is what makes the
-          # transcription the one a call resolves to.
-          def singleton_def(source, method_name)
-            source.sub(/\Adef #{Regexp.escape(method_name.to_s)}\b/, "def self.#{method_name}")
           end
 
           # `node.slice` starts AT the `def` keyword, so the first line carries no

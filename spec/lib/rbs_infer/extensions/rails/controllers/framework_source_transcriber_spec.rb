@@ -11,9 +11,8 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
   # gem's, whatever version happens to be installed. So the assertions below
   # compare against the RESOLVED source rather than against a fixed text, which
   # would pin a Rails version instead of the property that matters.
-  def real_body(receiver, method_name, singleton: false)
-    target = Object.const_get(receiver)
-    method = singleton ? target.method(method_name) : target.instance_method(method_name)
+  def real_body(receiver, method_name)
+    method = Object.const_get(receiver).instance_method(method_name)
     file, line = method.source_location
     result = Prism.parse_file(file)
     node = RbsInfer::Analyzer.find_all_nodes(result.value) { |n| n.is_a?(Prism::DefNode) }
@@ -24,7 +23,10 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
   end
 
   it "transcribes the body verbatim from the installed gem" do
-    body = real_body("ActionController::Base", :authenticate_or_request_with_http_token)
+    body = real_body(
+      "ActionController::HttpAuthentication::Token::ControllerMethods",
+      :authenticate_or_request_with_http_token
+    )
 
     # Every line of the real method, at the sidecar's indentation.
     body.lines.each do |line|
@@ -34,23 +36,24 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
     end
   end
 
-  it "puts the controller methods on ActionController::Base, not on the declaring module" do
-    # The RBS collection declares them on HttpAuthentication::Token::ControllerMethods.
-    # Re-declaring there would be a duplicate; on the class it is not, and a
-    # class's own method wins over an included module's.
-    expect(source).to match(/module ActionController\n  class Base\n/)
+  it "keeps each body in the owner it was written in" do
+    # Not a free choice: a body carries constant references that resolve by the
+    # lexical nesting of where it was WRITTEN. `Token.authenticate(...)` moved
+    # into `ActionController::Base` stops resolving — there is no
+    # `ActionController::Token` — and Ruby raises the same NameError the checker
+    # reports. Declarations have a free owner; bodies do not.
+    expect(source).to include("module Token\n      module ControllerMethods\n")
     expect(source).to include("def authenticate_or_request_with_http_token")
     expect(source).to include("def authenticate_with_http_token")
   end
 
-  it "rewrites only the def line for the method reached through `extend self`" do
-    # `Token.authenticate` is an instance method the module extends onto itself.
-    # Declared as the singleton, it wins; the body stays untouched.
-    expect(source).to include("def self.authenticate(controller, &login_procedure)")
-    expect(source).to include("login_procedure.call(token, options)")
+  it "rewrites nothing, not even a def line" do
+    body = real_body("ActionController::HttpAuthentication::Token", :authenticate)
 
-    body = real_body("ActionController::HttpAuthentication::Token", :authenticate, singleton: true)
     expect(body).to start_with("def authenticate(")
+    expect(source).to include("def authenticate(controller, &login_procedure)")
+    expect(source).to include("login_procedure.call(token, options)")
+    expect(source).not_to include("def self.authenticate")
   end
 
   it "emits parseable Ruby" do
@@ -75,10 +78,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
       "#{described_class}::SEEDS",
       [described_class::Seed.new(
         receiver: "ActionController::Base",
-        method_name: :no_such_method_anywhere,
-        singleton: false,
-        namespace: ["ActionController", "Base"],
-        as_singleton: false
+        method_name: :no_such_method_anywhere
       )]
     )
 
