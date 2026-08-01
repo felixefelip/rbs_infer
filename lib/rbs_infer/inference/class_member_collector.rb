@@ -163,6 +163,8 @@ module RbsInfer::Inference
         extract_attrs(node)
       when :include
         extract_includes(node)
+      when :prepend
+        extract_includes(node, kind: :prepend)
       when :extend
         extract_extends(node)
       when :delegate
@@ -259,7 +261,11 @@ module RbsInfer::Inference
       pop_scope
     end
 
-    def extract_includes(node)
+    # `kind:` distinguishes `include` from `prepend`. Both are mixins and are
+    # collected identically; only the emitted keyword differs, and with it where
+    # the module lands in the ancestor chain — which decides whose method a call
+    # resolves to (felixefelip/rbs_infer#144).
+    def extract_includes(node, kind: :include)
       # `Receiver.include Mod` (explicit constant receiver) reopens another
       # class — it is NOT a mixin of the current target. The multi-target
       # core picks these up as separate reopen targets (TargetDiscovery);
@@ -274,7 +280,7 @@ module RbsInfer::Inference
         next unless name
 
         @members << Member.new(
-          kind: :include,
+          kind: kind,
           name: name,
           signature: name,
           visibility: :public,
