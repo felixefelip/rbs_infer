@@ -101,14 +101,8 @@ module ActionController
       extend ::ActionController::HttpAuthentication::Token
 
       module ControllerMethods
-        def authenticate_or_request_with_http_token: (?String realm, ?String? message) { (String token, ActiveSupport::HashWithIndifferentAccess[untyped, untyped] options) -> boolish } -> untyped
-
-        def authenticate_with_http_token: () { (String token, ActiveSupport::HashWithIndifferentAccess[untyped, untyped] options) -> boolish } -> boolish
-
         def request_http_token_authentication: (?String realm, ?String? message) -> void
       end
-
-      def authenticate: (instance controller) { (String token, ActiveSupport::HashWithIndifferentAccess[untyped, untyped] options) -> boolish } -> boolish
 
       def token_and_options: (ActionDispatch::Request request) -> [String, ActiveSupport::HashWithIndifferentAccess[untyped, untyped]]?
 
