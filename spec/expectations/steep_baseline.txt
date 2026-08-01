@@ -9,8 +9,6 @@ app/models/concerns/test/filtrable.rb:8:4: [error] Type `(singleton(::Test) & si
 app/models/example10.rb:27:26: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not have method `name`
 app/models/example15.rb:25:25: [error] Type `(::Example15::User | nil)` does not have method `name`
-app/models/example17.rb:21:10: [error] Type `(^(untyped) -> untyped | nil)` does not have method `call`
-app/models/example17.rb:31:4: [warning] No block given for `yield`
 app/models/example3.rb:122:11: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:63:13: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:64:26: [error] Type `(::Example3::User | nil)` does not have method `name`
@@ -32,4 +30,4 @@ app/services/profile_formatter.rb:31:4: [error] `format_nickname` requires `self
 app/services/profile_formatter.rb:37:13: [error] Type `(::String | nil)` does not have method `upcase`
 app/services/tag_destroy.rb:110:6: [error] Cannot allow method body have type `(void | ::String)` because declared as type `(::String | nil)`
 app/services/tag_destroy.rb:98:7: [error] Type `::TagDestroy` does not have method `untyped`
-sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:35:26: [error] Type `(^(untyped) -> untyped | nil)` does not have method `call`
+sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:22:35: [warning] Cannot pass a value of type `(^(untyped) -> untyped | nil)` as a block-pass-argument of type `^(untyped, untyped) -> untyped`

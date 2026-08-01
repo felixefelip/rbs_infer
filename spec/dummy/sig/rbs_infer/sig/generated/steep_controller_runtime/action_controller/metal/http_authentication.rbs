@@ -5,7 +5,7 @@ module ActionController
       def authenticate_with_http_token: () ?{ (untyped) -> untyped } -> untyped
     end
     module Token
-      def authenticate: (untyped controller) ?{ (untyped) -> untyped } -> untyped
+      def authenticate: (untyped controller) { (untyped, untyped) -> untyped } -> untyped
     end
   end
 end
