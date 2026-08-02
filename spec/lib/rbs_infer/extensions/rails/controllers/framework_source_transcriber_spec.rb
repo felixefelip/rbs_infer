@@ -25,11 +25,15 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
     node = RbsInfer::Analyzer.find_all_nodes(result.value) { |n| n.is_a?(Prism::DefNode) }
                              .find { |n| n.location.start_line == line }
     margin = node.location.start_column
-    first, *rest = node.slice.lines
+    # Desugared like the transcription itself, so a dynamic send does not read
+    # as a discrepancy: the body is the gem's MODULO the one declared rewrite
+    # (felixefelip/rbs_infer#160). Without this the assertion below turns into a
+    # landmine — it passes only while no seed's body contains a `__send__`.
+    first, *rest = described_class.new.send(:desugar_dynamic_sends, node).lines
     ([first] + rest.map { |l| l.strip.empty? ? l : l.sub(/\A {0,#{margin}}/, "") }).join
   end
 
-  it "transcribes the body verbatim from the installed gem" do
+  it "transcribes the body from the installed gem, modulo the declared rewrite" do
     body = real_body(
       "ActionController::HttpAuthentication::Token::ControllerMethods",
       :authenticate_or_request_with_http_token
