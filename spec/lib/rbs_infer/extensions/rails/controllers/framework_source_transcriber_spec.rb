@@ -3,6 +3,7 @@ require "rbs_infer"
 require "action_controller"
 require "tmpdir"
 require "rbs_infer/extensions/rails/controllers/framework_source_transcriber"
+require "rbs_infer/extensions/rails/controllers/runtime_generator"
 
 RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscriber do
   subject(:source) { files.map { |f| f[:source] }.join("\n") }
@@ -25,11 +26,15 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
     node = RbsInfer::Analyzer.find_all_nodes(result.value) { |n| n.is_a?(Prism::DefNode) }
                              .find { |n| n.location.start_line == line }
     margin = node.location.start_column
-    first, *rest = node.slice.lines
+    # Desugared like the transcription itself, so a dynamic send does not read
+    # as a discrepancy: the body is the gem's MODULO the one declared rewrite
+    # (felixefelip/rbs_infer#160). Without this the assertion below turns into a
+    # landmine — it passes only while no seed's body contains a `__send__`.
+    first, *rest = described_class.new.send(:desugar_dynamic_sends, node).lines
     ([first] + rest.map { |l| l.strip.empty? ? l : l.sub(/\A {0,#{margin}}/, "") }).join
   end
 
-  it "transcribes the body verbatim from the installed gem" do
+  it "transcribes the body from the installed gem, modulo the declared rewrite" do
     body = real_body(
       "ActionController::HttpAuthentication::Token::ControllerMethods",
       :authenticate_or_request_with_http_token
@@ -52,6 +57,31 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
     expect(source).to include("module Token\n      module ControllerMethods\n")
     expect(source).to include("def authenticate_or_request_with_http_token")
     expect(source).to include("def authenticate_with_http_token")
+  end
+
+  # The `||`'s other operand, and the frame that hands `self` to it. Their TYPES
+  # were never in question — what is missing without them is the proof that
+  # reaching this operand RENDERS, which is what makes the fact the block
+  # establishes sound on every other exit (felixefelip/steep#126).
+  it "transcribes the halting tail of the chain" do
+    expect(source).to include("def request_http_token_authentication")
+
+    real_body("ActionController::HttpAuthentication::Token", :authentication_request).lines.each do |line|
+      next if line.strip.empty?
+
+      expect(source).to include(line.strip)
+    end
+  end
+
+  # And the rewrite is not hypothetical: that render is written as a dynamic
+  # send, so a verbatim transcription would be a dead end at exactly the point
+  # where the halt has to be seen.
+  it "leaves no dynamic send behind" do
+    # The header names the rewrite, so the assertion is about the code below it.
+    code = source.lines.reject { |line| line.start_with?("#") }.join
+
+    expect(code).to include("controller.render")
+    expect(code).not_to include("__send__")
   end
 
   it "rewrites nothing, not even a def line" do
@@ -91,5 +121,43 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
     )
 
     expect(described_class.new.build).to be_empty
+  end
+
+  # felixefelip/rbs_infer#160. The one deviation from a verbatim body, applied
+  # because Steep resolves NONE of `__send__`, `send`, `public_send` — all three
+  # type as their `Kernel`/`BasicObject` declaration and return `untyped`, so the
+  # call is a dead end for the flow the transcription exists to expose.
+  describe "desugaring a dynamic send" do
+    def desugar(ruby)
+      node = RbsInfer::Analyzer.find_all_nodes(Prism.parse(ruby).value) { |n| n.is_a?(Prism::DefNode) }.first
+      described_class.new.send(:desugar_dynamic_sends, node)
+    end
+
+    it "writes the call without the indirection, keeping the other arguments" do
+      expect(desugar(<<~RUBY)).to include("controller.render plain: message, status: :unauthorized")
+        def authentication_request(controller, message)
+          controller.__send__ :render, plain: message, status: :unauthorized
+        end
+      RUBY
+    end
+
+    it "covers `send` and `public_send`, which resolve no better" do
+      expect(desugar("def a(c); c.send(:render, 1); end")).to include("c.render(1)")
+      expect(desugar("def a(c); c.public_send(:render, 1); end")).to include("c.render(1)")
+    end
+
+    it "handles a call whose only argument is the symbol" do
+      expect(desugar("def a(c); c.__send__(:reset); end")).to include("c.reset()")
+    end
+
+    # With a variable there is no name to put in the message's place, so the
+    # call stays as written — and stays a dead end, honestly.
+    it "leaves a dynamic name alone" do
+      expect(desugar("def a(c, name); c.__send__(name, 1); end")).to include("c.__send__(name, 1)")
+    end
+
+    it "leaves an ordinary call alone" do
+      expect(desugar("def a(c); c.render(1); end")).to include("c.render(1)")
+    end
   end
 end

@@ -5,10 +5,15 @@
 #
 # The framework's own source, transcribed from the installed gem so
 # the checker can follow the flow an RBS signature cannot express
-# (felixefelip/rbs_infer#144). Bodies are verbatim: the
-# bodies land in the owner they were written in, so their constant
-# references resolve by the same lexical nesting the gem relies on,
-# and the file mirrors the gem's own path.
+# (felixefelip/rbs_infer#144). Bodies land in the owner they were
+# written in, so their constant references resolve by the same
+# lexical nesting the gem relies on, and the file mirrors the gem's
+# own path.
+#
+# Verbatim but for one mechanical rewrite: `x.__send__(:foo, …)`
+# and its `send`/`public_send` siblings are written `x.foo(…)`.
+# Steep resolves none of the three, so the call would be a dead end
+# for every fact that depends on what it reached.
 
 module ActionController
   module HttpAuthentication
@@ -20,6 +25,10 @@ module ActionController
 
         def authenticate_with_http_token(&login_procedure)
           Token.authenticate(self, &login_procedure)
+        end
+
+        def request_http_token_authentication(realm = "Application", message = nil)
+          Token.authentication_request(self, realm, message)
         end
       end
     end
@@ -34,6 +43,12 @@ module ActionController
         unless token.blank?
           login_procedure.call(token, options)
         end
+      end
+
+      def authentication_request(controller, realm, message = nil)
+        message ||= "HTTP Token: Access denied.\n"
+        controller.headers["WWW-Authenticate"] = %(Token realm="#{realm.tr('"', "")}")
+        controller.render plain: message, status: :unauthorized
       end
     end
   end

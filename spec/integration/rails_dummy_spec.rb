@@ -533,6 +533,31 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       assert_runtime_rbs("steep_controller_runtime")
     end
 
+    # The transcription's own pseudo-code, which nothing else compared with a
+    # fresh generation: `assert_runtime_rbs` derives the `.rbs` FROM the
+    # checked-in `.rb`, so a stale body yields a consistent, stale signature and
+    # the suite stays green. The Devise generator has had this guard all along
+    # (felixefelip/rbs_infer#160).
+    it "emits the transcription checked into the dummy" do
+      # Inside the example, not at the top: the seeds are reflected off real
+      # constants, so the framework has to be loaded — and loading it from a
+      # file's top level is what made `transcribe_framework:` a parameter rather
+      # than a detection in the first place (felixefelip/rbs_infer#146).
+      require "action_controller"
+      require "rbs_infer/extensions/rails/controllers/framework_source_transcriber"
+
+      files = RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscriber.new.build
+      expect(files).not_to be_empty
+
+      aggregate_failures do
+        files.each do |file|
+          checked_in = Pathname.new("sig/generated/steep_controller_runtime").join(file[:filename])
+          expect(file[:source]).to eq(checked_in.read),
+                                   "#{checked_in} is stale — re-run `rake rbs_infer:controller_runtime:all`"
+        end
+      end
+    end
+
     it "view runtime" do
       assert_runtime_rbs("steep_actionview_runtime")
     end

@@ -60,6 +60,18 @@ module RbsInfer
             Seed.new(
               receiver: "ActionController::HttpAuthentication::Token",
               method_name: :authenticate
+            ),
+            # The `||`'s other operand, and the two frames that carry its halt.
+            # Their TYPES were never in question — what is missing without them
+            # is the proof that reaching this operand RENDERS, which is what
+            # makes the chain's fact sound (felixefelip/steep#126).
+            Seed.new(
+              receiver: "ActionController::HttpAuthentication::Token::ControllerMethods",
+              method_name: :request_http_token_authentication
+            ),
+            Seed.new(
+              receiver: "ActionController::HttpAuthentication::Token",
+              method_name: :authentication_request
             )
           ].freeze
 
@@ -107,10 +119,15 @@ module RbsInfer
               #
               # The framework's own source, transcribed from the installed gem so
               # the checker can follow the flow an RBS signature cannot express
-              # (felixefelip/rbs_infer#144). Bodies are verbatim: the
-              # bodies land in the owner they were written in, so their constant
-              # references resolve by the same lexical nesting the gem relies on,
-              # and the file mirrors the gem's own path.
+              # (felixefelip/rbs_infer#144). Bodies land in the owner they were
+              # written in, so their constant references resolve by the same
+              # lexical nesting the gem relies on, and the file mirrors the gem's
+              # own path.
+              #
+              # Verbatim but for one mechanical rewrite: `x.__send__(:foo, …)`
+              # and its `send`/`public_send` siblings are written `x.foo(…)`.
+              # Steep resolves none of the three, so the call would be a dead end
+              # for every fact that depends on what it reached.
 
             HEADER
           end
@@ -125,7 +142,49 @@ module RbsInfer
             return nil unless file && line && File.file?(file)
 
             node = def_node_at(file, line) or return nil
-            [file, owner.split("::"), dedent(node.slice, node.location.start_column)]
+            [file, owner.split("::"), dedent(desugar_dynamic_sends(node), node.location.start_column)]
+          end
+
+          # `controller.__send__ :render, …` → `controller.render …`
+          #
+          # The one deviation from a verbatim body, and a mechanical one: the
+          # same call written without the indirection. Steep resolves none of
+          # `__send__`, `send` or `public_send` — measured, all three type as
+          # their `Kernel`/`BasicObject` declaration returning `untyped` — so the
+          # call-graph edge is lost, and with it every fact that depends on what
+          # the method reached. Rails renders the 401 that way, and that render
+          # is what proves the `||` tail halts (felixefelip/steep#126).
+          #
+          # Only with a LITERAL symbol: with a variable there is no name to put
+          # in its place. And only meaning-preserving while the target is public
+          # — `__send__` reaches private methods, a plain call does not. When it
+          # is not, the transcription reports a visibility error the real code
+          # does not have: wrong, but wrong out loud, which is the trade taken
+          # rather than teaching the checker to read symbols.
+          SEND_ALIASES = %i[__send__ send public_send].freeze
+
+          def desugar_dynamic_sends(node)
+            source = node.slice.dup
+            origin = node.location.start_offset
+
+            edits = RbsInfer::Analyzer.find_all_nodes(node) { |n| dynamic_send?(n) }.flat_map do |call|
+              symbol, *rest = call.arguments.arguments
+              # The argument list loses the symbol; the message keeps its place,
+              # spelled with the symbol's own name.
+              [[call.message_loc.start_offset - origin, call.message_loc.end_offset - origin, symbol.unescaped],
+               [symbol.location.start_offset - origin,
+                (rest.first&.location&.start_offset || symbol.location.end_offset) - origin, ""]]
+            end
+
+            # Back to front, so an earlier edit cannot shift a later offset.
+            edits.sort_by { |start, _, _| -start }.each { |start, finish, text| source[start...finish] = text }
+            source
+          end
+
+          def dynamic_send?(node)
+            return false unless node.is_a?(Prism::CallNode) && SEND_ALIASES.include?(node.name)
+
+            node.arguments&.arguments&.first.is_a?(Prism::SymbolNode)
           end
 
           def resolve(seed)
