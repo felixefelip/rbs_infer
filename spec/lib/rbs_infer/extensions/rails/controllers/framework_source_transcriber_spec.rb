@@ -92,4 +92,42 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
 
     expect(described_class.new.build).to be_empty
   end
+
+  # felixefelip/rbs_infer#160. The one deviation from a verbatim body, applied
+  # because Steep resolves NONE of `__send__`, `send`, `public_send` — all three
+  # type as their `Kernel`/`BasicObject` declaration and return `untyped`, so the
+  # call is a dead end for the flow the transcription exists to expose.
+  describe "desugaring a dynamic send" do
+    def desugar(ruby)
+      node = RbsInfer::Analyzer.find_all_nodes(Prism.parse(ruby).value) { |n| n.is_a?(Prism::DefNode) }.first
+      described_class.new.send(:desugar_dynamic_sends, node)
+    end
+
+    it "writes the call without the indirection, keeping the other arguments" do
+      expect(desugar(<<~RUBY)).to include("controller.render plain: message, status: :unauthorized")
+        def authentication_request(controller, message)
+          controller.__send__ :render, plain: message, status: :unauthorized
+        end
+      RUBY
+    end
+
+    it "covers `send` and `public_send`, which resolve no better" do
+      expect(desugar("def a(c); c.send(:render, 1); end")).to include("c.render(1)")
+      expect(desugar("def a(c); c.public_send(:render, 1); end")).to include("c.render(1)")
+    end
+
+    it "handles a call whose only argument is the symbol" do
+      expect(desugar("def a(c); c.__send__(:reset); end")).to include("c.reset()")
+    end
+
+    # With a variable there is no name to put in the message's place, so the
+    # call stays as written — and stays a dead end, honestly.
+    it "leaves a dynamic name alone" do
+      expect(desugar("def a(c, name); c.__send__(name, 1); end")).to include("c.__send__(name, 1)")
+    end
+
+    it "leaves an ordinary call alone" do
+      expect(desugar("def a(c); c.render(1); end")).to include("c.render(1)")
+    end
+  end
 end
