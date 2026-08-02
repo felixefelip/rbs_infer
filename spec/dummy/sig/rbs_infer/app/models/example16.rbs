@@ -28,6 +28,6 @@ class Example16
     self.@user: User?
 
     def self.user: () -> Example16::User?
-    def self.user=: (User value) -> untyped
+    def self.user=: (User value) -> User
   end
 end

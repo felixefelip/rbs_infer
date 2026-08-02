@@ -371,7 +371,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
       class Widget
         attr_reader user: Widget?
 
-        def user=: (Widget value) -> untyped
+        def user=: (Widget value) -> Widget
         def use: () -> Widget
 
         class AfterUse
