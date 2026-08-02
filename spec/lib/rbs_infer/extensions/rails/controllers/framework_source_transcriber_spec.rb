@@ -3,6 +3,7 @@ require "rbs_infer"
 require "action_controller"
 require "tmpdir"
 require "rbs_infer/extensions/rails/controllers/framework_source_transcriber"
+require "rbs_infer/extensions/rails/controllers/runtime_generator"
 
 RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscriber do
   subject(:source) { files.map { |f| f[:source] }.join("\n") }
@@ -56,6 +57,31 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
     expect(source).to include("module Token\n      module ControllerMethods\n")
     expect(source).to include("def authenticate_or_request_with_http_token")
     expect(source).to include("def authenticate_with_http_token")
+  end
+
+  # The `||`'s other operand, and the frame that hands `self` to it. Their TYPES
+  # were never in question — what is missing without them is the proof that
+  # reaching this operand RENDERS, which is what makes the fact the block
+  # establishes sound on every other exit (felixefelip/steep#126).
+  it "transcribes the halting tail of the chain" do
+    expect(source).to include("def request_http_token_authentication")
+
+    real_body("ActionController::HttpAuthentication::Token", :authentication_request).lines.each do |line|
+      next if line.strip.empty?
+
+      expect(source).to include(line.strip)
+    end
+  end
+
+  # And the rewrite is not hypothetical: that render is written as a dynamic
+  # send, so a verbatim transcription would be a dead end at exactly the point
+  # where the halt has to be seen.
+  it "leaves no dynamic send behind" do
+    # The header names the rewrite, so the assertion is about the code below it.
+    code = source.lines.reject { |line| line.start_with?("#") }.join
+
+    expect(code).to include("controller.render")
+    expect(code).not_to include("__send__")
   end
 
   it "rewrites nothing, not even a def line" do

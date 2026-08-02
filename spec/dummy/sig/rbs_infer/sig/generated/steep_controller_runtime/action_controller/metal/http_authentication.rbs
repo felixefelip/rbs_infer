@@ -3,9 +3,11 @@ module ActionController
     module Token::ControllerMethods
       def authenticate_or_request_with_http_token: (?String realm, ?untyped message) { (String, ActiveSupport::HashWithIndifferentAccess[untyped, untyped]?) -> untyped } -> untyped
       def authenticate_with_http_token: () { (String, ActiveSupport::HashWithIndifferentAccess[untyped, untyped]?) -> untyped } -> untyped
+      def request_http_token_authentication: (?String realm, ?untyped message) -> untyped
     end
     module Token
       def authenticate: (untyped controller) { (String, ActiveSupport::HashWithIndifferentAccess[untyped, untyped]?) -> untyped } -> untyped
+      def authentication_request: (untyped controller, String realm, ?untyped message) -> untyped
     end
   end
 end

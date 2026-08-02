@@ -101,7 +101,6 @@ module ActionController
       extend ::ActionController::HttpAuthentication::Token
 
       module ControllerMethods
-        def request_http_token_authentication: (?String realm, ?String? message) -> void
       end
 
       def token_and_options: (ActionDispatch::Request request) -> [String, ActiveSupport::HashWithIndifferentAccess[untyped, untyped]]?
@@ -116,7 +115,6 @@ module ActionController
 
       def encode_credentials: (String token, ?::Hash[untyped, untyped] options) -> ::String
 
-      def authentication_request: (instance controller, String realm, ?String? message) -> void
     end
   end
 end

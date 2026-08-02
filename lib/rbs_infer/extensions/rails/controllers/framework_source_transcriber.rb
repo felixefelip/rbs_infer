@@ -60,6 +60,18 @@ module RbsInfer
             Seed.new(
               receiver: "ActionController::HttpAuthentication::Token",
               method_name: :authenticate
+            ),
+            # The `||`'s other operand, and the two frames that carry its halt.
+            # Their TYPES were never in question — what is missing without them
+            # is the proof that reaching this operand RENDERS, which is what
+            # makes the chain's fact sound (felixefelip/steep#126).
+            Seed.new(
+              receiver: "ActionController::HttpAuthentication::Token::ControllerMethods",
+              method_name: :request_http_token_authentication
+            ),
+            Seed.new(
+              receiver: "ActionController::HttpAuthentication::Token",
+              method_name: :authentication_request
             )
           ].freeze
 

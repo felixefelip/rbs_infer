@@ -26,6 +26,10 @@ module ActionController
         def authenticate_with_http_token(&login_procedure)
           Token.authenticate(self, &login_procedure)
         end
+
+        def request_http_token_authentication(realm = "Application", message = nil)
+          Token.authentication_request(self, realm, message)
+        end
       end
     end
   end
@@ -39,6 +43,12 @@ module ActionController
         unless token.blank?
           login_procedure.call(token, options)
         end
+      end
+
+      def authentication_request(controller, realm, message = nil)
+        message ||= "HTTP Token: Access denied.\n"
+        controller.headers["WWW-Authenticate"] = %(Token realm="#{realm.tr('"', "")}")
+        controller.render plain: message, status: :unauthorized
       end
     end
   end
