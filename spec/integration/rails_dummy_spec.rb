@@ -547,6 +547,17 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     it "Devise runtime" do
       assert_runtime_rbs("steep_devise_runtime")
     end
+
+    # The only runtime sidecar that had no snapshot, and the one that most needed
+    # it: `Current`'s attributes are typed entirely from call sites in other
+    # files, so its RBS moves whenever that inference moves. Two things went
+    # unseen for want of this — a `-> nil` on `self.with` that was the previous
+    # generation's own output feeding itself (felixefelip/rbs_infer#156), and an
+    # `author_name: String?` that no source could justify. Both would have read
+    # as a diff here.
+    it "Current runtime" do
+      assert_runtime_rbs("steep_current_runtime")
+    end
   end
 
   # Class-instance variables (felixefelip/rbs_infer#86). A `@x` written in a
