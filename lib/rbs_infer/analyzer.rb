@@ -688,7 +688,51 @@ module RbsInfer
     @caller_block_returns&.each do |name, types|
       (returns[name] ||= []).concat(types)
     end
+    propagate_along_forwards(returns, collector.forwards)
     returns
+  end
+
+  # A forwarded block carries the evidence one frame down
+  # (felixefelip/rbs_infer#158):
+  #
+  #   def with_token(&block)
+  #     fetch_token(&block) || deny
+  #   end
+  #
+  # `fetch_token` has no call site with a block of its own — only this forward —
+  # so it had nothing to go on. But every block that reaches it through this edge
+  # is a block that reached `with_token`, whose answer the call sites already
+  # gave. So the forwarder's evidence is the callee's.
+  #
+  # It is the mirror of felixefelip/rbs_infer#149, which walks the same edge the
+  # other way: whether a block is REQUIRED is a demand the callee makes, while
+  # what it RETURNS is evidence the caller supplies.
+  #
+  # A fixpoint because a chain is arbitrarily deep and the members come in no
+  # order; it terminates because the lists only grow and a type is added once.
+  def propagate_along_forwards(returns, forwards)
+    return if forwards.empty?
+
+    loop do
+      changed = false
+
+      forwards.each do |forwarder, callees|
+        observed = returns[forwarder]
+        next if observed.nil? || observed.empty?
+
+        callees.each do |callee|
+          inherited = (returns[callee] ||= [])
+          observed.each do |type|
+            next if inherited.include?(type)
+
+            inherited << type
+            changed = true
+          end
+        end
+      end
+
+      break unless changed
+    end
   end
 
   # ─── Extrair nomes dos keyword params opcionais do initialize ─────

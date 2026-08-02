@@ -62,4 +62,42 @@ RSpec.describe RbsInfer::Inference::BlockReturnCollector do
   it "ignores a call with no block at all" do
     expect(collect("def go; wrap(1); end", methods: ["wrap"], expression_types: { "1:13" => "Integer" })).to be_empty
   end
+
+  # felixefelip/rbs_infer#158: a forwarded block is not evidence, but it is an
+  # EDGE. Every block that reaches the callee through it is one that reached the
+  # forwarder, so the caller propagates the forwarder's answer along it.
+  describe "#forwards" do
+    def forwards_in(source, methods:)
+      collector = described_class.new(methods: Set.new(methods), expression_types: {})
+      Prism.parse(source).value.accept(collector)
+      collector.forwards
+    end
+
+    it "records who hands its own block on to whom" do
+      source = <<~RUBY
+        def with_token(&block)
+          fetch_token(&block) || deny
+        end
+      RUBY
+
+      expect(forwards_in(source, methods: ["fetch_token"])).to eq("with_token" => ["fetch_token"])
+    end
+
+    # `other(&:upcase)` builds a proc on the spot and `other(&some_proc)` passes
+    # somebody else's — neither says anything about what reached this method.
+    it "ignores a block that is not the method's own" do
+      source = <<~RUBY
+        def wrapper(&block)
+          fetch_token(&:upcase)
+          fetch_token(&other_proc)
+        end
+      RUBY
+
+      expect(forwards_in(source, methods: ["fetch_token"])).to be_empty
+    end
+
+    it "ignores a forward from outside any method" do
+      expect(forwards_in("fetch_token(&block)", methods: ["fetch_token"])).to be_empty
+    end
+  end
 end

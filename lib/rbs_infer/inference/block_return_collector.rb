@@ -27,14 +27,36 @@ module RbsInfer::Inference
       @expression_types = expression_types
       @receiver_check = receiver_check
       @returns = Hash.new { |hash, key| hash[key] = [] }
+      @forwards = Hash.new { |hash, key| hash[key] = [] }
       super()
     end
 
     # `{ "with_token" => ["Example18::User?"] }` — one entry per call site.
     attr_reader :returns
 
+    # `{ "with_token" => ["fetch_token"] }` — who hands their own block on to
+    # whom. A forwarded block is not evidence by itself, but every block that
+    # reaches the callee through this edge is one that reached the forwarder, so
+    # the forwarder's answer is the callee's too. The caller resolves that, since
+    # it needs a fixpoint over the whole set (felixefelip/rbs_infer#158).
+    attr_reader :forwards
+
+    def visit_def_node(node)
+      previous_method, previous_block = @current_method, @current_block_param
+      @current_method = node.name.to_s
+      @current_block_param = node.parameters&.block&.name&.to_s
+      super
+    ensure
+      @current_method, @current_block_param = previous_method, previous_block
+    end
+
     def visit_call_node(node)
-      collect(node) if node.block.is_a?(Prism::BlockNode) && @methods.include?(node.name.to_s)
+      if @methods.include?(node.name.to_s)
+        case node.block
+        when Prism::BlockNode then collect(node)
+        when Prism::BlockArgumentNode then collect_forward(node)
+        end
+      end
       super
     end
 
@@ -45,6 +67,22 @@ module RbsInfer::Inference
 
       type = block_return_type(node.block)
       @returns[node.name.to_s] << type if type
+    end
+
+    # `fetch_token(&block)` inside `def with_token(&block)`. Only the enclosing
+    # method's OWN block counts: `other(&:upcase)` or `other(&some_proc)` says
+    # nothing about what reached this method.
+    def collect_forward(node)
+      return unless @current_method && receiver_matches?(node)
+      return unless forwards_own_block?(node.block)
+
+      @forwards[@current_method] << node.name.to_s
+    end
+
+    def forwards_own_block?(block_argument)
+      expression = block_argument.expression
+      @current_block_param && expression.is_a?(Prism::LocalVariableReadNode) &&
+        expression.name.to_s == @current_block_param
     end
 
     def receiver_matches?(node)
