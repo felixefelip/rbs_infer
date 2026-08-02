@@ -5,21 +5,25 @@ module RbsInfer::Inference
   class CallerFileAnalyzer
     include RbsInfer::Signatures::RbsAnnotationParser
 
-    attr_reader :method_call_usages
+    attr_reader :method_call_usages, :method_block_returns
 
     # `target_file`: the file being analyzed. REQUIRED, not defaulted: it gates bare-call
     # matching for a class reopened across files, and the target's own file is already
     # covered by `IntraClassCallAnalyzer`. Omitting it would double-count every same-file
     # self-call — the two paths resolve the receiver differently, so the parameter widens
     # into a union instead of failing loudly (required-threaded-deps).
-    def initialize(target_class:, method_type_resolver:, target_file:, init_positional_params: [], target_methods: {}, steep_bridge: nil)
+    def initialize(target_class:, method_type_resolver:, target_file:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new)
       @target_class = target_class
       @target_file = target_file
       @method_type_resolver = method_type_resolver
       @init_positional_params = init_positional_params
       @target_methods = target_methods
       @steep_bridge = steep_bridge
+      # felixefelip/rbs_infer#155: methods whose signature carries a block, and
+      # what the blocks passed to them at these call sites return.
+      @block_methods = block_methods
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
+      @method_block_returns = Hash.new { |h, k| h[k] = [] }
     end
 
     def analyze(file, force_bare: false)
@@ -143,12 +147,18 @@ module RbsInfer::Inference
         established_ivars_by_method: established_ivars_by_method,
         argument_partitions_by_method: argument_partitions_by_method,
         constant_arg_resolver: constant_arg_resolver,
-        defined_class_names: NewCallCollector.collect_defined_class_names(result.value)
+        defined_class_names: NewCallCollector.collect_defined_class_names(result.value),
+        block_methods: @block_methods,
+        expression_types: @steep_bridge ? @steep_bridge.all_expression_types(source) : {}
       )
       result.value.accept(visitor)
 
       visitor.method_call_usages.each do |method_name, usages|
         @method_call_usages[method_name].concat(usages)
+      end
+
+      visitor.method_block_returns.each do |method_name, types|
+        @method_block_returns[method_name].concat(types)
       end
 
       visitor.usages

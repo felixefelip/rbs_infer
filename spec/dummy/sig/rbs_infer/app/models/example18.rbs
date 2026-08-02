@@ -8,7 +8,7 @@ class Example18
 
   def authenticate: () -> untyped
   def from_token: () -> untyped
-  def with_token: () { (String) -> untyped } -> untyped
+  def with_token: () { (String) -> Example18::User? } -> untyped
   def fetch_token: () { (String) -> untyped } -> untyped
   def deny: () -> bool
   def halt: () -> bool

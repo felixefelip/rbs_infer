@@ -14,7 +14,7 @@ class Example19
 
   def authenticate: () -> untyped
   def from_token: () -> untyped
-  def with_token: () { (String) -> untyped } -> untyped
+  def with_token: () { (String) -> Example19::User? } -> untyped
   def fetch_token: () { (String) -> untyped } -> untyped
   def refuse: () -> untyped
   def lookup: (String token) -> Example19::User?

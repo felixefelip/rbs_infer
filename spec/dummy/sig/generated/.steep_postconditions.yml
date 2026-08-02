@@ -101,16 +101,25 @@ postconditions:
     may_write:
     - "@account"
 - class: Current
+  method: author_name
+  effects:
+    returns_ivar: "@author_name"
+- class: Current
   method: author_name=
   unconditional:
     establishes_consts:
       author_name: "::String"
+  effects:
+    may_write:
+    - "@author_name"
 - class: Current
   method: set
   effects:
     may_write:
     - "@account"
+    - "@author_name"
     - "@user"
+    - "@viewer_name"
 - class: Current
   method: user
   effects:
@@ -124,6 +133,18 @@ postconditions:
     may_write:
     - "@user"
 - class: Current
+  method: viewer_name
+  effects:
+    returns_ivar: "@viewer_name"
+- class: Current
+  method: viewer_name=
+  unconditional:
+    establishes_consts:
+      viewer_name: "::String"
+  effects:
+    may_write:
+    - "@viewer_name"
+- class: Current
   method: with
   unconditional:
     ivars:
@@ -131,7 +152,9 @@ postconditions:
   effects:
     may_write:
     - "@account"
+    - "@author_name"
     - "@user"
+    - "@viewer_name"
 - class: DashboardController
   method: __rbs_infer__run_show
   unconditional:
@@ -264,6 +287,20 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example10::Sink
+  method: last
+  effects:
+    returns_ivar: "@last"
+- class: Example10::Sink
+  method: last=
+  unconditional:
+    ivars:
+      "@last": "::Example10::Bar"
+    establishes_consts:
+      last: "::Example10::Bar"
+  effects:
+    may_write:
+    - "@last"
 - class: Example11::Partial
   method: initialize
   effects:

@@ -1,7 +1,7 @@
 class Column
   attr_accessor board: Board?
   attr_accessor column_name: String
-  attr_accessor user_name: untyped
+  attr_accessor user_name: String?
 
   def initialize: (column_name: String) -> void
   def set_default_user_name: () -> String

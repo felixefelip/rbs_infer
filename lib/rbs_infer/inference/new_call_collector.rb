@@ -1,6 +1,6 @@
 module RbsInfer::Inference
   class NewCallCollector < Prism::Visitor
-    attr_reader :usages, :method_call_usages
+    attr_reader :usages, :method_call_usages, :method_block_returns
 
     # Collect the fully-qualified names of every class/module DEFINED in a
     # parsed file, so `match_class?` can tell a bare `Foo` written inside
@@ -28,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {})
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {})
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -72,8 +72,14 @@ module RbsInfer::Inference
       # `{ "render" => [{ param:, pattern:, ivars: }] }` — argument-sensitive partitions
       # (felixefelip/steep#89, #91, #95). Applied per `when` branch by `visit_case_node`.
       @argument_partitions_by_method = argument_partitions_by_method
+      # felixefelip/rbs_infer#155: names whose signature carries a block, and
+      # Steep's types for this file, so a call site can be asked what the block
+      # it passes returns. Empty when the caller is analyzed without a bridge.
+      @block_methods = block_methods
+      @expression_types = expression_types
       @usages = []
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
+      @method_block_returns = Hash.new { |h, k| h[k] = [] }
       # Lexically-enclosing class names (fully qualified) and whether the
       # current method is a singleton (`def self.x`) — used to resolve a
       # `self` argument/receiver to its type.
@@ -172,6 +178,16 @@ module RbsInfer::Inference
         end
       end
 
+      # felixefelip/rbs_infer#155: what the block passed HERE returns. Not gated
+      # on `node.arguments` like the branches above — `with_token do |t| … end`
+      # passes no arguments at all, and the block is the whole point.
+      if !@block_methods.empty? && node.block.is_a?(Prism::BlockNode) && @block_methods.include?(node.name.to_s)
+        if node.receiver.nil? ? @match_bare_calls : block_receiver_matches?(node)
+          type = BlockReturnCollector.block_return_type(node.block, @expression_types)
+          @method_block_returns[node.name.to_s] << type if type
+        end
+      end
+
       # Bare method calls matching target_methods (for included modules, e.g. helpers in ERB views)
       if !@target_methods.empty? && node.receiver.nil? && node.arguments && @match_bare_calls
         method_name = node.name.to_s
@@ -185,6 +201,11 @@ module RbsInfer::Inference
     end
 
     private
+
+    def block_receiver_matches?(node)
+      receiver_type = resolve_receiver_type(node.receiver)
+      receiver_type && match_class?(receiver_type)
+    end
 
     # Lookup the type of an `:ivar` reference. Tries the `@`-prefixed
     # key first (the convention used by `ErbCallerResolver` to keep
@@ -718,7 +739,7 @@ module RbsInfer::Inference
           next
         end
 
-        args[param_names[index]] = resolve_value_type(arg)
+        args[param_names[index]] = argument_type(arg)
         index += 1
       end
 
@@ -731,11 +752,36 @@ module RbsInfer::Inference
           next unless elem.is_a?(Prism::AssocNode)
           key = extract_symbol_key(elem.key)
           next unless key
-          args[key] = resolve_value_type(elem.value)
+          args[key] = argument_type(elem.value)
         end
       end
 
       args
+    end
+
+    # The checker's answer for an argument the structural resolver could not
+    # type (felixefelip/rbs_infer#157).
+    #
+    # `self.author_name = value&.full_name` is a call site the collector matches
+    # and then throws away: `value` is the enclosing method's parameter and the
+    # send is safe-navigated, which the structural path does not follow. The
+    # argument came out `untyped`, the Analyzer drops `untyped` usages, and the
+    # attribute stayed untyped though Steep types that expression `String?`.
+    #
+    # Only a fallback: the structural answer wins when it has one, since it
+    # carries the naming conventions (a class name for `Klass.new`, a record for
+    # a hash literal) that a checker type does not.
+    def argument_type(arg)
+      resolved = resolve_value_type(arg)
+      return resolved unless resolved.nil? || resolved == "untyped"
+
+      expression_type(arg) || resolved
+    end
+
+    def expression_type(node)
+      # Character column, like every other lookup into this map — Parser counts
+      # characters where Prism also offers bytes (felixefelip/rbs_infer#142).
+      @expression_types["#{node.location.start_line}:#{node.location.start_character_column}"]
     end
 
     # Whether a keyword hash at the call site is really a positional Hash: no key names a

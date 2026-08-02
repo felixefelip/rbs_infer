@@ -1,12 +1,12 @@
 class Example17
-  def with_token: () { (String) -> untyped } -> untyped
+  def with_token: () { (String) -> String } -> String
   def with_optional: () ?{ (String) -> untyped } -> untyped
   def with_yield: () { (String) -> untyped } -> untyped
   def with_pair: () { (String, Integer) -> untyped } -> untyped
   def with_either: (untyped flag) { (String | Integer) -> untyped } -> untyped
-  def forward_required: () { (String) -> untyped } -> untyped
+  def forward_required: () { (String) -> untyped } -> String
   def forward_optional: () ?{ (*untyped) -> untyped } -> untyped
-  def forward_guarded: () ?{ (*untyped) -> untyped } -> untyped
+  def forward_guarded: () ?{ (*untyped) -> untyped } -> String?
   def name: () -> String
-  def run: () -> untyped
+  def run: () -> String
 end
