@@ -713,9 +713,21 @@ postconditions:
     may_write:
     - "@name"
 - class: Example19
+  method: authenticate
+  conditional_const_returns:
+    Example19::Registry.user:
+      gate_ivar: "@halted"
+      type: "::Example19::User"
+- class: Example19
   method: fetch_token
   when_true:
     block_truthy: true
+- class: Example19
+  method: from_token
+  conditional_const_returns:
+    Example19::Registry.user:
+      gate_ivar: "@halted"
+      type: "::Example19::User"
 - class: Example19
   method: halt
   unconditional:
@@ -725,6 +737,10 @@ postconditions:
   effects:
     may_write:
     - "@halted"
+- class: Example19
+  method: with_token
+  conditional_block_truthy:
+    gate_ivar: "@halted"
 - class: Example19::Registry
   method: user
   effects:
@@ -1682,6 +1698,14 @@ method_entry_facts:
   method: user
   consts:
     Example18::Registry.user: "::Example18::User"
+- class: Example19
+  method: show
+  consts:
+    Example19::Registry.user: "::Example19::User"
+- class: Example19::Registry
+  method: user
+  consts:
+    Example19::Registry.user: "::Example19::User"
 - class: Example4
   method: run_foo_name
   consts:

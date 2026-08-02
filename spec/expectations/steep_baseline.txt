@@ -9,7 +9,6 @@ app/models/concerns/test/filtrable.rb:8:4: [error] Type `(singleton(::Test) & si
 app/models/example10.rb:27:26: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not have method `name`
 app/models/example15.rb:25:25: [error] Type `(::Example15::User | nil)` does not have method `name`
-app/models/example19.rb:68:25: [error] Type `(::Example19::User | nil)` does not have method `name`
 app/models/example3.rb:122:11: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:63:13: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:64:26: [error] Type `(::Example3::User | nil)` does not have method `name`
