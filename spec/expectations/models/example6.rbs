@@ -7,7 +7,7 @@ class Example6
     self.@name: String?
 
     def self.name: () -> String?
-    def self.name=: (String value) -> untyped
+    def self.name=: (String value) -> String
   end
 end
 

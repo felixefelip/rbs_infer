@@ -144,6 +144,7 @@ module RbsInfer::Inference
         #    type already inferred for the ivar (felixefelip/rbs_infer#19)
         if last_stmt.is_a?(Prism::InstanceVariableReadNode) || last_stmt.is_a?(Prism::InstanceVariableWriteNode)
           resolved = ivar_types[last_stmt.name.to_s.sub(/\A@/, "")]
+          resolved = assigned_param_type(last_stmt, method_param_types[method_name] || {}) if resolved.nil? || resolved == "untyped"
           if resolved && resolved != "untyped"
             member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(resolved)}")
             own_return_types[method_name] = resolved
@@ -252,6 +253,33 @@ module RbsInfer::Inference
     end
 
     private
+
+    # `@x = value` evaluates to VALUE — that is what Ruby returns, whatever the
+    # ivar was declared as — so the parameter answers when the ivar map cannot.
+    #
+    # It cannot for a SINGLETON setter, which is where every `-> untyped` setter
+    # in the dummy came from: `def self.user=(value); @user = value; end` writes
+    # a class-instance variable (`self.@user`), a different slot from the
+    # instance ivars this pass is given. Steep types the method
+    # `Example18::User` all along (felixefelip/rbs_infer#154).
+    #
+    # Instance setters reach it too, whenever the ivar map has no answer yet.
+    # The parameter is the more precise source there: an `@user: Widget?` whose
+    # setter takes a `Widget` returns a `Widget`, never nil. The ivar keeps
+    # precedence only because it is the established behaviour for the READ half
+    # of this rule, where it is the right answer.
+    #
+    # Narrow on purpose: only a bare parameter read. `@x = compute(value)` is
+    # someone else's question, and guessing it here would be worse than leaving
+    # the honest `untyped`.
+    def assigned_param_type(node, local_types)
+      return nil unless node.is_a?(Prism::InstanceVariableWriteNode)
+
+      value = node.value
+      return nil unless value.is_a?(Prism::LocalVariableReadNode)
+
+      local_types[value.name.to_s]
+    end
 
     # Bundle the class's own return-type knowledge for call resolution: both
     # kind-split maps plus the enclosing method's kind. Lets a receiver typed

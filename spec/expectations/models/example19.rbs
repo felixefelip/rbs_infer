@@ -34,6 +34,6 @@ class Example19
     self.@user: Example19::User?
 
     def self.user: () -> Example19::User?
-    def self.user=: (Example19::User value) -> untyped
+    def self.user=: (Example19::User value) -> Example19::User
   end
 end

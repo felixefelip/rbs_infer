@@ -73,6 +73,60 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
   end
 
   describe "#resolve_method_return_types_from_attrs" do
+    # `@x = value` evaluates to VALUE. The ivar map cannot answer for a
+    # SINGLETON setter — `self.@user` is a class-instance variable, a different
+    # slot from the instance ivars this pass receives — which is why every
+    # singleton setter in the dummy read `-> untyped` (felixefelip/rbs_infer#154).
+    it "types a singleton setter from the parameter it assigns" do
+      source = <<~RUBY
+        class Registry
+          def self.user=(value)
+            @user = value
+          end
+        end
+      RUBY
+      result = Prism.parse(source)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
+      result.value.accept(collector)
+      member = collector.members.find { |candidate| candidate.name == "user=" }
+
+      merger.resolve_method_return_types_from_attrs(
+        collector.members,
+        {},
+        parsed_target: parsed_target,
+        method_param_types: { "user=" => { "value" => "User" } }
+      )
+
+      expect(member.signature).to end_with("-> User")
+    end
+
+    # Narrow on purpose: anything but a bare parameter read is someone else's
+    # question, and `untyped` is the honest answer rather than a guess.
+    it "leaves a setter whose assignment is computed alone" do
+      source = <<~RUBY
+        class Registry
+          def self.user=(value)
+            @user = normalize(value)
+          end
+        end
+      RUBY
+      result = Prism.parse(source)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
+      result.value.accept(collector)
+      member = collector.members.find { |candidate| candidate.name == "user=" }
+
+      merger.resolve_method_return_types_from_attrs(
+        collector.members,
+        {},
+        parsed_target: parsed_target,
+        method_param_types: { "user=" => { "value" => "User" } }
+      )
+
+      expect(member.signature).to end_with("-> untyped")
+    end
+
     it "refines record fields in the RHS of an indexed assignment" do
       source = <<~RUBY
         class CookieWriter
