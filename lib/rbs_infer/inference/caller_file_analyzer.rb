@@ -12,7 +12,7 @@ module RbsInfer::Inference
     # covered by `IntraClassCallAnalyzer`. Omitting it would double-count every same-file
     # self-call — the two paths resolve the receiver differently, so the parameter widens
     # into a union instead of failing loudly (required-threaded-deps).
-    def initialize(target_class:, method_type_resolver:, target_file:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new)
+    def initialize(target_class:, method_type_resolver:, target_file:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {})
       @target_class = target_class
       @target_file = target_file
       @method_type_resolver = method_type_resolver
@@ -22,6 +22,7 @@ module RbsInfer::Inference
       # felixefelip/rbs_infer#155: methods whose signature carries a block, and
       # what the blocks passed to them at these call sites return.
       @block_methods = block_methods
+      @method_owners = method_owners
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
       @method_block_returns = Hash.new { |h, k| h[k] = [] }
     end
@@ -149,6 +150,7 @@ module RbsInfer::Inference
         constant_arg_resolver: constant_arg_resolver,
         defined_class_names: NewCallCollector.collect_defined_class_names(result.value),
         block_methods: @block_methods,
+        method_owners: @method_owners,
         expression_types: @steep_bridge ? @steep_bridge.all_expression_types(source) : {}
       )
       result.value.accept(visitor)
