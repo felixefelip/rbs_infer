@@ -426,6 +426,27 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # Example18 with the one change that keeps the real Rails chain open: the halt
+  # lands on an object passed as an ARGUMENT (felixefelip/steep#126). What it
+  # pins here is that the block half still works across that same boundary —
+  # `fetch_token` keeps its required, `String`-shaped block — so a reader can
+  # see that what fails is the halt, not the block.
+  it "example19" do
+    name = "models/example19"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example19.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # Blocks, whose signature is decided by the body rather than the parameter
   # list: required or not (#147), the parameter types read off the sites that
   # use it (#148), and — for a body that only forwards — the callee's own

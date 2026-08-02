@@ -675,6 +675,38 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example19
+  method: fetch_token
+  when_true:
+    block_truthy: true
+- class: Example19
+  method: halt
+  unconditional:
+    ivars:
+      "@halted": 'true'
+    self: "::Example19 & ::Example19::AfterHalt"
+  effects:
+    may_write:
+    - "@halted"
+- class: Example19::Registry
+  method: user
+  effects:
+    returns_ivar: "@user"
+- class: Example19::Registry
+  method: user=
+  unconditional:
+    ivars:
+      "@user": "::Example19::User"
+    establishes_consts:
+      user: "::Example19::User"
+  effects:
+    may_write:
+    - "@user"
+- class: Example19::User
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
 - class: Example2::Foo
   method: user=
   unconditional:
