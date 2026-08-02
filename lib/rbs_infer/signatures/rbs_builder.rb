@@ -280,7 +280,12 @@ module RbsInfer::Signatures
           lines << "#{inner_indent}extend #{qualify(ext.name)}"
         end
         mod_members.select { |m| m.kind == :class_method }.each do |m|
-          lines << "#{inner_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(m.signature)}"
+          # The same substitution the top-level singletons get. Omitting it left
+          # a nested module's `def self.x` carrying the raw structural signature
+          # even once its call sites had been read (felixefelip/rbs_infer#159).
+          sig = m.signature
+          sig = apply_inferred_param_types(sig, method_param_types[m.name]) if method_param_types[m.name]
+          lines << "#{inner_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
         end
         mod_members.select { |m| m.kind == :singleton_alias }.each do |a|
           lines << "#{inner_indent}alias self.#{a.name} self.#{a.old_name}"

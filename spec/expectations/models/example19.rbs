@@ -1,22 +1,23 @@
 class Example19
   @halted: true?
+  @message: String?
 
   module Responder
-    def self.deny: (untyped host, untyped message) -> untyped
+    def self.deny: (Example19 host, String message) -> bool
   end
 
   def show: () -> String
   def call: () -> String?
   def halt: () -> bool
-  def record: (untyped message) -> untyped
+  def record: (String? message) -> String?
 
   private
 
-  def authenticate: () -> untyped
-  def from_token: () -> untyped
-  def with_token: () { (String) -> Example19::User? } -> untyped
+  def authenticate: () -> (Example19::User | bool)
+  def from_token: () -> (Example19::User | bool)
+  def with_token: () { (String) -> Example19::User? } -> (Example19::User | bool)
   def fetch_token: () { (String) -> Example19::User? } -> Example19::User?
-  def refuse: () -> untyped
+  def refuse: () -> bool
   def lookup: (String token) -> Example19::User?
   def token_value: () -> String
 end

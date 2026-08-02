@@ -738,6 +738,11 @@ postconditions:
     may_write:
     - "@halted"
 - class: Example19
+  method: record
+  effects:
+    may_write:
+    - "@message"
+- class: Example19
   method: with_token
   conditional_block_truthy:
     gate_ivar: "@halted"

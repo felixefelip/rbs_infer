@@ -234,7 +234,8 @@ module RbsInfer
     # the first type seen (felixefelip/rbs_infer#64).
     cross_class_param_types = infer_method_param_types_from_callers(
       extract_attr_writer_methods(target_members),
-      block_methods: target_members.select { |m| untyped_block_return?(m) }.map(&:name).to_set
+      block_methods: target_members.select { |m| untyped_block_return?(m) }.map(&:name).to_set,
+      method_owners: nested_method_owners(target_members)
     )
     cross_class_param_types.each do |method_name, param_types|
       method_param_types[method_name] ||= {}
@@ -735,6 +736,20 @@ module RbsInfer
     end
   end
 
+  # `{ "deny" => "Example19::Responder" }` for the target's methods that live in
+  # a nested MODULE. Such a module is emitted inside this target's block rather
+  # than as a target of its own (felixefelip/rbs_infer#22), so its call sites
+  # were matched against the wrong name and its parameters stayed `untyped`
+  # (felixefelip/rbs_infer#159).
+  def nested_method_owners(target_members)
+    target_members.each_with_object({}) do |member, owners|
+      next unless [:method, :class_method].include?(member.kind)
+      next if member.owner.nil? || member.owner.empty?
+
+      owners[member.name] ||= "#{@target_class}::#{member.owner}"
+    end
+  end
+
   # ─── Extrair nomes dos keyword params opcionais do initialize ─────
 
   def extract_optional_init_params
@@ -942,7 +957,7 @@ module RbsInfer
 
   # Inferir tipos de parâmetros de métodos via chamadas cross-class
   # Ex: PostPublisher chama notifier.notify(post.user, "msg") → user: User, message: String
-  def infer_method_param_types_from_callers(extra_methods = {}, block_methods: Set.new)
+  def infer_method_param_types_from_callers(extra_methods = {}, block_methods: Set.new, method_owners: {})
     # `extra_methods` are SYNTHETIC writers standing in for `attr_accessor`-
     # generated methods, and name their param after the attr (`user`). A real
     # `def user=(value)` overriding that attr names it `value`, and the def is
@@ -962,7 +977,8 @@ module RbsInfer
       init_positional_params: positional_params,
       target_methods: target_methods,
       steep_bridge: steep_bridge,
-      block_methods: block_methods
+      block_methods: block_methods,
+      method_owners: method_owners
     )
     referencing = @source_index.files_referencing(@target_class)
 

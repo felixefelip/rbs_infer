@@ -28,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {})
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -75,6 +75,11 @@ module RbsInfer::Inference
       # felixefelip/rbs_infer#155: names whose signature carries a block, and
       # Steep's types for this file, so a call site can be asked what the block
       # it passes returns. Empty when the caller is analyzed without a bridge.
+      # felixefelip/rbs_infer#159: `{ "deny" => "Example19::Responder" }` — the
+      # target's methods that belong to a nested module, which is emitted in
+      # place rather than as a target of its own, so its call sites are matched
+      # against the OWNER's name instead of the enclosing target's.
+      @method_owners = method_owners
       @block_methods = block_methods
       @expression_types = expression_types
       @usages = []
@@ -84,11 +89,25 @@ module RbsInfer::Inference
       # current method is a singleton (`def self.x`) — used to resolve a
       # `self` argument/receiver to its type.
       @class_name_stack = []
+      # `:class` / `:module` for each enclosing declaration, innermost last. A
+      # module's `self` is whoever includes it, so an instance method there
+      # cannot claim the module's name (felixefelip/rbs_infer#159).
+      @declaration_kinds = []
       @in_singleton_method = false
       @current_method = nil
     end
 
+    # A module declaration does not push a name — `@class_name_stack` is about
+    # the enclosing CLASS — but it does decide what `self` is inside it.
+    def visit_module_node(node)
+      @declaration_kinds.push(:module)
+      super
+    ensure
+      @declaration_kinds.pop
+    end
+
     def visit_class_node(node)
+      @declaration_kinds.push(:class)
       # Pré-coletar tipos de ivars de todos os métodos da classe
       # para que @post definido em set_post esteja disponível em publish
       collect_class_ivar_types(node)
@@ -101,6 +120,7 @@ module RbsInfer::Inference
       @class_name_stack.push(full_name) if full_name
       super
       @class_name_stack.pop if full_name
+      @declaration_kinds.pop
     end
 
     def visit_def_node(node)
@@ -171,7 +191,7 @@ module RbsInfer::Inference
         method_name = node.name.to_s
         if @target_methods.key?(method_name)
           receiver_type = resolve_receiver_type(node.receiver)
-          if receiver_type && match_class?(receiver_type)
+          if receiver_type && (match_class?(receiver_type) || owner_match?(receiver_type, method_name))
             args = extract_cross_class_args(node, @target_methods[method_name])
             @method_call_usages[method_name] << args unless args.empty?
           end
@@ -372,6 +392,24 @@ module RbsInfer::Inference
     # the current nesting, it is that class, not the same-named target
     # elsewhere. Absent such a local definition we keep the unique-name
     # assumption (cross-file), which existing behaviour depends on.
+    # `Responder.deny(self, "denied")` where `deny` belongs to
+    # `Example19::Responder`, a nested MODULE. Such a module is emitted inside
+    # its enclosing target's block rather than as a target of its own
+    # (felixefelip/rbs_infer#22), so nothing ever asked about its call sites and
+    # its parameters stayed `untyped` — while a nested CLASS three lines away,
+    # being a target, had everything inferred.
+    #
+    # The receiver is matched against the OWNER here, not the enclosing target,
+    # and only for a method that owner actually has.
+    def owner_match?(receiver_type, method_name)
+      owner = @method_owners[method_name] or return false
+
+      receiver_components(receiver_type).any? do |component|
+        normalized = component.sub(/\A::/, "")
+        normalized == owner || relative_receiver_matches_target?(normalized, owner)
+      end
+    end
+
     def relative_receiver_matches_target?(relative_name, target)
       return false unless target.end_with?("::#{relative_name}")
       resolved = resolve_relative_in_file(relative_name)
@@ -633,6 +671,13 @@ module RbsInfer::Inference
         return refined if refined && !refined.empty?
       end
 
+      # Inside a module, an INSTANCE method's `self` is whatever includes it —
+      # unknowable from here, and claiming the module is a lie that reaches the
+      # signature (`Token.authenticate(self, …)` typed its parameter
+      # `ActionController::HttpAuthentication`, which has no `request`).
+      # A `def self.x` in a module is different: there `self` IS the module.
+      return "untyped" if !@in_singleton_method && @declaration_kinds.last == :module
+
       base = @class_name_stack.last || @caller_class_name
       return "untyped" unless base
 
@@ -781,7 +826,13 @@ module RbsInfer::Inference
     def expression_type(node)
       # Character column, like every other lookup into this map — Parser counts
       # characters where Prism also offers bytes (felixefelip/rbs_infer#142).
-      @expression_types["#{node.location.start_line}:#{node.location.start_character_column}"]
+      type = @expression_types["#{node.location.start_line}:#{node.location.start_character_column}"]
+
+      # `self` is a real RBS type, but it means "the receiver of THIS method" —
+      # so carrying it into ANOTHER method's parameter says the argument is a
+      # Token when it is a controller. The checker answers `self` for a `self`
+      # node; here that answer is unusable.
+      type unless type == "self"
     end
 
     # Whether a keyword hash at the call site is really a positional Hash: no key names a
