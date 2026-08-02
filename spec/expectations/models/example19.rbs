@@ -1,0 +1,39 @@
+class Example19
+  @halted: true?
+
+  module Responder
+    def self.deny: (untyped host, untyped message) -> untyped
+  end
+
+  def show: () -> String
+  def call: () -> String?
+  def halt: () -> bool
+  def record: (untyped message) -> untyped
+
+  private
+
+  def authenticate: () -> untyped
+  def from_token: () -> untyped
+  def with_token: () { (String) -> untyped } -> untyped
+  def fetch_token: () { (String) -> untyped } -> untyped
+  def refuse: () -> untyped
+  def lookup: (String token) -> Example19::User?
+  def token_value: () -> String
+end
+
+class Example19
+  class User
+    attr_reader name: String
+
+    def initialize: (name: String) -> void
+  end
+end
+
+class Example19
+  class Registry
+    self.@user: Example19::User?
+
+    def self.user: () -> Example19::User?
+    def self.user=: (Example19::User value) -> untyped
+  end
+end
