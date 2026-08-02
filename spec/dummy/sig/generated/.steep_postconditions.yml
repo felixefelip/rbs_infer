@@ -32,6 +32,14 @@ postconditions:
   effects:
     may_write:
     - "@__rbs_infer__performed"
+- class: ActionController::HttpAuthentication::Token
+  method: authenticate
+  when_true:
+    block_truthy: true
+- class: ActionController::HttpAuthentication::Token::ControllerMethods
+  method: authenticate_with_http_token
+  when_true:
+    block_truthy: true
 - class: ApplicationController
   method: authenticate_user
   effects:
@@ -571,6 +579,88 @@ postconditions:
     may_write:
     - "@user"
 - class: Example16::User
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
+- class: Example17
+  method: forward_guarded
+  when_true:
+    block_truthy: true
+- class: Example17
+  method: forward_optional
+  when_true:
+    block_truthy: true
+- class: Example17
+  method: forward_required
+  when_true:
+    block_truthy: true
+- class: Example17
+  method: with_optional
+  when_true:
+    block_truthy: true
+- class: Example17
+  method: with_pair
+  when_true:
+    block_truthy: true
+- class: Example17
+  method: with_token
+  when_true:
+    block_truthy: true
+- class: Example17
+  method: with_yield
+  when_true:
+    block_truthy: true
+- class: Example18
+  method: authenticate
+  effects:
+    may_write:
+    - "@halted"
+- class: Example18
+  method: call
+  effects:
+    may_write:
+    - "@halted"
+- class: Example18
+  method: deny
+  effects:
+    may_write:
+    - "@halted"
+- class: Example18
+  method: fetch_token
+  when_true:
+    block_truthy: true
+- class: Example18
+  method: halt
+  unconditional:
+    ivars:
+      "@halted": 'true'
+    self: "::Example18 & ::Example18::AfterHalt"
+  effects:
+    may_write:
+    - "@halted"
+- class: Example18
+  method: with_token
+  effects:
+    may_write:
+    - "@halted"
+  conditional_block_truthy:
+    gate_ivar: "@halted"
+- class: Example18::Registry
+  method: user
+  effects:
+    returns_ivar: "@user"
+- class: Example18::Registry
+  method: user=
+  unconditional:
+    ivars:
+      "@user": "::Example18::User"
+    establishes_consts:
+      user: "::Example18::User"
+  effects:
+    may_write:
+    - "@user"
+- class: Example18::User
   method: initialize
   effects:
     may_write:

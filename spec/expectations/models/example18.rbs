@@ -1,0 +1,34 @@
+class Example18
+  @halted: true?
+
+  def show: () -> String
+  def call: () -> String?
+
+  private
+
+  def authenticate: () -> untyped
+  def from_token: () -> untyped
+  def with_token: () { (String) -> untyped } -> untyped
+  def fetch_token: () { (String) -> untyped } -> untyped
+  def deny: () -> bool
+  def halt: () -> bool
+  def lookup: (String token) -> Example18::User?
+  def token_value: () -> String
+end
+
+class Example18
+  class User
+    attr_reader name: String
+
+    def initialize: (name: String) -> void
+  end
+end
+
+class Example18
+  class Registry
+    self.@user: Example18::User?
+
+    def self.user: () -> Example18::User?
+    def self.user=: (Example18::User value) -> untyped
+  end
+end
