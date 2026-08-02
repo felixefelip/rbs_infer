@@ -1,33 +1,37 @@
 class Current
   self.@user: ((User & User::Validated) | User)?
+  self.@author_name: String?
   self.@account: (Account & Account::Validated)?
+  self.@viewer_name: String?
   self.@__rbs_infer_instance: Current?
 
   @user: ((User & User::Validated) | User)?
+  @author_name: String?
   @account: (Account & Account::Validated)?
+  @viewer_name: String?
 
   module GeneratedAttributeMethods
     def user: () -> ((User & User::Validated) | User)?
     def user=: (((User & User::Validated)? | User?) value) -> ((User & User::Validated) | User)?
-    def author_name: () -> untyped
-    def author_name=: (untyped value) -> untyped
+    def author_name: () -> String?
+    def author_name=: (String? value) -> String?
     def account: () -> (Account & Account::Validated)?
     def account=: ((Account & Account::Validated)? value) -> (Account & Account::Validated)?
-    def viewer_name: () -> untyped
-    def viewer_name=: (untyped value) -> untyped
+    def viewer_name: () -> String?
+    def viewer_name=: (String? value) -> String?
   end
 
   include GeneratedAttributeMethods
 
   def self.user: () -> ((User & User::Validated) | User)?
   def self.user=: (((User & User::Validated)? | User?) value) -> ((User & User::Validated)? | User?)
-  def self.author_name: () -> untyped
-  def self.author_name=: (untyped value) -> untyped
+  def self.author_name: () -> String?
+  def self.author_name=: (String? value) -> String?
   def self.account: () -> (Account & Account::Validated)?
   def self.account=: ((Account & Account::Validated)? value) -> (Account & Account::Validated)?
-  def self.viewer_name: () -> untyped
-  def self.viewer_name=: (untyped value) -> untyped
+  def self.viewer_name: () -> String?
+  def self.viewer_name=: (String? value) -> String?
   def self.__rbs_infer_instance: () -> Current
-  def self.set: (?user: ((User & User::Validated) | User)?, ?author_name: untyped, ?account: (Account & Account::Validated)?, ?viewer_name: untyped) ?{ () -> untyped } -> untyped
-  def self.with: (?user: (User & User::Validated)?, ?author_name: untyped, ?account: (Account & Account::Validated)?, ?viewer_name: untyped) ?{ () -> ProfileFormatter } -> ProfileFormatter?
+  def self.set: (?user: ((User & User::Validated) | User)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: String?) ?{ () -> untyped } -> untyped
+  def self.with: (?user: (User & User::Validated)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: String?) ?{ () -> ProfileFormatter } -> ProfileFormatter?
 end

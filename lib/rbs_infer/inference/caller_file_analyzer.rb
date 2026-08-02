@@ -149,7 +149,7 @@ module RbsInfer::Inference
         constant_arg_resolver: constant_arg_resolver,
         defined_class_names: NewCallCollector.collect_defined_class_names(result.value),
         block_methods: @block_methods,
-        expression_types: @block_methods.empty? || @steep_bridge.nil? ? {} : @steep_bridge.all_expression_types(source)
+        expression_types: @steep_bridge ? @steep_bridge.all_expression_types(source) : {}
       )
       result.value.accept(visitor)
 

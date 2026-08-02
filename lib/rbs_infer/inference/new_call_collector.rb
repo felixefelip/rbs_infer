@@ -739,7 +739,7 @@ module RbsInfer::Inference
           next
         end
 
-        args[param_names[index]] = resolve_value_type(arg)
+        args[param_names[index]] = argument_type(arg)
         index += 1
       end
 
@@ -752,11 +752,36 @@ module RbsInfer::Inference
           next unless elem.is_a?(Prism::AssocNode)
           key = extract_symbol_key(elem.key)
           next unless key
-          args[key] = resolve_value_type(elem.value)
+          args[key] = argument_type(elem.value)
         end
       end
 
       args
+    end
+
+    # The checker's answer for an argument the structural resolver could not
+    # type (felixefelip/rbs_infer#157).
+    #
+    # `self.author_name = value&.full_name` is a call site the collector matches
+    # and then throws away: `value` is the enclosing method's parameter and the
+    # send is safe-navigated, which the structural path does not follow. The
+    # argument came out `untyped`, the Analyzer drops `untyped` usages, and the
+    # attribute stayed untyped though Steep types that expression `String?`.
+    #
+    # Only a fallback: the structural answer wins when it has one, since it
+    # carries the naming conventions (a class name for `Klass.new`, a record for
+    # a hash literal) that a checker type does not.
+    def argument_type(arg)
+      resolved = resolve_value_type(arg)
+      return resolved unless resolved.nil? || resolved == "untyped"
+
+      expression_type(arg) || resolved
+    end
+
+    def expression_type(node)
+      # Character column, like every other lookup into this map — Parser counts
+      # characters where Prism also offers bytes (felixefelip/rbs_infer#142).
+      @expression_types["#{node.location.start_line}:#{node.location.start_character_column}"]
     end
 
     # Whether a keyword hash at the call site is really a positional Hash: no key names a
