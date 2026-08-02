@@ -6,10 +6,10 @@ class Example18
 
   private
 
-  def authenticate: () -> untyped
-  def from_token: () -> untyped
-  def with_token: () { (String) -> Example18::User? } -> untyped
-  def fetch_token: () { (String) -> untyped } -> untyped
+  def authenticate: () -> (Example18::User | bool)
+  def from_token: () -> (Example18::User | bool)
+  def with_token: () { (String) -> Example18::User? } -> (Example18::User | bool)
+  def fetch_token: () { (String) -> Example18::User? } -> Example18::User?
   def deny: () -> bool
   def halt: () -> bool
   def lookup: (String token) -> Example18::User?
