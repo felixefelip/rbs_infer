@@ -210,7 +210,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     # should infer the positional `initialize(caderneta)` param as
     # `Caderneta` — `self` resolves to the lexically-enclosing class.
     # Previously `self` fell through to `untyped`.
-    def collect_with_self(source, target_class:, caller_class_name:, init_positional_params:, self_types_by_method: {})
+    def collect_with_self(source, target_class:, caller_class_name:, init_positional_params:,
+                          self_types_by_method: {}, module_self_type: nil)
       result = Prism.parse(source)
       visitor = described_class.new(
         target_class: target_class,
@@ -219,6 +220,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         caller_class_name: caller_class_name,
         init_positional_params: init_positional_params,
         self_types_by_method: self_types_by_method,
+        module_self_type: module_self_type,
         constant_arg_resolver: null_constant_resolver,
         defined_class_names: described_class.collect_defined_class_names(result.value)
       )
@@ -339,6 +341,75 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       )
       result.value.accept(visitor)
       expect(visitor.usages.first["owner"]).to eq("untyped")
+    end
+
+    # felixefelip/rbs_infer#161. A module's instance-method `self` is whoever
+    # includes it, which the module does not say — but the self-type annotators
+    # do, and a file scanned for call sites is parsed without the annotation
+    # they would have injected, so the answer is passed in.
+    describe "self inside a module" do
+      let(:source) do
+        <<~RUBY
+          module Post::Taggable
+            def digest
+              Digest.new(self)
+            end
+          end
+        RUBY
+      end
+
+      it "stays untyped when no annotator covers the module" do
+        usages = collect_with_self(
+          source, target_class: "Digest", caller_class_name: "Post::Taggable", init_positional_params: ["post"]
+        )
+        expect(usages.first["post"]).to eq("untyped")
+      end
+
+      it "uses the includer's type when an annotator answers" do
+        usages = collect_with_self(
+          source, target_class: "Digest", caller_class_name: "Post::Taggable",
+          init_positional_params: ["post"], module_self_type: "(Post & Post::Taggable)"
+        )
+        expect(usages.first["post"]).to eq("(Post & Post::Taggable)")
+      end
+
+      # The annotators were asked about one module; a different one in the same
+      # file has its own includer and must not inherit the answer.
+      it "does not lend the answer to a sibling module" do
+        nested = <<~RUBY
+          module Post
+            module Other
+              def digest
+                Digest.new(self)
+              end
+            end
+          end
+        RUBY
+
+        usages = collect_with_self(
+          nested, target_class: "Digest", caller_class_name: "Post::Taggable",
+          init_positional_params: ["post"], module_self_type: "(Post & Post::Taggable)"
+        )
+        expect(usages.first["post"]).to eq("untyped")
+      end
+
+      # A `def self.x` in a module is not a mixin method: there `self` IS the
+      # module, and the annotators' instance answer does not apply.
+      it "leaves a singleton method resolving to the module itself" do
+        singleton = <<~RUBY
+          module Post::Taggable
+            def self.digest_all
+              Digest.new(self)
+            end
+          end
+        RUBY
+
+        usages = collect_with_self(
+          singleton, target_class: "Digest", caller_class_name: "Post::Taggable",
+          init_positional_params: ["post"], module_self_type: "(Post & Post::Taggable)"
+        )
+        expect(usages.first["post"]).to eq("singleton(Post::Taggable)")
+      end
     end
   end
 

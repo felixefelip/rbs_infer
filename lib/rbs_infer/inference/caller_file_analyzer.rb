@@ -133,6 +133,16 @@ module RbsInfer::Inference
           {}
         end
 
+      # A module's instance-method `self` is whoever includes it, which the file
+      # itself does not say — and the annotators already know: `Card::Entropic`
+      # is mixed into `Card`. As a TARGET the file gets the answer injected as an
+      # annotation; as a CALLER it is parsed from disk, so the answer has to be
+      # asked for. Without it `Card::Entropy.for(self)` typed its parameter
+      # `Card::Entropic`, which has no `last_active_at` (felixefelip/rbs_infer#161).
+      module_self_type = RbsInfer::Project::SelfTypeAnnotators.instance_type(
+        path: file, module_name: caller_class_name, source: source
+      )
+
       visitor = NewCallCollector.new(
         target_class: @target_class,
         method_return_types: method_return_types,
@@ -145,6 +155,7 @@ module RbsInfer::Inference
         target_methods: @target_methods,
         match_bare_calls: match_bare,
         self_types_by_method: self_types_by_method,
+        module_self_type: module_self_type,
         established_ivars_by_method: established_ivars_by_method,
         argument_partitions_by_method: argument_partitions_by_method,
         constant_arg_resolver: constant_arg_resolver,

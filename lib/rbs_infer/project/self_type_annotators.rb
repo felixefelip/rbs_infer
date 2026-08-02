@@ -61,5 +61,37 @@ module RbsInfer::Project
       end
       target_source
     end
+
+    INSTANCE_ANNOTATION = /\A#\s*@type\s+instance:\s*(?<type>.+?)\s*\z/
+
+    # The type a module's INSTANCE methods see as `self`, or nil when no
+    # annotator covers the file. Same plugins and same entries `apply` injects,
+    # READ instead of injected — a file being scanned for call sites is parsed
+    # as it is on disk, so the annotation is never there, yet its `self` still
+    # has to resolve to something (felixefelip/rbs_infer#161).
+    #
+    # Matched on the anchor, so a file declaring more than one module cannot
+    # borrow a sibling's answer.
+    #
+    # Returned PARENTHESIZED, which the annotation is not: an intersection is
+    # only legal bare in argument position. Measured — `(A & B x) -> void`
+    # parses, `() -> A & B` is a syntax error — and it is the same shape the
+    # callback sidecar already stores (`(::Post & ::Post::Validated)`), so a
+    # type that reaches a return is usable wherever it lands.
+    def instance_type(path:, module_name:, source:)
+      return nil if module_name.nil? || module_name.empty?
+
+      anchor = module_name.split("::").last
+
+      type = @annotators.filter_map do |annotator|
+        annotator.self_type_entries(path: path, module_name: module_name, source: source)
+                 .select { |entry| entry["anchor"] == anchor }
+                 .flat_map { |entry| entry["annotations"] }
+                 .filter_map { |line| line[INSTANCE_ANNOTATION, :type] }
+                 .first
+      end.first
+
+      "(#{type})" if type
+    end
   end
 end

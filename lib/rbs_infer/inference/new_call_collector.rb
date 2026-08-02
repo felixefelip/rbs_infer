@@ -28,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_type: nil, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -64,6 +64,10 @@ module RbsInfer::Inference
       # SteepBridge#callback_self_types). Preferred over the lexical class
       # name when resolving `self` inside such a method.
       @self_types_by_method = self_types_by_method
+      # `"Card & Card::Entropic"` — what a module's INSTANCE methods see as
+      # `self`, from the self-type annotators. File-wide, so it applies only to
+      # the module the caller class name names.
+      @module_self_type = module_self_type
       # `{ "set_post" => { "@post" => "(::Post & ::Post::Validated)" } }` — ivars a
       # self-method proves populated once it has run (postconditions sidecar). Applied
       # in source order by `visit_call_node`, so only call sites AFTER the establishing
@@ -93,6 +97,9 @@ module RbsInfer::Inference
       # module's `self` is whoever includes it, so an instance method there
       # cannot claim the module's name (felixefelip/rbs_infer#159).
       @declaration_kinds = []
+      # Enclosing MODULE names, innermost last — only to tell which module the
+      # annotators' self-type answer was about.
+      @module_name_stack = []
       @in_singleton_method = false
       @current_method = nil
     end
@@ -101,9 +108,22 @@ module RbsInfer::Inference
     # the enclosing CLASS — but it does decide what `self` is inside it.
     def visit_module_node(node)
       @declaration_kinds.push(:module)
+      @module_name_stack.push(module_name_for(node))
       super
     ensure
       @declaration_kinds.pop
+      @module_name_stack.pop
+    end
+
+    # A module's FQN, joined with whatever encloses it. Tracked apart from
+    # `@class_name_stack`, which modules deliberately stay out of — a module
+    # name is not a `self` type, and the only thing this answers is WHICH module
+    # the annotators' answer was about (felixefelip/rbs_infer#161).
+    def module_name_for(node)
+      segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path) or return nil
+      outer = @module_name_stack.last || @class_name_stack.last
+
+      outer ? "#{outer}::#{segment}" : segment
     end
 
     def visit_class_node(node)
@@ -671,17 +691,32 @@ module RbsInfer::Inference
         return refined if refined && !refined.empty?
       end
 
-      # Inside a module, an INSTANCE method's `self` is whatever includes it —
-      # unknowable from here, and claiming the module is a lie that reaches the
-      # signature (`Token.authenticate(self, …)` typed its parameter
-      # `ActionController::HttpAuthentication`, which has no `request`).
+      # Inside a module, an INSTANCE method's `self` is whatever includes it.
+      # Unknowable from the nesting — claiming the module is a lie that reaches
+      # the signature (`Token.authenticate(self, …)` typed its parameter
+      # `ActionController::HttpAuthentication`, which has no `request`) — but
+      # not unknowable in general: the self-type annotators answer it for a
+      # covered concern, and that answer is the one the call site should see.
+      # `Card::Entropy.for(self)` needs the `Card` half of `Card & Card::Entropic`
+      # for `last_active_at`. Only for the module the file is named after, so a
+      # sibling module in the same file cannot borrow it.
       # A `def self.x` in a module is different: there `self` IS the module.
-      return "untyped" if !@in_singleton_method && @declaration_kinds.last == :module
+      return module_self_type || "untyped" if !@in_singleton_method && @declaration_kinds.last == :module
 
       base = @class_name_stack.last || @caller_class_name
       return "untyped" unless base
 
       @in_singleton_method ? "singleton(#{base})" : base
+    end
+
+    # The annotators were asked about the file's own module, so the answer holds
+    # for that one and no other: a second module in the same file has its own
+    # includer. An unnameable module (a dynamic constant path) gets the answer
+    # rather than nothing — the file names one concern in every real case.
+    def module_self_type
+      name = @module_name_stack.last
+
+      @module_self_type if name.nil? || name == @caller_class_name
     end
 
     # Resolves a `self.<method>` against the refined `self` type when the
