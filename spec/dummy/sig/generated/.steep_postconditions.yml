@@ -616,6 +616,10 @@ postconditions:
   effects:
     may_write:
     - "@halted"
+  conditional_const_returns:
+    Example18::Registry.user:
+      gate_ivar: "@halted"
+      type: "::Example18::User"
 - class: Example18
   method: call
   effects:
@@ -630,6 +634,12 @@ postconditions:
   method: fetch_token
   when_true:
     block_truthy: true
+- class: Example18
+  method: from_token
+  conditional_const_returns:
+    Example18::Registry.user:
+      gate_ivar: "@halted"
+      type: "::Example18::User"
 - class: Example18
   method: halt
   unconditional:
@@ -1595,6 +1605,14 @@ method_entry_facts:
   method: user
   consts:
     Example16::Registry.user: "::Example16::User"
+- class: Example18
+  method: show
+  consts:
+    Example18::Registry.user: "::Example18::User"
+- class: Example18::Registry
+  method: user
+  consts:
+    Example18::Registry.user: "::Example18::User"
 - class: Example4
   method: run_foo_name
   consts:
