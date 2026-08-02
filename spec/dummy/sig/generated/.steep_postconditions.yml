@@ -32,6 +32,14 @@ postconditions:
   effects:
     may_write:
     - "@__rbs_infer__performed"
+- class: ActionController::HttpAuthentication::Token
+  method: authenticate
+  when_true:
+    block_truthy: true
+- class: ActionController::HttpAuthentication::Token::ControllerMethods
+  method: authenticate_with_http_token
+  when_true:
+    block_truthy: true
 - class: ApplicationController
   method: authenticate_user
   effects:
@@ -575,6 +583,34 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example17
+  method: forward_guarded
+  when_true:
+    block_truthy: true
+- class: Example17
+  method: forward_optional
+  when_true:
+    block_truthy: true
+- class: Example17
+  method: forward_required
+  when_true:
+    block_truthy: true
+- class: Example17
+  method: with_optional
+  when_true:
+    block_truthy: true
+- class: Example17
+  method: with_pair
+  when_true:
+    block_truthy: true
+- class: Example17
+  method: with_token
+  when_true:
+    block_truthy: true
+- class: Example17
+  method: with_yield
+  when_true:
+    block_truthy: true
 - class: Example2::Foo
   method: user=
   unconditional:
