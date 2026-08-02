@@ -431,6 +431,28 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # use it (#148), and — for a body that only forwards — the callee's own
   # requirement (#149). The three readings sit side by side in one class
   # precisely because a fix for any of them can break the others.
+  # The authentication chain with the establishment inside a BLOCK — the gap
+  # felixefelip/rbs_infer#144 is about, and the fixture stage 3 will be built
+  # against. What it pins here is the premise: the framework pair carries a
+  # required, `String`-shaped block, and `Registry.user` is nilable, so the
+  # deref in `show` is a type error for ONE reason. The facts themselves live in
+  # `.steep_postconditions.yml`, and the error in the steep baseline.
+  it "example18" do
+    name = "models/example18"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example18.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   it "example17" do
     name = "models/example17"
     rbs = RbsInfer::Analyzer.new(
