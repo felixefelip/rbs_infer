@@ -101,11 +101,6 @@ postconditions:
     may_write:
     - "@account"
 - class: Current
-  method: author_name=
-  unconditional:
-    establishes_consts:
-      author_name: "::String"
-- class: Current
   method: set
   effects:
     may_write:

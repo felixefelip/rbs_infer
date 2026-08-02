@@ -432,6 +432,39 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
     end
   end
 
+  describe ".replace_block_return_type" do
+    it "fills in what the block returns, leaving its parameters alone" do
+      expect(described_class.replace_block_return_type("m: () { (String) -> untyped } -> untyped", "User"))
+        .to eq("m: () { (String) -> User } -> untyped")
+    end
+
+    # The mirror image of the parameter list, and measured rather than assumed:
+    # `{ () -> A | B }` is a SYNTAX ERROR, while `{ (A | B) -> untyped }` is fine.
+    it "parenthesizes a union, which is invalid bare in this position" do
+      expect(described_class.replace_block_return_type("m: () { () -> untyped } -> untyped", "String | Integer"))
+        .to eq("m: () { () -> (String | Integer) } -> untyped")
+    end
+
+    it "leaves alone what it cannot account for" do
+      [
+        # already refined, or hand-written
+        ["m: () { (String) -> User } -> untyped", "Post"],
+        # no block at all
+        ["m: (untyped a) -> untyped", "User"],
+        # nothing to say
+        ["m: () { (String) -> untyped } -> untyped", nil],
+        ["m: () { (String) -> untyped } -> untyped", "untyped"]
+      ].each { |sig, type| expect(described_class.replace_block_return_type(sig, type)).to eq(sig) }
+    end
+
+    # The method's own return sits outside the braces and is somebody else's
+    # answer — a `-> untyped` there must survive.
+    it "touches only the return inside the braces" do
+      expect(described_class.replace_block_return_type("m: () ?{ () -> untyped } -> untyped", "Post"))
+        .to eq("m: () ?{ () -> Post } -> untyped")
+    end
+  end
+
   describe ".require_block" do
     it "adopts the callee's block: required, and shaped like theirs" do
       expect(described_class.require_block("m: () ?{ (*untyped) -> untyped } -> untyped", ["String", "Integer"]))

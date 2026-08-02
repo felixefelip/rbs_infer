@@ -4,14 +4,13 @@ class Current
   self.@__rbs_infer_instance: Current?
 
   @user: ((User & User::Validated) | User)?
-  @author_name: String?
   @account: (Account & Account::Validated)?
 
   module GeneratedAttributeMethods
     def user: () -> ((User & User::Validated) | User)?
     def user=: (((User & User::Validated)? | User?) value) -> ((User & User::Validated) | User)?
-    def author_name: () -> String?
-    def author_name=: (String? value) -> String?
+    def author_name: () -> untyped
+    def author_name=: (untyped value) -> untyped
     def account: () -> (Account & Account::Validated)?
     def account=: ((Account & Account::Validated)? value) -> (Account & Account::Validated)?
     def viewer_name: () -> untyped
@@ -22,13 +21,13 @@ class Current
 
   def self.user: () -> ((User & User::Validated) | User)?
   def self.user=: (((User & User::Validated)? | User?) value) -> ((User & User::Validated)? | User?)
-  def self.author_name: () -> String?
-  def self.author_name=: (String? value) -> String?
+  def self.author_name: () -> untyped
+  def self.author_name=: (untyped value) -> untyped
   def self.account: () -> (Account & Account::Validated)?
   def self.account=: ((Account & Account::Validated)? value) -> (Account & Account::Validated)?
   def self.viewer_name: () -> untyped
   def self.viewer_name=: (untyped value) -> untyped
   def self.__rbs_infer_instance: () -> Current
-  def self.set: (?user: ((User & User::Validated) | User)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: untyped) ?{ () -> untyped } -> nil
-  def self.with: (?user: (User & User::Validated)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: untyped) ?{ () -> untyped } -> nil
+  def self.set: (?user: ((User & User::Validated) | User)?, ?author_name: untyped, ?account: (Account & Account::Validated)?, ?viewer_name: untyped) ?{ () -> untyped } -> untyped
+  def self.with: (?user: (User & User::Validated)?, ?author_name: untyped, ?account: (Account & Account::Validated)?, ?viewer_name: untyped) ?{ () -> ProfileFormatter } -> ProfileFormatter?
 end

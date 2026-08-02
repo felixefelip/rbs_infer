@@ -232,7 +232,10 @@ module RbsInfer
     # overwrite) with the intra-class types: a method called with `String` in
     # one file and `:Symbol` in another should infer `(String | Symbol)`, not
     # the first type seen (felixefelip/rbs_infer#64).
-    cross_class_param_types = infer_method_param_types_from_callers(extract_attr_writer_methods(target_members))
+    cross_class_param_types = infer_method_param_types_from_callers(
+      extract_attr_writer_methods(target_members),
+      block_methods: target_members.select { |m| untyped_block_return?(m) }.map(&:name).to_set
+    )
     cross_class_param_types.each do |method_name, param_types|
       method_param_types[method_name] ||= {}
       param_types.each do |param_name, type|
@@ -309,6 +312,11 @@ module RbsInfer
     # obrigatoriedade e o formato dele — pergunta que só o Steep responde,
     # porque depende de qual sobrecarga se aplica (felixefelip/rbs_infer#149).
     resolve_forwarded_block_requirements(target_members)
+
+    # O que os blocos passados nos call-sites devolvem. É a metade do tipo do
+    # bloco que o corpo do método não responde — ele recebe esse valor, não o
+    # produz (felixefelip/rbs_infer#155).
+    resolve_block_return_types(target_members)
 
     # Identificar parâmetros opcionais do initialize
     optional_params = extract_optional_init_params
@@ -631,6 +639,58 @@ module RbsInfer
     end
   end
 
+  # A block's RETURN is the one half of its type the method cannot answer: it
+  # receives that value rather than producing it, and a method that passes it
+  # through (`block.call(token)`, `yield`) constrains it not at all. So the
+  # evidence is the blocks the call sites pass — the same contract every
+  # inferred parameter type already has, and unioned the same way.
+  #
+  # Sites that Steep cannot type are skipped rather than counted as `untyped`:
+  # unioning one in would erase the answer the others gave.
+  def resolve_block_return_types(target_members)
+    return if @parsed_target.nil?
+
+    members = target_members.select { |m| untyped_block_return?(m) }
+    return if members.empty?
+
+    returns = collect_block_returns(members.map(&:name).to_set)
+    return if returns.empty?
+
+    members.each do |member|
+      observed = returns[member.name]
+      next if observed.nil? || observed.empty?
+
+      member.signature = RbsInfer::Signatures::RbsParserUtil.replace_block_return_type(
+        member.signature, RbsInfer::Inference::TypeMerger.union_types(observed)
+      )
+    end
+  end
+
+  # Method members only, and `to_s` because a member's signature is filled in
+  # by a later pass for some kinds — this runs over every member the collector
+  # produced, not only the ones with a method type.
+  def untyped_block_return?(member)
+    [:method, :class_method].include?(member.kind) && member.signature.to_s.include?("-> untyped }")
+  end
+
+  # Call sites in the target's own file plus every caller file. A receiverless
+  # call here is a self-send, so the target's file needs no receiver check; the
+  # caller files resolve theirs through `NewCallCollector`, which already knows
+  # how (#131).
+  def collect_block_returns(method_names)
+    collector = RbsInfer::Inference::BlockReturnCollector.new(
+      methods: method_names,
+      expression_types: steep_bridge.all_expression_types(@parsed_target.source)
+    )
+    @parsed_target.tree.accept(collector)
+
+    returns = collector.returns
+    @caller_block_returns&.each do |name, types|
+      (returns[name] ||= []).concat(types)
+    end
+    returns
+  end
+
   # ─── Extrair nomes dos keyword params opcionais do initialize ─────
 
   def extract_optional_init_params
@@ -838,7 +898,7 @@ module RbsInfer
 
   # Inferir tipos de parâmetros de métodos via chamadas cross-class
   # Ex: PostPublisher chama notifier.notify(post.user, "msg") → user: User, message: String
-  def infer_method_param_types_from_callers(extra_methods = {})
+  def infer_method_param_types_from_callers(extra_methods = {}, block_methods: Set.new)
     # `extra_methods` are SYNTHETIC writers standing in for `attr_accessor`-
     # generated methods, and name their param after the attr (`user`). A real
     # `def user=(value)` overriding that attr names it `value`, and the def is
@@ -857,7 +917,8 @@ module RbsInfer
       method_type_resolver: method_type_resolver,
       init_positional_params: positional_params,
       target_methods: target_methods,
-      steep_bridge: steep_bridge
+      steep_bridge: steep_bridge,
+      block_methods: block_methods
     )
     referencing = @source_index.files_referencing(@target_class)
 
@@ -879,6 +940,10 @@ module RbsInfer
     end
 
     @extra_caller_sources&.call(analyzer, @target_class, @source_files)
+
+    # Kept for `resolve_block_return_types`, which runs later in the pipeline
+    # (felixefelip/rbs_infer#155).
+    @caller_block_returns = analyzer.method_block_returns
 
     result = {}
     analyzer.method_call_usages.each do |method_name, usages|
@@ -1124,6 +1189,7 @@ require_relative "inference/class_member_collector/extract_params_signature"
 require_relative "inference/class_member_collector/block_signature"
 require_relative "ast/def_collector"
 require_relative "inference/new_call_collector"
+require_relative "inference/block_return_collector"
 require_relative "signatures/method_type_resolver"
 require_relative "inference/caller_file_analyzer"
 require_relative "signatures/rbs_builder"

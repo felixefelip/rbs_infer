@@ -294,6 +294,26 @@ module RbsInfer::Signatures
       !type.nil? && type != "untyped"
     end
 
+    # Fills in what the block RETURNS, which is the one part of a block type
+    # that the method's own body cannot answer: it is what the method receives
+    # FROM the block, not what it hands to it. The evidence is the blocks the
+    # call sites actually pass (felixefelip/rbs_infer#155).
+    #
+    # Only an `untyped` return is rewritten — a block type refined by anything
+    # else was settled by better evidence, and an explicit annotation must not
+    # be overridden.
+    #
+    # A union is PARENTHESIZED here, unlike in the parameter list: `{ () -> A | B }`
+    # is a syntax error, while `{ (A | B) -> untyped }` is fine. Measured, not
+    # assumed — the two positions really do differ.
+    BLOCK_RETURN = /(?<open>\??\{ \([^)]*\) -> )untyped(?<close> \})/
+
+    def replace_block_return_type(method_sig, type)
+      return method_sig unless method_sig && usable_type?(type)
+
+      method_sig.sub(BLOCK_RETURN) { "#{Regexp.last_match[:open]}#{parenthesize_compound(type)}#{Regexp.last_match[:close]}" }
+    end
+
     # Turns the "I only forward it" block into the callee's own — required, and
     # shaped like whatever the callee declares (#149).
     #
