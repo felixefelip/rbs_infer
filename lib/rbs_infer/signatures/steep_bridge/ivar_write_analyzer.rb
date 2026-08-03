@@ -103,7 +103,7 @@ class RbsInfer::Signatures::SteepBridge
     # class body) is intentionally NOT recorded here — there's no method
     # to attribute it to. Use `collect_initialized_ivars` for that case.
     def ivar_write_types_per_method(source_code, target_class:)
-      typing = @steep.type_check(source_code)
+      typing = @steep_bridge.type_check(source_code)
       return {} unless typing
 
       source_node = typing.source.node
@@ -494,6 +494,18 @@ class RbsInfer::Signatures::SteepBridge
 
     def class_scope_match?(namespace, target_class)
       @steep_bridge.class_scope_match?(namespace, target_class)
+    end
+
+    def push_namespace(namespace, node)
+      @steep_bridge.push_namespace(namespace, node)
+    end
+
+    def intrinsic_type_of(node, typing)
+      @steep_bridge.intrinsic_type_of(node, typing)
+    end
+
+    def format_type(type)
+      @steep_bridge.format_type(type)
     end
   end
 end

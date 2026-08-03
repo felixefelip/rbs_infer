@@ -629,23 +629,30 @@ module RbsInfer::Signatures
       result
     end
 
-    private
-
-    # Renders a whitequark `:const` node into a dotted class-path string:
-    # `(const nil :Foo)` → "Foo", `(const (const nil :Foo) :Bar)` →
-    # "Foo::Bar", `(const (cbase) :Foo)` → "Foo". Returns nil for shapes
-    # we can't name (dynamic constant paths), so the caller keeps the
-    # outer namespace rather than inventing a segment.
-    def const_node_to_name(node)
-      return nil unless node.is_a?(::Parser::AST::Node) && node.type == :const
-
-      scope, name = node.children
-      if scope.nil? || (scope.is_a?(::Parser::AST::Node) && scope.type == :cbase)
-        name.to_s
-      elsif scope.is_a?(::Parser::AST::Node) && scope.type == :const
-        prefix = const_node_to_name(scope)
-        prefix ? "#{prefix}::#{name}" : nil
+    # Type-checks a source string and returns Steep's `typing` (or nil). This
+    # is the single most expensive operation in the pipeline (a full Steep
+    # synthesize), and the ~7 oracle methods above each call it — so one
+    # analysis type-checks the same target source ~5x and each caller source
+    # ~2x. Memoize per source for the instance's lifetime.
+    #
+    # Safe to cache: the bridge is per-Analyzer, the result depends only on
+    # (source, env, sidecar stores), the env (`definition_builder`) only
+    # changes via the class-level `reset!` — called *between* analyses, never
+    # during one — and the stores are load-once read-only inputs. The returned
+    # `typing` is only ever read by callers, never mutated. A new analysis
+    # gets a fresh instance (and a freshly-reset env), so no cross-analysis
+    # staleness. (felixefelip/rbs_infer#47)
+    def type_check(source_code)
+      (@type_check_cache ||= {}).fetch(source_code) do
+        @type_check_cache[source_code] = type_check_uncached(source_code)
       end
+    end
+
+    # A `[name, kind]` namespace frame for a `:class`/`:module` node, or the
+    # unchanged namespace for an anonymous one.
+    def push_namespace(namespace, node)
+      name = const_node_to_name(node.children[0])
+      name ? namespace + [[name, node.type]] : namespace
     end
 
     # True when the lexical class path `namespace` (array of segments) is
@@ -675,33 +682,99 @@ module RbsInfer::Signatures
       namespace.drop(target.split("::").size).all? { |(_, kind)| kind == :module }
     end
 
-    # A `[name, kind]` namespace frame for a `:class`/`:module` node, or the
-    # unchanged namespace for an anonymous one.
-    def push_namespace(namespace, node)
-      name = const_node_to_name(node.children[0])
-      name ? namespace + [[name, node.type]] : namespace
-    end
-
-    # Type-checks a source string and returns Steep's `typing` (or nil). This
-    # is the single most expensive operation in the pipeline (a full Steep
-    # synthesize), and the ~7 oracle methods above each call it — so one
-    # analysis type-checks the same target source ~5x and each caller source
-    # ~2x. Memoize per source for the instance's lifetime.
-    #
-    # Safe to cache: the bridge is per-Analyzer, the result depends only on
-    # (source, env, sidecar stores), the env (`definition_builder`) only
-    # changes via the class-level `reset!` — called *between* analyses, never
-    # during one — and the stores are load-once read-only inputs. The returned
-    # `typing` is only ever read by callers, never mutated. A new analysis
-    # gets a fresh instance (and a freshly-reset env), so no cross-analysis
-    # staleness. (felixefelip/rbs_infer#47)
-    def type_check(source_code)
-      (@type_check_cache ||= {}).fetch(source_code) do
-        @type_check_cache[source_code] = type_check_uncached(source_code)
+    def intrinsic_type_of(node, typing)
+      case node.type
+      when :nil
+        Steep::AST::Builtin.nil_type
+      when :str, :dstr
+        Steep::AST::Builtin::String.instance_type
+      when :int
+        Steep::AST::Builtin::Integer.instance_type
+      when :float
+        Steep::AST::Builtin::Float.instance_type
+      when :sym, :dsym
+        Steep::AST::Builtin::Symbol.instance_type
+      when :true
+        Steep::AST::Types::Literal.new(value: true)
+      when :false
+        Steep::AST::Types::Literal.new(value: false)
+      when :regexp
+        Steep::AST::Builtin::Regexp.instance_type
+      else
+        typing.type_of(node: node) rescue nil
       end
     end
 
-    private def type_check_uncached(source_code)
+    def format_type(steep_type)
+      # `Steep::AST::Types::Logic::*` are internal types Steep uses for
+      # predicate-narrowing flow analysis (e.g., the body of
+      # `def x?; !@y.nil?; end` types as `Logic::Not`). They have no
+      # valid RBS surface form — `to_s` emits `<% Steep::AST::Types::Logic::Not %>`,
+      # which then leaks into generated RBS. Collapse all of them to
+      # `bool` since that's the user-visible meaning of any predicate
+      # return.
+      return "bool" if steep_type.is_a?(Steep::AST::Types::Logic::Base)
+
+      str = steep_type.to_s
+
+      # Remove leading :: from all type names
+      str = str.gsub(/(^|[\[\(, |])::/) { $1 }
+
+      # Normalize record key format: { :sym => Type } → { sym: Type }
+      str = str.gsub(/:(\w+) =>/, '\1:')
+
+      # Normalize nilable types in nested contexts: (Type | nil) → Type?
+      str = str.gsub(/\(([^|()]+) \| nil\)/) { "#{$1.strip}?" }
+      str = str.gsub(/\(nil \| ([^|()]+)\)/) { "#{$1.strip}?" }
+
+      # Normalize void out of union types: (void | T) → T?
+      # void in a union means "return value not used in that branch", treat as nil
+      if str =~ /\A\(/ && str.include?("void")
+        parts = str.gsub(/\A\(|\)\z/, "").split(/\s*\|\s*/)
+        parts.reject! { |p| p == "void" }
+        parts.reject! { |p| p == "nil" }
+        if parts.empty?
+          return "void"
+        elsif parts.size == 1
+          return "#{parts.first}?"
+        else
+          return "(#{parts.join(" | ")})?"
+        end
+      end
+
+      # Normalize (T | nil) to T?
+      if str =~ /\A\((.+) \| nil\)\z/
+        inner = $1.strip
+        return "#{inner}?" unless inner.include?("|")
+      end
+      if str =~ /\A\(nil \| (.+)\)\z/
+        inner = $1.strip
+        return "#{inner}?" unless inner.include?("|")
+      end
+
+      str
+    end
+
+    private
+
+    # Renders a whitequark `:const` node into a dotted class-path string:
+    # `(const nil :Foo)` → "Foo", `(const (const nil :Foo) :Bar)` →
+    # "Foo::Bar", `(const (cbase) :Foo)` → "Foo". Returns nil for shapes
+    # we can't name (dynamic constant paths), so the caller keeps the
+    # outer namespace rather than inventing a segment.
+    def const_node_to_name(node)
+      return nil unless node.is_a?(::Parser::AST::Node) && node.type == :const
+
+      scope, name = node.children
+      if scope.nil? || (scope.is_a?(::Parser::AST::Node) && scope.type == :cbase)
+        name.to_s
+      elsif scope.is_a?(::Parser::AST::Node) && scope.type == :const
+        prefix = const_node_to_name(scope)
+        prefix ? "#{prefix}::#{name}" : nil
+      end
+    end
+
+    def type_check_uncached(source_code)
       subtyping = steep_subtyping
       return nil unless subtyping
 
@@ -800,79 +873,6 @@ module RbsInfer::Signatures
       else
         Dir.pwd
       end
-    end
-
-    def intrinsic_type_of(node, typing)
-      case node.type
-      when :nil
-        Steep::AST::Builtin.nil_type
-      when :str, :dstr
-        Steep::AST::Builtin::String.instance_type
-      when :int
-        Steep::AST::Builtin::Integer.instance_type
-      when :float
-        Steep::AST::Builtin::Float.instance_type
-      when :sym, :dsym
-        Steep::AST::Builtin::Symbol.instance_type
-      when :true
-        Steep::AST::Types::Literal.new(value: true)
-      when :false
-        Steep::AST::Types::Literal.new(value: false)
-      when :regexp
-        Steep::AST::Builtin::Regexp.instance_type
-      else
-        typing.type_of(node: node) rescue nil
-      end
-    end
-
-    def format_type(steep_type)
-      # `Steep::AST::Types::Logic::*` are internal types Steep uses for
-      # predicate-narrowing flow analysis (e.g., the body of
-      # `def x?; !@y.nil?; end` types as `Logic::Not`). They have no
-      # valid RBS surface form — `to_s` emits `<% Steep::AST::Types::Logic::Not %>`,
-      # which then leaks into generated RBS. Collapse all of them to
-      # `bool` since that's the user-visible meaning of any predicate
-      # return.
-      return "bool" if steep_type.is_a?(Steep::AST::Types::Logic::Base)
-
-      str = steep_type.to_s
-
-      # Remove leading :: from all type names
-      str = str.gsub(/(^|[\[\(, |])::/) { $1 }
-
-      # Normalize record key format: { :sym => Type } → { sym: Type }
-      str = str.gsub(/:(\w+) =>/, '\1:')
-
-      # Normalize nilable types in nested contexts: (Type | nil) → Type?
-      str = str.gsub(/\(([^|()]+) \| nil\)/) { "#{$1.strip}?" }
-      str = str.gsub(/\(nil \| ([^|()]+)\)/) { "#{$1.strip}?" }
-
-      # Normalize void out of union types: (void | T) → T?
-      # void in a union means "return value not used in that branch", treat as nil
-      if str =~ /\A\(/ && str.include?("void")
-        parts = str.gsub(/\A\(|\)\z/, "").split(/\s*\|\s*/)
-        parts.reject! { |p| p == "void" }
-        parts.reject! { |p| p == "nil" }
-        if parts.empty?
-          return "void"
-        elsif parts.size == 1
-          return "#{parts.first}?"
-        else
-          return "(#{parts.join(" | ")})?"
-        end
-      end
-
-      # Normalize (T | nil) to T?
-      if str =~ /\A\((.+) \| nil\)\z/
-        inner = $1.strip
-        return "#{inner}?" unless inner.include?("|")
-      end
-      if str =~ /\A\(nil \| (.+)\)\z/
-        inner = $1.strip
-        return "#{inner}?" unless inner.include?("|")
-      end
-
-      str
     end
 
     # The method a top-level body stands for, from its `@type self_method:` annotation
