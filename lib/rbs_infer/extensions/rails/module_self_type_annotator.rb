@@ -82,11 +82,28 @@ module RbsInfer
         end
 
         def annotations(module_name, hosts, is_concern)
-          instance = "# @type instance: #{(hosts + [module_name]).join(' & ')}"
+          instance = "# @type instance: #{union(hosts.map { |host| "#{host} & #{module_name}" })}"
           return [instance] unless is_concern
 
-          singletons = (hosts + [module_name]).map { |name| "singleton(#{name})" }
-          ["# @type self: #{singletons.join(' & ')}", instance]
+          selves = hosts.map { |host| "singleton(#{host}) & singleton(#{module_name})" }
+          ["# @type self: #{union(selves)}", instance]
+        end
+
+        # Two hosts mean two possible `self`s — one at a time, which is a UNION.
+        # Intersecting them says one object is both, which for two sibling
+        # controllers is a type nothing has: method resolution against it
+        # degrades and the module stops yielding facts at all. Measured on
+        # Fizzy, where `Authentication` lost every postcondition it carried.
+        # felixefelip/steep#130 is what makes a union usable as a self type.
+        #
+        # A single host is written bare, so the common case reads as it always
+        # did and `&` never has to out-bind `|`.
+        def union(parts)
+          if parts.size == 1
+            parts.first
+          else
+            parts.map { |part| "(#{part})" }.join(" | ")
+          end
         end
       end
 

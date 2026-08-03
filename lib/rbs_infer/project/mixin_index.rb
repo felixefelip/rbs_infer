@@ -26,6 +26,7 @@ module RbsInfer::Project
       @included_shorts = {}                            # file → Set[short name]
       @files_defining = Hash.new { |h, k| h[k] = [] }  # short name → [file]
       @includes_by_class = Hash.new { |h, k| h[k] = Set.new } # class FQN → Set[written name]
+      @module_declarations = Set.new                          # FQNs declared as `module`
       build(source_files)
     end
 
@@ -55,12 +56,20 @@ module RbsInfer::Project
     # looks a constant up outward through the enclosing namespaces, so `include
     # Eventable` inside `class Card` may mean `Card::Eventable` or `::Eventable`.
     # Every nesting of the host is a candidate.
-    def hosts_of(module_name)
-      target = unqualified(module_name)
+    def hosts_of(module_name, seen: Set.new)
+      return [] unless seen.add?(unqualified(module_name))
 
-      @includes_by_class.filter_map do |host, written|
-        host if written.any? { |name| resolves_to?(name, host, target) }
-      end.sort
+      direct = @includes_by_class.filter_map do |host, written|
+        host if written.any? { |name| resolves_to?(name, host, module_name) }
+      end
+
+      # A MODULE that includes the target is not a `self` — it is another mixin,
+      # and the real self is whoever includes IT. Fizzy's `Authentication` is
+      # included by `ActiveStorage::Authorize`, a concern; answering `Authorize`
+      # put a module in a position only a class can hold. Resolved through,
+      # `seen`-guarded because two concerns can include each other.
+      direct.flat_map { |host| @module_declarations.include?(host) ? hosts_of(host, seen: seen) : [host] }
+            .uniq.sort
     end
 
     private
@@ -95,6 +104,7 @@ module RbsInfer::Project
         end
 
         written = include_written_names(entry.result.value)
+        @module_declarations << class_name if extractor.is_module
         @files_defining[class_name.split("::").last] << file
         @included_shorts[file] = written.map { |name| name.split("::").last }.to_set
         # Merged rather than assigned: a class reopened across files carries the
@@ -117,6 +127,7 @@ module RbsInfer::Project
     # Whether `written`, as it appears inside `host`, names `target`.
     def resolves_to?(written, host, target)
       name = unqualified(written)
+      target = unqualified(target)
       return true if name == target
 
       nestings(host).any? { |prefix| "#{prefix}::#{name}" == target }

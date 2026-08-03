@@ -106,14 +106,12 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       expect(entry["annotations"]).to eq(["# @type instance: Post & Test::Filtrable"])
     end
 
-    # An intersection, not a union. `self` is one host at a time, so the union
-    # is the truthful type — but Steep raises `Unexpected self_type` on one
-    # (`type_construction.rb#for_new_method`) and the whole method falls to
-    # `untyped`: measured, `PostsHelper`'s four methods all went from `String`
-    # to `untyped`. The intersection resolves against every host's surface,
-    # which is what the callers need, at the cost of accepting a call that only
-    # one of the hosts supports.
-    it "intersects every host when a module is mixed into more than one" do
+    # A union, because `self` is one host at a time. Intersecting them says an
+    # object is both, and for two sibling controllers that is a type nothing
+    # has — measured on Fizzy, where it cost `Authentication` every
+    # postcondition it carried. felixefelip/steep#130 is what makes a union
+    # usable here.
+    it "unions every host when a module is mixed into more than one" do
       entry = described_class.entry_for(
         path: "app/helpers/posts_helper.rb",
         module_name: "PostsHelper",
@@ -121,7 +119,8 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
         mixin_index: index_answering(%w[ERBPostsIndex ERBPostsShow])
       )
 
-      expect(entry["annotations"]).to eq(["# @type instance: ERBPostsIndex & ERBPostsShow & PostsHelper"])
+      expect(entry["annotations"])
+        .to eq(["# @type instance: (ERBPostsIndex & PostsHelper) | (ERBPostsShow & PostsHelper)"])
     end
 
     it "carries the same hosts into the singleton annotation" do
@@ -133,8 +132,8 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       )
 
       expect(entry["annotations"]).to eq([
-        "# @type self: singleton(Card) & singleton(Comment) & singleton(Eventable)",
-        "# @type instance: Card & Comment & Eventable"
+        "# @type self: (singleton(Card) & singleton(Eventable)) | (singleton(Comment) & singleton(Eventable))",
+        "# @type instance: (Card & Eventable) | (Comment & Eventable)"
       ])
     end
 

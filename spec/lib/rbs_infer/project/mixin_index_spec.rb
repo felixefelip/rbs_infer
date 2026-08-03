@@ -146,6 +146,41 @@ RSpec.describe RbsInfer::Project::MixinIndex do
       expect(index.hosts_of("Searchable")).to contain_exactly("Card")
     end
 
+    # felixefelip/rbs_infer#167. A MODULE that includes the target is another
+    # mixin, not a `self`: the real self is whoever includes IT. Fizzy's
+    # `Authentication` is included by a concern, and answering that concern put
+    # a module where only a class can stand.
+    it "resolves through a module that re-mixes the target" do
+      host = write_file("application_controller.rb", "class ApplicationController\n  include Authorize\nend\n")
+      authorize = write_file("authorize.rb", "module Authorize\n  include Authentication\nend\n")
+      auth = write_file("authentication.rb", "module Authentication\nend\n")
+
+      index = described_class.new([host, authorize, auth])
+
+      expect(index.hosts_of("Authentication")).to contain_exactly("ApplicationController")
+    end
+
+    it "keeps the class hosts alongside a re-mixed one" do
+      app = write_file("application_controller.rb", "class ApplicationController\n  include Authentication\nend\n")
+      other = write_file("passkeys_controller.rb", "class PasskeysController\n  include Authentication\nend\n")
+      authorize = write_file("authorize.rb", "module Authorize\n  include Authentication\nend\n")
+      auth = write_file("authentication.rb", "module Authentication\nend\n")
+
+      index = described_class.new([app, other, authorize, auth])
+
+      # `Authorize` resolves to nothing here — nobody includes it — and drops
+      # out rather than standing in for a class.
+      expect(index.hosts_of("Authentication")).to contain_exactly("ApplicationController", "PasskeysController")
+    end
+
+    # Two concerns including each other must not recurse forever.
+    it "survives a cycle" do
+      a = write_file("a.rb", "module A\n  include B\nend\n")
+      b = write_file("b.rb", "module B\n  include A\nend\n")
+
+      expect(described_class.new([a, b]).hosts_of("A")).to be_empty
+    end
+
     it "is empty for a module no one includes" do
       lonely = write_file("lonely.rb", "module Lonely\nend\n")
 

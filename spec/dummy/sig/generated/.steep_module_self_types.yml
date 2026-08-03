@@ -14,8 +14,8 @@ app/helpers/posts_helper.rb:
   modules:
   - anchor: PostsHelper
     annotations:
-    - "# @type instance: ERBPostsEdit & ERBPostsIndex & ERBPostsNew & ERBPostsShow
-      & PostsHelper"
+    - "# @type instance: (ERBPostsEdit & PostsHelper) | (ERBPostsIndex & PostsHelper)
+      | (ERBPostsNew & PostsHelper) | (ERBPostsShow & PostsHelper)"
 app/models/concerns/test/filtrable.rb:
   modules:
   - anchor: Filtrable
@@ -84,8 +84,3 @@ sig/generated/steep_current_runtime/current.rb:
   - anchor: GeneratedAttributeMethods
     annotations:
     - "# @type instance: Current & Current::GeneratedAttributeMethods"
-sig/generated/steep_devise_runtime/devise_scoped_helpers.rb:
-  modules:
-  - anchor: DeviseScopedHelpers
-    annotations:
-    - "# @type instance: DeviseScopedHelpers & DeviseScopedHelpers"
