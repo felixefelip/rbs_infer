@@ -107,9 +107,7 @@ module RbsInfer::Inference
       last = body.is_a?(Prism::StatementsNode) ? body.body.last : body
       return nil unless last
 
-      # Character column: Steep's map comes from Parser, which counts
-      # characters, while Prism also offers bytes (felixefelip/rbs_infer#142).
-      expression_types["#{last.location.start_line}:#{last.location.start_character_column}"]
+      expression_types[RbsInfer::Signatures::SteepBridge.prism_expression_key(last.location)]
     end
   end
 end

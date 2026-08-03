@@ -43,8 +43,9 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
     end
 
     # Where the values the body hands to the block sit in the source, one entry
-    # per block parameter: `[[[line, column], …], …]`, columns in CHARACTERS so
-    # a Parser-based lookup lines up (felixefelip/rbs_infer#142).
+    # per block parameter: `[[[start_line, start_column, end_line, end_column], …], …]`,
+    # columns in CHARACTERS so a Parser-based lookup lines up
+    # (felixefelip/rbs_infer#142).
     #
     # Only the positions: the TYPES there are the checker's answer, and the
     # checker belongs to the Analyzer. This object is structural, like the rest
@@ -143,8 +144,15 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       node.arguments&.arguments || []
     end
 
+    # Both ends of the expression, not just where it starts: the Analyzer looks
+    # these up in a map keyed by the whole range, so that a receiver cannot
+    # answer for the call it receives (felixefelip/rbs_infer#168). Structural
+    # here, like the rest of this object — the KEY is built where the map is.
     def position_of(node)
-      [node.location.start_line, node.location.start_character_column] if node
+      return nil unless node
+
+      loc = node.location
+      [loc.start_line, loc.start_character_column, loc.end_line, loc.end_character_column]
     end
 
     # Anything that asks whether the block is there.

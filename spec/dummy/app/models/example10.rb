@@ -41,8 +41,13 @@ class Example10
   # then the write. Constant writes never had that treatment — this fixture is
   # the pre-existing half of the same shape.
   #
-  # Note the gap is about which CALLS are visited, not about the write itself:
-  # `Sink.last` is established correctly either way.
+  # Note the gap is about which CALLS are visited, not about the write itself.
+  # What `Sink.last` is established AS does follow from it, though: while `greet`
+  # errors it is `untyped`, so the write says nothing about the type. It read
+  # `Example10::Bar` until felixefelip/rbs_infer#168 — the receiver of the RHS,
+  # which begins at the same column as the RHS itself and so answered for it
+  # while the map was keyed by a position. Closing the gap above is what would
+  # make this a `String`.
   def run
     Example10::Foo.name = 'John Doe'
     Example10::Sink.last = Example10::Bar.new.greet # RHS call NOT walked -> greet errors

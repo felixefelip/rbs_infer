@@ -1170,7 +1170,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
   end
 
   describe "#all_expression_types" do
-    it "maps line:column to type for all typed expressions" do
+    it "maps every typed expression to its type" do
       code = <<~RUBY
         class Foo
           def bar
@@ -1184,6 +1184,27 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       # The lvasgn for x is on line 3
       typed_values = result.values
       expect(typed_values).to include("(Comment & Comment::Validated)")
+    end
+
+    # felixefelip/rbs_infer#168. A receiver starts exactly where its call does,
+    # so three expressions here begin at 3:4 and only the range tells them
+    # apart. Keyed by the start alone they collapsed into one entry, and the
+    # answer the caller-side inference read was whichever `each_typing` yielded
+    # last — the receiver, whenever the call itself was `untyped`.
+    it "keys an expression by its whole range, so a receiver cannot answer for its call" do
+      code = <<~RUBY
+        class Foo
+          def bar
+            Comment.find(1).body
+          end
+        end
+      RUBY
+
+      result = bridge.all_expression_types(code)
+
+      expect(result["3:4-3:11"]).to eq("singleton(Comment)")
+      expect(result["3:4-3:19"]).to eq("(Comment & Comment::Validated)")
+      expect(result["3:4-3:24"]).to eq("String")
     end
 
     it "returns empty hash for unparseable code" do

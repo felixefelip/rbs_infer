@@ -33,5 +33,5 @@ class Current
   def self.viewer_name=: (String? value) -> String?
   def self.__rbs_infer_instance: () -> Current
   def self.set: (?user: ((User & User::Validated) | User)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: String?) ?{ () -> untyped } -> untyped
-  def self.with: (?user: (User & User::Validated)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: String?) ?{ () -> ProfileFormatter } -> ProfileFormatter?
+  def self.with: (?user: (User & User::Validated)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: String?) ?{ () -> untyped } -> untyped
 end

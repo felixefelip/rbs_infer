@@ -1,5 +1,5 @@
 class Example10
-  def run: () -> Example10::Bar
+  def run: () -> untyped
 end
 
 class Example10
@@ -13,10 +13,8 @@ end
 
 class Example10
   class Sink
-    self.@last: Example10::Bar?
-
-    def self.last: () -> Example10::Bar?
-    def self.last=: (Example10::Bar value) -> Example10::Bar
+    def self.last: () -> untyped
+    def self.last=: (untyped value) -> untyped
   end
 end
 

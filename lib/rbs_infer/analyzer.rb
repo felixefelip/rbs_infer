@@ -608,7 +608,8 @@ module RbsInfer
   # yields an Integer in one branch and a String in another gives its block a
   # union, exactly as the sites say.
   def block_param_type(positions, expression_types)
-    types = positions.filter_map { |line, column| expression_types["#{line}:#{column}"] }.uniq
+    keys = positions.map { |position| RbsInfer::Signatures::SteepBridge.expression_key(*position) }
+    types = keys.filter_map { |key| expression_types[key] }.uniq
     return nil if types.empty?
 
     RbsInfer::Inference::TypeMerger.union_types(types)
