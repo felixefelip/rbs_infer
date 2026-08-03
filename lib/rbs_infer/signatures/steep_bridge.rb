@@ -207,7 +207,7 @@ module RbsInfer::Signatures
     end
 
     def forwarded_block_requirements(source_code)
-      RbsInfer::Signatures::SteepBridge::BlockAnalyzer.new.forwarded_block_requirements(source_code)
+      RbsInfer::Signatures::SteepBridge::BlockAnalyzer.new(steep_bridge: self).forwarded_block_requirements(source_code)
     end
 
     # Returns { "method_name" => "ReturnType" } for all def nodes.
