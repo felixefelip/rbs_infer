@@ -22,34 +22,35 @@ class Example10
   class Bar
     # Reached ONLY from the right-hand side of a constant write in `run`, where
     # `Foo.name` is already established — so a human reading the source sees this
-    # read as non-nil.
+    # read as non-nil, and so does the checker now that the RHS is part of the
+    # flow. This is the method whose return the whole chain below hangs on.
     def greet
-      Example10::Foo.name.upcase # should: "JOHN DOE"; actual: error (const RHS gap)
+      Example10::Foo.name.upcase # "JOHN DOE"
     end
   end
 
-  # CONST-WRITE RHS gap. `method_events` classifies `Const.attr = <rhs>` as a
-  # `:const_write` event and stops there: the RHS is never walked for calls, so
-  # `Bar.new.greet` is invisible to the flow and `greet` never receives the
-  # `Foo.name` fact established one line above.
+  # CONST-WRITE RHS. `method_events` classified `Const.attr = <rhs>` as a
+  # `:const_write` event and stopped there: the RHS was never walked for calls,
+  # so `Bar.new.greet` was invisible to the flow and `greet` never received the
+  # `Foo.name` fact established one line above — `Foo.name.upcase` errored.
   #
   # The RHS runs BEFORE the assignment, so its calls belong to the flow in that
   # order — exactly the reasoning already applied to `@x = <rhs>` when ivar
   # writes were introduced (felixefelip/steep#91). There, classifying the
   # statement as a write initially swallowed the RHS calls and dropped the entry
   # facts of 12 dummy methods; it was fixed by recording the RHS calls first,
-  # then the write. Constant writes never had that treatment — this fixture is
-  # the pre-existing half of the same shape.
+  # then the write. Constant writes got the same treatment in
+  # felixefelip/steep#131, which is what this fixture now pins.
   #
-  # Note the gap is about which CALLS are visited, not about the write itself.
-  # What `Sink.last` is established AS does follow from it, though: while `greet`
-  # errors it is `untyped`, so the write says nothing about the type. It read
-  # `Example10::Bar` until felixefelip/rbs_infer#168 — the receiver of the RHS,
-  # which begins at the same column as the RHS itself and so answered for it
-  # while the map was keyed by a position. Closing the gap above is what would
-  # make this a `String`.
+  # The gap was about which CALLS are visited, not about the write itself — but
+  # what `Sink.last` is established AS followed from it, because an erroring
+  # `greet` is `untyped` and a write of `untyped` says nothing. That slot read
+  # `Example10::Bar` until felixefelip/rbs_infer#168 (the receiver of the RHS,
+  # which begins at the same column as the RHS itself, answering for it while the
+  # map was keyed by a position), then `untyped`, and now `String` — what `greet`
+  # returns, which is what the source said all along.
   def run
     Example10::Foo.name = 'John Doe'
-    Example10::Sink.last = Example10::Bar.new.greet # RHS call NOT walked -> greet errors
+    Example10::Sink.last = Example10::Bar.new.greet
   end
 end

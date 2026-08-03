@@ -1,5 +1,5 @@
 class Example10
-  def run: () -> untyped
+  def run: () -> String
 end
 
 class Example10
@@ -13,13 +13,15 @@ end
 
 class Example10
   class Sink
-    def self.last: () -> untyped
-    def self.last=: (untyped value) -> untyped
+    self.@last: String?
+
+    def self.last: () -> String?
+    def self.last=: (String value) -> String
   end
 end
 
 class Example10
   class Bar
-    def greet: () -> untyped
+    def greet: () -> String
   end
 end
