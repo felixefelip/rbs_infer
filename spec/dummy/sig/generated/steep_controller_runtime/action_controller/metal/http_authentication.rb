@@ -19,8 +19,6 @@ module ActionController
   module HttpAuthentication
     module Token
       module ControllerMethods
-        # @type instance: ActionController::Base & ActionController::HttpAuthentication::Token::ControllerMethods
-
         def authenticate_or_request_with_http_token(realm = "Application", message = nil, &login_procedure)
           authenticate_with_http_token(&login_procedure) || request_http_token_authentication(realm, message)
         end

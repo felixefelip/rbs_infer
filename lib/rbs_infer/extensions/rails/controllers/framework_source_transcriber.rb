@@ -173,25 +173,9 @@ module RbsInfer
 
           def file_for(path, entries)
             blocks = entries.group_by { |_, namespace, _| namespace }
-                            .map { |namespace, rows| wrap(namespace, annotated(namespace, rows.map(&:last))) }
+                            .map { |namespace, rows| wrap(namespace, rows.map(&:last)) }
 
             { filename: sidecar_path(path), source: header + blocks.join("\n") }
-          end
-
-          # The same fact as the emitted `include`, said the other way round, for
-          # the other reader. The include tells whatever reads Ruby who the host
-          # is; this tells the CHECKER what `self` is while it reads the body —
-          # without it every `self` handed out of here is a bare module, and
-          # passing one where the callee now declares a controller is an error
-          # the real code does not have.
-          def annotated(namespace, defs)
-            host = host_of(namespace.join("::")) or return defs
-
-            ["# @type instance: #{host} & #{namespace.join('::')}", *defs]
-          end
-
-          def host_of(module_name)
-            MIXINS.find { |mixin| mixin.module_name == module_name && mixed_in?(mixin) }&.host
           end
 
           # The path below the gem's `lib/`, which is the gem's own layout.

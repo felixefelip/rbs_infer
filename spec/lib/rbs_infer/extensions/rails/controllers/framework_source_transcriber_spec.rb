@@ -75,26 +75,18 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
 
   # felixefelip/rbs_infer#165. A transcribed module is a mixin, and its body runs
   # with the includer's `self` — which the module cannot state, so the
-  # transcription states it, twice, once for each reader.
+  # transcription states it. Written as an ordinary `include`, so the same thing
+  # that reads the app's mixins reads this one.
   describe "who includes the transcribed module" do
-    let(:host) { "ActionController::Base" }
     let(:mixin) { "ActionController::HttpAuthentication::Token::ControllerMethods" }
 
-    # For whatever reads Ruby: a file of its own, because a file's includes are
-    # attributed to the ONE class it declares, and the transcription declares
-    # several modules.
-    it "emits the include as Ruby, in the host's own file" do
+    # A file of its own, because a file's includes are attributed to the ONE
+    # class it declares, and the transcription declares several modules.
+    it "emits the include in the host's own file" do
       base = files.find { |f| f[:filename] == "action_controller/base.rb" }
 
       expect(base[:source]).to include("module ActionController\n  class Base\n")
       expect(base[:source]).to include("include #{mixin}")
-    end
-
-    # For the checker: without it every `self` handed out of the module is a
-    # bare module, and passing one where the callee declares a controller is an
-    # error the real code does not have.
-    it "annotates the module's own self type" do
-      expect(source).to include("# @type instance: #{host} & #{mixin}")
     end
 
     # Curated like the seeds, but confirmed against the loaded runtime, so a
@@ -107,7 +99,6 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
       )
 
       expect(files.map { |f| f[:filename] }).not_to include("action_controller/base.rb")
-      expect(source).not_to include("@type instance:")
     end
   end
 

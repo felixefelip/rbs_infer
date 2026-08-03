@@ -17,10 +17,10 @@ module RbsInfer
       # `@type self:`/`@type instance:` into concerns/modules during parsing
       # (felixefelip/rbs_infer#52).
       #
-      # For each module/concern under the covered roots it records, keyed by the
-      # project-relative path, the leaf-name anchor and the annotation lines —
-      # computed by `ModuleSelfTypeAnnotator` from the AST-derived FQN (correct
-      # acronym casing) and Rails conventions. This replaces the path-based name
+      # Keyed by project-relative path, it records one entry per MODULE the file
+      # declares — the leaf-name anchor and the annotation lines, computed by
+      # `ModuleSelfTypeAnnotator` from the AST-derived FQN (correct acronym
+      # casing) and from who includes it. This replaces the path-based name
       # derivation that used to live in Steep.
       #
       # It also records, in the same entry, the `blocks` that Steep should
@@ -30,7 +30,12 @@ module RbsInfer
       # when it has no self-type annotations.
       class ModuleSelfTypeGenerator
         SIDECAR_PATH = "sig/generated/.steep_module_self_types.yml"
-        ROOTS = %w[app/models app/helpers app/controllers/concerns].freeze
+
+        # Every Ruby source the project checks, `sig/` included: a module's self
+        # type is not a property of where its file sits, and the transcription
+        # of a framework mixin lives under `sig/generated/`
+        # (felixefelip/rbs_infer#165).
+        SOURCE_GLOBS = ["app/**/*.rb", "sig/**/*.rb"].freeze
 
         def initialize(app_dir:)
           @app_dir = app_dir
@@ -45,12 +50,10 @@ module RbsInfer
           # table — and an empty table DELETES the sidecar, silently.
           mixin_index
 
-          ROOTS.each do |root|
-            Dir.glob(File.join(@app_dir, root, "**/*.rb")).sort.each do |abs|
-              rel = relative(abs)
-              entry = entry_for_file(abs, rel)
-              table[rel] = entry if entry
-            end
+          source_files.each do |abs|
+            rel = relative(abs)
+            entry = entry_for_file(abs, rel)
+            table[rel] = entry if entry
           end
           table
         end
@@ -73,34 +76,56 @@ module RbsInfer
 
         def entry_for_file(abs, rel)
           source = File.read(abs)
-          extractor = RbsInfer::AST::ClassNameExtractor.new(file_path: abs)
-          Prism.parse(source).value.accept(extractor)
-          module_name = extractor.class_name
-          return nil unless module_name
+          tree = Prism.parse(source).value
 
-          entry = ModuleSelfTypeAnnotator.entry_for(path: rel, module_name: module_name, source: source,
-                                                    mixin_index: mixin_index) || {}
-          blocks = ClassMethodsImplements.blocks_for(path: rel, module_name: module_name, source: source,
-                                                     mixin_index: mixin_index)
-          entry["blocks"] = blocks unless blocks.empty?
+          entry = {}
+          modules = self_types_for(rel, source, tree)
+          entry["modules"] = modules if modules.any?
+
+          blocks = blocks_for(abs, rel, source)
+          entry["blocks"] = blocks if blocks.any?
 
           entry.empty? ? nil : entry
         rescue StandardError
           nil
         end
 
+        # One per module the file DECLARES, not one for the file. A concern is
+        # one module in one file and reads the same either way; a framework
+        # transcription reopens several, and the name that stands for the file
+        # is the outermost wrapper — which nobody includes, and whose self type
+        # is nothing (felixefelip/rbs_infer#165).
+        def self_types_for(rel, source, tree)
+          RbsInfer::Inference::NewCallCollector.collect_defined_class_names(tree).sort.filter_map do |name|
+            ModuleSelfTypeAnnotator.entry_for(path: rel, module_name: name, source: source,
+                                              mixin_index: mixin_index)
+          end
+        end
+
+        # Still keyed on the file's own name: a `class_methods do` block belongs
+        # to the concern the file is written for.
+        def blocks_for(abs, rel, source)
+          extractor = RbsInfer::AST::ClassNameExtractor.new(file_path: abs)
+          Prism.parse(source).value.accept(extractor)
+          module_name = extractor.class_name
+          return [] unless module_name
+
+          ClassMethodsImplements.blocks_for(path: rel, module_name: module_name, source: source,
+                                            mixin_index: mixin_index)
+        end
+
         # The `include`s written across the app, so a module's self-type comes
         # from what the code says rather than from where its file sits
         # (felixefelip/rbs_infer#163).
         #
-        # Globbed wider than ROOTS on purpose — the class that includes a model
-        # concern can live anywhere — and over `sig/` too, so this sidecar and
-        # the in-process annotation read the same sources and cannot disagree.
+        # The same sources the table is built from, so this sidecar and the
+        # in-process annotation read one project and cannot disagree.
         def mixin_index
-          @mixin_index ||= RbsInfer::Project::MixinIndex.new(
-            Dir.glob(File.join(@app_dir, "app/**/*.rb")).sort +
-            Dir.glob(File.join(@app_dir, "sig/**/*.rb")).sort
-          )
+          @mixin_index ||= RbsInfer::Project::MixinIndex.new(source_files)
+        end
+
+        def source_files
+          @source_files ||= SOURCE_GLOBS.flat_map { |glob| Dir.glob(File.join(@app_dir, glob)) }.sort
         end
 
         def relative(abs)
