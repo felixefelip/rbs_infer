@@ -54,10 +54,10 @@ class RbsInfer::Signatures::SteepBridge
           next unless parts
 
           var_name, rhs = parts
-          rhs_type = intrinsic_type_of(rhs, typing)
+          rhs_type = RbsInfer::Signatures::SteepBridge::TypeFormatter.intrinsic_type_of(rhs, typing)
           next unless rhs_type
 
-          type_sets[var_name].add(format_type(rhs_type))
+          type_sets[var_name].add(RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(rhs_type))
         when :send
           receiver, method_name, *args = node.children
           next unless attr_writer_to_ivar.key?(method_name)
@@ -65,11 +65,11 @@ class RbsInfer::Signatures::SteepBridge
           next if args.empty?
 
           arg = args[0]
-          arg_type = intrinsic_type_of(arg, typing)
+          arg_type = RbsInfer::Signatures::SteepBridge::TypeFormatter.intrinsic_type_of(arg, typing)
           next unless arg_type
 
           ivar = attr_writer_to_ivar.fetch(method_name)
-          type_sets[ivar].add(format_type(arg_type))
+          type_sets[ivar].add(RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(arg_type))
         end
       end
 
@@ -165,7 +165,7 @@ class RbsInfer::Signatures::SteepBridge
       when :class, :module
         body = node.type == :class ? node.children[2] : node.children[1]
         walk_ivar_init_targets(body, in_init: false, in_class_body: true,
-                                     namespace: push_namespace(namespace, node),
+                                     namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
                                      target_class: target_class, result: result) if body
       when :sclass
         body = node.children[1]
@@ -181,7 +181,7 @@ class RbsInfer::Signatures::SteepBridge
         # def self.X — singleton method, skip; ivar there is class-instance
         # variable, not relevant for instance ivar initialization.
       when :ivasgn
-        if (in_init || in_class_body) && class_scope_match?(namespace, target_class)
+        if (in_init || in_class_body) && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
           var_name = node.children[0].to_s.sub(/\A@/, "")
           result << var_name
         end
@@ -192,7 +192,7 @@ class RbsInfer::Signatures::SteepBridge
                                     namespace: namespace, target_class: target_class, result: result) if rhs
       when :send
         receiver, method_name, *args = node.children
-        if (in_init || in_class_body) && class_scope_match?(namespace, target_class) &&
+        if (in_init || in_class_body) &&  RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class) &&
            (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
            method_name.to_s.end_with?("=") &&
            method_name != :==
@@ -291,7 +291,7 @@ class RbsInfer::Signatures::SteepBridge
       when :class, :module
         body = node.type == :class ? node.children[2] : node.children[1]
         collect_scoped_write_node_ids(body, attr_writer_to_ivar, target_class,
-                                      namespace: push_namespace(namespace, node),
+                                      namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
                                       in_def: false, result: result) if body
       when :sclass, :defs
         # Singleton scope (`class << self` / `def self.x`): `self` is the class,
@@ -307,7 +307,7 @@ class RbsInfer::Signatures::SteepBridge
         # Only writes inside an instance method are instance ivars. A bare
         # `@x = v` in the class body (`in_def` false) is a class-instance
         # variable — `self` is the class there too (felixefelip/rbs_infer#86).
-        result << node.object_id if in_def && class_scope_match?(namespace, target_class)
+        result << node.object_id if in_def &&  RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
         node.children.each do |c|
           collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def,
                                                                               result: result)
@@ -316,7 +316,7 @@ class RbsInfer::Signatures::SteepBridge
         # `@x ||= v` / `@x &&= v`: the write `each_typing` will key on is this
         # whole node, not its argument-less inner `:ivasgn`, so collect this
         # id (felixefelip/rbs_infer#85).
-        if in_def && node.children[0].type == :ivasgn && class_scope_match?(namespace, target_class)
+        if in_def && node.children[0].type == :ivasgn &&  RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
           result << node.object_id
         end
         node.children.each do |c|
@@ -327,7 +327,7 @@ class RbsInfer::Signatures::SteepBridge
         receiver, method_name = node.children[0], node.children[1]
         if in_def && attr_writer_to_ivar.key?(method_name) &&
            (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
-           class_scope_match?(namespace, target_class)
+            RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
           result << node.object_id
         end
         node.children.each do |c|
@@ -360,7 +360,7 @@ class RbsInfer::Signatures::SteepBridge
         collect_ivar_writes_per_method(body, typing: typing,
                                              attr_writer_to_ivar: attr_writer_to_ivar,
                                              current_method: nil,
-                                             namespace: push_namespace(namespace, node),
+                                             namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
                                              target_class: target_class,
                                              result: result) if body
       when :sclass
@@ -388,7 +388,7 @@ class RbsInfer::Signatures::SteepBridge
       when :ivasgn, :or_asgn, :and_asgn
         parts = ivar_write_name_and_rhs(node)
         rhs = parts&.last
-        if current_method && parts && class_scope_match?(namespace, target_class)
+        if current_method && parts && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
           var_name = parts.first
           # Use the RHS's INTRINSIC type, not what `typing` recorded.
           # When the ivar is already declared in RBS (e.g.,
@@ -400,9 +400,9 @@ class RbsInfer::Signatures::SteepBridge
           # node shape, matching `synthesize(node, hint: nil)`.
           # Mirrors the same fix in Steep's
           # `Postconditions::Inferrer` (felixefelip/steep#35).
-          rhs_type = intrinsic_type_of(rhs, typing)
+          rhs_type = RbsInfer::Signatures::SteepBridge::TypeFormatter.intrinsic_type_of(rhs, typing)
           if rhs_type
-            result[current_method][var_name].add(format_type(rhs_type))
+            result[current_method][var_name].add(RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(rhs_type))
           end
         end
         collect_ivar_writes_per_method(rhs, typing: typing,
@@ -415,12 +415,12 @@ class RbsInfer::Signatures::SteepBridge
         receiver, method_name, *args = node.children
         if current_method && attr_writer_to_ivar.key?(method_name) &&
            (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
-           !args.empty? && class_scope_match?(namespace, target_class)
+           !args.empty? && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
           arg = args[0]
-          arg_type = intrinsic_type_of(arg, typing)
+          arg_type = RbsInfer::Signatures::SteepBridge::TypeFormatter.intrinsic_type_of(arg, typing)
           if arg_type
             ivar = attr_writer_to_ivar.fetch(method_name)
-            result[current_method][ivar].add(format_type(arg_type))
+            result[current_method][ivar].add(RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(arg_type))
           end
         end
         node.children.each do |c|
@@ -490,22 +490,6 @@ class RbsInfer::Signatures::SteepBridge
         lhs, rhs = node.children
         [lhs.children[0].to_s.sub(/\A@/, ""), rhs] if lhs.type == :ivasgn && rhs
       end
-    end
-
-    def class_scope_match?(namespace, target_class)
-      @steep_bridge.class_scope_match?(namespace, target_class)
-    end
-
-    def push_namespace(namespace, node)
-      @steep_bridge.push_namespace(namespace, node)
-    end
-
-    def intrinsic_type_of(node, typing)
-      @steep_bridge.intrinsic_type_of(node, typing)
-    end
-
-    def format_type(type)
-      @steep_bridge.format_type(type)
     end
   end
 end

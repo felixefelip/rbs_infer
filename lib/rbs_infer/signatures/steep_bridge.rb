@@ -153,7 +153,7 @@ module RbsInfer::Signatures
         # :arg = block parameter in multi-param blocks (|x, y|);
         #        also matches def params, but those are typically untyped and get filtered below
         next unless node.type == :lvasgn || node.type == :procarg0 || node.type == :arg
-        type_str = format_type(type)
+        type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
         next if type_str == "untyped" || type_str == "nil" || type_str == "bot"
 
         var_name = node.children[0].to_s
@@ -196,7 +196,7 @@ module RbsInfer::Signatures
       typing.each_typing do |node, type|
         next unless node.type == :lvar
 
-        type_str = format_type(type)
+        type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
         # An unusable answer defers to the per-method map rather than
         # overriding it with nothing.
         next if type_str == "untyped" || type_str == "bot"
@@ -284,7 +284,7 @@ module RbsInfer::Signatures
         next unless body
 
         body_type = typing.type_of(node: body)
-        type_str = format_type(body_type)
+        type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(body_type)
 
         # When Steep can't resolve generic type params in block calls,
         # resolve from the block body type or from BlockBodyTypeMismatch errors.
@@ -335,7 +335,7 @@ module RbsInfer::Signatures
       typing.each_typing do |node, type|
         next unless node.type == :casgn
 
-        type_str = format_type(type)
+        type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
         next if type_str == "untyped" || type_str == "bot" || type_str == "void"
 
         result[node.children[1].to_s] = type_str
@@ -416,7 +416,7 @@ module RbsInfer::Signatures
       # Check for BlockBodyTypeMismatch — the actual type is the correct block body type
       mismatch = block_mismatches[last_expr.__id__]
       if mismatch
-        actual_type = format_type(mismatch.actual)
+        actual_type = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(mismatch.actual)
         if actual_type && actual_type != "untyped" && actual_type != "bot"
           return "Array[#{actual_type}]"
         end
@@ -433,15 +433,11 @@ module RbsInfer::Signatures
       block_body = block_body.children.last if block_body&.type == :begin
       return nil unless block_body
 
-      block_body_type = format_type(typing.type_of(node: block_body))
+      block_body_type = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(typing.type_of(node: block_body))
       return nil if !block_body_type || block_body_type == "untyped" || block_body_type == "bot"
 
       resolved = "Array[#{block_body_type}]"
       resolved == type_str ? nil : resolved
-    end
-
-    def steep_bridge_ivar_write_analyzer
-      @steep_bridge_ivar_write_analyzer ||= IvarWriteAnalyzer.new(steep_bridge: self)
     end
 
     def ivar_write_types(source_code, target_class:)
@@ -520,7 +516,7 @@ module RbsInfer::Signatures
         loc = node.loc&.expression
         next unless loc
 
-        type_str = format_type(type)
+        type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
         next if type_str == "untyped" || type_str == "bot"
 
         key = self.class.expression_key(loc.first_line, loc.column, loc.last_line, loc.last_column)
@@ -648,130 +644,10 @@ module RbsInfer::Signatures
       end
     end
 
-    # A `[name, kind]` namespace frame for a `:class`/`:module` node, or the
-    # unchanged namespace for an anonymous one.
-    def push_namespace(namespace, node)
-      name = const_node_to_name(node.children[0])
-      name ? namespace + [[name, node.type]] : namespace
-    end
-
-    # True when the lexical class path `namespace` (array of segments) is
-    # `target_class` *or* something nested under it. The nested case is
-    # required: an expander (e.g. CurrentAttributes) can emit a nested
-    # `module GeneratedAttributeMethods` that is `include`d into the class
-    # and writes the same ivars, so its writes belong to the target. The
-    # `::` boundary keeps a sibling like `BoardMember` from matching
-    # target `Board`. A nil `target_class` means "don't scope" (whole
-    # file), preserved for callers with no single target.
-    # Whether a write at lexical `namespace` (a list of `[name, kind]` frames,
-    # outermost first) belongs to `target_class`.
-    #
-    # Frames strictly below the target only count while they are *modules*:
-    # a nested module's members are the target's, emitted in place by the
-    # owner mechanism (felixefelip/rbs_infer#22). A nested *class* is its own
-    # target, so its writes are not the target's — without this, `@name = name`
-    # in `Example3::User#initialize` surfaced as `@name: String` on `Example3`.
-    def class_scope_match?(namespace, target_class)
-      return true if target_class.nil?
-
-      target = target_class.to_s.sub(/\A::/, "")
-      current = namespace.map(&:first).join("::")
-      return true if current == target
-      return false unless current.start_with?("#{target}::")
-
-      namespace.drop(target.split("::").size).all? { |(_, kind)| kind == :module }
-    end
-
-    def intrinsic_type_of(node, typing)
-      case node.type
-      when :nil
-        Steep::AST::Builtin.nil_type
-      when :str, :dstr
-        Steep::AST::Builtin::String.instance_type
-      when :int
-        Steep::AST::Builtin::Integer.instance_type
-      when :float
-        Steep::AST::Builtin::Float.instance_type
-      when :sym, :dsym
-        Steep::AST::Builtin::Symbol.instance_type
-      when :true
-        Steep::AST::Types::Literal.new(value: true)
-      when :false
-        Steep::AST::Types::Literal.new(value: false)
-      when :regexp
-        Steep::AST::Builtin::Regexp.instance_type
-      else
-        typing.type_of(node: node) rescue nil
-      end
-    end
-
-    def format_type(steep_type)
-      # `Steep::AST::Types::Logic::*` are internal types Steep uses for
-      # predicate-narrowing flow analysis (e.g., the body of
-      # `def x?; !@y.nil?; end` types as `Logic::Not`). They have no
-      # valid RBS surface form — `to_s` emits `<% Steep::AST::Types::Logic::Not %>`,
-      # which then leaks into generated RBS. Collapse all of them to
-      # `bool` since that's the user-visible meaning of any predicate
-      # return.
-      return "bool" if steep_type.is_a?(Steep::AST::Types::Logic::Base)
-
-      str = steep_type.to_s
-
-      # Remove leading :: from all type names
-      str = str.gsub(/(^|[\[\(, |])::/) { $1 }
-
-      # Normalize record key format: { :sym => Type } → { sym: Type }
-      str = str.gsub(/:(\w+) =>/, '\1:')
-
-      # Normalize nilable types in nested contexts: (Type | nil) → Type?
-      str = str.gsub(/\(([^|()]+) \| nil\)/) { "#{$1.strip}?" }
-      str = str.gsub(/\(nil \| ([^|()]+)\)/) { "#{$1.strip}?" }
-
-      # Normalize void out of union types: (void | T) → T?
-      # void in a union means "return value not used in that branch", treat as nil
-      if str =~ /\A\(/ && str.include?("void")
-        parts = str.gsub(/\A\(|\)\z/, "").split(/\s*\|\s*/)
-        parts.reject! { |p| p == "void" }
-        parts.reject! { |p| p == "nil" }
-        if parts.empty?
-          return "void"
-        elsif parts.size == 1
-          return "#{parts.first}?"
-        else
-          return "(#{parts.join(" | ")})?"
-        end
-      end
-
-      # Normalize (T | nil) to T?
-      if str =~ /\A\((.+) \| nil\)\z/
-        inner = $1.strip
-        return "#{inner}?" unless inner.include?("|")
-      end
-      if str =~ /\A\(nil \| (.+)\)\z/
-        inner = $1.strip
-        return "#{inner}?" unless inner.include?("|")
-      end
-
-      str
-    end
-
     private
 
-    # Renders a whitequark `:const` node into a dotted class-path string:
-    # `(const nil :Foo)` → "Foo", `(const (const nil :Foo) :Bar)` →
-    # "Foo::Bar", `(const (cbase) :Foo)` → "Foo". Returns nil for shapes
-    # we can't name (dynamic constant paths), so the caller keeps the
-    # outer namespace rather than inventing a segment.
-    def const_node_to_name(node)
-      return nil unless node.is_a?(::Parser::AST::Node) && node.type == :const
-
-      scope, name = node.children
-      if scope.nil? || (scope.is_a?(::Parser::AST::Node) && scope.type == :cbase)
-        name.to_s
-      elsif scope.is_a?(::Parser::AST::Node) && scope.type == :const
-        prefix = const_node_to_name(scope)
-        prefix ? "#{prefix}::#{name}" : nil
-      end
+    def steep_bridge_ivar_write_analyzer
+      @steep_bridge_ivar_write_analyzer ||= IvarWriteAnalyzer.new(steep_bridge: self)
     end
 
     def type_check_uncached(source_code)
@@ -940,7 +816,7 @@ module RbsInfer::Signatures
       return :unknown unless function.optional_positionals.empty? && function.rest_positionals.nil? &&
         function.trailing_positionals.empty? && function.required_keywords.empty?
 
-      function.required_positionals.map { |param| format_type(param.type) }
+      function.required_positionals.map { |param| RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(param.type) }
     end
 
     def find_enclosing_method(node, typing)
