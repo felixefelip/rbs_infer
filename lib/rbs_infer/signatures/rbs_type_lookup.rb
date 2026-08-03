@@ -80,7 +80,7 @@ module RbsInfer::Signatures
         index[class_name] || []
       end
 
-      # Clears the run-wide caches. Called alongside `SteepBridge.reset!`
+      # Clears the run-wide caches. Called alongside `SteepEnvironment.reset!`
       # between dependency levels so freshly-written sig is picked up.
       def reset!
         @caches = nil
@@ -91,7 +91,7 @@ module RbsInfer::Signatures
       # The caches are scoped to the working directory: the sig globs and the
       # relative paths they yield only mean anything under a fixed `Dir.pwd`, so
       # a `chdir` (the CLI never does mid-run, but tests do) starts fresh —
-      # mirroring `SteepBridge.definition_builder`'s dir guard.
+      # mirroring `SteepEnvironment.definition_builder`'s dir guard.
       def caches
         dir = Dir.pwd
         if @caches.nil? || @caches[:dir] != dir

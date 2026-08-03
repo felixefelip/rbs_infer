@@ -15,130 +15,6 @@ module RbsInfer::Signatures
   # - Attr inference via initialize
   # - RBS generation
   class SteepBridge
-    # Shared RBS DefinitionBuilder, cached at the class level.
-    # Both SteepBridge and RbsDefinitionResolver use the same RBS environment,
-    # so we load it once and share it to avoid duplicating ~1s of loading.
-    class << self
-      def definition_builder
-        current_dir = Dir.pwd
-        if @definition_builder_loaded && @definition_builder_dir == current_dir
-          return @definition_builder
-        end
-
-        @definition_builder_loaded = true
-        @definition_builder_dir = current_dir
-        @definition_builder = build_definition_builder
-      end
-
-      # Steep's type-checking context (factory → interface builder → subtyping
-      # + constant resolver), derived from the shared `definition_builder` and
-      # cached at the class level. The interface builder memoizes each type's
-      # method "shape"; sharing it across every Analyzer means a type's shape is
-      # built once per env instead of rebuilt per file — the dominant cost after
-      # #48/#49 (felixefelip/rbs_infer#47). Keyed by builder identity, so it
-      # rebuilds exactly when `definition_builder` does (reset! / chdir).
-      def steep_context
-        db = definition_builder
-        return nil unless db
-        return @steep_context if @steep_context_builder.equal?(db)
-
-        @steep_context_builder = db
-        factory = Steep::AST::Types::Factory.new(builder: db)
-        interface_builder = Steep::Interface::Builder.new(factory, implicitly_returns_nil: false)
-        @steep_context = {
-          subtyping: Steep::Subtyping::Check.new(builder: interface_builder),
-          constant_resolver: RBS::Resolver::ConstantResolver.new(builder: db),
-        }
-      end
-
-      def reset!
-        @definition_builder = nil
-        @definition_builder_loaded = false
-        @definition_builder_dir = nil
-        @steep_context = nil
-        @steep_context_builder = nil
-      end
-
-      private
-
-      def build_definition_builder
-        require "rbs"
-        require "yaml"
-
-        loader = RBS::EnvironmentLoader.new
-
-        # Load the project's RBS collection (gems + stdlib) from its
-        # lockfile, mirroring what `steep check` does (see Steep's
-        # `Drivers::Utils::DriverHelper`). This is what pulls in the
-        # *stdlib* RBS — `date`, `time`, etc. — which gem RBS depends on
-        # but `EnvironmentLoader.new` does not load by itself.
-        #
-        # It matters because gems like activesupport reopen core stdlib
-        # classes with overload-extending signatures, e.g. on `::Date`:
-        #
-        #     def +: (ActiveSupport::Duration other) -> self
-        #          | ...   # extends the stdlib Date#+ overloads
-        #
-        # The trailing `| ...` requires the stdlib `date` base method to
-        # already exist. Without `date` loaded, building `::Date`'s method
-        # table raises `RBS::InvalidOverloadMethodError`; Steep wraps it as
-        # an `UnexpectedError` and types every `Date`-receiver expression
-        # as `untyped`. That silently poisons whole return-type chains
-        # (e.g. `((Date.current - born) / 365).to_f.truncate(2)` inferred
-        # as `untyped` instead of `Float`). Loading the lockfile keeps the
-        # bridge's environment in parity with `steep check`.
-        add_collection_from_lockfile(loader)
-
-        Dir["sig/*/"].each { |d| loader.add(path: Pathname(d)) }
-
-        env = RBS::Environment.from_loader(loader).resolve_type_names
-        RBS::DefinitionBuilder.new(env: env)
-      rescue LoadError, StandardError => _e
-        nil
-      end
-
-      # Adds the project's RBS collection (gems + stdlib) to `loader` from
-      # its `rbs_collection.lock.yaml`. Falls back to the legacy
-      # `.gem_rbs_collection/*/*/` glob when there's no readable/usable
-      # lockfile — note that fallback does NOT bring in stdlib RBS, so
-      # `Date`/`Time` chains there still degrade to `untyped`.
-      def add_collection_from_lockfile(loader)
-        config_path = RBS::Collection::Config.find_config_path
-        lock_path = config_path && RBS::Collection::Config.to_lockfile_path(config_path)
-
-        unless lock_path&.exist?
-          return add_gem_rbs_collection_glob(loader)
-        end
-
-        lockfile = RBS::Collection::Config::Lockfile.from_lockfile(
-          lockfile_path: lock_path,
-          data: YAML.load(lock_path.read)
-        )
-        # Raises CollectionNotAvailable if the lockfile references gems
-        # that aren't installed under the collection dir. Check before
-        # mutating `loader` so we can fall back cleanly to the glob.
-        lockfile.check_rbs_availability!
-        loader.add_collection(lockfile)
-      rescue StandardError
-        add_gem_rbs_collection_glob(loader)
-      end
-
-      def add_gem_rbs_collection_glob(loader)
-        Dir[".gem_rbs_collection/*/*/"].each { |ver_dir| loader.add(path: Pathname(ver_dir)) }
-      end
-    end
-
-    # Steep's subtyping/constant-resolver context, shared at the class level so
-    # the interface builder's per-type shape cache is reused across instances
-    # (felixefelip/rbs_infer#47). nil when the env couldn't be built.
-    def steep_subtyping
-      self.class.steep_context&.fetch(:subtyping)
-    end
-
-    def steep_constant_resolver
-      self.class.steep_context&.fetch(:constant_resolver)
-    end
-
     # Returns { "var_name" => "Type" } for all local variable assignments
     # in all methods of the given source code.
     # Result is keyed by method name: { "method_name" => { "var" => "Type" } }
@@ -212,84 +88,12 @@ module RbsInfer::Signatures
       RbsInfer::Signatures::SteepBridge::BlockAnalyzer.new(steep_bridge: self).forwarded_block_requirements(source_code)
     end
 
-    # Returns { "method_name" => "ReturnType" } for all def nodes.
-    # The return type is inferred from the body of the method.
-    # Return types of instance methods (`def x`), keyed by name. Singleton
-    # methods (`def self.x`) are excluded — fetch those via
-    # `method_return_types_by_kind(...)[:singleton]` so a class method and an
-    # instance method sharing a name don't clobber each other's entry.
     def method_return_types(source_code)
-      method_return_types_by_kind(source_code)[:instance]
+      return_type_analyzer.method_return_types(source_code)
     end
 
-    # Return types split by receiver kind: `{ instance: {name=>type},
-    # singleton: {name=>type} }`. `def x` (Prism `:def`) and `def self.x`
-    # (`:defs`) used to write the same name-keyed entry, so a homonymous
-    # pair leaked one type onto the other (felixefelip/rbs_infer#33).
-    #
-    # A class method has a THIRD spelling, and the node type does not tell it
-    # apart: inside `class << self` it is a plain `:def`. Filed as an instance
-    # method it was then unreachable, because the reader asks by the member's
-    # kind — which is `:class_method` — and every such method stayed `untyped`
-    # while Steep had its type all along (felixefelip/rbs_infer#162).
     def method_return_types_by_kind(source_code)
-      typing = type_check(source_code)
-      return { instance: {}, singleton: {} } unless typing
-
-      # Index BlockBodyTypeMismatch errors by block node identity
-      block_mismatches = {}
-      typing.errors.each do |err|
-        next unless err.is_a?(Steep::Diagnostic::Ruby::BlockBodyTypeMismatch)
-
-        block_mismatches[err.node.__id__] = err
-      end
-
-      instance = {}
-      singleton = {}
-      singleton_class_defs = singleton_class_def_ids(typing.source.node)
-
-      typing.each_typing do |node, _type|
-        next unless node.type == :def || node.type == :defs
-
-        plain_def = node.type == :def
-        singleton_def = !plain_def || singleton_class_defs.include?(node.__id__)
-        method_name = plain_def ? node.children[0].to_s : node.children[1].to_s
-        body = plain_def ? node.children[2] : node.children[3]
-        next unless body
-
-        body_type = typing.type_of(node: body)
-        type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(body_type)
-
-        # When Steep can't resolve generic type params in block calls,
-        # resolve from the block body type or from BlockBodyTypeMismatch errors.
-        resolved = resolve_block_generic_type(typing, body, type_str, block_mismatches)
-        type_str = resolved if resolved
-
-        next if type_str == "untyped"
-
-        (singleton_def ? singleton : instance)[method_name] = type_str
-      end
-
-      { instance: instance, singleton: singleton }
-    end
-
-    # Node ids of the `def`s written inside `class << self`.
-    #
-    # `class << obj` is a different thing and is deliberately excluded: those
-    # are singleton methods of THAT object, not of the class. The ivar walker
-    # already treats `:sclass` and `:defs` as one scope for the same reason —
-    # in both, `self` is the class.
-    def singleton_class_def_ids(node, inside: false, result: Set.new)
-      return result unless node.is_a?(Parser::AST::Node)
-
-      case node.type
-      when :sclass then inside = node.children[0]&.type == :self
-      when :class, :module then inside = false
-      when :def then result << node.__id__ if inside
-      end
-
-      node.children.each { |child| singleton_class_def_ids(child, inside: inside, result: result) }
-      result
+      return_type_analyzer.method_return_types_by_kind(source_code)
     end
 
     # Returns { "CONSTANT_NAME" => "Type" } for every `NAME = expr` /
@@ -322,33 +126,49 @@ module RbsInfer::Signatures
     # references are absent (a class is a class_decl, not a `Foo = ...` casgn),
     # so they return nil. Type string is `::`-stripped to match `constant_types`.
     def constant_type_from_env(name, namespace:)
-      builder = self.class.definition_builder
+      builder = SteepEnvironment.definition_builder
       return nil unless builder && name
 
       env = builder.env
       constant_name_candidates(name, namespace).each do |fqn|
-        entry = env.constant_decls[RBS::TypeName.parse(fqn)]
+        type_name = parse_type_name(fqn) or next
+        entry = env.constant_decls[type_name]
         next unless entry
 
         return entry.decl.type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }
       end
-      nil
-    rescue RBS::BaseError, StandardError
       nil
     end
 
     # True when `name` (resolved from `namespace`) is a class or module in the
     # env — i.e. its bare name is a valid type (`foo(User) -> User`).
     def class_or_module?(name, namespace:)
-      builder = self.class.definition_builder
+      builder = SteepEnvironment.definition_builder
       return false unless builder && name
 
       env = builder.env
       constant_name_candidates(name, namespace).any? do |fqn|
-        env.class_decls.key?(RBS::TypeName.parse(fqn))
+        type_name = parse_type_name(fqn)
+        type_name && env.class_decls.key?(type_name)
       end
-    rescue RBS::BaseError, StandardError
-      false
+    end
+
+    # The one thing in those two lookups that can raise on the input they are
+    # given: `RBS::TypeName.parse` answers a bare `RuntimeError` — not even an
+    # `RBS::BaseError` — for a string that is no constant path at all (`""`,
+    # `"::"`), which `extract_constant_path` can hand over. Such a candidate is
+    # skipped; that is the entire handling either lookup needs.
+    #
+    # Both used to wrap their whole body in `rescue RBS::BaseError, StandardError`
+    # instead, which is how a `NoMethodError` from a moved class method read as
+    # "the environment has no answer" and typed every constant in value position
+    # `untyped`. A bug in here has to reach the surface, so nothing broader is
+    # caught (felixefelip/rbs_infer#46 wrote the rescue defensively; no failure
+    # ever justified its width).
+    def parse_type_name(fqn)
+      RBS::TypeName.parse(fqn)
+    rescue RuntimeError, RBS::BaseError
+      nil
     end
 
     # Fully-qualified candidates for a constant reference, walking the
@@ -366,52 +186,6 @@ module RbsInfer::Signatures
       end
       candidates << "::#{bare}"
       candidates.uniq
-    end
-
-    BLOCK_GENERIC_METHODS = %w[map collect].freeze
-
-    # When Steep can't resolve generic type params bottom-up in block calls
-    # (e.g., `.map { |x| expr }` → Array[untyped]), extract the block body type
-    # that Steep already typed correctly and substitute it.
-    # Also corrects cases where bidirectional checking from a wrong RBS declaration
-    # produces BlockBodyTypeMismatch — uses the actual block body type.
-    def resolve_block_generic_type(typing, body, type_str, block_mismatches)
-      last_expr = body
-      last_expr = body.children.last if body.type == :begin
-
-      return nil unless last_expr&.type == :block
-
-      send_node = last_expr.children[0]
-      return nil unless send_node&.type == :send
-
-      called_method = send_node.children[1].to_s
-      return nil unless BLOCK_GENERIC_METHODS.include?(called_method)
-
-      # Check for BlockBodyTypeMismatch — the actual type is the correct block body type
-      mismatch = block_mismatches[last_expr.__id__]
-      if mismatch
-        actual_type = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(mismatch.actual)
-        if actual_type && actual_type != "untyped" && actual_type != "bot"
-          return "Array[#{actual_type}]"
-        end
-      end
-
-      # Extract block body type from Steep and construct Array[block_body_type].
-      # For .map/.collect the return is always Array[block_body_type].
-      # This handles both:
-      # - Array[untyped]: Steep couldn't resolve the generic at all
-      # - Array[{record with untyped}]: Steep's bidirectional typing used the
-      #   declared type, but the actual block body has a more precise type
-      #   (e.g., test_hash refined order: untyped → order: Nokogiri::XML::Node)
-      block_body = last_expr.children[2]
-      block_body = block_body.children.last if block_body&.type == :begin
-      return nil unless block_body
-
-      block_body_type = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(typing.type_of(node: block_body))
-      return nil if !block_body_type || block_body_type == "untyped" || block_body_type == "bot"
-
-      resolved = "Array[#{block_body_type}]"
-      resolved == type_str ? nil : resolved
     end
 
     def ivar_write_types(source_code, target_class:)
@@ -621,8 +395,23 @@ module RbsInfer::Signatures
 
     private
 
+    # Steep's subtyping/constant-resolver context, shared at the class level so
+    # the interface builder's per-type shape cache is reused across instances
+    # (felixefelip/rbs_infer#47). nil when the env couldn't be built.
+    def steep_subtyping
+      SteepEnvironment.steep_context&.fetch(:subtyping)
+    end
+
+    def steep_constant_resolver
+      SteepEnvironment.steep_context&.fetch(:constant_resolver)
+    end
+
     def steep_bridge_ivar_write_analyzer
       @steep_bridge_ivar_write_analyzer ||= IvarWriteAnalyzer.new(steep_bridge: self)
+    end
+
+    def return_type_analyzer
+      @return_type_analyzer ||= ReturnTypeAnalyzer.new(steep_bridge: self)
     end
 
     def type_check_uncached(source_code)
