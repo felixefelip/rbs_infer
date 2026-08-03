@@ -101,7 +101,8 @@ module RbsInfer
     # `source` that the pipeline parses.
     if @target_class
       source = RbsInfer::Project::SelfTypeAnnotators.apply(
-        source, detect_source: original_source, path: @target_file, module_name: @target_class
+        source, detect_source: original_source, path: @target_file, module_name: @target_class,
+        mixin_index: mixin_index
       )
     end
 
@@ -978,7 +979,8 @@ module RbsInfer
       target_methods: target_methods,
       steep_bridge: steep_bridge,
       block_methods: block_methods,
-      method_owners: method_owners
+      method_owners: method_owners,
+      mixin_index: mixin_index
     )
     referencing = @source_index.files_referencing(@target_class)
 

@@ -27,14 +27,15 @@ module RbsInfer
       #
       # Detection reuses `ClassMethodsExpander.class_methods_block?` so the
       # sidecar and the RBS desugar agree on exactly what a `class_methods`
-      # block is. The including class is derived by the same rule
-      # `ModuleSelfTypeAnnotator` uses for the concern self-type.
+      # block is. The hosts come from the same `ModuleSelfTypeAnnotator.hosts_for`
+      # the concern self-type uses, so the two halves of one concern cannot end
+      # up mixed into different classes.
       module ClassMethodsImplements
         CALL = "class_methods"
 
         module_function
 
-        # @param path [String] source path (for the including-class rule)
+        # @param path [String] source path (for the presumed-host convention)
         # @param module_name [String] the concern's FQN from the AST (e.g.
         #   "Post::Taggable")
         # @param source [String] the file's source
@@ -42,8 +43,8 @@ module RbsInfer
         #   "::<FQN>::ClassMethods"[, "self" => "singleton(::<Includer>) &
         #   ::<FQN>::ClassMethods"] }]` when `source` has at least one
         #   receiverless `class_methods do` block, else `[]`. `self` is omitted
-        #   when no including class can be derived (e.g. a top-level concern).
-        def blocks_for(path:, module_name:, source:)
+        #   when no host is known (e.g. a top-level concern nobody includes).
+        def blocks_for(path:, module_name:, source:, mixin_index: nil)
           return [] if module_name.nil? || module_name.empty?
           return [] unless source.include?(CALL)
 
@@ -57,8 +58,12 @@ module RbsInfer
 
           class_methods = "::#{module_name}::ClassMethods"
           entry = { "call" => CALL, "implements" => class_methods }
-          if (including = ModuleSelfTypeAnnotator.including_class_for(path, module_name))
-            entry["self"] = "singleton(::#{including}) & #{class_methods}"
+          # Same resolution the instance self-type uses, so the two halves of a
+          # concern cannot end up mixed into different classes.
+          hosts = ModuleSelfTypeAnnotator.hosts_for(path, module_name, mixin_index)
+          unless hosts.empty?
+            singletons = hosts.map { |host| "singleton(::#{host})" }
+            entry["self"] = (singletons + [class_methods]).join(" & ")
           end
           [entry]
         end
@@ -80,8 +85,9 @@ module RbsInfer
         # @return [Hash, nil] `{ "anchor" => "ClassMethods", "annotations" =>
         #   ["# @type instance: singleton(::<Includer>) & ::<FQN>::ClassMethods"] }`,
         #   or nil when there's no `class_methods` block or no derivable includer.
-        def self_type_entry(path:, module_name:, source:)
-          self_type = blocks_for(path: path, module_name: module_name, source: source).first&.fetch("self", nil)
+        def self_type_entry(path:, module_name:, source:, mixin_index: nil)
+          self_type = blocks_for(path: path, module_name: module_name, source: source, mixin_index: mixin_index)
+                      .first&.fetch("self", nil)
           return nil unless self_type
 
           {
@@ -92,8 +98,8 @@ module RbsInfer
 
         # SelfTypeAnnotators plugin contract: the desugared `ClassMethods`
         # submodule self-type as a (possibly empty) list of inject-ready entries.
-        def self_type_entries(path:, module_name:, source:)
-          entry = self_type_entry(path: path, module_name: module_name, source: source)
+        def self_type_entries(path:, module_name:, source:, mixin_index: nil)
+          entry = self_type_entry(path: path, module_name: module_name, source: source, mixin_index: mixin_index)
           entry ? [entry] : []
         end
       end

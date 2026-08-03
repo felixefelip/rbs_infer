@@ -20,7 +20,10 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
   it "emits the sidecar with the declared (AST) casing, not path camelization" do
     in_app(
       "app/models/search/record/sqlite.rb" =>
-        "module Search::Record::SQLite\n  extend ActiveSupport::Concern\nend\n"
+        "module Search::Record::SQLite\n  extend ActiveSupport::Concern\nend\n",
+      # The host, because the self-type is read off the `include` (#163).
+      "app/models/search/record.rb" =>
+        "class Search::Record\n  include Search::Record::SQLite\nend\n"
     ) do |dir|
       out = described_class.new(app_dir: dir).generate
       table = YAML.safe_load(File.read(out))
@@ -37,6 +40,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
   it "covers models, helpers and controller concerns; skips uncovered files" do
     in_app(
       "app/models/post/taggable.rb"            => "module Post::Taggable\nend\n",
+      "app/models/post.rb"                     => "class Post\n  include Post::Taggable\nend\n",
       "app/helpers/posts_helper.rb"            => "module PostsHelper\nend\n",
       "app/controllers/concerns/filterable.rb" => "module Filterable\n  extend ActiveSupport::Concern\nend\n",
       "lib/ignored.rb"                         => "module Ignored\nend\n"
@@ -54,7 +58,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
 
   it "adds a `blocks` @implements entry for a concern with `class_methods do`" do
     in_app(
-      "app/models/post/taggable.rb" => <<~RUBY
+      "app/models/post/taggable.rb" => <<~RUBY,
         module Post::Taggable
           extend ActiveSupport::Concern
 
@@ -65,6 +69,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
           end
         end
       RUBY
+      "app/models/post.rb" => "class Post\n  include Post::Taggable\nend\n"
     ) do |dir|
       entry = described_class.new(app_dir: dir).build_table.fetch("app/models/post/taggable.rb")
 

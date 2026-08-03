@@ -5,8 +5,14 @@ require "rbs_infer"
 require "rbs_infer/extensions/rails/class_methods_implements"
 
 RSpec.describe RbsInfer::Extensions::Rails::ClassMethodsImplements do
-  def blocks(source, path: "app/models/post/taggable.rb", module_name: "Post::Taggable")
-    described_class.blocks_for(path: path, module_name: module_name, source: source)
+  # A model concern's host is read off the `include` that names it — there is no
+  # convention for one any more (felixefelip/rbs_infer#163), so the index has to
+  # answer or there is no host at all.
+  def blocks(source, path: "app/models/post/taggable.rb", module_name: "Post::Taggable", hosts: ["Post"])
+    described_class.blocks_for(
+      path: path, module_name: module_name, source: source,
+      mixin_index: instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts)
+    )
   end
 
   it "emits @implements and the includer-singleton self for a `class_methods do` block" do
@@ -31,8 +37,8 @@ RSpec.describe RbsInfer::Extensions::Rails::ClassMethodsImplements do
     )
   end
 
-  it "omits `self` when no including class can be derived (top-level concern)" do
-    result = blocks(<<~RUBY, path: "app/models/concerns/greetable.rb", module_name: "Greetable")
+  it "omits `self` when nobody includes the concern" do
+    result = blocks(<<~RUBY, path: "app/models/concerns/greetable.rb", module_name: "Greetable", hosts: [])
       module Greetable
         extend ActiveSupport::Concern
 
@@ -77,8 +83,11 @@ RSpec.describe RbsInfer::Extensions::Rails::ClassMethodsImplements do
   end
 
   describe ".self_type_entry" do
-    def entry(source, path: "app/models/post/taggable.rb", module_name: "Post::Taggable")
-      described_class.self_type_entry(path: path, module_name: module_name, source: source)
+    def entry(source, path: "app/models/post/taggable.rb", module_name: "Post::Taggable", hosts: ["Post"])
+      described_class.self_type_entry(
+        path: path, module_name: module_name, source: source,
+        mixin_index: instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts)
+      )
     end
 
     it "anchors the includer-singleton self on the desugared ClassMethods submodule" do
@@ -100,8 +109,8 @@ RSpec.describe RbsInfer::Extensions::Rails::ClassMethodsImplements do
       )
     end
 
-    it "returns nil when no including class can be derived (top-level concern)" do
-      result = entry(<<~RUBY, path: "app/models/concerns/greetable.rb", module_name: "Greetable")
+    it "returns nil when nobody includes the concern" do
+      result = entry(<<~RUBY, path: "app/models/concerns/greetable.rb", module_name: "Greetable", hosts: [])
         module Greetable
           extend ActiveSupport::Concern
 

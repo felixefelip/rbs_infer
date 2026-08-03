@@ -49,11 +49,12 @@ module RbsInfer::Project
     # returns the annotated source. `detect_source` is what annotators inspect
     # (the original file); `target_source` is what gets parsed (post-expansion).
     # A no-op (no annotators, no matches) returns `target_source` unchanged.
-    def apply(target_source, detect_source:, path:, module_name:)
+    def apply(target_source, detect_source:, path:, module_name:, mixin_index: nil)
       return target_source if module_name.nil? || module_name.empty?
 
       @annotators.each do |annotator|
-        annotator.self_type_entries(path: path, module_name: module_name, source: detect_source).each do |entry|
+        entries_from(annotator, path: path, module_name: module_name,
+                                source: detect_source, mixin_index: mixin_index).each do |entry|
           target_source = Steep::Source::ModuleSelfTypes.inject(
             target_source, annotations: entry["annotations"], anchor: entry["anchor"]
           )
@@ -78,20 +79,37 @@ module RbsInfer::Project
     # parses, `() -> A & B` is a syntax error — and it is the same shape the
     # callback sidecar already stores (`(::Post & ::Post::Validated)`), so a
     # type that reaches a return is usable wherever it lands.
-    def instance_type(path:, module_name:, source:)
+    def instance_type(path:, module_name:, source:, mixin_index: nil)
       return nil if module_name.nil? || module_name.empty?
 
       anchor = module_name.split("::").last
 
       type = @annotators.filter_map do |annotator|
-        annotator.self_type_entries(path: path, module_name: module_name, source: source)
-                 .select { |entry| entry["anchor"] == anchor }
-                 .flat_map { |entry| entry["annotations"] }
-                 .filter_map { |line| line[INSTANCE_ANNOTATION, :type] }
-                 .first
+        entries_from(annotator, path: path, module_name: module_name, source: source, mixin_index: mixin_index)
+          .select { |entry| entry["anchor"] == anchor }
+          .flat_map { |entry| entry["annotations"] }
+          .filter_map { |line| line[INSTANCE_ANNOTATION, :type] }
+          .first
       end.first
 
       "(#{type})" if type
+    end
+
+    # `mixin_index` is passed only to annotators that ask for it, so adding it
+    # to the contract does not break one written against the older three
+    # (felixefelip/rbs_infer#163).
+    def entries_from(annotator, path:, module_name:, source:, mixin_index:)
+      if accepts_mixin_index?(annotator)
+        annotator.self_type_entries(path: path, module_name: module_name, source: source, mixin_index: mixin_index)
+      else
+        annotator.self_type_entries(path: path, module_name: module_name, source: source)
+      end
+    end
+
+    def accepts_mixin_index?(annotator)
+      annotator.method(:self_type_entries).parameters.any? do |kind, name|
+        name == :mixin_index || kind == :keyrest
+      end
     end
   end
 end

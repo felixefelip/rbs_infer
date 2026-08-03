@@ -1,23 +1,31 @@
 module RbsInfer::Project
-  # For a target module (concern), resolves the files whose *bare* calls (no
-  # receiver) can reach the module's instance methods.
+  # The project's mixin graph. One pass over every source file, recording what
+  # each one DEFINES and what it `include`s/`prepend`s, to answer the two
+  # questions a mixin raises.
   #
-  # A concern's methods are mixed into the host and called without a receiver —
-  # not only in the host's own file, but in the host's *other* concerns too:
-  # sibling modules share the host's `self`, so a bare `track_event :x` in
-  # `Card::Statuses` reaches `Eventable#track_event` because `Card` includes
-  # both. Those sibling files never name the concern, so the constant-reference
-  # index (`SourceIndex`) doesn't find them.
+  # **Who can call into this module** — `files_reaching`. A concern's methods
+  # are mixed into the host and called without a receiver, not only in the
+  # host's own file but in the host's *other* concerns: sibling modules share
+  # the host's `self`, so a bare `track_event :x` in `Card::Statuses` reaches
+  # `Eventable#track_event` because `Card` includes both. Those sibling files
+  # never name the concern, so the constant-reference index (`SourceIndex`)
+  # doesn't find them. The answer is host files ∪ the files of every sibling
+  # module those hosts also include.
   #
-  # This index parses each file once, recording per file: the class/module it
-  # defines and the short names it `include`s/`prepend`s. From that it answers
-  # `files_reaching(module_name)` = host files (that include the module) ∪ the
-  # files of every sibling module those hosts also include.
+  # **What `self` is inside it** — `hosts_of`, the classes that include it
+  # (felixefelip/rbs_infer#163).
+  #
+  # The two match names differently, on purpose. Reachability keys on the short
+  # name: a false positive only widens a search that is then filtered by what
+  # the calls actually resolve to. A self-type cannot afford one — naming the
+  # wrong host puts a wrong type in a signature — so `hosts_of` resolves the
+  # written name to an FQN the way Ruby does.
   class MixinIndex
     def initialize(source_files, parse_cache: nil)
       @parse_cache = parse_cache || ParseCache.new
       @included_shorts = {}                            # file → Set[short name]
       @files_defining = Hash.new { |h, k| h[k] = [] }  # short name → [file]
+      @includes_by_class = Hash.new { |h, k| h[k] = Set.new } # class FQN → Set[written name]
       build(source_files)
     end
 
@@ -34,6 +42,25 @@ module RbsInfer::Project
         end
       end
       result.to_a
+    end
+
+    # Classes that `include`/`prepend` `module_name`, by FQN — the answer to
+    # "what is `self` inside this module", read off the source instead of
+    # guessed from a naming convention (felixefelip/rbs_infer#163).
+    #
+    # Every one of them, not the first: a module mixed into two classes has two
+    # possible `self`s, and saying one would be a claim the code does not make.
+    #
+    # Matching has to resolve the written name, which is rarely the FQN: Ruby
+    # looks a constant up outward through the enclosing namespaces, so `include
+    # Eventable` inside `class Card` may mean `Card::Eventable` or `::Eventable`.
+    # Every nesting of the host is a candidate.
+    def hosts_of(module_name)
+      target = unqualified(module_name)
+
+      @includes_by_class.filter_map do |host, written|
+        host if written.any? { |name| resolves_to?(name, host, target) }
+      end.sort
     end
 
     private
@@ -67,8 +94,12 @@ module RbsInfer::Project
           next
         end
 
+        written = include_written_names(entry.result.value)
         @files_defining[class_name.split("::").last] << file
-        @included_shorts[file] = include_short_names(entry.result.value)
+        @included_shorts[file] = written.map { |name| name.split("::").last }.to_set
+        # Merged rather than assigned: a class reopened across files carries the
+        # includes of all of them.
+        @includes_by_class[class_name].merge(written)
       end
 
       # A template's bare calls reach whatever its OWNER includes: `post_status_badge(post)`
@@ -83,19 +114,38 @@ module RbsInfer::Project
       end
     end
 
-    # Short names from the arguments of `include A, B::C` / `prepend A`.
-    def include_short_names(root)
-      shorts = Set.new
+    # Whether `written`, as it appears inside `host`, names `target`.
+    def resolves_to?(written, host, target)
+      name = unqualified(written)
+      return true if name == target
+
+      nestings(host).any? { |prefix| "#{prefix}::#{name}" == target }
+    end
+
+    # `"A::B::C"` → `["A", "A::B", "A::B::C"]`, the namespaces a constant
+    # written inside `A::B::C` is looked up against, innermost aside.
+    def nestings(name)
+      parts = name.split("::")
+      parts.each_index.map { |i| parts[0..i].join("::") }
+    end
+
+    def unqualified(name)
+      name.to_s.sub(/\A::/, "")
+    end
+
+    # Names as WRITTEN in the arguments of `include A, B::C` / `prepend A`.
+    def include_written_names(root)
+      names = Set.new
       RbsInfer::Analyzer.find_all_nodes(root) do |n|
         n.is_a?(Prism::CallNode) && n.receiver.nil? &&
           (n.name == :include || n.name == :prepend) && n.arguments
       end.each do |call|
         call.arguments.arguments.each do |arg|
           name = RbsInfer::Analyzer.extract_constant_path(arg)
-          shorts << name.split("::").last if name
+          names << name if name
         end
       end
-      shorts
+      names
     end
   end
 end

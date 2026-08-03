@@ -5,12 +5,20 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
   CONCERN_SRC = "module X\n  extend ActiveSupport::Concern\nend\n"
   PLAIN_SRC = "module X\nend\n"
 
+  # A model concern's host comes from the `include` that names it, so these pass
+  # an index (felixefelip/rbs_infer#163). The conventions below cover only what
+  # no source shows.
+  def index_answering(hosts)
+    instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts)
+  end
+
   describe ".entry_for" do
     it "builds both annotations for a model concern, with the AST-cased name" do
       entry = described_class.entry_for(
         path: "app/models/search/record/sqlite.rb",
         module_name: "Search::Record::SQLite",
-        source: CONCERN_SRC
+        source: CONCERN_SRC,
+        mixin_index: index_answering(["Search::Record"])
       )
 
       expect(entry["anchor"]).to eq("SQLite")
@@ -24,10 +32,21 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       entry = described_class.entry_for(
         path: "app/models/post/taggable.rb",
         module_name: "Post::Taggable",
-        source: PLAIN_SRC
+        source: PLAIN_SRC,
+        mixin_index: index_answering(["Post"])
       )
 
       expect(entry["annotations"]).to eq(["# @type instance: Post & Post::Taggable"])
+    end
+
+    # There is no convention for a model concern any more: its host is always
+    # written down, and guessing it from the namespace only ever spoke where the
+    # guess was wrong — `Test::Filtrable` got `Test`, a directory, and the
+    # CLASSES under `app/models/` got a namespace they are not an instance of.
+    it "returns nil for a model concern nobody includes" do
+      expect(
+        described_class.entry_for(path: "app/models/post/taggable.rb", module_name: "Post::Taggable", source: PLAIN_SRC)
+      ).to be_nil
     end
 
     it "uses ApplicationController as the host for helpers" do
@@ -63,6 +82,84 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
 
     it "returns nil for a nil/empty module name" do
       expect(described_class.entry_for(path: "app/models/x.rb", module_name: nil, source: PLAIN_SRC)).to be_nil
+    end
+  end
+
+  # felixefelip/rbs_infer#163. The conventions above are a guess from a file
+  # path; the `include`s written in the sources are what the code says, so they
+  # answer first and the guess is left for what no source shows.
+  describe "with a mixin index" do
+    def index_answering(hosts)
+      instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts)
+    end
+
+    it "prefers the written include over the path convention" do
+      # The convention reads the namespace, `Test`, which is not a host at all —
+      # it is the directory the concern happens to sit in.
+      entry = described_class.entry_for(
+        path: "app/models/concerns/test/filtrable.rb",
+        module_name: "Test::Filtrable",
+        source: PLAIN_SRC,
+        mixin_index: index_answering(["Post"])
+      )
+
+      expect(entry["annotations"]).to eq(["# @type instance: Post & Test::Filtrable"])
+    end
+
+    # An intersection, not a union. `self` is one host at a time, so the union
+    # is the truthful type — but Steep raises `Unexpected self_type` on one
+    # (`type_construction.rb#for_new_method`) and the whole method falls to
+    # `untyped`: measured, `PostsHelper`'s four methods all went from `String`
+    # to `untyped`. The intersection resolves against every host's surface,
+    # which is what the callers need, at the cost of accepting a call that only
+    # one of the hosts supports.
+    it "intersects every host when a module is mixed into more than one" do
+      entry = described_class.entry_for(
+        path: "app/helpers/posts_helper.rb",
+        module_name: "PostsHelper",
+        source: PLAIN_SRC,
+        mixin_index: index_answering(%w[ERBPostsIndex ERBPostsShow])
+      )
+
+      expect(entry["annotations"]).to eq(["# @type instance: ERBPostsIndex & ERBPostsShow & PostsHelper"])
+    end
+
+    it "carries the same hosts into the singleton annotation" do
+      entry = described_class.entry_for(
+        path: "app/models/eventable.rb",
+        module_name: "Eventable",
+        source: CONCERN_SRC,
+        mixin_index: index_answering(%w[Card Comment])
+      )
+
+      expect(entry["annotations"]).to eq([
+        "# @type self: singleton(Card) & singleton(Comment) & singleton(Eventable)",
+        "# @type instance: Card & Comment & Eventable"
+      ])
+    end
+
+    # A top-level concern has no namespace to guess from, so before the index it
+    # got no annotation at all.
+    it "answers where the convention had nothing to say" do
+      entry = described_class.entry_for(
+        path: "app/models/trashable.rb",
+        module_name: "Trashable",
+        source: PLAIN_SRC,
+        mixin_index: index_answering(["Card"])
+      )
+
+      expect(entry["annotations"]).to eq(["# @type instance: Card & Trashable"])
+    end
+
+    it "falls back to the convention when nobody includes the module" do
+      entry = described_class.entry_for(
+        path: "app/helpers/posts_helper.rb",
+        module_name: "PostsHelper",
+        source: PLAIN_SRC,
+        mixin_index: index_answering([])
+      )
+
+      expect(entry["annotations"]).to eq(["# @type instance: ApplicationController & PostsHelper"])
     end
   end
 end
