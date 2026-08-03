@@ -24,8 +24,9 @@ module RbsInfer::AST
     # "frozen constant" idiom) pass the element type through.
     PASSTHROUGH_METHODS = %i[freeze dup clone tap itself].freeze
 
-    # Block methods whose result is `Array[<block body type>]`. Same set the
-    # SteepBridge corrects generics for (`BLOCK_GENERIC_METHODS`), plus
+    # Block methods whose result is `Array[<block body type>]`. Same set
+    # `SteepBridge::ReturnTypeAnalyzer` corrects generics for
+    # (`BLOCK_GENERIC_METHODS`), plus
     # `flat_map`; here it lets the block body's constructor type flow out.
     ARRAY_BLOCK_METHODS = %i[map collect flat_map].freeze
 
