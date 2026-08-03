@@ -28,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_type: nil, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -64,10 +64,11 @@ module RbsInfer::Inference
       # SteepBridge#callback_self_types). Preferred over the lexical class
       # name when resolving `self` inside such a method.
       @self_types_by_method = self_types_by_method
-      # `"Card & Card::Entropic"` — what a module's INSTANCE methods see as
-      # `self`, from the self-type annotators. File-wide, so it applies only to
-      # the module the caller class name names.
-      @module_self_type = module_self_type
+      # `{"Card::Entropic" => "(Card & Card::Entropic)"}` — what each module's
+      # INSTANCE methods see as `self`, from the self-type annotators. Keyed by
+      # module, because one file can declare several and they have different
+      # includers (felixefelip/rbs_infer#165).
+      @module_self_types = module_self_types
       # `{ "set_post" => { "@post" => "(::Post & ::Post::Validated)" } }` — ivars a
       # self-method proves populated once it has run (postconditions sidecar). Applied
       # in source order by `visit_call_node`, so only call sites AFTER the establishing
@@ -709,14 +710,10 @@ module RbsInfer::Inference
       @in_singleton_method ? "singleton(#{base})" : base
     end
 
-    # The annotators were asked about the file's own module, so the answer holds
-    # for that one and no other: a second module in the same file has its own
-    # includer. An unnameable module (a dynamic constant path) gets the answer
-    # rather than nothing — the file names one concern in every real case.
+    # The answer for the module being visited. An unnameable one (a dynamic
+    # constant path) falls back to the name the file stands for.
     def module_self_type
-      name = @module_name_stack.last
-
-      @module_self_type if name.nil? || name == @caller_class_name
+      @module_self_types[@module_name_stack.last || @caller_class_name]
     end
 
     # Resolves a `self.<method>` against the refined `self` type when the

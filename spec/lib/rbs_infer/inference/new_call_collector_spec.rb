@@ -211,7 +211,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     # `Caderneta` — `self` resolves to the lexically-enclosing class.
     # Previously `self` fell through to `untyped`.
     def collect_with_self(source, target_class:, caller_class_name:, init_positional_params:,
-                          self_types_by_method: {}, module_self_type: nil)
+                          self_types_by_method: {}, module_self_types: {})
       result = Prism.parse(source)
       visitor = described_class.new(
         target_class: target_class,
@@ -220,7 +220,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         caller_class_name: caller_class_name,
         init_positional_params: init_positional_params,
         self_types_by_method: self_types_by_method,
-        module_self_type: module_self_type,
+        module_self_types: module_self_types,
         constant_arg_resolver: null_constant_resolver,
         defined_class_names: described_class.collect_defined_class_names(result.value)
       )
@@ -368,7 +368,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       it "uses the includer's type when an annotator answers" do
         usages = collect_with_self(
           source, target_class: "Digest", caller_class_name: "Post::Taggable",
-          init_positional_params: ["post"], module_self_type: "(Post & Post::Taggable)"
+          init_positional_params: ["post"], module_self_types: { "Post::Taggable" => "(Post & Post::Taggable)" }
         )
         expect(usages.first["post"]).to eq("(Post & Post::Taggable)")
       end
@@ -388,7 +388,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
         usages = collect_with_self(
           nested, target_class: "Digest", caller_class_name: "Post::Taggable",
-          init_positional_params: ["post"], module_self_type: "(Post & Post::Taggable)"
+          init_positional_params: ["post"], module_self_types: { "Post::Taggable" => "(Post & Post::Taggable)" }
         )
         expect(usages.first["post"]).to eq("untyped")
       end
@@ -406,7 +406,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
         usages = collect_with_self(
           singleton, target_class: "Digest", caller_class_name: "Post::Taggable",
-          init_positional_params: ["post"], module_self_type: "(Post & Post::Taggable)"
+          init_positional_params: ["post"], module_self_types: { "Post::Taggable" => "(Post & Post::Taggable)" }
         )
         expect(usages.first["post"]).to eq("singleton(Post::Taggable)")
       end

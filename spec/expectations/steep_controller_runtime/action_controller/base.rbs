@@ -1,0 +1,5 @@
+module ActionController
+  class Base
+    include ::ActionController::HttpAuthentication::Token::ControllerMethods
+  end
+end
