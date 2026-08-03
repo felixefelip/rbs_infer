@@ -24,6 +24,7 @@ module RbsInfer::Signatures
         if @definition_builder_loaded && @definition_builder_dir == current_dir
           return @definition_builder
         end
+
         @definition_builder_loaded = true
         @definition_builder_dir = current_dir
         @definition_builder = build_definition_builder
@@ -153,7 +154,8 @@ module RbsInfer::Signatures
         # :arg = block parameter in multi-param blocks (|x, y|);
         #        also matches def params, but those are typically untyped and get filtered below
         next unless node.type == :lvasgn || node.type == :procarg0 || node.type == :arg
-        type_str = format_type(type)
+
+        type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
         next if type_str == "untyped" || type_str == "nil" || type_str == "bot"
 
         var_name = node.children[0].to_s
@@ -196,7 +198,7 @@ module RbsInfer::Signatures
       typing.each_typing do |node, type|
         next unless node.type == :lvar
 
-        type_str = format_type(type)
+        type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
         # An unusable answer defers to the per-method map rather than
         # overriding it with nothing.
         next if type_str == "untyped" || type_str == "bot"
@@ -206,38 +208,8 @@ module RbsInfer::Signatures
       result
     end
 
-    # Methods that hand their own block to someone else, mapped to what that
-    # callee declares the block to be:
-    #
-    #   { "authenticate_with_http_token" => { required: true, params: ["String", "…?"] } }
-    #
-    # Forwarding proves nothing by itself — `items.each(&block)` is perfectly
-    # fine without a block — so the answer has to come from the CALLEE, and only
-    # the checker can say which of its overloads applies. Against a possibly-nil
-    # proc it picks `() -> ::Enumerator[Elem, self]` for `each` (no block
-    # required) and the single required-block declaration for
-    # `Token.authenticate`. That is the distinction rbs_infer cannot draw
-    # structurally, and the reason this lives here (felixefelip/rbs_infer#149).
-    #
-    # Keys are `name` for instance methods and `self.name` for singletons, so a
-    # class method never answers for its instance namesake.
     def forwarded_block_requirements(source_code)
-      typing = type_check(source_code)
-      return {} unless typing
-
-      sites = Hash.new { |hash, key| hash[key] = [] }
-      each_forwarded_block(typing) do |send_node, method_key|
-        block = required_callee_block(typing, send_node)
-        sites[method_key] << block if block
-      end
-
-      # Any site that requires a block makes the method require one — calling it
-      # without one would reach that call. The parameters only survive while the
-      # sites agree; past that, `nil` widens them back to `*untyped`.
-      sites.transform_values do |found|
-        agreed = found.uniq
-        { required: true, params: agreed.size == 1 && agreed.first != :unknown ? agreed.first : nil }
-      end
+      RbsInfer::Signatures::SteepBridge::BlockAnalyzer.new(steep_bridge: self).forwarded_block_requirements(source_code)
     end
 
     # Returns { "method_name" => "ReturnType" } for all def nodes.
@@ -268,6 +240,7 @@ module RbsInfer::Signatures
       block_mismatches = {}
       typing.errors.each do |err|
         next unless err.is_a?(Steep::Diagnostic::Ruby::BlockBodyTypeMismatch)
+
         block_mismatches[err.node.__id__] = err
       end
 
@@ -277,6 +250,7 @@ module RbsInfer::Signatures
 
       typing.each_typing do |node, _type|
         next unless node.type == :def || node.type == :defs
+
         plain_def = node.type == :def
         singleton_def = !plain_def || singleton_class_defs.include?(node.__id__)
         method_name = plain_def ? node.children[0].to_s : node.children[1].to_s
@@ -284,7 +258,7 @@ module RbsInfer::Signatures
         next unless body
 
         body_type = typing.type_of(node: body)
-        type_str = format_type(body_type)
+        type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(body_type)
 
         # When Steep can't resolve generic type params in block calls,
         # resolve from the block body type or from BlockBodyTypeMismatch errors.
@@ -335,7 +309,7 @@ module RbsInfer::Signatures
       typing.each_typing do |node, type|
         next unless node.type == :casgn
 
-        type_str = format_type(type)
+        type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
         next if type_str == "untyped" || type_str == "bot" || type_str == "void"
 
         result[node.children[1].to_s] = type_str
@@ -416,7 +390,7 @@ module RbsInfer::Signatures
       # Check for BlockBodyTypeMismatch — the actual type is the correct block body type
       mismatch = block_mismatches[last_expr.__id__]
       if mismatch
-        actual_type = format_type(mismatch.actual)
+        actual_type = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(mismatch.actual)
         if actual_type && actual_type != "untyped" && actual_type != "bot"
           return "Array[#{actual_type}]"
         end
@@ -433,144 +407,19 @@ module RbsInfer::Signatures
       block_body = block_body.children.last if block_body&.type == :begin
       return nil unless block_body
 
-      block_body_type = format_type(typing.type_of(node: block_body))
+      block_body_type = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(typing.type_of(node: block_body))
       return nil if !block_body_type || block_body_type == "untyped" || block_body_type == "bot"
 
       resolved = "Array[#{block_body_type}]"
       resolved == type_str ? nil : resolved
     end
 
-    # Returns { "var_name" => "Type" } for instance variable writes
-    # observed in the source, scoped to `target_class`. The var name is
-    # without the leading `@`.
-    #
-    # `target_class` matters when a single file defines several classes
-    # (initializers, `lib/*_ext.rb`, fixtures): only writes lexically
-    # inside `target_class` (or a module nested-and-included under it,
-    # e.g. an expander's `GeneratedAttributeMethods`) count, so a sibling
-    # class's `@x` never bleeds in (felixefelip/rbs_infer#38). Pass `nil`
-    # to opt out of scoping (whole-file behavior).
-    #
-    # Writes counted:
-    #
-    # - Direct `:ivasgn` (`@x = expr`) anywhere in any method.
-    # - `:send` of `x=` with receiver `nil` (implicit self) or `:self`,
-    #   when `x=` is declared as `attr_writer :x` / `attr_accessor :x`
-    #   on the same class. The argument's type contributes to the union
-    #   of `@x` (felixefelip/rbs_infer#4 + steep#18 mapping).
-    #
-    # When no write is observed inside `def initialize` (nor at class-body
-    # scope) of `target_class`, the emitted type gets `| nil`
-    # (definite-initialization rule). The narrowing is then reabsorbed by
-    # steep#16 within methods that explicitly assign before reading.
     def ivar_write_types(source_code, target_class:)
-      typing = type_check(source_code)
-      return {} unless typing
-
-      source_node = typing.source.node
-      return {} unless source_node
-
-      type_sets = Hash.new { |h, k| h[k] = RbsInfer::Inference::IvarTypeSet.new }
-      initialized = collect_initialized_ivars(source_node, target_class: target_class)
-      attr_writer_to_ivar = collect_attr_writers(source_node)
-      # Only writes lexically inside `target_class` count. A single file can
-      # define several classes (initializers, `lib/*_ext.rb`, the dummy-app
-      # fixtures), and without scoping their ivars — and same-named methods
-      # like `initialize` — pool into each other (felixefelip/rbs_infer#38).
-      # `each_typing` enumerates the whole file, so we filter it by node
-      # identity against the set of writes that belong to `target_class`.
-      in_scope = collect_scoped_write_node_ids(source_node, attr_writer_to_ivar, target_class)
-
-      typing.each_typing do |node, type|
-        next unless in_scope.include?(node.object_id)
-        case node.type
-        when :ivasgn, :or_asgn, :and_asgn
-          parts = ivar_write_name_and_rhs(node)
-          next unless parts
-          var_name, rhs = parts
-          rhs_type = intrinsic_type_of(rhs, typing)
-          next unless rhs_type
-          type_sets[var_name].add(format_type(rhs_type))
-        when :send
-          receiver, method_name, *args = node.children
-          next unless attr_writer_to_ivar.key?(method_name)
-          next unless receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)
-          next if args.empty?
-
-          arg = args[0]
-          arg_type = intrinsic_type_of(arg, typing)
-          next unless arg_type
-
-          ivar = attr_writer_to_ivar.fetch(method_name)
-          type_sets[ivar].add(format_type(arg_type))
-        end
-      end
-
-      result = {}
-      type_sets.each do |name, type_set|
-        force_nilable = !initialized.include?(name)
-        emitted = type_set.emit(force_nilable: force_nilable)
-        result[name] = emitted if emitted
-      end
-      result
+      steep_bridge_ivar_write_analyzer.ivar_write_types(source_code, target_class: target_class)
     end
 
-    # Returns `{ "method_name" => { "ivar_name" => "type" } }` for every
-    # method of `target_class` that writes (directly or via attr_writer)
-    # an instance variable. The per-method shape is what enables consumers
-    # (e.g., the ERB convention generator) to narrow an ivar's type to
-    # the contribution of a specific writer — rather than always seeing
-    # the wide union of all observed writes.
-    #
-    # Scoped to `target_class` so that same-named methods across classes
-    # in one file (`Foo#initialize` and `Bar#initialize`) don't pool into
-    # a single `"initialize"` bucket (felixefelip/rbs_infer#38). Pass
-    # `nil` to opt out of scoping.
-    #
-    # Coverage mirrors `ivar_write_types`:
-    # - Direct `:ivasgn` (`@x = expr`) inside any method.
-    # - `:send` matching `attr_writer :x` / `attr_accessor :x` declared
-    #   on the same class, with implicit-self or `self` receiver.
-    #
-    # Top-level `:ivasgn` outside any method (class-instance variable in
-    # class body) is intentionally NOT recorded here — there's no method
-    # to attribute it to. Use `collect_initialized_ivars` for that case.
     def ivar_write_types_per_method(source_code, target_class:)
-      typing = type_check(source_code)
-      return {} unless typing
-
-      source_node = typing.source.node
-      return {} unless source_node
-
-      attr_writer_to_ivar = collect_attr_writers(source_node)
-      per_method_sets = Hash.new do |h, k|
-        h[k] = Hash.new { |h2, k2| h2[k2] = RbsInfer::Inference::IvarTypeSet.new }
-      end
-
-      collect_ivar_writes_per_method(
-        source_node,
-        typing: typing,
-        attr_writer_to_ivar: attr_writer_to_ivar,
-        current_method: nil,
-        namespace: [],
-        target_class: target_class,
-        result: per_method_sets
-      )
-
-      result = {}
-      per_method_sets.each do |method_name, ivar_sets|
-        ivar_types = {}
-        ivar_sets.each do |ivar_name, type_set|
-          # `force_nilable: false` — this method already filters per
-          # writer; nilability decisions live at the consumer
-          # (controller declaration uses `ivar_write_types`, the
-          # view consumer wants the writer's raw contribution).
-          emitted = type_set.emit(force_nilable: false)
-          ivar_types[ivar_name] = emitted if emitted
-        end
-        result[method_name] = ivar_types unless ivar_types.empty?
-      end
-      result
+      steep_bridge_ivar_write_analyzer.ivar_write_types_per_method(source_code, target_class: target_class)
     end
 
     # Runs Steep's `Postconditions::Inferrer` against the source and
@@ -595,28 +444,6 @@ module RbsInfer::Signatures
     rescue StandardError => e
       Steep.logger.warn { "[rbs_infer] postcondition inferrer failed: #{e.message}" } if defined?(Steep.logger)
       []
-    end
-
-    # Returns Set[String] of ivar names (without leading `@`) that are
-    # assigned inside `def initialize` of `target_class`, or at its
-    # class-body scope. Used by the definite-initialization rule to
-    # decide whether `nil` is added to the union — so it must be scoped to
-    # the same class the writes are, or an `@x` initialized in a *sibling*
-    # class in the same file would wrongly suppress the `| nil` here.
-    def collect_initialized_ivars(node, target_class:)
-      result = Set.new
-      walk_ivar_init_targets(node, in_init: false, in_class_body: false,
-                             namespace: [], target_class: target_class, result: result)
-      result
-    end
-
-    # Returns { :method_name= => "ivar_name_without_@" } for every
-    # `attr_writer :x` / `attr_accessor :x` declared in the source.
-    # Used to map `self.x = expr` call sites to the underlying `@x`.
-    def collect_attr_writers(node)
-      result = {}
-      walk_attr_writer_decls(node, result: result)
-      result
     end
 
     # The key an expression is filed under in `all_expression_types`: its full
@@ -663,7 +490,7 @@ module RbsInfer::Signatures
         loc = node.loc&.expression
         next unless loc
 
-        type_str = format_type(type)
+        type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
         next if type_str == "untyped" || type_str == "bot"
 
         key = self.class.expression_key(loc.first_line, loc.column, loc.last_line, loc.last_column)
@@ -700,6 +527,7 @@ module RbsInfer::Signatures
       result = {}
       entries.each do |entry|
         next unless entry.applies_self
+
         entry.runs_before.each do |method_sym|
           result[method_sym.to_s] ||= entry.applies_self
         end
@@ -772,339 +600,6 @@ module RbsInfer::Signatures
       result
     end
 
-    private
-
-    # Renders a whitequark `:const` node into a dotted class-path string:
-    # `(const nil :Foo)` → "Foo", `(const (const nil :Foo) :Bar)` →
-    # "Foo::Bar", `(const (cbase) :Foo)` → "Foo". Returns nil for shapes
-    # we can't name (dynamic constant paths), so the caller keeps the
-    # outer namespace rather than inventing a segment.
-    def const_node_to_name(node)
-      return nil unless node.is_a?(::Parser::AST::Node) && node.type == :const
-
-      scope, name = node.children
-      if scope.nil? || (scope.is_a?(::Parser::AST::Node) && scope.type == :cbase)
-        name.to_s
-      elsif scope.is_a?(::Parser::AST::Node) && scope.type == :const
-        prefix = const_node_to_name(scope)
-        prefix ? "#{prefix}::#{name}" : nil
-      end
-    end
-
-    # True when the lexical class path `namespace` (array of segments) is
-    # `target_class` *or* something nested under it. The nested case is
-    # required: an expander (e.g. CurrentAttributes) can emit a nested
-    # `module GeneratedAttributeMethods` that is `include`d into the class
-    # and writes the same ivars, so its writes belong to the target. The
-    # `::` boundary keeps a sibling like `BoardMember` from matching
-    # target `Board`. A nil `target_class` means "don't scope" (whole
-    # file), preserved for callers with no single target.
-    # Whether a write at lexical `namespace` (a list of `[name, kind]` frames,
-    # outermost first) belongs to `target_class`.
-    #
-    # Frames strictly below the target only count while they are *modules*:
-    # a nested module's members are the target's, emitted in place by the
-    # owner mechanism (felixefelip/rbs_infer#22). A nested *class* is its own
-    # target, so its writes are not the target's — without this, `@name = name`
-    # in `Example3::User#initialize` surfaced as `@name: String` on `Example3`.
-    def class_scope_match?(namespace, target_class)
-      return true if target_class.nil?
-
-      target = target_class.to_s.sub(/\A::/, "")
-      current = namespace.map(&:first).join("::")
-      return true if current == target
-      return false unless current.start_with?("#{target}::")
-
-      namespace.drop(target.split("::").size).all? { |(_, kind)| kind == :module }
-    end
-
-    # A `[name, kind]` namespace frame for a `:class`/`:module` node, or the
-    # unchanged namespace for an anonymous one.
-    def push_namespace(namespace, node)
-      name = const_node_to_name(node.children[0])
-      name ? namespace + [[name, node.type]] : namespace
-    end
-
-    # Object-ids of the `:ivasgn` / attr-writer `:send` nodes that live
-    # lexically inside `target_class`. `ivar_write_types` filters the
-    # whole-file `each_typing` stream against this set so a sibling class
-    # in the same file can't contribute to the target's ivar types. Using
-    # object-ids (not the nodes) sidesteps `Parser::AST::Node`'s
-    # structural `==`, which would conflate two identical writes in
-    # different classes.
-    def collect_scoped_write_node_ids(node, attr_writer_to_ivar, target_class, namespace: [], in_def: false, result: Set.new)
-      return result unless node.is_a?(::Parser::AST::Node)
-
-      case node.type
-      when :class, :module
-        body = node.type == :class ? node.children[2] : node.children[1]
-        collect_scoped_write_node_ids(body, attr_writer_to_ivar, target_class,
-                                      namespace: push_namespace(namespace, node),
-                                      in_def: false, result: result) if body
-      when :sclass, :defs
-        # Singleton scope (`class << self` / `def self.x`): `self` is the class,
-        # so every `@x = ...` inside is a class-instance variable (`self.@x`),
-        # never an instance ivar. Don't descend — these writes must not land in
-        # the instance-ivar map (felixefelip/rbs_infer#86). The Prism path in
-        # ReturnTypeResolver collects them separately.
-      when :def
-        body = node.children[2]
-        collect_scoped_write_node_ids(body, attr_writer_to_ivar, target_class,
-                                      namespace: namespace, in_def: true, result: result) if body
-      when :ivasgn
-        # Only writes inside an instance method are instance ivars. A bare
-        # `@x = v` in the class body (`in_def` false) is a class-instance
-        # variable — `self` is the class there too (felixefelip/rbs_infer#86).
-        result << node.object_id if in_def && class_scope_match?(namespace, target_class)
-        node.children.each do |c|
-          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def, result: result)
-        end
-      when :or_asgn, :and_asgn
-        # `@x ||= v` / `@x &&= v`: the write `each_typing` will key on is this
-        # whole node, not its argument-less inner `:ivasgn`, so collect this
-        # id (felixefelip/rbs_infer#85).
-        if in_def && node.children[0].type == :ivasgn && class_scope_match?(namespace, target_class)
-          result << node.object_id
-        end
-        node.children.each do |c|
-          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def, result: result)
-        end
-      when :send
-        receiver, method_name = node.children[0], node.children[1]
-        if in_def && attr_writer_to_ivar.key?(method_name) &&
-           (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
-           class_scope_match?(namespace, target_class)
-          result << node.object_id
-        end
-        node.children.each do |c|
-          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def, result: result)
-        end
-      else
-        node.children.each do |c|
-          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def, result: result)
-        end
-      end
-
-      result
-    end
-
-    # Walks `node` accumulating ivar writes attributed to the enclosing
-    # `def`. Propagates `current_method` through descent; only records
-    # writes that happen inside a `:def` (writes in class body are
-    # ignored here since they don't belong to any callable). Mirrors the
-    # filter logic of `ivar_write_types` for both `:ivasgn` and
-    # attr_writer-style `:send`.
-    def collect_ivar_writes_per_method(node, typing:, attr_writer_to_ivar:, current_method:, namespace:, target_class:, result:)
-      return unless node.is_a?(::Parser::AST::Node)
-
-      case node.type
-      when :class, :module
-        body = node.type == :class ? node.children[2] : node.children[1]
-        collect_ivar_writes_per_method(body, typing: typing,
-                                       attr_writer_to_ivar: attr_writer_to_ivar,
-                                       current_method: nil,
-                                       namespace: push_namespace(namespace, node),
-                                       target_class: target_class,
-                                       result: result) if body
-      when :sclass
-        # `class << self` — same lexical class, singleton scope; keep the
-        # namespace so writes inside still attribute to the enclosing class.
-        body = node.children[1]
-        collect_ivar_writes_per_method(body, typing: typing,
-                                       attr_writer_to_ivar: attr_writer_to_ivar,
-                                       current_method: nil,
-                                       namespace: namespace,
-                                       target_class: target_class,
-                                       result: result) if body
-      when :def
-        method_name = node.children[0].to_s
-        body = node.children[2]
-        collect_ivar_writes_per_method(body, typing: typing,
-                                       attr_writer_to_ivar: attr_writer_to_ivar,
-                                       current_method: method_name,
-                                       namespace: namespace,
-                                       target_class: target_class,
-                                       result: result) if body
-      when :defs
-        # Singleton `def self.X` — class-instance variable scope, not
-        # relevant for the per-action narrowing this method serves.
-      when :ivasgn, :or_asgn, :and_asgn
-        parts = ivar_write_name_and_rhs(node)
-        rhs = parts&.last
-        if current_method && parts && class_scope_match?(namespace, target_class)
-          var_name = parts.first
-          # Use the RHS's INTRINSIC type, not what `typing` recorded.
-          # When the ivar is already declared in RBS (e.g.,
-          # `@name: String?`), Steep's `:ivasgn` synthesize widens
-          # the literal's typing via hint propagation — `@name = "TBA"`
-          # shows up as `String?` instead of `String`, silently
-          # swallowing the narrowing the writer actually introduces.
-          # `intrinsic_type_of` re-computes the type from the literal
-          # node shape, matching `synthesize(node, hint: nil)`.
-          # Mirrors the same fix in Steep's
-          # `Postconditions::Inferrer` (felixefelip/steep#35).
-          rhs_type = intrinsic_type_of(rhs, typing)
-          if rhs_type
-            result[current_method][var_name].add(format_type(rhs_type))
-          end
-        end
-        collect_ivar_writes_per_method(rhs, typing: typing,
-                                       attr_writer_to_ivar: attr_writer_to_ivar,
-                                       current_method: current_method,
-                                       namespace: namespace,
-                                       target_class: target_class,
-                                       result: result) if rhs
-      when :send
-        receiver, method_name, *args = node.children
-        if current_method && attr_writer_to_ivar.key?(method_name) &&
-           (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
-           !args.empty? && class_scope_match?(namespace, target_class)
-          arg = args[0]
-          arg_type = intrinsic_type_of(arg, typing)
-          if arg_type
-            ivar = attr_writer_to_ivar.fetch(method_name)
-            result[current_method][ivar].add(format_type(arg_type))
-          end
-        end
-        node.children.each do |c|
-          collect_ivar_writes_per_method(c, typing: typing,
-                                         attr_writer_to_ivar: attr_writer_to_ivar,
-                                         current_method: current_method,
-                                         namespace: namespace,
-                                         target_class: target_class,
-                                         result: result)
-        end
-      when :begin
-        node.children.each do |c|
-          collect_ivar_writes_per_method(c, typing: typing,
-                                         attr_writer_to_ivar: attr_writer_to_ivar,
-                                         current_method: current_method,
-                                         namespace: namespace,
-                                         target_class: target_class,
-                                         result: result)
-        end
-      else
-        node.children.each do |c|
-          collect_ivar_writes_per_method(c, typing: typing,
-                                         attr_writer_to_ivar: attr_writer_to_ivar,
-                                         current_method: current_method,
-                                         namespace: namespace,
-                                         target_class: target_class,
-                                         result: result)
-        end
-      end
-    end
-
-    # Walks `node` looking for `:ivasgn` targets that count as definite
-    # initialization (inside `def initialize` or directly in a class body
-    # outside any method). Does not descend into non-initialize defs.
-    def walk_ivar_init_targets(node, in_init:, in_class_body:, namespace:, target_class:, result:)
-      return unless node.is_a?(::Parser::AST::Node)
-
-      case node.type
-      when :class, :module
-        body = node.type == :class ? node.children[2] : node.children[1]
-        walk_ivar_init_targets(body, in_init: false, in_class_body: true,
-                               namespace: push_namespace(namespace, node),
-                               target_class: target_class, result: result) if body
-      when :sclass
-        body = node.children[1]
-        walk_ivar_init_targets(body, in_init: false, in_class_body: true,
-                               namespace: namespace, target_class: target_class, result: result) if body
-      when :def
-        if node.children[0] == :initialize
-          body = node.children[2]
-          walk_ivar_init_targets(body, in_init: true, in_class_body: false,
-                                 namespace: namespace, target_class: target_class, result: result) if body
-        end
-      when :defs
-        # def self.X — singleton method, skip; ivar there is class-instance
-        # variable, not relevant for instance ivar initialization.
-      when :ivasgn
-        if (in_init || in_class_body) && class_scope_match?(namespace, target_class)
-          var_name = node.children[0].to_s.sub(/\A@/, "")
-          result << var_name
-        end
-        # also walk RHS for nested classes (`@x = Class.new { @y = ... }` is
-        # exotic but harmless to descend)
-        rhs = node.children[1]
-        walk_ivar_init_targets(rhs, in_init: in_init, in_class_body: in_class_body,
-                               namespace: namespace, target_class: target_class, result: result) if rhs
-      when :send
-        receiver, method_name, *args = node.children
-        if (in_init || in_class_body) && class_scope_match?(namespace, target_class) &&
-           (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
-           method_name.to_s.end_with?("=") &&
-           method_name != :==
-          # `self.x = expr` inside initialize or class body — counts as
-          # init if `x=` is an attr_writer/accessor on this class. Resolve
-          # lazily via the same attr-writer walk so we don't need to
-          # double-pass.
-          # Note: we ALWAYS mark `x` as initialized here when the shape
-          # matches; the attr_writer registry filter happens at the
-          # ivar-collection step. Acceptable false-positive: a custom
-          # `x=` method in initialize won't actually init `@x`, but we'd
-          # still mark it — the type set will be empty for that name and
-          # nothing is emitted. So no observable bug.
-          ivar = method_name.to_s.chomp("=").sub(/\A@/, "")
-          result << ivar unless ivar.empty?
-        end
-        node.children.each do |c|
-          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body,
-                                 namespace: namespace, target_class: target_class, result: result)
-        end
-      when :begin
-        node.children.each do |c|
-          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body,
-                                 namespace: namespace, target_class: target_class, result: result)
-        end
-      else
-        # Descend through everything else (if/case/blocks/etc.) while
-        # keeping the current scope flags.
-        node.children.each do |c|
-          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body,
-                                 namespace: namespace, target_class: target_class, result: result)
-        end
-      end
-    end
-
-    # Walks `node` collecting `attr_writer :x` / `attr_accessor :x` /
-    # `attr_reader :x` declarations in class bodies; only writer/accessor
-    # contribute to the `{ :x= => "x" }` map. Reader entries are skipped
-    # because they don't define `x=`.
-    def walk_attr_writer_decls(node, result:)
-      return unless node.is_a?(::Parser::AST::Node)
-
-      case node.type
-      when :class, :module
-        body = node.type == :class ? node.children[2] : node.children[1]
-        if body
-          # Only direct children of the class body count — `attr_writer`
-          # inside a method body doesn't define accessors on the class.
-          decls = body.type == :begin ? body.children : [body]
-          decls.each do |child|
-            next unless child.is_a?(::Parser::AST::Node)
-            next unless child.type == :send
-            next unless child.children[0].nil? # implicit-self receiver
-            next unless %i[attr_writer attr_accessor].include?(child.children[1])
-            child.children[2..].each do |arg|
-              next unless arg.is_a?(::Parser::AST::Node)
-              next unless arg.type == :sym
-              name = arg.children[0].to_s
-              result[:"#{name}="] = name
-            end
-          end
-          # Descend into nested classes.
-          decls.each { |c| walk_attr_writer_decls(c, result: result) }
-        end
-      when :sclass
-        body = node.children[1]
-        walk_attr_writer_decls(body, result: result) if body
-      else
-        node.children.each { |c| walk_attr_writer_decls(c, result: result) }
-      end
-    end
-
     # Type-checks a source string and returns Steep's `typing` (or nil). This
     # is the single most expensive operation in the pipeline (a full Steep
     # synthesize), and the ~7 oracle methods above each call it — so one
@@ -1124,7 +619,13 @@ module RbsInfer::Signatures
       end
     end
 
-    private def type_check_uncached(source_code)
+    private
+
+    def steep_bridge_ivar_write_analyzer
+      @steep_bridge_ivar_write_analyzer ||= IvarWriteAnalyzer.new(steep_bridge: self)
+    end
+
+    def type_check_uncached(source_code)
       subtyping = steep_subtyping
       return nil unless subtyping
 
@@ -1225,119 +726,6 @@ module RbsInfer::Signatures
       end
     end
 
-    # Returns the intrinsic (hint-free) type of a node. For literal AST
-    # nodes Steep's `:ivasgn` synthesize widens the recorded type to
-    # match the LHS declared type via hint propagation — so a
-    # `@name = "TBA"` against `@name: String?` ends up with the str
-    # node typed as `String?` in `typing`. The widening is intentional
-    # for collections (`@x: Array[Numeric] = [1, 2, 3]` needs hint to
-    # type-check), but for narrowing-detection it silently swallows
-    # the writer's actual contribution.
-    #
-    # For literal nodes we compute the type directly from the node
-    # shape, mirroring `synthesize(node, hint: nil)`. Non-literal RHS
-    # nodes (sends, lvars, dstrs without interpolation, arrays, hashes)
-    # fall back to `typing.type_of` — those rarely suffer the widening
-    # since the hint mostly affects literal value-class lookups.
-    #
-    # Same pattern as `Steep::Postconditions::Inferrer#intrinsic_type_of`
-    # (felixefelip/steep#35). Both call sites need to bypass the same
-    # widening for the cross-receiver narrowing pipeline to fire.
-    # Instance-variable writes take two AST shapes. A plain `@x = v` is an
-    # `:ivasgn` carrying its RHS as the second child. A `@x ||= v` / `@x &&= v`
-    # wraps an argument-less `:ivasgn` (the name alone) in an `:or_asgn` /
-    # `:and_asgn` whose second child is the RHS — so walking down to the inner
-    # `:ivasgn` finds no RHS, which is why `||=` writes were silently dropped
-    # (felixefelip/rbs_infer#85). Returns `[name_without_@, rhs_node]` for any
-    # of the three, or nil for anything else — including the bare inner
-    # `:ivasgn` of an `||=`. `||=`/`&&=` assign approximately the RHS type, so
-    # callers type them exactly like a plain write; `:op_asgn` (`+=`, `<<=`) is
-    # deliberately excluded, since there the result type is the operator's, not
-    # the RHS's.
-    def ivar_write_name_and_rhs(node)
-      case node.type
-      when :ivasgn
-        name, rhs = node.children
-        [name.to_s.sub(/\A@/, ""), rhs] if rhs
-      when :or_asgn, :and_asgn
-        lhs, rhs = node.children
-        [lhs.children[0].to_s.sub(/\A@/, ""), rhs] if lhs.type == :ivasgn && rhs
-      end
-    end
-
-    def intrinsic_type_of(node, typing)
-      case node.type
-      when :nil
-        Steep::AST::Builtin.nil_type
-      when :str, :dstr
-        Steep::AST::Builtin::String.instance_type
-      when :int
-        Steep::AST::Builtin::Integer.instance_type
-      when :float
-        Steep::AST::Builtin::Float.instance_type
-      when :sym, :dsym
-        Steep::AST::Builtin::Symbol.instance_type
-      when :true
-        Steep::AST::Types::Literal.new(value: true)
-      when :false
-        Steep::AST::Types::Literal.new(value: false)
-      when :regexp
-        Steep::AST::Builtin::Regexp.instance_type
-      else
-        typing.type_of(node: node) rescue nil
-      end
-    end
-
-    def format_type(steep_type)
-      # `Steep::AST::Types::Logic::*` are internal types Steep uses for
-      # predicate-narrowing flow analysis (e.g., the body of
-      # `def x?; !@y.nil?; end` types as `Logic::Not`). They have no
-      # valid RBS surface form — `to_s` emits `<% Steep::AST::Types::Logic::Not %>`,
-      # which then leaks into generated RBS. Collapse all of them to
-      # `bool` since that's the user-visible meaning of any predicate
-      # return.
-      return "bool" if steep_type.is_a?(Steep::AST::Types::Logic::Base)
-
-      str = steep_type.to_s
-
-      # Remove leading :: from all type names
-      str = str.gsub(/(^|[\[\(, |])::/) { $1 }
-
-      # Normalize record key format: { :sym => Type } → { sym: Type }
-      str = str.gsub(/:(\w+) =>/, '\1:')
-
-      # Normalize nilable types in nested contexts: (Type | nil) → Type?
-      str = str.gsub(/\(([^|()]+) \| nil\)/) { "#{$1.strip}?" }
-      str = str.gsub(/\(nil \| ([^|()]+)\)/) { "#{$1.strip}?" }
-
-      # Normalize void out of union types: (void | T) → T?
-      # void in a union means "return value not used in that branch", treat as nil
-      if str =~ /\A\(/ && str.include?("void")
-        parts = str.gsub(/\A\(|\)\z/, "").split(/\s*\|\s*/)
-        parts.reject! { |p| p == "void" }
-        parts.reject! { |p| p == "nil" }
-        if parts.empty?
-          return "void"
-        elsif parts.size == 1
-          return "#{parts.first}?"
-        else
-          return "(#{parts.join(" | ")})?"
-        end
-      end
-
-      # Normalize (T | nil) to T?
-      if str =~ /\A\((.+) \| nil\)\z/
-        inner = $1.strip
-        return "#{inner}?" unless inner.include?("|")
-      end
-      if str =~ /\A\(nil \| (.+)\)\z/
-        inner = $1.strip
-        return "#{inner}?" unless inner.include?("|")
-      end
-
-      str
-    end
-
     # The method a top-level body stands for, from its `@type self_method:` annotation
     # (felixefelip/steep#85), or nil when the body carries none.
     def self_method_name(typing)
@@ -1348,62 +736,6 @@ module RbsInfer::Signatures
       nil
     rescue StandardError
       nil
-    end
-
-    # Yields `[send_node, method_key]` for every call that receives a
-    # `&block_param` — the method's own block on its way out. `&:symbol` is a
-    # proc literal built on the spot, not this method's block, so it is not a
-    # forward and never reaches the callee lookup.
-    def each_forwarded_block(typing, &block)
-      walk_forwarded_blocks(typing.source.node, nil, false, &block)
-    end
-
-    def walk_forwarded_blocks(node, method_key, singleton, &block)
-      return unless node.is_a?(Parser::AST::Node)
-
-      case node.type
-      when :def then method_key = singleton ? "self.#{node.children[0]}" : node.children[0].to_s
-      when :defs then method_key = "self.#{node.children[1]}"
-      when :sclass then singleton = true
-      when :send, :csend
-        forwarded = node.children.any? do |child|
-          child.is_a?(Parser::AST::Node) && child.type == :block_pass &&
-            child.children[0]&.type == :lvar
-        end
-        block.call(node, method_key) if forwarded && method_key
-      end
-
-      node.children.each { |child| walk_forwarded_blocks(child, method_key, singleton, &block) }
-    end
-
-    # The block the callee declares, as `[param types]`, or `:unknown` when it
-    # requires one whose shape we can't spell. `nil` when it requires none —
-    # including when the receiver is untyped, where there is no callee to ask.
-    #
-    # Every declaration has to require it: a union receiver whose halves
-    # disagree cannot force a block on this method.
-    def required_callee_block(typing, send_node)
-      call = typing.call_of(node: send_node)
-      decls = call.respond_to?(:method_decls) ? call.method_decls.to_a : []
-      return nil if decls.empty?
-      return nil unless decls.all? { |decl| decl.method_type.block&.required }
-
-      shapes = decls.map { |decl| callee_block_params(decl.method_type.block) }.uniq
-      shapes.size == 1 ? shapes.first : :unknown
-    rescue StandardError
-      nil
-    end
-
-    # Only a plain list of required positionals is transcribable — an optional
-    # or rest parameter in the callee's block has no place in the caller's
-    # `(untyped, untyped)` shape, so it widens instead of guessing.
-    def callee_block_params(block)
-      function = block.type
-      return :unknown unless function.respond_to?(:required_positionals)
-      return :unknown unless function.optional_positionals.empty? && function.rest_positionals.nil? &&
-        function.trailing_positionals.empty? && function.required_keywords.empty?
-
-      function.required_positionals.map { |param| format_type(param.type) }
     end
 
     def find_enclosing_method(node, typing)
