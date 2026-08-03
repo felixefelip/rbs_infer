@@ -464,6 +464,28 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # snapshot pins is that everything else still holds: the block keeps its
   # required, `String`-shaped signature, so a reader can tell the nesting is
   # what fails.
+  # felixefelip/rbs_infer#168. A parameter typed as the RECEIVER of the
+  # expression assigned to it: `Registry.holder = ticket.holder` types
+  # `holder=` as taking a `Ticket?`, because the caller-side map is keyed by
+  # `line:column` and a receiver starts where its call does. Fizzy's
+  # `Current#identity=` is the same shape, and from there `Current.identity` is
+  # a `Session` for the whole app.
+  it "example21" do
+    name = "models/example21"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example21.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   it "example20" do
     name = "models/example20"
     rbs = RbsInfer::Analyzer.new(
