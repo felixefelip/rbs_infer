@@ -810,6 +810,41 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example21
+  method: assign
+  unconditional:
+    ivars:
+      "@ticket": "::Example21::Ticket"
+    self: "::Example21 & ::Example21::AfterAssign"
+  effects:
+    may_write:
+    - "@ticket"
+- class: Example21
+  method: prepare
+  effects:
+    may_write:
+    - "@ticket"
+- class: Example21
+  method: ticket
+  effects:
+    returns_ivar: "@ticket"
+- class: Example21::Holder
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
+- class: Example21::Registry
+  method: holder
+  effects:
+    returns_ivar: "@holder"
+- class: Example21::Registry
+  method: holder=
+  unconditional:
+    establishes_consts:
+      holder: "::Example21::Ticket"
+  effects:
+    may_write:
+    - "@holder"
 - class: Example2::Foo
   method: user=
   unconditional:

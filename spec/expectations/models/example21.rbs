@@ -1,0 +1,32 @@
+class Example21
+  @ticket: Example21::Ticket?
+
+  def ticket: () -> Example21::Ticket?
+  def assign: (Ticket ticket) -> Example21::Ticket
+  def prepare: () -> Example21::Ticket
+  def promote: () -> Example21::Holder
+  def show: () -> String
+end
+
+class Example21
+  class Holder
+    attr_reader name: String
+
+    def initialize: (name: String) -> void
+  end
+end
+
+class Example21
+  class Ticket
+    def holder: () -> Holder
+  end
+end
+
+class Example21
+  class Registry
+    self.@holder: Example21::Ticket?
+
+    def self.holder=: (Example21::Ticket? value) -> Example21::Ticket?
+    def self.holder: () -> Example21::Ticket?
+  end
+end

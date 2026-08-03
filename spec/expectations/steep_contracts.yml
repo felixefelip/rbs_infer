@@ -124,6 +124,15 @@ methods:
         receiver:
           kind: self
         method: body
+  Example21#promote:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: ticket
+    enforced: false
   Post#author_name:
     requires:
     - kind: not_nil
