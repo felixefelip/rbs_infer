@@ -33,6 +33,11 @@
 # and `Current.with` in this same dummy want the INNER answer, for the mirror
 # reason. Only a key that carries the range tells the two apart, which is what
 # the map is keyed by now.
+#
+# The range key alone left the parameter `untyped` — right, but poorer than the
+# source. `Example21::Holder` came from the structural chain, once `resolve_all`
+# stopped recording `untyped` over an RBS answer and the RBS index stopped
+# keeping only the last declaration of a class per file. See `promote` below.
 class Example21
   class Holder
     attr_reader :name
@@ -76,22 +81,26 @@ class Example21
   end
 
   # The whole fixture. `Registry.holder=` used to take whatever `ticket` is; it
-  # now takes `untyped`, which is what the assigned expression really has — the
-  # call below is itself the error the baseline records, so the checker types it
-  # with nothing rather than with the receiver.
+  # takes an `Example21::Holder`, which is what a human reads here.
   #
-  # `Holder` is what a human reads here, and reaching it is a separate step: the
-  # structural chain asks the caller class's method map for `ticket` and gets
-  # `untyped`, where `MethodTypeResolver#resolve` answers `Example21::Ticket?`
-  # for the same question — and `resolve("Example21::Ticket?", "holder")` is
-  # already `Example21::Holder`.
+  # Two steps got there. Stopping the receiver from answering (the range key)
+  # only emptied the slot — the checker cannot type `ticket.holder`, because
+  # `ticket` is nilable and the call is the error the line below records. What
+  # FILLS it is the structural chain, and that had two of its own: `resolve_all`
+  # recorded `untyped` for `ticket` where an RBS answer was waiting behind it,
+  # and the RBS index kept only the last `class Example21` block of a file that
+  # has four. With both fixed the chain reads `ticket` as `Example21::Ticket?`,
+  # and `Ticket#holder` off a nilable receiver as `Example21::Holder` — the
+  # optimistic lookup a human makes too.
   def promote
     Registry.holder = ticket.holder
   end
 
   # And where that lands: the registry used to hand back a `Ticket?`, which has
-  # no `name` — an error the real code does not have. It hands back what was
-  # actually assigned now, so this line is clean.
+  # no `name` — an error about the wrong class entirely. It hands back a
+  # `Holder?` now, so the error that remains is the true one: `@holder` is only
+  # ever written through `holder=`, so reading it here without a guard can be
+  # nil. Same shape as example14/15/20, and recorded in the baseline as such.
   def show
     "Held by #{Registry.holder.name}"
   end

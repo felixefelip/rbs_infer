@@ -299,6 +299,64 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
     end
   end
 
+  # felixefelip/rbs_infer#168. Everything rbs_infer emits reopens the class it
+  # describes — one block for the class, one per nested class — and the index
+  # kept only the last, so a lookup for the outer class saw the block holding
+  # the inner one and answered "no methods". The recursive path
+  # (`class_info_from_rbs`) has always unioned every match; these pin the two
+  # to the same answer.
+  describe ".class_info_from_index over a file that reopens the class" do
+    let(:rbs) do
+      <<~RBS
+        class Example
+          def ticket: () -> Ticket?
+        end
+
+        class Example
+          class Registry
+            def self.holder: () -> Holder?
+          end
+        end
+      RBS
+    end
+
+    def info_via_index(class_name)
+      index = described_class.build_declaration_index(described_class.parse_declarations(rbs))
+      described_class.class_info_from_index(index, class_name)
+    end
+
+    it "unions the methods across every declaration of the class" do
+      expect(info_via_index("Example").types).to include("ticket" => "Ticket?")
+    end
+
+    it "answers the same as the recursive path" do
+      expect(info_via_index("Example").types)
+        .to eq(described_class.class_info_from_rbs(rbs, "Example").types)
+    end
+
+    it "still finds a class declared only inside a later reopening" do
+      expect(info_via_index("Example::Registry").class_method_types).to include("holder" => "Holder?")
+    end
+
+    it "takes the superclass from the declaration that states one" do
+      reopened = <<~RBS
+        class Example
+          def a: () -> Integer
+        end
+
+        class Example < Base
+          def b: () -> String
+        end
+      RBS
+
+      index = described_class.build_declaration_index(described_class.parse_declarations(reopened))
+      info = described_class.class_info_from_index(index, "Example")
+
+      expect(info.superclass).to eq("Base")
+      expect(info.types).to eq("a" => "Integer", "b" => "String")
+    end
+  end
+
   describe ".parenthesize_union" do
     it "wraps a bare top-level union (invalid in method-type position)" do
       expect(described_class.parenthesize_union("Integer | Float")).to eq("(Integer | Float)")

@@ -23,8 +23,17 @@ module RbsInfer::Signatures
       []
     end
 
-    # Constrói um índice fqn → declaration a partir de uma lista de declarations.
+    # Constrói um índice fqn → declarations a partir de uma lista de declarations.
     # Permite lookup O(1) por nome de classe em vez de busca recursiva O(n).
+    #
+    # A LIST per name, because one .rbs commonly declares the same class more than
+    # once — everything rbs_infer emits does, one block per class plus one per nested
+    # class. Keyed `index[fqn] = decl` the last block won, so asking this index about
+    # `Example21` got the block that holds `class Registry` and the answer was "that
+    # class has no methods" — while `#resolve`, which goes through the RBS
+    # environment, answered `Example21::Ticket?` for the very first method in the
+    # file. `find_declaration`, the recursive path, has always yielded every match;
+    # this is the same union, kept O(1) (felixefelip/rbs_infer#168).
     def build_declaration_index(declarations, current_prefix = "", index = {})
       declarations.each do |decl|
         next unless decl.is_a?(RBS::AST::Declarations::Class) || decl.is_a?(RBS::AST::Declarations::Module)
@@ -36,7 +45,7 @@ module RbsInfer::Signatures
                 "#{current_prefix}::#{decl_name}"
               end
 
-        index[fqn] = decl
+        (index[fqn] ||= []) << decl
 
         nested = decl.members.select { |m|
           m.is_a?(RBS::AST::Declarations::Class) || m.is_a?(RBS::AST::Declarations::Module)
@@ -46,18 +55,23 @@ module RbsInfer::Signatures
       index
     end
 
-    # Extrai RbsClassInfo a partir de um índice fqn → declaration (O(1)).
+    # Extrai RbsClassInfo a partir de um índice fqn → declarations (O(1)),
+    # unindo todas as declarações da classe no arquivo — a mesma união que
+    # `class_info_from_declarations` faz pelo caminho recursivo.
     def class_info_from_index(index, class_name)
       normalized = class_name.sub(/\A::/, "")
-      decl = index[normalized]
-      return RbsClassInfo.new(superclass: nil, types: {}, includes: [], class_method_types: {}) unless decl
+      decls = index[normalized]
+      return RbsClassInfo.new(superclass: nil, types: {}, includes: [], class_method_types: {}) if decls.nil? || decls.empty?
 
-      superclass = extract_superclass(decl)
+      superclass = nil
       types = {}
       includes = []
       class_method_types = {}
       ivar_types = {}
-      extract_members(decl.members, types, includes, class_method_types, normalized, ivar_types)
+      decls.each do |decl|
+        superclass ||= extract_superclass(decl)
+        extract_members(decl.members, types, includes, class_method_types, normalized, ivar_types)
+      end
 
       RbsClassInfo.new(superclass:, types:, includes:, class_method_types:, ivar_types:)
     end

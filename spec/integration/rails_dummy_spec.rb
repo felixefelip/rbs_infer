@@ -469,8 +469,9 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # as taking a `Ticket?`, because the caller-side map was keyed by `line:column`
   # and a receiver starts where its call does. Fizzy's `Current#identity=` is the
   # same shape, and from there `Current.identity` was a `Session` for the whole
-  # app. Keyed by the whole range, the parameter takes what the expression really
-  # has — `untyped`, the call itself being the error the baseline records.
+  # app. Keyed by the whole range the receiver stops answering, and with
+  # `resolve_all` no longer recording `untyped` over an RBS answer the structural
+  # chain fills the slot: `Example21::Holder`, what the source says.
   it "example21" do
     name = "models/example21"
     rbs = RbsInfer::Analyzer.new(

@@ -819,6 +819,20 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example21::Registry
+  method: holder
+  effects:
+    returns_ivar: "@holder"
+- class: Example21::Registry
+  method: holder=
+  unconditional:
+    ivars:
+      "@holder": "::Example21::Holder"
+    establishes_consts:
+      holder: "::Example21::Holder"
+  effects:
+    may_write:
+    - "@holder"
 - class: Example2::Foo
   method: user=
   unconditional:

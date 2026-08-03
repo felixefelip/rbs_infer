@@ -297,4 +297,59 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
       end
     end
   end
+
+  # felixefelip/rbs_infer#168. The bulk map (`resolve_all`) is what a call-site
+  # collector reads a receiverless call's type from, and it was answering
+  # `untyped` where `#resolve` — same resolver, same method — answered from RBS.
+  # A reader whose body is just `@ticket` is the shape: nothing structural to
+  # infer, everything to read back from the previous pass's `sig/`.
+  describe "#resolve_all against an earlier pass's sig/" do
+    around do |ex|
+      Dir.mktmpdir { |dir| Dir.chdir(dir) { ex.run } }
+    end
+    before { RbsInfer::Signatures::RbsTypeLookup.reset! }
+
+    def write(path, content)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, content)
+      path
+    end
+
+    it "lets the RBS answer through instead of recording untyped over it" do
+      source = write("app/models/example.rb", <<~RUBY)
+        class Example
+          def ticket
+            @ticket
+          end
+        end
+      RUBY
+      write("sig/example.rbs", <<~RBS)
+        class Example
+          def ticket: () -> Ticket?
+        end
+      RBS
+
+      resolver = described_class.new([source], constant_resolver: fake_constant_resolver)
+
+      expect(resolver.resolve_all("Example")).to include("ticket" => "Ticket?")
+      # The single-method path already answered this; the two agreeing is the point.
+      expect(resolver.resolve("Example", "ticket")).to eq("Ticket?")
+    end
+
+    it "keeps a type the source itself states, over the RBS" do
+      source = write("app/models/example.rb", <<~RUBY)
+        class Example
+          #: -> String
+          def ticket
+            @ticket
+          end
+        end
+      RUBY
+      write("sig/example.rbs", "class Example\n  def ticket: () -> Ticket?\nend\n")
+
+      resolver = described_class.new([source], constant_resolver: fake_constant_resolver)
+
+      expect(resolver.resolve_all("Example")).to include("ticket" => "String")
+    end
+  end
 end
