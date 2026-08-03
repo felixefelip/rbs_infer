@@ -266,7 +266,16 @@ module RbsInfer::Signatures
             case member.kind
             when :method
               if member.signature =~ /.*->\s*(.+)$/
-                types[member.name] = $1.strip
+                type = $1.strip
+                # `untyped` is not an answer, it is the absence of one — recording
+                # it OCCUPIES the slot, and every later source here fills with
+                # `||=`, so the RBS lookup at step 6 never got to speak. That is
+                # how `Example21#ticket` read `untyped` in this map while
+                # `#resolve` — which asks RBS first — answered
+                # `Example21::Ticket?` for the same method
+                # (felixefelip/rbs_infer#168). The attr branch below has always
+                # skipped it; the method branch had not.
+                types[member.name] = type unless type == "untyped"
               end
             when :attr_accessor, :attr_reader
               attr_names.add(member.name)

@@ -24,7 +24,9 @@ end
 
 class Example21
   class Registry
-    def self.holder=: (untyped value) -> untyped
-    def self.holder: () -> untyped
+    self.@holder: Example21::Holder?
+
+    def self.holder=: (Example21::Holder value) -> Example21::Holder
+    def self.holder: () -> Example21::Holder?
   end
 end
