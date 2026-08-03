@@ -62,8 +62,9 @@ module RbsInfer
           # concern cannot end up mixed into different classes.
           hosts = ModuleSelfTypeAnnotator.hosts_for(path, module_name, mixin_index)
           unless hosts.empty?
-            singletons = hosts.map { |host| "singleton(::#{host})" }
-            entry["self"] = (singletons + [class_methods]).join(" & ")
+            entry["self"] = ModuleSelfTypeAnnotator.union(
+              hosts.map { |host| "singleton(::#{host}) & #{class_methods}" }
+            )
           end
           [entry]
         end
