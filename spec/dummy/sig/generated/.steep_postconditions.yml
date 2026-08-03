@@ -277,6 +277,7 @@ postconditions:
   unconditional:
     consts:
       Example10::Foo.name: "::String"
+      Example10::Sink.last: "::String"
 - class: Example10::Foo
   method: name
   effects:
@@ -291,6 +292,20 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example10::Sink
+  method: last
+  effects:
+    returns_ivar: "@last"
+- class: Example10::Sink
+  method: last=
+  unconditional:
+    ivars:
+      "@last": "::String"
+    establishes_consts:
+      last: "::String"
+  effects:
+    may_write:
+    - "@last"
 - class: Example11::Partial
   method: initialize
   effects:
@@ -1504,10 +1519,6 @@ method_entry_facts:
     Current.user: "(::User & ::User::Validated)"
     Current.viewer_name: "::String"
 - class: ApplicationController
-  method: current_user
-  ivars:
-    "@__rbs_infer__performed": 'true'
-- class: ApplicationController
   method: log_user_author_name
   self_methods:
     current_user: "(::User & ::User::Validated)"
@@ -1695,6 +1706,14 @@ method_entry_facts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
     Current.viewer_name: "::String"
+- class: Example10::Bar
+  method: greet
+  consts:
+    Example10::Foo.name: "::String"
+- class: Example10::Foo
+  method: name
+  consts:
+    Example10::Foo.name: "::String"
 - class: Example12
   method: dispatch_age
   ivars:
@@ -1735,10 +1754,6 @@ method_entry_facts:
     current_user: "::Example13Viewer"
   consts:
     Example13::Registry.user: "::Example13Viewer"
-- class: Example13::Guarded
-  method: current_user
-  self_methods:
-    current_user: "::Example13Viewer"
 - class: Example13::Registry
   method: user
   consts:

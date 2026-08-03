@@ -375,9 +375,11 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
-  # CONST-WRITE RHS. `Const.attr = <rhs>` classifies as a write and the RHS is
-  # walked for calls first, so a callee reached only from there — `Bar.new.greet`
-  # — still receives the facts established above it.
+  # CONST-WRITE RHS (felixefelip/steep#131). `Const.attr = <rhs>` classifies as a
+  # write and the RHS is walked for calls first, so a callee reached only from
+  # there — `Bar.new.greet` — still receives the facts established above it. What
+  # the snapshot pins is the whole chain that follows: `greet` types as `String`
+  # rather than erroring, so the write carries a `String` and `run` returns one.
   it "example10" do
     name = "models/example10"
     rbs = RbsInfer::Analyzer.new(
