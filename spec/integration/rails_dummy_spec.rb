@@ -101,6 +101,15 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/post/archiver", target_class: "Post::Archiver", target_file: "app/models/post/archiver.rb")
   end
 
+  # The same shape one namespace over, and the half `Archiver` cannot show: the
+  # caller is a CONCERN, so `self` is not the enclosing constant but whoever
+  # includes it. The lexical answer `Post::Taggable` has `tag_names` and not
+  # `published_at`; the annotators' `Post & Post::Taggable` has both, and this
+  # snapshot is where the difference shows (felixefelip/rbs_infer#161).
+  it "Post::TagDigest (self handed out by a concern) matches expected RBS" do
+    assert_snapshot("models/post/tag_digest", target_class: "Post::TagDigest", target_file: "app/models/post/tag_digest.rb")
+  end
+
   it "Coupon::Code (constant argument) matches expected RBS" do
     assert_snapshot("models/coupon/code", target_class: "Coupon::Code", target_file: "app/models/coupon/code.rb")
   end

@@ -82,6 +82,57 @@ RSpec.describe RbsInfer::Project::SelfTypeAnnotators do
     end
   end
 
+  # The same entries `.apply` injects, read rather than injected: a file scanned
+  # for call sites is parsed as it is on disk (felixefelip/rbs_infer#161).
+  describe ".instance_type" do
+    def entry(anchor, *annotations)
+      { "anchor" => anchor, "annotations" => annotations }
+    end
+
+    # Parenthesized, unlike the annotation: `() -> A & B` is a syntax error and
+    # `(A & B x) -> void` is not, so the type has to be usable in both.
+    it "reads the instance annotation the module would have been given" do
+      described_class.register(
+        fake_annotator(seen: [], entries: [entry("Entropic",
+                                                 "# @type self: singleton(Card) & singleton(Card::Entropic)",
+                                                 "# @type instance: Card & Card::Entropic")])
+      )
+
+      expect(described_class.instance_type(path: "app/models/card/entropic.rb", module_name: "Card::Entropic", source: ""))
+        .to eq("(Card & Card::Entropic)")
+    end
+
+    # A file may declare more than one module, and each gets its own entry.
+    it "matches on the anchor, so a sibling's answer cannot be borrowed" do
+      described_class.register(
+        fake_annotator(seen: [], entries: [entry("Other", "# @type instance: Card & Card::Other")])
+      )
+
+      expect(described_class.instance_type(path: "x.rb", module_name: "Card::Entropic", source: "")).to be_nil
+    end
+
+    it "is nil when no annotator covers the file" do
+      expect(described_class.instance_type(path: "x.rb", module_name: "Card::Entropic", source: "")).to be_nil
+    end
+
+    it "is nil for an entry that carries no instance line" do
+      described_class.register(
+        fake_annotator(seen: [], entries: [entry("Entropic", "# @type self: singleton(Card)")])
+      )
+
+      expect(described_class.instance_type(path: "x.rb", module_name: "Card::Entropic", source: "")).to be_nil
+    end
+
+    it "never calls annotators when module_name is blank" do
+      seen = []
+      described_class.register(fake_annotator(seen: seen, entries: [entry("Bar", "# @type instance: X")]))
+
+      expect(described_class.instance_type(path: "x.rb", module_name: nil, source: "")).to be_nil
+      expect(described_class.instance_type(path: "x.rb", module_name: "", source: "")).to be_nil
+      expect(seen).to be_empty
+    end
+  end
+
   describe "default registrations" do
     it "registers the Rails self-type annotators at require time" do
       # Outside the around hook's teardown these are the real registrations.

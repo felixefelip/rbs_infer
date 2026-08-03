@@ -10,6 +10,7 @@ class Post
     extend ActiveSupport::Concern
 
     def tag_names: () -> Array[untyped]
+    def tag_digest: () -> untyped
     def tag_with: (untyped name) -> (Tag & Tag::Validated)
     def untag: (untyped name) -> untyped
     def tagged_with?: (untyped name) -> bool

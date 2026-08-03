@@ -37,6 +37,14 @@ end
     tags.pluck(:name)
   end
 
+  # The `self` handed out here is the concern's, and a module's instance-method
+  # `self` is whoever includes it — `Post & Post::Taggable`, which the self-type
+  # annotators already say and the call-site scan now asks for. Naming the
+  # module alone loses the host half (felixefelip/rbs_infer#161).
+  def tag_digest
+    Post::TagDigest.for(self)
+  end
+
   def tag_with(name)
     tag = Tag.find_or_create_by!(name: name)
     post_tags.find_or_create_by!(tag: tag)
