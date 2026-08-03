@@ -346,6 +346,67 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       # The name-keyed accessor returns instance methods only.
       expect(bridge.method_return_types(code)["tally"]).to eq("Integer")
     end
+
+    # felixefelip/rbs_infer#162. The third spelling of a class method, and the
+    # node type does not tell it apart: inside `class << self` it is a plain
+    # `:def`. Filed as an instance method it became unreachable, because the
+    # reader asks by the member's kind — which is `:class_method`.
+    it "files a `class << self` def as a singleton method" do
+      code = <<~RUBY
+        class Foo
+          class << self
+            def tally
+              "big"
+            end
+          end
+
+          def tally
+            42
+          end
+        end
+      RUBY
+
+      by_kind = bridge.method_return_types_by_kind(code)
+      expect(by_kind[:singleton]["tally"]).to eq("String")
+      expect(by_kind[:instance]["tally"]).to eq("Integer")
+    end
+
+    # `class << obj` opens THAT object's singleton class, so its methods are
+    # not the enclosing class's.
+    it "leaves a `class << other` def where it was" do
+      code = <<~RUBY
+        class Foo
+          OTHER = Object.new
+
+          class << OTHER
+            def tally
+              "big"
+            end
+          end
+        end
+      RUBY
+
+      expect(bridge.method_return_types_by_kind(code)[:singleton]).not_to have_key("tally")
+    end
+
+    # A class body inside the singleton class is out of it again.
+    it "stops at a nested class body" do
+      code = <<~RUBY
+        class Foo
+          class << self
+            class Inner
+              def tally
+                42
+              end
+            end
+          end
+        end
+      RUBY
+
+      by_kind = bridge.method_return_types_by_kind(code)
+      expect(by_kind[:instance]["tally"]).to eq("Integer")
+      expect(by_kind[:singleton]).not_to have_key("tally")
+    end
   end
 
   describe "#method_return_types block generic resolution" do
