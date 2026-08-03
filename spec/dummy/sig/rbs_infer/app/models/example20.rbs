@@ -1,0 +1,42 @@
+class Example20
+  @halted: true?
+  @message: String?
+
+  module Responder
+    def self.deny: (Example20 host, String message) -> bool
+  end
+
+  def show: () -> String
+  def call: () -> String?
+  def halt: () -> bool
+  def record: (String? message) -> String?
+
+  private
+
+  def authenticate: () -> (Example20::User | bool)
+  def from_token: () -> (Example20::User | bool | nil)
+  def with_token: () { (String) -> Example20::User? } -> (Example20::User | bool)
+  def fetch_token: () { (String) -> Example20::User? } -> Example20::User?
+  def refuse: () -> bool
+  def lookup: (String token) -> Example20::User?
+  def bearer_request?: () -> bool
+  def json_request?: () -> bool
+  def token_value: () -> String
+end
+
+class Example20
+  class User
+    attr_reader name: String
+
+    def initialize: (name: String) -> void
+  end
+end
+
+class Example20
+  class Registry
+    self.@user: Example20::User?
+
+    def self.user: () -> Example20::User?
+    def self.user=: (Example20::User value) -> Example20::User
+  end
+end

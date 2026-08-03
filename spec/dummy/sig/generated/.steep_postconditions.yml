@@ -769,6 +769,47 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example20
+  method: fetch_token
+  when_true:
+    block_truthy: true
+- class: Example20
+  method: halt
+  unconditional:
+    ivars:
+      "@halted": 'true'
+    self: "::Example20 & ::Example20::AfterHalt"
+  effects:
+    may_write:
+    - "@halted"
+- class: Example20
+  method: record
+  effects:
+    may_write:
+    - "@message"
+- class: Example20
+  method: with_token
+  conditional_block_truthy:
+    gate_ivar: "@halted"
+- class: Example20::Registry
+  method: user
+  effects:
+    returns_ivar: "@user"
+- class: Example20::Registry
+  method: user=
+  unconditional:
+    ivars:
+      "@user": "::Example20::User"
+    establishes_consts:
+      user: "::Example20::User"
+  effects:
+    may_write:
+    - "@user"
+- class: Example20::User
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
 - class: Example2::Foo
   method: user=
   unconditional:
