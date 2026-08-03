@@ -437,6 +437,16 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       # is absent here by design — that is `class_or_module?`'s question.
       expect(bridge.constant_type_from_env("Post", namespace: nil)).to be_nil
     end
+
+    # `RBS::TypeName.parse` raises a bare RuntimeError on a string that is no
+    # constant path at all, and a caller can hand one over. Skipping that
+    # candidate is the only failure either lookup absorbs — everything else
+    # raised in there is a bug and must surface.
+    it "skips a candidate that is not a constant path" do
+      expect(bridge.class_or_module?("", namespace: nil)).to be(false)
+      expect(bridge.constant_type_from_env("", namespace: nil)).to be_nil
+      expect(bridge.class_or_module?("Post", namespace: "")).to be(true)
+    end
   end
 
   describe "#all_expression_types" do

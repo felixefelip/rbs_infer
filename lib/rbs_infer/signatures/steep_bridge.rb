@@ -129,24 +129,15 @@ module RbsInfer::Signatures
       builder = SteepEnvironment.definition_builder
       return nil unless builder && name
 
-      # Scoped to the env walk, deliberately: a method-level rescue also covered
-      # the line above, so when the environment moved to `SteepEnvironment` the
-      # stale `self.class.definition_builder` raised `NoMethodError` and was
-      # swallowed as "no answer" — every constant in value position silently fell
-      # to `untyped`. What this is here to tolerate is a malformed/incomplete RBS
-      # env, not a call that does not exist.
-      begin
-        env = builder.env
-        constant_name_candidates(name, namespace).each do |fqn|
-          entry = env.constant_decls[RBS::TypeName.parse(fqn)]
-          next unless entry
+      env = builder.env
+      constant_name_candidates(name, namespace).each do |fqn|
+        type_name = parse_type_name(fqn) or next
+        entry = env.constant_decls[type_name]
+        next unless entry
 
-          return entry.decl.type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }
-        end
-        nil
-      rescue RBS::BaseError, StandardError
-        nil
+        return entry.decl.type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }
       end
+      nil
     end
 
     # True when `name` (resolved from `namespace`) is a class or module in the
@@ -155,15 +146,29 @@ module RbsInfer::Signatures
       builder = SteepEnvironment.definition_builder
       return false unless builder && name
 
-      # Same scoping as `constant_type_from_env` above, for the same reason.
-      begin
-        env = builder.env
-        constant_name_candidates(name, namespace).any? do |fqn|
-          env.class_decls.key?(RBS::TypeName.parse(fqn))
-        end
-      rescue RBS::BaseError, StandardError
-        false
+      env = builder.env
+      constant_name_candidates(name, namespace).any? do |fqn|
+        type_name = parse_type_name(fqn)
+        type_name && env.class_decls.key?(type_name)
       end
+    end
+
+    # The one thing in those two lookups that can raise on the input they are
+    # given: `RBS::TypeName.parse` answers a bare `RuntimeError` — not even an
+    # `RBS::BaseError` — for a string that is no constant path at all (`""`,
+    # `"::"`), which `extract_constant_path` can hand over. Such a candidate is
+    # skipped; that is the entire handling either lookup needs.
+    #
+    # Both used to wrap their whole body in `rescue RBS::BaseError, StandardError`
+    # instead, which is how a `NoMethodError` from a moved class method read as
+    # "the environment has no answer" and typed every constant in value position
+    # `untyped`. A bug in here has to reach the surface, so nothing broader is
+    # caught (felixefelip/rbs_infer#46 wrote the rescue defensively; no failure
+    # ever justified its width).
+    def parse_type_name(fqn)
+      RBS::TypeName.parse(fqn)
+    rescue RuntimeError, RBS::BaseError
+      nil
     end
 
     # Fully-qualified candidates for a constant reference, walking the
