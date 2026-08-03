@@ -1,18 +1,25 @@
 module RbsInfer::Project
-  # For a target module (concern), resolves the files whose *bare* calls (no
-  # receiver) can reach the module's instance methods.
+  # The project's mixin graph. One pass over every source file, recording what
+  # each one DEFINES and what it `include`s/`prepend`s, to answer the two
+  # questions a mixin raises.
   #
-  # A concern's methods are mixed into the host and called without a receiver —
-  # not only in the host's own file, but in the host's *other* concerns too:
-  # sibling modules share the host's `self`, so a bare `track_event :x` in
-  # `Card::Statuses` reaches `Eventable#track_event` because `Card` includes
-  # both. Those sibling files never name the concern, so the constant-reference
-  # index (`SourceIndex`) doesn't find them.
+  # **Who can call into this module** — `files_reaching`. A concern's methods
+  # are mixed into the host and called without a receiver, not only in the
+  # host's own file but in the host's *other* concerns: sibling modules share
+  # the host's `self`, so a bare `track_event :x` in `Card::Statuses` reaches
+  # `Eventable#track_event` because `Card` includes both. Those sibling files
+  # never name the concern, so the constant-reference index (`SourceIndex`)
+  # doesn't find them. The answer is host files ∪ the files of every sibling
+  # module those hosts also include.
   #
-  # This index parses each file once, recording per file: the class/module it
-  # defines and the short names it `include`s/`prepend`s. From that it answers
-  # `files_reaching(module_name)` = host files (that include the module) ∪ the
-  # files of every sibling module those hosts also include.
+  # **What `self` is inside it** — `hosts_of`, the classes that include it
+  # (felixefelip/rbs_infer#163).
+  #
+  # The two match names differently, on purpose. Reachability keys on the short
+  # name: a false positive only widens a search that is then filtered by what
+  # the calls actually resolve to. A self-type cannot afford one — naming the
+  # wrong host puts a wrong type in a signature — so `hosts_of` resolves the
+  # written name to an FQN the way Ruby does.
   class MixinIndex
     def initialize(source_files, parse_cache: nil)
       @parse_cache = parse_cache || ParseCache.new
