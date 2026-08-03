@@ -17,7 +17,6 @@ module RbsInfer
       # Registers on `RbsInfer::Project::SelfTypeAnnotators` so the core injects
       # it without naming this Rails extension (felixefelip/rbs_infer#60).
       module ModuleSelfTypeAnnotator
-        MODELS_PREFIX = "app/models/"
         HELPERS_PREFIX = "app/helpers/"
         CONTROLLER_CONCERNS_PREFIX = "app/controllers/concerns/"
 
@@ -62,22 +61,24 @@ module RbsInfer
           Array(presumed_host_for(path, module_name))
         end
 
-        # The class a concern/module is PRESUMED to be mixed into, by Rails
-        # convention — nothing here reads an `include`. Helpers and controller
-        # concerns are presumed to mix into ApplicationController; a model
-        # concern into its enclosing namespace (`Post::Taggable` → `Post`).
-        # Returns nil when the file isn't under a covered root, or a model
-        # concern has no namespace to guess from.
-        def presumed_host_for(path, module_name)
+        # The class a module is PRESUMED to be mixed into — nothing here reads
+        # an `include`, which is why it only answers where no `include` exists
+        # to read: Rails mixes helpers and controller concerns in itself, and
+        # nobody writes those anywhere.
+        #
+        # There is deliberately no rule for a model concern. Its host is always
+        # written down (`class Card; include Card::Entropic`), so guessing it
+        # from the namespace only ever spoke where the guess was wrong: for
+        # `Test::Filtrable` it answered `Test`, a directory; for the CLASSES
+        # under `app/models/` — `Post::Archiver`, `Coupon::Code` — it claimed an
+        # instance of one is also an instance of its namespace, which nothing
+        # makes true (felixefelip/rbs_infer#163).
+        def presumed_host_for(path, _module_name)
           path = path.to_s
           return "ApplicationController" if path.include?(HELPERS_PREFIX)
           return "ApplicationController" if path.include?(CONTROLLER_CONCERNS_PREFIX)
-          return nil unless path.include?(MODELS_PREFIX)
 
-          parts = module_name.split("::")
-          return nil if parts.size < 2
-
-          parts[0..-2].join("::")
+          nil
         end
 
         def annotations(module_name, hosts, is_concern)

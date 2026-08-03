@@ -5,12 +5,20 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
   CONCERN_SRC = "module X\n  extend ActiveSupport::Concern\nend\n"
   PLAIN_SRC = "module X\nend\n"
 
+  # A model concern's host comes from the `include` that names it, so these pass
+  # an index (felixefelip/rbs_infer#163). The conventions below cover only what
+  # no source shows.
+  def index_answering(hosts)
+    instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts)
+  end
+
   describe ".entry_for" do
     it "builds both annotations for a model concern, with the AST-cased name" do
       entry = described_class.entry_for(
         path: "app/models/search/record/sqlite.rb",
         module_name: "Search::Record::SQLite",
-        source: CONCERN_SRC
+        source: CONCERN_SRC,
+        mixin_index: index_answering(["Search::Record"])
       )
 
       expect(entry["anchor"]).to eq("SQLite")
@@ -24,10 +32,21 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       entry = described_class.entry_for(
         path: "app/models/post/taggable.rb",
         module_name: "Post::Taggable",
-        source: PLAIN_SRC
+        source: PLAIN_SRC,
+        mixin_index: index_answering(["Post"])
       )
 
       expect(entry["annotations"]).to eq(["# @type instance: Post & Post::Taggable"])
+    end
+
+    # There is no convention for a model concern any more: its host is always
+    # written down, and guessing it from the namespace only ever spoke where the
+    # guess was wrong — `Test::Filtrable` got `Test`, a directory, and the
+    # CLASSES under `app/models/` got a namespace they are not an instance of.
+    it "returns nil for a model concern nobody includes" do
+      expect(
+        described_class.entry_for(path: "app/models/post/taggable.rb", module_name: "Post::Taggable", source: PLAIN_SRC)
+      ).to be_nil
     end
 
     it "uses ApplicationController as the host for helpers" do
