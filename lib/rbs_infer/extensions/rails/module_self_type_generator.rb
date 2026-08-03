@@ -8,6 +8,7 @@ require_relative "class_methods_implements"
 # `Project::MixinIndex`, which walks sources with the analyzer's own helpers.
 # `rbs_infer.rb` does not load this file, so there is no cycle.
 require "rbs_infer"
+require "steep"
 
 module RbsInfer
   module Extensions
@@ -31,11 +32,7 @@ module RbsInfer
       class ModuleSelfTypeGenerator
         SIDECAR_PATH = "sig/generated/.steep_module_self_types.yml"
 
-        # Every Ruby source the project checks, `sig/` included: a module's self
-        # type is not a property of where its file sits, and the transcription
-        # of a framework mixin lives under `sig/generated/`
-        # (felixefelip/rbs_infer#165).
-        SOURCE_GLOBS = ["app/**/*.rb", "sig/**/*.rb"].freeze
+        STEEPFILE = "Steepfile"
 
         def initialize(app_dir:)
           @app_dir = app_dir
@@ -124,8 +121,35 @@ module RbsInfer
           @mixin_index ||= RbsInfer::Project::MixinIndex.new(source_files)
         end
 
+        # Exactly what the project tells Steep to check, `ignore`s included —
+        # asked of the Steepfile rather than guessed from a list of directories.
+        # A module's self type is not a property of where its file sits, and the
+        # transcription of a framework mixin lives under `sig/generated/`
+        # (felixefelip/rbs_infer#165).
+        #
+        # No Steepfile, no files: this sidecar exists for `steep check` and for
+        # nothing else, so a project that does not run it has nothing to write.
         def source_files
-          @source_files ||= SOURCE_GLOBS.flat_map { |glob| Dir.glob(File.join(@app_dir, glob)) }.sort
+          @source_files ||= steep_targets.flat_map { |target| paths_in(target) }
+                                         .select { |path| path.extname == ".rb" }
+                                         .uniq.sort
+                                         .map { |path| File.join(@app_dir, path) }
+        end
+
+        def steep_targets
+          path = Pathname(File.join(@app_dir, STEEPFILE))
+          return [] unless path.file?
+
+          project = Steep::Project.new(steepfile_path: path.expand_path)
+          Steep::Project::DSL.parse(project, path.read)
+          project.targets
+        rescue StandardError
+          []
+        end
+
+        def paths_in(target)
+          Steep::Services::FileLoader.new(base_dir: Pathname(@app_dir))
+                                     .each_path_in_patterns(target.source_pattern).to_a
         end
 
         def relative(abs)

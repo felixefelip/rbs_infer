@@ -6,8 +6,19 @@ require "fileutils"
 require "yaml"
 
 RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
+  # A Steepfile, because the file list is now exactly what the project tells
+  # Steep to check (#165) — and because that is what a real app has.
+  STEEPFILE = <<~RUBY
+    target :app do
+      check "app"
+      check "sig/**/*.rb"
+      signature "sig"
+    end
+  RUBY
+
   def in_app(files)
     Dir.mktmpdir do |dir|
+      files = { "Steepfile" => STEEPFILE }.merge(files)
       files.each do |rel, content|
         path = File.join(dir, rel)
         FileUtils.mkdir_p(File.dirname(path))
