@@ -456,6 +456,30 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # Example19 with the one thing left between here and the real chain: the call
+  # carrying the block sits two conditionals deep, and the inner alternative is
+  # the halt — Fizzy's `authenticate_by_bearer_token`. The rule that turns "the
+  # block established X" into a fact about the method reads the method's VALUE
+  # and unwraps a single one-armed `if`, so it sees nothing here. What the
+  # snapshot pins is that everything else still holds: the block keeps its
+  # required, `String`-shaped signature, so a reader can tell the nesting is
+  # what fails.
+  it "example20" do
+    name = "models/example20"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example20.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   # Blocks, whose signature is decided by the body rather than the parameter
   # list: required or not (#147), the parameter types read off the sites that
   # use it (#148), and — for a body that only forwards — the callee's own
