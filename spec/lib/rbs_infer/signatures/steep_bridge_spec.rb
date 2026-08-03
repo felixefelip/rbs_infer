@@ -417,6 +417,28 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
     end
   end
 
+  # The two env-backed constant lookups, pinned directly rather than through the
+  # snapshots they feed. Both answer "no" by returning nil/false, so anything that
+  # breaks the environment access — the class method moving, say — reads as "this
+  # constant is not a class" and every `?Klass` default quietly becomes `?untyped`,
+  # eight snapshots away from the cause.
+  describe "env-backed constant lookups" do
+    it "recognizes a class of the project as a class" do
+      expect(bridge.class_or_module?("Palette", namespace: nil)).to be(true)
+      expect(bridge.class_or_module?("Post", namespace: nil)).to be(true)
+    end
+
+    it "says no for a name that is not a class" do
+      expect(bridge.class_or_module?("NoSuchConstantAnywhere", namespace: nil)).to be(false)
+    end
+
+    it "reads a constant's declared type out of the environment" do
+      # `sig/` of the dummy declares it; a class reference has no `casgn` and so
+      # is absent here by design — that is `class_or_module?`'s question.
+      expect(bridge.constant_type_from_env("Post", namespace: nil)).to be_nil
+    end
+  end
+
   describe "#all_expression_types" do
     it "maps every typed expression to its type" do
       code = <<~RUBY

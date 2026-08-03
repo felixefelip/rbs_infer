@@ -126,33 +126,44 @@ module RbsInfer::Signatures
     # references are absent (a class is a class_decl, not a `Foo = ...` casgn),
     # so they return nil. Type string is `::`-stripped to match `constant_types`.
     def constant_type_from_env(name, namespace:)
-      builder = self.class.definition_builder
+      builder = SteepEnvironment.definition_builder
       return nil unless builder && name
 
-      env = builder.env
-      constant_name_candidates(name, namespace).each do |fqn|
-        entry = env.constant_decls[RBS::TypeName.parse(fqn)]
-        next unless entry
+      # Scoped to the env walk, deliberately: a method-level rescue also covered
+      # the line above, so when the environment moved to `SteepEnvironment` the
+      # stale `self.class.definition_builder` raised `NoMethodError` and was
+      # swallowed as "no answer" — every constant in value position silently fell
+      # to `untyped`. What this is here to tolerate is a malformed/incomplete RBS
+      # env, not a call that does not exist.
+      begin
+        env = builder.env
+        constant_name_candidates(name, namespace).each do |fqn|
+          entry = env.constant_decls[RBS::TypeName.parse(fqn)]
+          next unless entry
 
-        return entry.decl.type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }
+          return entry.decl.type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }
+        end
+        nil
+      rescue RBS::BaseError, StandardError
+        nil
       end
-      nil
-    rescue RBS::BaseError, StandardError
-      nil
     end
 
     # True when `name` (resolved from `namespace`) is a class or module in the
     # env — i.e. its bare name is a valid type (`foo(User) -> User`).
     def class_or_module?(name, namespace:)
-      builder = self.class.definition_builder
+      builder = SteepEnvironment.definition_builder
       return false unless builder && name
 
-      env = builder.env
-      constant_name_candidates(name, namespace).any? do |fqn|
-        env.class_decls.key?(RBS::TypeName.parse(fqn))
+      # Same scoping as `constant_type_from_env` above, for the same reason.
+      begin
+        env = builder.env
+        constant_name_candidates(name, namespace).any? do |fqn|
+          env.class_decls.key?(RBS::TypeName.parse(fqn))
+        end
+      rescue RBS::BaseError, StandardError
+        false
       end
-    rescue RBS::BaseError, StandardError
-      false
     end
 
     # Fully-qualified candidates for a constant reference, walking the
