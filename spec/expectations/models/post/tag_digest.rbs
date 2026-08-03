@@ -1,6 +1,6 @@
 class Post
   class TagDigest
-    def self.for: ((Post & Post::Taggable) post) -> untyped
+    def self.for: ((Post & Post::Taggable) post) -> Post::TagDigest?
 
     def initialize: (untyped title, untyped tag_names) -> untyped
     def headline: () -> String

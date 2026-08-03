@@ -254,6 +254,12 @@ module RbsInfer::Signatures
     # singleton: {name=>type} }`. `def x` (Prism `:def`) and `def self.x`
     # (`:defs`) used to write the same name-keyed entry, so a homonymous
     # pair leaked one type onto the other (felixefelip/rbs_infer#33).
+    #
+    # A class method has a THIRD spelling, and the node type does not tell it
+    # apart: inside `class << self` it is a plain `:def`. Filed as an instance
+    # method it was then unreachable, because the reader asks by the member's
+    # kind — which is `:class_method` — and every such method stayed `untyped`
+    # while Steep had its type all along (felixefelip/rbs_infer#162).
     def method_return_types_by_kind(source_code)
       typing = type_check(source_code)
       return { instance: {}, singleton: {} } unless typing
@@ -267,12 +273,14 @@ module RbsInfer::Signatures
 
       instance = {}
       singleton = {}
+      singleton_class_defs = singleton_class_def_ids(typing.source.node)
 
       typing.each_typing do |node, _type|
         next unless node.type == :def || node.type == :defs
-        singleton_def = node.type == :defs
-        method_name = singleton_def ? node.children[1].to_s : node.children[0].to_s
-        body = singleton_def ? node.children[3] : node.children[2]
+        plain_def = node.type == :def
+        singleton_def = !plain_def || singleton_class_defs.include?(node.__id__)
+        method_name = plain_def ? node.children[0].to_s : node.children[1].to_s
+        body = plain_def ? node.children[2] : node.children[3]
         next unless body
 
         body_type = typing.type_of(node: body)
@@ -289,6 +297,25 @@ module RbsInfer::Signatures
       end
 
       { instance: instance, singleton: singleton }
+    end
+
+    # Node ids of the `def`s written inside `class << self`.
+    #
+    # `class << obj` is a different thing and is deliberately excluded: those
+    # are singleton methods of THAT object, not of the class. The ivar walker
+    # already treats `:sclass` and `:defs` as one scope for the same reason —
+    # in both, `self` is the class.
+    def singleton_class_def_ids(node, inside: false, result: Set.new)
+      return result unless node.is_a?(Parser::AST::Node)
+
+      case node.type
+      when :sclass then inside = node.children[0]&.type == :self
+      when :class, :module then inside = false
+      when :def then result << node.__id__ if inside
+      end
+
+      node.children.each { |child| singleton_class_def_ids(child, inside: inside, result: result) }
+      result
     end
 
     # Returns { "CONSTANT_NAME" => "Type" } for every `NAME = expr` /
