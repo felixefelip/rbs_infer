@@ -1,7 +1,7 @@
 class RbsInfer::Signatures::SteepBridge
   class BlockAnalyzer
     def initialize(steep_bridge:)
-			@steep_bridge = steep_bridge
+      @steep_bridge = steep_bridge
     end
 
     # Methods that hand their own block to someone else, mapped to what that
@@ -38,9 +38,9 @@ class RbsInfer::Signatures::SteepBridge
       end
     end
 
-		private
+    private
 
-		# Yields `[send_node, method_key]` for every call that receives a
+    # Yields `[send_node, method_key]` for every call that receives a
     # `&block_param` — the method's own block on its way out. `&:symbol` is a
     # proc literal built on the spot, not this method's block, so it is not a
     # forward and never reaches the callee lookup.
@@ -91,7 +91,7 @@ class RbsInfer::Signatures::SteepBridge
       function = block.type
       return :unknown unless function.respond_to?(:required_positionals)
       return :unknown unless function.optional_positionals.empty? && function.rest_positionals.nil? &&
-        function.trailing_positionals.empty? && function.required_keywords.empty?
+                             function.trailing_positionals.empty? && function.required_keywords.empty?
 
       function.required_positionals.map { |param| RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(param.type) }
     end

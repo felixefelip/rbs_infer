@@ -24,6 +24,7 @@ module RbsInfer::Signatures
         if @definition_builder_loaded && @definition_builder_dir == current_dir
           return @definition_builder
         end
+
         @definition_builder_loaded = true
         @definition_builder_dir = current_dir
         @definition_builder = build_definition_builder
@@ -153,6 +154,7 @@ module RbsInfer::Signatures
         # :arg = block parameter in multi-param blocks (|x, y|);
         #        also matches def params, but those are typically untyped and get filtered below
         next unless node.type == :lvasgn || node.type == :procarg0 || node.type == :arg
+
         type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
         next if type_str == "untyped" || type_str == "nil" || type_str == "bot"
 
@@ -238,6 +240,7 @@ module RbsInfer::Signatures
       block_mismatches = {}
       typing.errors.each do |err|
         next unless err.is_a?(Steep::Diagnostic::Ruby::BlockBodyTypeMismatch)
+
         block_mismatches[err.node.__id__] = err
       end
 
@@ -247,6 +250,7 @@ module RbsInfer::Signatures
 
       typing.each_typing do |node, _type|
         next unless node.type == :def || node.type == :defs
+
         plain_def = node.type == :def
         singleton_def = !plain_def || singleton_class_defs.include?(node.__id__)
         method_name = plain_def ? node.children[0].to_s : node.children[1].to_s
@@ -523,6 +527,7 @@ module RbsInfer::Signatures
       result = {}
       entries.each do |entry|
         next unless entry.applies_self
+
         entry.runs_before.each do |method_sym|
           result[method_sym.to_s] ||= entry.applies_self
         end

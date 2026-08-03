@@ -181,7 +181,8 @@ class RbsInfer::Signatures::SteepBridge
         # def self.X — singleton method, skip; ivar there is class-instance
         # variable, not relevant for instance ivar initialization.
       when :ivasgn
-        if (in_init || in_class_body) && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
+        if (in_init || in_class_body) && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace,
+                                                                                                            target_class)
           var_name = node.children[0].to_s.sub(/\A@/, "")
           result << var_name
         end
@@ -192,7 +193,8 @@ class RbsInfer::Signatures::SteepBridge
                                     namespace: namespace, target_class: target_class, result: result) if rhs
       when :send
         receiver, method_name, *args = node.children
-        if (in_init || in_class_body) &&  RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class) &&
+        if (in_init || in_class_body) && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace,
+                                                                                                            target_class) &&
            (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
            method_name.to_s.end_with?("=") &&
            method_name != :==
@@ -307,7 +309,9 @@ class RbsInfer::Signatures::SteepBridge
         # Only writes inside an instance method are instance ivars. A bare
         # `@x = v` in the class body (`in_def` false) is a class-instance
         # variable — `self` is the class there too (felixefelip/rbs_infer#86).
-        result << node.object_id if in_def &&  RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
+        result << node.object_id if in_def && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(
+          namespace, target_class
+        )
         node.children.each do |c|
           collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def,
                                                                               result: result)
@@ -316,7 +320,9 @@ class RbsInfer::Signatures::SteepBridge
         # `@x ||= v` / `@x &&= v`: the write `each_typing` will key on is this
         # whole node, not its argument-less inner `:ivasgn`, so collect this
         # id (felixefelip/rbs_infer#85).
-        if in_def && node.children[0].type == :ivasgn &&  RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
+        if in_def && node.children[0].type == :ivasgn && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(
+          namespace, target_class
+        )
           result << node.object_id
         end
         node.children.each do |c|
@@ -327,7 +333,7 @@ class RbsInfer::Signatures::SteepBridge
         receiver, method_name = node.children[0], node.children[1]
         if in_def && attr_writer_to_ivar.key?(method_name) &&
            (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
-            RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
+           RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
           result << node.object_id
         end
         node.children.each do |c|
@@ -388,7 +394,8 @@ class RbsInfer::Signatures::SteepBridge
       when :ivasgn, :or_asgn, :and_asgn
         parts = ivar_write_name_and_rhs(node)
         rhs = parts&.last
-        if current_method && parts && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
+        if current_method && parts && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace,
+                                                                                                         target_class)
           var_name = parts.first
           # Use the RHS's INTRINSIC type, not what `typing` recorded.
           # When the ivar is already declared in RBS (e.g.,
