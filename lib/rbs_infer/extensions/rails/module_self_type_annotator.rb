@@ -8,8 +8,8 @@ module RbsInfer
       # `Steep::Source::ModuleSelfTypes.inject` (felixefelip/rbs_infer#52).
       #
       # This is the Rails-aware half that used to live inside Steep: it knows
-      # the path conventions (models / helpers / controller concerns), the
-      # including-class rule, and concern detection. Unlike the old Steep code
+      # the path conventions (models / helpers / controller concerns), how a
+      # module's hosts are resolved, and concern detection. Unlike the old Steep code
       # it does NOT camelize the file path to get the module name — the caller
       # passes the real name from the AST (`Analyzer#target_class`), so acronyms
       # (`SQLite`, `OAuth`) keep their declared casing.
@@ -39,35 +39,36 @@ module RbsInfer
         def entry_for(path:, module_name:, source:, mixin_index: nil)
           return nil if module_name.nil? || module_name.empty?
 
-          including_classes = including_classes_for(path, module_name, mixin_index)
-          return nil if including_classes.empty?
+          hosts = hosts_for(path, module_name, mixin_index)
+          return nil if hosts.empty?
 
           anchor = module_name.split("::").last
           is_concern = source.include?("extend ActiveSupport::Concern")
 
-          { "anchor" => anchor, "annotations" => annotations(module_name, including_classes, is_concern) }
+          { "anchor" => anchor, "annotations" => annotations(module_name, hosts, is_concern) }
         end
 
         # Every class a module is mixed into.
         #
         # The written `include`s come first: they are what the code says, while
-        # the conventions below are a guess from a file path. The guess stays as
+        # the convention below is a guess from a file path. The guess stays as
         # the fallback for what no source shows — a helper is mixed in by Rails
         # itself, and nobody writes that `include` anywhere
         # (felixefelip/rbs_infer#163).
-        def including_classes_for(path, module_name, mixin_index)
+        def hosts_for(path, module_name, mixin_index)
           hosts = mixin_index ? mixin_index.hosts_of(module_name) : []
           return hosts if hosts.any?
 
-          Array(including_class_for(path, module_name))
+          Array(presumed_host_for(path, module_name))
         end
 
-        # The class a concern/module is mixed into, by Rails convention.
-        # Helpers and controller concerns mix into ApplicationController; a
-        # model concern mixes into its enclosing namespace (`Post::Taggable` →
-        # `Post`). Returns nil when the file isn't under a covered root, or a
-        # model concern has no namespace to derive the host from.
-        def including_class_for(path, module_name)
+        # The class a concern/module is PRESUMED to be mixed into, by Rails
+        # convention — nothing here reads an `include`. Helpers and controller
+        # concerns are presumed to mix into ApplicationController; a model
+        # concern into its enclosing namespace (`Post::Taggable` → `Post`).
+        # Returns nil when the file isn't under a covered root, or a model
+        # concern has no namespace to guess from.
+        def presumed_host_for(path, module_name)
           path = path.to_s
           return "ApplicationController" if path.include?(HELPERS_PREFIX)
           return "ApplicationController" if path.include?(CONTROLLER_CONCERNS_PREFIX)
@@ -79,11 +80,11 @@ module RbsInfer
           parts[0..-2].join("::")
         end
 
-        def annotations(module_name, including_classes, is_concern)
-          instance = "# @type instance: #{(including_classes + [module_name]).join(' & ')}"
+        def annotations(module_name, hosts, is_concern)
+          instance = "# @type instance: #{(hosts + [module_name]).join(' & ')}"
           return [instance] unless is_concern
 
-          singletons = (including_classes + [module_name]).map { |name| "singleton(#{name})" }
+          singletons = (hosts + [module_name]).map { |name| "singleton(#{name})" }
           ["# @type self: #{singletons.join(' & ')}", instance]
         end
       end

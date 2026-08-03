@@ -27,14 +27,15 @@ module RbsInfer
       #
       # Detection reuses `ClassMethodsExpander.class_methods_block?` so the
       # sidecar and the RBS desugar agree on exactly what a `class_methods`
-      # block is. The including class is derived by the same rule
-      # `ModuleSelfTypeAnnotator` uses for the concern self-type.
+      # block is. The hosts come from the same `ModuleSelfTypeAnnotator.hosts_for`
+      # the concern self-type uses, so the two halves of one concern cannot end
+      # up mixed into different classes.
       module ClassMethodsImplements
         CALL = "class_methods"
 
         module_function
 
-        # @param path [String] source path (for the including-class rule)
+        # @param path [String] source path (for the presumed-host convention)
         # @param module_name [String] the concern's FQN from the AST (e.g.
         #   "Post::Taggable")
         # @param source [String] the file's source
@@ -42,7 +43,7 @@ module RbsInfer
         #   "::<FQN>::ClassMethods"[, "self" => "singleton(::<Includer>) &
         #   ::<FQN>::ClassMethods"] }]` when `source` has at least one
         #   receiverless `class_methods do` block, else `[]`. `self` is omitted
-        #   when no including class can be derived (e.g. a top-level concern).
+        #   when no host is known (e.g. a top-level concern nobody includes).
         def blocks_for(path:, module_name:, source:, mixin_index: nil)
           return [] if module_name.nil? || module_name.empty?
           return [] unless source.include?(CALL)
@@ -59,9 +60,9 @@ module RbsInfer
           entry = { "call" => CALL, "implements" => class_methods }
           # Same resolution the instance self-type uses, so the two halves of a
           # concern cannot end up mixed into different classes.
-          including = ModuleSelfTypeAnnotator.including_classes_for(path, module_name, mixin_index)
-          unless including.empty?
-            singletons = including.map { |klass| "singleton(::#{klass})" }
+          hosts = ModuleSelfTypeAnnotator.hosts_for(path, module_name, mixin_index)
+          unless hosts.empty?
+            singletons = hosts.map { |host| "singleton(::#{host})" }
             entry["self"] = (singletons + [class_methods]).join(" & ")
           end
           [entry]
