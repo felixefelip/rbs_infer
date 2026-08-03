@@ -159,7 +159,7 @@ module RbsInfer::Signatures
     def rbs_builder
       return @rbs_builder if @rbs_builder_loaded
       @rbs_builder_loaded = true
-      @rbs_builder = SteepBridge.definition_builder
+      @rbs_builder = SteepEnvironment.definition_builder
     end
 
     # Infere variáveis de tipo genérico a partir da assinatura do bloco.

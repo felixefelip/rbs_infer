@@ -169,7 +169,7 @@ if output
   levels = RbsInfer::Project::DependencySorter.sort(files)
 
   reset_caches = lambda do
-    RbsInfer::Signatures::SteepBridge.reset!
+    RbsInfer::Signatures::SteepEnvironment.reset!
     # Run-wide RBS file/glob caches: clear so a freshly-written sig file (new
     # path or changed content) is re-globbed/re-parsed on the next level/pass
     # (felixefelip/rbs_infer#47).
