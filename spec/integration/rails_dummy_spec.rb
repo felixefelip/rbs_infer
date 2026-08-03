@@ -465,11 +465,12 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # required, `String`-shaped signature, so a reader can tell the nesting is
   # what fails.
   # felixefelip/rbs_infer#168. A parameter typed as the RECEIVER of the
-  # expression assigned to it: `Registry.holder = ticket.holder` types
-  # `holder=` as taking a `Ticket?`, because the caller-side map is keyed by
-  # `line:column` and a receiver starts where its call does. Fizzy's
-  # `Current#identity=` is the same shape, and from there `Current.identity` is
-  # a `Session` for the whole app.
+  # expression assigned to it: `Registry.holder = ticket.holder` typed `holder=`
+  # as taking a `Ticket?`, because the caller-side map was keyed by `line:column`
+  # and a receiver starts where its call does. Fizzy's `Current#identity=` is the
+  # same shape, and from there `Current.identity` was a `Session` for the whole
+  # app. Keyed by the whole range, the parameter takes what the expression really
+  # has — `untyped`, the call itself being the error the baseline records.
   it "example21" do
     name = "models/example21"
     rbs = RbsInfer::Analyzer.new(

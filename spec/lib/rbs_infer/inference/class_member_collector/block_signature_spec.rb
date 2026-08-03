@@ -71,8 +71,8 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector::BlockSignature do
   end
 
   # The types at those sites are the checker's answer, so this only records
-  # where to look — line and CHARACTER column, which is what a Parser-based
-  # lookup is keyed by.
+  # where to look — BOTH ends of the expression, in lines and CHARACTER columns,
+  # which is what a Parser-based lookup is keyed by (#168).
   describe "#arg_positions" do
     def positions_for(source)
       def_node = Prism.parse(source).value.statements.body.first
@@ -80,11 +80,11 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector::BlockSignature do
     end
 
     it "points at each argument the body passes to the block" do
-      expect(positions_for("def m(&block)\n  block.call(x, y)\nend")).to eq([[[2, 13]], [[2, 16]]])
+      expect(positions_for("def m(&block)\n  block.call(x, y)\nend")).to eq([[[2, 13, 2, 14]], [[2, 16, 2, 17]]])
     end
 
     it "collects every site for the same parameter, so they can be unioned" do
-      expect(positions_for("def m\n  yield 1\n  yield 2\nend")).to eq([[[2, 8], [3, 8]]])
+      expect(positions_for("def m\n  yield 1\n  yield 2\nend")).to eq([[[2, 8, 2, 9], [3, 8, 3, 9]]])
     end
 
     it "has nothing to say when the arity itself is unknown" do

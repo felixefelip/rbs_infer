@@ -2,9 +2,10 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Inference::BlockReturnCollector do
-  # Steep's map is keyed `"line:column"`; the fixtures below state it directly so
-  # the collector's own job — finding the block's last statement and looking it
-  # up — is what gets tested, not the bridge.
+  # Steep's map is keyed by an expression's whole RANGE
+  # (`"start_line:start_column-end_line:end_column"`, #168); the fixtures below
+  # state it directly so the collector's own job — finding the block's last
+  # statement and looking it up — is what gets tested, not the bridge.
   def collect(source, methods:, expression_types:, receiver_check: nil)
     collector = described_class.new(
       methods: Set.new(methods), expression_types: expression_types, receiver_check: receiver_check
@@ -22,7 +23,7 @@ RSpec.describe RbsInfer::Inference::BlockReturnCollector do
       end
     RUBY
 
-    expect(collect(source, methods: ["with_token"], expression_types: { "3:4" => "User?" }))
+    expect(collect(source, methods: ["with_token"], expression_types: { "3:4-3:17" => "User?" }))
       .to eq("with_token" => ["User?"])
   end
 
@@ -34,7 +35,7 @@ RSpec.describe RbsInfer::Inference::BlockReturnCollector do
       end
     RUBY
 
-    expect(collect(source, methods: ["wrap"], expression_types: { "2:9" => "Integer", "3:9" => "String" }))
+    expect(collect(source, methods: ["wrap"], expression_types: { "2:9-2:10" => "Integer", "3:9-3:12" => "String" }))
       .to eq("wrap" => ["Integer", "String"])
   end
 
@@ -43,13 +44,13 @@ RSpec.describe RbsInfer::Inference::BlockReturnCollector do
   it "ignores a call on a receiver when no check is supplied" do
     source = "def go; other.wrap { 1 }; end"
 
-    expect(collect(source, methods: ["wrap"], expression_types: { "1:21" => "Integer" })).to be_empty
+    expect(collect(source, methods: ["wrap"], expression_types: { "1:21-1:22" => "Integer" })).to be_empty
   end
 
   it "asks the supplied check about a receiver" do
     source = "def go; other.wrap { 1 }; end"
 
-    expect(collect(source, methods: ["wrap"], expression_types: { "1:21" => "Integer" }, receiver_check: ->(_node) { true }))
+    expect(collect(source, methods: ["wrap"], expression_types: { "1:21-1:22" => "Integer" }, receiver_check: ->(_node) { true }))
       .to eq("wrap" => ["Integer"])
   end
 

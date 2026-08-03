@@ -856,9 +856,10 @@ module RbsInfer::Inference
     end
 
     def expression_type(node)
-      # Character column, like every other lookup into this map — Parser counts
-      # characters where Prism also offers bytes (felixefelip/rbs_infer#142).
-      type = @expression_types["#{node.location.start_line}:#{node.location.start_character_column}"]
+      # Keyed by the node's whole range: a receiver starts where its call does,
+      # so a start position alone would let `ticket` answer for `ticket.holder`
+      # (felixefelip/rbs_infer#168).
+      type = @expression_types[RbsInfer::Signatures::SteepBridge.prism_expression_key(node.location)]
 
       # `self` is a real RBS type, but it means "the receiver of THIS method" —
       # so carrying it into ANOTHER method's parameter says the argument is a

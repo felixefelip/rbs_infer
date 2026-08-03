@@ -291,20 +291,6 @@ postconditions:
   effects:
     may_write:
     - "@name"
-- class: Example10::Sink
-  method: last
-  effects:
-    returns_ivar: "@last"
-- class: Example10::Sink
-  method: last=
-  unconditional:
-    ivars:
-      "@last": "::Example10::Bar"
-    establishes_consts:
-      last: "::Example10::Bar"
-  effects:
-    may_write:
-    - "@last"
 - class: Example11::Partial
   method: initialize
   effects:
@@ -833,18 +819,6 @@ postconditions:
   effects:
     may_write:
     - "@name"
-- class: Example21::Registry
-  method: holder
-  effects:
-    returns_ivar: "@holder"
-- class: Example21::Registry
-  method: holder=
-  unconditional:
-    establishes_consts:
-      holder: "::Example21::Ticket"
-  effects:
-    may_write:
-    - "@holder"
 - class: Example2::Foo
   method: user=
   unconditional:

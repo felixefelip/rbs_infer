@@ -619,9 +619,40 @@ module RbsInfer::Signatures
       result
     end
 
+    # The key an expression is filed under in `all_expression_types`: its full
+    # RANGE, both ends.
+    #
+    # A position was not enough, because a position does not name an expression.
+    # A receiver starts exactly where its call does, so in
+    #
+    #     Registry.holder = ticket.holder
+    #
+    # `ticket` and `ticket.holder` began at the same column and shared one key.
+    # It stayed hidden while the call had a type of its own — either answer was
+    # at least ABOUT the right expression — and surfaced when the call was
+    # `untyped`: dropped from the map, the receiver was left answering for the
+    # whole expression, and `holder=` took a `Ticket?` (the object that HAS a
+    # holder) instead of a `Holder` (felixefelip/rbs_infer#168).
+    #
+    # Preferring the widest or the narrowest expression at a position does not
+    # decide it either: `Current.with` wants the inner answer and this wants the
+    # outer one. Only the range tells the two apart — so both sides of the map
+    # build their key through here, or they drift apart in silence.
+    def self.expression_key(first_line, first_column, last_line, last_column)
+      "#{first_line}:#{first_column}-#{last_line}:#{last_column}"
+    end
+
+    # The same key for a Prism node — the LOOKUP side of the map. Character
+    # columns, because Parser counts characters where Prism also offers bytes,
+    # and a source with multibyte text has to line up (felixefelip/rbs_infer#142).
+    def self.prism_expression_key(location)
+      expression_key(location.start_line, location.start_character_column,
+                     location.end_line, location.end_character_column)
+    end
+
     # Returns the type of a specific node within the typing result.
     # Useful for resolving argument types in call sites.
-    # Returns { node_id => "Type" } for all typed expressions.
+    # Returns { expression_key => "Type" } for all typed expressions.
     def all_expression_types(source_code)
       typing = type_check(source_code)
       return {} unless typing
@@ -635,7 +666,7 @@ module RbsInfer::Signatures
         type_str = format_type(type)
         next if type_str == "untyped" || type_str == "bot"
 
-        key = "#{loc.first_line}:#{loc.column}"
+        key = self.class.expression_key(loc.first_line, loc.column, loc.last_line, loc.last_column)
         result[key] = type_str
       end
 
