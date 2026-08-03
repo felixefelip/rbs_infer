@@ -2,12 +2,17 @@
 app/models/concerns/test/filtrable.rb:
   anchor: Filtrable
   annotations:
-  - "# @type self: singleton(Test) & singleton(Test::Filtrable)"
-  - "# @type instance: Test & Test::Filtrable"
+  - "# @type self: singleton(Post) & singleton(Test::Filtrable)"
+  - "# @type instance: Post & Test::Filtrable"
 app/models/coupon/code.rb:
   anchor: Code
   annotations:
   - "# @type instance: Coupon & Coupon::Code"
+app/models/eventable.rb:
+  anchor: Eventable
+  annotations:
+  - "# @type self: singleton(Widget) & singleton(Eventable)"
+  - "# @type instance: Widget & Eventable"
 app/models/post/archiver.rb:
   anchor: Archiver
   annotations:
@@ -62,9 +67,10 @@ app/helpers/application_helper.rb:
 app/helpers/posts_helper.rb:
   anchor: PostsHelper
   annotations:
-  - "# @type instance: ApplicationController & PostsHelper"
+  - "# @type instance: ERBPostsEdit & ERBPostsIndex & ERBPostsNew & ERBPostsShow &
+    PostsHelper"
 app/controllers/concerns/filter_configuration.rb:
   anchor: FilterConfiguration
   annotations:
-  - "# @type self: singleton(ApplicationController) & singleton(FilterConfiguration)"
-  - "# @type instance: ApplicationController & FilterConfiguration"
+  - "# @type self: singleton(PostsController) & singleton(FilterConfiguration)"
+  - "# @type instance: PostsController & FilterConfiguration"

@@ -12,7 +12,7 @@ module RbsInfer::Inference
     # covered by `IntraClassCallAnalyzer`. Omitting it would double-count every same-file
     # self-call — the two paths resolve the receiver differently, so the parameter widens
     # into a union instead of failing loudly (required-threaded-deps).
-    def initialize(target_class:, method_type_resolver:, target_file:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {})
+    def initialize(target_class:, method_type_resolver:, target_file:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {}, mixin_index: nil)
       @target_class = target_class
       @target_file = target_file
       @method_type_resolver = method_type_resolver
@@ -23,6 +23,9 @@ module RbsInfer::Inference
       # what the blocks passed to them at these call sites return.
       @block_methods = block_methods
       @method_owners = method_owners
+      # The `include`s written across the sources — what a module's `self` is,
+      # for the files scanned as callers (felixefelip/rbs_infer#163).
+      @mixin_index = mixin_index
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
       @method_block_returns = Hash.new { |h, k| h[k] = [] }
     end
@@ -140,7 +143,7 @@ module RbsInfer::Inference
       # asked for. Without it `Card::Entropy.for(self)` typed its parameter
       # `Card::Entropic`, which has no `last_active_at` (felixefelip/rbs_infer#161).
       module_self_type = RbsInfer::Project::SelfTypeAnnotators.instance_type(
-        path: file, module_name: caller_class_name, source: source
+        path: file, module_name: caller_class_name, source: source, mixin_index: @mixin_index
       )
 
       visitor = NewCallCollector.new(

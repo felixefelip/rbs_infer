@@ -4,6 +4,10 @@ require "prism"
 require "yaml"
 require "fileutils"
 require_relative "class_methods_implements"
+# The whole gem, not a leaf: this generator now reads the `include`s through
+# `Project::MixinIndex`, which walks sources with the analyzer's own helpers.
+# `rbs_infer.rb` does not load this file, so there is no cycle.
+require "rbs_infer"
 
 module RbsInfer
   module Extensions
@@ -36,6 +40,11 @@ module RbsInfer
         # touching disk conventions twice.
         def build_table
           table = {}
+          # Built here rather than lazily inside `entry_for_file`, whose
+          # `rescue StandardError` would turn a broken index into an empty
+          # table — and an empty table DELETES the sidecar, silently.
+          mixin_index
+
           ROOTS.each do |root|
             Dir.glob(File.join(@app_dir, root, "**/*.rb")).sort.each do |abs|
               rel = relative(abs)
@@ -69,13 +78,29 @@ module RbsInfer
           module_name = extractor.class_name
           return nil unless module_name
 
-          entry = ModuleSelfTypeAnnotator.entry_for(path: rel, module_name: module_name, source: source) || {}
-          blocks = ClassMethodsImplements.blocks_for(path: rel, module_name: module_name, source: source)
+          entry = ModuleSelfTypeAnnotator.entry_for(path: rel, module_name: module_name, source: source,
+                                                    mixin_index: mixin_index) || {}
+          blocks = ClassMethodsImplements.blocks_for(path: rel, module_name: module_name, source: source,
+                                                     mixin_index: mixin_index)
           entry["blocks"] = blocks unless blocks.empty?
 
           entry.empty? ? nil : entry
         rescue StandardError
           nil
+        end
+
+        # The `include`s written across the app, so a module's self-type comes
+        # from what the code says rather than from where its file sits
+        # (felixefelip/rbs_infer#163).
+        #
+        # Globbed wider than ROOTS on purpose — the class that includes a model
+        # concern can live anywhere — and over `sig/` too, so this sidecar and
+        # the in-process annotation read the same sources and cannot disagree.
+        def mixin_index
+          @mixin_index ||= RbsInfer::Project::MixinIndex.new(
+            Dir.glob(File.join(@app_dir, "app/**/*.rb")).sort +
+            Dir.glob(File.join(@app_dir, "sig/**/*.rb")).sort
+          )
         end
 
         def relative(abs)

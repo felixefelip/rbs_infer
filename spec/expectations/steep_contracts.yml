@@ -197,21 +197,6 @@ methods:
           kind: self
         method: nickname
     enforced: false
-  Test::Filtrable#filtrable?:
-    requires:
-    - kind: not_nil
-      expr:
-        kind: send
-        receiver:
-          kind: self
-        method: created_at
-    - kind: not_nil
-      expr:
-        kind: send
-        receiver:
-          kind: self
-        method: updated_at
-    enforced: false
   Test::Filtrable#teste:
     requires:
     - kind: not_nil

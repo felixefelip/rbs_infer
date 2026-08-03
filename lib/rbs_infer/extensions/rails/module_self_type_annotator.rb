@@ -25,33 +25,48 @@ module RbsInfer
 
         # SelfTypeAnnotators plugin contract: the concern/module self-type as a
         # (possibly empty) list of inject-ready entries.
-        def self_type_entries(path:, module_name:, source:)
-          entry = entry_for(path: path, module_name: module_name, source: source)
+        def self_type_entries(path:, module_name:, source:, mixin_index: nil)
+          entry = entry_for(path: path, module_name: module_name, source: source, mixin_index: mixin_index)
           entry ? [entry] : []
         end
 
         # @param path [String] source path (e.g. "app/models/search/record/sqlite.rb")
         # @param module_name [String] the real FQN from the AST (e.g. "Search::Record::SQLite")
         # @param source [String] the file's source (for concern detection)
+        # @param mixin_index [MixinIndex, nil] the `include`s written in the sources
         # @return [Hash, nil] `{ "anchor" => leaf, "annotations" => [lines] }`, or
-        #   nil when the file isn't a covered module/concern.
-        def entry_for(path:, module_name:, source:)
+        #   nil when nothing says what the module is mixed into.
+        def entry_for(path:, module_name:, source:, mixin_index: nil)
           return nil if module_name.nil? || module_name.empty?
 
-          including_class = including_class_for(path, module_name)
-          return nil unless including_class
+          including_classes = including_classes_for(path, module_name, mixin_index)
+          return nil if including_classes.empty?
 
           anchor = module_name.split("::").last
           is_concern = source.include?("extend ActiveSupport::Concern")
 
-          { "anchor" => anchor, "annotations" => annotations(module_name, including_class, is_concern) }
+          { "anchor" => anchor, "annotations" => annotations(module_name, including_classes, is_concern) }
         end
 
-        # The class a concern/module is mixed into. Helpers and controller
-        # concerns mix into ApplicationController by Rails convention; a model
-        # concern mixes into its enclosing namespace (`Post::Taggable` → `Post`).
-        # Returns nil when the file isn't under a covered root, or a model
-        # concern has no namespace to derive the host from.
+        # Every class a module is mixed into.
+        #
+        # The written `include`s come first: they are what the code says, while
+        # the conventions below are a guess from a file path. The guess stays as
+        # the fallback for what no source shows — a helper is mixed in by Rails
+        # itself, and nobody writes that `include` anywhere
+        # (felixefelip/rbs_infer#163).
+        def including_classes_for(path, module_name, mixin_index)
+          hosts = mixin_index ? mixin_index.hosts_of(module_name) : []
+          return hosts if hosts.any?
+
+          Array(including_class_for(path, module_name))
+        end
+
+        # The class a concern/module is mixed into, by Rails convention.
+        # Helpers and controller concerns mix into ApplicationController; a
+        # model concern mixes into its enclosing namespace (`Post::Taggable` →
+        # `Post`). Returns nil when the file isn't under a covered root, or a
+        # model concern has no namespace to derive the host from.
         def including_class_for(path, module_name)
           path = path.to_s
           return "ApplicationController" if path.include?(HELPERS_PREFIX)
@@ -64,12 +79,12 @@ module RbsInfer
           parts[0..-2].join("::")
         end
 
-        def annotations(module_name, including_class, is_concern)
-          instance = "# @type instance: #{including_class} & #{module_name}"
+        def annotations(module_name, including_classes, is_concern)
+          instance = "# @type instance: #{(including_classes + [module_name]).join(' & ')}"
           return [instance] unless is_concern
 
-          self_line = "# @type self: singleton(#{including_class}) & singleton(#{module_name})"
-          [self_line, instance]
+          singletons = (including_classes + [module_name]).map { |name| "singleton(#{name})" }
+          ["# @type self: #{singletons.join(' & ')}", instance]
         end
       end
 

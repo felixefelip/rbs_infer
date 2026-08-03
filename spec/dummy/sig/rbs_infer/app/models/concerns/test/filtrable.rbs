@@ -2,7 +2,7 @@ module Test
   module Filtrable
     extend ActiveSupport::Concern
 
-    def filtrable?: () -> untyped
+    def filtrable?: () -> bool
     def teste: () -> untyped
   end
 end
