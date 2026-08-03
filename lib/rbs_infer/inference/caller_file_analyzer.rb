@@ -136,15 +136,24 @@ module RbsInfer::Inference
           {}
         end
 
+      defined_names = NewCallCollector.collect_defined_class_names(result.value)
+
       # A module's instance-method `self` is whoever includes it, which the file
       # itself does not say — and the annotators already know: `Card::Entropic`
       # is mixed into `Card`. As a TARGET the file gets the answer injected as an
       # annotation; as a CALLER it is parsed from disk, so the answer has to be
       # asked for. Without it `Card::Entropy.for(self)` typed its parameter
       # `Card::Entropic`, which has no `last_active_at` (felixefelip/rbs_infer#161).
-      module_self_type = RbsInfer::Project::SelfTypeAnnotators.instance_type(
-        path: file, module_name: caller_class_name, source: source, mixin_index: @mixin_index
-      )
+      #
+      # Asked for EVERY module the file declares, not just the one the file is
+      # named after: the framework transcription puts several in one file, and
+      # the name that stands for it is the outermost wrapper
+      # (`ActionController::HttpAuthentication`), which nobody includes.
+      module_self_types = defined_names.to_h do |name|
+        [name, RbsInfer::Project::SelfTypeAnnotators.instance_type(
+          path: file, module_name: name, source: source, mixin_index: @mixin_index
+        )]
+      end.compact
 
       visitor = NewCallCollector.new(
         target_class: @target_class,
@@ -158,11 +167,11 @@ module RbsInfer::Inference
         target_methods: @target_methods,
         match_bare_calls: match_bare,
         self_types_by_method: self_types_by_method,
-        module_self_type: module_self_type,
+        module_self_types: module_self_types,
         established_ivars_by_method: established_ivars_by_method,
         argument_partitions_by_method: argument_partitions_by_method,
         constant_arg_resolver: constant_arg_resolver,
-        defined_class_names: NewCallCollector.collect_defined_class_names(result.value),
+        defined_class_names: defined_names,
         block_methods: @block_methods,
         method_owners: @method_owners,
         expression_types: @steep_bridge ? @steep_bridge.all_expression_types(source) : {}

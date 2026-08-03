@@ -12,7 +12,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
 
   it "mirrors the gem's own path, so provenance is readable from it" do
     expect(files.map { |f| f[:filename] })
-      .to contain_exactly("action_controller/metal/http_authentication.rb")
+      .to contain_exactly("action_controller/metal/http_authentication.rb", "action_controller/base.rb")
   end
 
   # The point of transcribing rather than modelling is that the body is the
@@ -73,6 +73,35 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
     end
   end
 
+  # felixefelip/rbs_infer#165. A transcribed module is a mixin, and its body runs
+  # with the includer's `self` — which the module cannot state, so the
+  # transcription states it. Written as an ordinary `include`, so the same thing
+  # that reads the app's mixins reads this one.
+  describe "who includes the transcribed module" do
+    let(:mixin) { "ActionController::HttpAuthentication::Token::ControllerMethods" }
+
+    # A file of its own, because a file's includes are attributed to the ONE
+    # class it declares, and the transcription declares several modules.
+    it "emits the include in the host's own file" do
+      base = files.find { |f| f[:filename] == "action_controller/base.rb" }
+
+      expect(base[:source]).to include("module ActionController\n  class Base\n")
+      expect(base[:source]).to include("include #{mixin}")
+    end
+
+    # Curated like the seeds, but confirmed against the loaded runtime, so a
+    # Rails version that rearranges its mixins drops the claim instead of
+    # repeating it.
+    it "emits nothing for a mixin the runtime does not confirm" do
+      stub_const(
+        "#{described_class}::MIXINS",
+        [described_class::Mixin.new(host: "ActionController::Base", module_name: "Comparable")]
+      )
+
+      expect(files.map { |f| f[:filename] }).not_to include("action_controller/base.rb")
+    end
+  end
+
   # And the rewrite is not hypothetical: that render is written as a dynamic
   # send, so a verbatim transcription would be a dead end at exactly the point
   # where the halt has to be seen.
@@ -119,6 +148,8 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
         method_name: :no_such_method_anywhere
       )]
     )
+
+    stub_const("#{described_class}::MIXINS", [])
 
     expect(described_class.new.build).to be_empty
   end

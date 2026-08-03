@@ -6,8 +6,19 @@ require "fileutils"
 require "yaml"
 
 RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
+  # A Steepfile, because the file list is now exactly what the project tells
+  # Steep to check (#165) — and because that is what a real app has.
+  STEEPFILE = <<~RUBY
+    target :app do
+      check "app"
+      check "sig/**/*.rb"
+      signature "sig"
+    end
+  RUBY
+
   def in_app(files)
     Dir.mktmpdir do |dir|
+      files = { "Steepfile" => STEEPFILE }.merge(files)
       files.each do |rel, content|
         path = File.join(dir, rel)
         FileUtils.mkdir_p(File.dirname(path))
@@ -28,16 +39,16 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
       out = described_class.new(app_dir: dir).generate
       table = YAML.safe_load(File.read(out))
 
-      entry = table.fetch("app/models/search/record/sqlite.rb")
-      expect(entry["anchor"]).to eq("SQLite")
-      expect(entry["annotations"]).to include(
+      mod = table.fetch("app/models/search/record/sqlite.rb")["modules"].first
+      expect(mod["anchor"]).to eq("SQLite")
+      expect(mod["annotations"]).to include(
         "# @type instance: Search::Record & Search::Record::SQLite"
       )
-      expect(entry["annotations"].join).not_to include("Sqlite")
+      expect(mod["annotations"].join).not_to include("Sqlite")
     end
   end
 
-  it "covers models, helpers and controller concerns; skips uncovered files" do
+  it "covers every source that declares a module with a host; skips the rest" do
     in_app(
       "app/models/post/taggable.rb"            => "module Post::Taggable\nend\n",
       "app/models/post.rb"                     => "class Post\n  include Post::Taggable\nend\n",
@@ -47,12 +58,15 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
     ) do |dir|
       table = described_class.new(app_dir: dir).build_table
 
+      # `app/models/post.rb` declares a class nobody includes, and `lib/` is not
+      # scanned at all.
       expect(table.keys).to contain_exactly(
         "app/models/post/taggable.rb",
         "app/helpers/posts_helper.rb",
         "app/controllers/concerns/filterable.rb"
       )
-      expect(table["app/helpers/posts_helper.rb"]["annotations"].first).to include("ApplicationController & PostsHelper")
+      expect(table["app/helpers/posts_helper.rb"]["modules"].first["annotations"].first)
+        .to include("ApplicationController & PostsHelper")
     end
   end
 
@@ -74,7 +88,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
       entry = described_class.new(app_dir: dir).build_table.fetch("app/models/post/taggable.rb")
 
       # self-type annotations and the block @implements coexist in one entry.
-      expect(entry["anchor"]).to eq("Taggable")
+      expect(entry["modules"].first["anchor"]).to eq("Taggable")
       expect(entry["blocks"]).to eq(
         [{
           "call" => "class_methods",

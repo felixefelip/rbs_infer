@@ -37,6 +37,10 @@ postconditions:
   when_true:
     block_truthy: true
 - class: ActionController::HttpAuthentication::Token::ControllerMethods
+  method: authenticate_or_request_with_http_token
+  conditional_block_truthy:
+    gate_ivar: "@__rbs_infer__performed"
+- class: ActionController::HttpAuthentication::Token::ControllerMethods
   method: authenticate_with_http_token
   when_true:
     block_truthy: true

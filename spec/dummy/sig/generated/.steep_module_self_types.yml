@@ -1,64 +1,91 @@
 ---
+app/controllers/concerns/filter_configuration.rb:
+  modules:
+  - anchor: FilterConfiguration
+    annotations:
+    - "# @type self: singleton(PostsController) & singleton(FilterConfiguration)"
+    - "# @type instance: PostsController & FilterConfiguration"
+app/helpers/application_helper.rb:
+  modules:
+  - anchor: ApplicationHelper
+    annotations:
+    - "# @type instance: ApplicationController & ApplicationHelper"
+app/helpers/posts_helper.rb:
+  modules:
+  - anchor: PostsHelper
+    annotations:
+    - "# @type instance: ERBPostsEdit & ERBPostsIndex & ERBPostsNew & ERBPostsShow
+      & PostsHelper"
 app/models/concerns/test/filtrable.rb:
-  anchor: Filtrable
-  annotations:
-  - "# @type self: singleton(Post) & singleton(Test::Filtrable)"
-  - "# @type instance: Post & Test::Filtrable"
+  modules:
+  - anchor: Filtrable
+    annotations:
+    - "# @type self: singleton(Post) & singleton(Test::Filtrable)"
+    - "# @type instance: Post & Test::Filtrable"
 app/models/eventable.rb:
-  anchor: Eventable
-  annotations:
-  - "# @type self: singleton(Widget) & singleton(Eventable)"
-  - "# @type instance: Widget & Eventable"
+  modules:
+  - anchor: Eventable
+    annotations:
+    - "# @type self: singleton(Widget) & singleton(Eventable)"
+    - "# @type instance: Widget & Eventable"
 app/models/post/notifiable.rb:
-  anchor: Notifiable
-  annotations:
-  - "# @type self: singleton(Post) & singleton(Post::Notifiable)"
-  - "# @type instance: Post & Post::Notifiable"
+  modules:
+  - anchor: Notifiable
+    annotations:
+    - "# @type self: singleton(Post) & singleton(Post::Notifiable)"
+    - "# @type instance: Post & Post::Notifiable"
 app/models/post/taggable.rb:
-  anchor: Taggable
-  annotations:
-  - "# @type self: singleton(Post) & singleton(Post::Taggable)"
-  - "# @type instance: Post & Post::Taggable"
+  modules:
+  - anchor: Taggable
+    annotations:
+    - "# @type self: singleton(Post) & singleton(Post::Taggable)"
+    - "# @type instance: Post & Post::Taggable"
   blocks:
   - call: class_methods
     implements: "::Post::Taggable::ClassMethods"
     self: singleton(::Post) & ::Post::Taggable::ClassMethods
 app/models/user/displayable.rb:
-  anchor: Displayable
-  annotations:
-  - "# @type self: singleton(User) & singleton(User::Displayable)"
-  - "# @type instance: User & User::Displayable"
+  modules:
+  - anchor: Displayable
+    annotations:
+    - "# @type self: singleton(User) & singleton(User::Displayable)"
+    - "# @type instance: User & User::Displayable"
 app/models/user/notifiable.rb:
-  anchor: Notifiable
-  annotations:
-  - "# @type self: singleton(User) & singleton(User::Notifiable)"
-  - "# @type instance: User & User::Notifiable"
+  modules:
+  - anchor: Notifiable
+    annotations:
+    - "# @type self: singleton(User) & singleton(User::Notifiable)"
+    - "# @type instance: User & User::Notifiable"
 app/models/user/recoverable.rb:
-  anchor: Recoverable
-  annotations:
-  - "# @type self: singleton(User) & singleton(User::Recoverable)"
-  - "# @type instance: User & User::Recoverable"
+  modules:
+  - anchor: Recoverable
+    annotations:
+    - "# @type self: singleton(User) & singleton(User::Recoverable)"
+    - "# @type instance: User & User::Recoverable"
 app/models/widget/closeable.rb:
-  anchor: Closeable
-  annotations:
-  - "# @type self: singleton(Widget) & singleton(Widget::Closeable)"
-  - "# @type instance: Widget & Widget::Closeable"
+  modules:
+  - anchor: Closeable
+    annotations:
+    - "# @type self: singleton(Widget) & singleton(Widget::Closeable)"
+    - "# @type instance: Widget & Widget::Closeable"
 app/models/widget/publishable.rb:
-  anchor: Publishable
-  annotations:
-  - "# @type self: singleton(Widget) & singleton(Widget::Publishable)"
-  - "# @type instance: Widget & Widget::Publishable"
-app/helpers/application_helper.rb:
-  anchor: ApplicationHelper
-  annotations:
-  - "# @type instance: ApplicationController & ApplicationHelper"
-app/helpers/posts_helper.rb:
-  anchor: PostsHelper
-  annotations:
-  - "# @type instance: ERBPostsEdit & ERBPostsIndex & ERBPostsNew & ERBPostsShow &
-    PostsHelper"
-app/controllers/concerns/filter_configuration.rb:
-  anchor: FilterConfiguration
-  annotations:
-  - "# @type self: singleton(PostsController) & singleton(FilterConfiguration)"
-  - "# @type instance: PostsController & FilterConfiguration"
+  modules:
+  - anchor: Publishable
+    annotations:
+    - "# @type self: singleton(Widget) & singleton(Widget::Publishable)"
+    - "# @type instance: Widget & Widget::Publishable"
+sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:
+  modules:
+  - anchor: ControllerMethods
+    annotations:
+    - "# @type instance: ActionController::Base & ActionController::HttpAuthentication::Token::ControllerMethods"
+sig/generated/steep_current_runtime/current.rb:
+  modules:
+  - anchor: GeneratedAttributeMethods
+    annotations:
+    - "# @type instance: Current & Current::GeneratedAttributeMethods"
+sig/generated/steep_devise_runtime/devise_scoped_helpers.rb:
+  modules:
+  - anchor: DeviseScopedHelpers
+    annotations:
+    - "# @type instance: DeviseScopedHelpers & DeviseScopedHelpers"
