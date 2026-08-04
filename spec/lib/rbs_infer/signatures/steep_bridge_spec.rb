@@ -492,4 +492,44 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       expect(result).to eq({})
     end
   end
+
+  # Type-check results and the sidecar stores depend on (source, env, stores) —
+  # never on the target class — so they are shared across bridges rather than
+  # rebuilt per analysis. What makes that safe is the key: the Steep context,
+  # which `SteepEnvironment.reset!` replaces.
+  describe "sharing across bridges" do
+    it "hands two bridges the same sidecar store" do
+      expect(described_class.new.send(:contracts_store))
+        .to equal(described_class.new.send(:contracts_store))
+    end
+
+    it "hands two bridges the same type-check result" do
+      source = "class SharedProbe\n  def go = 1\nend\n"
+
+      expect(described_class.new.type_check(source))
+        .to equal(described_class.new.type_check(source))
+    end
+
+    it "buckets everything under one context, so one key invalidates all of it" do
+      context = RbsInfer::Signatures::SteepEnvironment.steep_context
+      bucket = described_class.shared(context)
+
+      expect(described_class.shared(context)).to equal(bucket)
+      expect(bucket.keys).to contain_exactly(:type_checks, :sidecars)
+    end
+
+    # The reason there is no second `reset!` to call: the bucket is keyed on the
+    # context object, so dropping the environment drops what was computed
+    # against it. A result must never outlive the RBS it was derived from.
+    it "drops the shared bucket when the environment is reset" do
+      before_reset = described_class.shared(RbsInfer::Signatures::SteepEnvironment.steep_context)
+
+      RbsInfer::Signatures::SteepEnvironment.reset!
+      after_reset = described_class.shared(RbsInfer::Signatures::SteepEnvironment.steep_context)
+
+      expect(after_reset).not_to equal(before_reset)
+      expect(after_reset[:type_checks]).to be_empty
+      expect(after_reset[:sidecars]).to be_empty
+    end
+  end
 end

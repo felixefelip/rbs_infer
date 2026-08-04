@@ -207,7 +207,9 @@ bundle exec rspec spec/lib/rbs_infer/analyzer_spec.rb
 
 ## Steep integration
 
-`RbsInfer::SteepBridge` keeps a long-lived Steep environment loaded so the analyzer can resolve method return types against existing RBS (stdlib, gems, Rails, your own previously-generated `sig/`). When `--output` regenerates files, `SteepBridge.reset!` is called between dependency levels so each pass sees the previously-emitted RBS. This is what lets call-chains across files converge in `--max-passes` iterations.
+`RbsInfer::Signatures::SteepEnvironment` keeps a long-lived Steep environment loaded so the analyzer can resolve method return types against existing RBS (stdlib, gems, Rails, your own previously-generated `sig/`). When `--output` regenerates files, `SteepEnvironment.reset!` is called between dependency levels so each pass sees the previously-emitted RBS. This is what lets call-chains across files converge in `--max-passes` iterations.
+
+Everything derived from that environment hangs off it and is invalidated with it: `SteepBridge` shares its type-check results and its sidecar stores (`Steep::Contracts` / `Postconditions` / `Callbacks`) in a bucket keyed by the environment's identity, so one `reset!` drops the lot and no cache can outlive the RBS it was computed against.
 
 ## Performance
 

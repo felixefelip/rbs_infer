@@ -378,18 +378,40 @@ module RbsInfer::Signatures
     # is the single most expensive operation in the pipeline (a full Steep
     # synthesize), and the ~7 oracle methods above each call it — so one
     # analysis type-checks the same target source ~5x and each caller source
-    # ~2x. Memoize per source for the instance's lifetime.
+    # ~2x.
     #
-    # Safe to cache: the bridge is per-Analyzer, the result depends only on
-    # (source, env, sidecar stores), the env (`definition_builder`) only
-    # changes via the class-level `reset!` — called *between* analyses, never
-    # during one — and the stores are load-once read-only inputs. The returned
-    # `typing` is only ever read by callers, never mutated. A new analysis
-    # gets a fresh instance (and a freshly-reset env), so no cross-analysis
-    # staleness. (felixefelip/rbs_infer#47)
+    # The result depends on (source, env, sidecar stores). None of those is the
+    # target class, so the cache has no business being per-analysis: a caller
+    # file is type-checked once per target that sees it as a caller, and on
+    # Fizzy `Card`/`User`/`Account` are referenced by 63/54/53 files each. It
+    # was per-instance because the bridge is (felixefelip/rbs_infer#47); the
+    # answer is to key on what it actually depends on instead.
+    #
+    # `SteepEnvironment.steep_context` is that key, and it needs no new
+    # invalidation hook: the context is itself keyed by `definition_builder`
+    # identity, so `SteepEnvironment.reset!` — which the CLI already calls
+    # between dependency levels and stabilization passes — makes the next
+    # `steep_context` a different object, and everything hung off the old one
+    # is dropped with it. The returned `typing` is only ever read by callers,
+    # never mutated.
     def type_check(source_code)
-      (@type_check_cache ||= {}).fetch(source_code) do
-        @type_check_cache[source_code] = type_check_uncached(source_code)
+      context = SteepEnvironment.steep_context or return nil
+
+      cache = self.class.shared(context)[:type_checks]
+      cache.fetch(source_code) { cache[source_code] = type_check_uncached(source_code) }
+    end
+
+    class << self
+      # Everything shared across bridges, hung off one Steep context: the
+      # type-check results and the read-only sidecar stores. One bucket, one
+      # key, so a single `SteepEnvironment.reset!` invalidates all of it — no
+      # second `reset!` to define here and none to wire into the CLI.
+      def shared(context)
+        unless @shared_context.equal?(context)
+          @shared_context = context
+          @shared = { type_checks: {}, sidecars: {} }
+        end
+        @shared
       end
     end
 
@@ -465,29 +487,43 @@ module RbsInfer::Signatures
     # `user.name` typechecks cleanly. Without this hook the store stayed
     # empty and no narrowing applied, which made rbs_infer fall back to
     # `untyped`.
+    # The read-only sidecars (`Steep::Contracts` / `Postconditions` /
+    # `Callbacks`), loaded from YAML under the project root. Every bridge loaded
+    # its own copy, so a run parsed the same three files once per target — 2% of
+    # wall time in Psych alone. Shared per (kind, base dir) inside the context
+    # bucket, which is also the right lifetime: they are read out of `sig/`, and
+    # `sig/` is exactly what the CLI regenerates before each `reset!`.
+    #
+    # Without a context there is no bucket to share through — and no
+    # type-checking either — so it falls back to the instance.
+    def sidecar(kind)
+      context = SteepEnvironment.steep_context
+      store = context ? self.class.shared(context)[:sidecars] : (@sidecars ||= {})
+      key = [kind, contracts_base_dir]
+      return store[key] if store.key?(key)
+
+      store[key] = yield Pathname(contracts_base_dir).expand_path
+    end
+
     def contracts_store
-      @contracts_store ||=
-        begin
-          base = Pathname(contracts_base_dir).expand_path
-          Steep::Contracts.load(base)
-        rescue StandardError => e
-          warn "[rbs_infer] failed to load Steep contracts from #{base}: #{e.class}: #{e.message}"
-          Steep::Contracts::Store.empty
-        end
+      sidecar(:contracts) do |base|
+        Steep::Contracts.load(base)
+      rescue StandardError => e
+        warn "[rbs_infer] failed to load Steep contracts from #{base}: #{e.class}: #{e.message}"
+        Steep::Contracts::Store.empty
+      end
     end
 
     # Loads conditional postconditions written by external generators
     # (rbs_rails, rbs_inline, hand-authored) into a glob under `sig/`.
     # Required by Steep's TypeCheckService since felixefelip/steep#10.
     def postconditions_store
-      @postconditions_store ||=
-        begin
-          base = Pathname(contracts_base_dir).expand_path
-          Steep::Postconditions.load(base)
-        rescue StandardError => e
-          warn "[rbs_infer] failed to load Steep postconditions from #{base}: #{e.class}: #{e.message}"
-          Steep::Postconditions::Store.empty
-        end
+      sidecar(:postconditions) do |base|
+        Steep::Postconditions.load(base)
+      rescue StandardError => e
+        warn "[rbs_infer] failed to load Steep postconditions from #{base}: #{e.class}: #{e.message}"
+        Steep::Postconditions::Store.empty
+      end
     end
 
     # Loads the generic callback sidecar (felixefelip/steep#27) from
@@ -497,14 +533,12 @@ module RbsInfer::Signatures
     # explicit setter call in the body. Required by `TypeCheckService`
     # since Steep made `callbacks:` a mandatory keyword.
     def callbacks_store
-      @callbacks_store ||=
-        begin
-          base = Pathname(contracts_base_dir).expand_path
-          Steep::Callbacks.load(base)
-        rescue StandardError => e
-          warn "[rbs_infer] failed to load Steep callbacks from #{base}: #{e.class}: #{e.message}"
-          Steep::Callbacks::Store.empty
-        end
+      sidecar(:callbacks) do |base|
+        Steep::Callbacks.load(base)
+      rescue StandardError => e
+        warn "[rbs_infer] failed to load Steep callbacks from #{base}: #{e.class}: #{e.message}"
+        Steep::Callbacks::Store.empty
+      end
     end
 
     def contracts_base_dir
