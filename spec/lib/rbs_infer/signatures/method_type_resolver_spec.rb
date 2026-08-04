@@ -7,6 +7,19 @@ require_relative "../../../support/temp_file_helpers"
 RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
   include TempFileHelpers
 
+  # Test-only builder. `mixin_index:` is REQUIRED in production — it is what says
+  # who includes a module, so a call site inside a concern has a `self` to pass,
+  # and a caller that forgets it degrades silently (see
+  # docs/engineering/required-threaded-deps.md). Here it is built from the same
+  # files the resolver gets, which is what the Analyzer does too.
+  def build_resolver(source_files, **kwargs)
+    described_class.new(
+      source_files,
+      mixin_index: RbsInfer::Project::MixinIndex.new(source_files),
+      **kwargs
+    )
+  end
+
   it "resolve tipo de método anotado com #:" do
     files = {
       "foo.rb" => <<~RUBY
@@ -20,7 +33,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     }
 
     with_temp_files(files) do |dir, paths|
-      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+      resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("Foo", "name")).to eq("String")
     end
   end
@@ -35,7 +48,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     }
 
     with_temp_files(files) do |dir, paths|
-      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+      resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("Foo", "count")).to eq("Integer")
     end
   end
@@ -54,7 +67,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     }
 
     with_temp_files(files) do |dir, paths|
-      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+      resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("Foo", "repo")).to eq("DefaultRepo")
     end
   end
@@ -79,7 +92,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     }
 
     with_temp_files(files) do |dir, paths|
-      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+      resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("MyApp::Foo", "widget")).to eq("Widget")
     end
   end
@@ -111,7 +124,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     RUBY
 
     with_temp_files("my_app/entity.rb" => entity_src, "my_app/service.rb" => service_src) do |dir, paths|
-      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+      resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("MyApp::Entity", "nome")).to eq("String")
     end
   end
@@ -143,7 +156,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     RUBY
 
     with_temp_files("my_app/entity.rb" => entity_src, "my_app/caller.rb" => caller_src) do |dir, paths|
-      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+      resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("MyApp::Entity", "email")).to eq("Wrapper")
       expect(resolver.resolve_init_param_types("MyApp::Entity")["email"]).to eq("String")
     end
@@ -176,7 +189,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     }
 
     with_temp_files(files) do |dir, paths|
-      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+      resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("Model & Model::Validated", "file")).to eq("Uploader")
       expect(resolver.resolve("(Model & Model::Validated)", "file")).to eq("Uploader")
     end
@@ -206,7 +219,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     }
 
     with_temp_files(files) do |dir, paths|
-      resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+      resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
       expect(resolver.resolve("(LeftClass & RightClass)", "shared")).to eq("Symbol")
     end
   end
@@ -239,7 +252,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
     it "resolves a bare constant against the enclosing namespace" do
       with_temp_files(namespaced_service) do |dir, paths|
-        resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+        resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
         expect(resolver.qualify_constant("Archiver", enclosing: "Post")).to eq("Post::Archiver")
       end
     end
@@ -267,7 +280,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
       )
 
       with_temp_files(files) do |dir, paths|
-        resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+        resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
 
         expect(resolver.qualify_constant("Archiver", enclosing: "Post")).to eq("Post::Archiver")
         expect(resolver.qualify_constant("Archiver", enclosing: "Comment")).to eq("Archiver")
@@ -283,7 +296,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
     it "keeps a constant that is not the enclosing namespace's" do
       with_temp_files(namespaced_service) do |dir, paths|
-        resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+        resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
         expect(resolver.qualify_constant("Post", enclosing: "Post")).to eq("Post")
       end
     end
@@ -292,7 +305,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     # flow through untouched, so the resolvers that CAN see it still get a chance.
     it "returns the written name when no candidate is known" do
       with_temp_files(namespaced_service) do |dir, paths|
-        resolver = described_class.new(paths, constant_resolver: fake_constant_resolver)
+        resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
         expect(resolver.qualify_constant("Time", enclosing: "Post")).to eq("Time")
       end
     end
@@ -329,7 +342,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
         end
       RBS
 
-      resolver = described_class.new([source], constant_resolver: fake_constant_resolver)
+      resolver = build_resolver([source], constant_resolver: fake_constant_resolver)
 
       expect(resolver.resolve_all("Example")).to include("ticket" => "Ticket?")
       # The single-method path already answered this; the two agreeing is the point.
@@ -347,7 +360,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
       RUBY
       write("sig/example.rbs", "class Example\n  def ticket: () -> Ticket?\nend\n")
 
-      resolver = described_class.new([source], constant_resolver: fake_constant_resolver)
+      resolver = build_resolver([source], constant_resolver: fake_constant_resolver)
 
       expect(resolver.resolve_all("Example")).to include("ticket" => "String")
     end

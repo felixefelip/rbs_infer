@@ -12,7 +12,7 @@ module RbsInfer::Inference
     # covered by `IntraClassCallAnalyzer`. Omitting it would double-count every same-file
     # self-call — the two paths resolve the receiver differently, so the parameter widens
     # into a union instead of failing loudly (required-threaded-deps).
-    def initialize(target_class:, method_type_resolver:, target_file:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {}, mixin_index: nil)
+    def initialize(target_class:, method_type_resolver:, target_file:, mixin_index:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {})
       @target_class = target_class
       @target_file = target_file
       @method_type_resolver = method_type_resolver
@@ -25,6 +25,13 @@ module RbsInfer::Inference
       @method_owners = method_owners
       # The `include`s written across the sources — what a module's `self` is,
       # for the files scanned as callers (felixefelip/rbs_infer#163).
+      #
+      # Required, not defaulted: without it every module's `self` on this path is
+      # `untyped`, which reads as an answer. One of the Analyzer's two
+      # constructions omitted it, and that is the one deciding `initialize`
+      # parameters — `WidgetAuditor.new(self)` in a concern typed its parameter
+      # `untyped` while the other construction, wired, read the intersection
+      # (felixefelip/rbs_infer#175).
       @mixin_index = mixin_index
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
       @method_block_returns = Hash.new { |h, k| h[k] = [] }
@@ -149,11 +156,9 @@ module RbsInfer::Inference
       # named after: the framework transcription puts several in one file, and
       # the name that stands for it is the outermost wrapper
       # (`ActionController::HttpAuthentication`), which nobody includes.
-      module_self_types = defined_names.to_h do |name|
-        [name, RbsInfer::Project::SelfTypeAnnotators.instance_type(
-          path: file, module_name: name, source: source, mixin_index: @mixin_index
-        )]
-      end.compact
+      module_self_types = RbsInfer::Project::SelfTypeAnnotators.instance_types(
+        path: file, module_names: defined_names, source: source, mixin_index: @mixin_index
+      )
 
       visitor = NewCallCollector.new(
         target_class: @target_class,
@@ -220,7 +225,10 @@ module RbsInfer::Inference
         # Pre-converted ERB source has no constant defs of its own → {}.
         constant_arg_resolver: ConstantArgTypeResolver.new(steep_bridge: @steep_bridge, caller_constant_types: {}),
         # ERB-converted source defines no classes → empty; nothing to disambiguate.
-        defined_class_names: NewCallCollector.collect_defined_class_names(result.value)
+        defined_class_names: NewCallCollector.collect_defined_class_names(result.value),
+        # A template declares no module either, so there is no module `self` to
+        # resolve here — the empty map is the answer, not a missing wire.
+        module_self_types: {}
       )
       result.value.accept(visitor)
 

@@ -1,0 +1,6 @@
+class WidgetAuditor
+  attr_reader widget: (Widget & Widget::Closeable)
+
+  def initialize: ((Widget & Widget::Closeable) widget) -> void
+  def audit: () -> bool
+end

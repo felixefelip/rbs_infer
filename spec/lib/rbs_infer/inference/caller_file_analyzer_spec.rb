@@ -2,15 +2,17 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Inference::CallerFileAnalyzer do
-  # Test-only default for the required `target_file` (which gates bare-call matching
-  # for a class reopened across files). These examples exercise a private string
-  # helper and never reach that path, so any path serves — the production API stays
-  # strict so a forgotten wiring fails loudly instead of widening types.
+  # Test-only defaults for the required `target_file` (which gates bare-call matching
+  # for a class reopened across files) and `mixin_index` (what a module's `self` is).
+  # These examples exercise a private string helper and never reach either path, so
+  # anything serves — the production API stays strict so a forgotten wiring fails
+  # loudly instead of typing every concern's `self` untyped.
   let(:analyzer) do
     described_class.new(
       target_class: "Foo",
       method_type_resolver: nil,
-      target_file: "app/models/foo.rb"
+      target_file: "app/models/foo.rb",
+      mixin_index: RbsInfer::Project::MixinIndex.new([])
     )
   end
 
