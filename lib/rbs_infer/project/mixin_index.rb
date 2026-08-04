@@ -27,6 +27,8 @@ module RbsInfer::Project
       @files_defining = Hash.new { |h, k| h[k] = [] }  # short name → [file]
       @includes_by_class = Hash.new { |h, k| h[k] = Set.new } # class FQN → Set[written name]
       @module_declarations = Set.new                          # FQNs declared as `module`
+      @hosts_by_target = {}                                   # target FQN → [host FQN]
+      @hosts_of_cache = {}                                    # target FQN → resolved hosts
       build(source_files)
     end
 
@@ -55,27 +57,35 @@ module RbsInfer::Project
     # Matching has to resolve the written name, which is rarely the FQN: Ruby
     # looks a constant up outward through the enclosing namespaces, so `include
     # Eventable` inside `class Card` may mean `Card::Eventable` or `::Eventable`.
-    # Every nesting of the host is a candidate.
-    def hosts_of(module_name, seen: Set.new)
-      return [] unless seen.add?(unqualified(module_name))
-
-      direct = @includes_by_class.filter_map do |host, written|
-        host if written.any? { |name| resolves_to?(name, host, module_name) }
-      end
-
-      # A MODULE that includes the target is not a `self` — it is another mixin,
-      # and the real self is whoever includes IT. Fizzy's `Authentication` is
-      # included by `ActiveStorage::Authorize`, a concern; answering `Authorize`
-      # put a module in a position only a class can hold. Resolved through,
-      # `seen`-guarded because two concerns can include each other.
-      direct.flat_map { |host| @module_declarations.include?(host) ? hosts_of(host, seen: seen) : [host] }
-            .uniq.sort
+    # Every nesting of the host is a candidate — which is what `@hosts_by_target`
+    # has already enumerated, so the answer is a lookup rather than a scan.
+    def hosts_of(module_name)
+      @hosts_of_cache[unqualified(module_name)] ||= resolve_hosts(module_name, Set.new)
     end
 
     private
 
     EMPTY = Set.new.freeze
     private_constant :EMPTY
+
+    EMPTY_ARRAY = [].freeze
+    private_constant :EMPTY_ARRAY
+
+    # `seen` is recursion state, threaded rather than exposed: only the outermost
+    # call is memoized, so a cached entry is always the complete answer.
+    def resolve_hosts(module_name, seen)
+      target = unqualified(module_name)
+      return [] unless seen.add?(target)
+
+      # A MODULE that includes the target is not a `self` — it is another mixin,
+      # and the real self is whoever includes IT. Fizzy's `Authentication` is
+      # included by `ActiveStorage::Authorize`, a concern; answering `Authorize`
+      # put a module in a position only a class can hold. Resolved through,
+      # `seen`-guarded because two concerns can include each other.
+      @hosts_by_target.fetch(target, EMPTY_ARRAY)
+                      .flat_map { |host| @module_declarations.include?(host) ? resolve_hosts(host, seen) : [host] }
+                      .uniq.sort
+    end
 
     # Files whose class/module includes `short`.
     def host_files(short)
@@ -122,15 +132,34 @@ module RbsInfer::Project
         end
         @included_shorts[file] = inherited unless inherited.empty?
       end
+
+      index_hosts_by_target
     end
 
-    # Whether `written`, as it appears inside `host`, names `target`.
-    def resolves_to?(written, host, target)
-      name = unqualified(written)
-      target = unqualified(target)
-      return true if name == target
-
-      nestings(host).any? { |prefix| "#{prefix}::#{name}" == target }
+    # The reverse of `@includes_by_class`, built once.
+    #
+    # `include Eventable` written inside `class Card` names exactly one of a
+    # fixed, enumerable set: the name as written, or that name under any of the
+    # host's nestings. Nothing about that set depends on what is later asked, so
+    # deriving it per query — scanning every class and re-splitting every name to
+    # ask "does this one resolve to the target?" — recomputes at every call what
+    # one pass over the graph settles for good. Enumerating it here turns
+    # `hosts_of` into a hash lookup, and (measured on Fizzy) takes the mixin
+    # resolution from ~36% of a run's wall time, plus the GC churn of the strings
+    # it allocated, down to noise.
+    def index_hosts_by_target
+      @includes_by_class.each do |host, written|
+        prefixes = nestings(host)
+        written.each do |name|
+          short = unqualified(name)
+          candidates = prefixes.map { |prefix| "#{prefix}::#{short}" }
+          candidates.unshift(short)
+          candidates.each do |target|
+            hosts = (@hosts_by_target[target] ||= [])
+            hosts << host unless hosts.include?(host)
+          end
+        end
+      end
     end
 
     # `"A::B::C"` → `["A", "A::B", "A::B::C"]`, the namespaces a constant

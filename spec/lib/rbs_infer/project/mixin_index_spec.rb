@@ -186,5 +186,35 @@ RSpec.describe RbsInfer::Project::MixinIndex do
 
       expect(described_class.new([lonely]).hosts_of("Lonely")).to be_empty
     end
+
+    # The answer is memoized and the cycle guard is now threaded through the
+    # recursion rather than rebuilt per call, so a second question must not see
+    # the first one's `seen` set — which would silently answer empty.
+    it "answers the same on repeat, and after resolving through a neighbour" do
+      app = write_file("application_controller.rb", "class ApplicationController\n  include Authorize\nend\n")
+      authorize = write_file("authorize.rb", "module Authorize\n  include Authentication\nend\n")
+      auth = write_file("authentication.rb", "module Authentication\nend\n")
+
+      index = described_class.new([app, authorize, auth])
+
+      expect(index.hosts_of("Authentication")).to contain_exactly("ApplicationController")
+      # Asked again, and asked about the module the first answer resolved through.
+      expect(index.hosts_of("Authentication")).to contain_exactly("ApplicationController")
+      expect(index.hosts_of("Authorize")).to contain_exactly("ApplicationController")
+      expect(index.hosts_of("Authentication")).to contain_exactly("ApplicationController")
+    end
+
+    # A cycle is `seen`-guarded per question. The guard must not outlive it: the
+    # empty answer for `A` says nothing about `B`.
+    it "keeps a cycle's guard local to the question" do
+      a = write_file("a.rb", "module A\n  include B\nend\n")
+      b = write_file("b.rb", "module B\n  include A\nend\n")
+      host = write_file("widget.rb", "class Widget\n  include B\nend\n")
+
+      index = described_class.new([a, b, host])
+
+      expect(index.hosts_of("A")).to contain_exactly("Widget")
+      expect(index.hosts_of("B")).to contain_exactly("Widget")
+    end
   end
 end
