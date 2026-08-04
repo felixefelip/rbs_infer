@@ -98,6 +98,70 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
   end
 
   describe "#resolve_method_return_types_from_attrs" do
+    # A factory written in `class << self` ends in a BARE `new`, and that used
+    # to fall past the constructor rule into the receiverless-call case, which
+    # asks the name map — where `new` only appears once the class has an RBS of
+    # its OWN. On a first generation there is none, so the method was left
+    # `untyped` for Steep, and Steep is blind for the same reason: it resolved
+    # `new` against `::Object` and typed the factory `Object`. Nothing ever
+    # re-derived it, because every later pass only reconsiders members still
+    # `untyped` — so `-> Object?` outlived the run that guessed it, and
+    # deleting the `.rbs` to regenerate reproduced it rather than fixing it.
+    #
+    # No `method_type_resolver` here on purpose: the point is that the answer
+    # comes from the source alone, with no RBS in the picture.
+    it "types a bare `new` in a class-method body as the class being generated" do
+      source = <<~RUBY
+        class Digest
+          class << self
+            def for(post)
+              new(post.title)
+            end
+          end
+
+          def initialize(title)
+            @title = title
+          end
+        end
+      RUBY
+      result = Prism.parse(source)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
+      result.value.accept(collector)
+      member = collector.members.find { |candidate| candidate.name == "for" }
+      expect(member.kind).to eq(:class_method)
+
+      described_class
+        .new(target_file: nil, constant_resolver: fake_constant_resolver, target_class: "Digest")
+        .resolve_method_return_types_from_attrs(collector.members, {}, parsed_target: parsed_target)
+
+      expect(member.signature).to end_with("-> Digest")
+    end
+
+    # The mirror. In an INSTANCE method `self` is not the class, so a
+    # receiverless `new` is an ordinary method call — answering `Digest` there
+    # would invent a constructor the class does not have.
+    it "leaves a bare `new` in an instance-method body alone" do
+      source = <<~RUBY
+        class Digest
+          def rebuild
+            new(@title)
+          end
+        end
+      RUBY
+      result = Prism.parse(source)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
+      result.value.accept(collector)
+      member = collector.members.find { |candidate| candidate.name == "rebuild" }
+
+      described_class
+        .new(target_file: nil, constant_resolver: fake_constant_resolver, target_class: "Digest")
+        .resolve_method_return_types_from_attrs(collector.members, {}, parsed_target: parsed_target)
+
+      expect(member.signature).to end_with("-> untyped")
+    end
+
     # `@x = value` evaluates to VALUE. The ivar map cannot answer for a
     # SINGLETON setter — `self.@user` is a class-instance variable, a different
     # slot from the instance ivars this pass receives — which is why every

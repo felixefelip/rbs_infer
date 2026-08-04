@@ -204,9 +204,11 @@ module RbsInfer::Inference
           next
         end
 
-        # 2. Klass.new(...) na última expressão
-        if last_stmt.is_a?(Prism::CallNode) && last_stmt.name == :new && last_stmt.receiver
-          class_name = constant_receiver_class(last_stmt.receiver, method_type_resolver)
+        # 2. A constructor call as the last expression — all three spellings,
+        #    `Klass.new`, `self.new` and a BARE `new`, resolved by the one rule
+        #    `infer_call_return_type` already applies further down a chain.
+        if last_stmt.is_a?(Prism::CallNode) && last_stmt.name == :new
+          class_name = constructed_class(last_stmt, kind, method_type_resolver)
           if class_name
             member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(class_name)}")
             own_return_types[method_name] = class_name
@@ -406,6 +408,36 @@ module RbsInfer::Inference
     # from the enclosing class outward, so `Archiver.new(...)` written inside
     # `Post` is `Post::Archiver` when that exists (felixefelip/rbs_infer#129).
     # `@target_class` IS the lexical scope of every body this merger walks.
+    # The class a `new` call constructs. `Klass.new` names its own class;
+    # `self.new` and a bare `new` are the same call in a class-method body,
+    # where `self` IS the class, so both construct the class being generated
+    # (felixefelip/rbs_infer#35).
+    #
+    # Nil in an instance method for the two self-spellings: there `self` is an
+    # instance, so a receiverless `new` is an ordinary method call and
+    # answering `@target_class` would invent a constructor.
+    #
+    # The bare form is what a factory written in `class << self` uses
+    # (`def for(x); ...; new(...); end`). It used to fall past this rule into
+    # the receiverless-call case below, which asks the name map for `new` —
+    # empty on a cold start, because that map's RBS half is the class's OWN
+    # previously-generated signature. The method was then left `-> untyped`
+    # for Steep, and Steep cannot answer while the class has no RBS either: it
+    # resolved `new` against `::Object` and typed the factory `Object`. Once
+    # `-> Object?` was written it was permanent, because every later pass only
+    # reconsiders members still `untyped` — so whatever the FIRST generation of
+    # a file guessed decided the type forever, and deleting the `.rbs` to
+    # regenerate made it worse rather than better.
+    def constructed_class(call_node, kind, method_type_resolver)
+      receiver = call_node.receiver
+
+      if receiver.nil? || receiver.is_a?(Prism::SelfNode)
+        @target_class if kind == :class_method
+      else
+        constant_receiver_class(receiver, method_type_resolver)
+      end
+    end
+
     def constant_receiver_class(node, method_type_resolver)
       name = RbsInfer::Analyzer.extract_constant_path(node) or return nil
       return name unless method_type_resolver
