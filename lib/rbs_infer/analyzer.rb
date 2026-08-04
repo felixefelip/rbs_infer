@@ -40,10 +40,14 @@ module RbsInfer
 
   def initialize(target_class: nil, source_files:, target_file: nil, extra_caller_sources: nil)
     @source_files = source_files
-    @source_index = RbsInfer::Project::SourceIndex.new(source_files)
-    @parse_cache = RbsInfer::Project::ParseCache.new
-    @file_index = RbsInfer::Project::FileIndex.new(source_files)
-    @caller_file_cache = RbsInfer::Project::CallerFileCache.new(@parse_cache)
+    # Built once per file list and reused across targets: none of these can see
+    # the target class, so a run over N targets was building N cold copies of
+    # the same thing (RbsInfer::Project::Corpus).
+    @corpus = RbsInfer::Project::Corpus.for(source_files)
+    @source_index = @corpus.source_index
+    @parse_cache = @corpus.parse_cache
+    @file_index = @corpus.file_index
+    @caller_file_cache = @corpus.caller_file_cache
     @target_file = target_file
     @target_class = target_class
     @extra_caller_sources = extra_caller_sources
@@ -1172,7 +1176,7 @@ module RbsInfer
   end
 
   def mixin_index
-    @mixin_index ||= RbsInfer::Project::MixinIndex.new(@source_files, parse_cache: @parse_cache)
+    @corpus.mixin_index
   end
 
   # ─── Resolver quais namespaces da classe-alvo são class (não module) ──
@@ -1235,6 +1239,7 @@ end
 require_relative "project/parse_cache"
 require_relative "project/file_index"
 require_relative "project/caller_file_cache"
+require_relative "project/corpus"
 require_relative "ast/lexical_constant_resolver"
 require_relative "ast/node_type_inferrer"
 require_relative "ast/constructor_type_inferrer"
