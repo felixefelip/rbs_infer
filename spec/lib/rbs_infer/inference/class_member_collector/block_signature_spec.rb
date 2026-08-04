@@ -48,6 +48,39 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector::BlockSignature do
     end
   end
 
+  # felixefelip/rbs_infer#174. Ruby 3.1's `&` is a block parameter with no NAME,
+  # so asking for the name to decide whether there IS a block answered no, and
+  # the signature came out with no block clause at all. Every call site passing
+  # one then reads as `Ruby::UnexpectedBlockGiven`.
+  describe "anonymous block parameter" do
+    it "declares the block a method takes as a bare `&`" do
+      expect(signature_for("def m(url, &); other(url, &); end")).to eq("?{ (*untyped) -> untyped }")
+    end
+
+    it "counts the bare `&` as a forward, so the callee can settle it" do
+      def_node = Prism.parse("def m(url, &); other(url, &); end").value.statements.body.first
+      signature = described_class.new(def_node.parameters, body: def_node.body)
+
+      expect(signature.open_forward?).to be(true)
+    end
+
+    it "still reads a guard, which no name is needed for" do
+      def_node = Prism.parse("def m(&); other(&) if block_given?; end").value.statements.body.first
+      signature = described_class.new(def_node.parameters, body: def_node.body)
+
+      expect(signature.call).to eq("?{ (*untyped) -> untyped }")
+      expect(signature.open_forward?).to be(false)
+    end
+
+    it "is required when the body yields, anonymous parameter or not" do
+      expect(signature_for("def m(&); yield 1; end")).to eq("{ (untyped) -> untyped }")
+    end
+
+    it "keeps saying nothing about a method with no block at all" do
+      expect(signature_for("def m(url); other(url); end")).to be_nil
+    end
+  end
+
   describe "arity" do
     it "takes the arity from the use site" do
       expect(signature_for("def m(&block); block.call(1, 2); end")).to eq("{ (untyped, untyped) -> untyped }")

@@ -44,6 +44,12 @@ class RbsInfer::Signatures::SteepBridge
     # `&block_param` — the method's own block on its way out. `&:symbol` is a
     # proc literal built on the spot, not this method's block, so it is not a
     # forward and never reaches the callee lookup.
+    #
+    # The anonymous forward (`other(url, &)`) is the same thing said without a
+    # name, and Parser spells it as a `block_pass` with a nil child rather than
+    # an `lvar` one. Reading only the `lvar` shape left those methods with the
+    # callee's requirement unasked — `?{ (*untyped) }` where the callee makes it
+    # `{ (String) }` (felixefelip/rbs_infer#174).
     def each_forwarded_block(typing, &block)
       walk_forwarded_blocks(typing.source.node, nil, false, &block)
     end
@@ -57,8 +63,10 @@ class RbsInfer::Signatures::SteepBridge
       when :sclass then singleton = true
       when :send, :csend
         forwarded = node.children.any? do |child|
-          child.is_a?(Parser::AST::Node) && child.type == :block_pass &&
-            child.children[0]&.type == :lvar
+          next false unless child.is_a?(Parser::AST::Node) && child.type == :block_pass
+
+          inner = child.children[0]
+          inner.nil? || inner.type == :lvar
         end
         block.call(node, method_key) if forwarded && method_key
       end

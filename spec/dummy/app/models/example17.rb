@@ -74,6 +74,24 @@ class Example17
     with_token(&block) if block
   end
 
+  # The same forward, with Ruby 3.1's ANONYMOUS block parameter. `&` declares a
+  # block and has no name, so a rule that asks for the name concluded the method
+  # takes none and left the block out of the signature entirely — after which
+  # every `forward_anonymous { … }` is `Ruby::UnexpectedBlockGiven`. Found in
+  # Fizzy, where twelve helpers are written this way
+  # (`def button_to_copy_to_clipboard(url, &)`) and thirty-two view lines failed
+  # on it (felixefelip/rbs_infer#174).
+  def forward_anonymous(&)
+    with_token(&)
+  end
+
+  # A guard needs no name either — `block_given?` asks the question for both
+  # spellings — so this stays optional where the one above is settled by the
+  # callee.
+  def forward_anonymous_guarded(&)
+    with_token(&) if block_given?
+  end
+
   def name
     "example"
   end

@@ -37,7 +37,7 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
 
     # The RBS fragment, or nil when the method takes no block at all.
     def call
-      return nil unless block_param_name || yields?
+      return nil unless block_param? || yields?
 
       "#{"?" unless required?}{ (#{block_params}) -> untyped }"
     end
@@ -65,7 +65,7 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
     # optional whatever the callee wants, and a direct call has already answered
     # the question with better evidence than a callee's declaration.
     def open_forward?
-      !block_param_name.nil? && use_sites.empty? && forwards_block? && !guards_block?
+      block_param? && use_sites.empty? && forwards_block? && !guards_block?
     end
 
     private
@@ -74,8 +74,25 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       (yields? || calls_block_param?) && !guards_block?
     end
 
+    # Whether the method declares a block parameter at all — the question that
+    # decides whether a block belongs in the signature.
+    #
+    # It used to be asked as "does it have a NAME", which Ruby 3.1's anonymous
+    # `&` answers no to: `def button_to_copy_to_clipboard(url, &)` takes a block
+    # and forwards it as a bare `&`. The signature came out with no block clause,
+    # and every `<%= button_to_copy_to_clipboard(url) do %>` then read as
+    # `Ruby::UnexpectedBlockGiven` — thirty-two view lines in Fizzy, across the
+    # twelve helpers written that way (felixefelip/rbs_infer#174).
+    def block_param?
+      @params.respond_to?(:block) && !@params.block.nil?
+    end
+
+    # The block's local-variable name, or nil when it is anonymous. Only the
+    # questions that need to FIND the block in the body (`block.call`, `if
+    # block`) go through this — an anonymous block cannot be named, so it can
+    # only be forwarded or asked about with `block_given?`.
     def block_param_name
-      return nil unless @params.respond_to?(:block) && @params.block
+      return nil unless block_param?
 
       @params.block.name&.to_s
     end
@@ -131,12 +148,17 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       end
     end
 
-    # `foo(&block)` — the block leaving this method for another one.
+    # `foo(&block)` — the block leaving this method for another one. An anonymous
+    # parameter is forwarded as a bare `&`, which Prism spells as the same
+    # `BlockArgumentNode` with no expression.
     def forwards_block?
-      name = block_param_name or return false
+      return false unless block_param?
 
+      name = block_param_name
       walk_body do |node|
-        node.is_a?(Prism::BlockArgumentNode) && reads_block?(node.expression, name)
+        next false unless node.is_a?(Prism::BlockArgumentNode)
+
+        name ? reads_block?(node.expression, name) : node.expression.nil?
       end
     end
 
