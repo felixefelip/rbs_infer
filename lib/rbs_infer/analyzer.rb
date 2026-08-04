@@ -953,7 +953,7 @@ module RbsInfer
   def find_new_calls
     positional_params = extract_init_positional_params
     target_methods = extract_target_method_params
-    analyzer = RbsInfer::Inference::CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, target_file: @target_file, init_positional_params: positional_params, target_methods: target_methods, steep_bridge: steep_bridge)
+    analyzer = RbsInfer::Inference::CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, target_file: @target_file, init_positional_params: positional_params, target_methods: target_methods, steep_bridge: steep_bridge, mixin_index: mixin_index)
     @source_index.files_referencing(@target_class).flat_map { |file| analyzer.analyze(file) }
   end
 
@@ -1134,7 +1134,7 @@ module RbsInfer
   end
 
   def method_type_resolver
-    @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache, constant_resolver: env_only_constant_resolver)
+    @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache, constant_resolver: env_only_constant_resolver, mixin_index: mixin_index)
   end
 
   def type_merger

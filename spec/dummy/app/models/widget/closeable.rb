@@ -14,4 +14,11 @@ module Widget::Closeable
   def reopen
     track_event(:reopened) if was_just_published?
   end
+
+  # felixefelip/rbs_infer#175: `self` inside a concern, handed to a constructor.
+  # `WidgetAuditor#initialize` should take `(Widget & Widget::Closeable)` — the
+  # includer, which only the mixin graph knows.
+  def audit
+    WidgetAuditor.new(self).audit
+  end
 end

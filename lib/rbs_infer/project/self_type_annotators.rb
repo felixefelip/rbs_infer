@@ -95,6 +95,20 @@ module RbsInfer::Project
       "(#{type})" if type
     end
 
+    # `{ "Card::Stallable" => "(Card & Card::Stallable)" }` for the modules a file
+    # declares — what `self` is in each of them, which is what a call site inside a
+    # concern passes when it writes `Detector.new(self)`.
+    #
+    # One place, because two of them ask: the caller-file walk and the resolver's
+    # own walks over the same files. Answering it in only one of them is how
+    # `Card::ActivitySpike::Detector#initialize` came out `untyped` while the
+    # sidecar had the answer all along (felixefelip/rbs_infer#175).
+    def instance_types(path:, module_names:, source:, mixin_index:)
+      module_names.to_h do |name|
+        [name, instance_type(path: path, module_name: name, source: source, mixin_index: mixin_index)]
+      end.compact
+    end
+
     # `mixin_index` is passed only to annotators that ask for it, so adding it
     # to the contract does not break one written against the older three
     # (felixefelip/rbs_infer#163).

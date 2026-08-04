@@ -28,9 +28,17 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     found
   end
 
+  # Test-only builder. `module_self_types:` is REQUIRED in production (a caller
+  # that forgets it types every `self` inside a concern `untyped` — see
+  # docs/engineering/required-threaded-deps.md), and hardly an example here is
+  # about that map; the ones that are pass their own.
+  def build_collector(**kwargs)
+    described_class.new(module_self_types: {}, **kwargs)
+  end
+
   def collect_usages(source, target_class:, method_return_types: {}, local_var_types: {})
     result = Prism.parse(source)
-    visitor = described_class.new(
+    visitor = build_collector(
       target_class: target_class,
       method_return_types: method_return_types,
       local_var_types: local_var_types,
@@ -61,7 +69,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     RUBY
 
     result = Prism.parse(source)
-    visitor = described_class.new(
+    visitor = build_collector(
       target_class: "Foo",
       method_return_types: {},
       local_var_types: { "session" => "Session" },
@@ -86,7 +94,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     RUBY
 
     result = Prism.parse(source)
-    visitor = described_class.new(
+    visitor = build_collector(
       target_class: "Foo",
       method_return_types: {},
       local_var_types: { "session" => "Session?" },
@@ -155,10 +163,10 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
     with_temp_files(files) do |dir, paths|
       Dir.chdir(dir) do
-        resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver)
+        resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver, mixin_index: RbsInfer::Project::MixinIndex.new(paths))
         source = File.read(paths.last)
         result = Prism.parse(source)
-        visitor = described_class.new(
+        visitor = build_collector(
           target_class: "Target",
           method_return_types: {},
           local_var_types: {},
@@ -213,7 +221,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     def collect_with_self(source, target_class:, caller_class_name:, init_positional_params:,
                           self_types_by_method: {}, module_self_types: {})
       result = Prism.parse(source)
-      visitor = described_class.new(
+      visitor = build_collector(
         target_class: target_class,
         method_return_types: {},
         local_var_types: {},
@@ -331,7 +339,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       # No enclosing class node and no caller_class_name.
       source = "Target.new(self)"
       result = Prism.parse(source)
-      visitor = described_class.new(
+      visitor = build_collector(
         target_class: "Target",
         method_return_types: {},
         local_var_types: {},
@@ -475,7 +483,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     it "matches a target call whose receiver resolves to an intersection type" do
       source = "caderneta.qtde_por_vacina(v)"
       result = Prism.parse(source)
-      visitor = described_class.new(
+      visitor = build_collector(
         target_class: "Caderneta",
         method_return_types: { "caderneta" => "Caderneta & Caderneta::Validated", "v" => "Vacina" },
         local_var_types: {},
@@ -500,7 +508,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       it "matches a target call whose receiver resolves to a #{shape} type" do
         source = "caderneta.qtde_por_vacina(v)"
         result = Prism.parse(source)
-        visitor = described_class.new(
+        visitor = build_collector(
           target_class: "Caderneta",
           method_return_types: { "caderneta" => receiver_type, "v" => "Vacina" },
           local_var_types: {},
@@ -517,7 +525,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     it "still refuses a receiver that is not the target" do
       source = "vacina.qtde_por_vacina(v)"
       result = Prism.parse(source)
-      visitor = described_class.new(
+      visitor = build_collector(
         target_class: "Caderneta",
         method_return_types: { "vacina" => "(Vacina & Vacina::Validated)?", "v" => "Vacina" },
         local_var_types: {},
@@ -535,7 +543,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     it "does not match a singleton receiver against the instance target" do
       source = "klass.qtde_por_vacina(v)"
       result = Prism.parse(source)
-      visitor = described_class.new(
+      visitor = build_collector(
         target_class: "Caderneta",
         method_return_types: { "klass" => "singleton(Caderneta)", "v" => "Vacina" },
         local_var_types: {},
@@ -586,10 +594,10 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
       with_temp_files(files) do |dir, paths|
         Dir.chdir(dir) do
-          resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver)
+          resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver, mixin_index: RbsInfer::Project::MixinIndex.new(paths))
           source = File.read(File.join(dir, "caller.rb"))
           result = Prism.parse(source)
-          visitor = described_class.new(
+          visitor = build_collector(
             target_class: "Thing",
             method_return_types: {},
             local_var_types: {},
@@ -613,7 +621,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
   describe "external attr-setter call-sites (rbs_infer#71)" do
     def collect_method_usages(source, target_class:, target_methods:, local_var_types: {})
       result = Prism.parse(source)
-      visitor = described_class.new(
+      visitor = build_collector(
         target_class: target_class,
         method_return_types: {},
         local_var_types: local_var_types,
@@ -661,7 +669,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
   describe "same-simple-name classes are not conflated (cross-class leak)" do
     def collect_method_usages(source, target_class:, target_methods:, local_var_types: {})
       result = Prism.parse(source)
-      visitor = described_class.new(
+      visitor = build_collector(
         target_class: target_class,
         method_return_types: {},
         local_var_types: local_var_types,
@@ -716,7 +724,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
   describe "ivars established by a self-call (postconditions sidecar)" do
     def collect_with_established(source, target_class:, established:)
       result = Prism.parse(source)
-      visitor = described_class.new(
+      visitor = build_collector(
         target_class: target_class,
         method_return_types: {},
         local_var_types: {},
@@ -821,7 +829,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
   describe "ivars from an argument partition" do
     def collect_with_partitions(source, target_class:, partitions:)
       result = Prism.parse(source)
-      visitor = described_class.new(
+      visitor = build_collector(
         target_class: target_class,
         method_return_types: {},
         local_var_types: {},
@@ -917,7 +925,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
   describe "a keyword hash that collapses to a positional argument" do
     def collect_calls(source, target_class:, target_methods:)
       result = Prism.parse(source)
-      visitor = described_class.new(
+      visitor = build_collector(
         target_class: target_class,
         method_return_types: {},
         local_var_types: {},

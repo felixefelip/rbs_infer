@@ -4,5 +4,6 @@ class Widget
 
     def close: () -> { action: (Symbol | String), particulars: untyped }
     def reopen: () -> ({ action: Symbol | String, particulars: untyped } | nil)
+    def audit: () -> bool
   end
 end

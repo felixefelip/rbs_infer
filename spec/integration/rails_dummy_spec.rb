@@ -887,6 +887,15 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("services/profile_formatter", target_class: "ProfileFormatter", target_file: "app/services/profile_formatter.rb")
   end
 
+  # felixefelip/rbs_infer#175. Constructed only from inside a concern, with
+  # `self` — so the parameter is whoever includes the module, which needs the
+  # mixin graph. Two of the paths that walk caller files were not given it and
+  # answered `untyped`, and those are the ones that decide an `initialize`
+  # parameter. Fizzy's `Card::ActivitySpike::Detector.new(self)` is this shape.
+  it "WidgetAuditor takes the includer's type from a concern's `self`" do
+    assert_snapshot("services/widget_auditor", target_class: "WidgetAuditor", target_file: "app/services/widget_auditor.rb")
+  end
+
   it "ApplicationJob base class matches expected RBS" do
     assert_snapshot("jobs/application_job", target_class: "ApplicationJob", target_file: "app/jobs/application_job.rb")
   end

@@ -28,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types:, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -68,6 +68,13 @@ module RbsInfer::Inference
       # INSTANCE methods see as `self`, from the self-type annotators. Keyed by
       # module, because one file can declare several and they have different
       # includers (felixefelip/rbs_infer#165).
+      #
+      # Required, not defaulted (required-threaded-deps): a caller that forgets it
+      # gets `untyped` for every `self` inside a concern, which is an answer rather
+      # than a failure. That is exactly what happened to `MethodTypeResolver`'s two
+      # walks over caller files — `Detector.new(self)` in `Card::Stallable` typed
+      # the parameter `untyped` while the caller-file walk beside it, wired with
+      # the same map, read `(Card & Card::Stallable)` (felixefelip/rbs_infer#175).
       @module_self_types = module_self_types
       # `{ "set_post" => { "@post" => "(::Post & ::Post::Validated)" } }` — ivars a
       # self-method proves populated once it has run (postconditions sidecar). Applied

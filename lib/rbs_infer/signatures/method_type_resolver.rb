@@ -15,10 +15,18 @@ module RbsInfer::Signatures
     # Required, not defaulted: a caller that forgets it silently degrades those
     # types to untyped. Callers without a project SteepBridge can still pass an
     # env-only ConstantArgTypeResolver (the RBS env is process-global).
-    def initialize(source_files, constant_resolver:, source_index: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil)
+    # mixin_index: required (felixefelip/rbs_infer#175). It is what says who
+    # includes a module, and therefore what `self` is inside one — so a call site
+    # in a concern (`Detector.new(self)`) has a type to pass. A caller that
+    # forgets it does not fail: `self` resolves to `untyped` on this path, the
+    # parameter it feeds goes untyped with it, and the class's contracts stop
+    # being inferrable. Passed in rather than built here, because building one is
+    # a full sweep of the project's files and the Analyzer already has it.
+    def initialize(source_files, constant_resolver:, mixin_index:, source_index: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil)
       @source_files = source_files
       @source_index = source_index
       @constant_resolver = constant_resolver
+      @mixin_index = mixin_index
       @parse_cache = parse_cache || RbsInfer::Project::ParseCache.new
       @file_index = file_index || RbsInfer::Project::FileIndex.new(source_files)
       @caller_file_cache = caller_file_cache || RbsInfer::Project::CallerFileCache.new(@parse_cache)
@@ -171,6 +179,16 @@ module RbsInfer::Signatures
 
     private
 
+    # What `self` is in each module the scanned file declares, so a call site
+    # inside a concern passes the host's type rather than nothing. Both walks
+    # below scan caller files exactly as the Analyzer's own walk does, and this
+    # is the piece they were missing (felixefelip/rbs_infer#175).
+    def module_self_types_for(file, entry, defined_names)
+      RbsInfer::Project::SelfTypeAnnotators.instance_types(
+        path: file, module_names: defined_names, source: entry.source, mixin_index: @mixin_index
+      )
+    end
+
     def build_init_param_types(class_name)
       @building_init_params ||= Set.new
       return {} if @building_init_params.include?(class_name)
@@ -212,6 +230,7 @@ module RbsInfer::Signatures
         end
 
         local_var_types = {}
+        defined_names = RbsInfer::Inference::NewCallCollector.collect_defined_class_names(entry.result.value)
         visitor = RbsInfer::Inference::NewCallCollector.new(
           target_class: class_name,
           method_return_types: mrt,
@@ -221,7 +240,8 @@ module RbsInfer::Signatures
           # Env-aware resolver so constant call-site args resolve to their value
           # type via the loaded RBS env, not a bare name (#46, #56).
           constant_arg_resolver: @constant_resolver,
-          defined_class_names: RbsInfer::Inference::NewCallCollector.collect_defined_class_names(entry.result.value)
+          defined_class_names: defined_names,
+          module_self_types: module_self_types_for(file, entry, defined_names)
         )
         entry.result.value.accept(visitor)
         all_usages.concat(visitor.usages)
@@ -426,6 +446,7 @@ module RbsInfer::Signatures
         end
 
         local_var_types = {}
+        defined_names = RbsInfer::Inference::NewCallCollector.collect_defined_class_names(entry.result.value)
         visitor = RbsInfer::Inference::NewCallCollector.new(
           target_class: class_name,
           method_return_types: method_return_types,
@@ -435,7 +456,8 @@ module RbsInfer::Signatures
           # Env-aware resolver so constant call-site args resolve to their value
           # type via the loaded RBS env, not a bare name (#46, #56).
           constant_arg_resolver: @constant_resolver,
-          defined_class_names: RbsInfer::Inference::NewCallCollector.collect_defined_class_names(entry.result.value)
+          defined_class_names: defined_names,
+          module_self_types: module_self_types_for(file, entry, defined_names)
         )
         entry.result.value.accept(visitor)
 
