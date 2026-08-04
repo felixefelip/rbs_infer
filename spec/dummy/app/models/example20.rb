@@ -36,7 +36,11 @@
 # boundary, `Registry.user` is still written inside the block. If `show` stops
 # being an error, the nesting is the only thing that changed.
 #
-# Until then, `show` is a type error. That is the point of the fixture.
+# It did: felixefelip/steep#132 descends however deep and gates the fact on the
+# alternative's halt rather than refusing it — which is what the paragraph above
+# hoped for, and it needed no new machinery. `show` type-checks, and the last
+# measured difference between this fixture and the method a real app writes is
+# gone (felixefelip/rbs_infer#144).
 class Example20
   class User
     attr_reader :name

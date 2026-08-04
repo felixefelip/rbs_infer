@@ -35,7 +35,11 @@
 # `halt` is public for the same reason `render` is: something outside the object
 # calls it.
 #
-# Until #126 lands, `show` is a type error. That is the point of the fixture.
+# felixefelip/steep#126 landed and `show` type-checks: the callee records the
+# calls it makes on each parameter, the caller records where it handed `self`
+# over, and together they prove a halt neither frame states alone. The
+# `__send__` obstacle above was closed separately (#160), by desugaring the
+# dynamic send in the transcription.
 class Example19
   class User
     attr_reader :name
