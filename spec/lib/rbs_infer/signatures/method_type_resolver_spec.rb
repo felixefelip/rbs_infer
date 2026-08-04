@@ -365,4 +365,37 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
       expect(resolver.resolve_all("Example")).to include("ticket" => "String")
     end
   end
+
+  # A call on a `T?` receiver runs one of TWO bodies, and the nil one is ordinary
+  # code whenever NilClass defines the method. Resolving only the base type
+  # emitted `Card::Golden#golden?: () -> true` for `goldness.present?` — Rails
+  # gives `ActiveRecord::Core#present?` the literal `true`, and the `false` from
+  # the nil branch was dropped, so Steep rejected the body it had just typed as
+  # `(true | false)`.
+  describe "#resolve on a nilable receiver" do
+    subject(:resolver) { build_resolver([], constant_resolver: fake_constant_resolver) }
+
+    it "unions the nil branch when NilClass defines the method" do
+      # `Object#nil?: () -> false` against `NilClass#nil?: () -> true`.
+      expect(resolver.resolve("String", "nil?")).to eq("false")
+      expect(resolver.resolve("String?", "nil?")).to eq("bool")
+    end
+
+    it "drops the nil branch's literal when the base's class already covers it" do
+      # `NilClass#to_s: () -> ""`, and `"" <: String` — the union is `String`.
+      expect(resolver.resolve("Integer?", "to_s")).to eq("String")
+    end
+
+    it "keeps the optimistic base answer when NilClass does not define it" do
+      # The nil branch would be a NoMethodError — the app's steep check flags the
+      # unhandled nil; there is no second return type to union in.
+      expect(resolver.resolve("String?", "upcase")).to eq("String")
+    end
+
+    it "keeps the base answer when a branch's type is receiver-relative" do
+      # `self` means a different type in each branch, and the caller resolves a
+      # returned `self` against ONE receiver, so the union isn't expressible.
+      expect(resolver.resolve("String?", "itself")).to eq("self")
+    end
+  end
 end

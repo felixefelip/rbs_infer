@@ -31,6 +31,7 @@ module RbsInfer::Signatures
       @file_index = file_index || RbsInfer::Project::FileIndex.new(source_files)
       @caller_file_cache = caller_file_cache || RbsInfer::Project::CallerFileCache.new(@parse_cache)
       @cache = {}
+      @nil_branch_cache = {}
       @building = Set.new # guard contra recursão infinita
       @rbs_type_lookup = RbsTypeLookup.new
       @rbs_definition_resolver = RbsDefinitionResolver.new
@@ -67,11 +68,25 @@ module RbsInfer::Signatures
     def resolve(class_name, method_name, block_body_type: nil)
       return nil unless class_name && class_name != "untyped"
 
-      # Nilable receiver (`User?`) → optimistic lookup on the base type,
-      # just as a human reading `user.name` knows the method belongs to
-      # User. The app's steep check still flags the unhandled nil; this
-      # is best-effort inference only (felixefelip/rbs_infer#19).
-      class_name = class_name.delete_suffix("?") if class_name.end_with?("?")
+      # Nilable receiver (`User?`): the call has TWO branches and both are real
+      # Ruby, so resolve the base type AND `NilClass`.
+      #
+      # When NilClass does not define the method, the nil branch would be a
+      # NoMethodError — the app's steep check flags it, and the optimistic
+      # base-only answer is the useful one, just as a human reading `user.name`
+      # knows the method belongs to User (felixefelip/rbs_infer#19).
+      #
+      # When it DOES define it (`present?`, `blank?`, `nil?`, `to_s`), the nil
+      # branch is ordinary code, and it usually answers the OPPOSITE constant of
+      # the base: `ActiveRecord::Core#present?: () -> true` (Rails short-circuits
+      # `Object#blank?`'s `respond_to?(:empty?)` with a literal) against
+      # `NilClass#present?: () -> false`. Dropping it emitted `-> true` for
+      # `goldness.present?` on a nilable `has_one` — a body that plainly returns
+      # false when the association is nil, which Steep then rejects with
+      # "Cannot allow method body have type `(true | false)` … declared as `true`".
+      if class_name.end_with?("?")
+        return resolve_nilable(class_name.delete_suffix("?"), method_name, block_body_type: block_body_type)
+      end
 
       # Intersection types (e.g. `(OrderImport & OrderImport::Validated)` from
       # finders that now return `Model & Model::Validated`) need to be split
@@ -105,6 +120,45 @@ module RbsInfer::Signatures
       # Fallback: source + regex-based resolution
       class_types = resolve_all(class_name)
       class_types[method_name] || class_types[method_name.delete_suffix("!").delete_suffix("?")]
+    end
+
+    # The two branches of a call on a nilable receiver, unioned. See `resolve`
+    # for why the nil branch is not optional.
+    private def resolve_nilable(base, method_name, block_body_type:)
+      base_result = resolve(base, method_name, block_body_type: block_body_type)
+      return base_result if base_result.nil? || base_result == "untyped"
+
+      nil_result = nil_branch(method_name, block_body_type)
+      return base_result if nil_result.nil? || nil_result == "untyped"
+      return base_result if base_result == nil_result
+
+      # `self` is receiver-relative, and the two branches have DIFFERENT
+      # receivers — `NilClass#tap: () -> self` is nil, the base's is the base.
+      # The caller substitutes a returned `self` against one receiver type
+      # (`TypeMerger#infer_call_return_type`), so a union spanning both is not
+      # expressible in what this method returns; keep the base's answer.
+      return base_result if self_relative?(base_result) || self_relative?(nil_result)
+
+      RbsInfer::Inference::TypeMerger.union_types([base_result, nil_result])
+    end
+
+    # `NilClass`'s own surface, memoized: every nilable receiver in the project
+    # asks the same question, and the answer never varies by call-site.
+    private def nil_branch(method_name, block_body_type)
+      key = [method_name, block_body_type]
+      return @nil_branch_cache[key] if @nil_branch_cache.key?(key)
+
+      @nil_branch_cache[key] = resolve("NilClass", method_name, block_body_type: block_body_type)
+    end
+
+    private def self_relative?(type)
+      contains_self?(RBS::Parser.parse_type(type))
+    rescue RBS::ParsingError, RBS::BaseError
+      true
+    end
+
+    private def contains_self?(rbs_type)
+      rbs_type.is_a?(RBS::Types::Bases::Self) || rbs_type.each_type.any? { |t| contains_self?(t) }
     end
 
     # Parses an intersection-type string via `RBS::Parser.parse_type` and

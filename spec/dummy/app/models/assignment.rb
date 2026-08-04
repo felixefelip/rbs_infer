@@ -20,6 +20,18 @@ class Assignment < ApplicationRecord
 
   before_validation :log_post_user_name
 
+  # A predicate over a NILABLE AR receiver — `post` is `::Post?` here, exactly
+  # the shape a `has_one` getter has. Rails short-circuits `Object#blank?`'s
+  # `respond_to?(:empty?)` with a literal, so the RBS reads
+  # `ActiveRecord::Core#present?: () -> true`; resolving only the non-nil branch
+  # emitted `-> true` for a body that plainly returns false when `post` is nil,
+  # and Steep rejected the very body it had typed as `(true | false)`.
+  # `NilClass#present?: () -> false` is the other half, and the two together are
+  # the whole of `bool`.
+  def assigned?
+    post.present?
+  end
+
   private
 
   def log_post_user_name

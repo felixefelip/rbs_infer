@@ -42,7 +42,51 @@ module RbsInfer::Inference
         seen[key] = true
         unique << type
       end
+      unique = collapse_subsumed(unique)
       unique.size == 1 ? unique.first : "(#{unique.join(" | ")})"
+    end
+
+    # Drops members another member already covers — which de-duplication can't
+    # catch, because the two are genuinely different types that happen to nest:
+    # `bool` contains both constants, `true | false` spans all of it, and a
+    # literal is a subtype of its own class, so `String | ""` IS `String`.
+    #
+    # All three shapes come from a call on a nilable receiver, whose two branches
+    # answer with opposite constants: `ActiveRecord::Core#present?: () -> true`
+    # against `NilClass#present?: () -> false`, `Object#present?: () -> bool`
+    # against that same `false`, `Integer#to_s: () -> String` against
+    # `NilClass#to_s: () -> ""`. Left alone they'd emit a union where the plain
+    # type is both shorter and exactly as precise.
+    def self.collapse_subsumed(members)
+      return members if members.size < 2
+
+      keys = members.to_h { |m| [m, canonical_key(m)] }
+
+      if keys.value?("bool")
+        members = members.reject { |m| %w[true false].include?(keys[m]) }
+      elsif keys.value?("true") && keys.value?("false")
+        members = members.map { |m| keys[m] == "true" ? "bool" : m }.reject { |m| keys[m] == "false" }
+      end
+
+      covered = members.map { |m| canonical_key(m) }.to_set
+      members.reject { |m| (cls = literal_class_name(m)) && covered.include?(cls) }
+    end
+
+    # The class a literal type is an instance of ("String" for `""`), or nil
+    # when the type isn't a literal. `true`/`false` are literals too, but they
+    # are handled by the `bool` rule above — TrueClass/FalseClass are not how
+    # RBS spells that union.
+    def self.literal_class_name(type)
+      parsed = RBS::Parser.parse_type(type)
+      return nil unless parsed.is_a?(RBS::Types::Literal)
+
+      case parsed.literal
+      when ::String then "String"
+      when ::Symbol then "Symbol"
+      when ::Integer then "Integer"
+      end
+    rescue RBS::ParsingError, RBS::BaseError
+      nil
     end
 
     # The identity of a type for dedup purposes, so two SPELLINGS of one type collapse.
