@@ -26,12 +26,14 @@
 #   2. `with_token`  — answers with the block or halts, so the fact is gated on
 #      the halt (stage 2b).
 #   3. `from_token`  — the call site: a truthy answer means the block ran and
-#      answered truthy, so what the BLOCK established holds. This is stage 3,
-#      and it is the one that does not exist yet.
+#      answered truthy, so what the BLOCK established holds. This is stage 3.
 #   4. `show`        — dereferences in another method, past the halt check, so
 #      the fact has to survive as an entry fact.
 #
-# Until 3 lands, `show` is a type error. That is the point of the fixture.
+# 3 was the one that did not exist when this was written; felixefelip/steep#125
+# built it and `show` type-checks. The fixture stays as the regression test for
+# all four links at once — a fact crossing a block boundary, gated on a halt,
+# and surviving into another method.
 class Example18
   class User
     attr_reader :name

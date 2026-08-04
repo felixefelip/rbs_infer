@@ -2,7 +2,6 @@ app/models/concerns/test/filtrable.rb:16:13: [error] Type `(::Post & ::Test::Fil
 app/models/concerns/test/filtrable.rb:16:4: [error] Type `(::Post & ::Test::Filtrable)` does not have method `asdasd`
 app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not have method `name`
 app/models/example15.rb:25:25: [error] Type `(::Example15::User | nil)` does not have method `name`
-app/models/example20.rb:67:25: [error] Type `(::Example20::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
 app/models/example21.rb:96:29: [error] Type `(::Example21::Ticket | nil)` does not have method `holder`
 app/models/example3.rb:122:11: [error] Type `(::Example3::User | nil)` does not have method `name`
