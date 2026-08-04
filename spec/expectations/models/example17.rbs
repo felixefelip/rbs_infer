@@ -7,6 +7,8 @@ class Example17
   def forward_required: () { (String) -> untyped } -> String
   def forward_optional: () ?{ (*untyped) -> untyped } -> untyped
   def forward_guarded: () ?{ (*untyped) -> untyped } -> String?
+  def forward_anonymous: () { (String) -> untyped } -> String
+  def forward_anonymous_guarded: () ?{ (*untyped) -> untyped } -> String?
   def name: () -> String
   def run: () -> String
 end
