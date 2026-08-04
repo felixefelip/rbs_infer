@@ -771,9 +771,21 @@ postconditions:
     may_write:
     - "@name"
 - class: Example20
+  method: authenticate
+  conditional_const_returns:
+    Example20::Registry.user:
+      gate_ivar: "@halted"
+      type: "::Example20::User"
+- class: Example20
   method: fetch_token
   when_true:
     block_truthy: true
+- class: Example20
+  method: from_token
+  conditional_const_returns:
+    Example20::Registry.user:
+      gate_ivar: "@halted"
+      type: "::Example20::User"
 - class: Example20
   method: halt
   unconditional:
@@ -1799,6 +1811,14 @@ method_entry_facts:
   method: user
   consts:
     Example19::Registry.user: "::Example19::User"
+- class: Example20
+  method: show
+  consts:
+    Example20::Registry.user: "::Example20::User"
+- class: Example20::Registry
+  method: user
+  consts:
+    Example20::Registry.user: "::Example20::User"
 - class: Example4
   method: run_foo_name
   consts:
