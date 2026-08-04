@@ -85,6 +85,12 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/post_tag", target_class: "PostTag", target_file: "app/models/post_tag.rb")
   end
 
+  # `assigned?` is the nilable-receiver predicate: `post` is `::Post?`, and the
+  # nil branch of `present?` is what the resolver used to drop.
+  it "Assignment model matches expected RBS" do
+    assert_snapshot("models/assignment", target_class: "Assignment", target_file: "app/models/assignment.rb")
+  end
+
   it "Current (CurrentAttributes) matches expected RBS" do
     assert_snapshot("models/current", target_class: "Current", target_file: "app/models/current.rb")
   end

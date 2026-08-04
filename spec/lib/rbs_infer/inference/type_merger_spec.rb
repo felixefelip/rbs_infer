@@ -70,6 +70,31 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
       expect(described_class.union_types(["User & ::User::Validated", "(::User & ::User::Validated)"]))
         .to eq("User & ::User::Validated")
     end
+
+    # The two branches of a call on a nilable receiver answer with opposite
+    # constants (`Model#present?: () -> true` / `NilClass#present?: () -> false`),
+    # so the union that spans them is the whole of `bool` and should say so.
+    it "collapses the two boolean constants into bool" do
+      expect(described_class.union_types(["true", "false"])).to eq("bool")
+    end
+
+    it "drops a boolean constant bool already covers" do
+      expect(described_class.union_types(["bool", "false"])).to eq("bool")
+    end
+
+    it "keeps nil alongside the collapsed bool" do
+      expect(described_class.union_types(["true", "false", "nil"])).to eq("(bool | nil)")
+    end
+
+    # `NilClass#to_s: () -> ""` against any other branch's `String`.
+    it "drops a literal its own class already covers" do
+      expect(described_class.union_types(["String", '""'])).to eq("String")
+      expect(described_class.union_types([":a", "Symbol"])).to eq("Symbol")
+    end
+
+    it "keeps a literal whose class is not in the union" do
+      expect(described_class.union_types(['""', "Symbol"])).to eq('("" | Symbol)')
+    end
   end
 
   describe "#resolve_method_return_types_from_attrs" do
