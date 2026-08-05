@@ -28,6 +28,12 @@ class User < ApplicationRecord
     active
   end
 
+  # The Fizzy shape of felixefelip/rbs_infer#185: a model class method called on
+  # a has_many collection proxy (`Current.user.filters.from_params …`).
+  def known_post_tag?(name)
+    posts.known_tag?(name)
+  end
+
   def posts_count
     posts.count
   end

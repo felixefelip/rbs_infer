@@ -50,7 +50,7 @@ module RbsInfer
             # Returns [FileEntry], or [] when nothing qualifies (no model has a
             # `before_validation` callback nor a has_many to a known model).
             def build
-              class_reopens + proxy_reopens
+              class_reopens + proxy_reopens + relation_method_reopens
             end
 
             private
@@ -233,6 +233,73 @@ module RbsInfer
               end
 
               file(["class #{ns}::ActiveRecord_Associations_CollectionProxy", *body, "end"])
+            end
+
+            # --- relation class-method reopens --------------------------------
+
+            # Active Record delegates a model's public CLASS methods to its
+            # relations and collection proxies: `Relation#method_missing`
+            # (activerecord's `relation/delegation.rb`) compiles
+            # `def x(...) = scoping { model.x(...) }` into the per-model
+            # `GeneratedRelationMethods` module the first time such a call is
+            # made. Nothing emitted that statically — rbs_rails writes only the
+            # `scope`/`enum` macros into that module (it reflects at runtime and
+            # has no type for a hand-written `def self.x`), and rbs_infer typed
+            # the method on the class SINGLETON alone — so
+            # `user.filters.from_params(…)` was a NoMethodError on the proxy
+            # (felixefelip/rbs_infer#185).
+            #
+            # `<Model>::GeneratedRelationMethods` is the one place all of them
+            # see: it is the constant Active Record itself const_sets, and
+            # rbs_rails already includes it into `ActiveRecord_Relation` AND into
+            # the collection proxy every owner-specific proxy descends from. One
+            # reopen therefore reaches the relation, the per-element proxy and
+            # every per-owner proxy — and keeps a SINGLE call site per delegated
+            # method, which repeating the body per proxy would fork (the reason
+            # `create!` delegates to `create` above).
+            #
+            # Emitted as plain Ruby rather than as a copy of the model's
+            # signature, so the return type comes from the pipeline and each
+            # parameter is inferred from the real call sites.
+            def relation_method_reopens
+              @models.filter_map do |model|
+                next unless active_record?(model)
+
+                methods = model.delegatable_singleton_methods
+                modules = model.class_methods_modules
+                next if methods.empty? && modules.empty?
+
+                FileEntry.new(
+                  filename: "#{file_name(model.class_name)}_relation_methods.rb",
+                  source: relation_methods_source(model.class_name, methods, modules)
+                )
+              end
+            end
+
+            def relation_methods_source(class_name, methods, modules)
+              body = modules.map { |mod| "  include #{mod}" }
+              methods.each do |method|
+                body << "" unless body.empty?
+                params = method.params.empty? ? nil : method.params
+                call = method.args.empty? ? "#{class_name}.#{method.name}" : "#{class_name}.#{method.name}(#{method.args})"
+                body.concat(method_lines(method.name, params) { [call] })
+              end
+
+              file(["module #{class_name}::GeneratedRelationMethods", *body, "end"])
+            end
+
+            # `GeneratedRelationMethods` is an Active Record concept: it exists
+            # only for a model, so a plain class under `app/models` (a service
+            # object, a `CurrentAttributes` subclass) must not get one. The
+            # superclass chain — resolved through the scanned classes, so an STI
+            # child counts through its parent — is what says which is which.
+            def active_record?(model, seen = Set.new)
+              parent = model.superclass
+              return false unless parent && seen.add?(model.class_name)
+              return true if parent.delete_prefix("::") == "ActiveRecord::Base"
+
+              found = resolve_constant(parent, model.class_name)
+              found ? active_record?(found, seen) : false
             end
 
             # NOTE: the synthetic `run_before_validation_callbacks` is defined in

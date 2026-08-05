@@ -569,6 +569,200 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
     end
   end
 
+  # Active Record delegates a model's public class methods to its relations and
+  # collection proxies (`Relation#method_missing` compiles them into
+  # `<Model>::GeneratedRelationMethods`), and nothing emitted that statically —
+  # `user.filters.from_params(…)` was a NoMethodError on the proxy
+  # (felixefelip/rbs_infer#185).
+  describe "relation reopen (class-method delegation)" do
+    APP_RECORD = <<~RUBY
+      class ApplicationRecord < ActiveRecord::Base
+      end
+    RUBY
+
+    def relation_methods_for(files)
+      in_app({ "app/models/application_record.rb" => APP_RECORD }.merge(files)) do |dir|
+        yield described_class.new(app_dir: dir).build
+      end
+    end
+
+    it "delegates a `class << self` method to the model" do
+      model = <<~RUBY
+        class Filter < ApplicationRecord
+          class << self
+            def from_params(params)
+              find_by_params(params)
+            end
+          end
+        end
+      RUBY
+
+      relation_methods_for("app/models/filter.rb" => model) do |files|
+        source = source_of(files, "filter_relation_methods.rb")
+
+        expect(source).to include("module Filter::GeneratedRelationMethods\n")
+        expect(source).to match(/def from_params\(params\)\n\s*Filter\.from_params\(params\)\n\s*end/)
+        expect(Prism.parse(source).success?).to be(true)
+      end
+    end
+
+    it "keeps the written parameters, so the call sites still type each one" do
+      model = <<~RUBY
+        class Filter < ApplicationRecord
+          def self.remember(attrs, limit = 5, *rest, touch: true, **opts, &blk)
+          end
+        end
+      RUBY
+
+      relation_methods_for("app/models/filter.rb" => model) do |files|
+        expect(source_of(files, "filter_relation_methods.rb")).to include(
+          "  def remember(attrs, limit = 5, *rest, touch: true, **opts, &blk)\n" \
+          "    Filter.remember(attrs, limit, *rest, touch: touch, **opts, &blk)\n"
+        )
+      end
+    end
+
+    # A default is copied verbatim into a module whose lexical scope is NOT the
+    # model's, so a constant written there would not resolve; the anonymous list
+    # keeps the arity without naming anything.
+    it "falls back to anonymous parameters when a default names a constant" do
+      model = <<~RUBY
+        class Filter < ApplicationRecord
+          def self.paged(size = PER_PAGE)
+          end
+        end
+      RUBY
+
+      relation_methods_for("app/models/filter.rb" => model) do |files|
+        expect(source_of(files, "filter_relation_methods.rb")).to include(
+          "  def paged(*, **, &)\n    Filter.paged(*, **, &)\n"
+        )
+      end
+    end
+
+    # Rails delegates only PUBLIC class methods (`method_missing` guards on
+    # `model.respond_to?`).
+    it "skips private class methods" do
+      model = <<~RUBY
+        class Filter < ApplicationRecord
+          def self.kept; end
+
+          class << self
+            private
+              def hidden; end
+          end
+
+          private_class_method def self.also_hidden; end
+
+          def self.hidden_by_symbol; end
+          private_class_method :hidden_by_symbol
+        end
+      RUBY
+
+      relation_methods_for("app/models/filter.rb" => model) do |files|
+        source = source_of(files, "filter_relation_methods.rb")
+
+        expect(source).to include("def kept")
+        expect(source).not_to include("hidden")
+      end
+    end
+
+    # rbs_rails already writes the scopes into this very module, and a duplicate
+    # definition in one module poisons the whole RBS environment.
+    it "leaves a name rbs_rails already emits as a scope alone" do
+      model = <<~RUBY
+        class Filter < ApplicationRecord
+          scope :recent, -> { order(created_at: :desc) }
+
+          def self.recent; end
+          def self.oldest; end
+        end
+      RUBY
+
+      relation_methods_for("app/models/filter.rb" => model) do |files|
+        source = source_of(files, "filter_relation_methods.rb")
+
+        expect(source).to include("def oldest")
+        expect(source).not_to include("def recent")
+      end
+    end
+
+    # A concern's class methods are INCLUDED rather than delegated: the includer's
+    # own RBS never re-declares them (nothing emits the `extend` that
+    # ActiveSupport::Concern performs), so `Filter.find_by_params` would not
+    # resolve — but `Filter::Params::ClassMethods` already carries the signatures.
+    it "includes a concern's ClassMethods module, both spellings" do
+      block_form = <<~RUBY
+        module Filter::Params
+          extend ActiveSupport::Concern
+          class_methods do
+            def find_by_params(params); end
+          end
+        end
+      RUBY
+      module_form = <<~RUBY
+        module Filter::Sorting
+          extend ActiveSupport::Concern
+          module ClassMethods
+            def sorted_by(key); end
+          end
+        end
+      RUBY
+      model = <<~RUBY
+        class Filter < ApplicationRecord
+          include Filter::Params
+          include Filter::Sorting
+        end
+      RUBY
+
+      relation_methods_for(
+        "app/models/filter.rb" => model,
+        "app/models/filter/params.rb" => block_form,
+        "app/models/filter/sorting.rb" => module_form
+      ) do |files|
+        source = source_of(files, "filter_relation_methods.rb")
+
+        expect(source).to include("  include Filter::Params::ClassMethods\n")
+        expect(source).to include("  include Filter::Sorting::ClassMethods\n")
+        expect(source).not_to include("def find_by_params")
+      end
+    end
+
+    # `GeneratedRelationMethods` is an Active Record concept — a plain class under
+    # `app/models` has no relation to delegate to.
+    it "emits nothing for a class that is not a model" do
+      service = <<~RUBY
+        class PlainService
+          def self.call(x); end
+        end
+      RUBY
+
+      relation_methods_for("app/models/plain_service.rb" => service) do |files|
+        expect(files.map(&:filename)).not_to include("plain_service_relation_methods.rb")
+      end
+    end
+
+    # An STI child reaches ActiveRecord::Base through its parent, not directly.
+    it "follows the superclass chain to decide a class is a model" do
+      parent = <<~RUBY
+        class Filter < ApplicationRecord
+        end
+      RUBY
+      child = <<~RUBY
+        class SavedFilter < Filter
+          def self.from_params(params); end
+        end
+      RUBY
+
+      relation_methods_for(
+        "app/models/filter.rb" => parent, "app/models/saved_filter.rb" => child
+      ) do |files|
+        expect(source_of(files, "saved_filter_relation_methods.rb"))
+          .to include("module SavedFilter::GeneratedRelationMethods\n")
+      end
+    end
+  end
+
   # Snapshot of the generated sidecar against the real dummy app, so a change in
   # the emitted pseudo-code shows up as a reviewable diff.
   #   Regenerate with: UPDATE_EXPECTATIONS=1 bundle exec rspec <this file>

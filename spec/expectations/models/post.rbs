@@ -15,6 +15,9 @@ class Post < ApplicationRecord
   def add_comment: (author: untyped, body: untyped) -> Comment
   def was_priority_high: () -> bool?
   def publish_in_transaction: () -> self
+  def popular_tags: (?Integer limit) -> untyped
+  def tag_limit: () -> Integer
+  def sibling_tag_names: () -> Array[String]
   def iterate_tags: () -> Post_Tag::ActiveRecord_Associations_CollectionProxy
   def archive: () -> Post_Comment::ActiveRecord_Associations_CollectionProxy
   def archive_via_singleton: () -> Post_Comment::ActiveRecord_Associations_CollectionProxy

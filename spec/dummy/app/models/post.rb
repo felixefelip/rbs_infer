@@ -85,6 +85,24 @@ class Post < ApplicationRecord
     end
   end
 
+  # Two halves of the same rule (felixefelip/rbs_infer#185): Active Record
+  # delegates a model's public CLASS methods to its relations and collection
+  # proxies (`Relation#method_missing` compiles them into
+  # `<Model>::GeneratedRelationMethods`), so `popular` — a `class << self` on Tag
+  # — is a real call on the has_many proxy, and `default_tag_names` — a
+  # `class_methods do` in Post::Taggable — is one on a scope's relation.
+  def popular_tags(limit = 5)
+    tags.popular(limit)
+  end
+
+  def tag_limit
+    tags.default_limit
+  end
+
+  def sibling_tag_names
+    Post.recently_tagged.default_tag_names
+  end
+
   def iterate_tags
     my_tags = tags.order(:name)
     my_tags.each do |tag|

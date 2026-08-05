@@ -7,6 +7,7 @@ class User < ApplicationRecord
 
   def full_name: () -> String
   def active?: () -> bool?
+  def known_post_tag?: (untyped name) -> bool
   def posts_count: () -> Integer
   def recent_posts: (?Integer limit) -> User_Post::ActiveRecord_Associations_CollectionProxy
   def posts_titled_like: ((Post & Post::Validated) post) -> Integer
