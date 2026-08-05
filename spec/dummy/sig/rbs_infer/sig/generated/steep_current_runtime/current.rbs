@@ -12,7 +12,7 @@ class Current
 
   module GeneratedAttributeMethods
     def user: () -> ((User & User::Validated) | User)?
-    def user=: (((User & User::Validated)? | User?) value) -> ((User & User::Validated) | User)?
+    def user=: (((User & User::Validated) | User?) value) -> ((User & User::Validated) | User)?
     def author_name: () -> String?
     def author_name=: (String? value) -> String?
     def account: () -> (Account & Account::Validated)?
@@ -24,7 +24,7 @@ class Current
   include GeneratedAttributeMethods
 
   def self.user: () -> ((User & User::Validated) | User)?
-  def self.user=: (((User & User::Validated)? | User?) value) -> ((User & User::Validated)? | User?)
+  def self.user=: (((User & User::Validated) | User?) value) -> ((User & User::Validated) | User?)
   def self.author_name: () -> String?
   def self.author_name=: (String? value) -> String?
   def self.account: () -> (Account & Account::Validated)?

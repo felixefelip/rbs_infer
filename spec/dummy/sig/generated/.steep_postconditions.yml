@@ -1933,6 +1933,16 @@ method_entry_facts:
     Current.user: "(::User & ::User::Validated)"
     Current.viewer_name: "::String"
 - class: PostsController
+  method: build_filtering_for_current_user
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "((::User & ::User::Validated) | ::User)"
+    Current.viewer_name: "::String"
+  ivars:
+    "@post": "(::Post & ::Post::Validated)"
+- class: PostsController
   method: create
   self_methods:
     current_user: "(::User & ::User::Validated)"

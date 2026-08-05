@@ -614,8 +614,7 @@ module RbsInfer::Inference
           key = extract_symbol_key(elem.key)
           next unless key
 
-          value_type = resolve_value_type(elem.value)
-          args[key] = value_type
+          args[key] = argument_type(elem.value)
         end
       end
 
@@ -633,7 +632,7 @@ module RbsInfer::Inference
         next if arg.is_a?(Prism::KeywordHashNode)
 
         param_name = @init_positional_params[index]
-        args[param_name] = resolve_value_type(arg)
+        args[param_name] = argument_type(arg)
         index += 1
       end
 
@@ -867,14 +866,35 @@ module RbsInfer::Inference
     # argument came out `untyped`, the Analyzer drops `untyped` usages, and the
     # attribute stayed untyped though Steep types that expression `String?`.
     #
-    # Only a fallback: the structural answer wins when it has one, since it
+    # Mostly a fallback: the structural answer wins when it has one, since it
     # carries the naming conventions (a class name for `Klass.new`, a record for
     # a hash literal) that a checker type does not.
+    #
+    # The exception is nilability. The structural path resolves a call through
+    # its DECLARATION — `Current.user` is `(User & User::Validated)?` because
+    # that is what the signature says. A declaration is what holds where flow
+    # can't be followed; at a position the checker has already proven non-nil,
+    # its answer is the better one, and taking the declaration there hands the
+    # callee's parameter a `nil` no call site can pass
+    # (felixefelip/rbs_infer#186).
     def argument_type(arg)
       resolved = resolve_value_type(arg)
+      checker = expression_type(arg)
+
+      return checker if narrowed_from?(resolved, checker)
       return resolved unless resolved.nil? || resolved == "untyped"
 
-      expression_type(arg) || resolved
+      checker || resolved
+    end
+
+    # Whether the two answers differ ONLY by nilability, with the checker on the
+    # non-nil side. Deliberately not a general subtype test: this is the one
+    # case where the checker is strictly better informed than the declaration,
+    # and every other disagreement leaves the structural answer in charge.
+    def narrowed_from?(declared, checked)
+      return false unless declared && checked
+
+      declared == RbsInfer::Signatures::RbsParserUtil.nilablize(checked)
     end
 
     def expression_type(node)

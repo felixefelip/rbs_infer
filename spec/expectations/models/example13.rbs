@@ -7,7 +7,7 @@ class Example13
     self.@registry_instance: Registry?
 
     module GeneratedAttributes
-      attr_accessor user: (Example13Viewer? | nil)?
+      attr_accessor user: (Example13Viewer | nil)?
       attr_accessor tenant: (Example13Tenant | nil)?
       attr_writer registry_instance: untyped
     end
@@ -15,8 +15,8 @@ class Example13
     include GeneratedAttributes
 
     def self.registry_instance: () -> Example13::Registry
-    def self.user: () -> (Example13Viewer? | nil)?
-    def self.user=: ((Example13Viewer? | nil) value) -> (Example13Viewer? | nil)
+    def self.user: () -> (Example13Viewer | nil)?
+    def self.user=: ((Example13Viewer | nil) value) -> (Example13Viewer | nil)
     def self.tenant: () -> (Example13Tenant | nil)?
     def self.tenant=: ((Example13Tenant | nil) value) -> (Example13Tenant | nil)
   end

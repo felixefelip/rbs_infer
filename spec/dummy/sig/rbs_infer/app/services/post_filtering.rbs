@@ -1,10 +1,14 @@
 class PostFiltering
-  attr_reader user: User?
+  attr_reader user: (User & User::Validated | User)
   attr_reader post: Post
   attr_reader expanded: bool
 
-  def initialize: (User? user, Post post, ?expanded: bool) -> void
+  def initialize: ((User & User::Validated | User) user, Post post, ?expanded: bool) -> void
   def expanded?: () -> bool
   def title: () -> String?
   def author_name: () -> String?
+
+  class AfterInitialize
+    attr_reader user: (User & User::Validated) | User
+  end
 end
