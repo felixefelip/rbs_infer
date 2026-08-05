@@ -43,9 +43,7 @@ class PostsController < ApplicationController
   def publish
     # Assignment call-site that types `Current.user` (rbs_infer#19)
     Current.user = @post.user
-    # Call-site that types the one-line `@user, @post, @expanded = ...` in
-    # PostFiltering#initialize (rbs_infer#183)
-    PostFiltering.new(@post.user, @post, expanded: true)
+    build_filtering_for_current_user
     publisher = PostPublisher.new(@post)
     if publisher.call
       redirect_to @post, notice: "Post published."
@@ -66,5 +64,17 @@ class PostsController < ApplicationController
 
   def post_params
     params.require(:post).permit(:title, :body, :pinned)
+  end
+
+  # The call-site that types `PostFiltering#initialize` — its one-line
+  # `@user, @post, @expanded = ...` (felixefelip/rbs_infer#183) and, for the
+  # `user` parameter, #186: `Current.user` is DECLARED nilable and
+  # the guard proves it non-nil for the rest of the body. Taking the declaration
+  # here handed the parameter a `nil` no call site can pass. Fizzy's
+  # `FilterScoped` is this shape.
+  def build_filtering_for_current_user
+    return unless Current.user
+
+    PostFiltering.new(Current.user, @post, expanded: false)
   end
 end
