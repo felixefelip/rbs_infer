@@ -526,5 +526,69 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         expect(user).not_to have_key("ran")
       end
     end
+
+    # felixefelip/rbs_infer#183 — em whitequark os alvos de um `masgn` são
+    # `:ivasgn` sem RHS, então a escrita não contribuía tipo nenhum.
+    context "com atribuição múltipla (`@a, @b = x, y`)" do
+      it "tipa cada ivar como a forma uma-por-linha tiparia" do
+        code = <<~RUBY
+          class Foo
+            def initialize
+              @name, @size = "hello", 3
+            end
+          end
+        RUBY
+
+        result = bridge.ivar_write_types(code, target_class: "Foo")
+        expect(result["name"]).to eq("String")
+        expect(result["size"]).to eq("Integer")
+      end
+
+      it "conta como inicialização definida, sem `| nil`" do
+        code = <<~RUBY
+          class Foo
+            def initialize
+              @name, @size = "hello", 3
+            end
+
+            def rename
+              @name = "other"
+            end
+          end
+        RUBY
+
+        result = bridge.ivar_write_types(code, target_class: "Foo")
+        expect(result["name"]).to eq("String")
+      end
+
+      it "não inventa tipo quando o valor único é desestruturado em runtime" do
+        code = <<~RUBY
+          class Foo
+            def initialize(pair)
+              @a, @b = pair
+            end
+          end
+        RUBY
+
+        result = bridge.ivar_write_types(code, target_class: "Foo")
+        expect(result).not_to have_key("a")
+        expect(result).not_to have_key("b")
+      end
+    end
+  end
+
+  describe "#ivar_write_types_per_method com atribuição múltipla" do
+    it "atribui cada ivar ao método que a escreveu" do
+      code = <<~RUBY
+        class Foo
+          def load
+            @name, @size = "hello", 3
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types_per_method(code, target_class: "Foo")
+      expect(result["load"]).to eq({ "name" => "String", "size" => "Integer" })
+    end
   end
 end

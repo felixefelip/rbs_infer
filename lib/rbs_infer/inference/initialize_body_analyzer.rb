@@ -52,6 +52,17 @@ module RbsInfer::Inference
       super
     end
 
+    # `@user, @filter = user, filter` assigns the same params the one-per-line
+    # form does; Prism just shapes it as one node (felixefelip/rbs_infer#183).
+    def visit_multi_write_node(node)
+      if @in_initialize
+        RbsInfer::AST::MultiWriteDecomposer.ivar_name_pairs(node).each do |attr_name, value|
+          @self_assignments[attr_name] ||= resolve_assignment_value(value)
+        end
+      end
+      super
+    end
+
     private
 
     def extract_param_names(params)

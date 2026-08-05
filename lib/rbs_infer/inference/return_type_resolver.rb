@@ -434,6 +434,15 @@ module RbsInfer::Inference
           result << name
         end
         node.compact_child_nodes.each { |c| collect_body_level_ivar_writes(c, known_return_types, type_sets, attr_names, result) }
+      when Prism::MultiWriteNode
+        RbsInfer::AST::MultiWriteDecomposer.ivar_name_pairs(node).each do |name, value|
+          next if attr_names.include?(name)
+
+          inferred = basic_value_type(value, known_return_types)
+          type_sets[name].add(inferred) if inferred
+          result << name
+        end
+        node.compact_child_nodes.each { |c| collect_body_level_ivar_writes(c, known_return_types, type_sets, attr_names, result) }
       else
         node.compact_child_nodes.each { |c| collect_body_level_ivar_writes(c, known_return_types, type_sets, attr_names, result) }
       end
@@ -542,6 +551,17 @@ module RbsInfer::Inference
             type_sets[name].add(inferred) if inferred
           end
         end
+
+        # `@a, @b = x, y` — same contribution as the one-per-line form
+        # (felixefelip/rbs_infer#183).
+        RbsInfer::AST::MultiWriteDecomposer.ivar_name_pairs(current).each do |name, value|
+          next if attr_names.include?(name)
+
+          inferred = basic_value_type(value, known_return_types)
+          inferred = param_types[value.name.to_s] if inferred.nil? && value.is_a?(Prism::LocalVariableReadNode)
+          type_sets[name].add(inferred) if inferred
+        end
+
         queue.concat(current.compact_child_nodes)
       end
     end
@@ -566,6 +586,13 @@ module RbsInfer::Inference
       when Prism::InstanceVariableWriteNode
         if in_init || in_class_body
           result << node.name.to_s.sub(/\A@/, "")
+        end
+        walk_prism_init_targets(node.value, in_init: in_init, in_class_body: in_class_body, result: result) if node.value
+      when Prism::MultiWriteNode
+        # `@a, @b = x, y` initializes both, whatever the values look like — so
+        # this uses every ivar target, not just the pairable ones.
+        if in_init || in_class_body
+          result.merge(RbsInfer::AST::MultiWriteDecomposer.ivar_target_names(node))
         end
         walk_prism_init_targets(node.value, in_init: in_init, in_class_body: in_class_body, result: result) if node.value
       when Prism::CallNode

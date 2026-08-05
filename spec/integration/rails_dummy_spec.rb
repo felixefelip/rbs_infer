@@ -902,6 +902,15 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("services/widget_auditor", target_class: "WidgetAuditor", target_file: "app/services/widget_auditor.rb")
   end
 
+  # felixefelip/rbs_infer#183. `initialize` assigns every ivar on one line
+  # (`@user, @post, @expanded = user, post, expanded`), which Prism shapes as a
+  # `MultiWriteNode` — the ivar → param link, and the definite-initialization
+  # rule behind it, both have to read that shape or the attrs come out
+  # `untyped`/`T?` while the params are fully typed. Fizzy's `User::Filtering`.
+  it "PostFiltering types attrs assigned by a single multiple assignment" do
+    assert_snapshot("services/post_filtering", target_class: "PostFiltering", target_file: "app/services/post_filtering.rb")
+  end
+
   it "ApplicationJob base class matches expected RBS" do
     assert_snapshot("jobs/application_job", target_class: "ApplicationJob", target_file: "app/jobs/application_job.rb")
   end

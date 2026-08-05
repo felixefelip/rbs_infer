@@ -77,11 +77,16 @@ module RbsInfer::Inference
     end
 
     def visit_instance_variable_write_node(node)
+      record_ivar_write(node.name.to_s.sub(/\A@/, ""), node.value) if @in_method && in_target_class?
+      super
+    end
+
+    # `@a, @b = x, y` writes the same attrs the one-per-line form does
+    # (felixefelip/rbs_infer#183).
+    def visit_multi_write_node(node)
       if @in_method && in_target_class?
-        name = node.name.to_s.sub(/\A@/, "")
-        if @attr_names.include?(name) && !@attr_types[name]
-          type = infer_type_from_node(node.value)
-          @attr_types[name] = type if type
+        RbsInfer::AST::MultiWriteDecomposer.ivar_name_pairs(node).each do |name, value|
+          record_ivar_write(name, value)
         end
       end
       super
@@ -93,6 +98,13 @@ module RbsInfer::Inference
     # concat: arg é um array, elementos estão dentro
 
     private
+
+    def record_ivar_write(name, value)
+      return unless @attr_names.include?(name) && !@attr_types[name]
+
+      type = infer_type_from_node(value)
+      @attr_types[name] = type if type
+    end
 
     # Pushes the class/module name (`Foo`, `Foo::Bar` for a compact path)
     # while visiting its body, so `in_target_class?` can tell whether the
