@@ -1079,6 +1079,17 @@ postconditions:
   effects:
     may_write:
     - "@post"
+- class: PostFiltering
+  method: expanded?
+  effects:
+    returns_ivar: "@expanded"
+- class: PostFiltering
+  method: initialize
+  effects:
+    may_write:
+    - "@expanded"
+    - "@post"
+    - "@user"
 - class: PostPublisher
   method: initialize
   effects:

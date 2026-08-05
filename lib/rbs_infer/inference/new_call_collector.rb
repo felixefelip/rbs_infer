@@ -340,15 +340,22 @@ module RbsInfer::Inference
     end
 
     def collect_class_ivar_types(class_node)
+      # Both `@x = Foo.new` and `@x, @y = Foo.new, Bar.new`
+      # (felixefelip/rbs_infer#183).
       ivar_writes = RbsInfer::Analyzer.find_all_nodes(class_node) do |n|
-        n.is_a?(Prism::InstanceVariableWriteNode) && n.value.is_a?(Prism::CallNode)
+        (n.is_a?(Prism::InstanceVariableWriteNode) && n.value.is_a?(Prism::CallNode)) ||
+          n.is_a?(Prism::MultiWriteNode)
+      end.flat_map do |n|
+        if n.is_a?(Prism::InstanceVariableWriteNode)
+          [[n.name.to_s.sub(/\A@/, ""), n.value]]
+        else
+          RbsInfer::AST::MultiWriteDecomposer.ivar_name_pairs(n).select { |_, value| value.is_a?(Prism::CallNode) }
+        end
       end
 
-      ivar_writes.each do |ivar|
-        var_name = ivar.name.to_s.sub(/\A@/, "")
+      ivar_writes.each do |var_name, call|
         next if @local_var_types[var_name]
 
-        call = ivar.value
         if call.name == :new && call.receiver
           class_name = RbsInfer::Analyzer.extract_constant_path(call.receiver)
           @local_var_types[var_name] = class_name if class_name
@@ -537,20 +544,28 @@ module RbsInfer::Inference
             end
           end
         elsif stmt.is_a?(Prism::InstanceVariableWriteNode)
-          var_name = stmt.name.to_s.sub(/\A@/, "")
-          if stmt.value.is_a?(Prism::CallNode)
-            if stmt.value.name == :new && stmt.value.receiver
-              class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
-              @local_var_types[var_name] = class_name if class_name
-            elsif @method_type_resolver
-              class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
-              if class_name
-                resolved = @method_type_resolver.resolve_class_method(class_name, stmt.value.name.to_s)
-                @local_var_types[var_name] = resolved.delete_suffix("?") if resolved && resolved != "untyped"
-              end
-            end
+          record_ivar_call_type(stmt.name.to_s.sub(/\A@/, ""), stmt.value)
+        elsif stmt.is_a?(Prism::MultiWriteNode)
+          # `@a, @b = Foo.new, Bar.new` (felixefelip/rbs_infer#183).
+          RbsInfer::AST::MultiWriteDecomposer.ivar_name_pairs(stmt).each do |var_name, value|
+            record_ivar_call_type(var_name, value)
           end
         end
+      end
+    end
+
+    def record_ivar_call_type(var_name, value)
+      return unless value.is_a?(Prism::CallNode)
+
+      if value.name == :new && value.receiver
+        class_name = RbsInfer::Analyzer.extract_constant_path(value.receiver)
+        @local_var_types[var_name] = class_name if class_name
+      elsif @method_type_resolver
+        class_name = RbsInfer::Analyzer.extract_constant_path(value.receiver)
+        return unless class_name
+
+        resolved = @method_type_resolver.resolve_class_method(class_name, value.name.to_s)
+        @local_var_types[var_name] = resolved.delete_suffix("?") if resolved && resolved != "untyped"
       end
     end
 

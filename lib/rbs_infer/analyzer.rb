@@ -474,13 +474,13 @@ module RbsInfer
       param_names = def_param_names(defn)
       next if param_names.empty?
 
-      self.class.find_all_nodes(defn) { |n| n.is_a?(Prism::InstanceVariableWriteNode) }.each do |write|
-        next unless write.value.is_a?(Prism::LocalVariableReadNode)
+      ivar_writes_with_values(defn).each do |ivar_name, value|
+        next unless value.is_a?(Prism::LocalVariableReadNode)
 
-        param_name = write.value.name.to_s
+        param_name = value.name.to_s
         next unless param_names.include?(param_name)
 
-        ivar_type = ivar_types[write.name.to_s.sub(/\A@/, "")]
+        ivar_type = ivar_types[ivar_name]
         next if ivar_type.nil? || ivar_type == "untyped"
 
         params = (method_param_types[defn.name.to_s] ||= {})
@@ -493,6 +493,21 @@ module RbsInfer
         elsif ivar_type == RbsInfer::Signatures::RbsParserUtil.nilablize(current)
           params[param_name] = ivar_type
         end
+      end
+    end
+  end
+
+  # `[["ivar_name", value_node], ...]` for every ivar assignment in `defn`,
+  # covering both `@x = v` and the multiple-assignment form `@x, @y = v, w`
+  # (felixefelip/rbs_infer#183).
+  def ivar_writes_with_values(defn)
+    self.class.find_all_nodes(defn) do |n|
+      n.is_a?(Prism::InstanceVariableWriteNode) || n.is_a?(Prism::MultiWriteNode)
+    end.flat_map do |node|
+      if node.is_a?(Prism::InstanceVariableWriteNode)
+        [[node.name.to_s.sub(/\A@/, ""), node.value]]
+      else
+        RbsInfer::AST::MultiWriteDecomposer.ivar_name_pairs(node)
       end
     end
   end
@@ -1241,6 +1256,7 @@ require_relative "project/file_index"
 require_relative "project/caller_file_cache"
 require_relative "project/corpus"
 require_relative "ast/lexical_constant_resolver"
+require_relative "ast/multi_write_decomposer"
 require_relative "ast/node_type_inferrer"
 require_relative "ast/constructor_type_inferrer"
 require_relative "inference/known_return_types_builder"

@@ -44,13 +44,14 @@ class RbsInfer::Signatures::SteepBridge
       # `each_typing` enumerates the whole file, so we filter it by node
       # identity against the set of writes that belong to `target_class`.
       in_scope = collect_scoped_write_node_ids(source_node, attr_writer_to_ivar, target_class)
+      masgn_values = collect_masgn_target_values(source_node)
 
       typing.each_typing do |node, type|
         next unless in_scope.include?(node.object_id)
 
         case node.type
         when :ivasgn, :or_asgn, :and_asgn
-          parts = ivar_write_name_and_rhs(node)
+          parts = ivar_write_name_and_rhs(node, masgn_values: masgn_values)
           next unless parts
 
           var_name, rhs = parts
@@ -121,6 +122,7 @@ class RbsInfer::Signatures::SteepBridge
         current_method: nil,
         namespace: [],
         target_class: target_class,
+        masgn_values: collect_masgn_target_values(source_node),
         result: per_method_sets
       )
 
@@ -357,7 +359,7 @@ class RbsInfer::Signatures::SteepBridge
     # filter logic of `ivar_write_types` for both `:ivasgn` and
     # attr_writer-style `:send`.
     def collect_ivar_writes_per_method(node, typing:, attr_writer_to_ivar:, current_method:, namespace:, target_class:,
-                                       result:)
+                                       masgn_values:, result:)
       return unless node.is_a?(::Parser::AST::Node)
 
       case node.type
@@ -368,6 +370,7 @@ class RbsInfer::Signatures::SteepBridge
                                              current_method: nil,
                                              namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
                                              target_class: target_class,
+                                             masgn_values: masgn_values,
                                              result: result) if body
       when :sclass
         # `class << self` — same lexical class, singleton scope; keep the
@@ -378,6 +381,7 @@ class RbsInfer::Signatures::SteepBridge
                                              current_method: nil,
                                              namespace: namespace,
                                              target_class: target_class,
+                                             masgn_values: masgn_values,
                                              result: result) if body
       when :def
         method_name = node.children[0].to_s
@@ -387,12 +391,13 @@ class RbsInfer::Signatures::SteepBridge
                                              current_method: method_name,
                                              namespace: namespace,
                                              target_class: target_class,
+                                             masgn_values: masgn_values,
                                              result: result) if body
       when :defs
         # Singleton `def self.X` — class-instance variable scope, not
         # relevant for the per-action narrowing this method serves.
       when :ivasgn, :or_asgn, :and_asgn
-        parts = ivar_write_name_and_rhs(node)
+        parts = ivar_write_name_and_rhs(node, masgn_values: masgn_values)
         rhs = parts&.last
         if current_method && parts && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace,
                                                                                                          target_class)
@@ -417,6 +422,7 @@ class RbsInfer::Signatures::SteepBridge
                                             current_method: current_method,
                                             namespace: namespace,
                                             target_class: target_class,
+                                            masgn_values: masgn_values,
                                             result: result) if rhs
       when :send
         receiver, method_name, *args = node.children
@@ -436,6 +442,7 @@ class RbsInfer::Signatures::SteepBridge
                                             current_method: current_method,
                                             namespace: namespace,
                                             target_class: target_class,
+                                            masgn_values: masgn_values,
                                             result: result)
         end
       when :begin
@@ -445,6 +452,7 @@ class RbsInfer::Signatures::SteepBridge
                                             current_method: current_method,
                                             namespace: namespace,
                                             target_class: target_class,
+                                            masgn_values: masgn_values,
                                             result: result)
         end
       else
@@ -454,6 +462,7 @@ class RbsInfer::Signatures::SteepBridge
                                             current_method: current_method,
                                             namespace: namespace,
                                             target_class: target_class,
+                                            masgn_values: masgn_values,
                                             result: result)
         end
       end
@@ -488,15 +497,53 @@ class RbsInfer::Signatures::SteepBridge
     # callers type them exactly like a plain write; `:op_asgn` (`+=`, `<<=`) is
     # deliberately excluded, since there the result type is the operator's, not
     # the RHS's.
-    def ivar_write_name_and_rhs(node)
+    # `masgn_values` required, not defaulted: a caller that forgets it doesn't
+    # break, it silently stops typing every multiple assignment — the
+    # silent-wrong case in docs/engineering/required-threaded-deps.md.
+    def ivar_write_name_and_rhs(node, masgn_values:)
       case node.type
       when :ivasgn
         name, rhs = node.children
+        # A multiple-assignment target is an argument-less `:ivasgn`; its value
+        # is the element of the RHS array that lands in it
+        # (felixefelip/rbs_infer#183).
+        rhs ||= masgn_values[node.object_id]
         [name.to_s.sub(/\A@/, ""), rhs] if rhs
       when :or_asgn, :and_asgn
         lhs, rhs = node.children
         [lhs.children[0].to_s.sub(/\A@/, ""), rhs] if lhs.type == :ivasgn && rhs
       end
+    end
+
+    # `{ target_ivasgn_node_id => value_node }` for every `@a, @b = x, y` in
+    # the tree. Handing back the RHS *element* (rather than reading the
+    # target's own typing) keeps `intrinsic_type_of` in play: a masgn target
+    # is subject to the same declared-ivar hint widening that
+    # `intrinsic_type_of` exists to undo, so pairing here makes the multiple
+    # assignment type exactly like the one-per-line form it stands for.
+    #
+    # Pairs only when the correspondence is positional and certain — same rule
+    # as the Prism-side `AST::MultiWriteDecomposer`.
+    def collect_masgn_target_values(node, result: {})
+      return result unless node.is_a?(::Parser::AST::Node)
+
+      if node.type == :masgn
+        mlhs, rhs = node.children
+        if mlhs.respond_to?(:type) && mlhs.type == :mlhs && rhs.respond_to?(:type) && rhs.type == :array
+          targets = mlhs.children
+          values = rhs.children
+          if targets.size == values.size &&
+             targets.none? { |t| t.respond_to?(:type) && t.type == :splat } &&
+             values.none? { |v| v.respond_to?(:type) && v.type == :splat }
+            targets.zip(values).each do |target, value|
+              result[target.object_id] = value if target.respond_to?(:type) && target.type == :ivasgn
+            end
+          end
+        end
+      end
+
+      node.children.each { |c| collect_masgn_target_values(c, result: result) }
+      result
     end
   end
 end

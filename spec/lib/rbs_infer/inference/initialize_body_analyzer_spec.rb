@@ -213,4 +213,47 @@ RSpec.describe RbsInfer::Inference::InitializeBodyAnalyzer do
     expect(visitor.self_assignments["items"][:kind]).to eq(:literal)
     expect(visitor.self_assignments["items"][:type]).to eq("Array[Integer | String]")
   end
+
+  context "com atribuição múltipla (`@a, @b = a, b`)" do
+    it "liga cada ivar ao param que cai nele" do
+      source = <<~RUBY
+        class Foo
+          def initialize(user, filter, expanded: false)
+            @user, @filter, @expanded = user, filter, expanded
+          end
+        end
+      RUBY
+
+      visitor = analyze(source)
+      expect(visitor.self_assignments["user"]).to eq({ kind: :param, name: "user" })
+      expect(visitor.self_assignments["filter"]).to eq({ kind: :param, name: "filter" })
+      expect(visitor.self_assignments["expanded"]).to eq({ kind: :param, name: "expanded" })
+    end
+
+    it "resolve cada valor pelo mesmo caminho da forma uma-por-linha" do
+      source = <<~RUBY
+        class Foo
+          def initialize(email)
+            @email, @tags = Email.new(email), ["a"]
+          end
+        end
+      RUBY
+
+      visitor = analyze(source)
+      expect(visitor.self_assignments["email"]).to eq({ kind: :constant, type: "Email" })
+      expect(visitor.self_assignments["tags"]).to eq({ kind: :literal, type: "Array[String]" })
+    end
+
+    it "não adivinha quando o valor único é desestruturado em runtime" do
+      source = <<~RUBY
+        class Foo
+          def initialize(pair)
+            @a, @b = pair
+          end
+        end
+      RUBY
+
+      expect(analyze(source).self_assignments).to be_empty
+    end
+  end
 end
