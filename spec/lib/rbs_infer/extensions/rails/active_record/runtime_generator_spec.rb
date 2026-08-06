@@ -569,6 +569,235 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
     end
   end
 
+  # Active Record delegates a model's public class methods to its relations and
+  # collection proxies (`Relation#method_missing` compiles them into
+  # `<Model>::GeneratedRelationMethods`), and nothing emitted that statically —
+  # `user.filters.from_params(…)` was a NoMethodError on the proxy
+  # (felixefelip/rbs_infer#185).
+  describe "relation reopen (class-method delegation)" do
+    APP_RECORD = <<~RUBY
+      class ApplicationRecord < ActiveRecord::Base
+      end
+    RUBY
+
+    def relation_methods_for(files)
+      in_app({ "app/models/application_record.rb" => APP_RECORD }.merge(files)) do |dir|
+        yield described_class.new(app_dir: dir).build
+      end
+    end
+
+    it "delegates a `class << self` method to the model" do
+      model = <<~RUBY
+        class Filter < ApplicationRecord
+          class << self
+            def from_params(params)
+              find_by_params(params)
+            end
+          end
+        end
+      RUBY
+
+      relation_methods_for("app/models/filter.rb" => model) do |files|
+        source = source_of(files, "filter/generated_relation_methods.rb")
+
+        expect(source).to include("module Filter::GeneratedRelationMethods\n")
+        expect(source).to match(/def from_params\(params\)\n\s*::Filter\.from_params\(params\)\n\s*end/)
+        expect(Prism.parse(source).success?).to be(true)
+      end
+    end
+
+    it "keeps the written parameters, so the call sites still type each one" do
+      model = <<~RUBY
+        class Filter < ApplicationRecord
+          def self.remember(attrs, limit = 5, *rest, touch: true, **opts, &blk)
+          end
+        end
+      RUBY
+
+      relation_methods_for("app/models/filter.rb" => model) do |files|
+        expect(source_of(files, "filter/generated_relation_methods.rb")).to include(
+          "  def remember(attrs, limit = 5, *rest, touch: true, **opts, &blk)\n" \
+          "    ::Filter.remember(attrs, limit, *rest, touch: touch, **opts, &blk)\n"
+        )
+      end
+    end
+
+    # A default is copied verbatim into a module whose lexical scope is NOT the
+    # model's, so a constant written there would not resolve; the anonymous list
+    # keeps the arity without naming anything.
+    it "falls back to anonymous parameters when a default names a constant" do
+      model = <<~RUBY
+        class Filter < ApplicationRecord
+          def self.paged(size = PER_PAGE)
+          end
+        end
+      RUBY
+
+      relation_methods_for("app/models/filter.rb" => model) do |files|
+        expect(source_of(files, "filter/generated_relation_methods.rb")).to include(
+          "  def paged(*, **, &)\n    ::Filter.paged(*, **, &)\n"
+        )
+      end
+    end
+
+    # Rails delegates only PUBLIC class methods (`method_missing` guards on
+    # `model.respond_to?`).
+    it "skips private class methods" do
+      model = <<~RUBY
+        class Filter < ApplicationRecord
+          def self.kept; end
+
+          class << self
+            private
+              def hidden; end
+          end
+
+          private_class_method def self.also_hidden; end
+
+          def self.hidden_by_symbol; end
+          private_class_method :hidden_by_symbol
+        end
+      RUBY
+
+      relation_methods_for("app/models/filter.rb" => model) do |files|
+        source = source_of(files, "filter/generated_relation_methods.rb")
+
+        expect(source).to include("def kept")
+        expect(source).not_to include("hidden")
+      end
+    end
+
+    # rbs_rails already writes the scopes into this very module, and a duplicate
+    # definition in one module poisons the whole RBS environment.
+    it "leaves a name rbs_rails already emits as a scope alone" do
+      model = <<~RUBY
+        class Filter < ApplicationRecord
+          scope :recent, -> { order(created_at: :desc) }
+
+          def self.recent; end
+          def self.oldest; end
+        end
+      RUBY
+
+      relation_methods_for("app/models/filter.rb" => model) do |files|
+        source = source_of(files, "filter/generated_relation_methods.rb")
+
+        expect(source).to include("def oldest")
+        expect(source).not_to include("def recent")
+      end
+    end
+
+    # A concern's class methods are INCLUDED rather than delegated: the includer's
+    # own RBS never re-declares them (nothing emits the `extend` that
+    # ActiveSupport::Concern performs), so `Filter.find_by_params` would not
+    # resolve — but `Filter::Params::ClassMethods` already carries the signatures.
+    it "includes a concern's ClassMethods module, both spellings" do
+      block_form = <<~RUBY
+        module Filter::Params
+          extend ActiveSupport::Concern
+          class_methods do
+            def find_by_params(params); end
+          end
+        end
+      RUBY
+      module_form = <<~RUBY
+        module Filter::Sorting
+          extend ActiveSupport::Concern
+          module ClassMethods
+            def sorted_by(key); end
+          end
+        end
+      RUBY
+      model = <<~RUBY
+        class Filter < ApplicationRecord
+          include Filter::Params
+          include Filter::Sorting
+        end
+      RUBY
+
+      relation_methods_for(
+        "app/models/filter.rb" => model,
+        "app/models/filter/params.rb" => block_form,
+        "app/models/filter/sorting.rb" => module_form
+      ) do |files|
+        source = source_of(files, "filter/generated_relation_methods.rb")
+
+        expect(source).to include("  include ::Filter::Params::ClassMethods\n")
+        expect(source).to include("  include ::Filter::Sorting::ClassMethods\n")
+        expect(source).not_to include("def find_by_params")
+      end
+    end
+
+    # The reopen sits inside the model's own namespace, where a relative name is
+    # resolved against it first: `include Storage::Totaled::ClassMethods` inside
+    # `class Account` means `::Account::Storage::Totaled::ClassMethods` as soon as
+    # `Account::Storage` exists, and RBS then fails with `Cannot find type
+    # Storage::Totaled::ClassMethods` (felixefelip/rbs_infer#185).
+    it "writes every constant absolute, so the model's own namespace cannot capture it" do
+      concern = <<~RUBY
+        module Storage::Totaled
+          extend ActiveSupport::Concern
+          class_methods do
+            def foreign_key_for_storage; end
+          end
+        end
+      RUBY
+      shadow = "module Account::Storage\nend\n"
+      model = <<~RUBY
+        class Account < ApplicationRecord
+          include Storage::Totaled
+
+          def self.create_with_owner(owner:); end
+        end
+      RUBY
+
+      relation_methods_for(
+        "app/models/account.rb" => model,
+        "app/models/account/storage.rb" => shadow,
+        "app/models/concerns/storage/totaled.rb" => concern
+      ) do |files|
+        source = source_of(files, "account/generated_relation_methods.rb")
+
+        expect(source).to include("  include ::Storage::Totaled::ClassMethods\n")
+        expect(source).to include("    ::Account.create_with_owner(owner: owner)\n")
+      end
+    end
+
+    # `GeneratedRelationMethods` is an Active Record concept — a plain class under
+    # `app/models` has no relation to delegate to.
+    it "emits nothing for a class that is not a model" do
+      service = <<~RUBY
+        class PlainService
+          def self.call(x); end
+        end
+      RUBY
+
+      relation_methods_for("app/models/plain_service.rb" => service) do |files|
+        expect(files.map(&:filename)).not_to include("plain_service/generated_relation_methods.rb")
+      end
+    end
+
+    # An STI child reaches ActiveRecord::Base through its parent, not directly.
+    it "follows the superclass chain to decide a class is a model" do
+      parent = <<~RUBY
+        class Filter < ApplicationRecord
+        end
+      RUBY
+      child = <<~RUBY
+        class SavedFilter < Filter
+          def self.from_params(params); end
+        end
+      RUBY
+
+      relation_methods_for(
+        "app/models/filter.rb" => parent, "app/models/saved_filter.rb" => child
+      ) do |files|
+        expect(source_of(files, "saved_filter/generated_relation_methods.rb"))
+          .to include("module SavedFilter::GeneratedRelationMethods\n")
+      end
+    end
+  end
+
   # Snapshot of the generated sidecar against the real dummy app, so a change in
   # the emitted pseudo-code shows up as a reviewable diff.
   #   Regenerate with: UPDATE_EXPECTATIONS=1 bundle exec rspec <this file>
@@ -582,18 +811,24 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         # `.rb` only: the inferred `.rbs` snapshots share this directory
         # (spec/integration/rails_dummy_spec.rb) and rmtree would take them out.
         expectations.glob("**/*.rb").each(&:delete) if expectations.exist?
-        expectations.mkpath
-        files.each { |f| expectations.join(f.filename).write(f.source) }
+        files.each do |f|
+          path = expectations.join(f.filename)
+          path.dirname.mkpath
+          path.write(f.source)
+        end
       end
 
       aggregate_failures do
         files.each { |f| expect(f.source).to eq(expectations.join(f.filename).read) }
-        # no stale/extra expectation files
+        # no stale/extra expectation files. Globbed rather than listed: a
+        # filename can name a subdirectory (`post/generated_relation_methods.rb`),
+        # and `children` would neither see it nor the stale dir it was left in.
+        #
         # `.rb` only: the inferred `.rbs` snapshots live in this same directory
         # (spec/integration/rails_dummy_spec.rb, "runtime pseudo-code RBS") and are
         # not this generator's output.
-        pseudo_code = expectations.children.select { |p| p.extname == ".rb" }
-        expect(pseudo_code.map { |p| p.basename.to_s }.sort).to eq(files.map(&:filename).sort)
+        pseudo_code = expectations.glob("**/*.rb").map { |p| p.relative_path_from(expectations).to_s }
+        expect(pseudo_code.sort).to eq(files.map(&:filename).sort)
       end
     end
   end

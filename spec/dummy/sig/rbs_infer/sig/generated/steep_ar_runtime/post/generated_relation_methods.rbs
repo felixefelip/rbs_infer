@@ -1,0 +1,5 @@
+class Post
+  module GeneratedRelationMethods
+    include ::Post::Taggable::ClassMethods
+  end
+end

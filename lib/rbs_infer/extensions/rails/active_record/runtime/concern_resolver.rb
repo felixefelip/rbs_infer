@@ -74,6 +74,10 @@ module RbsInfer
                 path: reopens.first.path,
                 class_name: class_name,
                 kind: :class,
+                # Only the DEFINING reopen writes a superclass (`class Post` used
+                # to nest `Post::Archiver` writes none), so the merged model takes
+                # whichever one has it.
+                superclass: reopens.filter_map(&:superclass).first,
                 body: reopens.flat_map { |unit| expand(unit, concerns, Set.new) }
               )
             end

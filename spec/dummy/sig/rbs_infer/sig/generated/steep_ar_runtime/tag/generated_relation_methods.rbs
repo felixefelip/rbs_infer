@@ -1,0 +1,6 @@
+class Tag
+  module GeneratedRelationMethods
+    def popular: (?Integer limit) -> untyped
+    def default_limit: () -> Integer
+  end
+end

@@ -1669,4 +1669,118 @@ RSpec.describe RbsInfer::Analyzer do
     end
   end
 
+  # ─── namespace kind under an ambiguous file name (#185) ─────────
+
+  describe "#generate_rbs rendering the namespace of a nested target" do
+    around do |ex|
+      Dir.mktmpdir { |dir| Dir.chdir(dir) { ex.run } }
+    end
+
+    def write(path, content)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, content)
+      path
+    end
+
+    # The namespace's kind is read from the file named after it by convention,
+    # found by matching the path SUFFIX — which is not unique.
+    # `app/models/account/export.rb` answers to "export" as much as
+    # `app/models/export.rb` does, and landing on it left `Export` looking
+    # undeclared: the wrapper rendered `module Export` against the `class Export`
+    # its own file declares, and RBS rejected the pair with
+    # "Declaration of `::Export` is duplicated".
+    it "renders `class` when another file's path shadows the namespace's own" do
+      nested = write("app/models/account/export.rb", "class Account::Export < Export\nend\n")
+      top_level = write("app/models/export.rb", <<~RUBY)
+        class Export < ApplicationRecord
+          def self.cleanup
+            expired.destroy_all
+          end
+        end
+      RUBY
+      target = write("sig/generated/steep_ar_runtime/export/generated_relation_methods.rb", <<~RUBY)
+        module Export::GeneratedRelationMethods
+          def cleanup
+            Export.cleanup
+          end
+        end
+      RUBY
+
+      rbs = described_class.new(
+        target_class: "Export::GeneratedRelationMethods",
+        target_file: target,
+        source_files: [nested, top_level, target]
+      ).generate_rbs
+
+      expect(rbs).to include("class Export\n")
+      expect(rbs).not_to include("module Export\n")
+      expect(rbs).to include("module GeneratedRelationMethods")
+    end
+
+    # The path a constant implies is GUESSED — rbs_infer splits on case changes
+    # and cannot see the app's `inflect.acronym` rules — so `SQLite` becomes
+    # `sq_lite` while the file is `sqlite.rb`. `Fts` then looked undeclared and
+    # rendered as `module Fts` against the `class Fts` its own file declares:
+    # "Declaration of `::Search::Record::SQLite::Fts` is duplicated".
+    it "renders `class` when an acronym makes the conventional path wrong" do
+      files = {
+        "app/models/search.rb" => "module Search\nend\n",
+        "app/models/search/record.rb" => "class Search::Record < ApplicationRecord\nend\n",
+        "app/models/search/record/sqlite.rb" => "module Search::Record::SQLite\nend\n",
+        "app/models/search/record/sqlite/fts.rb" => <<~RUBY
+          class Search::Record::SQLite::Fts < ApplicationRecord
+            def self.rebuild
+              "ok"
+            end
+          end
+        RUBY
+      }.map { |path, content| write(path, content) }
+
+      target = write("sig/generated/steep_ar_runtime/search_record_sqlite_fts/generated_relation_methods.rb", <<~RUBY)
+        module Search::Record::SQLite::Fts::GeneratedRelationMethods
+          def rebuild
+            Search::Record::SQLite::Fts.rebuild
+          end
+        end
+      RUBY
+
+      rbs = described_class.new(
+        target_class: "Search::Record::SQLite::Fts::GeneratedRelationMethods",
+        target_file: target,
+        source_files: files + [target]
+      ).generate_rbs
+
+      # Each namespace as its own file declares it: module, class, module, class.
+      expect(rbs).to include("module Search\n")
+      expect(rbs).to include("class Record\n")
+      expect(rbs).to include("module SQLite\n")
+      expect(rbs).to include("class Fts\n")
+      expect(rbs).not_to include("module Fts\n")
+    end
+
+    # The same walk must not turn a real module into a class: `Reporting` is a
+    # module, and a nested file answering to its name changes nothing.
+    it "still renders `module` when the namespace's own file declares one" do
+      nested = write("app/models/account/reporting.rb", "module Account::Reporting\nend\n")
+      top_level = write("app/models/reporting.rb", "module Reporting\nend\n")
+      target = write("app/models/reporting/summary.rb", <<~RUBY)
+        module Reporting
+          class Summary
+            def title
+              "x"
+            end
+          end
+        end
+      RUBY
+
+      rbs = described_class.new(
+        target_class: "Reporting::Summary",
+        target_file: target,
+        source_files: [nested, top_level, target]
+      ).generate_rbs
+
+      expect(rbs).to include("module Reporting\n")
+    end
+  end
+
 end

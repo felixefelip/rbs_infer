@@ -55,7 +55,12 @@ module RbsInfer
             FileUtils.rm_rf(dir)
             unless files.empty?
               FileUtils.mkdir_p(dir)
-              files.each { |file| File.write(File.join(dir, file.filename), file.source) }
+              files.each do |file|
+                path = File.join(dir, file.filename)
+                # A filename can name a subdirectory (`post/generated_relation_methods.rb`).
+                FileUtils.mkdir_p(File.dirname(path))
+                File.write(path, file.source)
+              end
             end
 
             dir

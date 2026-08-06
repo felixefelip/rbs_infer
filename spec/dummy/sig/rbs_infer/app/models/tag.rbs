@@ -1,3 +1,4 @@
 class Tag < ApplicationRecord
   def self.popular: (?Integer limit) -> untyped
+  def self.default_limit: () -> Integer
 end
