@@ -1717,6 +1717,47 @@ RSpec.describe RbsInfer::Analyzer do
       expect(rbs).to include("module GeneratedRelationMethods")
     end
 
+    # The path a constant implies is GUESSED — rbs_infer splits on case changes
+    # and cannot see the app's `inflect.acronym` rules — so `SQLite` becomes
+    # `sq_lite` while the file is `sqlite.rb`. `Fts` then looked undeclared and
+    # rendered as `module Fts` against the `class Fts` its own file declares:
+    # "Declaration of `::Search::Record::SQLite::Fts` is duplicated".
+    it "renders `class` when an acronym makes the conventional path wrong" do
+      files = {
+        "app/models/search.rb" => "module Search\nend\n",
+        "app/models/search/record.rb" => "class Search::Record < ApplicationRecord\nend\n",
+        "app/models/search/record/sqlite.rb" => "module Search::Record::SQLite\nend\n",
+        "app/models/search/record/sqlite/fts.rb" => <<~RUBY
+          class Search::Record::SQLite::Fts < ApplicationRecord
+            def self.rebuild
+              "ok"
+            end
+          end
+        RUBY
+      }.map { |path, content| write(path, content) }
+
+      target = write("sig/generated/steep_ar_runtime/search_record_sqlite_fts/generated_relation_methods.rb", <<~RUBY)
+        module Search::Record::SQLite::Fts::GeneratedRelationMethods
+          def rebuild
+            Search::Record::SQLite::Fts.rebuild
+          end
+        end
+      RUBY
+
+      rbs = described_class.new(
+        target_class: "Search::Record::SQLite::Fts::GeneratedRelationMethods",
+        target_file: target,
+        source_files: files + [target]
+      ).generate_rbs
+
+      # Each namespace as its own file declares it: module, class, module, class.
+      expect(rbs).to include("module Search\n")
+      expect(rbs).to include("class Record\n")
+      expect(rbs).to include("module SQLite\n")
+      expect(rbs).to include("class Fts\n")
+      expect(rbs).not_to include("module Fts\n")
+    end
+
     # The same walk must not turn a real module into a class: `Reporting` is a
     # module, and a nested file answering to its name changes nothing.
     it "still renders `module` when the namespace's own file declares one" do
