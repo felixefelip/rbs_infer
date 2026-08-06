@@ -269,8 +269,11 @@ module RbsInfer
                 modules = model.class_methods_modules
                 next if methods.empty? && modules.empty?
 
+                # Under a directory named for the model, so the sidecar's flat
+                # list stays one file per reopened CLASS and everything else a
+                # model needs has an obvious home next to this one.
                 FileEntry.new(
-                  filename: "#{file_name(model.class_name)}_relation_methods.rb",
+                  filename: "#{file_name(model.class_name)}/generated_relation_methods.rb",
                   source: relation_methods_source(model.class_name, methods, modules)
                 )
               end

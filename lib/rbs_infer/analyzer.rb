@@ -1219,17 +1219,28 @@ module RbsInfer
         next
       end
 
+      # Every file whose path ends in the conventional one, not just the first:
+      # a suffix is ambiguous, and the file it happens to land on may declare a
+      # DIFFERENT class. `app/models/account/export.rb` (`class Account::Export`)
+      # answers to "export" as much as `app/models/export.rb` does, and taking it
+      # left `Export` looking undeclared — so its namespace rendered as
+      # `module Export` against the `class Export` its own file declares, and RBS
+      # rejected the pair with "Declaration of `::Export` is duplicated"
+      # (felixefelip/rbs_infer#185).
       class_path = RbsInfer.class_name_to_path(full_name)
-      source_file = @file_index.find(class_path)
+      @file_index.candidates(class_path).each do |source_file|
+        next unless File.exist?(source_file)
 
-      next unless source_file && File.exist?(source_file)
+        entry = @parse_cache.get(source_file)
+        next unless entry
 
-      entry = @parse_cache.get(source_file)
-      next unless entry
+        visitor = RbsInfer::AST::ClassNameExtractor.new(file_path: source_file)
+        entry.result.value.accept(visitor)
+        next unless visitor.class_name == full_name
 
-      visitor = RbsInfer::AST::ClassNameExtractor.new(file_path: source_file)
-      entry.result.value.accept(visitor)
-      classes.add(full_name) if visitor.class_name == full_name && !visitor.is_module
+        classes.add(full_name) unless visitor.is_module
+        break
+      end
     end
 
     classes

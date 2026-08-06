@@ -598,7 +598,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       RUBY
 
       relation_methods_for("app/models/filter.rb" => model) do |files|
-        source = source_of(files, "filter_relation_methods.rb")
+        source = source_of(files, "filter/generated_relation_methods.rb")
 
         expect(source).to include("module Filter::GeneratedRelationMethods\n")
         expect(source).to match(/def from_params\(params\)\n\s*Filter\.from_params\(params\)\n\s*end/)
@@ -615,7 +615,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       RUBY
 
       relation_methods_for("app/models/filter.rb" => model) do |files|
-        expect(source_of(files, "filter_relation_methods.rb")).to include(
+        expect(source_of(files, "filter/generated_relation_methods.rb")).to include(
           "  def remember(attrs, limit = 5, *rest, touch: true, **opts, &blk)\n" \
           "    Filter.remember(attrs, limit, *rest, touch: touch, **opts, &blk)\n"
         )
@@ -634,7 +634,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       RUBY
 
       relation_methods_for("app/models/filter.rb" => model) do |files|
-        expect(source_of(files, "filter_relation_methods.rb")).to include(
+        expect(source_of(files, "filter/generated_relation_methods.rb")).to include(
           "  def paged(*, **, &)\n    Filter.paged(*, **, &)\n"
         )
       end
@@ -660,7 +660,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       RUBY
 
       relation_methods_for("app/models/filter.rb" => model) do |files|
-        source = source_of(files, "filter_relation_methods.rb")
+        source = source_of(files, "filter/generated_relation_methods.rb")
 
         expect(source).to include("def kept")
         expect(source).not_to include("hidden")
@@ -680,7 +680,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       RUBY
 
       relation_methods_for("app/models/filter.rb" => model) do |files|
-        source = source_of(files, "filter_relation_methods.rb")
+        source = source_of(files, "filter/generated_relation_methods.rb")
 
         expect(source).to include("def oldest")
         expect(source).not_to include("def recent")
@@ -720,7 +720,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         "app/models/filter/params.rb" => block_form,
         "app/models/filter/sorting.rb" => module_form
       ) do |files|
-        source = source_of(files, "filter_relation_methods.rb")
+        source = source_of(files, "filter/generated_relation_methods.rb")
 
         expect(source).to include("  include Filter::Params::ClassMethods\n")
         expect(source).to include("  include Filter::Sorting::ClassMethods\n")
@@ -738,7 +738,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       RUBY
 
       relation_methods_for("app/models/plain_service.rb" => service) do |files|
-        expect(files.map(&:filename)).not_to include("plain_service_relation_methods.rb")
+        expect(files.map(&:filename)).not_to include("plain_service/generated_relation_methods.rb")
       end
     end
 
@@ -757,7 +757,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       relation_methods_for(
         "app/models/filter.rb" => parent, "app/models/saved_filter.rb" => child
       ) do |files|
-        expect(source_of(files, "saved_filter_relation_methods.rb"))
+        expect(source_of(files, "saved_filter/generated_relation_methods.rb"))
           .to include("module SavedFilter::GeneratedRelationMethods\n")
       end
     end
@@ -776,18 +776,24 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         # `.rb` only: the inferred `.rbs` snapshots share this directory
         # (spec/integration/rails_dummy_spec.rb) and rmtree would take them out.
         expectations.glob("**/*.rb").each(&:delete) if expectations.exist?
-        expectations.mkpath
-        files.each { |f| expectations.join(f.filename).write(f.source) }
+        files.each do |f|
+          path = expectations.join(f.filename)
+          path.dirname.mkpath
+          path.write(f.source)
+        end
       end
 
       aggregate_failures do
         files.each { |f| expect(f.source).to eq(expectations.join(f.filename).read) }
-        # no stale/extra expectation files
+        # no stale/extra expectation files. Globbed rather than listed: a
+        # filename can name a subdirectory (`post/generated_relation_methods.rb`),
+        # and `children` would neither see it nor the stale dir it was left in.
+        #
         # `.rb` only: the inferred `.rbs` snapshots live in this same directory
         # (spec/integration/rails_dummy_spec.rb, "runtime pseudo-code RBS") and are
         # not this generator's output.
-        pseudo_code = expectations.children.select { |p| p.extname == ".rb" }
-        expect(pseudo_code.map { |p| p.basename.to_s }.sort).to eq(files.map(&:filename).sort)
+        pseudo_code = expectations.glob("**/*.rb").map { |p| p.relative_path_from(expectations).to_s }
+        expect(pseudo_code.sort).to eq(files.map(&:filename).sort)
       end
     end
   end

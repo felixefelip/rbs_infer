@@ -38,6 +38,40 @@ RSpec.describe RbsInfer::Project::FileIndex do
     expect(result).to eq("/project/app/models/magic_link.rb")
   end
 
+  # A suffix is not unique, and the file `find` lands on may declare a different
+  # class: `app/models/account/export.rb` (`class Account::Export`) answers to
+  # "export" as much as `app/models/export.rb` does. A caller that parses the
+  # file and can TELL walks the candidates (felixefelip/rbs_infer#185).
+  describe "#candidates" do
+    let(:nested) { "/project/app/models/account/export.rb" }
+    let(:top_level) { "/project/app/models/export.rb" }
+
+    it "returns every file whose path ends in the class_path" do
+      index = described_class.new([nested, top_level])
+
+      expect(index.candidates("export")).to contain_exactly(nested, top_level)
+    end
+
+    # The conventional home of a top-level constant is the least-nested path,
+    # whatever order the files were indexed in.
+    it "orders the least-nested path first" do
+      expect(described_class.new([nested, top_level]).candidates("export").first).to eq(top_level)
+      expect(described_class.new([top_level, nested]).candidates("export").first).to eq(top_level)
+    end
+
+    it "returns [] for a class_path nothing answers to" do
+      expect(described_class.new([top_level]).candidates("post")).to eq([])
+    end
+
+    # `find` is `candidates.first`, so the ambiguous case now answers with the
+    # top-level file rather than with whichever was indexed first.
+    it "agrees with #find" do
+      index = described_class.new([nested, top_level])
+
+      expect(index.find("export")).to eq(top_level)
+    end
+  end
+
   it "#include? retorna true para class_path existente" do
     index = described_class.new(["/project/app/models/user.rb"])
 
