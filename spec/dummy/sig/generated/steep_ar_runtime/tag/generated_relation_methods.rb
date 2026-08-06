@@ -5,10 +5,10 @@
 
 module Tag::GeneratedRelationMethods
   def popular(limit = 10)
-    Tag.popular(limit)
+    ::Tag.popular(limit)
   end
 
   def default_limit
-    Tag.default_limit
+    ::Tag.default_limit
   end
 end

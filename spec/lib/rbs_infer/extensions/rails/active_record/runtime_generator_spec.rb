@@ -601,7 +601,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         source = source_of(files, "filter/generated_relation_methods.rb")
 
         expect(source).to include("module Filter::GeneratedRelationMethods\n")
-        expect(source).to match(/def from_params\(params\)\n\s*Filter\.from_params\(params\)\n\s*end/)
+        expect(source).to match(/def from_params\(params\)\n\s*::Filter\.from_params\(params\)\n\s*end/)
         expect(Prism.parse(source).success?).to be(true)
       end
     end
@@ -617,7 +617,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       relation_methods_for("app/models/filter.rb" => model) do |files|
         expect(source_of(files, "filter/generated_relation_methods.rb")).to include(
           "  def remember(attrs, limit = 5, *rest, touch: true, **opts, &blk)\n" \
-          "    Filter.remember(attrs, limit, *rest, touch: touch, **opts, &blk)\n"
+          "    ::Filter.remember(attrs, limit, *rest, touch: touch, **opts, &blk)\n"
         )
       end
     end
@@ -635,7 +635,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
 
       relation_methods_for("app/models/filter.rb" => model) do |files|
         expect(source_of(files, "filter/generated_relation_methods.rb")).to include(
-          "  def paged(*, **, &)\n    Filter.paged(*, **, &)\n"
+          "  def paged(*, **, &)\n    ::Filter.paged(*, **, &)\n"
         )
       end
     end
@@ -722,9 +722,44 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       ) do |files|
         source = source_of(files, "filter/generated_relation_methods.rb")
 
-        expect(source).to include("  include Filter::Params::ClassMethods\n")
-        expect(source).to include("  include Filter::Sorting::ClassMethods\n")
+        expect(source).to include("  include ::Filter::Params::ClassMethods\n")
+        expect(source).to include("  include ::Filter::Sorting::ClassMethods\n")
         expect(source).not_to include("def find_by_params")
+      end
+    end
+
+    # The reopen sits inside the model's own namespace, where a relative name is
+    # resolved against it first: `include Storage::Totaled::ClassMethods` inside
+    # `class Account` means `::Account::Storage::Totaled::ClassMethods` as soon as
+    # `Account::Storage` exists, and RBS then fails with `Cannot find type
+    # Storage::Totaled::ClassMethods` (felixefelip/rbs_infer#185).
+    it "writes every constant absolute, so the model's own namespace cannot capture it" do
+      concern = <<~RUBY
+        module Storage::Totaled
+          extend ActiveSupport::Concern
+          class_methods do
+            def foreign_key_for_storage; end
+          end
+        end
+      RUBY
+      shadow = "module Account::Storage\nend\n"
+      model = <<~RUBY
+        class Account < ApplicationRecord
+          include Storage::Totaled
+
+          def self.create_with_owner(owner:); end
+        end
+      RUBY
+
+      relation_methods_for(
+        "app/models/account.rb" => model,
+        "app/models/account/storage.rb" => shadow,
+        "app/models/concerns/storage/totaled.rb" => concern
+      ) do |files|
+        source = source_of(files, "account/generated_relation_methods.rb")
+
+        expect(source).to include("  include ::Storage::Totaled::ClassMethods\n")
+        expect(source).to include("    ::Account.create_with_owner(owner: owner)\n")
       end
     end
 

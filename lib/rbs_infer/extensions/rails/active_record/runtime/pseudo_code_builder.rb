@@ -279,12 +279,21 @@ module RbsInfer
               end
             end
 
+            # Every constant is written ABSOLUTE. The reopen sits inside the
+            # model's own namespace, where a relative name is resolved against it
+            # first: `include Storage::Totaled::ClassMethods` inside
+            # `class Account` means `::Account::Storage::Totaled::ClassMethods`
+            # once `Account::Storage` exists — which it does, and RBS then failed
+            # with `Cannot find type Storage::Totaled::ClassMethods`
+            # (felixefelip/rbs_infer#185). Nothing here is ever meant to resolve
+            # relatively: the names come from a whole-project scan, already full.
             def relation_methods_source(class_name, methods, modules)
-              body = modules.map { |mod| "  include #{mod}" }
+              body = modules.map { |mod| "  include ::#{mod}" }
               methods.each do |method|
                 body << "" unless body.empty?
                 params = method.params.empty? ? nil : method.params
-                call = method.args.empty? ? "#{class_name}.#{method.name}" : "#{class_name}.#{method.name}(#{method.args})"
+                receiver = "::#{class_name}.#{method.name}"
+                call = method.args.empty? ? receiver : "#{receiver}(#{method.args})"
                 body.concat(method_lines(method.name, params) { [call] })
               end
 

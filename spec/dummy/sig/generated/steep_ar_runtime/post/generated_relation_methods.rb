@@ -4,5 +4,5 @@
 # Regenerated on every run; do not edit.
 
 module Post::GeneratedRelationMethods
-  include Post::Taggable::ClassMethods
+  include ::Post::Taggable::ClassMethods
 end
