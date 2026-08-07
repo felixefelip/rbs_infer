@@ -5,13 +5,18 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
   # RbsBuilder's kwargs are all required (see its initialize). This helper
   # supplies test-only defaults so each example states only what it cares
   # about — keeping the production API strict while specs stay terse.
-  def make_builder(target_class:, superclass_name:, namespace_classes: Set.new, is_module: false, type_params: "")
+  def make_builder(target_class:, superclass_name:, namespace_classes: Set.new, is_module: false, type_params: "",
+                   source_files: [])
     described_class.new(
       target_class: target_class,
       superclass_name: superclass_name,
       namespace_classes: namespace_classes,
       is_module: is_module,
-      type_params: type_params
+      type_params: type_params,
+      class_methods_index: RbsInfer::Project::ClassMethodsIndex.new(
+        file_index: RbsInfer::Project::FileIndex.new(source_files),
+        parse_cache: RbsInfer::Project::ParseCache.new
+      )
     )
   end
 
