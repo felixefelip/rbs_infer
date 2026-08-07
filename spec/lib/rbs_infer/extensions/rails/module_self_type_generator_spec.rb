@@ -70,6 +70,29 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
     end
   end
 
+  # felixefelip/rbs_infer#189. `include Notifiable` inside `class User` means
+  # `User::Notifiable`, so the top-level concern of the same name must not take
+  # `User` for a host — the annotation would claim a type nothing inhabits.
+  it "keeps a host out of the concern its own namespace shadows" do
+    in_app(
+      "app/models/concerns/notifiable.rb" =>
+        "module Notifiable\n  extend ActiveSupport::Concern\nend\n",
+      "app/models/user/notifiable.rb" =>
+        "module User::Notifiable\n  extend ActiveSupport::Concern\nend\n",
+      "app/models/user.rb"  => "class User\n  include Notifiable\nend\n",
+      "app/models/event.rb" => "class Event\n  include Notifiable\nend\n"
+    ) do |dir|
+      table = described_class.new(app_dir: dir).build_table
+
+      expect(table["app/models/concerns/notifiable.rb"]["modules"].first["annotations"])
+        .to eq(["# @type self: singleton(Event) & singleton(Notifiable)",
+                "# @type instance: Event & Notifiable"])
+      expect(table["app/models/user/notifiable.rb"]["modules"].first["annotations"])
+        .to eq(["# @type self: singleton(User) & singleton(User::Notifiable)",
+                "# @type instance: User & User::Notifiable"])
+    end
+  end
+
   it "adds a `blocks` @implements entry for a concern with `class_methods do`" do
     in_app(
       "app/models/post/taggable.rb" => <<~RUBY,
