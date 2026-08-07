@@ -56,9 +56,9 @@ module RbsInfer::Project
     #
     # Matching has to resolve the written name, which is rarely the FQN: Ruby
     # looks a constant up outward through the enclosing namespaces, so `include
-    # Eventable` inside `class Card` may mean `Card::Eventable` or `::Eventable`.
-    # Every nesting of the host is a candidate — which is what `@hosts_by_target`
-    # has already enumerated, so the answer is a lookup rather than a scan.
+    # Eventable` inside `class Card` may mean `Card::Eventable` or `::Eventable`
+    # — whichever the project declares first, innermost out. `@hosts_by_target`
+    # has already settled that, so the answer is a lookup rather than a scan.
     def hosts_of(module_name)
       @hosts_of_cache[unqualified(module_name)] ||= resolve_hosts(module_name, Set.new)
     end
@@ -151,15 +151,37 @@ module RbsInfer::Project
       @includes_by_class.each do |host, written|
         prefixes = nestings(host)
         written.each do |name|
-          short = unqualified(name)
-          candidates = prefixes.map { |prefix| "#{prefix}::#{short}" }
-          candidates.unshift(short)
-          candidates.each do |target|
+          targets_for(name, prefixes).each do |target|
             hosts = (@hosts_by_target[target] ||= [])
             hosts << host unless hosts.include?(host)
           end
         end
       end
+    end
+
+    # The candidates a written name can mean, innermost nesting first — and,
+    # when the project declares one of them, ONLY that one. Ruby stops at the
+    # first constant it finds walking outward, so `include Notifiable` inside
+    # `class User` means `User::Notifiable` when that module exists and never
+    # reaches `::Notifiable`. Registering every candidate instead put `User`
+    # among the hosts of a module it does not include, and the concern's self
+    # type gained a member nothing inhabits: `(Event & Notifiable) | (Mention &
+    # Notifiable) | (User & Notifiable)` (felixefelip/rbs_infer#189).
+    #
+    # A candidate is only decided against what the sources DECLARE as a module,
+    # which is what an `include` can name. When none of them is declared the
+    # module is one we cannot see — a gem's, a framework's — and every candidate
+    # stays: narrowing on absent evidence would drop hosts that resolve today.
+    def targets_for(name, prefixes)
+      short = unqualified(name)
+      # `include ::Notifiable` says outright which one it means, and no nesting
+      # of the host is a candidate for it.
+      return [short] if name.to_s.start_with?("::")
+
+      candidates = prefixes.reverse.map { |prefix| "#{prefix}::#{short}" }
+      candidates << short
+      declared = candidates.find { |candidate| @module_declarations.include?(candidate) }
+      declared ? [declared] : candidates
     end
 
     # `"A::B::C"` → `["A", "A::B", "A::B::C"]`, the namespaces a constant

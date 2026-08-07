@@ -108,6 +108,47 @@ RSpec.describe RbsInfer::Project::MixinIndex do
       expect(index.hosts_of("Card::Entropic")).to contain_exactly("Card")
     end
 
+    # felixefelip/rbs_infer#189. Ruby stops at the first constant it finds
+    # walking outward, so a nested module of the host's own namespace shadows
+    # the top-level one of the same name — the include never reaches it.
+    it "stops at the innermost declared module of the same name" do
+      user = write_file("user.rb", "class User\n  include Notifiable\nend\n")
+      event = write_file("event.rb", "class Event\n  include Notifiable\nend\n")
+      nested = write_file("user/notifiable.rb", "module User::Notifiable\nend\n")
+      top = write_file("concerns/notifiable.rb", "module Notifiable\nend\n")
+
+      index = described_class.new([user, event, nested, top])
+
+      expect(index.hosts_of("User::Notifiable")).to contain_exactly("User")
+      # `Event::Notifiable` does not exist, so `Event` does reach the top-level
+      # one — and `User` does not.
+      expect(index.hosts_of("Notifiable")).to contain_exactly("Event")
+    end
+
+    # The rooted name says outright which module it means, so the host's own
+    # namespace is not searched even when it holds one of the same name.
+    it "does not resolve an absolute name into the host's namespace" do
+      user = write_file("user.rb", "class User\n  include ::Notifiable\nend\n")
+      nested = write_file("user/notifiable.rb", "module User::Notifiable\nend\n")
+      top = write_file("concerns/notifiable.rb", "module Notifiable\nend\n")
+
+      index = described_class.new([user, nested, top])
+
+      expect(index.hosts_of("Notifiable")).to contain_exactly("User")
+      expect(index.hosts_of("User::Notifiable")).to be_empty
+    end
+
+    # Nothing in the sources declares a gem's module, and a name we cannot
+    # resolve must not be narrowed away: every candidate stays a host.
+    it "keeps every candidate for a module the sources do not declare" do
+      host = write_file("card.rb", "class Card\n  include Broadcastable\nend\n")
+
+      index = described_class.new([host])
+
+      expect(index.hosts_of("Broadcastable")).to contain_exactly("Card")
+      expect(index.hosts_of("Card::Broadcastable")).to contain_exactly("Card")
+    end
+
     it "resolves a name written absolutely" do
       host = write_file("card.rb", "class Card\n  include ::Eventable\nend\n")
       eventable = write_file("eventable.rb", "module Eventable\nend\n")
