@@ -96,6 +96,32 @@ module RbsInfer::Signatures
       return_type_analyzer.method_return_types_by_kind(source_code)
     end
 
+    # Whether a body typed `value` satisfies a declaration of `declared` —
+    # exactly the relation `Ruby::MethodBodyTypeMismatch` reports on, asked of
+    # Steep's own subtyping check so the answer cannot drift from the error.
+    #
+    # Three-valued on purpose: `nil` is "cannot decide" — no environment, an
+    # unparsable type, or a type whose meaning depends on a context this check
+    # does not have (`self`/`instance`/`class`, whose referent is the enclosing
+    # definition). A caller that corrects a signature on `false` must not
+    # correct on `nil`, so the two are never collapsed here.
+    def accepts?(declared, value)
+      subtyping = steep_subtyping
+      return nil unless subtyping
+
+      declared_type = context_free_type(declared, subtyping)
+      value_type = context_free_type(value, subtyping)
+      return nil unless declared_type && value_type
+
+      subtyping.check(
+        Steep::Subtyping::Relation.new(sub_type: value_type, super_type: declared_type),
+        self_type: nil, instance_type: nil, class_type: nil,
+        constraints: Steep::Subtyping::Constraints.empty
+      ).success?
+    rescue StandardError
+      nil
+    end
+
     # Returns { "CONSTANT_NAME" => "Type" } for every `NAME = expr` /
     # `Foo::NAME = expr` in the source, typed from the RHS expression.
     # Keyed by the bare constant name (the `:casgn` node's name child), so
@@ -426,6 +452,33 @@ module RbsInfer::Signatures
 
     def steep_constant_resolver
       SteepEnvironment.steep_context&.fetch(:constant_resolver)
+    end
+
+    # A signature's type string as a Steep type, or nil when it is not one this
+    # check can compare.
+    #
+    # Names are absolutized before the factory sees them: a signature writes
+    # `Filter`, and the definition every subtyping question ends at is filed
+    # under `::Filter`. A relative name resolves to nothing, which the rescue
+    # would report as "cannot decide" for every type in the project.
+    def context_free_type(string, subtyping)
+      parsed = RBS::Parser.parse_type(string)
+      return nil if context_dependent?(parsed)
+
+      subtyping.factory.type(parsed.map_type_name { |name, _, _| name.absolute! })
+    rescue RBS::ParsingError, RBS::BaseError
+      nil
+    end
+
+    # `self`, `instance` and `class` name whatever definition encloses them, and
+    # this check has no enclosing definition — comparing them against a concrete
+    # type would answer about a type neither side wrote.
+    def context_dependent?(type)
+      return true if type.is_a?(RBS::Types::Bases::Self) ||
+                     type.is_a?(RBS::Types::Bases::Instance) ||
+                     type.is_a?(RBS::Types::Bases::Class)
+
+      type.each_type.any? { |t| context_dependent?(t) }
     end
 
     def steep_bridge_ivar_write_analyzer

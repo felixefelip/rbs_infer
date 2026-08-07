@@ -532,4 +532,35 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       expect(after_reset[:sidecars]).to be_empty
     end
   end
+
+  # felixefelip/rbs_infer#191. The relation `Ruby::MethodBodyTypeMismatch`
+  # reports on, asked of Steep's own check so a generated signature can be
+  # corrected exactly when the checker would reject it.
+  describe "#accepts?" do
+    it "answers true for a body type the declaration covers" do
+      expect(bridge.accepts?("String", "String")).to be(true)
+      expect(bridge.accepts?("(String | Array[String])", "String")).to be(true)
+      expect(bridge.accepts?("String?", "String")).to be(true)
+    end
+
+    it "answers false for a body type the declaration does not cover" do
+      expect(bridge.accepts?("String", "(String | Array[String])")).to be(false)
+      expect(bridge.accepts?("String", "Integer")).to be(false)
+    end
+
+    # Signatures write relative names; the definitions are filed under absolute
+    # ones. Without absolutizing, every project type would be undecidable.
+    it "resolves a relative name to the project's definition" do
+      expect(bridge.accepts?("ApplicationRecord", "User")).to be(true)
+      expect(bridge.accepts?("User", "ApplicationRecord")).to be(false)
+    end
+
+    # `nil` is "cannot decide", which a caller must not read as "does not
+    # accept" — `self` names the enclosing definition, and there is none here.
+    it "answers nil for a type it cannot compare" do
+      expect(bridge.accepts?("self", "User")).to be_nil
+      expect(bridge.accepts?("Array[self]", "Array[User]")).to be_nil
+      expect(bridge.accepts?("String", "not a type[")).to be_nil
+    end
+  end
 end
