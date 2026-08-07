@@ -3,14 +3,19 @@ module RbsInfer::Signatures
     # All keyword args are required: both call-sites always supply them, and
     # omitting any would be silently wrong (a missing `type_params` reopens a
     # generic class without its params → GenericParameterMismatchError; a
-    # missing `is_module`/`namespace_classes` mis-renders the declaration).
+    # missing `is_module`/`namespace_classes` mis-renders the declaration; a
+    # missing `class_methods_index` drops every `extend X::ClassMethods`).
     # Per docs/engineering/required-threaded-deps.md, that's "required", not
     # "defaulted".
-    def initialize(target_class:, superclass_name:, namespace_classes:, is_module:, type_params:)
+    def initialize(target_class:, superclass_name:, namespace_classes:, is_module:, type_params:, class_methods_index:)
       @target_class = target_class
       @superclass_name = superclass_name
       @namespace_classes = namespace_classes
       @is_module = is_module
+      # Answers whether an included module carries a nested `ClassMethods`, over
+      # both the project's own source and the gem RBS collection
+      # (felixefelip/rbs_infer#188).
+      @class_methods_index = class_methods_index
       # Generic type-parameter list ("[unchecked out Elem]") for the leaf
       # declaration when reopening a generic class; "" for the common
       # non-generic case (felixefelip/rbs_infer#38).
@@ -360,27 +365,14 @@ module RbsInfer::Signatures
       signature
     end
 
-    # Verifica se o módulo incluído tem um sub-módulo ClassMethods em .gem_rbs_collection/
+    # Whether the included module carries a nested `ClassMethods` — the shape
+    # that makes `include X` also `extend X::ClassMethods`.
+    #
+    # The module name is written in the INCLUDER's lexical scope (`include
+    # Params` inside `Filter` means `Filter::Params`), so the target class goes
+    # along as the scope to resolve it against.
     def has_class_methods_module?(module_name)
-      parts = module_name.split("::")
-      first = parts.first
-
-      gem_hints = [
-        first.downcase,
-        first.gsub(/([a-z])([A-Z])/, '\1_\2').downcase,
-        first.gsub(/([a-z])([A-Z])/, '\1-\2').downcase,
-      ].uniq
-
-      rbs_files = gem_hints.flat_map { |hint| Dir[".gem_rbs_collection/#{hint}/**/*.rbs"] }.uniq
-      return false if rbs_files.empty?
-
-      rbs_files.each do |file|
-        content = File.read(file)
-        next unless content.include?(parts.last)
-        return true if RbsParserUtil.has_class_methods_submodule?(content, module_name)
-      end
-
-      false
+      @class_methods_index.has?(module_name, enclosing: @target_class)
     end
   end
 end
