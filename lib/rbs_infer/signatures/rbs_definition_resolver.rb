@@ -9,6 +9,11 @@ module RbsInfer::Signatures
     def initialize
       @rbs_builder = nil
       @rbs_builder_loaded = false
+      # Memo for `instance_method_owner`. Lives beside `@rbs_builder`, which is
+      # fetched once per instance, so the cache can never outlive the environment
+      # it was computed against — the invariant the README states for everything
+      # derived from `SteepEnvironment`.
+      @instance_method_owners = {}
     end
 
     def resolve_via_rbs_builder(kind, class_name, method_name, block_body_type: nil)
@@ -92,6 +97,28 @@ module RbsInfer::Signatures
       nil
     rescue RBS::BaseError
       nil
+    end
+
+    # The class or module an instance method is DEFINED IN for `class_name`, walking
+    # the RBS ancestor chain — superclasses and included modules alike — or nil when
+    # the type has no such method (or isn't in the environment at all).
+    #
+    # This answers "whose method is this receiver calling?" for the case where the
+    # answer is not readable from the receiver's NAME. Active Record is the extreme
+    # example: `user.filters.from_params(...)` has a receiver typed
+    # `User_Filter::ActiveRecord_Associations_CollectionProxy`, and the method it
+    # reaches is defined two links up the chain, in
+    # `Filter::GeneratedRelationMethods` — a per-association subclass of a proxy
+    # that includes the delegating module. Neither link is a name the call site
+    # spells, and both exist only in rbs_rails' RBS, so the mixin graph built from
+    # the Ruby sources cannot see them either.
+    def instance_method_owner(class_name, method_name)
+      return nil unless rbs_builder
+
+      key = [class_name, method_name]
+      return @instance_method_owners[key] if @instance_method_owners.key?(key)
+
+      @instance_method_owners[key] = compute_instance_method_owner(class_name, method_name)
     end
 
     def format_rbs_return_type(rbs_type, context_class = nil)
@@ -190,6 +217,19 @@ module RbsInfer::Signatures
 
     def build_rbs_type_name(class_name)
       RBS::TypeName.parse(class_name).absolute!
+    end
+
+    def compute_instance_method_owner(class_name, method_name)
+      type_name = build_rbs_type_name(class_name)
+      return nil unless type_name
+      # A spelling that is not a class at all (`singleton(Foo)`, an alias) parses
+      # into a name no declaration answers to, which this lookup already rejects.
+      return nil unless rbs_builder.env.class_decls.key?(type_name)
+
+      member = rbs_builder.build_instance(type_name).methods[method_name.to_sym]
+      member&.defined_in&.to_s
+    rescue RBS::BaseError
+      nil
     end
   end
 end

@@ -219,7 +219,8 @@ module RbsInfer::Inference
         method_name = node.name.to_s
         if @target_methods.key?(method_name)
           receiver_type = resolve_receiver_type(node.receiver)
-          if receiver_type && (match_class?(receiver_type) || owner_match?(receiver_type, method_name))
+          if receiver_type && (match_class?(receiver_type) || owner_match?(receiver_type, method_name) ||
+                               ancestry_match?(receiver_type, method_name))
             args = extract_cross_class_args(node, @target_methods[method_name])
             @method_call_usages[method_name] << args unless args.empty?
           end
@@ -443,6 +444,42 @@ module RbsInfer::Inference
         normalized = component.sub(/\A::/, "")
         normalized == owner || relative_receiver_matches_target?(normalized, owner)
       end
+    end
+
+    # Does the receiver reach the target's method through its ANCESTRY — a
+    # superclass, or a module it includes — rather than through its name?
+    #
+    # `match_class?` and `owner_match?` above both compare NAMES, which is all the
+    # sources can be asked. A receiver typed as the class that includes the target
+    # module never spells that module, so every such call site was invisible and
+    # the module's parameters stayed `untyped`. Active Record makes this the normal
+    # case rather than the exotic one: it delegates a model's class methods to its
+    # relations and proxies through `<Model>::GeneratedRelationMethods`, so
+    # `user.filters.from_params(filter_params)` — a receiver typed
+    # `User_Filter::ActiveRecord_Associations_CollectionProxy`, two ancestry links
+    # away — is how those methods are actually called, while the only call site the
+    # name-based match accepted was the AR-runtime pseudo-code's own
+    # `::Filter.from_params(params)`, forwarding a parameter still being inferred.
+    # `Filter.from_params` therefore read `(untyped params)` even though every real
+    # caller passes an `ActionController::Parameters & …::Permitted`.
+    #
+    # Asked LAST, and only for a method the target declares: the two name-based
+    # matches are string comparisons, this one consults the RBS environment.
+    #
+    # The RBS is also the only place that knows this — rbs_rails declares the
+    # relation shapes and their `include`s in signatures, never in Ruby, so
+    # `MixinIndex` (built from the sources' `include`s) cannot answer it.
+    def ancestry_match?(receiver_type, method_name)
+      normalized_target = @target_class.sub(/\A::/, "")
+
+      receiver_components(receiver_type).any? do |component|
+        owner = rbs_definition_resolver.instance_method_owner(component, method_name)
+        owner && owner.sub(/\A::/, "") == normalized_target
+      end
+    end
+
+    def rbs_definition_resolver
+      @rbs_definition_resolver ||= RbsInfer::Signatures::RbsDefinitionResolver.new
     end
 
     def relative_receiver_matches_target?(relative_name, target)
