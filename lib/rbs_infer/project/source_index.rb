@@ -16,6 +16,19 @@ module RbsInfer::Project
     # `files_calling`); bare calls are covered by the mixin graph.
     RECEIVER_CALL = /\.\s*([a-z_][a-zA-Z0-9_]*[?!]?)/
 
+    # The WRITE form of the same shape: `record.channel = "none"` is a call to
+    # `channel=`, and `RECEIVER_CALL` above stops before the `=` — so the file was
+    # only ever indexed under `channel`, a name no caller asks about (a reader
+    # takes no parameters, and `files_calling` is only asked about methods that
+    # do). A writer-only method was therefore invisible unless its class happened
+    # to have some OTHER parameterized method called in the same file, which is
+    # what made the miss look intermittent.
+    #
+    # Op-assign counts: `record.count += 1` reads and writes. The `(?!=[=~>])`
+    # tail keeps `==`, `=~` and `=>` out — those are reads of the getter, not
+    # writes — and `!=` never matches because `!` is not among the operators.
+    RECEIVER_WRITE = %r{\.\s*([a-z_][a-zA-Z0-9_]*)\s*(?:\|\||&&|\*\*|<<|>>|[-+*/%|&^])?=(?![=~>])}
+
     def initialize(source_files)
       @index = Hash.new { |h, k| h[k] = [] }
       @call_index = Hash.new { |h, k| h[k] = [] }
@@ -28,6 +41,9 @@ module RbsInfer::Project
 
         content.scan(RECEIVER_CALL).flatten.uniq.each do |method_name|
           @call_index[method_name] << file
+        end
+        content.scan(RECEIVER_WRITE).flatten.uniq.each do |method_name|
+          @call_index["#{method_name}="] << file
         end
         # `_` faz parte do nome da constante: proxies de associação do
         # rbs_rails (`Post_Assignment`, `ActiveRecord_Associations_CollectionProxy`)

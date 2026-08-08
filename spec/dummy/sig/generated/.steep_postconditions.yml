@@ -1069,6 +1069,20 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Notification
+  method: mute!
+  effects:
+    may_write:
+    - "@__store_settings_channel"
+- class: Notification::GeneratedStoreAccessors
+  method: channel
+  effects:
+    returns_ivar: "@__store_settings_channel"
+- class: Notification::GeneratedStoreAccessors
+  method: channel=
+  effects:
+    may_write:
+    - "@__store_settings_channel"
 - class: ParseXml
   method: initialize
   effects:

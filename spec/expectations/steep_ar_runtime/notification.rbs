@@ -1,0 +1,3 @@
+class Notification
+  include ::Notification::GeneratedStoreAccessors
+end

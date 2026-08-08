@@ -52,6 +52,18 @@ module RbsInfer
           # the signatures already exist.
           ClassMethodsModule = Struct.new(:name, keyword_init: true)
 
+          # One `store_accessor` key: the reader/writer pair Active Record defines
+          # with `define_method` inside `_store_accessors_module` — an anonymous
+          # module it INCLUDES into the model, which is what lets an override
+          # written in the class body call `super`. None of it is statically
+          # visible, so without the pseudo-code the accessor does not exist for
+          # the checker at all: every read is a `NoMethod`, not an `untyped`.
+          #
+          # `key` is the store slot and `name` the method actually defined, which
+          # `prefix:`/`suffix:` change while the slot does not — so two macros
+          # naming one slot differently share the storage they share at runtime.
+          StoreAccessor = Struct.new(:store, :key, :name, keyword_init: true)
+
           # A public CLASS method written as `def self.x` / inside `class << self`.
           # Active Record delegates these to relations and collection proxies
           # (`ActiveRecord::Delegation::ClassSpecificRelation#method_missing`
@@ -78,7 +90,7 @@ module RbsInfer
             :kind,       # :class | :module (a concern)
             :superclass, # "ApplicationRecord" (nil for a module, or a bare class)
             :body,       # [BelongsTo | HasMany | BeforeValidation | Include | Scope |
-                         #  SingletonMethod | ClassMethodsModule]
+                         #  SingletonMethod | ClassMethodsModule | StoreAccessor]
             keyword_init: true
           ) do
             # A later declaration of the same association REPLACES the earlier
@@ -113,6 +125,14 @@ module RbsInfer
             # include order and without repeats.
             def class_methods_modules
               body.grep(ClassMethodsModule).map(&:name).uniq
+            end
+
+            # The store accessors, keeping the LAST declaration of each METHOD
+            # name: re-declaring a key redefines the pair, and two entries under
+            # one name would emit a `DuplicateMethodDefinition` into the module —
+            # which poisons the whole RBS environment, not just this file.
+            def store_accessors
+              last_per_name(body.grep(StoreAccessor))
             end
 
             # The `belongs_to` on this model whose target is `owner_class` — the
@@ -247,10 +267,76 @@ module RbsInfer
               when :scope
                 name = first_symbol(stmt) or return []
                 [Scope.new(name: name)]
+              when :store_accessor
+                store_accessor_entries(stmt)
+              when :store
+                store_entries(stmt)
               when :include
                 constant_args(stmt).map { |const| Include.new(name: const) }
               else
                 []
+              end
+            end
+
+            # --- store accessors ----------------------------------------------
+
+            # `store_accessor :settings, :theme, :channel, prefix: true` — one
+            # entry per key. The first symbol names the store column and the rest
+            # are keys; the trailing kwargs hash is skipped by `symbol_list`.
+            def store_accessor_entries(call)
+              args = call.arguments.arguments
+              store = args.first.is_a?(Prism::SymbolNode) ? args.first.value.to_s : nil
+              return [] unless store
+
+              store_accessors_for(call, store, symbol_list(args.drop(1)))
+            end
+
+            # `store :settings, accessors: [ :theme ], coder: JSON` — the same
+            # pairs, from the macro that also declares the serialization. Without
+            # `accessors:` it defines no method at all (`store :request, coder:
+            # JSON`), so there is nothing to model.
+            def store_entries(call)
+              store = first_symbol(call) or return []
+
+              store_accessors_for(call, store, symbol_list([kwarg(call, "accessors")].compact))
+            end
+
+            def store_accessors_for(call, store, keys)
+              prefix = affix(call, "prefix", store)
+              suffix = affix(call, "suffix", store)
+
+              keys.map do |key|
+                StoreAccessor.new(store: store, key: key, name: "#{prefix}#{key}#{suffix}")
+              end
+            end
+
+            # Active Record builds the method name as `"#{prefix}#{key}#{suffix}"`,
+            # where `true` means "use the store's own name" and a symbol/string
+            # means that name. The separating `_` belongs to the affix, so a key
+            # with neither is untouched.
+            def affix(call, position, store)
+              node = kwarg(call, position)
+              value =
+                case node
+                when Prism::TrueNode then store
+                when Prism::SymbolNode then node.value.to_s
+                when Prism::StringNode then node.unescaped
+                else return ""
+                end
+
+              position == "prefix" ? "#{value}_" : "_#{value}"
+            end
+
+            # Symbols, plus the contents of any array literal among them: Active
+            # Record flattens `keys`, so `store_accessor :settings, %i[a b]` is
+            # the same declaration as spelling them out.
+            def symbol_list(nodes)
+              nodes.flat_map do |node|
+                case node
+                when Prism::SymbolNode then [node.value.to_s]
+                when Prism::ArrayNode then symbol_list(node.elements)
+                else []
+                end
               end
             end
 

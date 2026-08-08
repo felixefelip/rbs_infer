@@ -126,6 +126,41 @@ RSpec.describe RbsInfer::Project::SourceIndex do
 
       expect(index.files_calling("whatever")).to be_empty
     end
+
+    # `record.channel = "none"` é uma chamada a `channel=`, e só esse nome é
+    # consultado: um reader não tem parâmetro, e `files_calling` só é perguntado
+    # sobre métodos que têm. Indexando apenas `channel`, um writer ficava
+    # invisível — a não ser que a classe tivesse OUTRO método com parâmetros
+    # chamado no mesmo arquivo, o que fazia a falha parecer intermitente.
+    it "indexa a escrita de atributo sob o nome do writer" do
+      f = write_file("a.rb", 'record.channel = "none"')
+
+      index = described_class.new([f])
+
+      expect(index.files_calling("channel=")).to contain_exactly(f)
+      expect(index.files_calling("channel")).to contain_exactly(f)
+    end
+
+    it "indexa op-assign como escrita e como leitura" do
+      f = write_file("a.rb", "counter.total += 1\nsetting.theme ||= 'dark'")
+
+      index = described_class.new([f])
+
+      expect(index.files_calling("total=")).to contain_exactly(f)
+      expect(index.files_calling("theme=")).to contain_exactly(f)
+    end
+
+    # Comparação é leitura do getter, não escrita: indexar `==`/`=~`/`>=` como
+    # writer encheria o índice de nomes que ninguém define.
+    it "não confunde comparação com escrita" do
+      f = write_file("a.rb", "a.slot == 1 && a.other != 2 && a.third =~ /x/ && a.fourth >= 3")
+
+      index = described_class.new([f])
+
+      %w[slot= other= third= fourth=].each do |name|
+        expect(index.files_calling(name)).to be_empty
+      end
+    end
   end
 
   it "não confunde constantes CamelCase adjacentes a underscores" do

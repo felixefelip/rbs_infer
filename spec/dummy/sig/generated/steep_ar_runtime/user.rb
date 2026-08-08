@@ -4,6 +4,8 @@
 # Regenerated on every run; do not edit.
 
 class User
+  include ::User::GeneratedStoreAccessors
+
   def notifications
     User_Notification::ActiveRecord_Associations_CollectionProxy.new(Notification, self)
   end
