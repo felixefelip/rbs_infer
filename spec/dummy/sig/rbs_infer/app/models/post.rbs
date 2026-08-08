@@ -18,6 +18,7 @@ class Post < ApplicationRecord
   def publish_in_transaction: () -> self
   def popular_tags: (?Integer limit) -> untyped
   def tag_limit: () -> Integer
+  def tag_named: () -> (Tag & Tag::Validated)?
   def sibling_tag_names: () -> Array[String]
   def iterate_tags: () -> Post_Tag::ActiveRecord_Associations_CollectionProxy
   def archive: () -> Post_Comment::ActiveRecord_Associations_CollectionProxy

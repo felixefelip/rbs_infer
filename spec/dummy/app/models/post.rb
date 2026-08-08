@@ -99,6 +99,15 @@ class Post < ApplicationRecord
     tags.default_limit
   end
 
+  # The ARGUMENT direction of that same delegation: the receiver is the has_many
+  # proxy, so `Tag.named`'s parameter is only typed if the proxy's type is
+  # recognized as reaching `Tag::GeneratedRelationMethods#named` through its
+  # ancestry — the name it is spelled with (`Post_Tag::…CollectionProxy`) says
+  # nothing about either link.
+  def tag_named
+    tags.named(title.to_s)
+  end
+
   def sibling_tag_names
     Post.recently_tagged.default_tag_names
   end

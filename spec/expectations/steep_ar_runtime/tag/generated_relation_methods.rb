@@ -11,4 +11,8 @@ module Tag::GeneratedRelationMethods
   def default_limit
     ::Tag.default_limit
   end
+
+  def named(value)
+    ::Tag.named(value)
+  end
 end

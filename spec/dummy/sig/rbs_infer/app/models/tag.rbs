@@ -1,4 +1,5 @@
 class Tag < ApplicationRecord
   def self.popular: (?Integer limit) -> untyped
   def self.default_limit: () -> Integer
+  def self.named: (String value) -> (Tag & Tag::Validated)?
 end

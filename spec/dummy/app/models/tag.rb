@@ -25,5 +25,15 @@ class Tag < ApplicationRecord
     def default_limit
       10
     end
+
+    # A parameter with NO default, so its type can only come from a call site —
+    # and the only caller (`Post#tag_named`) goes through the has_many proxy, two
+    # ancestry links away from this class. Both halves of the chain are under
+    # test: the proxy's receiver type has to be recognized as reaching
+    # `Tag::GeneratedRelationMethods#named`, and the pseudo-code's
+    # `::Tag.named(value)` then has to carry that type here.
+    def named(value)
+      find_by(name: value)
+    end
   end
 end
