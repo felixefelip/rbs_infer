@@ -8,7 +8,7 @@ class Example14
 
   def halt: () -> bool
   def verify: () -> Example14::User
-  def set_user: () -> User
+  def set_user: () -> Example14::User
 end
 
 class Example14
