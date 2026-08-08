@@ -1,0 +1,6 @@
+class User
+  module GeneratedStoreAccessors
+    def digest_hour: () -> untyped
+    def digest_hour=: (untyped value) -> untyped
+  end
+end

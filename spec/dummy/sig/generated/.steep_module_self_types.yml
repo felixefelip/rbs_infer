@@ -74,6 +74,16 @@ app/models/widget/publishable.rb:
     annotations:
     - "# @type self: singleton(Widget) & singleton(Widget::Publishable)"
     - "# @type instance: Widget & Widget::Publishable"
+sig/generated/steep_ar_runtime/notification/generated_store_accessors.rb:
+  modules:
+  - anchor: GeneratedStoreAccessors
+    annotations:
+    - "# @type instance: Notification & Notification::GeneratedStoreAccessors"
+sig/generated/steep_ar_runtime/user/generated_store_accessors.rb:
+  modules:
+  - anchor: GeneratedStoreAccessors
+    annotations:
+    - "# @type instance: User & User::GeneratedStoreAccessors"
 sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:
   modules:
   - anchor: ControllerMethods

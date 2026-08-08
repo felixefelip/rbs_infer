@@ -6,6 +6,7 @@ class User
     def notifications_count: () -> Integer
     def notify!: (String title) -> Notification
     def notify_welcome!: () -> Notification
+    def mute_latest_notification!: () -> String?
     def latest_notification_headline: () -> String?
   end
 end

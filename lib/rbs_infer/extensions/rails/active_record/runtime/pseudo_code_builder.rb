@@ -50,8 +50,15 @@ module RbsInfer
             # Returns [FileEntry], or [] when nothing qualifies (no model has a
             # `before_validation` callback nor a has_many to a known model).
             def build
-              class_reopens + proxy_reopens + relation_method_reopens
+              class_reopens + proxy_reopens + relation_method_reopens + store_accessor_reopens
             end
+
+            # The module Active Record's `store_accessor` builds at runtime.
+            # `Generated…` matches the neighbourhood rbs_rails already owns
+            # (`GeneratedAttributeMethods`, `GeneratedRelationMethods`) and keeps
+            # the name clear of anything an app would write itself — AR's own is
+            # anonymous, so there is no real name to match.
+            STORE_ACCESSORS_MODULE = "GeneratedStoreAccessors"
 
             private
 
@@ -69,11 +76,16 @@ module RbsInfer
             end
 
             # class_name => { callbacks: [...], belongs_to_defaults: [BelongsTo],
-            #                 getters: [{ name:, proxy:, element: }, ...] }
+            #                 getters: [{ name:, proxy:, element: }, ...],
+            #                 store_accessors: bool }
             def reopen_plan
-              plan = Hash.new { |h, k| h[k] = { callbacks: [], belongs_to_defaults: [], getters: [] } }
+              plan = Hash.new do |h, k|
+                h[k] = { callbacks: [], belongs_to_defaults: [], getters: [], store_accessors: false }
+              end
 
               @models.each do |model|
+                plan[model.class_name][:store_accessors] = true if model.store_accessors.any?
+
                 plan[model.class_name][:callbacks] = model.before_validation_callbacks if model.before_validation_callbacks.any?
 
                 # A `belongs_to ... default: -> { expr }` runs `expr` in a
@@ -105,8 +117,16 @@ module RbsInfer
 
             def class_source(class_name, info)
               body = []
+              # `store_accessor` defines the pair inside a module it INCLUDES, not
+              # in the class — which is exactly what lets an override in the class
+              # body call `super`. Emitting the pair as plain `def`s here would
+              # both lose that and collide with the override.
+              body << "  include ::#{class_name}::#{STORE_ACCESSORS_MODULE}" if info[:store_accessors]
+
               defaults = info[:belongs_to_defaults]
               if info[:callbacks].any? || defaults.any?
+                body << "" unless body.empty?
+
                 # `save(**)` matches the real `save: (?context:, ?validate:,
                 # ?touch:) -> bool`; it runs the before_validation callbacks (the
                 # named ones and the belongs_to `default:` lambdas) so their
@@ -312,6 +332,53 @@ module RbsInfer
 
               found = resolve_constant(parent, model.class_name)
               found ? active_record?(found, seen) : false
+            end
+
+            # --- store accessor reopens --------------------------------------
+
+            # One module per model declaring `store_accessor`, holding the
+            # reader/writer pair for each key. `class_source` emits the matching
+            # `include`, so a model that needs nothing else still gets its reopen.
+            #
+            # Nothing here states a type — same rule as the Devise generator. The
+            # slot is an ivar assigned only by the writer, so the pipeline reads
+            # the writer's parameter off its real call sites and the "assigned
+            # outside `initialize`" rule makes the reader nilable on its own,
+            # which is what a store key that was never written actually is.
+            # Modelling the read as `settings["theme"]` instead would be faithful
+            # and permanently `untyped`: the column is json.
+            def store_accessor_reopens
+              @models.filter_map do |model|
+                accessors = model.store_accessors
+                next if accessors.empty?
+
+                FileEntry.new(
+                  filename: "#{file_name(model.class_name)}/#{file_name(STORE_ACCESSORS_MODULE)}.rb",
+                  source: store_accessors_source(model.class_name, accessors)
+                )
+              end
+            end
+
+            def store_accessors_source(class_name, accessors)
+              body = []
+              accessors.each do |accessor|
+                ivar = store_ivar(accessor)
+                body << "" unless body.empty?
+                body.concat(method_lines(accessor.name) { [ivar] })
+                body << ""
+                body.concat(method_lines("#{accessor.name}=", "value") { ["#{ivar} = value"] })
+              end
+
+              file(["module #{class_name}::#{STORE_ACCESSORS_MODULE}", *body, "end"])
+            end
+
+            # The slot the pair reads and writes, named after the store COLUMN and
+            # the key rather than the method: `prefix:`/`suffix:` variants of one
+            # key then share the storage they share at runtime, and the `__store_`
+            # namespace keeps a key from ever colliding with an ivar the model
+            # assigns itself.
+            def store_ivar(accessor)
+              "@__store_#{accessor.store}_#{accessor.key}"
             end
 
             # NOTE: the synthetic `run_before_validation_callbacks` is defined in

@@ -17,6 +17,13 @@ module User::Notifiable
 
   included do
     has_many :notifications, dependent: :destroy
+
+    # Declared in a concern's `included do`, which is where Rails apps put it (it
+    # is where fizzy's `store_accessor :fields, …` lives) and the half only
+    # `ConcernResolver` can see: reading `user.rb` alone finds no macro, so the
+    # pair has to be spliced onto the INCLUDER — the module is `User`'s, not the
+    # concern's, because the keys belong to whoever includes it.
+    store_accessor :preferences, :digest_hour
   end
 
   def unread_notifications
@@ -38,6 +45,16 @@ module User::Notifiable
   # not annotations, so a method nobody calls stays `untyped`.
   def notify_welcome!
     notify!("Welcome")
+  end
+
+  # The EXTERNAL write to a store slot. The pair lives in a module the element
+  # only reaches through its ancestry, so this is what pins the writer's
+  # parameter — and with it the reader's type.
+  def mute_latest_notification!
+    latest = notifications.order(created_at: :desc).first
+    return unless latest
+
+    latest.channel = "none"
   end
 
   def latest_notification_headline
