@@ -19,17 +19,59 @@ module RbsInfer::Project
     def initialize(files)
       @files = files
       @file_class = {}     # file → class_name defined in file
-      @class_file = {}     # class_name → file
+      # class_name → EVERY file that declares it. A class reopened across files is
+      # the norm here, not an oddity: `Tag` is `app/models/tag.rb` *and* the
+      # AR-runtime pseudo-code that reopens it. Keying one file per class silently
+      # dropped all but the last one scanned, so an edge meant for `app/models/tag.rb`
+      # landed on `sig/generated/steep_ar_runtime/tag.rb` instead.
+      @class_files = Hash.new { |h, k| h[k] = [] }
       @file_deps = {}      # file → Set of files it depends on
+      @prepared = false
     end
 
     def sorted_levels
-      scan_files
-      build_dependency_graph
+      prepare
       topological_levels
     end
 
+    # `file → Set[file]` over BOTH directions of every dependency edge: the files
+    # a file references and the files that reference it. Read as "whose generated
+    # RBS can this file's inference have read, and whose can have read this one's".
+    #
+    # Both directions are needed because the two halves of inference read the graph
+    # opposite ways. A RETURN type is resolved from the callee's RBS, so a file
+    # reads the RBS of what it references — the direction `sorted_levels` orders
+    # by. A PARAMETER type is inferred from call sites, so a file's RBS depends on
+    # its CALLERS, which reference it. One edge, two readers, and a change at
+    # either end can move the other.
+    #
+    # This is what the stabilization loop requeues on. Re-running only the files
+    # whose own RBS changed is not enough: when the AR-runtime pseudo-code's
+    # `from_params(params)` finally got a typed parameter, nothing re-ran
+    # `app/models/filter.rb`, which reads that parameter through the pseudo-code's
+    # `::Filter.from_params(params)` call site — it had already been generated in an
+    # earlier level (it is a dependency of the pseudo-code, not a dependent) and had
+    # not changed in the pass, so it was not in the queue. The type only landed on
+    # the NEXT whole invocation of the CLI (felixefelip/rbs_infer#193 follow-up).
+    def neighbors
+      prepare
+      @neighbors ||= @file_deps.each_with_object(Hash.new { |h, k| h[k] = Set.new }) do |(file, deps), map|
+        deps.each do |dep|
+          map[file] << dep
+          map[dep] << file
+        end
+      end
+    end
+
     private
+
+    def prepare
+      return if @prepared
+      @prepared = true
+
+      scan_files
+      build_dependency_graph
+    end
 
     # Phase 1: For each file, extract the class it defines and the constant
     # names it references.
@@ -53,7 +95,7 @@ module RbsInfer::Project
         next unless class_name
 
         @file_class[file] = class_name
-        @class_file[class_name] = file
+        @class_files[class_name] << file
 
         # Extract all constant references in the file
         refs = Set.new
@@ -72,7 +114,7 @@ module RbsInfer::Project
     def build_dependency_graph
       # Build short_name → [class_name] index
       short_to_classes = Hash.new { |h, k| h[k] = [] }
-      @class_file.each_key do |cn|
+      @class_files.each_key do |cn|
         short_to_classes[cn.split("::").last] << cn
       end
 
@@ -84,8 +126,7 @@ module RbsInfer::Project
         deps = Set.new
         refs.each do |short_name|
           short_to_classes[short_name].each do |cn|
-            dep_file = @class_file[cn]
-            deps << dep_file if dep_file && dep_file != file
+            @class_files[cn].each { |dep_file| deps << dep_file if dep_file != file }
           end
         end
         @file_deps[file] = deps

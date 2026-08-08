@@ -125,5 +125,60 @@ RSpec.describe RbsInfer::Project::DependencySorter do
       levels = described_class.sort([good, bad])
       expect(levels.flatten).to include(good)
     end
+
+    it "orders a file after every file declaring a class it references" do
+      model = write_file("app/models/tag.rb", "class Tag; def self.named(v); v; end; end")
+      reopen = write_file("sig/generated/tag.rb", "class Tag; def extra; 1; end; end")
+      caller_file = write_file("sig/generated/tag/relation.rb", <<~RUBY)
+        module Tag::Relation
+          def named(value); ::Tag.named(value); end
+        end
+      RUBY
+
+      levels = described_class.sort([model, reopen, caller_file])
+      expect(levels.index { |l| l.include?(caller_file) })
+        .to be > [model, reopen].map { |f| levels.index { |l| l.include?(f) } }.max
+    end
+  end
+
+  describe "#neighbors" do
+    it "pairs a file with the files it references, in both directions" do
+      user = write_file("app/models/user.rb", "class User; end")
+      service = write_file("app/services/greeter.rb", <<~RUBY)
+        class Greeter
+          def call(user); User.find(user); end
+        end
+      RUBY
+
+      sorter = described_class.new([user, service])
+
+      expect(sorter.neighbors[service]).to contain_exactly(user)
+      expect(sorter.neighbors[user]).to contain_exactly(service)
+    end
+
+    # A class reopened across files used to be keyed one file per class, so all
+    # but the last one scanned dropped out of the graph — and the one that
+    # dropped out was `app/models/tag.rb`, the file that had to be regenerated.
+    it "reaches every file declaring the referenced class, not just one" do
+      model = write_file("app/models/tag.rb", "class Tag; def self.named(v); v; end; end")
+      reopen = write_file("sig/generated/tag.rb", "class Tag; def extra; 1; end; end")
+      caller_file = write_file("sig/generated/tag/relation.rb", <<~RUBY)
+        module Tag::Relation
+          def named(value); ::Tag.named(value); end
+        end
+      RUBY
+
+      sorter = described_class.new([model, reopen, caller_file])
+
+      expect(sorter.neighbors[caller_file]).to contain_exactly(model, reopen)
+      expect(sorter.neighbors[model]).to include(caller_file)
+    end
+
+    it "answers without a prior call to sorted_levels" do
+      a = write_file("app/models/user.rb", "class User; end")
+      b = write_file("app/services/greeter.rb", "class Greeter; def call; User; end; end")
+
+      expect(described_class.new([a, b]).neighbors[b]).to contain_exactly(a)
+    end
   end
 end

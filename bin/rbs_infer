@@ -166,7 +166,18 @@ generate = lambda do |inputs_to_process, silent: false|
 end
 
 if output
-  levels = RbsInfer::Project::DependencySorter.sort(files)
+  sorter = RbsInfer::Project::DependencySorter.new(files)
+  levels = sorter.sorted_levels
+  neighbors = sorter.neighbors
+
+  # A file whose RBS changed can move the RBS of every file it shares a dependency
+  # edge with, in either direction — see `DependencySorter#neighbors`. Requeueing
+  # only the files whose own RBS changed left a type one whole CLI invocation
+  # behind whenever the file that had to read it sat in an earlier level and did
+  # not change in the pass.
+  with_neighbors = lambda do |changed|
+    changed.flat_map { |file| [file, *neighbors[file]] }.uniq
+  end
 
   reset_caches = lambda do
     RbsInfer::Signatures::SteepEnvironment.reset!
@@ -184,13 +195,16 @@ if output
     all_changed.concat(changed)
   end
 
-  # Stabilization: re-run any remaining changed files (handles cycles, indirect deps)
+  # Stabilization: re-run the changed files and their graph neighbours (handles
+  # cycles, indirect deps, and the caller/callee split described above).
+  # `changed` still means "files whose RBS changed in the last pass", so what
+  # ends the loop is unchanged — only the set re-analyzed each pass widens.
   pass = 1
   changed = all_changed.uniq
   while changed.any? && pass < max_passes
     pass += 1
     reset_caches.call
-    changed = generate.call(changed, silent: true)
+    changed = generate.call(with_neighbors.call(changed), silent: true)
   end
 
   if changed.any?
