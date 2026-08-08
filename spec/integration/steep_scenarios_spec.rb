@@ -387,4 +387,33 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     expect(result.generated_rbs.chomp).to eq(expected_rbs.chomp)
     expect(result.diagnostics).to be_empty
   end
+
+  # felixefelip/rbs_infer#191. A return type used to be a ratchet: only
+  # `-> untyped` was ever filled in, so a concrete type survived every
+  # regeneration — including after the type it was derived from widened
+  # underneath it, which is `Ruby::MethodBodyTypeMismatch` on the generated RBS
+  # and stayed there however often it was regenerated.
+  it "replaces a previously generated return the body contradicts" do
+    result = steep_scenario(<<~RUBY, sig: <<~RBS)
+      class Widget
+        def pick(flag)
+          if flag
+            @thing = "one"
+          else
+            @thing = [2]
+          end
+        end
+      end
+    RUBY
+      class Widget
+        @thing: (String | Array[Integer])?
+
+        def pick: (untyped flag) -> String
+      end
+    RBS
+
+    expect(result.generated_rbs).to include("def pick: (untyped flag) -> (String | Array[Integer])")
+    expect(result.diagnostics).to be_empty
+  end
+
 end

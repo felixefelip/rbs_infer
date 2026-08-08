@@ -31,11 +31,20 @@ module SteepScenarioHelper
   # Generates RBS with rbs_infer and runs `steep check` on `ruby` in an
   # isolated temp project. Returns a Result with the parsed `diagnostics`
   # (sorted, unique), the `generated_rbs`, and the raw `steep_output`.
-  def steep_scenario(ruby)
+  #
+  # `sig` seeds the file rbs_infer is about to write, so a scenario can start
+  # from a PREVIOUS generation instead of from nothing — the only way to
+  # express what a regeneration does with a signature already on disk. Most
+  # scenarios have no previous output to speak of and pass nothing.
+  def steep_scenario(ruby, sig: nil)
     Dir.mktmpdir("rbs-infer-scenario") do |dir|
       dir = Pathname(dir)
       (dir + "app").mkpath
       (dir + "app" + "scenario.rb").write(ruby)
+      if sig
+        (dir + "sig" + "generated" + "app").mkpath
+        (dir + "sig" + "generated" + "app" + "scenario.rbs").write(sig)
+      end
       (dir + "Steepfile").write(<<~STEEP)
         target :app do
           signature "sig"
