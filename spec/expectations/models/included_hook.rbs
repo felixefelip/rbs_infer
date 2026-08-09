@@ -1,0 +1,18 @@
+class IncludedHook
+  module Hookable
+    def self.included: (untyped base) -> untyped
+    def from_hook: () -> String
+    def slot: () -> untyped
+  end
+  module Arbitrary
+    def self.foo_included: (untyped base) -> untyped
+    def from_arbitrary: () -> String
+  end
+  module Shared
+    def self.included: (untyped base) -> untyped
+    def from_shared: () -> Integer
+  end
+
+  include Slots
+  include Hookable
+end

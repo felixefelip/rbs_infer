@@ -117,6 +117,26 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
                     target_file: "app/models/eval_reopen/slots.rb")
   end
 
+  # `Module#included` is a plain Ruby hook: `include X` calls `X.included(self)`, so
+  # `base.class_eval do ... end` inside it defines the block's methods on the INCLUDER.
+  # The snapshot records the gap — they are attributed to the module instead, which is
+  # why `slot`'s `super` finds nothing and `IncludedHookCaller#read_slot` reads
+  # `untyped` where the slot is `String?`.
+  #
+  # This is the plain-Ruby core of the `included do` problem; ActiveSupport::Concern is
+  # sugar over the same shape. `ClassEvalExpander` declines it correctly for what it
+  # knows: the receiver is a method parameter, so the call names no class — the hosts
+  # have to come from the mixin graph.
+  it "IncludedHook (self.included hook) matches expected RBS" do
+    assert_snapshot("models/included_hook", target_class: "IncludedHook",
+                    target_file: "app/models/included_hook.rb")
+  end
+
+  it "IncludedHook::Slots (the hook block's super target) matches expected RBS" do
+    assert_snapshot("models/included_hook/slots", target_class: "IncludedHook::Slots",
+                    target_file: "app/models/included_hook/slots.rb")
+  end
+
   # A namespaced service object called by its BARE name from the model that
   # encloses it (felixefelip/rbs_infer#129). The interesting half is `Post#archive` /
   # `#archive_via_singleton` in the Post snapshot above: `Archiver` there is

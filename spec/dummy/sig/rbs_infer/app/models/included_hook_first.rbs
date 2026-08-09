@@ -1,0 +1,3 @@
+class IncludedHookFirst
+  include IncludedHook::Shared
+end

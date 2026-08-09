@@ -1078,6 +1078,15 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: IncludedHook::Slots
+  method: slot
+  effects:
+    returns_ivar: "@slot"
+- class: IncludedHook::Slots
+  method: slot=
+  effects:
+    may_write:
+    - "@slot"
 - class: Notification
   method: mute!
   effects:

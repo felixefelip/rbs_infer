@@ -33,6 +33,20 @@ app/models/eventable.rb:
     annotations:
     - "# @type self: singleton(Widget) & singleton(Eventable)"
     - "# @type instance: Widget & Eventable"
+app/models/included_hook/slots.rb:
+  modules:
+  - anchor: Slots
+    annotations:
+    - "# @type instance: IncludedHook & IncludedHook::Slots"
+app/models/included_hook.rb:
+  modules:
+  - anchor: Hookable
+    annotations:
+    - "# @type instance: IncludedHook & IncludedHook::Hookable"
+  - anchor: Shared
+    annotations:
+    - "# @type instance: (IncludedHookFirst & IncludedHook::Shared) | (IncludedHookSecond
+      & IncludedHook::Shared)"
 app/models/post/notifiable.rb:
   modules:
   - anchor: Notifiable
