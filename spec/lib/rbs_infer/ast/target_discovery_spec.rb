@@ -21,6 +21,44 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     expect(d.include_targets).to be_empty
   end
 
+  # Ruby REOPENS a class rather than redefining it, and a target's pass already
+  # collects members from every reopen in the file. A second entry re-emitted the
+  # whole merged set, and two declarations of one method in a single file is an
+  # `RBS::DuplicatedMethodDefinitionError` — `build_instance` raises for that class,
+  # poisoning the environment rather than just the file.
+  it "records one target per name however many times the file reopens it" do
+    d = discover(<<~RUBY)
+      class ZzTwo
+        def a; end
+      end
+
+      class ZzTwo
+        def b; end
+      end
+    RUBY
+
+    expect(d.declaration_targets).to eq([{ name: "ZzTwo", is_module: false }])
+  end
+
+  it "keeps a reopened nested class distinct from its namesake elsewhere" do
+    d = discover(<<~RUBY)
+      class Outer
+        class Inner
+          def a; end
+        end
+      end
+
+      class Inner
+        def b; end
+      end
+    RUBY
+
+    expect(d.declaration_targets).to eq([
+      { name: "Outer::Inner", is_module: false },
+      { name: "Inner", is_module: false }
+    ])
+  end
+
   it "discovers sibling top-level declarations with their kind" do
     d = discover(<<~RUBY)
       class Foo; end

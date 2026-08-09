@@ -84,7 +84,21 @@ module RbsInfer::AST
       name = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
       return unless name && !name.empty?
 
-      @declaration_targets << { name: (@namespace + [name]).join("::"), is_module: is_module }
+      qualified = (@namespace + [name]).join("::")
+
+      # ONE target per name, however many times the file reopens it. Ruby reopens a
+      # class rather than redefining it, and a target's pass already collects members
+      # from every reopen in the file — so a second entry re-emitted the whole merged
+      # set, and two declarations of the same method in one file is an RBS
+      # `DuplicatedMethodDefinitionError`: `build_instance` raises for that class, so
+      # it poisons the environment rather than just the one file.
+      #
+      # Latent while no fixture reopened a class twice in a single file; the
+      # `class_eval` desugaring makes it the normal case, since it emits a `class X`
+      # beside the one the file already writes.
+      return if @declaration_targets.any? { |t| t[:name] == qualified }
+
+      @declaration_targets << { name: qualified, is_module: is_module }
     end
 
     # A declaration whose body is nothing but other class/module declarations
