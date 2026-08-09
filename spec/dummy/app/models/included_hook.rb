@@ -91,19 +91,6 @@ class IncludedHook
     end
   end
 
-  # Two hosts for one hook block: the remaining ambiguity, not an oversight. One block,
-  # two `base`s, and `super` inside it would resolve against a different chain in each —
-  # the same disagreement felixefelip/steep#134 declines on rather than guess.
-  module Shared
-    def self.included(base)
-      base.class_eval do
-        def from_shared
-          1
-        end
-      end
-    end
-  end
-
   # The `include`s are the only thing that says who `base` is, for both shapes.
   include Slots
   include Hookable

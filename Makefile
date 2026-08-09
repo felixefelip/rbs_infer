@@ -36,6 +36,11 @@ rbs_infer_module_self_types:
 rbs_infer_ar_runtime:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/active_record/runtime_generator'; RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator.new(app_dir: '.').generate"
 
+## `include M` chama `M.included(self)` — a unica coisa que diz qual classe o `base`
+## de um hook e. Core: `include` e Ruby puro, nao Rails.
+rbs_infer_ruby_runtime:
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/project/ruby_runtime_generator'; RbsInfer::Project::RubyRuntimeGenerator.new(app_dir: '.').generate"
+
 rbs_infer_controller_runtime:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/controllers/runtime_generator'; RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator.new(app_dir: '.').generate"
 
@@ -53,6 +58,7 @@ rbs_generators_all:
 	make rbs_infer_devise
 	make rbs_infer_module_self_types
 	make rbs_infer_ar_runtime
+	make rbs_infer_ruby_runtime
 	make rbs_infer_controller_runtime
 	make rbs_infer_current_runtime
 	make rbs_infer_actionview_runtime
