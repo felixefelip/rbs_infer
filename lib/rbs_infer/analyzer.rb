@@ -1313,4 +1313,7 @@ require_relative "signatures/steep_bridge/ivar_write_analyzer"
 require_relative "signatures/steep_bridge/block_analyzer"
 require_relative "signatures/steep_bridge/return_type_analyzer"
 require_relative "project/source_expanders"
+# Core, not an extension, and registered unconditionally: `class_eval` is plain Ruby,
+# so every project gets the reopen read whether or not it uses a framework.
+require_relative "project/class_eval_expander"
 require_relative "project/self_type_annotators"

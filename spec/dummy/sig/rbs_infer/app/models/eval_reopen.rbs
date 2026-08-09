@@ -2,8 +2,11 @@ class EvalReopen
   include ::EvalReopen::Slots
 
   def own: () -> String
+  def by_class_eval: () -> Integer
+  def slot: () -> String
+  def by_module_eval: () -> Symbol
 end
 
 class EvalReopenCaller
-  def fill: () -> String
+  def fill: () -> Symbol
 end
