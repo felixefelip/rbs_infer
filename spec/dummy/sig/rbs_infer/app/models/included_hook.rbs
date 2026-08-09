@@ -1,0 +1,38 @@
+class IncludedHook
+  module Hookable
+    def self.included: (untyped base) -> untyped
+    def from_hook: () -> String
+    def slot: () -> untyped
+  end
+  module Sugared
+    extend ActiveSupport::Concern
+    def from_sugar: () -> String
+    def badge: () -> untyped
+  end
+  module Homespun
+    extend ::IncludedHook::HomeMade
+    def from_homespun: () -> String
+    def stamp: () -> untyped
+  end
+  module Arbitrary
+    def self.foo_included: (untyped base) -> untyped
+    def from_arbitrary: () -> String
+  end
+  module Shared
+    def self.included: (untyped base) -> untyped
+    def from_shared: () -> Integer
+  end
+
+  include Slots
+  include Hookable
+  include Sugared
+  include Homespun
+end
+
+class IncludedHookCaller
+  def fill: () -> String
+  def read_slot: () -> untyped
+  def read_badge: () -> untyped
+  def read_stamp: () -> untyped
+  def read_shared: () -> Integer
+end
