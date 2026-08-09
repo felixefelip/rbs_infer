@@ -65,5 +65,7 @@ class EvalReopenCaller
   def fill
     target = EvalReopen.new
     target.slot = "value"
+    target.by_class_eval
+    target.by_module_eval
   end
 end
