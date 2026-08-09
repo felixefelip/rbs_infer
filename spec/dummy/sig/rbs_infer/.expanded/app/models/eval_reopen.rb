@@ -25,8 +25,16 @@ end
 # receiver — so everything below lands on `EvalReopen` exactly as if it had been
 # written inside the body above.
 class EvalReopen
-def by_class_eval
+  def by_class_eval
     2
+  end
+
+  # Parameters go through the same inference as any class body's: `value` is typed
+  # from the call site below, and the optional one from its default. Nothing about the
+  # desugaring is special-cased for them — the RBS this produces is byte-identical to
+  # the same methods written inside `class EvalReopen`.
+  def tagged(value, limit = 10)
+    "#{value}:#{limit}"
   end
 
   # The load-bearing half. `super` resolves against the RECEIVER's ancestors
@@ -43,7 +51,7 @@ end
 # `module_eval` is an alias of `class_eval`, so a regression that special-cased one
 # name shows up here as a missing `by_module_eval`.
 class EvalReopen
-def by_module_eval
+  def by_module_eval
     :three
   end
 end
@@ -71,5 +79,6 @@ class EvalReopenCaller
     target.slot = "value"
     target.by_class_eval
     target.by_module_eval
+    target.tagged(:draft)
   end
 end

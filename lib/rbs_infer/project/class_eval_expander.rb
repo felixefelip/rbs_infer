@@ -111,17 +111,49 @@ module RbsInfer::Project
       return nil unless name && !name.empty?
 
       body = call.block.body
-      body_source = body ? slice(source, body) : ""
+      body_source = body ? slice_with_indent(source, body) : ""
+
+      # `class #{name}` lands at the call's own column, since it replaces the call in
+      # place — so the closing `end` is indented to match rather than to column 0.
+      indent = line_indent(source, call.location.start_offset)
 
       {
         start: call.location.start_offset,
         end: call.location.end_offset,
-        text: "class #{name}\n#{body_source}\nend",
+        text: "class #{name}\n#{body_source}\n#{indent}end",
       }
     end
 
-    def slice(source, node)
-      source.byteslice(node.location.start_offset, node.location.end_offset - node.location.start_offset)
+    # The whitespace between the start of `offset`'s line and `offset`, or "" when
+    # anything else precedes it on that line.
+    def line_indent(source, offset)
+      scan = offset
+      scan -= 1 while scan.positive? && [" ", "\t"].include?(source.byteslice(scan - 1, 1))
+      return "" unless scan.zero? || source.byteslice(scan - 1, 1) == "\n"
+
+      source.byteslice(scan, offset - scan)
+    end
+
+    # The body, sliced from the start of its own LINE rather than from its first
+    # token, so the indentation the source already had survives.
+    #
+    # Slicing from the token dropped the FIRST line's indentation and nothing else,
+    # leaving `def` at column 0 with its own `end` still at column 2. Legal Ruby, and
+    # invisible to the pipeline, but the `.expanded/` sidecar exists to be read while
+    # debugging and that made it harder to read than the source it mirrors.
+    #
+    # Only the indentation is reclaimed — the body is never RE-indented, because that
+    # would rewrite the contents of any heredoc or multi-line string inside it.
+    def slice_with_indent(source, node)
+      start = node.location.start_offset
+      scan = start
+      scan -= 1 while scan.positive? && [" ", "\t"].include?(source.byteslice(scan - 1, 1))
+
+      # Only when the body genuinely opens its own line. `class_eval do def x; end end`
+      # on one line would otherwise pull in the space after `do`.
+      start = scan if scan.zero? || source.byteslice(scan - 1, 1) == "\n"
+
+      source.byteslice(start, node.location.end_offset - start)
     end
 
     # Back to front so earlier byte offsets stay valid (mirrors the other expanders).

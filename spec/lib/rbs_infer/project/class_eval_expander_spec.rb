@@ -8,27 +8,44 @@ RSpec.describe RbsInfer::Project::ClassEvalExpander do
     described_class.expand(source)
   end
 
-  # The body is sliced verbatim from the block, so it starts at the `def` and the
-  # first line loses its leading indentation — same as the other expanders. Only the
-  # parser and the `.expanded/` debug view ever read this.
   it "rewrites a class_eval block into a reopen of the receiver" do
     expect(expand("Foo.class_eval do\n  def bar\n    1\n  end\nend\n"))
-      .to eq("class Foo\ndef bar\n    1\n  end\nend\n")
+      .to eq("class Foo\n  def bar\n    1\n  end\nend\n")
+  end
+
+  # The `.expanded/` sidecar is read while debugging, so the rewrite keeps the source's
+  # own layout: the body is sliced from the start of its LINE (not from its first
+  # token, which dropped the first line's indentation and nothing else) and the closing
+  # `end` is aligned to the call it replaces. Nothing is RE-indented — that would
+  # rewrite the contents of a heredoc in the body.
+  it "keeps the source layout, including a nested call and a heredoc" do
+    expect(expand("class Wrap\n  Foo.class_eval do\n    def bar\n      1\n    end\n  end\nend\n"))
+      .to eq("class Wrap\n  class Foo\n    def bar\n      1\n    end\n  end\nend\n")
+
+    heredoc = "Foo.class_eval do\n  def bar\n    <<~SQL\n      select 1\n    SQL\n  end\nend\n"
+    expect(expand(heredoc)).to eq(heredoc.sub("Foo.class_eval do", "class Foo"))
+  end
+
+  # A body opening on the same line as `do` has no indentation to reclaim, and must not
+  # pull in the space after `do`.
+  it "leaves a single-line body alone" do
+    expect(expand("Foo.class_eval do def bar; 1; end end\n"))
+      .to eq("class Foo\ndef bar; 1; end\nend\n")
   end
 
   it "rewrites module_eval the same way" do
     expect(expand("Foo.module_eval do\n  def bar; 1; end\nend\n"))
-      .to eq("class Foo\ndef bar; 1; end\nend\n")
+      .to eq("class Foo\n  def bar; 1; end\nend\n")
   end
 
   it "rewrites a namespaced receiver, keeping its full path" do
     expect(expand("Foo::Bar.class_eval do\n  def baz; 1; end\nend\n"))
-      .to eq("class Foo::Bar\ndef baz; 1; end\nend\n")
+      .to eq("class Foo::Bar\n  def baz; 1; end\nend\n")
   end
 
   it "keeps a cbase receiver absolute" do
     expect(expand("::Foo.class_eval do\n  def bar; 1; end\nend\n"))
-      .to eq("class ::Foo\ndef bar; 1; end\nend\n")
+      .to eq("class ::Foo\n  def bar; 1; end\nend\n")
   end
 
   it "leaves the surrounding source alone" do
@@ -45,7 +62,7 @@ RSpec.describe RbsInfer::Project::ClassEvalExpander do
     RUBY
 
     expect(expanded).to include("class Other\n  def keep; 1; end\nend")
-    expect(expanded).to include("class Foo\ndef bar; 2; end\nend")
+    expect(expanded).to include("class Foo\n  def bar; 2; end\nend")
     expect(expanded).to include("TAIL = 3")
   end
 

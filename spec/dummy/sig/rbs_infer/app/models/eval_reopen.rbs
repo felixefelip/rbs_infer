@@ -3,10 +3,11 @@ class EvalReopen
 
   def own: () -> String
   def by_class_eval: () -> Integer
+  def tagged: (Symbol value, ?Integer limit) -> String
   def slot: () -> String
   def by_module_eval: () -> Symbol
 end
 
 class EvalReopenCaller
-  def fill: () -> Symbol
+  def fill: () -> String
 end

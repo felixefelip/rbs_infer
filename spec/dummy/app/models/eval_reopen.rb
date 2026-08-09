@@ -26,6 +26,14 @@ EvalReopen.class_eval do
     2
   end
 
+  # Parameters go through the same inference as any class body's: `value` is typed
+  # from the call site below, and the optional one from its default. Nothing about the
+  # desugaring is special-cased for them — the RBS this produces is byte-identical to
+  # the same methods written inside `class EvalReopen`.
+  def tagged(value, limit = 10)
+    "#{value}:#{limit}"
+  end
+
   # The load-bearing half. `super` resolves against the RECEIVER's ancestors
   # (`EvalReopen` -> `EvalReopen::Slots`), not against wherever the block is written —
   # there is no enclosing class or module here at all. It only types because the def
@@ -68,5 +76,6 @@ class EvalReopenCaller
     target.slot = "value"
     target.by_class_eval
     target.by_module_eval
+    target.tagged(:draft)
   end
 end

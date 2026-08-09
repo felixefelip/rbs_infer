@@ -1,6 +1,6 @@
 app/models/concerns/test/filtrable.rb:16:13: [error] Type `(::Post & ::Test::Filtrable)` does not have method `adddd`
 app/models/concerns/test/filtrable.rb:16:4: [error] Type `(::Post & ::Test::Filtrable)` does not have method `asdasd`
-app/models/eval_reopen.rb:53:6: [warning] Method `::Object#by_instance_eval` is not declared in RBS
+app/models/eval_reopen.rb:61:6: [warning] Method `::Object#by_instance_eval` is not declared in RBS
 app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not have method `name`
 app/models/example15.rb:25:25: [error] Type `(::Example15::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
