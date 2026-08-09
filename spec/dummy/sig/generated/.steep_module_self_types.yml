@@ -42,11 +42,18 @@ app/models/included_hook.rb:
   modules:
   - anchor: Hookable
     annotations:
+    - "# @type self: singleton(IncludedHook) & singleton(IncludedHook::Hookable)"
     - "# @type instance: IncludedHook & IncludedHook::Hookable"
   - anchor: Shared
     annotations:
+    - "# @type self: (singleton(IncludedHookFirst) & singleton(IncludedHook::Shared))
+      | (singleton(IncludedHookSecond) & singleton(IncludedHook::Shared))"
     - "# @type instance: (IncludedHookFirst & IncludedHook::Shared) | (IncludedHookSecond
       & IncludedHook::Shared)"
+  - anchor: Sugared
+    annotations:
+    - "# @type self: singleton(IncludedHook) & singleton(IncludedHook::Sugared)"
+    - "# @type instance: IncludedHook & IncludedHook::Sugared"
 app/models/post/notifiable.rb:
   modules:
   - anchor: Notifiable

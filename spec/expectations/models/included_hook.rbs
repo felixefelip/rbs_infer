@@ -4,6 +4,11 @@ class IncludedHook
     def from_hook: () -> String
     def slot: () -> untyped
   end
+  module Sugared
+    extend ActiveSupport::Concern
+    def from_sugar: () -> String
+    def badge: () -> untyped
+  end
   module Arbitrary
     def self.foo_included: (untyped base) -> untyped
     def from_arbitrary: () -> String
@@ -15,4 +20,5 @@ class IncludedHook
 
   include Slots
   include Hookable
+  include Sugared
 end

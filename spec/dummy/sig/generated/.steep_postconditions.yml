@@ -1079,6 +1079,15 @@ postconditions:
     may_write:
     - "@name"
 - class: IncludedHook::Slots
+  method: badge
+  effects:
+    returns_ivar: "@badge"
+- class: IncludedHook::Slots
+  method: badge=
+  effects:
+    may_write:
+    - "@badge"
+- class: IncludedHook::Slots
   method: slot
   effects:
     returns_ivar: "@slot"

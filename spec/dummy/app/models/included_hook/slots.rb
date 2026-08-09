@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
-# The mixin the hook block's `super` has to reach. Included by the HOST, not by the
-# hookable module — so it is only behind the hook's methods if those methods belong to
-# the host, which is the whole question.
+# The mixin both hook blocks' `super` has to reach. Included by the HOST, not by the
+# hookable modules — so it is only behind their methods if those methods belong to the
+# host, which is the whole question.
+#
+# Two slots, both uniquely named, so the plain-Ruby hook and the ActiveSupport::Concern sugar can each
+# override one on the SAME host, without colliding.
 module IncludedHook::Slots
   def slot
     @slot
@@ -10,5 +13,13 @@ module IncludedHook::Slots
 
   def slot=(value)
     @slot = value
+  end
+
+  def badge
+    @badge
+  end
+
+  def badge=(value)
+    @badge = value
   end
 end

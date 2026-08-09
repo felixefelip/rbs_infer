@@ -35,6 +35,30 @@ class IncludedHook
     end
   end
 
+  # The SAME shape, spelled with ActiveSupport::Concern's sugar. `included do ... end`
+  # is `base.class_eval(&block)` with `base` the includer — Concern's `append_features`
+  # runs it at include time — so `badge` below belongs to `IncludedHook` exactly as
+  # `Hookable`'s `slot` does. The two sit here side by side because they are one
+  # mechanism, and a fix for either that does not cover the other has missed that.
+  #
+  # This is the shape a real app writes: it is where fizzy's store-accessor overrides
+  # live (`def indexed_by; (super || default_indexed_by).inquiry; end`).
+  module Sugared
+    extend ActiveSupport::Concern
+
+    included do
+      def from_sugar
+        "sugar"
+      end
+
+      # The Concern-side criterion, over the other slot so it cannot collide with
+      # `Hookable`'s. `super` only resolves if this def belongs to the HOST.
+      def badge
+        super || "sugared"
+      end
+    end
+  end
+
   # A hook method named ANYTHING ELSE. Ruby invokes no hook here, so nothing static says
   # `foo_included` is ever called, let alone with an includer — what it would define
   # belongs to nobody. Here as the limit case, so a fix for the hook above cannot
@@ -62,18 +86,23 @@ class IncludedHook
     end
   end
 
-  # The `include` is the only thing that says who `base` is.
+  # The `include`s are the only thing that says who `base` is, for both shapes.
   include Slots
   include Hookable
+  include Sugared
 end
 
 # The call sites: the slot's writer is what gives `super` a type to return, and the
 # reads are what a regression would surface as `NoMethod` rather than as a silently
 # missing method.
 class IncludedHookCaller
+  # Writes both slots, which is what gives each `super` a type to return. Kept apart
+  # from the reads below so those measure the ancestor chain rather than a local
+  # narrowing of the value just written.
   def fill
     target = IncludedHook.new
     target.slot = "value"
+    target.badge = "value"
     target.from_hook
   end
 
@@ -83,6 +112,15 @@ class IncludedHookCaller
   # against `Hookable`, which includes nothing.
   def read_slot
     IncludedHook.new.slot
+  end
+
+  # The same criterion for the sugared half, over a slot with a UNIQUE name: `tag` was
+  # borrowed from the dummy's Tag model closely enough to pick up a type from
+  # elsewhere, which made the two halves look asymmetric when they are not.
+  # Both read `untyped` today and both have to become `String` — one fix, or the two
+  # shapes have been treated as two problems.
+  def read_badge
+    IncludedHook.new.badge
   end
 
   def read_shared
