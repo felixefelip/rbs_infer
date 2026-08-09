@@ -22,6 +22,11 @@ app/models/concerns/test/filtrable.rb:
     annotations:
     - "# @type self: singleton(Post) & singleton(Test::Filtrable)"
     - "# @type instance: Post & Test::Filtrable"
+app/models/eval_reopen/slots.rb:
+  modules:
+  - anchor: Slots
+    annotations:
+    - "# @type instance: EvalReopen & EvalReopen::Slots"
 app/models/eventable.rb:
   modules:
   - anchor: Eventable
