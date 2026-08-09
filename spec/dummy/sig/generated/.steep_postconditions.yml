@@ -1078,6 +1078,11 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: IncludedHook::HomeMade
+  method: included
+  effects:
+    may_write:
+    - "@included_block"
 - class: IncludedHook::Slots
   method: badge
   effects:
@@ -1096,6 +1101,15 @@ postconditions:
   effects:
     may_write:
     - "@slot"
+- class: IncludedHook::Slots
+  method: stamp
+  effects:
+    returns_ivar: "@stamp"
+- class: IncludedHook::Slots
+  method: stamp=
+  effects:
+    may_write:
+    - "@stamp"
 - class: Notification
   method: mute!
   effects:

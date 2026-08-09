@@ -40,6 +40,10 @@ app/models/included_hook/slots.rb:
     - "# @type instance: IncludedHook & IncludedHook::Slots"
 app/models/included_hook.rb:
   modules:
+  - anchor: Homespun
+    annotations:
+    - "# @type self: singleton(IncludedHook) & singleton(IncludedHook::Homespun)"
+    - "# @type instance: IncludedHook & IncludedHook::Homespun"
   - anchor: Hookable
     annotations:
     - "# @type self: singleton(IncludedHook) & singleton(IncludedHook::Hookable)"

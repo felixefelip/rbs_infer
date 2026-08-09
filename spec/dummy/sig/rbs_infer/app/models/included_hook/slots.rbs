@@ -2,10 +2,13 @@ class IncludedHook
   module Slots
     @slot: String?
     @badge: String?
+    @stamp: String?
 
     def slot: () -> String?
     def slot=: (String? value) -> String?
     def badge: () -> String?
     def badge=: (String? value) -> String?
+    def stamp: () -> String?
+    def stamp=: (String? value) -> String?
   end
 end

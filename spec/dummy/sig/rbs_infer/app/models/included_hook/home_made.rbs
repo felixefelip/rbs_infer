@@ -1,0 +1,7 @@
+class IncludedHook
+  module HomeMade
+    @included_block: ^(*untyped) -> untyped?
+
+    def included: (?untyped base) ?{ (*untyped) -> untyped } -> nil
+  end
+end

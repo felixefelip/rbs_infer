@@ -59,6 +59,24 @@ class IncludedHook
     end
   end
 
+  # The SAME sugar again, from a hand-rolled `included do` with no ActiveSupport in
+  # sight (`IncludedHook::HomeMade`). Written identically to `Sugared` above, because the
+  # call shape is what carries the meaning — so a fix that gated on
+  # `extend ActiveSupport::Concern` would read fizzy's concerns and miss this one.
+  module Homespun
+    extend IncludedHook::HomeMade
+
+    included do
+      def from_homespun
+        "homespun"
+      end
+
+      def stamp
+        super || "homespun"
+      end
+    end
+  end
+
   # A hook method named ANYTHING ELSE. Ruby invokes no hook here, so nothing static says
   # `foo_included` is ever called, let alone with an includer — what it would define
   # belongs to nobody. Here as the limit case, so a fix for the hook above cannot
@@ -90,6 +108,7 @@ class IncludedHook
   include Slots
   include Hookable
   include Sugared
+  include Homespun
 end
 
 # The call sites: the slot's writer is what gives `super` a type to return, and the
@@ -103,6 +122,7 @@ class IncludedHookCaller
     target = IncludedHook.new
     target.slot = "value"
     target.badge = "value"
+    target.stamp = "value"
     target.from_hook
   end
 
@@ -121,6 +141,11 @@ class IncludedHookCaller
   # shapes have been treated as two problems.
   def read_badge
     IncludedHook.new.badge
+  end
+
+  # And for the hand-rolled sugar. Three criteria, one fix.
+  def read_stamp
+    IncludedHook.new.stamp
   end
 
   def read_shared

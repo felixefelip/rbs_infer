@@ -22,4 +22,12 @@ module IncludedHook::Slots
   def badge=(value)
     @badge = value
   end
+
+  def stamp
+    @stamp
+  end
+
+  def stamp=(value)
+    @stamp = value
+  end
 end
