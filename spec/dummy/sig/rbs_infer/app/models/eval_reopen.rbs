@@ -1,0 +1,9 @@
+class EvalReopen
+  include ::EvalReopen::Slots
+
+  def own: () -> String
+end
+
+class EvalReopenCaller
+  def fill: () -> String
+end

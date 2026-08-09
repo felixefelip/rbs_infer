@@ -1,0 +1,8 @@
+class EvalReopen
+  module Slots
+    @slot: String?
+
+    def slot: () -> String?
+    def slot=: (String? value) -> String?
+  end
+end

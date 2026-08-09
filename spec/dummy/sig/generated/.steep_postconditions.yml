@@ -272,6 +272,15 @@ postconditions:
     may_write:
     - "@delivery_method"
     - "@from_address"
+- class: EvalReopen::Slots
+  method: slot
+  effects:
+    returns_ivar: "@slot"
+- class: EvalReopen::Slots
+  method: slot=
+  effects:
+    may_write:
+    - "@slot"
 - class: Example10
   method: run
   unconditional:

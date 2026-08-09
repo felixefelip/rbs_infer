@@ -99,6 +99,24 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/palette", target_class: "Palette", target_file: "app/models/palette.rb")
   end
 
+  # `class_eval` / `module_eval` with a constant receiver: plain Ruby, statically
+  # decidable, and read by NEITHER repo today — the snapshot records the gap. Every
+  # method defined inside the blocks is absent here, and `steep check` attributes
+  # them to `::Object` (four entries in `steep_baseline.txt`).
+  #
+  # `EvalReopen::Slots` next door is fully typed (`slot: () -> String?`), so the
+  # `super` inside the `class_eval` block has a real target waiting for it: this is
+  # the same shape as a store-accessor override in a concern's `included do`, which
+  # Rails implements *as* a `class_eval` on the includer.
+  it "EvalReopen (class_eval reopen) matches expected RBS" do
+    assert_snapshot("models/eval_reopen", target_class: "EvalReopen", target_file: "app/models/eval_reopen.rb")
+  end
+
+  it "EvalReopen::Slots (the class_eval block's super target) matches expected RBS" do
+    assert_snapshot("models/eval_reopen/slots", target_class: "EvalReopen::Slots",
+                    target_file: "app/models/eval_reopen/slots.rb")
+  end
+
   # A namespaced service object called by its BARE name from the model that
   # encloses it (felixefelip/rbs_infer#129). The interesting half is `Post#archive` /
   # `#archive_via_singleton` in the Post snapshot above: `Archiver` there is
