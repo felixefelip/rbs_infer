@@ -162,6 +162,72 @@ RSpec.describe RbsInfer::Project::SourceIndex do
         expect(index.files_calling(name)).to be_empty
       end
     end
+
+    # A literal-name `send` is a call to the method it NAMES, and that name is not written
+    # after a dot — so the file was indexed under `send`, a name no caller asks about, and
+    # the call site was invisible (felixefelip/rbs_infer#205).
+    context "com um `send` de nome literal" do
+      it "indexa sob o método nomeado, nas três grafias" do
+        f = write_file("caller.rb", <<~RUBY)
+          x.send(:stamp, "post")
+          y.__send__("branded", 1)
+          z.public_send(:called)
+        RUBY
+
+        index = described_class.new([f])
+
+        expect(index.files_calling("stamp")).to contain_exactly(f)
+        expect(index.files_calling("branded")).to contain_exactly(f)
+        expect(index.files_calling("called")).to contain_exactly(f)
+      end
+
+      it "aceita a forma sem parênteses" do
+        f = write_file("caller.rb", "x.send :stamp, \"post\"\n")
+
+        expect(described_class.new([f]).files_calling("stamp")).to contain_exactly(f)
+      end
+
+      it "preserva o nome real de um predicado e de um writer" do
+        f = write_file("caller.rb", "x.send(:stamped?, \"s\")\nx.send(:title=, \"t\")\n")
+
+        index = described_class.new([f])
+
+        expect(index.files_calling("stamped?")).to contain_exactly(f)
+        expect(index.files_calling("title=")).to contain_exactly(f)
+      end
+
+      # The limit case: the name is a value, so nothing static says which method it is.
+      # Indexing it under *something* would send the analyzer to a file that never calls it.
+      it "ignora um nome computado" do
+        f = write_file("caller.rb", <<~'RUBY')
+          x.send(name)
+          x.send(:"ti#{part}")
+          x.send(SOME_CONST)
+        RUBY
+
+        index = described_class.new([f])
+
+        expect(index.files_calling("name")).to be_empty
+        expect(index.files_calling("part")).to be_empty
+      end
+
+      # `\b` before the alternation: a method whose name merely ENDS in `send` is not one.
+      it "não confunde um método cujo nome termina em send" do
+        f = write_file("caller.rb", "x.resend(:stamp)\n")
+
+        expect(described_class.new([f]).files_calling("stamp")).to be_empty
+      end
+
+      # The quote group of the string form comes back from `scan` too; it is never a name.
+      it "não indexa a aspa da forma com string" do
+        f = write_file("caller.rb", "x.send(\"stamp\")\n")
+
+        index = described_class.new([f])
+
+        expect(index.files_calling("stamp")).to contain_exactly(f)
+        expect(index.files_calling("\"")).to be_empty
+      end
+    end
   end
 
   # The bare form, scanned on demand instead of indexed: `include Foo` in a class body is

@@ -52,6 +52,11 @@ module RbsInfer::Inference
     end
 
     def visit_call_node(node)
+      # felixefelip/rbs_infer#205. `send(:helper, x)` inside the class is a call to `helper`,
+      # and the commonest reason to write it here is that `helper` is private — the very
+      # methods this analyzer exists to type.
+      node = SendCall.desugar(node) || node
+
       if node.receiver.nil? && node.arguments
         method_name = node.name.to_s
 

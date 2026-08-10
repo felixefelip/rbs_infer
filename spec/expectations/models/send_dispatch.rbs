@@ -3,6 +3,6 @@ class SendDispatch
 
   private
 
-  def stamp: (untyped value) -> String
-  def stamped?: (untyped value) -> untyped
+  def stamp: (String value) -> String
+  def stamped?: (String value) -> bool
 end

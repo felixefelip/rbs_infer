@@ -15,10 +15,12 @@
 #   why the snapshot below reads `String` where it used to read `untyped`, with no rbs_infer
 #   change at all: `SteepBridge` uses the checker as the return-type oracle, so the win
 #   arrives through the existing pipeline.
-# - **rbs_infer still does not see the call site.** `SourceIndex` indexes the file under
-#   `send`, so `files_calling("stamp")` is empty and `stamp`'s parameter stays `untyped` —
-#   the same class of miss as the bare `include` that rbs_infer#202 fixed, from the other
-#   end. This is the half still open, and the one this fixture now pins.
+# - **rbs_infer reads the call site now** (rbs_infer#205). `SourceIndex` indexed the file
+#   under `send` — a name no caller asks about — so `files_calling("stamp")` was empty and
+#   the file was never opened as a caller; and even opened, the collector saw a call to
+#   `send` whose first argument happened to be a symbol. Both halves are closed, and
+#   `stamp`'s parameter is typed from the `send` below like any other cross-class argument.
+#   Same class of miss as the bare `include` that rbs_infer#202 fixed, from the other end.
 #
 # The caller below has two halves. The first is inference: return types that now read a
 # type, and one parameter (`SendDispatch#stamp`'s `value`) that still reads `untyped`. The
@@ -35,11 +37,10 @@ class SendDispatch
 
   private
 
-  # The rbs_infer criterion, and the half still OPEN: `value` has to come from the `send`
-  # call site in `SendDispatchCaller#stamped`, exactly like any other cross-class argument.
-  # It still reads `untyped`. Steep resolving the call (#137) does nothing for this one —
-  # the checker reads a call site, `SourceIndex` has to FIND it, and it indexes the file
-  # under `send`.
+  # The rbs_infer criterion, now MET (#205): `value` comes from the `send` call site in
+  # `SendDispatchCaller#stamped`, exactly like any other cross-class argument. Steep
+  # resolving the call (felixefelip/steep#137) did nothing for this one — the checker READS
+  # a call site, `SourceIndex` had to FIND it, and it was indexing the file under `send`.
   def stamp(value)
     "stamped: #{value}"
   end

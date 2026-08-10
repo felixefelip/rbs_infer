@@ -35,6 +35,23 @@ module RbsInfer::Project
     # include(...)` never matches: the line starts with `def`.
     BARE_CALL_AT = ->(method_name) { /^[ \t]*#{Regexp.escape(method_name)}\b(?![ \t]*[=.])/ }
 
+    # A literal-name `send` is a call to the method it NAMES, and that name is not written
+    # after a dot — `RECEIVER_CALL` indexes such a file under `send`, a name no caller ever
+    # asks about, so the call site was invisible and the method's parameter had none
+    # (felixefelip/rbs_infer#205). Same class of miss as the bare `include` of #202, from
+    # the other end: there the call had no receiver, here the name is not where a name goes.
+    #
+    # All three spellings, both literal forms, parens optional (`obj.send :stamp, "x"` is
+    # the same call). The name tail allows `?!=` so a predicate and a writer are indexed
+    # under the name they really have. An interpolated symbol cannot match: `:"` is not in
+    # the character class, and neither is a bare variable, which is the undecidable case.
+    SEND_CALL = /
+      \b(?:__send__|public_send|send)\s*\(?\s*
+      (?: :(?<sym>[a-z_][a-zA-Z0-9_]*[?!=]?)
+        | (?<q>["'])(?<str>[a-z_][a-zA-Z0-9_]*[?!=]?)\k<q>
+      )
+    /x
+
     def initialize(source_files)
       @source_files = source_files
       @index = Hash.new { |h, k| h[k] = [] }
@@ -52,6 +69,12 @@ module RbsInfer::Project
         end
         content.scan(RECEIVER_WRITE).flatten.uniq.each do |method_name|
           @call_index["#{method_name}="] << file
+        end
+        content.scan(SEND_CALL).flatten.compact.uniq.each do |method_name|
+          # The quote capture comes back too; it is never a method name.
+          next if method_name == '"' || method_name == "'"
+
+          @call_index[method_name] << file
         end
         # `_` faz parte do nome da constante: proxies de associação do
         # rbs_rails (`Post_Assignment`, `ActiveRecord_Associations_CollectionProxy`)

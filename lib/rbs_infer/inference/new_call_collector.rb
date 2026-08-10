@@ -203,6 +203,16 @@ module RbsInfer::Inference
     end
 
     def visit_call_node(node)
+      # felixefelip/rbs_infer#205. A literal-name `send` IS a call to that method, so read
+      # the call it stands for and let every branch below run unchanged — the positional
+      # mapping, the keyword args, the splat folding and the established-ivar narrowing all
+      # work on an ordinary CallNode and learn nothing about `send`.
+      #
+      # Skipped when the target declares its own `send` (`Ractor#send`, a socket's, a
+      # message bus's): there the first argument is a value, and the ordinary branch below
+      # already types it as the argument of the `send` the class actually has.
+      node = SendCall.desugar(node) || node unless @target_methods.key?("send")
+
       apply_established_ivars(node)
 
       if node.name == :new && node.receiver
