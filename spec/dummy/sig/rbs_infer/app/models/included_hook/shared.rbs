@@ -1,0 +1,7 @@
+class IncludedHook
+  module Shared
+    def self.included: (untyped base) -> untyped
+
+    def from_shared: () -> Integer
+  end
+end

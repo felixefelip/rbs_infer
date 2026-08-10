@@ -1,0 +1,3 @@
+class Module
+  def include: (*untyped) -> Module | ...
+end
