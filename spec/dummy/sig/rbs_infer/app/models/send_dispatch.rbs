@@ -12,4 +12,11 @@ class SendDispatchCaller
   def stamped_predicate: () -> untyped
   def called: () -> untyped
   def dynamic: (untyped name) -> untyped
+  def underscored: () -> untyped
+  def string_named: () -> untyped
+  def stamped_publicly: () -> untyped
+  def missing_name: () -> untyped
+  def wrong_arity: () -> untyped
+  def splatted: (*untyped args) -> untyped
+  def guarded: () -> untyped
 end
