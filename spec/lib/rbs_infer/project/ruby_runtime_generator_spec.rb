@@ -21,8 +21,52 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
         "      mod.send(:append_features, self)\n" \
         "      mod.send(:included, self)\n" \
         "    end\n",
-        "    self\n  end\nend\n"
+        "    self\n  end\n"
       )
+    end
+  end
+
+  # The two `include` delegates to, so the file models the whole dispatch rather than its
+  # first step, and an app's override has a `super` that resolves.
+  describe "the methods `include` calls" do
+    it "emits both, under `private`" do
+      Dir.mktmpdir do |dir|
+        source = build_in(dir).first.source
+
+        expect(source).to include("  private\n")
+        expect(source).to include("  def append_features(mod)\n")
+        expect(source).to include("  def included(base)\n")
+        # Both come from `Module`, both private — measured, not assumed:
+        # `Module.instance_method(:included).owner` is `Module`, and RBS core declares
+        # `private def included: (Module othermod) -> void`.
+        expect(source.index("  private\n")).to be < source.index("  def append_features(mod)\n")
+      end
+    end
+
+    # `rb_mod_append_features` type-checks its argument before splicing.
+    it "keeps append_features' type check" do
+      Dir.mktmpdir do |dir|
+        expect(build_in(dir).first.source).to include("raise TypeError")
+      end
+    end
+
+    # `rb_obj_dummy1`: one argument, returns nil. Writing anything else would describe a
+    # hook Ruby does not have.
+    it "leaves included the no-op it is on Module" do
+      Dir.mktmpdir do |dir|
+        expect(build_in(dir).first.source).to match(/def included\(base\)\n\s+nil\n\s+end/)
+      end
+    end
+
+    # A plain `def` would redeclare core's, which RBS rejects with
+    # `DuplicatedMethodDefinitionError` — and that aborts the whole run, not just this file.
+    it "marks both as overloading" do
+      Dir.mktmpdir do |dir|
+        source = build_in(dir).first.source
+
+        expect(source).to match(/# @rbs_infer \|\.\.\.\n\s+def append_features\(/)
+        expect(source).to match(/# @rbs_infer \|\.\.\.\n\s+def included\(/)
+      end
     end
   end
 
