@@ -36,6 +36,8 @@ module RbsInfer::Inference
         names = []
         defn.parameters.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if defn.parameters.respond_to?(:requireds)
         defn.parameters.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if defn.parameters.respond_to?(:optionals)
+        rest = RestParamMarker.name_from(defn.parameters)
+        names << RestParamMarker.mark(rest) if rest
         positional_params[defn.name.to_s] = names unless names.empty?
       end
 

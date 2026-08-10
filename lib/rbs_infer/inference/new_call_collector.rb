@@ -664,13 +664,25 @@ module RbsInfer::Inference
       return args unless call_node.arguments
 
       index = 0
+      splat_types = []
       call_node.arguments.arguments.each do |arg|
         break if index >= @init_positional_params.size
         next if arg.is_a?(Prism::KeywordHashNode)
 
+        # `Klass.new(a, b, c)` onto `initialize(first, *rest)`: everything from the rest
+        # param's index on is the same parameter, so fold instead of advancing.
+        if splat_name(@init_positional_params[index])
+          splat_types << argument_type(arg)
+          next
+        end
+
         param_name = @init_positional_params[index]
         args[param_name] = argument_type(arg)
         index += 1
+      end
+
+      if (splat = splat_name(@init_positional_params[index])) && !splat_types.empty?
+        args[splat] = RbsInfer::Inference::TypeMerger.union_types(splat_types.compact)
       end
 
       args
@@ -965,12 +977,7 @@ module RbsInfer::Inference
 
     # Whether a keyword hash at the call site is really a positional Hash: no key names a
     # parameter, so the callee cannot be receiving them as keywords.
-    # The parameter name behind the `"*name"` marker `extract_target_method_params`
-    # writes for a rest param, or nil for an ordinary name. See the comment there for
-    # why the marker travels in the list itself.
-    def splat_name(param_name)
-      param_name&.start_with?("*") ? param_name.delete_prefix("*") : nil
-    end
+    def splat_name(param_name) = RbsInfer::Inference::RestParamMarker.unmark(param_name)
 
     def collapses_to_positional?(node, param_names)
       keys = node.elements.filter_map { |e| e.is_a?(Prism::AssocNode) ? extract_symbol_key(e.key) : nil }

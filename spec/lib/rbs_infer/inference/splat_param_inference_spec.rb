@@ -91,6 +91,70 @@ RSpec.describe "rest parameter inference" do
     expect(rbs).to include("def anonymous: (*untyped) ->")
   end
 
+  # A constructor's arguments are collected by `extract_positional_args`, a different
+  # path from every other method's — `initialize` is skipped by
+  # `extract_target_method_params` and served by `init_positional_params` instead.
+  it "types a constructor's splat from `.new` call sites" do
+    rbs = rbs_for(
+      "notifier.rb",
+      "notifier.rb" => "class Notifier\n  def initialize(*recipients)\n    @recipients = recipients\n  end\nend\n",
+      "caller.rb" => "class Caller\n  def go\n    Notifier.new(User.new, User.new)\n  end\nend\n\nclass User\nend\n"
+    )
+
+    expect(rbs).to include("def initialize: (*User recipients) ->")
+  end
+
+  it "keeps a constructor's leading params separate from its splat" do
+    rbs = rbs_for(
+      "notifier.rb",
+      "notifier.rb" => "class Notifier\n  def initialize(subject, *bodies)\n    @subject = subject\n    @bodies = bodies\n  end\nend\n",
+      "caller.rb" => "class Caller\n  def go\n    Notifier.new(\"hi\", 1, 2)\n  end\nend\n"
+    )
+
+    expect(rbs).to include("def initialize: (String subject, *Integer bodies) ->")
+  end
+
+  # The intra-class path (`IntraClassCallAnalyzer`) maps by index against its own
+  # positional list, built the way `extract_target_method_params` used to be.
+  it "types a splat called only from inside its own class" do
+    rbs = rbs_for(
+      "notifier.rb",
+      "notifier.rb" => <<~RUBY,
+        class Notifier
+          def run
+            internal(User.new, User.new)
+          end
+
+          def internal(*people)
+            people
+          end
+        end
+      RUBY
+      "user.rb" => "class User\nend\n"
+    )
+
+    expect(rbs).to include("def internal: (*User people) ->")
+  end
+
+  it "unions an intra-class splat's arguments too" do
+    rbs = rbs_for(
+      "notifier.rb",
+      "notifier.rb" => <<~RUBY
+        class Notifier
+          def run
+            internal("a", 1)
+          end
+
+          def internal(*things)
+            things
+          end
+        end
+      RUBY
+    )
+
+    expect(rbs).to include("def internal: (*(String | Integer) things) ->")
+  end
+
   it "stays untyped when no call site says anything" do
     rbs = rbs_for("notifier.rb", "notifier.rb" => "class Notifier\n  def notify(*recipients)\n    recipients\n  end\nend\n")
 

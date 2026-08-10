@@ -1074,12 +1074,9 @@ module RbsInfer
   # requireds+optionals prefix) and kwargs by name, so the order
   # preserves the positional mapping.
   #
-  # A rest param sits between the two, where its index is, and is spelled
-  # `"*name"`. The marker is in-band because it is positional information
-  # about this very list — where one-to-one mapping stops and folding
-  # begins — and `extract_cross_class_args`, the only consumer that needs
-  # to know, is where it is stripped. Everything else compares these names
-  # against keyword keys, which a `*`-prefixed name can never equal.
+  # A rest param sits between the two, where its index is, marked by
+  # `RestParamMarker` — see there for what the marker is and why it travels
+  # in the list itself.
   def extract_target_method_params
     return {} unless @parsed_target
 
@@ -1095,20 +1092,12 @@ module RbsInfer
       names = []
       params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
       params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
-      names << "*#{rest_param_name(params)}" if rest_param_name(params)
+      rest = RbsInfer::Inference::RestParamMarker.name_from(params)
+      names << RbsInfer::Inference::RestParamMarker.mark(rest) if rest
       params.keywords.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:keywords)
       methods[defn.name.to_s] = names unless names.empty?
     end
     methods
-  end
-
-  # An anonymous `*` (and `def foo(a,)`'s implicit rest) has no name for the
-  # type substitution to key on, so it is not offered as a slot at all.
-  def rest_param_name(params)
-    rest = params.rest if params.respond_to?(:rest)
-    return unless rest.is_a?(Prism::RestParameterNode)
-
-    rest.name&.to_s
   end
 
   # `attr_accessor`/`attr_writer :x` defines an `x=` method, so an external
@@ -1184,6 +1173,8 @@ module RbsInfer
     names = []
     params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
     params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
+    rest = RbsInfer::Inference::RestParamMarker.name_from(params)
+    names << RbsInfer::Inference::RestParamMarker.mark(rest) if rest
     names
   end
 
@@ -1345,6 +1336,7 @@ require_relative "signatures/rbs_builder"
 require_relative "inference/constant_type_resolver"
 require_relative "inference/constant_arg_type_resolver"
 require_relative "inference/self_return_type_context"
+require_relative "inference/rest_param_marker"
 require_relative "inference/type_merger"
 require_relative "inference/ivar_type_set"
 require_relative "inference/return_type_resolver"

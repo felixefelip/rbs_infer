@@ -66,8 +66,16 @@ module RbsInfer::Inference
         positional_params = @method_positional_params[method_name]
         if positional_params
           positional_args = node.arguments.arguments.reject { |a| a.is_a?(Prism::KeywordHashNode) }
+          # From the rest param's index on, every argument is that same parameter. The
+          # candidates are already unioned per name below, so pointing them all at it is
+          # the whole of the folding here.
+          splat_index = RestParamMarker.index_in(positional_params)
           positional_args.each_with_index do |arg, i|
-            param_name = positional_params[i]
+            param_name = if splat_index && i >= splat_index
+                           RestParamMarker.unmark(positional_params[splat_index])
+                         else
+                           positional_params[i]
+                         end
             next unless param_name
             type = resolve_value_type(arg)
             next if type == "untyped"

@@ -96,15 +96,9 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       # An anonymous `*` (or `def foo(a,)`'s implicit rest) has no name to key on and
       # keeps the bare form.
       if @params.respond_to?(:rest) && @params.rest
-        @parts << (rest_param_name ? "*untyped #{rest_param_name}" : "*untyped")
+        name = RbsInfer::Inference::RestParamMarker.name_from(@params)
+        @parts << (name ? "*untyped #{name}" : "*untyped")
       end
-    end
-
-    def rest_param_name
-      rest = @params.rest
-      return unless rest.is_a?(Prism::RestParameterNode)
-
-      rest.name&.to_s
     end
 
     def extract_keyword_params_signature
