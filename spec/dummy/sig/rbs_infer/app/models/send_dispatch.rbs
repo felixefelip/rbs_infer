@@ -1,0 +1,15 @@
+class SendDispatch
+  def call: () -> String
+
+  private
+
+  def stamp: (untyped value) -> String
+  def stamped?: (untyped value) -> untyped
+end
+
+class SendDispatchCaller
+  def stamped: () -> untyped
+  def stamped_predicate: () -> untyped
+  def called: () -> untyped
+  def dynamic: (untyped name) -> untyped
+end

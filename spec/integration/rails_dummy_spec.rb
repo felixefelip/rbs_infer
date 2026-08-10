@@ -137,6 +137,27 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
                     target_file: "app/models/included_hook/slots.rb")
   end
 
+  # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
+  # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
+  # private on `Module`), which is why the `Module#include` pseudo-code spells them that
+  # way. Nothing here is undecidable: the receiver's type is known and the name is a
+  # literal. The snapshot records both gaps — `stamp`'s parameter reads `untyped` because
+  # rbs_infer indexes the file under `send` and never looks at the call site, and every
+  # `#stamped`/`#called` reads `untyped` because Steep types `send` as `untyped` and so
+  # checks nothing inside it. `#dynamic` is the limit case and must stay `untyped`.
+  it "SendDispatch (send reaching a private method) matches expected RBS" do
+    assert_snapshot("models/send_dispatch", target_class: "SendDispatch",
+                    target_file: "app/models/send_dispatch.rb")
+  end
+
+  # The call-site half, where the checker's answer shows: every one of these is the type
+  # of a `send`, so every one reads `untyped` while `send` returns `untyped`. `#dynamic`
+  # is the one that has to keep reading it.
+  it "SendDispatchCaller (the send call sites) matches expected RBS" do
+    assert_snapshot("models/send_dispatch_caller", target_class: "SendDispatchCaller",
+                    target_file: "app/models/send_dispatch.rb")
+  end
+
   # A namespaced service object called by its BARE name from the model that
   # encloses it (felixefelip/rbs_infer#129). The interesting half is `Post#archive` /
   # `#archive_via_singleton` in the Post snapshot above: `Archiver` there is

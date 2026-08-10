@@ -1,0 +1,6 @@
+class SendDispatchCaller
+  def stamped: () -> untyped
+  def stamped_predicate: () -> untyped
+  def called: () -> untyped
+  def dynamic: (untyped name) -> untyped
+end
