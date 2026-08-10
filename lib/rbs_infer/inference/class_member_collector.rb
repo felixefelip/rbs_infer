@@ -22,7 +22,7 @@ module RbsInfer::Inference
   # `block_open_forward` = o corpo só repassa o bloco (`foo(&block)`), sem
   # chamá-lo nem testá-lo, então quem decide se ele é obrigatório é o callee —
   # também resolvido no Analyzer (#149).
-  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, :block_arg_positions, :block_open_forward, keyword_init: true)
+  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, :block_arg_positions, :block_open_forward, :overloading, keyword_init: true)
 
   # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
   DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
@@ -122,6 +122,7 @@ module RbsInfer::Inference
       is_class_method = class_method_def?(node)
       name = node.name.to_s
       sig = find_rbs_signature(@comments, @lines, node.location.start_line)
+      overloading = find_overloading_marker(@comments, @lines, node.location.start_line)
 
       extractor = ExtractParamsSignature.new(node.parameters, body: node.body)
       params_sig = extractor.call
@@ -147,7 +148,8 @@ module RbsInfer::Inference
         # annotation is authoritative and must not be overridden.
         param_constant_defaults: sig ? nil : extractor.constant_default_params,
         block_arg_positions: sig ? nil : extractor.block_arg_positions,
-        block_open_forward: sig ? nil : extractor.block_open_forward?
+        block_open_forward: sig ? nil : extractor.block_open_forward?,
+        overloading: overloading
       )
       super
     end
@@ -461,6 +463,37 @@ module RbsInfer::Inference
         end
       end
       nil
+    end
+
+    # `# @rbs_infer |...` on its own line above a `def`: emit the signature as an
+    # RBS *overloading* member (`def x: (...) -> T | ...`) rather than a plain one.
+    #
+    # It is what lets pseudo-code give a body to a method something else already
+    # declares. Two declarations of one method in a class is a
+    # `DuplicatedMethodDefinitionError` — which does not degrade, it poisons the whole
+    # environment — while the overloading form adds the signature AHEAD of the existing
+    # ones instead. Reopening `Module#include` to say what `include` does is the case
+    # that needs it; `RBS::Environment` refuses the plain form outright.
+    #
+    # The marker states INTENT and is not trusted on its own: `| ...` requires a prior
+    # definition, so claiming it where there is none is `InvalidOverloadMethodError`,
+    # the same class of hard failure it exists to avoid. The analyzer confirms against
+    # the environment before emitting (see `Analyzer#confirm_overloading!`).
+    def find_overloading_marker(comments, lines, def_line)
+      comments.any? do |comment|
+        comment_line = comment.location.start_line
+        next false unless comment_line.between?(def_line - 3, def_line - 1)
+        next false unless lines_between_are_blank_or_comments(lines, comment_line, def_line)
+
+        source_line = lines[comment_line - 1]
+        if source_line
+          code_before = source_line[0...comment.location.start_column].strip
+          next false unless code_before.empty?
+        end
+
+        # `|...`, `| ...` and a trailing `...` alone all read as the same request.
+        comment.location.slice.match?(/@rbs_infer\s+\|?\s*\.\.\./)
+      end
     end
 
     def infer_return_type(defn)

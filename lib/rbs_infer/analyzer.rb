@@ -189,6 +189,7 @@ module RbsInfer
   def build_single_target_rbs
     # Parsear o arquivo-alvo para extrair todos os membros da classe
     target_members = parse_target_class
+    confirm_overloading!(target_members)
     resolve_delegate_methods(target_members)
 
     # Extrair classes da anotação @type instance (para concerns)
@@ -770,6 +771,34 @@ module RbsInfer
 
       owners[member.name] ||= "#{@target_class}::#{member.owner}"
     end
+  end
+
+  # `# @rbs_infer |...` above a def asks for RBS's overloading form (`... | ...`), which
+  # puts our signature AHEAD of one something else already declares instead of colliding
+  # with it. The marker states intent; this confirms it, because `| ...` with nothing to
+  # overload is an `InvalidOverloadMethodError` — the same class of hard failure, poisoning
+  # the whole environment, that it exists to avoid. A marker on a method nobody else
+  # declares silently emits the plain form rather than breaking the run.
+  #
+  # Our own previous output is excluded: it already declares the method, and confirming
+  # against it would be circular — a method only we declare would gain `| ...` and then
+  # have nothing left to overload.
+  def confirm_overloading!(members)
+    marked = members.select(&:overloading)
+    return if marked.empty?
+
+    own_output_suffix = @target_file&.sub(/\.rb\z/, ".rbs")
+
+    marked.each do |member|
+      confirmed = rbs_definition_resolver.foreign_plain_declaration?(
+        @target_class, member.name, excluding_suffix: own_output_suffix
+      )
+      member.overloading = false unless confirmed
+    end
+  end
+
+  def rbs_definition_resolver
+    @rbs_definition_resolver ||= RbsInfer::Signatures::RbsDefinitionResolver.new
   end
 
   # ─── Extrair nomes dos keyword params opcionais do initialize ─────
