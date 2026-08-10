@@ -863,19 +863,35 @@ module RbsInfer::Inference
       # parâmetro e ainda há slot posicional livre: sem isso o argumento desaparece, e o
       # parâmetro é tipado só pelos OUTROS call-sites — estreito demais, não apenas impreciso.
       index = 0
+      splat_types = []
       call_node.arguments.arguments.each do |arg|
         break if index >= param_names.size
 
         if arg.is_a?(Prism::KeywordHashNode)
           next unless collapses_to_positional?(arg, param_names)
 
-          args[param_names[index]] = hash_literal_type(arg)
-          index += 1
+          type = hash_literal_type(arg)
+        else
+          type = argument_type(arg)
+        end
+
+        # A rest param takes EVERY remaining positional argument, so they all describe
+        # the same parameter. Fold them into one union instead of advancing: without
+        # this the first argument would win the slot and the others would fall off the
+        # end of `param_names`, typing `*args` by the first position alone.
+        if splat_name(param_names[index])
+          splat_types << type
           next
         end
 
-        args[param_names[index]] = argument_type(arg)
+        args[param_names[index]] = type
         index += 1
+      end
+
+      if (splat = splat_name(param_names[index])) && !splat_types.empty?
+        # The splat's own type is its ELEMENT type (`*T` means each argument is a `T`),
+        # which is exactly the union of what the arguments are.
+        args[splat] = RbsInfer::Inference::TypeMerger.union_types(splat_types.compact)
       end
 
       # Args keyword
@@ -949,6 +965,13 @@ module RbsInfer::Inference
 
     # Whether a keyword hash at the call site is really a positional Hash: no key names a
     # parameter, so the callee cannot be receiving them as keywords.
+    # The parameter name behind the `"*name"` marker `extract_target_method_params`
+    # writes for a rest param, or nil for an ordinary name. See the comment there for
+    # why the marker travels in the list itself.
+    def splat_name(param_name)
+      param_name&.start_with?("*") ? param_name.delete_prefix("*") : nil
+    end
+
     def collapses_to_positional?(node, param_names)
       keys = node.elements.filter_map { |e| e.is_a?(Prism::AssocNode) ? extract_symbol_key(e.key) : nil }
       return false if keys.empty?

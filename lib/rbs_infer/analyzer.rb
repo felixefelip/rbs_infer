@@ -1073,6 +1073,13 @@ module RbsInfer
   # positional args by index (which can only reach the
   # requireds+optionals prefix) and kwargs by name, so the order
   # preserves the positional mapping.
+  #
+  # A rest param sits between the two, where its index is, and is spelled
+  # `"*name"`. The marker is in-band because it is positional information
+  # about this very list — where one-to-one mapping stops and folding
+  # begins — and `extract_cross_class_args`, the only consumer that needs
+  # to know, is where it is stripped. Everything else compares these names
+  # against keyword keys, which a `*`-prefixed name can never equal.
   def extract_target_method_params
     return {} unless @parsed_target
 
@@ -1088,10 +1095,20 @@ module RbsInfer
       names = []
       params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
       params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
+      names << "*#{rest_param_name(params)}" if rest_param_name(params)
       params.keywords.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:keywords)
       methods[defn.name.to_s] = names unless names.empty?
     end
     methods
+  end
+
+  # An anonymous `*` (and `def foo(a,)`'s implicit rest) has no name for the
+  # type substitution to key on, so it is not offered as a slot at all.
+  def rest_param_name(params)
+    rest = params.rest if params.respond_to?(:rest)
+    return unless rest.is_a?(Prism::RestParameterNode)
+
+    rest.name&.to_s
   end
 
   # `attr_accessor`/`attr_writer :x` defines an `x=` method, so an external

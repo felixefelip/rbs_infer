@@ -30,7 +30,7 @@ RSpec.describe "the `# @rbs_infer |...` overloading marker" do
       end
     RUBY
 
-    expect(rbs).to include("def include: (*untyped) -> self | ...")
+    expect(rbs).to include("def include: (*untyped mods) -> self | ...")
   end
 
   # The marker states intent; claiming it where there is nothing to overload would be a
@@ -91,7 +91,7 @@ RSpec.describe "the `# @rbs_infer |...` overloading marker" do
       end
     RUBY
 
-    expect(rbs).to include("def include: (*untyped) -> self | ...")
+    expect(rbs).to include("def include: (*untyped mods) -> self | ...")
     expect(rbs).to match(/def prepend: [^|]+$/m)
   end
 
@@ -115,6 +115,6 @@ RSpec.describe "the `# @rbs_infer |...` overloading marker" do
     env = RBS::Environment.from_loader(loader).resolve_type_names
     definition = RBS::DefinitionBuilder.new(env: env).build_instance(RBS::TypeName.parse("::Module").absolute!)
 
-    expect(definition.methods[:include].method_types.map(&:to_s).first).to eq("(*untyped) -> self")
+    expect(definition.methods[:include].method_types.map(&:to_s).first).to eq("(*untyped mods) -> self")
   end
 end
