@@ -1,0 +1,8 @@
+class SendDispatch
+  def call: () -> String
+
+  private
+
+  def stamp: (untyped value) -> String
+  def stamped?: (untyped value) -> untyped
+end
