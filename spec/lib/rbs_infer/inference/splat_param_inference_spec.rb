@@ -160,4 +160,58 @@ RSpec.describe "rest parameter inference" do
 
     expect(rbs).to include("def notify: (*untyped recipients) ->")
   end
+
+  # The other direction: a splat in the ARGUMENTS, against a fixed parameter. It does not
+  # place itself — `notify(*people)` may pass one argument or five — and what arrives is the
+  # array's elements, never the array. Recording `Array[untyped]` was not imprecise but
+  # wrong: `recipient` cannot receive an Array, and a wrong parameter type reads as an
+  # answer where `untyped` reads as a question (felixefelip/rbs_infer#205).
+  describe "a splat ARGUMENT against a fixed parameter" do
+    it "says nothing, rather than handing the array to the parameter" do
+      rbs = with_caller(
+        "  def notify(recipient)\n    recipient\n  end",
+        "    people = [User.new]\n    Notifier.new.notify(*people)"
+      )
+
+      expect(rbs).to include("def notify: (untyped recipient) ->")
+      expect(rbs).not_to include("Array[")
+    end
+
+    it "does not place the arguments that follow it either" do
+      rbs = with_caller(
+        "  def notify(first, second)\n    [first, second]\n  end",
+        "    rest = [User.new]\n    Notifier.new.notify(*rest, \"tail\")"
+      )
+
+      expect(rbs).to include("def notify: (untyped first, untyped second) ->")
+    end
+
+    it "still reads the arguments BEFORE it" do
+      rbs = with_caller(
+        "  def notify(first, second)\n    [first, second]\n  end",
+        "    rest = [User.new]\n    Notifier.new.notify(\"head\", *rest)"
+      )
+
+      expect(rbs).to include("def notify: (String first, untyped second) ->")
+    end
+
+    it "leaves an intra-class call alone the same way" do
+      rbs = rbs_for(
+        "notifier.rb",
+        "notifier.rb" => <<~RUBY
+          class Notifier
+            def run(*things)
+              internal(*things)
+            end
+
+            def internal(thing)
+              thing
+            end
+          end
+        RUBY
+      )
+
+      expect(rbs).to include("def internal: (untyped thing) ->")
+    end
+  end
 end

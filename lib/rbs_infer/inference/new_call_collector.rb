@@ -668,6 +668,9 @@ module RbsInfer::Inference
       call_node.arguments.arguments.each do |arg|
         break if index >= @init_positional_params.size
         next if arg.is_a?(Prism::KeywordHashNode)
+        # See `extract_cross_class_args`: a splat says nothing about which parameter gets
+        # what, and the array itself never arrives.
+        break if arg.is_a?(Prism::SplatNode)
 
         # `Klass.new(a, b, c)` onto `initialize(first, *rest)`: everything from the rest
         # param's index on is the same parameter, so fold instead of advancing.
@@ -878,6 +881,13 @@ module RbsInfer::Inference
       splat_types = []
       call_node.arguments.arguments.each do |arg|
         break if index >= param_names.size
+        # A splat argument of unknown length does not say WHICH parameter gets what:
+        # `stamp(*args)` may pass one argument or five, and what arrives is the array's
+        # ELEMENTS, never the array. Recording `Array[untyped]` against the parameter is
+        # not imprecise but wrong — `stamp` cannot receive an Array there — and a wrong
+        # parameter type is worse than none, because it reads as an answer. Everything
+        # after the splat is just as unplaced, so stop here (felixefelip/rbs_infer#205).
+        break if arg.is_a?(Prism::SplatNode)
 
         if arg.is_a?(Prism::KeywordHashNode)
           next unless collapses_to_positional?(arg, param_names)
