@@ -112,6 +112,42 @@ module RbsInfer::Signatures
     # that includes the delegating module. Neither link is a name the call site
     # spells, and both exist only in rbs_rails' RBS, so the mixin graph built from
     # the Ruby sources cannot see them either.
+    # Does some OTHER file already declare `class_name#method_name` as a plain
+    # (non-overloading) member? That is the precondition for emitting the overloading
+    # form: `| ...` with nothing to overload is `InvalidOverloadMethodError`, and two
+    # plain declarations are `DuplicatedMethodDefinitionError` — both of which poison the
+    # whole environment rather than degrading.
+    #
+    # `excluding_suffix` drops the declaration WE are about to rewrite. Our own previous
+    # output already declares the method, and confirming against it would be circular: a
+    # method only we declare would gain `| ...` and then have nothing left to overload.
+    # The suffix is `<source path>.rbs`, which is stable whatever `--output-dir` is.
+    #
+    # Only the same class counts. An ancestor's declaration is inheritance, which RBS
+    # models as ordinary overriding and never rejects.
+    def foreign_plain_declaration?(class_name, method_name, excluding_suffix: nil)
+      return false unless rbs_builder
+
+      type_name = build_rbs_type_name(class_name)
+      return false unless type_name
+
+      entry = rbs_builder.env.class_decls[type_name]
+      return false unless entry
+
+      entry.each_decl.any? do |decl|
+        path = decl.location&.buffer&.name.to_s
+        next false if excluding_suffix && path.end_with?(excluding_suffix)
+
+        decl.members.any? do |member|
+          member.is_a?(RBS::AST::Members::MethodDefinition) &&
+            member.name.to_s == method_name.to_s &&
+            !member.overloading?
+        end
+      end
+    rescue RBS::BaseError
+      false
+    end
+
     def instance_method_owner(class_name, method_name)
       return nil unless rbs_builder
 

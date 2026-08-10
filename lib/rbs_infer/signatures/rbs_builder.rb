@@ -251,7 +251,13 @@ module RbsInfer::Signatures
         elsif method_param_types[member.name]
           sig = apply_inferred_param_types(sig, method_param_types[member.name])
         end
-        "#{indent}def #{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
+        rendered = RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)
+        # RBS's *overloading* form: this signature goes AHEAD of the ones something else
+        # already declares for the same method, instead of colliding with them. Requested
+        # by `# @rbs_infer |...` above the def and confirmed against the environment
+        # before it gets here — see `ClassMemberCollector#find_overloading_marker`.
+        rendered = "#{rendered} | ..." if member.overloading
+        "#{indent}def #{rendered}"
       when :attr_accessor, :attr_reader, :attr_writer
         sig = member.signature
         sig = "#{member.name}: #{attr_types[member.name]}" if sig.end_with?(": untyped") && attr_types[member.name]
