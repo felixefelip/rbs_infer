@@ -1047,8 +1047,22 @@ module RbsInfer
     # target before the call site is used (felixefelip/rbs_infer#131).
     calling = target_methods.keys.flat_map { |m| @source_index.files_calling(m) }.to_set
 
-    (referencing.to_set | reaching | calling).each do |file|
-      analyzer.analyze(file, force_bare: reaching.include?(file))
+    # A target the ancestor graph puts behind EVERY object is called receiverlessly
+    # from anywhere: `include Foo` in a class body is `Module#include` on the class
+    # object. Such a call site names neither the target nor a receiver, so all three
+    # indexes above miss it — `files_calling` keys on the `.`, and the mixin graph
+    # only ever hears about a module some source actually includes. Ask instead which
+    # files make a bare call to one of the target's own methods, and let them match
+    # bare like the mixin-graph files do.
+    bare_reaching =
+      if steep_bridge&.universal_ancestor?(@target_class)
+        target_methods.keys.flat_map { |m| @source_index.files_with_bare_call(m) }.to_set
+      else
+        Set.new
+      end
+
+    (referencing.to_set | reaching | calling | bare_reaching).each do |file|
+      analyzer.analyze(file, force_bare: reaching.include?(file) || bare_reaching.include?(file))
     end
 
     @extra_caller_sources&.call(analyzer, @target_class, @source_files)

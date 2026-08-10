@@ -29,9 +29,17 @@ module RbsInfer::Project
     # writes — and `!=` never matches because `!` is not among the operators.
     RECEIVER_WRITE = %r{\.\s*([a-z_][a-zA-Z0-9_]*)\s*(?:\|\||&&|\*\*|<<|>>|[-+*/%|&^])?=(?![=~>])}
 
+    # A RECEIVERLESS call at the start of a line: `include Foo`, `helper :x`. The
+    # `(?![ \t]*[=.])` tail keeps `include = 1` and `include.foo` out — the first is
+    # no call, the second is the receiver form the index above already covers. `def
+    # include(...)` never matches: the line starts with `def`.
+    BARE_CALL_AT = ->(method_name) { /^[ \t]*#{Regexp.escape(method_name)}\b(?![ \t]*[=.])/ }
+
     def initialize(source_files)
+      @source_files = source_files
       @index = Hash.new { |h, k| h[k] = [] }
       @call_index = Hash.new { |h, k| h[k] = [] }
+      @bare_call_index = {}
       source_files.each do |file|
         begin
           content = File.read(file)
@@ -91,6 +99,26 @@ module RbsInfer::Project
     # the high-cardinality accessor names (`name`, `id`, `to_s`).
     def files_calling(method_name)
       @call_index[method_name] || EMPTY_ARRAY
+    end
+
+    # Files that call `method_name` with NO receiver.
+    #
+    # Deliberately scanned on demand instead of indexed with the two forms above: a
+    # bare call has no `.` to key on, so indexing it means indexing nearly every
+    # method name in the corpus — `puts`, `raise`, every macro of every DSL — to serve
+    # the one question that needs it. The one asker is a target the ancestor graph puts
+    # behind every object (`Module#include`), so the sweep is paid there and nowhere
+    # else, and memoized per name.
+    def files_with_bare_call(method_name)
+      @bare_call_index[method_name] ||= begin
+        pattern = BARE_CALL_AT.call(method_name)
+        @source_files.select do |file|
+          content = File.read(file)
+          content.match?(pattern)
+        rescue Errno::ENOENT, Errno::EACCES
+          false
+        end.freeze
+      end
     end
 
     EMPTY_ARRAY = [].freeze

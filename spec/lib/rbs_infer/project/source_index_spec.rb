@@ -109,8 +109,9 @@ RSpec.describe RbsInfer::Project::SourceIndex do
       expect(index.files_calling("save!")).to contain_exactly(f)
     end
 
-    # Only explicit-receiver calls. A bare call has no `.` and is covered by the
-    # mixin graph (`files_reaching`), which knows which hosts a module reaches.
+    # Only explicit-receiver calls. A bare call has no `.` to key on, and is served by
+    # the mixin graph (`files_reaching`) or, for a target the ancestor graph puts behind
+    # every object, by `#files_with_bare_call`.
     it "não indexa chamadas sem receiver" do
       f = write_file("a.rb", "qtde_por_vacina(vacina)")
 
@@ -160,6 +161,43 @@ RSpec.describe RbsInfer::Project::SourceIndex do
       %w[slot= other= third= fourth=].each do |name|
         expect(index.files_calling(name)).to be_empty
       end
+    end
+  end
+
+  # The bare form, scanned on demand instead of indexed: `include Foo` in a class body is
+  # `Module#include` on the class object, and neither index above can find it — the file
+  # names no target, and there is no `.` to key on.
+  describe "#files_with_bare_call" do
+    it "encontra a chamada sem receiver no começo da linha" do
+      f = write_file("host.rb", "class Host\n  include Hookable\nend\n")
+
+      expect(described_class.new([f]).files_with_bare_call("include")).to contain_exactly(f)
+    end
+
+    it "ignora a forma com receiver, que o índice de chamadas já cobre" do
+      f = write_file("a.rb", "Host.include Hookable\n")
+
+      expect(described_class.new([f]).files_with_bare_call("include")).to be_empty
+    end
+
+    it "ignora uma atribuição ao mesmo nome" do
+      f = write_file("a.rb", "include = 1\n")
+
+      expect(described_class.new([f]).files_with_bare_call("include")).to be_empty
+    end
+
+    # A definição não é uma chamada — e é justamente o arquivo do alvo, que assim seria
+    # analisado como caller de si mesmo.
+    it "ignora a própria definição do método" do
+      f = write_file("module_reopen.rb", "class Module\n  def include(*modules)\n    modules\n  end\nend\n")
+
+      expect(described_class.new([f]).files_with_bare_call("include")).to be_empty
+    end
+
+    it "ignora comentário" do
+      f = write_file("a.rb", "# include Hookable\n")
+
+      expect(described_class.new([f]).files_with_bare_call("include")).to be_empty
     end
   end
 

@@ -3,15 +3,16 @@ require "rbs_infer"
 
 RSpec.describe RbsInfer::Inference::ConstantArgTypeResolver do
   # A fake bridge exercising the two cross-file outcomes without a real Steep
-  # environment: a value constant resolves to a type, a class/module is
-  # recognized as such, everything else is unknown.
+  # environment: a value constant resolves to a type, a class/module resolves to the
+  # FULLY QUALIFIED name the env matched (`classes` maps written name => that answer),
+  # everything else is unknown.
   FakeBridge = Struct.new(:constants, :classes) do
     def constant_type_from_env(name, namespace:)
       constants[name]
     end
 
-    def class_or_module?(name, namespace:)
-      classes.include?(name)
+    def class_or_module_name(name, namespace:)
+      classes[name]
     end
   end
 
@@ -22,13 +23,13 @@ RSpec.describe RbsInfer::Inference::ConstantArgTypeResolver do
     end
 
     it "prefers the same-file type over the cross-file env" do
-      bridge = FakeBridge.new({ "CODE_LENGTH" => "Float" }, [])
+      bridge = FakeBridge.new({ "CODE_LENGTH" => "Float" }, {})
       resolver = described_class.new(steep_bridge: bridge, caller_constant_types: { "CODE_LENGTH" => "Integer" })
       expect(resolver.resolve(name: "CODE_LENGTH", namespace: nil)).to eq("Integer")
     end
 
     it "falls back to the cross-file env for a constant defined elsewhere" do
-      bridge = FakeBridge.new({ "Settings::CODE_LEN" => "Integer" }, [])
+      bridge = FakeBridge.new({ "Settings::CODE_LEN" => "Integer" }, {})
       resolver = described_class.new(steep_bridge: bridge, caller_constant_types: {})
       expect(resolver.resolve(name: "Settings::CODE_LEN", namespace: "Widget")).to eq("Integer")
     end
@@ -36,13 +37,23 @@ RSpec.describe RbsInfer::Inference::ConstantArgTypeResolver do
     it "resolves a class/module reference to its singleton type" do
       # `foo(User)` passes the class object, whose value type is
       # `singleton(User)` — not the instance `User`.
-      bridge = FakeBridge.new({}, ["User"])
+      bridge = FakeBridge.new({}, { "User" => "::User" })
       resolver = described_class.new(steep_bridge: bridge, caller_constant_types: {})
-      expect(resolver.resolve(name: "User", namespace: nil)).to eq("singleton(User)")
+      expect(resolver.resolve(name: "User", namespace: nil)).to eq("singleton(::User)")
+    end
+
+    # The emitted type has to survive being written into a signature that lives in
+    # another namespace: `include Slots` inside `class IncludedHook` means
+    # `::IncludedHook::Slots`, and `singleton(Slots)` inside `class Module` would mean
+    # `::Slots` — a name that need not exist, which is invalid RBS wherever it lands.
+    it "emits the qualified name the env matched, not the one the call site wrote" do
+      bridge = FakeBridge.new({}, { "Slots" => "::IncludedHook::Slots" })
+      resolver = described_class.new(steep_bridge: bridge, caller_constant_types: {})
+      expect(resolver.resolve(name: "Slots", namespace: "IncludedHook")).to eq("singleton(::IncludedHook::Slots)")
     end
 
     it "returns nil for an unresolved constant (caller emits untyped, never a poisoning bare name)" do
-      bridge = FakeBridge.new({}, [])
+      bridge = FakeBridge.new({}, {})
       resolver = described_class.new(steep_bridge: bridge, caller_constant_types: {})
       expect(resolver.resolve(name: "UNDEFINED_CONST", namespace: nil)).to be_nil
     end

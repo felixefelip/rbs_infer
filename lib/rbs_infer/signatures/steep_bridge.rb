@@ -169,14 +169,54 @@ module RbsInfer::Signatures
     # True when `name` (resolved from `namespace`) is a class or module in the
     # env — i.e. its bare name is a valid type (`foo(User) -> User`).
     def class_or_module?(name, namespace:)
+      !class_or_module_name(name, namespace: namespace).nil?
+    end
+
+    # The same question, answering WHICH class/module — fully qualified, as the env
+    # holds it. The caller emits a type from this, and a type has to survive being
+    # written somewhere else: `include Slots` inside `class IncludedHook` resolves to
+    # `::IncludedHook::Slots`, and emitting the written `Slots` produces a signature
+    # that means `::Slots` — a name that need not exist — wherever it lands.
+    def class_or_module_name(name, namespace:)
       builder = SteepEnvironment.definition_builder
-      return false unless builder && name
+      return nil unless builder && name
 
       env = builder.env
-      constant_name_candidates(name, namespace).any? do |fqn|
+      constant_name_candidates(name, namespace).find do |fqn|
         type_name = parse_type_name(fqn)
         type_name && env.class_decls.key?(type_name)
       end
+    end
+
+    # True when the ancestor graph puts `name` behind EVERY object, so a
+    # receiverless call to one of its instance methods can appear in any file:
+    # `include Foo` in a class body is `Module#include` on the class object, and
+    # `puts x` in any method body is `Kernel#puts` on self.
+    #
+    # Asked of the graph rather than answered with a list of names, because the
+    # graph is what decides it — and it names the same five either way
+    # (`Class`, `Module`, `Object`, `Kernel`, `BasicObject`), with no constant here
+    # to drift from RBS.
+    #
+    # Only the INSTANCE ancestors count. A reopen of `class Module` declares
+    # instance methods of `Module`, which is what a class body's `self` reaches;
+    # `singleton(::Object)` appearing in that list means `Object.foo`, which is
+    # one receiver, not every file.
+    def universal_ancestor?(name)
+      builder = SteepEnvironment.definition_builder
+      return false unless builder && name
+
+      universal_ancestor_names(builder).include?(name.to_s.sub(/\A::/, ""))
+    end
+
+    def universal_ancestor_names(builder)
+      object = parse_type_name("::Object") or return Set.new
+      ancestors = builder.ancestor_builder
+
+      (ancestors.singleton_ancestors(object).ancestors + ancestors.instance_ancestors(object).ancestors)
+        .grep(RBS::Definition::Ancestor::Instance)
+        .filter_map { |ancestor| ancestor.name&.to_s&.delete_prefix("::") }
+        .to_set
     end
 
     # The one thing in those two lookups that can raise on the input they are
