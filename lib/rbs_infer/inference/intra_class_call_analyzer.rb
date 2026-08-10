@@ -52,6 +52,11 @@ module RbsInfer::Inference
     end
 
     def visit_call_node(node)
+      # felixefelip/rbs_infer#205. `send(:helper, x)` inside the class is a call to `helper`,
+      # and the commonest reason to write it here is that `helper` is private — the very
+      # methods this analyzer exists to type.
+      node = SendCall.desugar(node) || node
+
       if node.receiver.nil? && node.arguments
         method_name = node.name.to_s
 
@@ -71,6 +76,11 @@ module RbsInfer::Inference
           # the whole of the folding here.
           splat_index = RestParamMarker.index_in(positional_params)
           positional_args.each_with_index do |arg, i|
+            # A splat argument does not place itself: `helper(*args)` may pass one argument
+            # or five, and the array itself never arrives at any parameter. See the same
+            # break in `NewCallCollector#extract_cross_class_args`.
+            break if arg.is_a?(Prism::SplatNode)
+
             param_name = if splat_index && i >= splat_index
                            RestParamMarker.unmark(positional_params[splat_index])
                          else
