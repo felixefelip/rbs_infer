@@ -447,6 +447,31 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       expect(bridge.constant_type_from_env("", namespace: nil)).to be_nil
       expect(bridge.class_or_module?("Post", namespace: "")).to be(true)
     end
+
+    # The type is emitted into a signature that can live in any namespace, so the answer
+    # has to be the name the ENV matched, not the one the call site wrote.
+    it "answers which class/module, fully qualified" do
+      expect(bridge.class_or_module_name("Post", namespace: nil)).to eq("::Post")
+      expect(bridge.class_or_module_name("Notifiable", namespace: "Post")).to eq("::Post::Notifiable")
+      expect(bridge.class_or_module_name("NoSuchConstantAnywhere", namespace: nil)).to be_nil
+    end
+  end
+
+  # Whether a receiverless call to the target's instance methods can appear in ANY file:
+  # `include Foo` in a class body is `Module#include` on the class object. Read off the
+  # ancestor graph rather than a list of names, so it cannot drift from RBS.
+  describe "#universal_ancestor?" do
+    it "says yes for what sits behind every class object and every object" do
+      %w[Module Class Object Kernel BasicObject ::Module].each do |name|
+        expect(bridge.universal_ancestor?(name)).to be(true), "expected #{name} to be universal"
+      end
+    end
+
+    it "says no for an ordinary class or module, however widely included" do
+      %w[Post Comparable Enumerable Post::Notifiable NoSuchConstantAnywhere].each do |name|
+        expect(bridge.universal_ancestor?(name)).to be(false), "expected #{name} NOT to be universal"
+      end
+    end
   end
 
   describe "#all_expression_types" do

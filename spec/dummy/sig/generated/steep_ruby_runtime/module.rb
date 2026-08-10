@@ -4,13 +4,23 @@
 # Regenerated on every run; do not edit.
 
 class Module
-  # What `include M` runs. Written in C, so no source says it.
+  # What `include M` runs — `rb_mod_include` in MRI's eval.c, written in C, so no
+  # source says it.
   #
   # `| ...` (rbs_infer#200) makes this ADD to core's `Module#include` rather than
   # redeclare it, which RBS rejects as a duplicate.
   # @rbs_infer |...
   def include(*modules)
-    modules.each { |mod| mod.included(self) }
+    raise ArgumentError, "wrong number of arguments (given 0, expected 1+)" if modules.empty?
+
+    # `while (argc--)`: backwards, which is why `include A, B` leaves A closest in
+    # the ancestors. `send` because `rb_funcall` dispatches by name ignoring
+    # visibility, and both of these are private on Module.
+    modules.reverse_each do |mod|
+      mod.send(:append_features, self)
+      mod.send(:included, self)
+    end
+
     self
   end
 end
