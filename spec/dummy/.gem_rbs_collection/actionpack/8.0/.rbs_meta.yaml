@@ -1,6 +1,6 @@
 ---
-name: ast
-version: '2.4'
+name: actionpack
+version: '8.0'
 source:
   type: git
   name: ruby/gem_rbs_collection

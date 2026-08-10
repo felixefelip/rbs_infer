@@ -1733,7 +1733,13 @@ module ActiveSupport
     # Evaluate given block in context of base class,
     # so that you can write class macros here.
     # When you define more than one +included+ block, it raises an exception.
-    def included: (?untyped? base) { () -> untyped } -> untyped
+    #
+    # The block is OPTIONAL. The method is `def included(base = nil, &block)` and has two
+    # call forms, only one of which passes a block: `included do ... end` is the DSL, and
+    # `included(base)` is Ruby's own hook, which passes a base and no block. Declaring the
+    # block required makes this signature irreconcilable with `Module#included`, which takes
+    # none — so a union over module singletons loses the method entirely.
+    def included: (?untyped? base) ?{ () -> untyped } -> untyped
 
     # Define class methods from given block.
     # You can define private class methods as well.
