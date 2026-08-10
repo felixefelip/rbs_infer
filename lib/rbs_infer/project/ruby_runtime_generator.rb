@@ -26,6 +26,13 @@ module RbsInfer::Project
   # is a no-op there (`rb_obj_dummy1`), so the plain-call spelling `mod.included(self)`
   # asserts a public call Ruby never makes. `send` is what `rb_funcall` is.
   #
+  # The two it delegates to are written here as well, under `private` because that is
+  # their visibility on `Module` (measured: `Module.instance_method(:included).owner` is
+  # `Module`, and RBS core declares both `private def`). Neither can state its whole
+  # effect — the splice is `rb_include_module` and the hook is `rb_obj_dummy1` — but
+  # writing them gives an app's override a `super` that resolves, which is what
+  # `ActiveSupport::Concern#append_features` needs.
+  #
   # Nothing here states a type; the same rule the Devise and AR-runtime generators
   # follow. `# @rbs_infer |...` (#200) makes the emitted signature RBS's overloading
   # form, so this ADDS to core's `Module#include` instead of redeclaring it — a plain
@@ -71,6 +78,36 @@ module RbsInfer::Project
           end
 
           self
+        end
+
+        private
+
+        # What `include` delegates the actual work to — `rb_mod_append_features` in eval.c:
+        #
+        #   if (!CLASS_OR_MODULE_P(include)) Check_Type(include, T_CLASS);
+        #   rb_include_module(include, module);
+        #   return module;
+        #
+        # The splice itself is `rb_include_module`, and no Ruby spells it — so the body says
+        # the two things it CAN say: the type check, and that the answer is the module. A
+        # module that overrides this (`ActiveSupport::Concern` does) now has a `super` to
+        # resolve against.
+        # @rbs_infer |...
+        def append_features(mod)
+          raise TypeError, "wrong argument type (expected Class or Module)" unless mod.is_a?(Module)
+
+          # rb_include_module(mod, self): the ancestors of `mod` gain `self`. Not expressible
+          # here, and not needed — RBS states ancestry, this file only models dispatch.
+          self
+        end
+
+        # The notification, and on `Module` it does nothing at all: `rb_obj_dummy1`, one
+        # argument, returns nil. A module that wants to know overrides it with
+        # `def self.included(base)`, which shadows this and is PUBLIC in the process — which
+        # is why `include` above has to reach this one with `send`.
+        # @rbs_infer |...
+        def included(base)
+          nil
         end
       end
     RUBY
