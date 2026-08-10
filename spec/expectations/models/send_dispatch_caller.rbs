@@ -1,13 +1,13 @@
 class SendDispatchCaller
-  def stamped: () -> untyped
+  def stamped: () -> String
   def stamped_predicate: () -> untyped
-  def called: () -> untyped
+  def called: () -> String
   def dynamic: (untyped name) -> untyped
-  def underscored: () -> untyped
-  def string_named: () -> untyped
+  def underscored: () -> String
+  def string_named: () -> String
   def stamped_publicly: () -> untyped
   def missing_name: () -> untyped
-  def wrong_arity: () -> untyped
-  def splatted: (*untyped args) -> untyped
+  def wrong_arity: () -> String
+  def splatted: (*untyped args) -> String
   def guarded: () -> untyped
 end

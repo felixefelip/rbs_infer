@@ -10,20 +10,22 @@
 # the method name is right there. Both repos read it as nothing today, and this fixture is
 # where that shows:
 #
-# - rbs_infer does not see the call site. `SourceIndex` indexes the file under `send`, so
-#   `files_calling("stamp")` is empty and `stamp`'s parameter is never typed — the same
-#   class of miss as the bare `include` that rbs_infer#202 fixed, from the other end.
-# - Steep checks nothing inside it. `send` returns `untyped`, so a wrong arity, a
-#   misspelled name and a call on the result are all accepted in silence (measured: three
-#   such lines, `No type error detected`).
+# - **Steep resolves it now** (felixefelip/steep#137). A literal-name `send` is read as a
+#   call to that method, so the arguments are checked and the return type is taken. That is
+#   why the snapshot below reads `String` where it used to read `untyped`, with no rbs_infer
+#   change at all: `SteepBridge` uses the checker as the return-type oracle, so the win
+#   arrives through the existing pipeline.
+# - **rbs_infer still does not see the call site.** `SourceIndex` indexes the file under
+#   `send`, so `files_calling("stamp")` is empty and `stamp`'s parameter stays `untyped` —
+#   the same class of miss as the bare `include` that rbs_infer#202 fixed, from the other
+#   end. This is the half still open, and the one this fixture now pins.
 #
-# The caller below has two halves. The first is inference that is missing: a parameter and
-# a return type that read `untyped` and have to read a type. The second is code that has to
-# start FAILING — `public_send` reaching a private method, a name that resolves nowhere, a
-# wrong arity — accepted in silence today, and each one a runtime error. Both halves are
-# invisible in the snapshot for the same reason (`send` is `untyped`), which is why the
-# second half is spelled out in comments here and belongs in `steep_baseline.txt` once
-# resolved.
+# The caller below has two halves. The first is inference: return types that now read a
+# type, and one parameter (`SendDispatch#stamp`'s `value`) that still reads `untyped`. The
+# second is code that has to FAIL — `public_send` reaching a private method, a name that
+# resolves nowhere, a wrong arity — each one a runtime error, silent before #137 and
+# reported now. Those live in `sig/generated/steep_baseline.txt`, which is where a
+# deliberate error belongs once the checker can see it.
 #
 # A plain class on purpose — nothing here is Active Record, so the fixture needs no table.
 class SendDispatch
@@ -33,9 +35,11 @@ class SendDispatch
 
   private
 
-  # The rbs_infer criterion: `value` has to come from the `send` call site in
-  # `SendDispatchCaller#stamped`, exactly like any other cross-class argument. It reads
-  # `untyped` today; it has to read `String`.
+  # The rbs_infer criterion, and the half still OPEN: `value` has to come from the `send`
+  # call site in `SendDispatchCaller#stamped`, exactly like any other cross-class argument.
+  # It still reads `untyped`. Steep resolving the call (#137) does nothing for this one —
+  # the checker reads a call site, `SourceIndex` has to FIND it, and it indexes the file
+  # under `send`.
   def stamp(value)
     "stamped: #{value}"
   end
@@ -50,9 +54,9 @@ end
 # The call sites. Kept in their own class so they are cross-class calls, which is the path
 # that types a parameter from its callers.
 class SendDispatchCaller
-  # The checker criterion: `send` with a literal symbol IS a call to that method, so this
-  # is `String`. It reads `untyped` today, and neither a wrong arity nor a misspelled name
-  # here would be reported at all.
+  # The checker criterion, now MET: `send` with a literal symbol IS a call to that method,
+  # so this is `String` — in the snapshot, without rbs_infer knowing anything about `send`,
+  # because `SteepBridge` asks the checker for the return type.
   def stamped
     SendDispatch.new.send(:stamp, "post")
   end
@@ -87,12 +91,13 @@ class SendDispatchCaller
     SendDispatch.new.send("stamp", "post")
   end
 
-  # ─── The half that has to become an ERROR ────────────────────────────────────────
+  # ─── The half that had to become an ERROR, and did ───────────────────────────────
   #
-  # Everything below is accepted in silence today, and each line is a runtime failure —
-  # which is the whole argument for resolving a literal-name `send`. They are deliberately
-  # wrong, like the intentional errors in `example7.rb`, and after a fix each one belongs
-  # in `sig/generated/steep_baseline.txt` rather than in the source.
+  # Every line below was accepted in silence before felixefelip/steep#137, and each one is a
+  # runtime failure — which was the whole argument for resolving a literal-name `send`. They
+  # are deliberately wrong, like the intentional errors in `example7.rb`, so each now sits in
+  # `spec/expectations/steep_baseline.txt`. If one of them ever stops being reported, that
+  # spec says so.
 
   # `public_send` respects visibility, so this is a `NoMethodError` at runtime even though
   # `stamp` exists. A different error from "no such method" and worth a different message:
@@ -101,9 +106,9 @@ class SendDispatchCaller
     SendDispatch.new.public_send(:stamp, "post")
   end
 
-  # No method by this name, at any visibility. Measured: Steep already reports the plain
-  # spelling of this (`Ruby::NoMethod`) even for a class that declares `method_missing`,
-  # so resolving `send` adds no new judgment — it removes an exception.
+  # No method by this name, at any visibility. Measured before the fix: Steep already
+  # reported the plain spelling of this (`Ruby::NoMethod`) even for a class that declares
+  # `method_missing`, so resolving `send` added no new judgment — it removed an exception.
   def missing_name
     SendDispatch.new.send(:no_such_method_anywhere)
   end
@@ -113,16 +118,22 @@ class SendDispatchCaller
     SendDispatch.new.send(:stamp, "a", "b", "c")
   end
 
-  # And the case that must NOT error: a splat of unknown length says nothing about how
-  # many arguments arrive, so a fix resolves the name and the return type and stays quiet
-  # about the arguments.
+  # This one was predicted to stay quiet — a splat of unknown length says nothing about how
+  # many arguments arrive — and the prediction was wrong, for a reason worth keeping: the
+  # DIRECT spelling does not stay quiet either. Measured, `SendDispatch.new.stamp(*args)`
+  # against a one-argument method reports `Unexpected positional argument` in Steep today,
+  # so `send` reporting it is not a send-specific arity judgment; it is the existing one,
+  # reached through a different door. Silencing it only for `send` would make `send` more
+  # permissive than the call it stands for. So: baselined, and the imprecision to fix is
+  # Steep's handling of splats, not `send`'s.
   def splatted(*args)
     SendDispatch.new.send(:stamp, *args)
   end
 
   # The shape that will make the most noise in a real codebase, and the reason the
-  # diagnostic wants an ID of its own to tune: a `respond_to?` guard does not put the
-  # method in the RBS, so this errors even though the code is careful. Silent today.
+  # diagnostic got an ID of its own to tune: a `respond_to?` guard does not put the method in
+  # the RBS, so this errors even though the code is careful. A project that hits a lot of it
+  # sets `Ruby::UnresolvedSend` to `:warning` in its Steepfile and ramps.
   def guarded
     target = SendDispatch.new
     target.send(:no_such_method_anywhere) if target.respond_to?(:no_such_method_anywhere)
