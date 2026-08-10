@@ -89,9 +89,15 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
         @parts << "?#{optional_param_type(p)} #{p.name}"
       end if @params.respond_to?(:optionals)
 
-      # Rest param
+      # Rest param. Emitted WITH its name when it has one, for the same reason every
+      # other parameter is: the type substitution downstream is keyed by name
+      # (`untyped <name>` → `<type> <name>`), so a nameless `*untyped` is a slot nothing
+      # can ever fill — the splat stayed `untyped` no matter what the call sites passed.
+      # An anonymous `*` (or `def foo(a,)`'s implicit rest) has no name to key on and
+      # keeps the bare form.
       if @params.respond_to?(:rest) && @params.rest
-        @parts << "*untyped"
+        name = RbsInfer::Inference::RestParamMarker.name_from(@params)
+        @parts << (name ? "*untyped #{name}" : "*untyped")
       end
     end
 

@@ -1073,6 +1073,10 @@ module RbsInfer
   # positional args by index (which can only reach the
   # requireds+optionals prefix) and kwargs by name, so the order
   # preserves the positional mapping.
+  #
+  # A rest param sits between the two, where its index is, marked by
+  # `RestParamMarker` — see there for what the marker is and why it travels
+  # in the list itself.
   def extract_target_method_params
     return {} unless @parsed_target
 
@@ -1088,6 +1092,8 @@ module RbsInfer
       names = []
       params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
       params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
+      rest = RbsInfer::Inference::RestParamMarker.name_from(params)
+      names << RbsInfer::Inference::RestParamMarker.mark(rest) if rest
       params.keywords.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:keywords)
       methods[defn.name.to_s] = names unless names.empty?
     end
@@ -1167,6 +1173,8 @@ module RbsInfer
     names = []
     params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
     params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
+    rest = RbsInfer::Inference::RestParamMarker.name_from(params)
+    names << RbsInfer::Inference::RestParamMarker.mark(rest) if rest
     names
   end
 
@@ -1328,6 +1336,7 @@ require_relative "signatures/rbs_builder"
 require_relative "inference/constant_type_resolver"
 require_relative "inference/constant_arg_type_resolver"
 require_relative "inference/self_return_type_context"
+require_relative "inference/rest_param_marker"
 require_relative "inference/type_merger"
 require_relative "inference/ivar_type_set"
 require_relative "inference/return_type_resolver"

@@ -2,9 +2,9 @@ module ActionController
   class Base
     @__rbs_infer__performed: true?
 
-    def redirect_to: (*untyped) -> bool
-    def render: (*untyped) -> bool
-    def head: (*untyped) -> bool
+    def redirect_to: (*untyped args) -> bool
+    def render: (*{ plain: String, status: Symbol } args) -> bool
+    def head: (*untyped args) -> bool
     def performed?: () -> true?
     def __rbs_infer__unknown_condition?: () -> untyped
   end
