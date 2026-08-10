@@ -256,13 +256,13 @@ module ActiveRecord
 
     def ==: (untyped other) -> untyped
 
-    def build: (?untyped? attributes) { () -> untyped } -> untyped
+    def build: (?untyped? attributes) ?{ () -> untyped } -> untyped
 
     alias new build
 
-    def create: (?untyped? attributes) { () -> untyped } -> untyped
+    def create: (?untyped? attributes) ?{ () -> untyped } -> untyped
 
-    def create!: (?untyped? attributes) { () -> untyped } -> untyped
+    def create!: (?untyped? attributes) ?{ () -> untyped } -> untyped
 
     private
 
@@ -462,9 +462,9 @@ module ActiveRecord
 
       def initialize_attributes: (untyped record, ?untyped? except_from_scope_attributes) -> untyped
 
-      def create: (?::Hash[untyped, untyped] attributes) { () -> untyped } -> untyped
+      def create: (?::Hash[untyped, untyped] attributes) ?{ () -> untyped } -> untyped
 
-      def create!: (?::Hash[untyped, untyped] attributes) { () -> untyped } -> untyped
+      def create!: (?::Hash[untyped, untyped] attributes) ?{ () -> untyped } -> untyped
 
       private
 
@@ -866,7 +866,7 @@ module ActiveRecord
 
       def find: (*untyped args) -> untyped
 
-      def build: (?::Hash[untyped, untyped] attributes) { () -> untyped } -> untyped
+      def build: (?::Hash[untyped, untyped] attributes) ?{ () -> untyped } -> untyped
 
       # Add +records+ to this association. Since +<<+ flattens its argument list
       # and inserts each record, +push+ and +concat+ behave identically.
@@ -2206,7 +2206,7 @@ module ActiveRecord
       # Implements the writer method, e.g. foo.bar= for Foo.belongs_to :bar
       def writer: (untyped record) -> untyped
 
-      def build: (?::Hash[untyped, untyped] attributes) { () -> untyped } -> untyped
+      def build: (?::Hash[untyped, untyped] attributes) ?{ () -> untyped } -> untyped
 
       # Implements the reload reader method, e.g. foo.reload_bar for
       # Foo.has_one :bar
@@ -19164,7 +19164,7 @@ module ActiveRecord
     #
     #   users.create(name: nil) # validation on name
     #   # => #<User id: nil, name: nil, ...>
-    def create: (?untyped? attributes) { () -> untyped } -> untyped
+    def create: (?untyped? attributes) ?{ () -> untyped } -> untyped
 
     # Similar to #create, but calls
     # {create!}[rdoc-ref:Persistence::ClassMethods#create!]
@@ -19172,13 +19172,13 @@ module ActiveRecord
     #
     # Expects arguments in the same format as
     # {ActiveRecord::Base.create!}[rdoc-ref:Persistence::ClassMethods#create!].
-    def create!: (?untyped? attributes) { () -> untyped } -> untyped
+    def create!: (?untyped? attributes) ?{ () -> untyped } -> untyped
 
-    def first_or_create: (?untyped? attributes) { () -> untyped } -> untyped
+    def first_or_create: (?untyped? attributes) ?{ () -> untyped } -> untyped
 
-    def first_or_create!: (?untyped? attributes) { () -> untyped } -> untyped
+    def first_or_create!: (?untyped? attributes) ?{ () -> untyped } -> untyped
 
-    def first_or_initialize: (?untyped? attributes) { () -> untyped } -> untyped
+    def first_or_initialize: (?untyped? attributes) ?{ () -> untyped } -> untyped
 
     # Finds the first record with the given attributes, or creates a record
     # with the attributes if one is not found:
@@ -19254,12 +19254,12 @@ module ActiveRecord
     # (unless the INSERT -> DELETE -> SELECT race condition is triggered), but if creation was attempted
     # and failed due to validation errors it won't be persisted, you get what #create returns in
     # such situation.
-    def create_or_find_by: (untyped attributes) { () -> untyped } -> untyped
+    def create_or_find_by: (untyped attributes) ?{ () -> untyped } -> untyped
 
     # Like #create_or_find_by, but calls
     # {create!}[rdoc-ref:Persistence::ClassMethods#create!] so an exception
     # is raised if the created record is invalid.
-    def create_or_find_by!: (untyped attributes) { () -> untyped } -> untyped
+    def create_or_find_by!: (untyped attributes) ?{ () -> untyped } -> untyped
 
     # Like #find_or_create_by, but calls {new}[rdoc-ref:Core#new]
     # instead of {create}[rdoc-ref:Persistence::ClassMethods#create].

@@ -1734,17 +1734,11 @@ module ActiveSupport
     # so that you can write class macros here.
     # When you define more than one +included+ block, it raises an exception.
     #
-    # LOCAL CORRECTION (felixefelip/rbs_infer): the block is `?{`, not `{`. The generated
-    # stub said `{ () -> untyped }` — REQUIRED — but the method is
-    # `def included(base = nil, &block)`, and `&block` is never required in Ruby. It has
-    # two call forms and only one of them passes a block: `included do … end` is the DSL,
-    # and `included(base)` is Ruby's own hook, which passes a base and no block.
-    #
-    # Requiring it made `Concern#included` irreconcilable with `Module#included` (no
-    # block): `MethodType#|` bails when one side needs a block and the other declares
-    # none, so `union_shape` dropped the entry entirely and a union over module
-    # singletons reported `does not have method included` even though all of them do.
-    # Restore this line only together with a fix upstream in gem_rbs_collection.
+    # The block is OPTIONAL. The method is `def included(base = nil, &block)` and has two
+    # call forms, only one of which passes a block: `included do ... end` is the DSL, and
+    # `included(base)` is Ruby's own hook, which passes a base and no block. Declaring the
+    # block required makes this signature irreconcilable with `Module#included`, which takes
+    # none — so a union over module singletons loses the method entirely.
     def included: (?untyped? base) ?{ () -> untyped } -> untyped
 
     # Define class methods from given block.

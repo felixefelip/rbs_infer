@@ -419,7 +419,25 @@ end
 
 module ActiveRecord
   module Delegation
+    # Delegated to `model` (the Active Record class) at runtime:
+    #
+    #   delegate :primary_key, :with_connection, :connection, :table_name,
+    #            :transaction, :sanitize_sql_like, :unscoped, :name, to: :model
+    #
+    # (active_record/lib/active_record/relation/delegation.rb). `Relation`
+    # includes this module, so declaring the full list here is what makes these
+    # callable on a relation — notably inside a `scope` body, where `self` is
+    # the relation rather than the class. Each signature mirrors its class-level
+    # counterpart.
+    def primary_key: () -> untyped
+    def with_connection: [T] () { (untyped) -> T } -> T
+    def connection: () -> untyped
     def table_name: () -> String
+    def transaction: [T] (?requires_new: boolish, ?isolation: (:read_uncommitted | :read_committed | :repeatable_read | :serializable)?, ?joinable: boolish) { () -> T } -> T
+    def sanitize_sql_like: (String string, ?String escape_character) -> String
+    def unscoped: () -> untyped
+                | () { () -> untyped } -> untyped
+    def name: () -> String
   end
 end
 
@@ -457,6 +475,13 @@ module ActiveRecord
               | (Array[PrimaryKey]) -> Array[Model & ValidatedModel]
               | (*PrimaryKey) -> Array[Model & ValidatedModel]
               | () { (Model & ValidatedModel) -> boolish } -> (Model & ValidatedModel)?
+      # ActiveRecord::SignedId. Narrowed for the same reason as the finders
+      # above, because that is literally what they delegate to: `find_signed`
+      # ends in `find_by primary_key => id` and returns nil when the signature
+      # is expired, has a purpose mismatch, or was tampered with; `find_signed!`
+      # ends in `find(id)` and raises instead.
+      def find_signed: (untyped signed_id, ?purpose: untyped, ?on_rotation: untyped) -> (Model & ValidatedModel)?
+      def find_signed!: (untyped signed_id, ?purpose: untyped, ?on_rotation: untyped) -> (Model & ValidatedModel)
       # find_or_create_by family is intentionally *not* narrowed: the non-bang
       # variants can return a record whose save failed validation. The bang
       # variants raise on validation failure, so they return ValidatedModel.
@@ -606,6 +631,13 @@ module ActiveRecord
       def find: (PrimaryKey id) -> (Model & ValidatedModel)
               | (Array[PrimaryKey]) -> Array[Model & ValidatedModel]
               | (*PrimaryKey) -> Array[Model & ValidatedModel]
+      # ActiveRecord::SignedId. Narrowed for the same reason as the finders
+      # above, because that is literally what they delegate to: `find_signed`
+      # ends in `find_by primary_key => id` and returns nil when the signature
+      # is expired, has a purpose mismatch, or was tampered with; `find_signed!`
+      # ends in `find(id)` and raises instead.
+      def find_signed: (untyped signed_id, ?purpose: untyped, ?on_rotation: untyped) -> (Model & ValidatedModel)?
+      def find_signed!: (untyped signed_id, ?purpose: untyped, ?on_rotation: untyped) -> (Model & ValidatedModel)
       # find_or_create_by family is intentionally *not* narrowed: the non-bang
       # variants can return a record whose save failed validation. The bang
       # variants raise on validation failure, so they return ValidatedModel.
@@ -615,6 +647,14 @@ module ActiveRecord
                             | (*untyped) { (Model) -> void } -> (Model & ValidatedModel)
       def find_or_initialize_by: (*untyped) -> Model
                                | (*untyped) { (Model) -> void } -> Model
+      # `Model.build` (Rails 7.1+) initializes without saving, so it returns a
+      # plain Model — same as `find_or_initialize_by`. The Array overload comes
+      # first: `untyped` would otherwise swallow an Array of attribute hashes
+      # and hand back a single Model instead of one record per hash.
+      def build: (Array[untyped] attributes) -> Array[Model]
+               | (Array[untyped] attributes) { (Model) -> void } -> Array[Model]
+               | (?untyped attributes) -> Model
+               | (?untyped attributes) { (Model) -> void } -> Model
       def create_or_find_by: (*untyped) -> Model
                            | (*untyped) { (Model) -> void } -> Model
       def create_or_find_by!: (*untyped) -> (Model & ValidatedModel)

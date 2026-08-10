@@ -6,6 +6,7 @@ module ActiveRecord
     extend Normalization::ClassMethods
     include SecurePassword
     extend SecurePassword::ClassMethods
+    include SignedId
     include TokenFor
     extend TokenFor::ClassMethods
 
@@ -174,6 +175,15 @@ module ActiveRecord
     module ClassMethods
       def authenticate_by: (untyped attributes) -> instance?
     end
+  end
+
+  # The instance half of ActiveRecord::SignedId — the token that the class-level
+  # `find_signed` / `find_signed!` verify. Those two live in the generic
+  # `Base::ClassMethods` / `Relation::Methods` (activerecord.rbs) instead of in a
+  # `SignedId::ClassMethods` module here, because only the generic modules can
+  # narrow their return to `(Model & ValidatedModel)`.
+  module SignedId
+    def signed_id: (?expires_in: ActiveSupport::Duration, ?expires_at: untyped, ?purpose: untyped) -> String
   end
 
   module TokenFor
