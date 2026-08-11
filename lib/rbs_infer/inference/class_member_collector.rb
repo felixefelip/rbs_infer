@@ -22,7 +22,14 @@ module RbsInfer::Inference
   # `block_open_forward` = o corpo só repassa o bloco (`foo(&block)`), sem
   # chamá-lo nem testá-lo, então quem decide se ele é obrigatório é o callee —
   # também resolvido no Analyzer (#149).
-  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, :block_arg_positions, :block_open_forward, :overloading, keyword_init: true)
+  # `block_stored_forward` = o corpo GUARDA o bloco numa ivar (`@x = block`) em
+  # vez de usá-lo, então quem decide contra qual `self` ele foi escrito é quem o
+  # repassa depois — resolvido no Analyzer (#208).
+  # `param_nil_defaults` = nomes dos params opcionais cujo default é o literal
+  # `nil`. Enquanto o tipo é `untyped` não muda nada; quando os call-sites dão
+  # um tipo de verdade ao param, é o que faz o `?` do nilable aparecer junto —
+  # aplicado no Analyzer, onde o tipo inferido existe (#208).
+  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_nil_defaults, :block_stored_forward, keyword_init: true)
 
   # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
   DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
@@ -147,8 +154,10 @@ module RbsInfer::Inference
         # Only when we synthesized the signature — an explicit `#:`/`@rbs`
         # annotation is authoritative and must not be overridden.
         param_constant_defaults: sig ? nil : extractor.constant_default_params,
+        param_nil_defaults: sig ? nil : extractor.nil_default_params,
         block_arg_positions: sig ? nil : extractor.block_arg_positions,
         block_open_forward: sig ? nil : extractor.block_open_forward?,
+        block_stored_forward: sig ? nil : extractor.block_stored_forward?,
         overloading: overloading
       )
       super

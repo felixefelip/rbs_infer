@@ -457,7 +457,8 @@ module RbsInfer::Inference
     end
 
     # Does the receiver reach the target's method through its ANCESTRY — a
-    # superclass, or a module it includes — rather than through its name?
+    # superclass, a module it includes, a module it extends — rather than
+    # through its name?
     #
     # `match_class?` and `owner_match?` above both compare NAMES, which is all the
     # sources can be asked. A receiver typed as the class that includes the target
@@ -478,12 +479,16 @@ module RbsInfer::Inference
     #
     # The RBS is also the only place that knows this — rbs_rails declares the
     # relation shapes and their `include`s in signatures, never in Ruby, so
-    # `MixinIndex` (built from the sources' `include`s) cannot answer it.
+    # `MixinIndex` (built from the sources' `include`s) cannot answer it. The
+    # same holds for the SINGLETON side, which `method_owner` reads off the
+    # same graph: `MixinIndex` records `include`/`prepend` and nothing else, so
+    # a receiver that reaches the target by `extend` has no other oracle
+    # (felixefelip/rbs_infer#208).
     def ancestry_match?(receiver_type, method_name)
       normalized_target = @target_class.sub(/\A::/, "")
 
       receiver_components(receiver_type).any? do |component|
-        owner = rbs_definition_resolver.instance_method_owner(component, method_name)
+        owner = rbs_definition_resolver.method_owner(component, method_name)
         owner && owner.sub(/\A::/, "") == normalized_target
       end
     end

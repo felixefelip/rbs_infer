@@ -328,6 +328,25 @@ module RbsInfer::Signatures
       method_sig.sub(BLOCK_RETURN) { "#{Regexp.last_match[:open]}#{parenthesize_compound(type)}#{Regexp.last_match[:close]}" }
     end
 
+    # Binds `self` inside a method's block clause: `?{ (*untyped) -> untyped }`
+    # becomes `?{ (*untyped) [self: Module] -> untyped }`.
+    #
+    # Only the binding is added — not the `?`, and not the parameter list. A
+    # block the method merely STORED is one it may never call, so nothing here
+    # can make it required, and its arity stays whatever the body said
+    # (felixefelip/rbs_infer#208).
+    #
+    # A clause that already binds `self` is left alone: that binding came from a
+    # hand-written annotation, and an annotation is the authority.
+    BLOCK_SELF_BINDING = /(?<open>\??\{ \([^)]*\) )(?=->)/
+
+    def bind_block_self(method_sig, self_type)
+      return method_sig unless method_sig && usable_type?(self_type)
+      return method_sig if method_sig.include?("[self:")
+
+      method_sig.sub(BLOCK_SELF_BINDING) { "#{Regexp.last_match[:open]}[self: #{self_type}] " }
+    end
+
     # Turns the "I only forward it" block into the callee's own — required, and
     # shaped like whatever the callee declares (#149).
     #

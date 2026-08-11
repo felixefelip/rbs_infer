@@ -60,13 +60,15 @@ RSpec.describe "rest parameter inference" do
     expect(rbs).to include("def deliver: (String subject, *String bodies) ->")
   end
 
+  # `?String?`, not `?String`: the `= nil` default is a call site nobody writes, and it
+  # passes nil (felixefelip/rbs_infer#208).
   it "keeps an optional before the splat separate from it" do
     rbs = with_caller(
       "  def only_optional(first = nil, *rest)\n    [first, rest]\n  end",
       "    Notifier.new.only_optional(\"a\", 1, 2)"
     )
 
-    expect(rbs).to include("def only_optional: (?String first, *Integer rest) ->")
+    expect(rbs).to include("def only_optional: (?String? first, *Integer rest) ->")
   end
 
   # Keywords are matched by name, and the splat does not eat them: `mode:` still lands on

@@ -1,7 +1,7 @@
 class UsersController
   @__rbs_infer__performed: true?
 
-  def render: (?(Symbol | String) target, *untyped rest) -> bool
+  def render: (?(Symbol | String)? target, *untyped rest) -> bool
 
   private
 

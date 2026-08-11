@@ -1620,7 +1620,7 @@ RSpec.describe RbsInfer::Analyzer do
 
       rbs = described_class.new(target_class: "Reopened", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
 
-      expect(rbs).to include("def handle: (?Symbol target")
+      expect(rbs).to include("def handle: (?Symbol? target")
     end
 
     # The target's OWN file is already covered by IntraClassCallAnalyzer. Counting it
