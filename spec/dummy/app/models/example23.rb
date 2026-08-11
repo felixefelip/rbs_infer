@@ -16,6 +16,8 @@ class Example23
 
     def self.log_something(message)
       puts message
+
+      message
     end
   end
 
