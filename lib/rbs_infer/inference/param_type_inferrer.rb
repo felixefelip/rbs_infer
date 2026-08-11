@@ -1,19 +1,42 @@
 module RbsInfer::Inference
-  # Infere tipos de parâmetros de métodos via chamadas intra-classe,
-  # detecção de forwarding wrappers e call-sites cross-class.
+  # What a method's parameters accept — from the intra-class calls, from the
+  # wrappers that forward arguments on, and from the call sites in other files.
   #
-  # Extraído de Analyzer para manter responsabilidades separadas.
-
+  # The three kinds of evidence answer the SAME question and cross: a method
+  # called with `String` in one file and `:symbol` in another has both types, not
+  # whichever was seen first. So the union lives here rather than in the caller —
+  # the Analyzer asks once and gets the whole answer (felixefelip/rbs_infer#64).
+  #
+  # `initialize` gets its own method because its evidence is a different thing
+  # entirely: the project's `.new`s, not calls to the method.
   class ParamTypeInferrer
     ITERATOR_METHODS = RbsInfer::ITERATOR_METHODS
 
-    def initialize(target_file:, target_class:, source_files:, source_index: nil, method_type_resolver:, type_merger:, steep_bridge: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil)
+    # What the blocks passed at the cross-class call sites return, picked up in
+    # passing by `infer_method_param_types` — this is the pipeline's only sweep
+    # over caller files, and `BlockSignatureResolver` needs the answer later
+    # (felixefelip/rbs_infer#155). Read, not injected: it used to be an Analyzer
+    # ivar written by one pass and consumed 400 lines further down, with nothing
+    # saying the two were connected.
+    attr_reader :caller_block_returns
+
+    # `source_index`, `mixin_index` and `extra_caller_sources` decide WHICH files
+    # are swept for call sites, so none of them is defaulted: a caller that forgets
+    # one does not break — it infers from a smaller set of callers and emits
+    # `untyped` where there was an answer (docs/engineering/required-threaded-deps.md).
+    # `extra_caller_sources` may legitimately be nil (not every project registers
+    # one), but saying so is the caller's job.
+    def initialize(target_file:, target_class:, source_files:, source_index:, method_type_resolver:, type_merger:,
+                   mixin_index:, extra_caller_sources:, steep_bridge: nil, parse_cache: nil, file_index: nil,
+                   caller_file_cache: nil)
       @target_file = target_file
       @target_class = target_class
       @source_files = source_files
       @source_index = source_index
       @method_type_resolver = method_type_resolver
       @type_merger = type_merger
+      @mixin_index = mixin_index
+      @extra_caller_sources = extra_caller_sources
       @steep_bridge = steep_bridge
       @parse_cache = parse_cache || RbsInfer::Project::ParseCache.new
       @file_index = file_index || RbsInfer::Project::FileIndex.new(source_files)
@@ -22,9 +45,58 @@ module RbsInfer::Inference
       # infer_wrapper_method_param_types (#46).
       @constant_arg_resolver = ConstantArgTypeResolver.new(steep_bridge: @steep_bridge, caller_constant_types: {})
       @constant_namespace = nil
+      @caller_block_returns = nil
     end
 
-    def infer_method_param_types(attr_types, parsed_target: nil)
+    # `{ "notify" => { "user" => "User", "message" => "String" } }` — every kind
+    # of evidence, already crossed.
+    #
+    # `is_module` comes per call rather than from the constructor: what settles it
+    # is the target's parse, which happens after this object exists.
+    def infer_method_param_types(members, attr_types, parsed_target:, is_module:)
+      inferred = infer_from_intra_class(attr_types, parsed_target)
+
+      infer_from_callers(members, parsed_target: parsed_target, is_module: is_module).each do |method_name, param_types|
+        inferred[method_name] ||= {}
+        param_types.each do |param_name, type|
+          existing = inferred[method_name][param_name]
+          inferred[method_name][param_name] =
+            if existing && existing != "untyped"
+              TypeMerger.union_types([existing, type])
+            else
+              type
+            end
+        end
+      end
+
+      nilablize_nil_defaults(members, inferred)
+      inferred
+    end
+
+    # What `initialize` accepts, from the project's `.new`s — with two fallbacks,
+    # in order of evidence: the signature RBS already declares, and the wrappers
+    # that forward arguments into a `.new` no direct call site reaches.
+    def infer_initialize_types(parsed_target:)
+      usages = find_new_calls(parsed_target)
+      return {} if usages.empty?
+
+      merged = @type_merger.merge_argument_types(usages)
+
+      if merged.values.all? { |t| t == "untyped" }
+        fallback = @method_type_resolver.resolve_init_param_types(@target_class)
+        merged = fallback unless fallback.empty?
+      end
+
+      if merged.values.all? { |t| t == "untyped" }
+        infer_init_types_via_forwarding_wrappers.each { |k, v| merged[k] = v if merged[k] == "untyped" }
+      end
+
+      merged
+    end
+
+    private
+
+    def infer_from_intra_class(attr_types, parsed_target)
       return {} unless parsed_target
 
       # Pré-coletar parâmetros posicionais de todos os métodos
@@ -70,13 +142,211 @@ module RbsInfer::Inference
       inferred
     end
 
+    # ─── Call sites in other files ─────────────────────────────────────
+
+    # `PostPublisher` calls `notifier.notify(post.user, "msg")` → `user: User`,
+    # `message: String`.
+    def infer_from_callers(members, parsed_target:, is_module:)
+      # `attr_writer_methods` are SYNTHETIC writers standing in for
+      # `attr_accessor`-generated methods, and name their param after the attr
+      # (`user`). A real `def user=(value)` overriding that attr names it `value`,
+      # and the def is the authority: the inferred type is keyed by param name, and
+      # RbsBuilder substitutes it by matching that name in the signature. Letting
+      # the synthetic name win filed the type under `user` while the signature said
+      # `value`, so the substitution missed and the param stayed `untyped` even
+      # though the call-site had been read correctly.
+      target_methods = attr_writer_methods(members).merge(target_method_params(parsed_target))
+      return {} if target_methods.empty?
+
+      analyzer = CallerFileAnalyzer.new(
+        target_class: @target_class,
+        target_file: @target_file,
+        method_type_resolver: @method_type_resolver,
+        init_positional_params: init_positional_params(parsed_target),
+        target_methods: target_methods,
+        steep_bridge: @steep_bridge,
+        # felixefelip/rbs_infer#155: the methods whose block return is still open
+        # — the ones worth collecting call-site blocks for.
+        block_methods: members.select { |m| BlockSignatureResolver.untyped_block_return?(m) }.map(&:name).to_set,
+        method_owners: nested_method_owners(members),
+        mixin_index: @mixin_index
+      )
+
+      caller_files(target_methods, is_module: is_module) do |file, force_bare|
+        analyzer.analyze(file, force_bare: force_bare)
+      end
+
+      @extra_caller_sources&.call(analyzer, @target_class, @source_files)
+      @caller_block_returns = analyzer.method_block_returns
+
+      result = {}
+      analyzer.method_call_usages.each do |method_name, usages|
+        merged = @type_merger.merge_argument_types(usages)
+        merged.reject! { |_, t| t == "untyped" }
+        result[method_name] = merged unless merged.empty?
+      end
+      result
+    end
+
+    # Who may be calling the target, by four routes no single index covers. Yields
+    # each file along with whether it matches RECEIVERLESS calls — which only the
+    # two routes that proved reachability earn.
+    def caller_files(target_methods, is_module:)
+      referencing = @source_index.files_referencing(@target_class)
+
+      # A concern's instance methods are called *bare* by includer hosts and by
+      # the host's sibling concerns — files that never name the concern, so the
+      # constant-reference index misses them. For a module target, fold in the
+      # mixin graph and force bare-call matching on those files (#64).
+      reaching = is_module ? @mixin_index.files_reaching(@target_class).to_set : Set.new
+
+      # A caller that reaches the target through a VALUE — an ivar, a local, a
+      # `Current.<attr>` — never spells the class name, so the constant index above
+      # does not return it. Add the files that call one of the target's own methods
+      # on some receiver; `match_class?` still has to prove that receiver is the
+      # target before the call site is used (felixefelip/rbs_infer#131).
+      calling = target_methods.keys.flat_map { |m| @source_index.files_calling(m) }.to_set
+
+      # A target the ancestor graph puts behind EVERY object is called receiverlessly
+      # from anywhere: `include Foo` in a class body is `Module#include` on the class
+      # object. Such a call site names neither the target nor a receiver, so all three
+      # indexes above miss it — `files_calling` keys on the `.`, and the mixin graph
+      # only ever hears about a module some source actually includes. Ask instead which
+      # files make a bare call to one of the target's own methods, and let them match
+      # bare like the mixin-graph files do.
+      bare_reaching =
+        if @steep_bridge&.universal_ancestor?(@target_class)
+          target_methods.keys.flat_map { |m| @source_index.files_with_bare_call(m) }.to_set
+        else
+          Set.new
+        end
+
+      (referencing.to_set | reaching | calling | bare_reaching).each do |file|
+        yield file, reaching.include?(file) || bare_reaching.include?(file)
+      end
+    end
+
+    # The target's `.new`s, in every file that names it.
+    def find_new_calls(parsed_target)
+      analyzer = CallerFileAnalyzer.new(
+        target_class: @target_class,
+        method_type_resolver: @method_type_resolver,
+        target_file: @target_file,
+        init_positional_params: init_positional_params(parsed_target),
+        target_methods: target_method_params(parsed_target),
+        steep_bridge: @steep_bridge,
+        mixin_index: @mixin_index
+      )
+      @source_index.files_referencing(@target_class).flat_map { |file| analyzer.analyze(file) }
+    end
+
+    # ─── What the target declares, for matching the call sites ─────────
+
+    # The parameter names of each target-class method:
+    # `{ "notify" => ["user", "message"] }`.
+    #
+    # Keywords come AFTER positionals: `extract_cross_class_args` maps
+    # positional args by index (which can only reach the requireds+optionals
+    # prefix) and kwargs by name, so the order preserves the positional mapping.
+    #
+    # A rest param sits between the two, where its index is, marked by
+    # `RestParamMarker` — see there for what the marker is and why it travels
+    # in the list itself.
+    def target_method_params(parsed_target)
+      return {} unless parsed_target
+
+      collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
+      parsed_target.tree.accept(collector)
+
+      methods = {}
+      collector.defs.each do |defn|
+        next if defn.name == :initialize
+        params = defn.parameters
+        next unless params
+
+        names = []
+        params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
+        params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
+        rest = RestParamMarker.name_from(params)
+        names << RestParamMarker.mark(rest) if rest
+        params.keywords.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:keywords)
+        methods[defn.name.to_s] = names unless names.empty?
+      end
+      methods
+    end
+
+    # The positional parameter names of the target's `initialize`.
+    def init_positional_params(parsed_target)
+      return [] unless parsed_target
+
+      collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
+      parsed_target.tree.accept(collector)
+
+      init_def = collector.defs.find { |d| d.name == :initialize }
+      return [] unless init_def&.parameters
+
+      params = init_def.parameters
+      names = []
+      params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
+      params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
+      rest = RestParamMarker.name_from(params)
+      names << RestParamMarker.mark(rest) if rest
+      names
+    end
+
+    # `attr_accessor`/`attr_writer :x` defines an `x=` method, so an external
+    # `receiver.x = value` is just a call to it. Expose those writers as
+    # synthetic target methods (single param named after the attr) so the
+    # cross-class call-site inference types the assigned value exactly like
+    # any other method argument (felixefelip/rbs_infer#71).
+    def attr_writer_methods(members)
+      members.each_with_object({}) do |m, acc|
+        next unless [:attr_accessor, :attr_writer].include?(m.kind)
+        acc["#{m.name}="] = [m.name]
+      end
+    end
+
+    # `{ "deny" => "Example19::Responder" }` for the target's methods that live in
+    # a nested MODULE. Such a module is emitted inside the target's block rather
+    # than as a target of its own (felixefelip/rbs_infer#22), so its call sites
+    # were matched against the wrong name and its parameters stayed `untyped`
+    # (felixefelip/rbs_infer#159).
+    def nested_method_owners(members)
+      members.each_with_object({}) do |member, owners|
+        next unless [:method, :class_method].include?(member.kind)
+        next if member.owner.nil? || member.owner.empty?
+
+        owners[member.name] ||= "#{@target_class}::#{member.owner}"
+      end
+    end
+
+    # A param whose default is the literal `nil` accepts nil however many non-nil
+    # arguments the call sites passed — the default is the call site nobody writes
+    # (felixefelip/rbs_infer#208). Applied after the union, and only once a type is
+    # there to widen: while the parameter is `untyped` the nil is already admitted,
+    # and `untyped?` is not a spelling.
+    def nilablize_nil_defaults(members, inferred)
+      members.each do |member|
+        next unless [:method, :class_method].include?(member.kind)
+        next if member.param_nil_defaults.nil? || member.param_nil_defaults.empty?
+
+        types = inferred[member.name] or next
+        member.param_nil_defaults.each do |param_name|
+          current = types[param_name]
+          next if current.nil? || current == "untyped"
+
+          types[param_name] = RbsInfer::Signatures::RbsParserUtil.nilablize(current)
+        end
+      end
+    end
+
     # Rastreia métodos em OUTROS arquivos que chamam TargetClass.new(param:)
     # com parâmetros forwarded, e resolve os tipos via call-sites desses wrappers
     def infer_init_types_via_forwarding_wrappers
       types = {}
       short_name = @target_class.split("::").last
 
-      files = @source_index ? @source_index.files_referencing(@target_class) : @source_files
+      files = @source_index.files_referencing(@target_class)
       files.each do |file|
         entry = @parse_cache.get(file)
         next unless entry
@@ -93,8 +363,6 @@ module RbsInfer::Inference
 
       types
     end
-
-    private
 
     # Detecta métodos que fazem Klass.new(param:, param:) com parâmetros forwarded
     def detect_forwarding_methods(parse_result, target_class_filter: nil)

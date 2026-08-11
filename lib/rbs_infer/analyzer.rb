@@ -196,7 +196,7 @@ module RbsInfer
     @instance_types = extract_instance_types
 
     # Inferir tipos do initialize via call-sites
-    init_arg_types = infer_initialize_types
+    init_arg_types = param_type_inferrer.infer_initialize_types(parsed_target: @parsed_target)
 
     # Inferir tipos dos attrs a partir do initialize (self.x = param)
     attr_types = infer_attr_types_from_initialize(init_arg_types)
@@ -232,38 +232,13 @@ module RbsInfer
     # Resolver return types de métodos que retornam attrs conhecidos
     type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target)
 
-    # Inferir tipos de parâmetros de métodos via chamadas intra-classe
-    method_param_types = param_type_inferrer.infer_method_param_types(attr_types, parsed_target: @parsed_target)
-
-    # Infer method param types from cross-class call-sites. Union (don't
-    # overwrite) with the intra-class types: a method called with `String` in
-    # one file and `:Symbol` in another should infer `(String | Symbol)`, not
-    # the first type seen (felixefelip/rbs_infer#64).
-    cross_class_param_types = infer_method_param_types_from_callers(
-      extract_attr_writer_methods(target_members),
-      block_methods: target_members.select { |m| RbsInfer::Inference::BlockSignatureResolver.untyped_block_return?(m) }.map(&:name).to_set,
-      method_owners: nested_method_owners(target_members)
+    # Method parameter types, with every kind of evidence already crossed:
+    # intra-class calls, forwarding wrappers, and call sites in other files. The
+    # union belongs to the inferrer — a method called with `String` in one file
+    # and `:symbol` in another has both types (felixefelip/rbs_infer#64).
+    method_param_types = param_type_inferrer.infer_method_param_types(
+      target_members, attr_types, parsed_target: @parsed_target, is_module: @is_module
     )
-    cross_class_param_types.each do |method_name, param_types|
-      method_param_types[method_name] ||= {}
-      param_types.each do |param_name, type|
-        existing = method_param_types[method_name][param_name]
-        method_param_types[method_name][param_name] =
-          if existing && existing != "untyped"
-            RbsInfer::Inference::TypeMerger.union_types([existing, type])
-          else
-            type
-          end
-      end
-    end
-
-    # A param whose default is the literal `nil` accepts nil however many
-    # non-nil arguments the call sites passed — the method's own default is a
-    # call site, and the one nobody writes down. Applied here, as soon as the
-    # inferred types are merged and before anything reads them, so the ivar it
-    # is assigned to and the setter it widens both see the nilable type
-    # (felixefelip/rbs_infer#208). Same rule `initialize` already follows above.
-    nilablize_nil_default_params(target_members, method_param_types)
 
     # An attr set from outside via `receiver.attr = value` (receiver typed
     # as this class) has no local write to infer from — but the setter is a
@@ -323,7 +298,7 @@ module RbsInfer
     # contra o qual um bloco guardado roda (#208) e o que os blocos dos
     # call-sites devolvem (#155). Uma reescrita só, de uma cláusula só, numa
     # ordem que o objeto é quem conhece.
-    block_signature_resolver.apply(target_members, caller_returns: @caller_block_returns)
+    block_signature_resolver.apply(target_members, caller_returns: param_type_inferrer.caller_block_returns)
 
     # Identificar parâmetros opcionais do initialize
     optional_params = extract_optional_init_params
@@ -598,43 +573,6 @@ module RbsInfer
     end
   end
 
-  # `def included(base = nil)` says two things, and only one of them survives
-  # the call sites: they answer what a caller passes (`Module`), the default
-  # answers what the method gets when nobody passes anything (`nil`). Taking
-  # only the first emits `?Module base` for a body written around `base.nil?`,
-  # which then reads as dead code — and the default itself stops type-checking.
-  #
-  # Only touched once a type is there to widen: while the parameter is `untyped`
-  # the nil is already admitted, and `untyped?` is not a spelling.
-  def nilablize_nil_default_params(target_members, method_param_types)
-    target_members.each do |member|
-      next unless [:method, :class_method].include?(member.kind)
-      next if member.param_nil_defaults.nil? || member.param_nil_defaults.empty?
-
-      types = method_param_types[member.name] or next
-      member.param_nil_defaults.each do |param_name|
-        current = types[param_name]
-        next if current.nil? || current == "untyped"
-
-        types[param_name] = RbsInfer::Signatures::RbsParserUtil.nilablize(current)
-      end
-    end
-  end
-
-  # `{ "deny" => "Example19::Responder" }` for the target's methods that live in
-  # a nested MODULE. Such a module is emitted inside this target's block rather
-  # than as a target of its own (felixefelip/rbs_infer#22), so its call sites
-  # were matched against the wrong name and its parameters stayed `untyped`
-  # (felixefelip/rbs_infer#159).
-  def nested_method_owners(target_members)
-    target_members.each_with_object({}) do |member, owners|
-      next unless [:method, :class_method].include?(member.kind)
-      next if member.owner.nil? || member.owner.empty?
-
-      owners[member.name] ||= "#{@target_class}::#{member.owner}"
-    end
-  end
-
   # `# @rbs_infer |...` above a def asks for RBS's overloading form (`... | ...`), which
   # puts our signature AHEAD of one something else already declares instead of colliding
   # with it. The marker states intent; this confirms it, because `| ...` with nothing to
@@ -841,153 +779,6 @@ module RbsInfer
     end
   end
 
-  # ─── Inferir tipos do initialize via call-sites ────────────────────
-
-  def infer_initialize_types
-    usages = find_new_calls
-    return {} if usages.empty?
-    merged = type_merger.merge_argument_types(usages)
-    # Se todos os tipos são untyped, tentar fallback via MethodTypeResolver
-    if merged.values.all? { |t| t == "untyped" }
-      fallback = method_type_resolver.resolve_init_param_types(@target_class)
-      merged = fallback unless fallback.empty?
-    end
-    # Fallback 2: rastrear métodos wrapper em outros arquivos que chamam
-    # TargetClass.new(param:, param:) com parâmetros forwarded
-    if merged.values.all? { |t| t == "untyped" }
-      forwarding_types = param_type_inferrer.infer_init_types_via_forwarding_wrappers
-      forwarding_types.each { |k, v| merged[k] = v if merged[k] == "untyped" }
-    end
-    merged
-  end
-
-  def find_new_calls
-    positional_params = extract_init_positional_params
-    target_methods = extract_target_method_params
-    analyzer = RbsInfer::Inference::CallerFileAnalyzer.new(target_class: @target_class, method_type_resolver: method_type_resolver, target_file: @target_file, init_positional_params: positional_params, target_methods: target_methods, steep_bridge: steep_bridge, mixin_index: mixin_index)
-    @source_index.files_referencing(@target_class).flat_map { |file| analyzer.analyze(file) }
-  end
-
-  # Inferir tipos de parâmetros de métodos via chamadas cross-class
-  # Ex: PostPublisher chama notifier.notify(post.user, "msg") → user: User, message: String
-  def infer_method_param_types_from_callers(extra_methods = {}, block_methods: Set.new, method_owners: {})
-    # `extra_methods` are SYNTHETIC writers standing in for `attr_accessor`-
-    # generated methods, and name their param after the attr (`user`). A real
-    # `def user=(value)` overriding that attr names it `value`, and the def is
-    # the authority: the inferred type is keyed by param name, and RbsBuilder
-    # substitutes it by matching that name in the signature. Letting the
-    # synthetic name win filed the type under `user` while the signature said
-    # `value`, so the substitution missed and the param stayed `untyped` even
-    # though the call-site had been read correctly.
-    target_methods = extra_methods.merge(extract_target_method_params)
-    return {} if target_methods.empty?
-
-    positional_params = extract_init_positional_params
-    analyzer = RbsInfer::Inference::CallerFileAnalyzer.new(
-      target_class: @target_class,
-      target_file: @target_file,
-      method_type_resolver: method_type_resolver,
-      init_positional_params: positional_params,
-      target_methods: target_methods,
-      steep_bridge: steep_bridge,
-      block_methods: block_methods,
-      method_owners: method_owners,
-      mixin_index: mixin_index
-    )
-    referencing = @source_index.files_referencing(@target_class)
-
-    # A concern's instance methods are called *bare* by includer hosts and by
-    # the host's sibling concerns — files that never name the concern, so the
-    # constant-reference index misses them. For a module target, fold in the
-    # mixin graph and force bare-call matching on those files (#64).
-    reaching = @is_module ? mixin_index.files_reaching(@target_class).to_set : Set.new
-
-    # A caller that reaches the target through a VALUE — an ivar, a local, a
-    # `Current.<attr>` — never spells the class name, so the constant index above
-    # does not return it. Add the files that call one of the target's own methods
-    # on some receiver; `match_class?` still has to prove that receiver is the
-    # target before the call site is used (felixefelip/rbs_infer#131).
-    calling = target_methods.keys.flat_map { |m| @source_index.files_calling(m) }.to_set
-
-    # A target the ancestor graph puts behind EVERY object is called receiverlessly
-    # from anywhere: `include Foo` in a class body is `Module#include` on the class
-    # object. Such a call site names neither the target nor a receiver, so all three
-    # indexes above miss it — `files_calling` keys on the `.`, and the mixin graph
-    # only ever hears about a module some source actually includes. Ask instead which
-    # files make a bare call to one of the target's own methods, and let them match
-    # bare like the mixin-graph files do.
-    bare_reaching =
-      if steep_bridge&.universal_ancestor?(@target_class)
-        target_methods.keys.flat_map { |m| @source_index.files_with_bare_call(m) }.to_set
-      else
-        Set.new
-      end
-
-    (referencing.to_set | reaching | calling | bare_reaching).each do |file|
-      analyzer.analyze(file, force_bare: reaching.include?(file) || bare_reaching.include?(file))
-    end
-
-    @extra_caller_sources&.call(analyzer, @target_class, @source_files)
-
-    # Kept for `BlockSignatureResolver`, which runs later in the pipeline
-    # (felixefelip/rbs_infer#155).
-    @caller_block_returns = analyzer.method_block_returns
-
-    result = {}
-    analyzer.method_call_usages.each do |method_name, usages|
-      merged = type_merger.merge_argument_types(usages)
-      merged.reject! { |_, t| t == "untyped" }
-      result[method_name] = merged unless merged.empty?
-    end
-    result
-  end
-
-  # Extracts the parameter names of each target-class method
-  # Returns { "notify" => ["user", "message"], ... }
-  #
-  # Keywords come AFTER positionals: `extract_cross_class_args` maps
-  # positional args by index (which can only reach the
-  # requireds+optionals prefix) and kwargs by name, so the order
-  # preserves the positional mapping.
-  #
-  # A rest param sits between the two, where its index is, marked by
-  # `RestParamMarker` — see there for what the marker is and why it travels
-  # in the list itself.
-  def extract_target_method_params
-    return {} unless @parsed_target
-
-    collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
-    @parsed_target.tree.accept(collector)
-
-    methods = {}
-    collector.defs.each do |defn|
-      next if defn.name == :initialize
-      params = defn.parameters
-      next unless params
-
-      names = []
-      params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
-      params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
-      rest = RbsInfer::Inference::RestParamMarker.name_from(params)
-      names << RbsInfer::Inference::RestParamMarker.mark(rest) if rest
-      params.keywords.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:keywords)
-      methods[defn.name.to_s] = names unless names.empty?
-    end
-    methods
-  end
-
-  # `attr_accessor`/`attr_writer :x` defines an `x=` method, so an external
-  # `receiver.x = value` is just a call to it. Expose those writers as
-  # synthetic target methods (single param named after the attr) so the
-  # cross-class call-site inference types the assigned value exactly like
-  # any other method argument (felixefelip/rbs_infer#71).
-  def extract_attr_writer_methods(target_members)
-    target_members.each_with_object({}) do |m, acc|
-      next unless [:attr_accessor, :attr_writer].include?(m.kind)
-      acc["#{m.name}="] = [m.name]
-    end
-  end
-
   # Fills `attr_types` for writable attrs whose type could only come from
   # external `receiver.attr = value` call-sites (their `attr=` parameter,
   # inferred by the cross-class pass). Nilability is NOT decided here — the
@@ -1033,25 +824,6 @@ module RbsInfer
 
       attr_types[m.name] = RbsInfer::Signatures::RbsParserUtil.nilablize(type)
     end
-  end
-
-  # Extrai nomes dos parâmetros positional do initialize da classe-alvo
-  def extract_init_positional_params
-    return [] unless @parsed_target
-
-    collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
-    @parsed_target.tree.accept(collector)
-
-    init_def = collector.defs.find { |d| d.name == :initialize }
-    return [] unless init_def&.parameters
-
-    params = init_def.parameters
-    names = []
-    params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
-    params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
-    rest = RbsInfer::Inference::RestParamMarker.name_from(params)
-    names << RbsInfer::Inference::RestParamMarker.mark(rest) if rest
-    names
   end
 
   # Returns the names of `initialize` keyword params whose default
@@ -1106,6 +878,8 @@ module RbsInfer
       source_index: @source_index,
       method_type_resolver: method_type_resolver,
       type_merger: type_merger,
+      mixin_index: mixin_index,
+      extra_caller_sources: @extra_caller_sources,
       steep_bridge: steep_bridge,
       parse_cache: @parse_cache,
       file_index: @file_index,
