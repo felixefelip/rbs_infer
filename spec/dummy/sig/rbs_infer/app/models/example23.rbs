@@ -1,11 +1,11 @@
 class Example23
   module Foo
-    def bazinga: (singleton(::Example23::Baz) module_included) -> untyped
-    def bazingado: (untyped base_foo) -> untyped
+    def bazinga: (singleton(::Example23::Baz) module_included) -> nil
+    def bazingado: (untyped base_foo) -> nil
   end
   module Baz
     extend ::Example23::Foo
-    def bazingado: (untyped base_foo) -> untyped
+    def bazingado: (untyped base_foo) -> nil
   end
 end
 

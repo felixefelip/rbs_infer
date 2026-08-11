@@ -5,7 +5,7 @@ class Example23
     end
 
     def bazingado(base_foo)
-      base_foo.log_something("bazingado")
+      puts "base_foo class: #{base_foo.class}"
     end
   end
 
