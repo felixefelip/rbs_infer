@@ -241,7 +241,7 @@ module RbsInfer
     # the first type seen (felixefelip/rbs_infer#64).
     cross_class_param_types = infer_method_param_types_from_callers(
       extract_attr_writer_methods(target_members),
-      block_methods: target_members.select { |m| untyped_block_return?(m) }.map(&:name).to_set,
+      block_methods: target_members.select { |m| RbsInfer::Inference::BlockSignatureResolver.untyped_block_return?(m) }.map(&:name).to_set,
       method_owners: nested_method_owners(target_members)
     )
     cross_class_param_types.each do |method_name, param_types|
@@ -318,26 +318,12 @@ module RbsInfer
     # SteepBridge/env (felixefelip/rbs_infer#46).
     resolve_constant_default_param_types(target_members, method_param_types)
 
-    # Tipar os parâmetros do bloco a partir do que o corpo passa para ele
-    # (`login_procedure.call(token, options)`). O collector deferiu do mesmo
-    # jeito: gravou só as posições, porque quem responde o tipo é o Steep
-    # (felixefelip/rbs_infer#148).
-    resolve_block_param_types(target_members)
-
-    # Métodos que só repassam o bloco (`foo(&block)`) herdam do callee a
-    # obrigatoriedade e o formato dele — pergunta que só o Steep responde,
-    # porque depende de qual sobrecarga se aplica (felixefelip/rbs_infer#149).
-    resolve_forwarded_block_requirements(target_members)
-
-    # Um bloco que o corpo GUARDA numa ivar roda contra o `self` de quem o
-    # repassa depois (`base.class_eval(&@included_block)`) — de novo uma
-    # pergunta do callee, e de novo só o Steep responde (felixefelip/rbs_infer#208).
-    resolve_stored_block_self_types(target_members)
-
-    # O que os blocos passados nos call-sites devolvem. É a metade do tipo do
-    # bloco que o corpo do método não responde — ele recebe esse valor, não o
-    # produz (felixefelip/rbs_infer#155).
-    resolve_block_return_types(target_members)
+    # Toda a metade "bloco" das assinaturas: os parâmetros que o corpo passa
+    # (#148), a obrigatoriedade e o formato que o callee impõe (#149), o `self`
+    # contra o qual um bloco guardado roda (#208) e o que os blocos dos
+    # call-sites devolvem (#155). Uma reescrita só, de uma cláusula só, numa
+    # ordem que o objeto é quem conhece.
+    block_signature_resolver.apply(target_members, caller_returns: @caller_block_returns)
 
     # Identificar parâmetros opcionais do initialize
     optional_params = extract_optional_init_params
@@ -632,194 +618,6 @@ module RbsInfer
 
         types[param_name] = RbsInfer::Signatures::RbsParserUtil.nilablize(current)
       end
-    end
-  end
-
-  # A block's parameters are whatever the method PASSES to it, so the sites
-  # that use the block are the evidence — and Steep has already typed those
-  # expressions while checking the file. `authenticate` calls
-  # `login_procedure.call(token, options)`, and asking about those two
-  # positions answers `String` and `ActiveSupport::HashWithIndifferentAccess?`
-  # for a block signature that was `{ (untyped, untyped) -> untyped }`.
-  #
-  # Positions come from the collector (structural, no bridge there); the types
-  # come from here, the same division as constant defaults above.
-  def resolve_block_param_types(target_members)
-    return if @parsed_target.nil?
-
-    members = target_members.select do |m|
-      [:method, :class_method].include?(m.kind) && m.block_arg_positions && !m.block_arg_positions.empty?
-    end
-    return if members.empty?
-
-    expression_types = steep_bridge.all_expression_types(@parsed_target.source)
-    return if expression_types.empty?
-
-    members.each do |member|
-      types = member.block_arg_positions.map { |positions| block_param_type(positions, expression_types) }
-      member.signature = RbsInfer::Signatures::RbsParserUtil.replace_block_param_types(member.signature, types)
-    end
-  end
-
-  # One block parameter, across every site that uses the block: a method that
-  # yields an Integer in one branch and a String in another gives its block a
-  # union, exactly as the sites say.
-  def block_param_type(positions, expression_types)
-    keys = positions.map { |position| RbsInfer::Signatures::SteepBridge.expression_key(*position) }
-    types = keys.filter_map { |key| expression_types[key] }.uniq
-    return nil if types.empty?
-
-    RbsInfer::Inference::TypeMerger.union_types(types)
-  end
-
-  # A method that forwards its block cannot say on its own whether one is
-  # needed: `items.each(&block)` runs fine without it, `Token.authenticate`
-  # does not. The callee decides, and the checker is what knows the callee —
-  # including which of its overloads a possibly-nil proc selects.
-  #
-  # Only members the collector left open are touched: no call of their own, no
-  # guard, nothing but the forward (`?{ (*untyped) -> untyped }`).
-  def resolve_forwarded_block_requirements(target_members)
-    return if @parsed_target.nil?
-
-    members = target_members.select do |m|
-      [:method, :class_method].include?(m.kind) && m.block_open_forward
-    end
-    return if members.empty?
-
-    requirements = steep_bridge.forwarded_block_requirements(@parsed_target.source)
-    return if requirements.empty?
-
-    members.each do |member|
-      key = member.kind == :class_method ? "self.#{member.name}" : member.name
-      requirement = requirements[key]
-      next unless requirement
-
-      member.signature = RbsInfer::Signatures::RbsParserUtil.require_block(member.signature, requirement[:params])
-    end
-  end
-
-  # A block kept in an ivar is replayed later, and the replay decides what `self`
-  # is inside it — `base.class_eval(&@included_block)` runs the block against the
-  # includer. That binding belongs in the signature: a caller writing
-  # `included do … end` is writing a body against that `self`, and without it the
-  # stored proc cannot be handed to `class_eval` at all (felixefelip/rbs_infer#208).
-  #
-  # Only members the collector left stored, and only the binding — see
-  # `RbsParserUtil.bind_block_self` for what is deliberately not taken.
-  def resolve_stored_block_self_types(target_members)
-    return if @parsed_target.nil?
-
-    members = target_members.select do |m|
-      [:method, :class_method].include?(m.kind) && m.block_stored_forward
-    end
-    return if members.empty?
-
-    bindings = steep_bridge.stored_block_self_types(@parsed_target.source)
-    return if bindings.empty?
-
-    members.each do |member|
-      key = member.kind == :class_method ? "self.#{member.name}" : member.name
-      binding = bindings[key]
-      next unless binding
-
-      member.signature = RbsInfer::Signatures::RbsParserUtil.bind_block_self(member.signature, binding)
-    end
-  end
-
-  # A block's RETURN is the one half of its type the method cannot answer: it
-  # receives that value rather than producing it, and a method that passes it
-  # through (`block.call(token)`, `yield`) constrains it not at all. So the
-  # evidence is the blocks the call sites pass — the same contract every
-  # inferred parameter type already has, and unioned the same way.
-  #
-  # Sites that Steep cannot type are skipped rather than counted as `untyped`:
-  # unioning one in would erase the answer the others gave.
-  def resolve_block_return_types(target_members)
-    return if @parsed_target.nil?
-
-    members = target_members.select { |m| untyped_block_return?(m) }
-    return if members.empty?
-
-    returns = collect_block_returns(members.map(&:name).to_set)
-    return if returns.empty?
-
-    members.each do |member|
-      observed = returns[member.name]
-      next if observed.nil? || observed.empty?
-
-      member.signature = RbsInfer::Signatures::RbsParserUtil.replace_block_return_type(
-        member.signature, RbsInfer::Inference::TypeMerger.union_types(observed)
-      )
-    end
-  end
-
-  # Method members only, and `to_s` because a member's signature is filled in
-  # by a later pass for some kinds — this runs over every member the collector
-  # produced, not only the ones with a method type.
-  def untyped_block_return?(member)
-    [:method, :class_method].include?(member.kind) && member.signature.to_s.include?("-> untyped }")
-  end
-
-  # Call sites in the target's own file plus every caller file. A receiverless
-  # call here is a self-send, so the target's file needs no receiver check; the
-  # caller files resolve theirs through `NewCallCollector`, which already knows
-  # how (#131).
-  def collect_block_returns(method_names)
-    collector = RbsInfer::Inference::BlockReturnCollector.new(
-      methods: method_names,
-      expression_types: steep_bridge.all_expression_types(@parsed_target.source)
-    )
-    @parsed_target.tree.accept(collector)
-
-    returns = collector.returns
-    @caller_block_returns&.each do |name, types|
-      (returns[name] ||= []).concat(types)
-    end
-    propagate_along_forwards(returns, collector.forwards)
-    returns
-  end
-
-  # A forwarded block carries the evidence one frame down
-  # (felixefelip/rbs_infer#158):
-  #
-  #   def with_token(&block)
-  #     fetch_token(&block) || deny
-  #   end
-  #
-  # `fetch_token` has no call site with a block of its own — only this forward —
-  # so it had nothing to go on. But every block that reaches it through this edge
-  # is a block that reached `with_token`, whose answer the call sites already
-  # gave. So the forwarder's evidence is the callee's.
-  #
-  # It is the mirror of felixefelip/rbs_infer#149, which walks the same edge the
-  # other way: whether a block is REQUIRED is a demand the callee makes, while
-  # what it RETURNS is evidence the caller supplies.
-  #
-  # A fixpoint because a chain is arbitrarily deep and the members come in no
-  # order; it terminates because the lists only grow and a type is added once.
-  def propagate_along_forwards(returns, forwards)
-    return if forwards.empty?
-
-    loop do
-      changed = false
-
-      forwards.each do |forwarder, callees|
-        observed = returns[forwarder]
-        next if observed.nil? || observed.empty?
-
-        callees.each do |callee|
-          inherited = (returns[callee] ||= [])
-          observed.each do |type|
-            next if inherited.include?(type)
-
-            inherited << type
-            changed = true
-          end
-        end
-      end
-
-      break unless changed
     end
   end
 
@@ -1131,7 +929,7 @@ module RbsInfer
 
     @extra_caller_sources&.call(analyzer, @target_class, @source_files)
 
-    # Kept for `resolve_block_return_types`, which runs later in the pipeline
+    # Kept for `BlockSignatureResolver`, which runs later in the pipeline
     # (felixefelip/rbs_infer#155).
     @caller_block_returns = analyzer.method_block_returns
 
@@ -1293,6 +1091,13 @@ module RbsInfer
     )
   end
 
+  def block_signature_resolver
+    @block_signature_resolver ||= RbsInfer::Inference::BlockSignatureResolver.new(
+      parsed_target: @parsed_target,
+      steep_bridge: steep_bridge
+    )
+  end
+
   def param_type_inferrer
     @param_type_inferrer ||= RbsInfer::Inference::ParamTypeInferrer.new(
       target_file: @target_file,
@@ -1408,6 +1213,7 @@ require_relative "inference/class_member_collector/block_signature"
 require_relative "ast/def_collector"
 require_relative "inference/new_call_collector"
 require_relative "inference/block_return_collector"
+require_relative "inference/block_signature_resolver"
 require_relative "signatures/method_type_resolver"
 require_relative "inference/caller_file_analyzer"
 require_relative "signatures/rbs_builder"
