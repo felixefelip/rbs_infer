@@ -1,0 +1,15 @@
+class Example22
+  module Foo
+    def bazinga: (untyped module_included) -> untyped
+    def bazingado: (untyped base_foo) -> untyped
+  end
+end
+
+class Example22
+  class Bar
+    extend ::Example22::Foo
+
+    def self.bazingado: (untyped base_foo) -> untyped
+    def self.log_something: (untyped message) -> nil
+  end
+end
