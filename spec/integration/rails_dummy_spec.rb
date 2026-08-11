@@ -577,6 +577,28 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # The same shape with the nested module reached by `extend` from a nested
+  # MODULE as well as from a nested class, which is what `MixinIndex#extenders_of`
+  # answers and what makes `bazinga`'s parameter a real type instead of `untyped`.
+  # It also pins the formatting of a nested module — the blank between siblings and
+  # between a module's mixins and its methods, which nothing else in the suite covers
+  # because every other nested module is a single group.
+  it "example23" do
+    name = "models/example23"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example23.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   it "example20" do
     name = "models/example20"
     rbs = RbsInfer::Analyzer.new(
