@@ -186,6 +186,71 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     ])
   end
 
+  # A nested module is emitted inside its enclosing target's block and nowhere
+  # else, so a wrapper hosting one is the only home it has. Dropping the
+  # wrapper because "it has no members of its own" dropped `Foo` with it, and
+  # the file emitted `Example22::Bar` alone.
+  it "keeps a namespace wrapper that is a nested module's only home" do
+    d = discover(<<~RUBY)
+      class Example22
+        module Foo
+          def bazinga; end
+        end
+
+        class Bar
+          def self.log_something; end
+        end
+      end
+    RUBY
+
+    expect(d.declaration_targets).to eq([
+      { name: "Example22", is_module: false },
+      { name: "Example22::Bar", is_module: false },
+    ])
+  end
+
+  # The other half of the same rule: with no target of its own the file takes
+  # the single-target path, which lands on the wrapper through
+  # `ClassNameExtractor` anyway. Adding it here would flatten that nesting —
+  # `module ActionController; module HttpAuthentication; module Token` emits
+  # nested only while the outer two stay out of the targets.
+  it "still skips a wrapper whose nested module is the file's only content" do
+    d = discover(<<~RUBY)
+      module ActionController
+        module HttpAuthentication
+          module Token
+            def authenticate; end
+          end
+        end
+      end
+    RUBY
+
+    expect(d.declaration_targets).to be_empty
+  end
+
+  # A module that is itself a pure namespace has no members needing a block, so
+  # it does not hold its wrapper alive.
+  it "skips a wrapper whose nested module only wraps classes" do
+    d = discover(<<~RUBY)
+      class Holder
+        module Wrapping
+          class Inner
+            def name; end
+          end
+        end
+
+        class Bar
+          def title; end
+        end
+      end
+    RUBY
+
+    expect(d.declaration_targets).to eq([
+      { name: "Holder::Wrapping::Inner", is_module: false },
+      { name: "Holder::Bar", is_module: false },
+    ])
+  end
+
   # `declarations` answers "what kind is X?" for every type the file declares —
   # wrappers and nested modules included, unlike `declaration_targets`. The
   # analyzer renders a nested target's namespace from it; resolving that kind

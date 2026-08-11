@@ -25,13 +25,16 @@ module RbsInfer::AST
   #   constant receiver. These reopen `Receiver` to mix in `Mod`; there is
   #   no class body to analyze, so the core synthesizes a reopen block.
   class TargetDiscovery < Prism::Visitor
-    attr_reader :declaration_targets, :include_targets, :declarations
+    attr_reader :include_targets, :declarations
 
     def initialize
       # Enclosing declaration names, outermost first — qualifies nested
       # targets. Blocks don't push, so it doubles as the depth counter.
       @namespace = []
-      @declaration_targets = []
+      # Source order, each `{ name:, is_module:, namespace: }`. `namespace` marks
+      # a wrapper kept only in case it turns out to be the only home a nested
+      # module has — see `declaration_targets`.
+      @targets = []
       # Every type the file declares, qualified name => is_module. Unlike
       # `declaration_targets` this keeps namespace wrappers and nested
       # modules: it answers "what kind is X?", not "what should we emit?".
@@ -59,6 +62,22 @@ module RbsInfer::AST
       super
     end
 
+    # The types to emit, in source order.
+    #
+    # A namespace wrapper hosting a nested module is in the list only when the
+    # file has a target of its own. The nested module is emitted inside its
+    # enclosing target's block and nowhere else, so with a sibling class in the
+    # file — `class C; module Foo; …; end; class Bar; end; end` — dropping the
+    # wrapper dropped `Foo` with it and the file emitted `C::Bar` alone. With no
+    # other target the file takes the single-target path, which already lands
+    # on the wrapper via
+    # `ClassNameExtractor`, and adding it here would only flatten that nesting.
+    def declaration_targets
+      real = @targets.reject { |t| t[:namespace] }
+      chosen = real.empty? ? real : @targets
+      chosen.map { |t| { name: t[:name], is_module: t[:is_module] } }
+    end
+
     private
 
     def nest(node)
@@ -79,7 +98,8 @@ module RbsInfer::AST
     end
 
     def record_declaration(node, is_module:)
-      return if namespace_wrapper?(node)
+      wrapper = namespace_wrapper?(node)
+      return if wrapper && !hosts_orphan_module?(node)
 
       name = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
       return unless name && !name.empty?
@@ -96,9 +116,17 @@ module RbsInfer::AST
       # Latent while no fixture reopened a class twice in a single file; the
       # `class_eval` desugaring makes it the normal case, since it emits a `class X`
       # beside the one the file already writes.
-      return if @declaration_targets.any? { |t| t[:name] == qualified }
+      return if @targets.any? { |t| t[:name] == qualified }
 
-      @declaration_targets << { name: qualified, is_module: is_module }
+      @targets << { name: qualified, is_module: is_module, namespace: wrapper }
+    end
+
+    # A module declared directly in `node`'s body that is not itself a pure
+    # namespace — so it has members, and the owner mechanism has to write them
+    # into `node`'s block because a nested module is never a target of its own.
+    # That is what makes an otherwise droppable wrapper worth keeping.
+    def hosts_orphan_module?(node)
+      node.body.body.any? { |stmt| stmt.is_a?(Prism::ModuleNode) && !namespace_wrapper?(stmt) }
     end
 
     # A declaration whose body is nothing but other class/module declarations

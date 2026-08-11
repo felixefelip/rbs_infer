@@ -555,6 +555,28 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # A nested module beside a nested class, in a body that declares nothing else.
+  # `TargetDiscovery` dropped `Example22` as a pure namespace, and with it the
+  # only block `Foo` is ever written into — the file emitted `Example22::Bar`
+  # alone, so `Bar.bazingado`'s `super` had no `extend`ed module to reach.
+  # Neither half shows it on its own: drop `Bar` and nothing in the file is a
+  # target, so the single-target path lands on `Example22` anyway.
+  it "example22" do
+    name = "models/example22"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example22.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   it "example20" do
     name = "models/example20"
     rbs = RbsInfer::Analyzer.new(
