@@ -9,6 +9,14 @@ class Example23
     end
   end
 
+  module Baz
+	  extend Example23::Foo
+
+    def bazingado(base_foo)
+      base_foo.log_something("bazingado")
+    end
+  end
+
   class Bar
     extend Example23::Foo
 
@@ -20,12 +28,5 @@ class Example23
       message
     end
   end
-
-  module Baz
-	  extend Example23::Foo
-
-    def bazingado(base_foo)
-      base_foo.log_something("bazingado")
-    end
-  end
 end
+
