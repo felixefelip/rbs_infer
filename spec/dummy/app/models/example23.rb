@@ -20,13 +20,15 @@ class Example23
   class Bar
     extend Example23::Foo
 
-    bazinga(Example23::Baz)
-
     def self.log_something(message)
       puts message
 
       message
     end
+
+    # Runs at class-body time, so everything it reaches has to be defined
+    # already: `Baz` above, and `log_something` right here.
+    bazinga(Example23::Baz)
   end
 end
 
