@@ -12,7 +12,7 @@ class Example23
   module Baz
 	  extend Example23::Foo
 
-    def bazingado(base_foo)
+    def self.bazingado(base_foo)
       base_foo.log_something("bazingado")
     end
   end
