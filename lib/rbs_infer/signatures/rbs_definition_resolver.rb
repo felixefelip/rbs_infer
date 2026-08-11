@@ -9,11 +9,11 @@ module RbsInfer::Signatures
     def initialize
       @rbs_builder = nil
       @rbs_builder_loaded = false
-      # Memo for `instance_method_owner`. Lives beside `@rbs_builder`, which is
+      # Memo for `method_owner`. Lives beside `@rbs_builder`, which is
       # fetched once per instance, so the cache can never outlive the environment
       # it was computed against — the invariant the README states for everything
       # derived from `SteepEnvironment`.
-      @instance_method_owners = {}
+      @method_owners = {}
     end
 
     def resolve_via_rbs_builder(kind, class_name, method_name, block_body_type: nil)
@@ -148,13 +148,30 @@ module RbsInfer::Signatures
       false
     end
 
-    def instance_method_owner(class_name, method_name)
+    # Which class or module OWNS the method a receiver of this type dispatches
+    # to — the answer RBS's ancestor graph gives, for a receiver that never
+    # spells the owner's name.
+    #
+    # Two chains, and the type says which: `Foo` is an instance, so the method
+    # comes from `Foo`'s ancestors; `singleton(Foo)` is the module object
+    # itself, whose methods come from `Foo`'s `def self.`s, from everything
+    # `Foo` EXTENDS, and from `Module`/`Object` behind them. RBS builds both
+    # (`AncestorBuilder#one_singleton_ancestors` is where `extended_modules`
+    # is threaded in), so the singleton side costs nothing more than asking
+    # `build_singleton` instead of `build_instance`.
+    #
+    # Without the singleton side every call site whose receiver reaches the
+    # target through `extend` is invisible: `mod.send(:included, self)` in the
+    # `Module#include` pseudo-code has a receiver typed as the includers'
+    # singletons, and a hand-rolled `included` hook is reached from one of them
+    # only by `extend` (felixefelip/rbs_infer#208).
+    def method_owner(type_str, method_name)
       return nil unless rbs_builder
 
-      key = [class_name, method_name]
-      return @instance_method_owners[key] if @instance_method_owners.key?(key)
+      key = [type_str, method_name]
+      return @method_owners[key] if @method_owners.key?(key)
 
-      @instance_method_owners[key] = compute_instance_method_owner(class_name, method_name)
+      @method_owners[key] = compute_method_owner(type_str, method_name)
     end
 
     def format_rbs_return_type(rbs_type, context_class = nil)
@@ -255,15 +272,33 @@ module RbsInfer::Signatures
       RBS::TypeName.parse(class_name).absolute!
     end
 
-    def compute_instance_method_owner(class_name, method_name)
-      type_name = build_rbs_type_name(class_name)
+    # `singleton(Foo)` has to be READ as a type rather than pattern-matched as a
+    # string: `RBS::TypeName.parse` happily digests the spelling into a namespace
+    # of `singleton(` and a name of `Foo)`, which no declaration answers to — a
+    # silent nil where the answer was available.
+    def compute_method_owner(type_str, method_name)
+      parsed = RBS::Parser.parse_type(type_str)
+
+      if parsed.is_a?(RBS::Types::ClassSingleton)
+        method_owner_in(parsed.name.absolute!, method_name, :singleton)
+      else
+        # The instance side keeps reading the STRING, unchanged: taking
+        # `parsed.name` here would also start answering for generic spellings
+        # (`Array[String]`), which this lookup has always declined.
+        method_owner_in(build_rbs_type_name(type_str), method_name, :instance)
+      end
+    rescue RBS::ParsingError, RBS::BaseError
+      nil
+    end
+
+    def method_owner_in(type_name, method_name, kind)
       return nil unless type_name
-      # A spelling that is not a class at all (`singleton(Foo)`, an alias) parses
-      # into a name no declaration answers to, which this lookup already rejects.
+      # A spelling no declaration answers to (an alias, a class this run has not
+      # seen) is rejected here rather than raised over.
       return nil unless rbs_builder.env.class_decls.key?(type_name)
 
-      member = rbs_builder.build_instance(type_name).methods[method_name.to_sym]
-      member&.defined_in&.to_s
+      definition = kind == :singleton ? rbs_builder.build_singleton(type_name) : rbs_builder.build_instance(type_name)
+      definition.methods[method_name.to_sym]&.defined_in&.to_s
     rescue RBS::BaseError
       nil
     end

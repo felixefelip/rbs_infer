@@ -88,6 +88,10 @@ module RbsInfer::Signatures
       RbsInfer::Signatures::SteepBridge::BlockAnalyzer.new(steep_bridge: self).forwarded_block_requirements(source_code)
     end
 
+    def stored_block_self_types(source_code)
+      RbsInfer::Signatures::SteepBridge::BlockAnalyzer.new(steep_bridge: self).stored_block_self_types(source_code)
+    end
+
     def method_return_types(source_code)
       return_type_analyzer.method_return_types(source_code)
     end

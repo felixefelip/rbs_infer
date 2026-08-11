@@ -10,6 +10,17 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
     # mirroring how `:constant` members defer (felixefelip/rbs_infer#37, #46).
     attr_reader :constant_default_params
 
+    # Optional params defaulting to a literal `nil`, by name. The signature says
+    # `?untyped` for them (see `optional_param_type`), and `untyped` swallows the
+    # nil — but the moment the call sites give the parameter a real type, the
+    # default stops being covered by it: `def included(base = nil)` called once
+    # with a `Module` would read `?Module base`, and calling it the way its own
+    # default invites binds `nil` to a parameter that does not admit one.
+    #
+    # Recorded rather than resolved, the same deferral `constant_default_params`
+    # makes: the type to widen does not exist yet here.
+    attr_reader :nil_default_params
+
     # Structural: constant defaults are captured into @constant_default_params and
     # emitted as `?untyped` for the Analyzer to fill, so this never resolves a
     # value-position constant itself (felixefelip/rbs_infer#56).
@@ -28,6 +39,12 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       block_signature.open_forward?
     end
 
+    # Whether the block is STORED rather than used, which leaves its self
+    # binding to whoever replays it (felixefelip/rbs_infer#208).
+    def block_stored_forward?
+      block_signature.stored_forward?
+    end
+
     # `body` decides whether a block is required, and whether a method that only
     # `yield`s takes one at all — neither is visible from the parameters alone.
     def initialize(params, body: nil)
@@ -35,6 +52,7 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       @body = body
       @parts = []
       @constant_default_params = {}
+      @nil_default_params = Set.new
     end
 
     def call
@@ -72,6 +90,11 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
         # `render :edit` fail with "Cannot pass ::Symbol as an argument of type nil".
         # Nothing is lost by widening: a parameter genuinely only ever passed nil is
         # degenerate, and `untyped` still admits it.
+        #
+        # What the default DOES say is that nil is a legal value, which matters again
+        # once a call site replaces this `untyped` with a real type — see
+        # `nil_default_params`.
+        @nil_default_params << param.name.to_s
         "untyped"
       else
         infer_node_type(value) || "untyped"
@@ -108,6 +131,7 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
         when Prism::RequiredKeywordParameterNode
           @parts << "#{p.name}: untyped"
         when Prism::OptionalKeywordParameterNode
+          @nil_default_params << p.name.to_s if p.value.is_a?(Prism::NilNode)
           @parts << "?#{p.name}: untyped"
         end
       end if @params.respond_to?(:keywords)

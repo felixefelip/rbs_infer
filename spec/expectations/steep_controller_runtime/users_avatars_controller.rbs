@@ -2,7 +2,7 @@ module Users
   class AvatarsController
     @__rbs_infer__performed: true?
 
-    def render: (?Symbol target, *{ status: Symbol } rest) -> bool
+    def render: (?Symbol? target, *{ status: Symbol } rest) -> bool
 
     private
 

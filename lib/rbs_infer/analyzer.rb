@@ -257,6 +257,14 @@ module RbsInfer
       end
     end
 
+    # A param whose default is the literal `nil` accepts nil however many
+    # non-nil arguments the call sites passed — the method's own default is a
+    # call site, and the one nobody writes down. Applied here, as soon as the
+    # inferred types are merged and before anything reads them, so the ivar it
+    # is assigned to and the setter it widens both see the nilable type
+    # (felixefelip/rbs_infer#208). Same rule `initialize` already follows above.
+    nilablize_nil_default_params(target_members, method_param_types)
+
     # An attr set from outside via `receiver.attr = value` (receiver typed
     # as this class) has no local write to infer from — but the setter is a
     # method, so the cross-class call-site inference above already typed its
@@ -320,6 +328,11 @@ module RbsInfer
     # obrigatoriedade e o formato dele — pergunta que só o Steep responde,
     # porque depende de qual sobrecarga se aplica (felixefelip/rbs_infer#149).
     resolve_forwarded_block_requirements(target_members)
+
+    # Um bloco que o corpo GUARDA numa ivar roda contra o `self` de quem o
+    # repassa depois (`base.class_eval(&@included_block)`) — de novo uma
+    # pergunta do callee, e de novo só o Steep responde (felixefelip/rbs_infer#208).
+    resolve_stored_block_self_types(target_members)
 
     # O que os blocos passados nos call-sites devolvem. É a metade do tipo do
     # bloco que o corpo do método não responde — ele recebe esse valor, não o
@@ -599,6 +612,29 @@ module RbsInfer
     end
   end
 
+  # `def included(base = nil)` says two things, and only one of them survives
+  # the call sites: they answer what a caller passes (`Module`), the default
+  # answers what the method gets when nobody passes anything (`nil`). Taking
+  # only the first emits `?Module base` for a body written around `base.nil?`,
+  # which then reads as dead code — and the default itself stops type-checking.
+  #
+  # Only touched once a type is there to widen: while the parameter is `untyped`
+  # the nil is already admitted, and `untyped?` is not a spelling.
+  def nilablize_nil_default_params(target_members, method_param_types)
+    target_members.each do |member|
+      next unless [:method, :class_method].include?(member.kind)
+      next if member.param_nil_defaults.nil? || member.param_nil_defaults.empty?
+
+      types = method_param_types[member.name] or next
+      member.param_nil_defaults.each do |param_name|
+        current = types[param_name]
+        next if current.nil? || current == "untyped"
+
+        types[param_name] = RbsInfer::Signatures::RbsParserUtil.nilablize(current)
+      end
+    end
+  end
+
   # A block's parameters are whatever the method PASSES to it, so the sites
   # that use the block are the evidence — and Steep has already typed those
   # expressions while checking the file. `authenticate` calls
@@ -660,6 +696,34 @@ module RbsInfer
       next unless requirement
 
       member.signature = RbsInfer::Signatures::RbsParserUtil.require_block(member.signature, requirement[:params])
+    end
+  end
+
+  # A block kept in an ivar is replayed later, and the replay decides what `self`
+  # is inside it — `base.class_eval(&@included_block)` runs the block against the
+  # includer. That binding belongs in the signature: a caller writing
+  # `included do … end` is writing a body against that `self`, and without it the
+  # stored proc cannot be handed to `class_eval` at all (felixefelip/rbs_infer#208).
+  #
+  # Only members the collector left stored, and only the binding — see
+  # `RbsParserUtil.bind_block_self` for what is deliberately not taken.
+  def resolve_stored_block_self_types(target_members)
+    return if @parsed_target.nil?
+
+    members = target_members.select do |m|
+      [:method, :class_method].include?(m.kind) && m.block_stored_forward
+    end
+    return if members.empty?
+
+    bindings = steep_bridge.stored_block_self_types(@parsed_target.source)
+    return if bindings.empty?
+
+    members.each do |member|
+      key = member.kind == :class_method ? "self.#{member.name}" : member.name
+      binding = bindings[key]
+      next unless binding
+
+      member.signature = RbsInfer::Signatures::RbsParserUtil.bind_block_self(member.signature, binding)
     end
   end
 

@@ -68,7 +68,35 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       block_param? && use_sites.empty? && forwards_block? && !guards_block?
     end
 
+    # True when the body STORES the block in an ivar instead of using it —
+    # `@included_block = block`, the `included do … end` mechanism in one line.
+    #
+    # A stored block outlives the call that brought it, so what it must BE is
+    # decided by whoever replays it later, not by anything here. The Analyzer
+    # goes looking for that too (felixefelip/rbs_infer#208), but for a different
+    # answer than `open_forward?` asks for: a block nobody calls yet cannot be
+    # required, and the store is the proof — it exists precisely so the call may
+    # never happen. Only the self BINDING transfers, and it must: a block written
+    # against one `self` cannot be swapped for a block written against another,
+    # while an argument it does not declare it can simply ignore.
+    #
+    # A call of its own still wins, same as above: `block.call(x)` says more
+    # about the block than any later replay does.
+    def stored_forward?
+      block_param? && use_sites.empty? && stores_block?
+    end
+
     private
+
+    # `@x = block` — the block leaving this method by being kept. An anonymous
+    # `&` has no name to read and so cannot be stored.
+    def stores_block?
+      name = block_param_name or return false
+
+      walk_body do |node|
+        node.is_a?(Prism::InstanceVariableWriteNode) && reads_block?(node.value, name)
+      end
+    end
 
     def required?
       (yields? || calls_block_param?) && !guards_block?
