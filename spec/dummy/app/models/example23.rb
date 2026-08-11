@@ -10,7 +10,7 @@ class Example23
   end
 
   module Baz
-	  extend Example23::Foo
+    extend Example23::Foo
 
     def self.bazingado(base_foo)
       base_foo.log_something("bazingado")
@@ -31,4 +31,3 @@ class Example23
     bazinga(Example23::Baz)
   end
 end
-
