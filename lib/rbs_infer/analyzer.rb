@@ -198,36 +198,16 @@ module RbsInfer
     # Inferir tipos do initialize via call-sites
     init_arg_types = param_type_inferrer.infer_initialize_types(parsed_target: @parsed_target)
 
-    # Inferir tipos dos attrs a partir do initialize (self.x = param)
-    attr_types = infer_attr_types_from_initialize(init_arg_types)
+    # Attr types from everything the class's own body says: the `initialize`
+    # assignments, the `self.x =` writes anywhere else, and the element types an
+    # `Array[untyped]` picks up from `<<`. What only the CALLERS know is filled in
+    # by `finalize`, further down — it needs the parameter types first.
+    attr_types = attr_type_inferrer.infer(init_arg_types, target_members)
 
-    # Inferir tipos dos attrs a partir de todos os métodos da classe
-    # (self.x = Foo.new ou variável local com mesmo nome do attr)
-    attr_types_from_class, collection_element_types = infer_attr_types_from_class_body(target_members)
-    attr_types_from_class.each do |name, type|
-      attr_types[name] ||= type
-    end
-
-    # Refinar Array[untyped] usando tipos inferidos de << usage
-    refine_collection_types(attr_types, collection_element_types)
-
-    # Enriquecer init_arg_types com tipos inferidos (defaults, attrs)
-    attr_types.each do |attr_name, type|
-      if init_arg_types[attr_name].nil? || init_arg_types[attr_name] == "untyped"
-        init_arg_types[attr_name] = type
-      end
-    end
-
-    # Params com default literal `nil` aceitam nil mesmo se todos os
-    # callers atuais passam não-nil — o signature precisa refletir
-    # isso. Aplicado APÓS o enriquecimento pra não duplicar `?` em
-    # tipos que já vieram nilable do attr_types.
-    nil_default_param_names = extract_nil_default_param_names
-    nil_default_param_names.each do |param_name|
-      current = init_arg_types[param_name]
-      next if current.nil? || current == "untyped"
-      init_arg_types[param_name] = RbsInfer::Signatures::RbsParserUtil.nilablize(current)
-    end
+    # `initialize`'s own parameters gain what the attrs now know, and then the
+    # ones written `= nil` widen — in that order, or the `?` doubles up on a type
+    # that arrived nilable from the attrs.
+    attr_type_inferrer.enrich_initialize_types(init_arg_types, attr_types)
 
     # Resolver return types de métodos que retornam attrs conhecidos
     type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target)
@@ -240,18 +220,12 @@ module RbsInfer
       target_members, attr_types, parsed_target: @parsed_target, is_module: @is_module
     )
 
-    # An attr set from outside via `receiver.attr = value` (receiver typed
-    # as this class) has no local write to infer from — but the setter is a
-    # method, so the cross-class call-site inference above already typed its
-    # parameter. Route that back to the attr's type, and — since the attr
-    # is never written in `initialize` — apply the definite-initialization
-    # `| nil` (felixefelip/rbs_infer#71).
-    apply_external_setter_attr_types(attr_types, method_param_types, target_members)
-
-    # Definite-initialization `?` for every attr getter whose ivar is never
-    # written in `initialize` — applied uniformly here so a locally-typed attr
-    # follows the same rule as an externally-set one (felixefelip/rbs_infer#71).
-    apply_definite_init_nilability(attr_types, target_members)
+    # The rest of the attr types: the ones only an external `receiver.attr = value`
+    # could give (its `attr=` parameter, just inferred above), and then the
+    # definite-initialization `?` for every getter whose ivar `initialize` never
+    # writes — applied uniformly, so a locally-typed attr follows the same rule as
+    # an externally-set one (felixefelip/rbs_infer#71).
+    attr_type_inferrer.finalize(attr_types, target_members, method_param_types: method_param_types)
 
     # Inferir tipos de instance variables (@post, @posts, etc.)
     # method_param_types feeds `@x = param` when the param's type came
@@ -693,150 +667,9 @@ module RbsInfer
   # mapeia o tipo do attr a partir do tipo do parâmetro (inferido via call-sites)
   # ou do valor default do keyword argument.
 
-  def infer_attr_types_from_initialize(init_arg_types)
-    return {} unless @parsed_target
-
-    visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new(constant_resolver: constant_arg_resolver)
-    @parsed_target.tree.accept(visitor)
-
-    attr_types = {}
-
-    # Mapear defaults dos keyword params: param_name -> tipo do default
-    default_types = visitor.keyword_defaults
-    nil_default_params = visitor.nil_default_params
-
-    # Mapear self.attr = expr encontrados no initialize
-    visitor.self_assignments.each do |attr_name, expr_info|
-      type = case expr_info[:kind]
-             when :param
-               # self.x = x → tipo vem dos call-sites ou do default
-               param_name = expr_info[:name]
-               call_site_type = init_arg_types[param_name]
-               call_site_type = nil if call_site_type == "untyped"
-               type = call_site_type || default_types[param_name]
-               # Se o param tem default literal `nil` (e.g.,
-               # `def initialize(name: nil); @name = name; end`), a
-               # ivar pode receber nil mesmo quando todos os callers
-               # passam não-nil. Refletir isso na declaração.
-               if type && nil_default_params.include?(param_name)
-                 type = RbsInfer::Signatures::RbsParserUtil.nilablize(type)
-               end
-               type
-             when :param_method
-               # self.x = param.method → resolver tipo do param, depois método
-               param_name = expr_info[:param_name]
-               param_type = init_arg_types[param_name]
-               param_type = nil if param_type.nil? || param_type == "untyped"
-               if param_type
-                 method_type_resolver.resolve(param_type, expr_info[:method_name])
-               end
-             when :call
-               # self.x = algo.method → tentar resolver via RBS
-               if expr_info[:class_name] && expr_info[:method_name] && method_type_resolver
-                 resolved = method_type_resolver.resolve_class_method(expr_info[:class_name], expr_info[:method_name])
-                 resolved == "self" ? expr_info[:class_name] : resolved
-               else
-                 expr_info[:type]
-               end
-             when :constant
-               expr_info[:type]
-             when :literal
-               expr_info[:type]
-             end
-
-      attr_types[attr_name] = type if type
-    end
-
-    attr_types
-  end
-
   # ─── Inferir tipos dos attrs via corpo de todos os métodos ─────────
   # Procura `self.attr = Foo.new(...)` em qualquer método da classe
   # e variáveis locais com mesmo nome de um attr_accessor.
-
-  def infer_attr_types_from_class_body(members)
-    return [{}, {}] unless @parsed_target
-
-    attr_names = members.select { |m| [:attr_accessor, :attr_reader, :attr_writer].include?(m.kind) }
-                        .map(&:name)
-                        .to_set
-    return [{}, {}] if attr_names.empty?
-
-    visitor = RbsInfer::Inference::ClassBodyAttrAnalyzer.new(attr_names: attr_names, method_type_resolver: method_type_resolver, constant_resolver: constant_arg_resolver, target_class: @target_class)
-    @parsed_target.tree.accept(visitor)
-
-    [visitor.attr_types, visitor.collection_element_types]
-  end
-
-  # Refina tipos Array[untyped] com tipos de elementos inferidos via <<
-  def refine_collection_types(attr_types, collection_element_types)
-    collection_element_types.each do |attr_name, element_types|
-      current = attr_types[attr_name]
-      next unless current&.start_with?("Array[untyped]")
-
-      element_type = element_types.to_a.join(" | ")
-      attr_types[attr_name] = "Array[#{element_type}]"
-    end
-  end
-
-  # Fills `attr_types` for writable attrs whose type could only come from
-  # external `receiver.attr = value` call-sites (their `attr=` parameter,
-  # inferred by the cross-class pass). Nilability is NOT decided here — the
-  # definite-initialization rule is applied uniformly afterwards by
-  # `apply_definite_init_nilability`, so a locally-written attr and an
-  # externally-set one follow the same rule (felixefelip/rbs_infer#71).
-  def apply_external_setter_attr_types(attr_types, method_param_types, target_members)
-    writable = target_members.select { |m| [:attr_accessor, :attr_writer].include?(m.kind) }
-    return if writable.empty?
-
-    writable.each do |m|
-      # Don't override a type already inferred from a local write.
-      next if attr_types[m.name] && attr_types[m.name] != "untyped"
-
-      setter_params = method_param_types["#{m.name}="]
-      inferred = setter_params&.values&.reject { |t| t.nil? || t == "untyped" }&.first
-      next unless inferred
-
-      attr_types[m.name] = inferred
-    end
-  end
-
-  # Definite-initialization rule, applied uniformly to every attr that has a
-  # GETTER (`attr_reader`/`attr_accessor`) once `attr_types` is fully
-  # assembled — no matter where the type came from (the initializer, a local
-  # `self.x =` write, or an external setter). If the backing ivar is never
-  # assigned in `initialize`, the getter can observe the pre-assignment `nil`,
-  # so the type is nilable. A pure `attr_writer` has no getter and keeps its
-  # bare accepted-value type. Previously the `?` was only applied on the
-  # external-setter path, so an attr typed from a local write (`self.name =
-  # value.name`, never set in `initialize`) wrongly stayed non-nil
-  # (felixefelip/rbs_infer#71, follow-up).
-  def apply_definite_init_nilability(attr_types, target_members)
-    getters = target_members.select { |m| [:attr_reader, :attr_accessor].include?(m.kind) }
-    return if getters.empty?
-
-    initialized = return_type_resolver.collect_prism_initialized_ivars(@parsed_target.tree)
-
-    getters.each do |m|
-      next if initialized.include?(m.name)
-      type = attr_types[m.name]
-      next if type.nil? || type == "untyped"
-
-      attr_types[m.name] = RbsInfer::Signatures::RbsParserUtil.nilablize(type)
-    end
-  end
-
-  # Returns the names of `initialize` keyword params whose default
-  # value is literal `nil` — used to widen the inferred type to its
-  # nilable form (`String` → `String?`) since the param can in fact
-  # receive nil even if every observed call site passes non-nil.
-  def extract_nil_default_param_names
-    return Set.new unless @parsed_target
-
-    visitor = RbsInfer::Inference::InitializeBodyAnalyzer.new(constant_resolver: constant_arg_resolver)
-    @parsed_target.tree.accept(visitor)
-    visitor.nil_default_params
-  end
 
   def method_type_resolver
     @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache, constant_resolver: env_only_constant_resolver, mixin_index: mixin_index)
@@ -867,6 +700,16 @@ module RbsInfer
     @block_signature_resolver ||= RbsInfer::Inference::BlockSignatureResolver.new(
       parsed_target: @parsed_target,
       steep_bridge: steep_bridge
+    )
+  end
+
+  def attr_type_inferrer
+    @attr_type_inferrer ||= RbsInfer::Inference::AttrTypeInferrer.new(
+      target_class: @target_class,
+      parsed_target: @parsed_target,
+      method_type_resolver: method_type_resolver,
+      constant_resolver: constant_arg_resolver,
+      return_type_resolver: return_type_resolver
     )
   end
 
@@ -999,6 +842,7 @@ require_relative "inference/send_call"
 require_relative "inference/type_merger"
 require_relative "inference/ivar_type_set"
 require_relative "inference/return_type_resolver"
+require_relative "inference/attr_type_inferrer"
 require_relative "inference/param_type_inferrer"
 require_relative "project/source_index"
 require_relative "project/mixin_index"
