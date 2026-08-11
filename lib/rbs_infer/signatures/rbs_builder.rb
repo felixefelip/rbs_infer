@@ -276,38 +276,47 @@ module RbsInfer::Signatures
 
       owned.group_by(&:owner).each do |owner, mod_members|
         inner_indent = member_indent + "  "
+        # Sibling modules are member blocks like any other, so they are
+        # blank-separated the same way `add_group` separates the groups of a
+        # class body — without this two `module X ... end` touch.
+        lines << "" unless lines.empty?
         lines << "#{member_indent}module #{owner}"
 
-        mod_members.select { |m| m.kind == :constant }.each do |const|
-          lines << "#{inner_indent}#{const.signature}"
-        end
-        mod_members.select { |m| m.kind == :prepend }.each do |pre|
-          lines << "#{inner_indent}prepend #{qualify(pre.name)}"
-        end
-        mod_members.select { |m| m.kind == :include }.each do |inc|
-          lines << "#{inner_indent}include #{qualify(inc.name)}"
-        end
-        mod_members.select { |m| m.kind == :extend }.each do |ext|
-          lines << "#{inner_indent}extend #{qualify(ext.name)}"
-        end
-        mod_members.select { |m| m.kind == :class_method }.each do |m|
+        # The body goes through the SAME grouping the top-level body uses
+        # (`add_group`), so a nested module reads like the class around it: the
+        # mixins separated from the singletons, the singletons from the instance
+        # members. Emitting the lines flat made a nested module the one place in
+        # the file where everything touched.
+        body_start = lines.size
+
+        add_group(lines, body_start, mod_members.select { |m| m.kind == :constant }.map do |const|
+          "#{inner_indent}#{const.signature}"
+        end)
+
+        mixins = mod_members.select { |m| m.kind == :prepend }.map { |pre| "#{inner_indent}prepend #{qualify(pre.name)}" } +
+                 mod_members.select { |m| m.kind == :include }.map { |inc| "#{inner_indent}include #{qualify(inc.name)}" } +
+                 mod_members.select { |m| m.kind == :extend }.map { |ext| "#{inner_indent}extend #{qualify(ext.name)}" }
+        add_group(lines, body_start, mixins)
+
+        class_level = mod_members.select { |m| m.kind == :class_method }.map do |m|
           # The same substitution the top-level singletons get. Omitting it left
           # a nested module's `def self.x` carrying the raw structural signature
           # even once its call sites had been read (felixefelip/rbs_infer#159).
           sig = m.signature
           sig = apply_inferred_param_types(sig, method_param_types[m.name]) if method_param_types[m.name]
-          lines << "#{inner_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
+          "#{inner_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
         end
-        mod_members.select { |m| m.kind == :singleton_alias }.each do |a|
-          lines << "#{inner_indent}alias self.#{a.name} self.#{a.old_name}"
+        class_level += mod_members.select { |m| m.kind == :singleton_alias }.map do |a|
+          "#{inner_indent}alias self.#{a.name} self.#{a.old_name}"
         end
-        mod_members.select { |m| m.kind == :alias }.each do |a|
-          lines << "#{inner_indent}alias #{a.name} #{a.old_name}"
+        class_level += mod_members.select { |m| m.kind == :alias }.map do |a|
+          "#{inner_indent}alias #{a.name} #{a.old_name}"
         end
-        mod_members.each do |m|
-          line = render_value_member(m, inner_indent, {}, attr_types, method_param_types, Set.new)
-          lines << line if line
-        end
+        add_group(lines, body_start, class_level)
+
+        add_group(lines, body_start, mod_members.filter_map do |m|
+          render_value_member(m, inner_indent, {}, attr_types, method_param_types, Set.new)
+        end)
 
         lines << "#{member_indent}end"
       end
