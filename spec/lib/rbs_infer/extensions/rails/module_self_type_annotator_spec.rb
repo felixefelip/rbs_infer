@@ -8,8 +8,8 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
   # A model concern's host comes from the `include` that names it, so these pass
   # an index (felixefelip/rbs_infer#163). The conventions below cover only what
   # no source shows.
-  def index_answering(hosts)
-    instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts)
+  def index_answering(hosts, extenders: [])
+    instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts, extenders_of: extenders)
   end
 
   describe ".entry_for" do
@@ -89,8 +89,8 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
   # path; the `include`s written in the sources are what the code says, so they
   # answer first and the guess is left for what no source shows.
   describe "with a mixin index" do
-    def index_answering(hosts)
-      instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts)
+    def index_answering(hosts, extenders: [])
+      instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts, extenders_of: extenders)
     end
 
     it "prefers the written include over the path convention" do
@@ -148,6 +148,62 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       )
 
       expect(entry["annotations"]).to eq(["# @type instance: Card & Trashable"])
+    end
+
+    # An extended module's instance method runs on the extender's CLASS OBJECT,
+    # so its `self` is `singleton(Bar)` — no intersection with the module, since
+    # the RBS reopen already writes `extend ::Foo` onto that singleton.
+    it "answers with the extender's singleton when the module is extended" do
+      entry = described_class.entry_for(
+        path: "app/models/example23.rb",
+        module_name: "Example23::Foo",
+        source: PLAIN_SRC,
+        mixin_index: index_answering([], extenders: ["Example23::Bar"])
+      )
+
+      expect(entry["annotations"]).to eq(["# @type instance: singleton(Example23::Bar)"])
+    end
+
+    # Both routes are honest members of one union: `self` is an instance of an
+    # includer or the class object of an extender, one at a time.
+    it "unions include hosts with extenders" do
+      entry = described_class.entry_for(
+        path: "app/models/foo.rb",
+        module_name: "Foo",
+        source: PLAIN_SRC,
+        mixin_index: index_answering(["Card"], extenders: %w[Bar Baz])
+      )
+
+      expect(entry["annotations"])
+        .to eq(["# @type instance: (Card & Foo) | (singleton(Bar)) | (singleton(Baz))"])
+    end
+
+    # The convention answers "which class includes this helper". A module the
+    # sources show being EXTENDED has already been answered by the code, so the
+    # guess must not be added beside it.
+    it "does not fall back to the convention for an extended module" do
+      entry = described_class.entry_for(
+        path: "app/helpers/posts_helper.rb",
+        module_name: "PostsHelper",
+        source: PLAIN_SRC,
+        mixin_index: index_answering([], extenders: ["ERBPostsIndex"])
+      )
+
+      expect(entry["annotations"]).to eq(["# @type instance: singleton(ERBPostsIndex)"])
+    end
+
+    # A concern is INCLUDED — that is what `ActiveSupport::Concern` is for — and
+    # the `self` of a module's singleton methods when the module is extended
+    # would be `singleton(singleton(Bar))`, which RBS cannot spell.
+    it "omits the singleton annotation when only extenders answer" do
+      entry = described_class.entry_for(
+        path: "app/models/foo.rb",
+        module_name: "Foo",
+        source: CONCERN_SRC,
+        mixin_index: index_answering([], extenders: ["Bar"])
+      )
+
+      expect(entry["annotations"]).to eq(["# @type instance: singleton(Bar)"])
     end
 
     it "falls back to the convention when nobody includes the module" do
