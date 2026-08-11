@@ -257,5 +257,136 @@ RSpec.describe RbsInfer::Project::MixinIndex do
       expect(index.hosts_of("A")).to contain_exactly("Widget")
       expect(index.hosts_of("B")).to contain_exactly("Widget")
     end
+
+    # The include belongs to the declaration that WROTE it, not to the file's
+    # headline class. Attributing a whole file to `extractor.class_name` made a
+    # nested module's host come out as the outer namespace — for
+    # `class Example3; class Foo; module GeneratedAttributes` it answered
+    # `Example3`, which includes nothing.
+    it "attributes an include to the declaration that writes it, not the file" do
+      file = write_file("example3.rb", <<~RUBY)
+        class Example3
+          class Foo
+            module GeneratedAttributes
+            end
+
+            include GeneratedAttributes
+          end
+        end
+      RUBY
+
+      index = described_class.new([file])
+
+      expect(index.hosts_of("Example3::Foo::GeneratedAttributes")).to contain_exactly("Example3::Foo")
+    end
+  end
+
+  describe "#extenders_of" do
+    it "answers with the class whose singleton gets the module" do
+      file = write_file("bar.rb", "class Bar\n  extend Foo\nend\n")
+      foo = write_file("foo.rb", "module Foo\nend\n")
+
+      index = described_class.new([file, foo])
+
+      expect(index.extenders_of("Foo")).to contain_exactly("Bar")
+      # `extend` is not an `include`: the module never reaches Bar's instances.
+      expect(index.hosts_of("Foo")).to be_empty
+    end
+
+    # A module is as good an answer as a class, and is NOT resolved through the
+    # way an INCLUDING module is: `module Baz; extend Foo` makes the object
+    # `Baz` itself the receiver of Foo's methods, so Baz is the self.
+    it "keeps a module that extends the target as the answer" do
+      baz = write_file("baz.rb", "module Baz\n  extend Foo\nend\n")
+      foo = write_file("foo.rb", "module Foo\nend\n")
+
+      index = described_class.new([baz, foo])
+
+      expect(index.extenders_of("Foo")).to contain_exactly("Baz")
+    end
+
+    it "answers with every extender, not the first" do
+      file = write_file("example23.rb", <<~RUBY)
+        class Example23
+          module Foo
+          end
+
+          module Baz
+            extend Example23::Foo
+          end
+
+          class Bar
+            extend Example23::Foo
+          end
+        end
+      RUBY
+
+      index = described_class.new([file])
+
+      expect(index.extenders_of("Example23::Foo"))
+        .to contain_exactly("Example23::Bar", "Example23::Baz")
+    end
+
+    # `include` inside `class << self` puts the module on the singleton, which
+    # is what `extend` means — the two spellings produce the same ancestors.
+    it "reads an include inside `class << self` as an extend" do
+      file = write_file("bar.rb", <<~RUBY)
+        class Bar
+          class << self
+            include Foo
+          end
+        end
+      RUBY
+      foo = write_file("foo.rb", "module Foo\nend\n")
+
+      index = described_class.new([file, foo])
+
+      expect(index.extenders_of("Foo")).to contain_exactly("Bar")
+      expect(index.hosts_of("Foo")).to be_empty
+    end
+
+    # `class C; extend M; end` where `module M; include Foo; end` — C's
+    # singleton gets M, and M carries Foo.
+    it "reaches the target through a module the extender extends" do
+      c = write_file("c.rb", "class C\n  extend M\nend\n")
+      m = write_file("m.rb", "module M\n  include Foo\nend\n")
+      foo = write_file("foo.rb", "module Foo\nend\n")
+
+      index = described_class.new([c, m, foo])
+
+      expect(index.extenders_of("Foo")).to contain_exactly("C")
+    end
+
+    # A class that INCLUDES the target passes it to its instances, never to its
+    # singleton — so it is a host, not an extender.
+    it "does not read an including class as an extender" do
+      card = write_file("card.rb", "class Card\n  include Foo\nend\n")
+      foo = write_file("foo.rb", "module Foo\nend\n")
+
+      index = described_class.new([card, foo])
+
+      expect(index.extenders_of("Foo")).to be_empty
+      expect(index.hosts_of("Foo")).to contain_exactly("Card")
+    end
+
+    # `extend self` names no other host, and its argument is not a constant.
+    it "records nothing for `extend self`" do
+      file = write_file("foo.rb", "module Foo\n  extend self\nend\n")
+
+      index = described_class.new([file])
+
+      expect(index.extenders_of("Foo")).to be_empty
+    end
+
+    # A file that only EXTENDS the module still makes bare calls into it —
+    # `bazinga(Baz)` in a class body is a call on the class object.
+    it "makes an extending file reach the module" do
+      bar = write_file("bar.rb", "class Bar\n  extend Foo\n  bazinga(Baz)\nend\n")
+      foo = write_file("foo.rb", "module Foo\n  def bazinga(m) = nil\nend\n")
+
+      index = described_class.new([bar, foo])
+
+      expect(index.files_reaching("Foo")).to include(bar)
+    end
   end
 end

@@ -5,11 +5,11 @@ app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not
 app/models/example15.rb:25:25: [error] Type `(::Example15::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
 app/models/example21.rb:96:29: [error] Type `(::Example21::Ticket | nil)` does not have method `holder`
-app/models/example3.rb:122:11: [error] Type `(::Example3::User | nil)` does not have method `name`
-app/models/example3.rb:63:13: [error] Type `(::Example3::User | nil)` does not have method `name`
-app/models/example3.rb:64:26: [error] Type `(::Example3::User | nil)` does not have method `name`
-app/models/example3.rb:65:26: [error] Type `(::String | nil)` does not have method `upcase`
-app/models/example3.rb:66:13: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example3.rb:123:11: [error] Type `(::Example3::User | nil)` does not have method `name`
+app/models/example3.rb:64:13: [error] Type `(::Example3::User | nil)` does not have method `name`
+app/models/example3.rb:65:26: [error] Type `(::Example3::User | nil)` does not have method `name`
+app/models/example3.rb:66:26: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example3.rb:67:13: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:14:25: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:22:25: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:27:23: [error] Type `(::String | nil)` does not have method `upcase`

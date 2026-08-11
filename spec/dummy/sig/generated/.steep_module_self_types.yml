@@ -33,6 +33,31 @@ app/models/eventable.rb:
     annotations:
     - "# @type self: singleton(Widget) & singleton(Eventable)"
     - "# @type instance: Widget & Eventable"
+app/models/example13.rb:
+  modules:
+  - anchor: GeneratedAttributes
+    annotations:
+    - "# @type instance: Example13::Registry & Example13::Registry::GeneratedAttributes"
+app/models/example22.rb:
+  modules:
+  - anchor: Foo
+    annotations:
+    - "# @type instance: singleton(Example22::Bar)"
+app/models/example23.rb:
+  modules:
+  - anchor: Foo
+    annotations:
+    - "# @type instance: (singleton(Example23::Bar)) | (singleton(Example23::Baz))"
+app/models/example3.rb:
+  modules:
+  - anchor: GeneratedAttributes
+    annotations:
+    - "# @type instance: Example3::Foo & Example3::Foo::GeneratedAttributes"
+app/models/included_hook/home_made.rb:
+  modules:
+  - anchor: HomeMade
+    annotations:
+    - "# @type instance: singleton(IncludedHook::Homespun)"
 app/models/included_hook/shared.rb:
   modules:
   - anchor: Shared
@@ -124,3 +149,8 @@ sig/generated/steep_current_runtime/current.rb:
   - anchor: GeneratedAttributeMethods
     annotations:
     - "# @type instance: Current & Current::GeneratedAttributeMethods"
+sig/generated/steep_devise_runtime/devise_scoped_helpers.rb:
+  modules:
+  - anchor: DeviseScopedHelpers
+    annotations:
+    - "# @type instance: ActionController::Base & DeviseScopedHelpers"

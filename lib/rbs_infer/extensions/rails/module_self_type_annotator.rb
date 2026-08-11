@@ -39,24 +39,31 @@ module RbsInfer
           return nil if module_name.nil? || module_name.empty?
 
           hosts = hosts_for(path, module_name, mixin_index)
-          return nil if hosts.empty?
+          extenders = mixin_index ? mixin_index.extenders_of(module_name) : []
+          return nil if hosts.empty? && extenders.empty?
 
           anchor = module_name.split("::").last
           is_concern = source.include?("extend ActiveSupport::Concern")
 
-          { "anchor" => anchor, "annotations" => annotations(module_name, hosts, is_concern) }
+          { "anchor" => anchor, "annotations" => annotations(module_name, hosts, extenders, is_concern) }
         end
 
-        # Every class a module is mixed into.
+        # Every class a module is mixed into by `include`.
         #
         # The written `include`s come first: they are what the code says, while
         # the convention below is a guess from a file path. The guess stays as
         # the fallback for what no source shows — a helper is mixed in by Rails
         # itself, and nobody writes that `include` anywhere
         # (felixefelip/rbs_infer#163).
+        #
+        # `extenders` is not consulted here on purpose: the presumption answers
+        # "which class includes this helper", and a module the sources show being
+        # EXTENDED has already been answered by the code. Falling back for it
+        # would put `ApplicationController` beside a host that is written down.
         def hosts_for(path, module_name, mixin_index)
           hosts = mixin_index ? mixin_index.hosts_of(module_name) : []
           return hosts if hosts.any?
+          return [] if mixin_index && mixin_index.extenders_of(module_name).any?
 
           Array(presumed_host_for(path, module_name))
         end
@@ -81,11 +88,26 @@ module RbsInfer
           nil
         end
 
-        def annotations(module_name, hosts, is_concern)
-          instance = "# @type instance: #{union(hosts.map { |host| "#{host} & #{module_name}" })}"
+        # An `include` and an `extend` of the same module produce `self`s of
+        # different KINDS, and both are honest members of the same union: an
+        # included module's instance method runs on an instance of the host
+        # (`Card & Card::Entropic`), an extended one's runs on the host's class
+        # object (`singleton(Bar)`) — no intersection with the module, because
+        # the RBS reopen already writes `extend ::Foo` on that singleton.
+        def annotations(module_name, hosts, extenders, is_concern)
+          instances = hosts.map { |host| "#{host} & #{module_name}" } +
+                      extenders.map { |extender| "singleton(#{extender})" }
+          instance = "# @type instance: #{union(instances)}"
           return [instance] unless is_concern
 
+          # Only the `include` hosts: the `self` of a module's SINGLETON methods
+          # when the module is extended would be `singleton(singleton(Bar))`,
+          # which RBS cannot spell. A concern is included anyway — that is what
+          # `ActiveSupport::Concern` is for — so this list is empty exactly when
+          # there is nothing to say.
           selves = hosts.map { |host| "singleton(#{host}) & singleton(#{module_name})" }
+          return [instance] if selves.empty?
+
           ["# @type self: #{union(selves)}", instance]
         end
 

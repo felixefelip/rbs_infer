@@ -11,7 +11,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ClassMethodsImplements do
   def blocks(source, path: "app/models/post/taggable.rb", module_name: "Post::Taggable", hosts: ["Post"])
     described_class.blocks_for(
       path: path, module_name: module_name, source: source,
-      mixin_index: instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts)
+      mixin_index: instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts, extenders_of: [])
     )
   end
 
@@ -86,7 +86,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ClassMethodsImplements do
     def entry(source, path: "app/models/post/taggable.rb", module_name: "Post::Taggable", hosts: ["Post"])
       described_class.self_type_entry(
         path: path, module_name: module_name, source: source,
-        mixin_index: instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts)
+        mixin_index: instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts, extenders_of: [])
       )
     end
 
