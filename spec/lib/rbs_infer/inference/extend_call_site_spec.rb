@@ -59,6 +59,98 @@ RSpec.describe "a call site reaching the target through extend" do
     expect(rbs).to include("def notify: (String target) ->")
   end
 
+  # The same reach, one level in: the module is NESTED under the target, so it is not a
+  # target of its own (felixefelip/rbs_infer#22) and the ancestry lands on a name the
+  # enclosing target does not answer to. Compared against the target alone — which is all
+  # this matcher used to do — the call site was dropped and the parameter stayed `untyped`
+  # (felixefelip/rbs_infer#229).
+  it "types a nested module's method reached by extend from a sibling" do
+    target = write("app/wrap.rb", <<~RUBY)
+      class Wrap
+        module Mixin
+          def notify(value)
+            value
+          end
+        end
+
+        module Host
+          extend Wrap::Mixin
+        end
+      end
+    RUBY
+    write("app/caller.rb", <<~RUBY)
+      class Caller
+        def run
+          klass = Wrap::Host
+          klass.notify("hi")
+        end
+      end
+    RUBY
+    write("sig/generated/wrap.rbs", <<~RBS)
+      class Wrap
+        module Mixin
+          def notify: (untyped value) -> untyped
+        end
+
+        module Host
+          extend ::Wrap::Mixin
+        end
+      end
+    RBS
+
+    rbs = RbsInfer::Analyzer.new(target_class: "Wrap", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
+
+    expect(rbs).to include("def notify: (String value) ->")
+  end
+
+  # And a `def self.` of the same name on the extender SHADOWS it, so the call site
+  # belongs to that one and the module's own stays untouched.
+  it "leaves the module alone when the extender shadows the method" do
+    target = write("app/wrap.rb", <<~RUBY)
+      class Wrap
+        module Mixin
+          def notify(value)
+            value
+          end
+        end
+
+        module Host
+          extend Wrap::Mixin
+
+          def self.notify(value)
+            value
+          end
+        end
+      end
+    RUBY
+    write("app/caller.rb", <<~RUBY)
+      class Caller
+        def run
+          klass = Wrap::Host
+          klass.notify("hi")
+        end
+      end
+    RUBY
+    write("sig/generated/wrap.rbs", <<~RBS)
+      class Wrap
+        module Mixin
+          def notify: (untyped value) -> untyped
+        end
+
+        module Host
+          extend ::Wrap::Mixin
+
+          def self.notify: (untyped value) -> untyped
+        end
+      end
+    RBS
+
+    rbs = RbsInfer::Analyzer.new(target_class: "Wrap", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
+
+    expect(rbs).to include("def self.notify: (String value) ->")
+    expect(rbs).to include("def notify: (untyped value) ->")
+  end
+
   # The receiver's type is what decides, not the method's name: `singleton(Host)` reaches
   # `Mixin` only because `Host` extends it. A class that does not gives nothing away.
   it "leaves the parameter untyped when the receiver's singleton does not reach the target" do
