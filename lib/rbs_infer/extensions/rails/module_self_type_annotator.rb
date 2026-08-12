@@ -74,8 +74,37 @@ module RbsInfer
           declared = "(#{instance})"
           instance_method_names(anchor, source).each_with_object({}) do |name, acc|
             narrowed = invoker_self_types.narrow(method_name: name, declared: declared)
-            acc[name] = narrowed unless narrowed == declared
+            next if narrowed == declared
+
+            spelling = annotatable(narrowed) or next
+            acc[name] = spelling
           end
+        end
+
+        # The one spelling of a type that Steep will accept in an annotation.
+        #
+        # `AnnotationParser#parse_type` re-reads the parsed node's own location
+        # and demands it be byte-for-byte the string it was given. RBS drops a
+        # redundant outer parenthesis from that location — `(A | B)` parses to a
+        # union whose source is `A | B` — so a type RBS reads happily is a
+        # syntax error in an annotation, reported against the ANNOTATED FILE.
+        # `InvokerSelfTypes` wraps its answer because everywhere else that
+        # answer lands is a type position where a bare `|` or `&` would bind
+        # wrong; here it must not be wrapped, so ask RBS for the canonical form
+        # rather than trying to spell it.
+        #
+        # nil unless RBS reads the WHOLE string. `parse_type` stops at the first
+        # complete type and ignores the rest — `"not a type ("` comes back as
+        # `not` — which is the very thing Steep's check catches, one file too
+        # late. The input is either the canonical form or that form wrapped
+        # once, because that is all `InvokerSelfTypes` produces; anything else
+        # is a malformed narrowing and does not belong in a file Steep parses.
+        def annotatable(type)
+          canonical = RBS::Parser.parse_type(type).to_s
+          stripped = type.strip
+          canonical if stripped == canonical || stripped == "(#{canonical})"
+        rescue RBS::ParsingError, RBS::BaseError
+          nil
         end
 
         # The instance methods the module named `anchor` declares directly. A
