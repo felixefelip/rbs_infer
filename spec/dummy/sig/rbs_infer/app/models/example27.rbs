@@ -1,0 +1,16 @@
+class Example27
+  module Foo
+    def bazinga: (singleton(::Example27::Baz) module_included) -> nil
+    def bazingado: (?singleton(Example27::Bar) base_foo, ?message: String) -> nil
+  end
+
+  module Baz
+    extend ::Example27::Foo
+  end
+end
+
+class Example27
+  class Bar
+    extend ::Example27::Foo
+  end
+end

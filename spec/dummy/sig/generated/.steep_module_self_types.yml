@@ -91,6 +91,13 @@ app/models/example26.rb:
       - when:
           module_included: singleton(Example26::BazOther)
         self: singleton(Example26::BarOther)
+app/models/example27.rb:
+  modules:
+  - anchor: Foo
+    annotations:
+    - "# @type instance: (singleton(Example27::Bar)) | (singleton(Example27::Baz))"
+    defs:
+      bazinga: singleton(Example27::Bar)
 app/models/example3.rb:
   modules:
   - anchor: GeneratedAttributes
