@@ -77,6 +77,11 @@ module RbsInfer::Inference
       # the same map, read `(Card & Card::Stallable)` (felixefelip/rbs_infer#175).
       @module_self_types = module_self_types
       @invoker_self_types = invoker_self_types
+      # The positional parameters of the `def` being visited, and the pairing a
+      # call site inside it states between one of them and a receiver branch —
+      # see `extract_cross_class_args_for`.
+      @current_def_params = []
+      @self_condition = nil
       # `{ "set_post" => { "@post" => "(::Post & ::Post::Validated)" } }` — ivars a
       # self-method proves populated once it has run (postconditions sidecar). Applied
       # in source order by `visit_call_node`, so only call sites AFTER the establishing
@@ -159,15 +164,27 @@ module RbsInfer::Inference
       # `def self.foo` carries a receiver; plain `def foo` does not.
       @in_singleton_method = !node.receiver.nil?
       @current_method = node.name.to_s
+      old_params = @current_def_params
+      @current_def_params = positional_param_names(node)
       unless @method_scoped_var_names.empty?
         @local_var_types = @local_var_types.reject { |name, _| @method_scoped_var_names.include?(name) }
         @local_var_types.merge!(@local_var_types_by_method[@current_method] || {})
       end
       collect_local_assignments(node)
       super
+      @current_def_params = old_params
       @current_method = old_method
       @in_singleton_method = old_singleton
       @local_var_types = old_vars
+    end
+
+    def positional_param_names(node)
+      params = node.parameters or return []
+
+      names = []
+      params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
+      params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
+      names
     end
 
     # A `case <param> ... when <literal>` branch is reachable only for callers who passed
@@ -230,23 +247,14 @@ module RbsInfer::Inference
         method_name = node.name.to_s
         if @target_methods.key?(method_name)
           receiver_type = resolve_receiver_type(node.receiver)
-          # The three matchers in their historical order — the two string
-          # comparisons before the one that consults the RBS environment. Only
-          # the owner match knows the call reaches something other than the
-          # target's own method, so only it qualifies the key it files under.
-          key =
-            if receiver_type.nil?
-              nil
-            elsif match_class?(receiver_type)
-              method_name
-            elsif (owner_key = owner_match_key(receiver_type, method_name))
-              owner_key
-            elsif (ancestry_key = ancestry_match_key(receiver_type, method_name))
-              ancestry_key
-            end
-
-          if key
-            args = extract_cross_class_args(node, @target_methods[method_name])
+          # ONE key per branch of the receiver, not one for the whole receiver.
+          # The branches of a union can reach different methods —
+          # `(singleton(Baz) | singleton(BazOther)).bazingado` is `Foo`'s
+          # through `Baz`'s extend and `BazOther`'s own `def self.` — and
+          # answering with the first match filed the call site against one of
+          # them and left the other with nothing (felixefelip/rbs_infer#231).
+          keys_by_branch(receiver_type, method_name).each do |key, branches|
+            args = extract_cross_class_args_for(node, method_name, branches)
             @method_call_usages[key] << args unless args.empty?
           end
         end
@@ -395,13 +403,71 @@ module RbsInfer::Inference
       end
     end
 
-    def match_class?(name)
-      normalized_target = @target_class.sub(/\A::/, "")
-      receiver_components(name).any? do |component|
-        normalized_name = component.sub(/\A::/, "")
-        next true if normalized_name == normalized_target
-        relative_receiver_matches_target?(normalized_name, normalized_target)
+    # The call's arguments, read with the enclosing method's own call sites
+    # RESTRICTED to the ones that could have produced these branches.
+    #
+    # Two parameters of one method travel together. `Foo#bazinga` is called
+    # twice — `bazinga(Baz)` in `Bar`, `bazinga(BazOther)` in `BarOther` — so
+    # inside it `module_included` and `self` are paired, never crossed. Read
+    # independently they become `(Baz | BazOther)` and `(Bar | BarOther)`, and
+    # `module_included.bazingado(self)` then hands `BazOther.bazingado` a
+    # `base_foo` that may be `Bar` — a class that does not have what its body
+    # calls (felixefelip/rbs_infer#231).
+    #
+    # The condition is only stated when the receiver is a plain read of one of
+    # this method's own positional parameters, and only for a single branch:
+    # that is when "the receiver is THIS" and "the parameter was THIS" are the
+    # same sentence. Everything else reads as before.
+    def extract_cross_class_args_for(node, method_name, branches)
+      previous = @self_condition
+      @self_condition = self_condition(node, branches)
+      extract_cross_class_args(node, @target_methods[method_name])
+    ensure
+      @self_condition = previous
+    end
+
+    # `[parameter index, branch]`, or nil when the pairing cannot be stated.
+    def self_condition(node, branches)
+      return nil unless branches.size == 1
+      return nil unless node.receiver.is_a?(Prism::LocalVariableReadNode)
+
+      index = @current_def_params.index(node.receiver.name.to_s) or return nil
+      [index, branches.first]
+    end
+
+    # `{ key => [branches that reach it] }` for a receiver, in branch order.
+    #
+    # The three matchers in their historical order — the two string comparisons
+    # before the one that consults the RBS environment — applied to each branch
+    # on its own. Only the owner and ancestry matches know the call reaches
+    # something other than the target's own method, so only they qualify the key
+    # they file under.
+    def keys_by_branch(receiver_type, method_name)
+      return {} if receiver_type.nil?
+
+      receiver_components(receiver_type).each_with_object({}) do |component, acc|
+        key =
+          if match_class_branch?(component)
+            method_name
+          else
+            owner_match_key(component, method_name) || ancestry_match_key(component, method_name)
+          end
+        next unless key
+
+        (acc[key] ||= []) << component
       end
+    end
+
+    def match_class?(name)
+      receiver_components(name).any? { |component| match_class_branch?(component) }
+    end
+
+    def match_class_branch?(component)
+      normalized_target = @target_class.sub(/\A::/, "")
+      normalized_name = component.sub(/\A::/, "")
+      return true if normalized_name == normalized_target
+
+      relative_receiver_matches_target?(normalized_name, normalized_target)
     end
 
     # Every nominal type the receiver could hold at the moment of the call.
@@ -453,29 +519,27 @@ module RbsInfer::Inference
     # WHICH owner matched is the answer, not just whether one did: the usages are
     # filed under that key so a sibling homonym does not inherit the type
     # (felixefelip/rbs_infer#215).
-    def owner_match_key(receiver_type, method_name)
+    def owner_match_key(component, method_name)
       entries = @method_owners[method_name]
       return nil if entries.nil? || entries.empty?
 
-      receiver_components(receiver_type).each do |component|
-        singleton = singleton_receiver(component)
-        normalized = (singleton || component).sub(/\A::/, "")
+      singleton = singleton_receiver(component)
+      normalized = (singleton || component).sub(/\A::/, "")
 
-        entries.each do |owner, kind|
-          # `singleton(X)` is the one receiver spelling that says which SIDE of
-          # the owner is being called: it is X's singleton, so it reaches X's
-          # `def self.`, and reaches an instance method of a module X extends
-          # only through the ancestry — which `ancestry_match?` answers off the
-          # RBS, and which loses to a `def self.` of the same name anyway. A
-          # bare `X` says nothing: `resolve_receiver_type` returns the same
-          # string for a constant receiver (`Responder.deny`, a singleton call)
-          # and for a value of type X (an instance call), so both kinds stay
-          # eligible there.
-          next if singleton && kind != :class_method
-          next unless normalized == owner || relative_receiver_matches_target?(normalized, owner)
+      entries.each do |owner, kind|
+        # `singleton(X)` is the one receiver spelling that says which SIDE of
+        # the owner is being called: it is X's singleton, so it reaches X's
+        # `def self.`, and reaches an instance method of a module X extends
+        # only through the ancestry — which `ancestry_match?` answers off the
+        # RBS, and which loses to a `def self.` of the same name anyway. A
+        # bare `X` says nothing: `resolve_receiver_type` returns the same
+        # string for a constant receiver (`Responder.deny`, a singleton call)
+        # and for a value of type X (an instance call), so both kinds stay
+        # eligible there.
+        next if singleton && kind != :class_method
+        next unless normalized == owner || relative_receiver_matches_target?(normalized, owner)
 
-          return RbsInfer::Inference::MethodKey.for(method_name, owner: owner, kind: kind)
-        end
+        return RbsInfer::Inference::MethodKey.for(method_name, owner: owner, kind: kind)
       end
 
       nil
@@ -529,20 +593,14 @@ module RbsInfer::Inference
     # `module_included.bazingado(self)` with `module_included` a
     # `singleton(Example24::Baz)`, and `Baz` extends `Foo`
     # (felixefelip/rbs_infer#229).
-    def ancestry_match_key(receiver_type, method_name)
-      normalized_target = @target_class.sub(/\A::/, "")
+    def ancestry_match_key(component, method_name)
+      owner = rbs_definition_resolver.method_owner(component, method_name) or return nil
 
-      receiver_components(receiver_type).each do |component|
-        owner = rbs_definition_resolver.method_owner(component, method_name) or next
+      normalized_owner = owner.sub(/\A::/, "")
+      return method_name if normalized_owner == @target_class.sub(/\A::/, "")
 
-        normalized_owner = owner.sub(/\A::/, "")
-        return method_name if normalized_owner == normalized_target
-
-        entry = nested_owner_entry(normalized_owner, method_name) or next
-        return RbsInfer::Inference::MethodKey.for(method_name, owner: entry[0], kind: entry[1])
-      end
-
-      nil
+      entry = nested_owner_entry(normalized_owner, method_name) or return nil
+      RbsInfer::Inference::MethodKey.for(method_name, owner: entry[0], kind: entry[1])
     end
 
     # The target's nested owner the ancestry landed on, as `[owner, kind]`.
@@ -891,7 +949,7 @@ module RbsInfer::Inference
       declared = @module_self_types[@module_name_stack.last || @caller_class_name]
       return declared if declared.nil? || @current_method.nil?
 
-      @invoker_self_types.narrow(method_name: @current_method, declared: declared)
+      @invoker_self_types.narrow(method_name: @current_method, declared: declared, given: @self_condition)
     end
 
     # Resolves a `self.<method>` against the refined `self` type when the

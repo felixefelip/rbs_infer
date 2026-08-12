@@ -640,6 +640,26 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # The two paths crossed: `bazinga` pairs a different `module_included` with a different
+  # `self` at each of its two call sites, and its receiver's branches reach two different
+  # methods. Read one parameter at a time the pairing is lost and `BazOther.bazingado`
+  # gets a `base_foo` its own body cannot call (felixefelip/rbs_infer#231).
+  it "example26" do
+    name = "models/example26"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example26.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   it "example20" do
     name = "models/example20"
     rbs = RbsInfer::Analyzer.new(
