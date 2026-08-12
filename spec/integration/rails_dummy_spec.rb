@@ -603,6 +603,27 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # The same shape in a second namespace, with the same method names. The
+  # invoker-self narrowing gathers call sites by NAME across the corpus, so each of these
+  # two files shows up in the other's observations; read as unplaceable callers, they
+  # blanked each other's narrowing (felixefelip/rbs_infer#227). Both snapshots are pinned
+  # so the poisoning cannot come back from either side.
+  it "example24" do
+    name = "models/example24"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example24.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   it "example20" do
     name = "models/example20"
     rbs = RbsInfer::Analyzer.new(

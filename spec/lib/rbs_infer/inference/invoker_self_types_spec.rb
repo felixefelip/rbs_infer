@@ -102,14 +102,64 @@ RSpec.describe RbsInfer::Inference::InvokerSelfTypes do
     expect(narrower.narrow(method_name: "stamp", declared: declared)).to eq(declared)
   end
 
-  # Including a bare call whose `self` is the module itself: there `self` IS the
-  # union, so the union is the answer.
-  it "declines when a bare call sits outside every declared branch" do
+  # The observations are gathered by method NAME across the corpus, so most of
+  # them belong to other methods. A class resolves a bare call in its own
+  # ancestry, and the declaration already lists every class whose ancestry
+  # carries this module — so one that is not listed is calling something else.
+  # Two namespaces with the same method names used to blank each other's
+  # narrowing (felixefelip/rbs_infer#227).
+  it "ignores a bare call from a class the declaration does not list" do
     write_two_extenders
     write("app/elsewhere.rb", <<~RUBY)
       class Elsewhere
         def run
           stamp(3)
+        end
+      end
+    RUBY
+
+    expect(narrower.narrow(method_name: "stamp", declared: declared))
+      .to eq("singleton(Wrap::Bar)")
+  end
+
+  # A MODULE's instance method is the one caller that cannot be dismissed that
+  # way: `self` there is whoever mixes THAT module in, a name this record does
+  # not carry, and it might be one of ours — a sibling concern sharing a host.
+  it "declines when a bare call sits in a module's instance method" do
+    write_two_extenders
+    write("app/sibling.rb", <<~RUBY)
+      module Sibling
+        def run
+          stamp(3)
+        end
+      end
+    RUBY
+
+    expect(narrower.narrow(method_name: "stamp", declared: declared)).to eq(declared)
+  end
+
+  # Including the module's own body, where `self` is the whole union.
+  it "declines when the module itself calls the method" do
+    write("app/wrap.rb", <<~RUBY)
+      class Wrap
+        module Foo
+          def stamp(value)
+            value
+          end
+
+          def relay(value)
+            stamp(value)
+          end
+        end
+
+        module Baz
+          extend Wrap::Foo
+        end
+
+        class Bar
+          extend Wrap::Foo
+
+          stamp(1)
         end
       end
     RUBY
