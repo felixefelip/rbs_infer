@@ -167,6 +167,91 @@ RSpec.describe RbsInfer::Inference::InvokerSelfTypes do
     expect(narrower.narrow(method_name: "stamp", declared: declared)).to eq(declared)
   end
 
+  # Two parameters of one method travel together across its call sites, and
+  # reading them independently crosses them (felixefelip/rbs_infer#231). `given`
+  # is the caller naming the path it is on.
+  describe "conditioned on one path" do
+    def write_two_paths
+      write("app/wrap.rb", <<~RUBY)
+        class Wrap
+          module Foo
+            def stamp(target)
+              target
+            end
+          end
+
+          module Baz
+          end
+
+          module BazOther
+          end
+
+          class Bar
+            extend Wrap::Foo
+
+            stamp(Wrap::Baz)
+          end
+
+          class Other
+            extend Wrap::Foo
+
+            stamp(Wrap::BazOther)
+          end
+        end
+      RUBY
+    end
+
+    let(:two_hosts) { "((singleton(Wrap::Bar)) | (singleton(Wrap::Other)))" }
+
+    it "keeps only the call sites that passed the given argument" do
+      write_two_paths
+
+      expect(narrower.narrow(method_name: "stamp", declared: two_hosts, given: [0, "singleton(Wrap::BazOther)"]))
+        .to eq("singleton(Wrap::Other)")
+      expect(narrower.narrow(method_name: "stamp", declared: two_hosts, given: [0, "singleton(::Wrap::Baz)"]))
+        .to eq("singleton(Wrap::Bar)")
+    end
+
+    it "answers as it would without a condition when no call site matches it" do
+      write_two_paths
+
+      expect(narrower.narrow(method_name: "stamp", declared: two_hosts, given: [0, "singleton(Wrap::Nobody)"]))
+        .to eq(two_hosts)
+    end
+
+    # A call site whose argument is not a constant has no type to compare, and
+    # dropping it would narrow on evidence this walk does not have.
+    it "ignores the condition when a call site's argument cannot be read" do
+      write("app/wrap.rb", <<~RUBY)
+        class Wrap
+          module Foo
+            def stamp(target)
+              target
+            end
+          end
+
+          module Baz
+          end
+
+          class Bar
+            extend Wrap::Foo
+
+            stamp(Wrap::Baz)
+          end
+
+          class Other
+            extend Wrap::Foo
+
+            stamp(compute)
+          end
+        end
+      RUBY
+
+      expect(narrower.narrow(method_name: "stamp", declared: two_hosts, given: [0, "singleton(Wrap::Baz)"]))
+        .to eq(two_hosts)
+    end
+  end
+
   # An uncalled method says nothing about its `self`. Narrowing to the empty set
   # would be inventing a fact rather than reading one.
   it "declines when nothing calls the method" do

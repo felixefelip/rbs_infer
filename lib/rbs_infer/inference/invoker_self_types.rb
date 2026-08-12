@@ -49,7 +49,15 @@ module RbsInfer::Inference
 
     # `declared` is the module's self type as the annotators state it. Returns
     # it unchanged unless the call sites prove a narrower one.
-    def narrow(method_name:, declared:)
+    #
+    # `given` is `[parameter index, type]` — the caller stating that it is
+    # reading `self` on the path where that parameter held that type. Two
+    # parameters of one method travel together across its call sites, and
+    # answering without the pairing crosses them: `Foo#bazinga` called with
+    # `Baz` from `Bar` and with `BazOther` from `BarOther` has a `self` of
+    # `Bar` on the first path and `BarOther` on the second, never the union of
+    # both on either (felixefelip/rbs_infer#231).
+    def narrow(method_name:, declared:, given: nil)
       return declared if declared.nil? || method_name.nil?
 
       branches = union_branches(declared)
@@ -58,8 +66,11 @@ module RbsInfer::Inference
       observed = observed_selves(method_name)
       return declared if observed.nil? || observed.empty?
 
+      observed = on_path(observed, given)
+      return declared if observed.empty?
+
       declared_branches = branches.to_set
-      invokers = observed.filter_map do |self_type, module_instance|
+      invokers = observed.filter_map do |self_type, module_instance, _args|
         next self_type if declared_branches.include?(self_type)
         # Outside the declaration and unplaceable: `self` is a host this record
         # cannot name, and it might be one of ours.
@@ -76,6 +87,29 @@ module RbsInfer::Inference
     end
 
     private
+
+    # The call sites that could have produced `given`, or all of them when the
+    # pairing cannot be read: an invocation whose argument at that position is
+    # not a plain constant has no type here to compare, and dropping it would
+    # narrow on evidence this walk does not have. Widening back to everything is
+    # the answer it would have given before the condition existed.
+    def on_path(observed, given)
+      return observed if given.nil?
+
+      index, type = given
+      wanted = normalize(type)
+      return observed unless observed.all? { |_, _, args| args.key?(index) }
+
+      observed.select { |_, _, args| normalize(args[index]) == wanted }
+    end
+
+    # The same type reaches here spelled two ways: read off the sources it is
+    # `singleton(Wrap::Baz)`, resolved through the RBS it is
+    # `singleton(::Wrap::Baz)`. The root `::` is the only difference and it is
+    # not one.
+    def normalize(type)
+      type.to_s.sub(/\A::/, "").sub(/\Asingleton\(::/, "singleton(")
+    end
 
     # Same rule the annotator applies when it builds the declaration: a single
     # part is written bare, because the parentheses exist only to keep a `|` or
@@ -127,8 +161,13 @@ module RbsInfer::Inference
     end
 
     # Walks a file for bare calls to one method and records the `self` each runs
-    # under, as `[self type, from a module's instance method?]`. Returns nil if
-    # any of them cannot be placed at all.
+    # under, as `[self type, from a module's instance method?, argument types]`.
+    # Returns nil if any of them cannot be placed at all.
+    #
+    # The arguments are what lets a reader ask for one PATH through the method
+    # rather than all of them, and only a constant is typed here: `bazinga(Baz)`
+    # is the shape this correlation is for, and anything else is left out of the
+    # record so the reader widens instead of guessing.
     #
     # The flag is what tells a caller that resolves in its own ancestry — a
     # class, or a module's own singleton — from one whose `self` is somebody
@@ -193,7 +232,37 @@ module RbsInfer::Inference
         # where that instance is not the thing named here but whoever mixes it
         # in, which is what the flag records.
         instance = @scope == :instance
-        @selves << [instance ? owner : "singleton(#{owner})", instance && @module_scope]
+        @selves << [instance ? owner : "singleton(#{owner})", instance && @module_scope, argument_types(node)]
+      end
+
+      # `{ position => type }` for the positional arguments that are constants,
+      # which a call passes to reach a module's singleton — `bazinga(Baz)` is
+      # `singleton(Example26::Baz)`. A position that is anything else is absent
+      # rather than untyped, so a reader can tell "not this one" from "cannot
+      # say".
+      def argument_types(node)
+        args = node.arguments&.arguments or return {}
+
+        args.each_with_index.each_with_object({}) do |(arg, index), acc|
+          next unless arg.is_a?(Prism::ConstantReadNode) || arg.is_a?(Prism::ConstantPathNode)
+
+          name = RbsInfer::Analyzer.extract_constant_path(arg) or next
+          acc[index] = "singleton(#{qualify(name)})"
+        end
+      end
+
+      # A constant written inside the declaration it belongs to is relative
+      # (`Baz` under `class Example26`), and the type it stands for is not.
+      # Resolved outward through the enclosing path, the way Ruby reads it.
+      def qualify(name)
+        return name.sub(/\A::/, "") if name.start_with?("::") || @path.empty?
+        return name if name.start_with?("#{@path.first}::")
+
+        @path.each_index.reverse_each do |i|
+          candidate = (@path[0..i] + [name]).join("::")
+          return candidate
+        end
+        name
       end
 
       def with_path(node, module_scope:)
