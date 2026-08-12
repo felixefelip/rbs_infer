@@ -183,12 +183,18 @@ module RbsInfer::Inference
         next unless member.signature.end_with?("-> untyped") || unresolved_record_return?(member.signature)
         next if method_name == "initialize"
 
+        # The same identity the member lookup above uses, applied to the
+        # inferred-parameter table: a nested module's method reads ITS call
+        # sites, not those of a homonym in a sibling module
+        # (felixefelip/rbs_infer#215).
+        param_types = inferred_param_types(method_param_types, method_name, owner, kind)
+
         # 0. Direct ivar read/write as the last expression
         #    (`def user; @user; end`, `def user=(v); @user = v; end`) →
         #    type already inferred for the ivar (felixefelip/rbs_infer#19)
         if last_stmt.is_a?(Prism::InstanceVariableReadNode) || last_stmt.is_a?(Prism::InstanceVariableWriteNode)
           resolved = ivar_types[last_stmt.name.to_s.sub(/\A@/, "")]
-          resolved = assigned_param_type(last_stmt, method_param_types[method_name] || {}) if resolved.nil? || resolved == "untyped"
+          resolved = assigned_param_type(last_stmt, param_types) if resolved.nil? || resolved == "untyped"
           if resolved && resolved != "untyped"
             member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(resolved)}")
             own_return_types[method_name] = resolved
@@ -234,9 +240,8 @@ module RbsInfer::Inference
 
         # 5. receiver.method() na última expressão
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver && method_type_resolver
-          local_types = method_param_types[method_name] || {}
           self_ctx = self_return_type_context(known_return_types, class_return_types, kind)
-          resolved = infer_call_return_type(last_stmt, self_ctx, method_type_resolver, local_types: local_types)
+          resolved = infer_call_return_type(last_stmt, self_ctx, method_type_resolver, local_types: param_types)
           if resolved
             replace_return_type(member, resolved)
             own_return_types[method_name] = resolved
@@ -287,7 +292,7 @@ module RbsInfer::Inference
         next unless member.signature.end_with?("-> untyped")
 
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver && method_type_resolver
-          local_types = method_param_types[method_name] || {}
+          local_types = inferred_param_types(method_param_types, method_name, owner, kind)
           self_ctx = self_return_type_context(known_return_types, class_return_types, kind)
           resolved = infer_call_return_type(last_stmt, self_ctx, method_type_resolver, local_types: local_types)
           if resolved
@@ -299,6 +304,17 @@ module RbsInfer::Inference
     end
 
     private
+
+    # The parameter types inferred for the method identified by (name, owner,
+    # kind) — `owner` relative to the target, as `DefCollector` reports it.
+    def inferred_param_types(method_param_types, method_name, owner, kind)
+      RbsInfer::Inference::MethodKey.lookup(
+        method_param_types,
+        method_name,
+        owner: RbsInfer::Inference::MethodKey.qualify_owner(@target_class, owner),
+        kind: kind
+      ) || {}
+    end
 
     # `@x = value` evaluates to VALUE — that is what Ruby returns, whatever the
     # ivar was declared as — so the parameter answers when the ivar map cannot.

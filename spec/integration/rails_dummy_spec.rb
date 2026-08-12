@@ -583,6 +583,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # It also pins the formatting of a nested module — the blank between siblings and
   # between a module's mixins and its methods, which nothing else in the suite covers
   # because every other nested module is a single group.
+  #
+  # And it pins the two-homonyms-in-one-target case (felixefelip/rbs_infer#215):
+  # `Foo#bazingado` and `Baz.bazingado` are two methods of one name inside one emitted
+  # block, the call site reaches the singleton, and only the singleton's line moves.
   it "example23" do
     name = "models/example23"
     rbs = RbsInfer::Analyzer.new(

@@ -1,6 +1,6 @@
 class IncludedHook
   module Hookable
-    def self.included: (untyped base) -> untyped
+    def self.included: (Module base) -> Symbol
 
     def from_hook: () -> String
     def slot: () -> untyped

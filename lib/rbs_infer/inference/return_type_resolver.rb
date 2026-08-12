@@ -309,8 +309,15 @@ module RbsInfer::Inference
       singleton_type_sets = Hash.new { |h, k| h[k] = IvarTypeSet.new }
 
       collector.defs.each do |defn|
-        param_types = method_param_types[defn.name.to_s] || {}
         singleton = collector.class_method?(defn)
+        # Keyed by the method's identity, not its name — see MethodKey
+        # (felixefelip/rbs_infer#215).
+        param_types = RbsInfer::Inference::MethodKey.lookup(
+          method_param_types,
+          defn.name.to_s,
+          owner: RbsInfer::Inference::MethodKey.qualify_owner(@target_class, collector.owner_of(defn)),
+          kind: singleton ? :class_method : :method
+        ) || {}
         target = singleton ? singleton_type_sets : fallback_type_sets
         skip_names = singleton ? singleton_attr_names : instance_attr_names
         collect_ivar_writes(defn, known_return_types, target, skip_names, param_types: param_types)

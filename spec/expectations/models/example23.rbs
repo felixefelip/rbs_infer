@@ -7,7 +7,7 @@ class Example23
   module Baz
     extend ::Example23::Foo
 
-    def self.bazingado: (untyped base_foo) -> untyped
+    def self.bazingado: ((singleton(Example23::Bar) | singleton(Example23::Baz)) base_foo) -> untyped
   end
 end
 
@@ -15,6 +15,6 @@ class Example23
   class Bar
     extend ::Example23::Foo
 
-    def self.log_something: (untyped message) -> nil
+    def self.log_something: (String message) -> String
   end
 end

@@ -151,7 +151,8 @@ module RbsInfer::Signatures
         # Param types inferred from call-sites also apply to singletons
         # (`Current.user = x` → `def self.user=: (User? value)`) —
         # felixefelip/rbs_infer#19.
-        sig = apply_inferred_param_types(sig, method_param_types[member.name]) if method_param_types[member.name]
+        inferred = inferred_param_types(member, method_param_types)
+        sig = apply_inferred_param_types(sig, inferred) if inferred
         out << "#{indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
       end
       members.select { |m| m.kind == :singleton_alias && m.owner.nil? }.each do |a|
@@ -239,6 +240,22 @@ module RbsInfer::Signatures
       end
     end
 
+    # What the call sites inferred for THIS member's parameters, or nil.
+    #
+    # Looked up by the member's identity (owner, kind, name), not by its name:
+    # a target that hosts nested modules can hold two methods with one name —
+    # `Foo#bazingado` and `Baz.bazingado` — and only the owner-matched call
+    # sites belong to each. Name alone wrote one homonym's type onto both
+    # (felixefelip/rbs_infer#215).
+    def inferred_param_types(member, method_param_types)
+      RbsInfer::Inference::MethodKey.lookup(
+        method_param_types,
+        member.name,
+        owner: RbsInfer::Inference::MethodKey.qualify_owner(@target_class, member.owner),
+        kind: member.kind
+      )
+    end
+
     # Renders a single value member (method / attr_*) as one RBS line, or
     # nil for other kinds. Shared between the class body and nested-module
     # emission (felixefelip/rbs_infer#22).
@@ -248,8 +265,8 @@ module RbsInfer::Signatures
         sig = member.signature
         if member.name == "initialize" && !init_arg_types.empty?
           sig = apply_inferred_init_types(sig, init_arg_types, optional_params)
-        elsif method_param_types[member.name]
-          sig = apply_inferred_param_types(sig, method_param_types[member.name])
+        elsif (inferred = inferred_param_types(member, method_param_types))
+          sig = apply_inferred_param_types(sig, inferred)
         end
         rendered = RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)
         # RBS's *overloading* form: this signature goes AHEAD of the ones something else
@@ -303,7 +320,8 @@ module RbsInfer::Signatures
           # a nested module's `def self.x` carrying the raw structural signature
           # even once its call sites had been read (felixefelip/rbs_infer#159).
           sig = m.signature
-          sig = apply_inferred_param_types(sig, method_param_types[m.name]) if method_param_types[m.name]
+          inferred = inferred_param_types(m, method_param_types)
+          sig = apply_inferred_param_types(sig, inferred) if inferred
           "#{inner_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
         end
         class_level += mod_members.select { |m| m.kind == :singleton_alias }.map do |a|

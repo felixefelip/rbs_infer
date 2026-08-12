@@ -306,17 +306,28 @@ module RbsInfer::Inference
       end
     end
 
-    # `{ "deny" => "Example19::Responder" }` for the target's methods that live in
-    # a nested MODULE. Such a module is emitted inside the target's block rather
-    # than as a target of its own (felixefelip/rbs_infer#22), so its call sites
-    # were matched against the wrong name and its parameters stayed `untyped`
+    # `{ "deny" => [["Example19::Responder", :class_method]] }` for the target's
+    # methods that live in a nested MODULE. Such a module is emitted inside the
+    # target's block rather than as a target of its own
+    # (felixefelip/rbs_infer#22), so its call sites were matched against the
+    # wrong name and its parameters stayed `untyped`
     # (felixefelip/rbs_infer#159).
+    #
+    # EVERY owner of the name, with its kind — not the first one. Under a
+    # namespace wrapper the members of every nested module land in the same
+    # table, and a name two of them declare is the normal case, not the exotic
+    # one: `Example23` holds `Foo#bazingado` and `Baz.bazingado`. Keeping only
+    # the first left `Foo` answering for a call the singleton makes, so the
+    # matcher compared the receiver against the wrong owner and dropped the call
+    # site (felixefelip/rbs_infer#215).
     def nested_method_owners(members)
       members.each_with_object({}) do |member, owners|
         next unless [:method, :class_method].include?(member.kind)
         next if member.owner.nil? || member.owner.empty?
 
-        owners[member.name] ||= "#{@target_class}::#{member.owner}"
+        entry = [RbsInfer::Inference::MethodKey.qualify_owner(@target_class, member.owner), member.kind]
+        entries = (owners[member.name] ||= [])
+        entries << entry unless entries.include?(entry)
       end
     end
 
@@ -330,7 +341,12 @@ module RbsInfer::Inference
         next unless [:method, :class_method].include?(member.kind)
         next if member.param_nil_defaults.nil? || member.param_nil_defaults.empty?
 
-        types = inferred[member.name] or next
+        types = RbsInfer::Inference::MethodKey.lookup(
+          inferred,
+          member.name,
+          owner: RbsInfer::Inference::MethodKey.qualify_owner(@target_class, member.owner),
+          kind: member.kind
+        ) or next
         member.param_nil_defaults.each do |param_name|
           current = types[param_name]
           next if current.nil? || current == "untyped"
