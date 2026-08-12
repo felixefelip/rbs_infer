@@ -7,12 +7,20 @@ class Example23
   module Baz
     extend ::Example23::Foo
 
-    def self.bazingado: (singleton(Example23::Bar) base_foo) -> String
+    def self.bazingado: ((singleton(Example23::Bar) | singleton(Example23::BarOther)) base_foo) -> String
   end
 end
 
 class Example23
   class Bar
+    extend ::Example23::Foo
+
+    def self.log_something: (String message) -> String
+  end
+end
+
+class Example23
+  class BarOther
     extend ::Example23::Foo
 
     def self.log_something: (String message) -> String

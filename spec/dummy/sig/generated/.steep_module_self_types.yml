@@ -47,9 +47,10 @@ app/models/example23.rb:
   modules:
   - anchor: Foo
     annotations:
-    - "# @type instance: (singleton(Example23::Bar)) | (singleton(Example23::Baz))"
+    - "# @type instance: (singleton(Example23::Bar)) | (singleton(Example23::BarOther))
+      | (singleton(Example23::Baz))"
     defs:
-      bazinga: singleton(Example23::Bar)
+      bazinga: singleton(Example23::Bar) | singleton(Example23::BarOther)
 app/models/example3.rb:
   modules:
   - anchor: GeneratedAttributes

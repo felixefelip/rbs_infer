@@ -86,6 +86,24 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
         expect(entry["defs"]).to eq("stamp" => "singleton(Wrap::Bar)")
       end
 
+      # felixefelip/steep#141's placement feeds this straight into
+      # `AnnotationParser`, which re-reads the parsed node's own location and
+      # demands it be byte-for-byte the string given. RBS drops a redundant
+      # outer parenthesis from that location, so `(A | B)` — which RBS itself
+      # reads happily — is `Ruby::AnnotationSyntaxError` in the ANNOTATED file.
+      # Two invoking hosts is what first produces a union here.
+      it "writes the union in the one spelling an annotation accepts" do
+        entry = entry_with(
+          narrower_answering("stamp" => "(singleton(Wrap::Bar) | singleton(Wrap::Other))")
+        )
+
+        expect(entry["defs"]).to eq("stamp" => "singleton(Wrap::Bar) | singleton(Wrap::Other)")
+      end
+
+      it "omits a self type RBS cannot read at all" do
+        expect(entry_with(narrower_answering("stamp" => "not a type ("))).not_to have_key("defs")
+      end
+
       it "omits the key entirely when nothing narrows" do
         expect(entry_with(narrower_answering({}))).not_to have_key("defs")
       end
