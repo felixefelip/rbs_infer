@@ -229,10 +229,24 @@ module RbsInfer::Inference
         method_name = node.name.to_s
         if @target_methods.key?(method_name)
           receiver_type = resolve_receiver_type(node.receiver)
-          if receiver_type && (match_class?(receiver_type) || owner_match?(receiver_type, method_name) ||
-                               ancestry_match?(receiver_type, method_name))
+          # The three matchers in their historical order — the two string
+          # comparisons before the one that consults the RBS environment. Only
+          # the owner match knows the call reaches something other than the
+          # target's own method, so only it qualifies the key it files under.
+          key =
+            if receiver_type.nil?
+              nil
+            elsif match_class?(receiver_type)
+              method_name
+            elsif (owner_key = owner_match_key(receiver_type, method_name))
+              owner_key
+            elsif ancestry_match?(receiver_type, method_name)
+              method_name
+            end
+
+          if key
             args = extract_cross_class_args(node, @target_methods[method_name])
-            @method_call_usages[method_name] << args unless args.empty?
+            @method_call_usages[key] << args unless args.empty?
           end
         end
       end
@@ -424,36 +438,53 @@ module RbsInfer::Inference
       end
     end
 
-    # A relative receiver spelling (`Foo`, `Bar::Baz`) matches a target whose
-    # full name ends with it (`Email` == `Academico::Aluno::Email`) — the
-    # whole-program unique-simple-name assumption the analyzer relies on when
-    # the receiver isn't fully qualified.
-    #
-    # The one exception: two classes sharing a simple name must not be
-    # conflated. A bare `Foo` written *inside* `class Example3` is
-    # `Example3::Foo` — Ruby resolves it against the lexical nesting — so it
-    # must not match target `Example2::Foo`. We can prove this soundly whenever
-    # the file being scanned itself defines the class the spelling resolves to:
-    # if `Foo` resolves to `Example3::Foo` (a class defined in this file) under
-    # the current nesting, it is that class, not the same-named target
-    # elsewhere. Absent such a local definition we keep the unique-name
-    # assumption (cross-file), which existing behaviour depends on.
-    # `Responder.deny(self, "denied")` where `deny` belongs to
-    # `Example19::Responder`, a nested MODULE. Such a module is emitted inside
-    # its enclosing target's block rather than as a target of its own
-    # (felixefelip/rbs_infer#22), so nothing ever asked about its call sites and
-    # its parameters stayed `untyped` — while a nested CLASS three lines away,
-    # being a target, had everything inferred.
+    # The call the two matchers above cannot see: `Responder.deny(self, "denied")`
+    # where `deny` belongs to `Example19::Responder`, a nested MODULE. Such a
+    # module is emitted inside its enclosing target's block rather than as a
+    # target of its own (felixefelip/rbs_infer#22), so nothing ever asked about
+    # its call sites and its parameters stayed `untyped` — while a nested CLASS
+    # three lines away, being a target, had everything inferred.
     #
     # The receiver is matched against the OWNER here, not the enclosing target,
     # and only for a method that owner actually has.
-    def owner_match?(receiver_type, method_name)
-      owner = @method_owners[method_name] or return false
+    #
+    # Returns the `MethodKey` of the owner's method the receiver reaches, or nil.
+    # WHICH owner matched is the answer, not just whether one did: the usages are
+    # filed under that key so a sibling homonym does not inherit the type
+    # (felixefelip/rbs_infer#215).
+    def owner_match_key(receiver_type, method_name)
+      entries = @method_owners[method_name]
+      return nil if entries.nil? || entries.empty?
 
-      receiver_components(receiver_type).any? do |component|
-        normalized = component.sub(/\A::/, "")
-        normalized == owner || relative_receiver_matches_target?(normalized, owner)
+      receiver_components(receiver_type).each do |component|
+        singleton = singleton_receiver(component)
+        normalized = (singleton || component).sub(/\A::/, "")
+
+        entries.each do |owner, kind|
+          # `singleton(X)` is the one receiver spelling that says which SIDE of
+          # the owner is being called: it is X's singleton, so it reaches X's
+          # `def self.`, and reaches an instance method of a module X extends
+          # only through the ancestry — which `ancestry_match?` answers off the
+          # RBS, and which loses to a `def self.` of the same name anyway. A
+          # bare `X` says nothing: `resolve_receiver_type` returns the same
+          # string for a constant receiver (`Responder.deny`, a singleton call)
+          # and for a value of type X (an instance call), so both kinds stay
+          # eligible there.
+          next if singleton && kind != :class_method
+          next unless normalized == owner || relative_receiver_matches_target?(normalized, owner)
+
+          return RbsInfer::Inference::MethodKey.for(method_name, owner: owner, kind: kind)
+        end
       end
+
+      nil
+    end
+
+    # `"singleton(Example23::Baz)"` → `"Example23::Baz"`; nil for anything else.
+    # `receiver_components` deliberately keeps a singleton type whole (it is one
+    # nominal type, not a decomposable union), so the unwrapping happens here.
+    def singleton_receiver(component)
+      component[/\Asingleton\((.+)\)\z/, 1]
     end
 
     # Does the receiver reach the target's method through its ANCESTRY — a
@@ -497,6 +528,20 @@ module RbsInfer::Inference
       @rbs_definition_resolver ||= RbsInfer::Signatures::RbsDefinitionResolver.new
     end
 
+    # A relative receiver spelling (`Foo`, `Bar::Baz`) matches a target whose
+    # full name ends with it (`Email` == `Academico::Aluno::Email`) — the
+    # whole-program unique-simple-name assumption the analyzer relies on when
+    # the receiver isn't fully qualified.
+    #
+    # The one exception: two classes sharing a simple name must not be
+    # conflated. A bare `Foo` written *inside* `class Example3` is
+    # `Example3::Foo` — Ruby resolves it against the lexical nesting — so it
+    # must not match target `Example2::Foo`. We can prove this soundly whenever
+    # the file being scanned itself defines the class the spelling resolves to:
+    # if `Foo` resolves to `Example3::Foo` (a class defined in this file) under
+    # the current nesting, it is that class, not the same-named target
+    # elsewhere. Absent such a local definition we keep the unique-name
+    # assumption (cross-file), which existing behaviour depends on.
     def relative_receiver_matches_target?(relative_name, target)
       return false unless target.end_with?("::#{relative_name}")
       resolved = resolve_relative_in_file(relative_name)
