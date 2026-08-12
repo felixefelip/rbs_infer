@@ -12,11 +12,13 @@
 # `Baz.bazingado` is `singleton(Bar)`. With that, `base_foo.log_something` resolves and
 # the whole chain closes — both return types follow.
 #
-# What #221 is about lives here too: rbs_infer knows the `self` of `Foo`'s instance
-# methods (`ModuleSelfTypeAnnotator` injects it) while Steep does not, because the
-# annotator writes the self-type line from the `include` hosts only and nobody includes
-# `Foo`. Whether that shows up as an error depends on what the parameter ends up
-# demanding, which is why it is a separate issue from the narrowing.
+# And the same narrowing reaches the checker (felixefelip/rbs_infer#221), which it has
+# to or the two halves disagree: rbs_infer would type the call site with `singleton(Bar)`
+# while Steep still read `bazinga`'s own `self` as the union, and the body could not pass
+# its `self` to the parameter it had just typed. One line per module cannot say it —
+# `bazinga` narrows, `bazingado` does not (nobody calls it) — so the sidecar carries a
+# `defs` entry and the annotation rides `bazinga`'s signature line. This file type-checks
+# with no baseline entry; both of the ones it used to have are gone.
 class Example23
   module Foo
     def bazinga(module_included)

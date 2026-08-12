@@ -33,9 +33,12 @@ module RbsInfer
         # @param module_name [String] the real FQN from the AST (e.g. "Search::Record::SQLite")
         # @param source [String] the file's source (for concern detection)
         # @param mixin_index [MixinIndex, nil] the `include`s written in the sources
-        # @return [Hash, nil] `{ "anchor" => leaf, "annotations" => [lines] }`, or
-        #   nil when nothing says what the module is mixed into.
-        def entry_for(path:, module_name:, source:, mixin_index: nil)
+        # @param invoker_self_types [InvokerSelfTypes, nil] narrows the module-wide
+        #   answer to the hosts that call each method; omitted, no `defs` is emitted
+        # @return [Hash, nil] `{ "anchor" => leaf, "annotations" => [lines] }` plus
+        #   `"defs" => { method => type }` where a method narrows, or nil when
+        #   nothing says what the module is mixed into.
+        def entry_for(path:, module_name:, source:, mixin_index: nil, invoker_self_types: nil)
           return nil if module_name.nil? || module_name.empty?
 
           hosts = hosts_for(path, module_name, mixin_index)
@@ -44,8 +47,63 @@ module RbsInfer
 
           anchor = module_name.split("::").last
           is_concern = source.include?("extend ActiveSupport::Concern")
+          instance = instance_type(module_name, hosts, extenders)
 
-          { "anchor" => anchor, "annotations" => annotations(module_name, hosts, extenders, is_concern) }
+          entry = { "anchor" => anchor, "annotations" => annotations(instance, module_name, hosts, is_concern) }
+          defs = narrowed_defs(anchor, source, instance, invoker_self_types)
+          entry["defs"] = defs if defs.any?
+          entry
+        end
+
+        # `{ "bazinga" => "singleton(::Example23::Bar)" }` — the methods of this
+        # module whose `self` is narrower than the module's own.
+        #
+        # The module-wide line answers "what may `self` be anywhere in here",
+        # which is the union over every host. A method only one host ever calls
+        # runs with that one, and `InvokerSelfTypes` (felixefelip/rbs_infer#222)
+        # already reads that off the call sites — it is what types the ARGUMENT
+        # such a method passes. Emitting it here is what makes the two agree:
+        # without it the body cannot pass its own `self` to a parameter typed
+        # from that very narrowing (felixefelip/rbs_infer#221).
+        #
+        # Only the methods that actually narrow, so a module whose `self` is one
+        # host, or whose methods nobody calls, writes nothing new.
+        def narrowed_defs(anchor, source, instance, invoker_self_types)
+          return {} if invoker_self_types.nil?
+
+          declared = "(#{instance})"
+          instance_method_names(anchor, source).each_with_object({}) do |name, acc|
+            narrowed = invoker_self_types.narrow(method_name: name, declared: declared)
+            acc[name] = narrowed unless narrowed == declared
+          end
+        end
+
+        # The instance methods the module named `anchor` declares directly. A
+        # `def self.` is excluded for the same reason Steep's placement skips
+        # it: its `self` is the module object, which no invoker narrows.
+        def instance_method_names(anchor, source)
+          node = find_scope(Prism.parse(source).value, anchor)
+          body = node&.body
+          return [] unless body.is_a?(Prism::StatementsNode)
+
+          body.body.filter_map do |stmt|
+            stmt.name.to_s if stmt.is_a?(Prism::DefNode) && stmt.receiver.nil?
+          end
+        end
+
+        def find_scope(node, anchor)
+          return nil unless node.is_a?(Prism::Node)
+
+          if (node.is_a?(Prism::ModuleNode) || node.is_a?(Prism::ClassNode)) &&
+             node.constant_path.respond_to?(:name) && node.constant_path.name.to_s == anchor
+            return node
+          end
+
+          node.compact_child_nodes.each do |child|
+            found = find_scope(child, anchor)
+            return found if found
+          end
+          nil
         end
 
         # Every class a module is mixed into by `include`.
@@ -94,10 +152,13 @@ module RbsInfer
         # (`Card & Card::Entropic`), an extended one's runs on the host's class
         # object (`singleton(Bar)`) — no intersection with the module, because
         # the RBS reopen already writes `extend ::Foo` on that singleton.
-        def annotations(module_name, hosts, extenders, is_concern)
-          instances = hosts.map { |host| "#{host} & #{module_name}" } +
-                      extenders.map { |extender| "singleton(#{extender})" }
-          instance = "# @type instance: #{union(instances)}"
+        def instance_type(module_name, hosts, extenders)
+          union(hosts.map { |host| "#{host} & #{module_name}" } +
+                extenders.map { |extender| "singleton(#{extender})" })
+        end
+
+        def annotations(instance_type, module_name, hosts, is_concern)
+          instance = "# @type instance: #{instance_type}"
           return [instance] unless is_concern
 
           # Only the `include` hosts: the `self` of a module's SINGLETON methods

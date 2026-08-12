@@ -39,6 +39,79 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       expect(entry["annotations"]).to eq(["# @type instance: Post & Post::Taggable"])
     end
 
+    # felixefelip/rbs_infer#221. One annotation per module cannot answer a
+    # question whose answer varies by method, and it has to: the same narrowing
+    # types the ARGUMENT such a method passes, so the body has to see it too or
+    # the two disagree.
+    describe "per-def self (defs)" do
+      TWO_EXTENDERS = <<~RUBY
+        class Wrap
+          module Foo
+            def stamp(value)
+              value
+            end
+
+            def other(value)
+              value
+            end
+          end
+        end
+      RUBY
+
+      # Narrows `stamp` and declines on anything else, which is what
+      # `InvokerSelfTypes` does for a method nobody calls.
+      def narrower_answering(answers)
+        double(:invoker_self_types).tap do |narrower|
+          allow(narrower).to receive(:narrow) do |method_name:, declared:|
+            answers.fetch(method_name, declared)
+          end
+        end
+      end
+
+      def entry_with(narrower)
+        described_class.entry_for(
+          path: "app/models/wrap.rb",
+          module_name: "Wrap::Foo",
+          source: TWO_EXTENDERS,
+          mixin_index: index_answering([], extenders: ["Wrap::Bar", "Wrap::Baz"]),
+          invoker_self_types: narrower
+        )
+      end
+
+      it "records only the methods whose self is narrower than the module's" do
+        entry = entry_with(narrower_answering("stamp" => "singleton(Wrap::Bar)"))
+
+        expect(entry["annotations"])
+          .to eq(["# @type instance: (singleton(Wrap::Bar)) | (singleton(Wrap::Baz))"])
+        expect(entry["defs"]).to eq("stamp" => "singleton(Wrap::Bar)")
+      end
+
+      it "omits the key entirely when nothing narrows" do
+        expect(entry_with(narrower_answering({}))).not_to have_key("defs")
+      end
+
+      # The plugin path (`self_type_entries`) has no narrower to pass, and the
+      # in-process pipeline does its own narrowing at read time anyway.
+      it "omits the key when no narrower is given" do
+        expect(entry_with(nil)).not_to have_key("defs")
+      end
+
+      # `def self.x`'s self is the module object — no invoker narrows it, and
+      # Steep's placement skips it for the same reason.
+      it "does not ask about a singleton method" do
+        narrower = narrower_answering("stamp" => "singleton(Wrap::Bar)")
+        entry = described_class.entry_for(
+          path: "app/models/wrap.rb",
+          module_name: "Wrap::Foo",
+          source: "class Wrap\n  module Foo\n    def self.stamp(v)\n      v\n    end\n  end\nend\n",
+          mixin_index: index_answering([], extenders: ["Wrap::Bar", "Wrap::Baz"]),
+          invoker_self_types: narrower
+        )
+
+        expect(entry).not_to have_key("defs")
+      end
+    end
+
     # There is no convention for a model concern any more: its host is always
     # written down, and guessing it from the namespace only ever spoke where the
     # guess was wrong — `Test::Filtrable` got `Test`, a directory, and the
