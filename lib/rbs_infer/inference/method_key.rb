@@ -50,6 +50,24 @@ module RbsInfer
         bare.merge(qualified)
       end
 
+      # The entries that HOLD this method's parameter types, in `lookup`'s order
+      # of precedence: the bare one first, the qualified one last.
+      #
+      # `lookup` answers a question — and when both entries exist it answers it
+      # by MERGING them into a new hash. Writing into what it returns writes
+      # into that copy, which is then dropped: the nil-default widening did
+      # exactly this, so a parameter typed from an owner-matched call site kept
+      # the type it had and the `= nil` in its own signature stopped being a
+      # legal argument (felixefelip/rbs_infer#235). A write has to reach the
+      # entry the value lives in, and which entry that is varies per parameter —
+      # `base_foo` under the qualified key, `message` under the bare one.
+      def self.tables(table, name, owner:, kind:)
+        key = self.for(name, owner: owner, kind: kind)
+        keys = key == name.to_s ? [name.to_s] : [name.to_s, key]
+
+        keys.filter_map { |k| table[k] }
+      end
+
       # `member.owner` is relative to the target (`"Baz"`); the table is keyed
       # by the full path.
       def self.qualify_owner(target_class, owner)

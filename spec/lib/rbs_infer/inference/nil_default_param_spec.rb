@@ -66,4 +66,71 @@ RSpec.describe "a parameter defaulting to nil" do
 
     expect(rbs).to include("def notify: (?untyped message) ->")
   end
+
+  # A method inside a nested module has its parameters filed under TWO keys: an
+  # owner-matched call site qualifies (`Wrap::Alpha#stamp`), and every other kind
+  # of evidence stays under the bare name. Reading the two MERGES them into a new
+  # hash, and the widening was written into that copy — dropped with it. Both
+  # parameters below default to nil, both got a type, and neither widened
+  # (felixefelip/rbs_infer#235).
+  #
+  # Which is why the flat cases above never showed it: a method with only one
+  # entry is looked up and mutated in place.
+  describe "on a method whose types are split across a qualified and a bare key" do
+    around do |ex|
+      Dir.mktmpdir { |dir| Dir.chdir(dir) { ex.run } }
+    end
+    before { RbsInfer::Signatures::RbsTypeLookup.reset! }
+
+    def write(path, content)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, content)
+      path
+    end
+
+    it "widens the parameter in each key that holds one" do
+      # `message` comes from the bare call in `Beta`'s body, `value` from the
+      # call whose receiver names `Beta` — which reaches `Alpha#stamp` through
+      # the extend, so it is filed under the owner.
+      target = write("app/wrap.rb", <<~RUBY)
+        class Wrap
+          module Alpha
+            def stamp(value = nil, message: nil)
+              [value, message]
+            end
+          end
+
+          module Beta
+            extend Wrap::Alpha
+
+            stamp(message: "hi")
+          end
+        end
+      RUBY
+      write("app/caller.rb", <<~RUBY)
+        class Caller
+          def run
+            klass = Wrap::Beta
+            klass.stamp("hi")
+          end
+        end
+      RUBY
+      # The previous pass's output, which is what types the caller's local.
+      write("sig/generated/wrap.rbs", <<~RBS)
+        class Wrap
+          module Alpha
+            def stamp: (?untyped value, ?message: untyped) -> untyped
+          end
+
+          module Beta
+            extend ::Wrap::Alpha
+          end
+        end
+      RBS
+
+      rbs = RbsInfer::Analyzer.new(target_class: "Wrap", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
+
+      expect(rbs).to include("def stamp: (?String? value, ?message: String?) ->")
+    end
+  end
 end
