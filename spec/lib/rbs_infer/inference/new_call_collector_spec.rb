@@ -28,12 +28,24 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     found
   end
 
-  # Test-only builder. `module_self_types:` is REQUIRED in production (a caller
-  # that forgets it types every `self` inside a concern `untyped` — see
-  # docs/engineering/required-threaded-deps.md), and hardly an example here is
-  # about that map; the ones that are pass their own.
+  # Test-only builder. `module_self_types:` and `invoker_self_types:` are both
+  # REQUIRED in production (a caller that forgets the first types every `self`
+  # inside a concern `untyped`; one that forgets the second cannot narrow it —
+  # see docs/engineering/required-threaded-deps.md), and hardly an example here
+  # is about either; the ones that are pass their own.
+  #
+  # The narrower is the real one over an empty corpus rather than a stub: with
+  # no files to read it finds no call sites and declines, which is exactly "do
+  # not narrow" — and it stays honest if the class changes.
   def build_collector(**kwargs)
-    described_class.new(module_self_types: {}, **kwargs)
+    described_class.new(module_self_types: {}, invoker_self_types: null_invoker_self_types, **kwargs)
+  end
+
+  def null_invoker_self_types
+    @null_invoker_self_types ||= RbsInfer::Inference::InvokerSelfTypes.new(
+      source_index: RbsInfer::Project::SourceIndex.new([]),
+      parse_cache: RbsInfer::Project::ParseCache.new
+    )
   end
 
   def collect_usages(source, target_class:, method_return_types: {}, local_var_types: {})
@@ -163,7 +175,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
     with_temp_files(files) do |dir, paths|
       Dir.chdir(dir) do
-        resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver, mixin_index: RbsInfer::Project::MixinIndex.new(paths))
+        resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver, mixin_index: RbsInfer::Project::MixinIndex.new(paths), invoker_self_types: null_invoker_self_types)
         source = File.read(paths.last)
         result = Prism.parse(source)
         visitor = build_collector(
@@ -594,7 +606,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
       with_temp_files(files) do |dir, paths|
         Dir.chdir(dir) do
-          resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver, mixin_index: RbsInfer::Project::MixinIndex.new(paths))
+          resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver, mixin_index: RbsInfer::Project::MixinIndex.new(paths), invoker_self_types: null_invoker_self_types)
           source = File.read(File.join(dir, "caller.rb"))
           result = Prism.parse(source)
           visitor = build_collector(

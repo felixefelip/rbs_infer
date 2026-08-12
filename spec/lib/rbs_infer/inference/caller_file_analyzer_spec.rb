@@ -12,7 +12,11 @@ RSpec.describe RbsInfer::Inference::CallerFileAnalyzer do
       target_class: "Foo",
       method_type_resolver: nil,
       target_file: "app/models/foo.rb",
-      mixin_index: RbsInfer::Project::MixinIndex.new([])
+      mixin_index: RbsInfer::Project::MixinIndex.new([]),
+      invoker_self_types: RbsInfer::Inference::InvokerSelfTypes.new(
+        source_index: RbsInfer::Project::SourceIndex.new([]),
+        parse_cache: RbsInfer::Project::ParseCache.new
+      )
     )
   end
 

@@ -22,11 +22,15 @@ module RbsInfer::Signatures
     # parameter it feeds goes untyped with it, and the class's contracts stop
     # being inferrable. Passed in rather than built here, because building one is
     # a full sweep of the project's files and the Analyzer already has it.
-    def initialize(source_files, constant_resolver:, mixin_index:, source_index: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil)
+    # invoker_self_types: required for the same reason and on the same path — it
+    # is what narrows that module `self` from every host to the ones that call
+    # the method being read (felixefelip/rbs_infer#222).
+    def initialize(source_files, constant_resolver:, mixin_index:, invoker_self_types:, source_index: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil)
       @source_files = source_files
       @source_index = source_index
       @constant_resolver = constant_resolver
       @mixin_index = mixin_index
+      @invoker_self_types = invoker_self_types
       @parse_cache = parse_cache || RbsInfer::Project::ParseCache.new
       @file_index = file_index || RbsInfer::Project::FileIndex.new(source_files)
       @caller_file_cache = caller_file_cache || RbsInfer::Project::CallerFileCache.new(@parse_cache)
@@ -295,7 +299,8 @@ module RbsInfer::Signatures
           # type via the loaded RBS env, not a bare name (#46, #56).
           constant_arg_resolver: @constant_resolver,
           defined_class_names: defined_names,
-          module_self_types: module_self_types_for(file, entry, defined_names)
+          module_self_types: module_self_types_for(file, entry, defined_names),
+          invoker_self_types: @invoker_self_types
         )
         entry.result.value.accept(visitor)
         all_usages.concat(visitor.usages)
@@ -511,7 +516,8 @@ module RbsInfer::Signatures
           # type via the loaded RBS env, not a bare name (#46, #56).
           constant_arg_resolver: @constant_resolver,
           defined_class_names: defined_names,
-          module_self_types: module_self_types_for(file, entry, defined_names)
+          module_self_types: module_self_types_for(file, entry, defined_names),
+          invoker_self_types: @invoker_self_types
         )
         entry.result.value.accept(visitor)
 

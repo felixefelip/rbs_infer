@@ -57,6 +57,7 @@ module RbsInfer::Project
       @index = Hash.new { |h, k| h[k] = [] }
       @call_index = Hash.new { |h, k| h[k] = [] }
       @bare_call_index = {}
+      @mention_index = {}
       source_files.each do |file|
         begin
           content = File.read(file)
@@ -135,6 +136,33 @@ module RbsInfer::Project
     def files_with_bare_call(method_name)
       @bare_call_index[method_name] ||= begin
         pattern = BARE_CALL_AT.call(method_name)
+        @source_files.select do |file|
+          content = File.read(file)
+          content.match?(pattern)
+        rescue Errno::ENOENT, Errno::EACCES
+          false
+        end.freeze
+      end
+    end
+
+    # Files whose text contains `method_name` as a word, in any position.
+    #
+    # A superset of the three above, and the only one of the four safe to read
+    # as "these are ALL the files that could call it". The other three are
+    # CANDIDATE filters, tuned to over-approximate cheaply for a search that a
+    # later resolution step filters: `files_calling` matches `.name` across a
+    # newline, so a comment ending in a full stop above a bare call registers as
+    # a receiver call; `files_with_bare_call` only matches at the start of a
+    # line, so `x = name(1)` does not register at all. Over-approximating is
+    # harmless when the answer is "look here too" and wrong when the answer is
+    # "there is nothing anywhere else", which is what a narrowing needs
+    # (felixefelip/rbs_infer#222).
+    #
+    # Scanned on demand and memoized, for the reason `files_with_bare_call`
+    # gives: an index over every identifier in the corpus is what it avoids.
+    def files_mentioning(method_name)
+      @mention_index[method_name] ||= begin
+        pattern = /\b#{Regexp.escape(method_name)}\b/
         @source_files.select do |file|
           content = File.read(file)
           content.match?(pattern)

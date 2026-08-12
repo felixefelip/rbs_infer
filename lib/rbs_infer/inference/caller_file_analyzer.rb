@@ -12,7 +12,7 @@ module RbsInfer::Inference
     # covered by `IntraClassCallAnalyzer`. Omitting it would double-count every same-file
     # self-call — the two paths resolve the receiver differently, so the parameter widens
     # into a union instead of failing loudly (required-threaded-deps).
-    def initialize(target_class:, method_type_resolver:, target_file:, mixin_index:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {})
+    def initialize(target_class:, method_type_resolver:, target_file:, mixin_index:, invoker_self_types:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {})
       @target_class = target_class
       @target_file = target_file
       @method_type_resolver = method_type_resolver
@@ -33,6 +33,11 @@ module RbsInfer::Inference
       # `untyped` while the other construction, wired, read the intersection
       # (felixefelip/rbs_infer#175).
       @mixin_index = mixin_index
+      # Which of those hosts actually CALLS the method being read, which is what
+      # turns the module's declared `self` into the one this call site has
+      # (felixefelip/rbs_infer#222). Required for the same reason as the index
+      # above: forgetting it silently widens a parameter instead of failing.
+      @invoker_self_types = invoker_self_types
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
       @method_block_returns = Hash.new { |h, k| h[k] = [] }
     end
@@ -173,6 +178,7 @@ module RbsInfer::Inference
         match_bare_calls: match_bare,
         self_types_by_method: self_types_by_method,
         module_self_types: module_self_types,
+        invoker_self_types: @invoker_self_types,
         established_ivars_by_method: established_ivars_by_method,
         argument_partitions_by_method: argument_partitions_by_method,
         constant_arg_resolver: constant_arg_resolver,
@@ -228,7 +234,8 @@ module RbsInfer::Inference
         defined_class_names: NewCallCollector.collect_defined_class_names(result.value),
         # A template declares no module either, so there is no module `self` to
         # resolve here — the empty map is the answer, not a missing wire.
-        module_self_types: {}
+        module_self_types: {},
+        invoker_self_types: @invoker_self_types
       )
       result.value.accept(visitor)
 
