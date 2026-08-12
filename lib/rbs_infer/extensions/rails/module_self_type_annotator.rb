@@ -52,7 +52,52 @@ module RbsInfer
           entry = { "anchor" => anchor, "annotations" => annotations(instance, module_name, hosts, is_concern) }
           defs = narrowed_defs(anchor, source, instance, invoker_self_types)
           entry["defs"] = defs if defs.any?
+          paths = declared_paths(anchor, source, instance, invoker_self_types)
+          entry["paths"] = paths if paths.any?
           entry
+        end
+
+        # `{ "bazinga" => [{ "when" => { param => type }, "self" => type }] }` —
+        # which `self` goes with which argument, call site by call site.
+        #
+        # The per-method `defs` above says what `self` may be anywhere in the
+        # method; this says which one goes with which path through it. Two
+        # parameters of one method travel together across its call sites and no
+        # RBS states that, so a call whose receiver is one of them is checked
+        # against every branch at once and demands a `self` that satisfies all
+        # of them — a type nothing is. felixefelip/steep#143 reads this and
+        # checks such a call one branch at a time instead.
+        #
+        # Written only where it says something the per-method answer does not:
+        # a method whose call sites all share one `self` is already covered.
+        def declared_paths(anchor, source, instance, invoker_self_types)
+          return {} if invoker_self_types.nil?
+
+          declared = "(#{instance})"
+          instance_methods(anchor, source).each_with_object({}) do |(name, params), acc|
+            next if params.empty?
+
+            entries = invoker_self_types.paths(method_name: name, declared: declared) or next
+            written = entries.filter_map { |args, self_type| path_entry(args, params, self_type) }
+            next unless written.size == entries.size
+
+            acc[name] = written
+          end
+        end
+
+        # One call site as the sidecar states it, or nil when it names an
+        # argument this method has no parameter for — a call passing more than
+        # the method takes cannot be what reached it.
+        def path_entry(args, params, self_type)
+          conditions = args.each_with_object({}) do |(index, type), acc|
+            name = params[index] or return nil
+            spelling = annotatable(type) or return nil
+            acc[name] = spelling
+          end
+          return nil if conditions.empty?
+
+          self_spelling = annotatable(self_type) or return nil
+          { "when" => conditions, "self" => self_spelling }
         end
 
         # `{ "bazinga" => "singleton(::Example23::Bar)" }` — the methods of this
@@ -111,13 +156,31 @@ module RbsInfer
         # `def self.` is excluded for the same reason Steep's placement skips
         # it: its `self` is the module object, which no invoker narrows.
         def instance_method_names(anchor, source)
+          instance_methods(anchor, source).map(&:first)
+        end
+
+        # `[[name, positional parameter names], ...]` for those methods. The
+        # parameters are what turns a call site's argument POSITIONS into the
+        # names the sidecar states a path in.
+        def instance_methods(anchor, source)
           node = find_scope(Prism.parse(source).value, anchor)
           body = node&.body
           return [] unless body.is_a?(Prism::StatementsNode)
 
           body.body.filter_map do |stmt|
-            stmt.name.to_s if stmt.is_a?(Prism::DefNode) && stmt.receiver.nil?
+            next unless stmt.is_a?(Prism::DefNode) && stmt.receiver.nil?
+
+            [stmt.name.to_s, positional_param_names(stmt)]
           end
+        end
+
+        def positional_param_names(node)
+          params = node.parameters or return []
+
+          names = []
+          params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
+          params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
+          names
         end
 
         def find_scope(node, anchor)
