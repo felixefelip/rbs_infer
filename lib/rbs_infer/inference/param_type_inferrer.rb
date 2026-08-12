@@ -344,17 +344,24 @@ module RbsInfer::Inference
         next unless [:method, :class_method].include?(member.kind)
         next if member.param_nil_defaults.nil? || member.param_nil_defaults.empty?
 
-        types = RbsInfer::Inference::MethodKey.lookup(
+        # Written through `tables`, not `lookup`: the parameters of one method
+        # can be spread across the bare and the qualified entry, and only the
+        # entry a parameter lives in can be widened (felixefelip/rbs_infer#235).
+        tables = RbsInfer::Inference::MethodKey.tables(
           inferred,
           member.name,
           owner: RbsInfer::Inference::MethodKey.qualify_owner(@target_class, member.owner),
           kind: member.kind
-        ) or next
-        member.param_nil_defaults.each do |param_name|
-          current = types[param_name]
-          next if current.nil? || current == "untyped"
+        )
+        next if tables.empty?
 
-          types[param_name] = RbsInfer::Signatures::RbsParserUtil.nilablize(current)
+        member.param_nil_defaults.each do |param_name|
+          tables.each do |types|
+            current = types[param_name]
+            next if current.nil? || current == "untyped"
+
+            types[param_name] = RbsInfer::Signatures::RbsParserUtil.nilablize(current)
+          end
         end
       end
     end
