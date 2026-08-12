@@ -1,0 +1,30 @@
+class Example25
+  module Foo
+    def bazinga: ((singleton(::Example25::Baz) | singleton(::Example25::BazOther)) module_included) -> untyped
+    def bazingado: (untyped base_foo) -> nil
+  end
+
+  module Baz
+    extend ::Example25::Foo
+  end
+
+  module BazOther
+    extend ::Example25::Foo
+
+    def self.bazingado: (untyped base_foo) -> untyped
+  end
+end
+
+class Example25
+  class Bar
+    extend ::Example25::Foo
+  end
+end
+
+class Example25
+  class BarOther
+    extend ::Example25::Foo
+
+    def self.log_something: (untyped message) -> untyped
+  end
+end
