@@ -20,10 +20,22 @@ module RbsInfer::Inference
   # - the method is called on a RECEIVER somewhere (`x.bazinga`). What `self`
   #   is inside the callee is then the receiver's type, which this walk does not
   #   resolve, so the picture is no longer whole.
-  # - a bare call sits somewhere whose `self` is not one of the declared
-  #   branches — including inside the module itself, where `self` IS the union.
+  # - a bare call sits in a MODULE's instance method and the module is not one
+  #   of the declared branches. `self` there is whoever mixes THAT module in —
+  #   a name this record does not carry — so the call cannot be placed. It
+  #   covers the module's own body, where `self` is the whole union, and a
+  #   sibling concern sharing a host.
   # - nothing calls it at all. An uncalled method says nothing about its `self`;
   #   narrowing to the empty set would be inventing a fact, not reading one.
+  #
+  # The observations are gathered by method NAME across the corpus, so most of
+  # them belong to other methods that happen to share it. Those are dropped, not
+  # counted and not a reason to decline: a bare call resolves in its caller's
+  # own ancestry, and the declaration already lists every class whose ancestry
+  # carries this module (`hosts_of`/`extenders_of` resolve through module hosts
+  # to the classes). A caller outside that list is calling something else. Two
+  # namespaces with the same method names used to blank each other's narrowing
+  # (felixefelip/rbs_infer#227).
   #
   # Whole-program by construction, which is the assumption the analyzer already
   # makes everywhere else: the call sites it can see are the call sites there
@@ -45,12 +57,19 @@ module RbsInfer::Inference
 
       observed = observed_selves(method_name)
       return declared if observed.nil? || observed.empty?
-      # A `self` outside the declared union means a call site this walk placed
-      # somewhere the declaration does not admit — the two disagree, so neither
-      # is trusted to subtract from the other.
-      return declared unless observed.subset?(branches.to_set)
 
-      kept = branches.select { |branch| observed.include?(branch) }
+      declared_branches = branches.to_set
+      invokers = observed.filter_map do |self_type, module_instance|
+        next self_type if declared_branches.include?(self_type)
+        # Outside the declaration and unplaceable: `self` is a host this record
+        # cannot name, and it might be one of ours.
+        return declared if module_instance
+
+        nil
+      end.to_set
+      return declared if invokers.empty?
+
+      kept = branches.select { |branch| invokers.include?(branch) }
       return declared if kept.size == branches.size
 
       parenthesize(kept)
@@ -108,7 +127,13 @@ module RbsInfer::Inference
     end
 
     # Walks a file for bare calls to one method and records the `self` each runs
-    # under. Returns nil if any of them cannot be placed.
+    # under, as `[self type, from a module's instance method?]`. Returns nil if
+    # any of them cannot be placed at all.
+    #
+    # The flag is what tells a caller that resolves in its own ancestry — a
+    # class, or a module's own singleton — from one whose `self` is somebody
+    # else at runtime. Only the first kind can be dismissed for not appearing in
+    # a declaration.
     class SelfContextCollector < Prism::Visitor
       def self.collect(root, method_name)
         collector = new(method_name)
@@ -126,11 +151,13 @@ module RbsInfer::Inference
         # nil in a class/module body, :instance in a `def x`, :singleton in a
         # `def self.x` or under `class << self`.
         @scope = nil
+        # Whether the innermost enclosing declaration is a `module`.
+        @module_scope = false
         super()
       end
 
-      def visit_class_node(node) = with_path(node) { super }
-      def visit_module_node(node) = with_path(node) { super }
+      def visit_class_node(node) = with_path(node, module_scope: false) { super }
+      def visit_module_node(node) = with_path(node, module_scope: true) { super }
 
       def visit_singleton_class_node(node)
         outer = @scope
@@ -162,19 +189,25 @@ module RbsInfer::Inference
 
         owner = @path.join("::")
         # A body and a `def self.` both run on the class object; an instance
-        # method runs on an instance.
-        @selves << (@scope == :instance ? owner : "singleton(#{owner})")
+        # method runs on an instance. A module's INSTANCE method is the one case
+        # where that instance is not the thing named here but whoever mixes it
+        # in, which is what the flag records.
+        instance = @scope == :instance
+        @selves << [instance ? owner : "singleton(#{owner})", instance && @module_scope]
       end
 
-      def with_path(node)
+      def with_path(node, module_scope:)
         name = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
         return yield if name.nil?
 
         @path.push(name)
-        outer = @scope
+        outer_scope = @scope
+        outer_module = @module_scope
         @scope = nil
+        @module_scope = module_scope
         yield
-        @scope = outer
+        @scope = outer_scope
+        @module_scope = outer_module
         @path.pop
       end
     end

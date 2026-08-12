@@ -1,0 +1,22 @@
+class Example24
+  module Foo
+    def bazinga: (singleton(::Example24::Baz) module_included) -> nil
+    def bazingado: (untyped base_foo) -> nil
+  end
+
+  module Baz
+    extend ::Example24::Foo
+  end
+end
+
+class Example24
+  class Bar
+    extend ::Example24::Foo
+  end
+end
+
+class Example24
+  class BarOther
+    extend ::Example24::Foo
+  end
+end
