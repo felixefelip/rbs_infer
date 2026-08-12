@@ -5,7 +5,6 @@ app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not
 app/models/example15.rb:25:25: [error] Type `(::Example15::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
 app/models/example21.rb:96:29: [error] Type `(::Example21::Ticket | nil)` does not have method `holder`
-app/models/example26.rb:28:32: [error] Cannot pass a value of type `self` as an argument of type `(singleton(::Example26::Bar) & singleton(::Example26::BarOther))`
 app/models/example3.rb:123:11: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:64:13: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:65:26: [error] Type `(::Example3::User | nil)` does not have method `name`

@@ -14,14 +14,18 @@
 # `def self.` — which is the second half of the same issue: one key per branch, not the
 # first that matches.
 #
-# What is RECORDED in the steep baseline is what neither the sidecar nor RBS can state.
-# rbs_infer reads the correlation and types each side by its own path; Steep checks the
-# call once, and for a union receiver it requires the argument to satisfy EVERY branch at
-# once — hence `singleton(Bar) & singleton(BarOther)`, a type nothing is. Its rule is
-# right for a fixed argument; `self` here is not fixed, it varies with the branch. Under
-# the declared surface of `bazinga` the two signatures really are contradictory, and only
-# the whole-program reading makes them true. Checking a union-receiver call per PATH is
-# what would close it — felixefelip/steep#143.
+# And the checker follows it, which took saying it somewhere RBS cannot. Checking the
+# call once, Steep merges the branches' method types and demands an argument that
+# satisfies EVERY branch — `singleton(Bar) & singleton(BarOther)`, a type nothing is.
+# That rule is right for a fixed argument, and `self` here is not fixed. So the sidecar
+# carries a `paths` entry naming which `self` goes with which argument, and
+# felixefelip/steep#143 checks such a call one branch at a time, each with its own
+# `self`. This file has no baseline entry: what used to be recorded there is now
+# verified.
+#
+# Example23 and Example24 get no `paths`, and should not: both of their invocations pass
+# the SAME constant, so the argument does not separate the call sites and the two selves
+# belong to one path rather than to two. Stating either would be picking one arbitrarily.
 class Example26
   module Foo
     def bazinga(module_included)

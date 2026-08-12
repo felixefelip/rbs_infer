@@ -60,10 +60,13 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
 
       # Narrows `stamp` and declines on anything else, which is what
       # `InvokerSelfTypes` does for a method nobody calls.
-      def narrower_answering(answers)
+      def narrower_answering(answers, paths: {})
         double(:invoker_self_types).tap do |narrower|
           allow(narrower).to receive(:narrow) do |method_name:, declared:|
             answers.fetch(method_name, declared)
+          end
+          allow(narrower).to receive(:paths) do |method_name:, declared:|
+            paths[method_name]
           end
         end
       end
@@ -79,7 +82,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       end
 
       it "records only the methods whose self is narrower than the module's" do
-        entry = entry_with(narrower_answering("stamp" => "singleton(Wrap::Bar)"))
+        entry = entry_with(narrower_answering({ "stamp" => "singleton(Wrap::Bar)" }))
 
         expect(entry["annotations"])
           .to eq(["# @type instance: (singleton(Wrap::Bar)) | (singleton(Wrap::Baz))"])
@@ -94,14 +97,58 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       # Two invoking hosts is what first produces a union here.
       it "writes the union in the one spelling an annotation accepts" do
         entry = entry_with(
-          narrower_answering("stamp" => "(singleton(Wrap::Bar) | singleton(Wrap::Other))")
+          narrower_answering({ "stamp" => "(singleton(Wrap::Bar) | singleton(Wrap::Other))" })
         )
 
         expect(entry["defs"]).to eq("stamp" => "singleton(Wrap::Bar) | singleton(Wrap::Other)")
       end
 
       it "omits a self type RBS cannot read at all" do
-        expect(entry_with(narrower_answering("stamp" => "not a type ("))).not_to have_key("defs")
+        expect(entry_with(narrower_answering({ "stamp" => "not a type (" }))).not_to have_key("defs")
+      end
+
+      # felixefelip/steep#143. The per-method answer says what `self` may be
+      # anywhere in the method; this says which one goes with which argument, so
+      # a call whose receiver is that argument can be checked one branch at a
+      # time instead of against all of them at once.
+      it "states which self goes with which argument" do
+        narrower = narrower_answering(
+          {},
+          paths: {
+            "stamp" => [
+              [{ 0 => "singleton(Wrap::Baz)" }, "singleton(Wrap::Bar)"],
+              [{ 0 => "singleton(Wrap::Other)" }, "singleton(Wrap::OtherHost)"]
+            ]
+          }
+        )
+
+        expect(entry_with(narrower)["paths"]).to eq(
+          "stamp" => [
+            { "when" => { "value" => "singleton(Wrap::Baz)" }, "self" => "singleton(Wrap::Bar)" },
+            { "when" => { "value" => "singleton(Wrap::Other)" }, "self" => "singleton(Wrap::OtherHost)" }
+          ]
+        )
+      end
+
+      it "omits the key when there is nothing to say" do
+        expect(entry_with(narrower_answering({}))).not_to have_key("paths")
+      end
+
+      # An argument position the method has no parameter for cannot be what
+      # reached it, so the whole method is left without paths rather than with
+      # a partial one.
+      it "omits the method when an argument names no parameter" do
+        narrower = narrower_answering(
+          {},
+          paths: {
+            "stamp" => [
+              [{ 0 => "singleton(Wrap::Baz)" }, "singleton(Wrap::Bar)"],
+              [{ 3 => "singleton(Wrap::Other)" }, "singleton(Wrap::OtherHost)"]
+            ]
+          }
+        )
+
+        expect(entry_with(narrower)).not_to have_key("paths")
       end
 
       it "omits the key entirely when nothing narrows" do
@@ -117,7 +164,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       # `def self.x`'s self is the module object — no invoker narrows it, and
       # Steep's placement skips it for the same reason.
       it "does not ask about a singleton method" do
-        narrower = narrower_answering("stamp" => "singleton(Wrap::Bar)")
+        narrower = narrower_answering({ "stamp" => "singleton(Wrap::Bar)" })
         entry = described_class.entry_for(
           path: "app/models/wrap.rb",
           module_name: "Wrap::Foo",

@@ -86,6 +86,49 @@ module RbsInfer::Inference
       parenthesize(kept)
     end
 
+    # `[[{ argument index => type }, self type], ...]` — one entry per call site
+    # that this module's declaration admits, or nil when there is nothing whole
+    # to say.
+    #
+    # Same reading `narrow` does, handed over instead of collapsed: `narrow`
+    # answers "what may `self` be here", and this answers "which `self` goes
+    # with which argument", which is the part no RBS can state and which the
+    # sidecar carries to the checker (felixefelip/steep#143).
+    #
+    # nil unless every call site is placeable, every one has readable arguments,
+    # and they do not all share one `self` — where they do, the per-method
+    # answer already says everything and a path would only repeat it.
+    def paths(method_name:, declared:)
+      branches = union_branches(declared).to_set
+      return nil if branches.size < 2
+
+      observed = observed_selves(method_name)
+      return nil if observed.nil? || observed.empty?
+
+      entries = observed.filter_map do |self_type, module_instance, args|
+        # Same reading `narrow` does: a caller outside the declaration is
+        # calling a homonym and is dropped, while a module's instance method
+        # outside it cannot be placed at all and stops the answer
+        # (felixefelip/rbs_infer#227).
+        next if !branches.include?(self_type) && !module_instance
+        return nil if module_instance
+        return nil if args.empty?
+
+        [args, self_type]
+      end
+      by_argument = entries.group_by(&:first)
+      # A path is a fact only when the argument SEPARATES the call sites. Two
+      # invocations passing the same thing with a different `self` are not two
+      # paths, they are one path with two selves — and stating either would be
+      # picking one arbitrarily. Example23 is exactly that: both of its
+      # invocations pass the same constant, so its `self` stays the per-method
+      # union and nothing is written here.
+      return nil if by_argument.size < 2
+      return nil if by_argument.any? { |_, group| group.map(&:last).uniq.size > 1 }
+
+      by_argument.map { |args, group| [args, group.first.last] }
+    end
+
     private
 
     # The call sites that could have produced `given`, or all of them when the
