@@ -95,7 +95,8 @@ module RbsInfer
         def self_types_for(rel, source, tree)
           RbsInfer::Inference::NewCallCollector.collect_defined_class_names(tree).sort.filter_map do |name|
             ModuleSelfTypeAnnotator.entry_for(path: rel, module_name: name, source: source,
-                                              mixin_index: mixin_index)
+                                              mixin_index: mixin_index,
+                                              invoker_self_types: invoker_self_types)
           end
         end
 
@@ -119,6 +120,17 @@ module RbsInfer
         # in-process annotation read one project and cannot disagree.
         def mixin_index
           @mixin_index ||= RbsInfer::Project::MixinIndex.new(source_files)
+        end
+
+        # Narrows a module method's `self` to the hosts that call it
+        # (felixefelip/rbs_infer#222), over the SAME files as the index above —
+        # this sidecar and the in-process annotation read one project and
+        # cannot disagree.
+        def invoker_self_types
+          @invoker_self_types ||= RbsInfer::Inference::InvokerSelfTypes.new(
+            source_index: RbsInfer::Project::SourceIndex.new(source_files),
+            parse_cache: RbsInfer::Project::ParseCache.new
+          )
         end
 
         # Exactly what the project tells Steep to check, `ignore`s included —
