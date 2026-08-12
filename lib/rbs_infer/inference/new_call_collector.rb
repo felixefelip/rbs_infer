@@ -241,8 +241,8 @@ module RbsInfer::Inference
               method_name
             elsif (owner_key = owner_match_key(receiver_type, method_name))
               owner_key
-            elsif ancestry_match?(receiver_type, method_name)
-              method_name
+            elsif (ancestry_key = ancestry_match_key(receiver_type, method_name))
+              ancestry_key
             end
 
           if key
@@ -516,13 +516,47 @@ module RbsInfer::Inference
     # same graph: `MixinIndex` records `include`/`prepend` and nothing else, so
     # a receiver that reaches the target by `extend` has no other oracle
     # (felixefelip/rbs_infer#208).
-    def ancestry_match?(receiver_type, method_name)
+    #
+    # Returns the `MethodKey` of the method the receiver reaches, or nil — the
+    # bare name when the ancestry lands on the target itself, the owner's key
+    # when it lands on one of the target's nested modules.
+    #
+    # That second case is the one `owner_match_key` deliberately leaves here: a
+    # `singleton(X)` receiver reaches a nested module's INSTANCE method only
+    # because X extends it, which is a fact of the ancestry and not of any name,
+    # so only the RBS can answer it. Answering it against the target alone left
+    # `Example24::Foo#bazingado` untyped — its one call site is
+    # `module_included.bazingado(self)` with `module_included` a
+    # `singleton(Example24::Baz)`, and `Baz` extends `Foo`
+    # (felixefelip/rbs_infer#229).
+    def ancestry_match_key(receiver_type, method_name)
       normalized_target = @target_class.sub(/\A::/, "")
 
-      receiver_components(receiver_type).any? do |component|
-        owner = rbs_definition_resolver.method_owner(component, method_name)
-        owner && owner.sub(/\A::/, "") == normalized_target
+      receiver_components(receiver_type).each do |component|
+        owner = rbs_definition_resolver.method_owner(component, method_name) or next
+
+        normalized_owner = owner.sub(/\A::/, "")
+        return method_name if normalized_owner == normalized_target
+
+        entry = nested_owner_entry(normalized_owner, method_name) or next
+        return RbsInfer::Inference::MethodKey.for(method_name, owner: entry[0], kind: entry[1])
       end
+
+      nil
+    end
+
+    # The target's nested owner the ancestry landed on, as `[owner, kind]`.
+    #
+    # The instance side wins a tie: reaching a nested module THROUGH the
+    # ancestry — `include` onto the instances, `extend` onto the singleton —
+    # always lands on its instance methods. Its `def self.` sits on the module's
+    # own singleton, which only a receiver naming the module reaches, and
+    # `owner_match_key` answers that one by name before this runs.
+    def nested_owner_entry(owner_name, method_name)
+      entries = @method_owners[method_name] or return nil
+
+      matching = entries.select { |owner, _| owner == owner_name }
+      matching.find { |_, kind| kind == :method } || matching.first
     end
 
     def rbs_definition_resolver

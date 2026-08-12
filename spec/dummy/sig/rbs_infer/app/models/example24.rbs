@@ -1,7 +1,7 @@
 class Example24
   module Foo
     def bazinga: (singleton(::Example24::Baz) module_included) -> nil
-    def bazingado: (untyped base_foo) -> nil
+    def bazingado: ((singleton(Example24::Bar) | singleton(Example24::BarOther)) base_foo) -> nil
   end
 
   module Baz
