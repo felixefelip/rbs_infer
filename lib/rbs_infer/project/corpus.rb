@@ -3,6 +3,7 @@ require_relative "source_index"
 require_relative "file_index"
 require_relative "caller_file_cache"
 require_relative "mixin_index"
+require_relative "../inference/invoker_self_types"
 
 module RbsInfer::Project
   # Everything about a project that a target class cannot change.
@@ -64,6 +65,17 @@ module RbsInfer::Project
     # should not pay for the walk, and `Analyzer` already treated it that way.
     def mixin_index
       @mixin_index ||= MixinIndex.new(@source_files, parse_cache: @parse_cache)
+    end
+
+    # Lazy for the same reason, and asked by little: only a module method with
+    # more than one possible `self` ever narrows, and the answer is memoized per
+    # method name for the whole run (felixefelip/rbs_infer#222). It sits here
+    # rather than in `Analyzer` so the memo, like the four indexes above,
+    # survives from one target to the next.
+    def invoker_self_types
+      @invoker_self_types ||= RbsInfer::Inference::InvokerSelfTypes.new(
+        source_index: @source_index, parse_cache: @parse_cache
+      )
     end
   end
 end

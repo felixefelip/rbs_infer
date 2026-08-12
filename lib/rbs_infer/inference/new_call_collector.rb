@@ -28,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types:, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types:, invoker_self_types:, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -76,6 +76,7 @@ module RbsInfer::Inference
       # the parameter `untyped` while the caller-file walk beside it, wired with
       # the same map, read `(Card & Card::Stallable)` (felixefelip/rbs_infer#175).
       @module_self_types = module_self_types
+      @invoker_self_types = invoker_self_types
       # `{ "set_post" => { "@post" => "(::Post & ::Post::Validated)" } }` — ivars a
       # self-method proves populated once it has run (postconditions sidecar). Applied
       # in source order by `visit_call_node`, so only call sites AFTER the establishing
@@ -845,8 +846,18 @@ module RbsInfer::Inference
 
     # The answer for the module being visited. An unnameable one (a dynamic
     # constant path) falls back to the name the file stands for.
+    #
+    # Narrowed to the hosts that actually call THIS method. The annotators state
+    # what `self` may be across the whole module — every class that includes it,
+    # every one that extends it — and that is the right answer for a
+    # declaration. As the type of an ARGUMENT it is too wide: `Foo#bazinga` is
+    # invoked from `Bar`'s body and nowhere else, so the `self` it passes on is
+    # `singleton(Bar)`, not the union with `Baz` (felixefelip/rbs_infer#222).
     def module_self_type
-      @module_self_types[@module_name_stack.last || @caller_class_name]
+      declared = @module_self_types[@module_name_stack.last || @caller_class_name]
+      return declared if declared.nil? || @current_method.nil?
+
+      @invoker_self_types.narrow(method_name: @current_method, declared: declared)
     end
 
     # Resolves a `self.<method>` against the refined `self` type when the

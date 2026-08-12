@@ -16,6 +16,10 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     described_class.new(
       source_files,
       mixin_index: RbsInfer::Project::MixinIndex.new(source_files),
+      invoker_self_types: RbsInfer::Inference::InvokerSelfTypes.new(
+        source_index: RbsInfer::Project::SourceIndex.new(source_files),
+        parse_cache: RbsInfer::Project::ParseCache.new
+      ),
       **kwargs
     )
   end

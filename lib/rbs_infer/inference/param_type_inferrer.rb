@@ -27,8 +27,8 @@ module RbsInfer::Inference
     # `extra_caller_sources` may legitimately be nil (not every project registers
     # one), but saying so is the caller's job.
     def initialize(target_file:, target_class:, source_files:, source_index:, method_type_resolver:, type_merger:,
-                   mixin_index:, extra_caller_sources:, steep_bridge: nil, parse_cache: nil, file_index: nil,
-                   caller_file_cache: nil)
+                   mixin_index:, invoker_self_types:, extra_caller_sources:, steep_bridge: nil, parse_cache: nil,
+                   file_index: nil, caller_file_cache: nil)
       @target_file = target_file
       @target_class = target_class
       @source_files = source_files
@@ -36,6 +36,7 @@ module RbsInfer::Inference
       @method_type_resolver = method_type_resolver
       @type_merger = type_merger
       @mixin_index = mixin_index
+      @invoker_self_types = invoker_self_types
       @extra_caller_sources = extra_caller_sources
       @steep_bridge = steep_bridge
       @parse_cache = parse_cache || RbsInfer::Project::ParseCache.new
@@ -169,7 +170,8 @@ module RbsInfer::Inference
         # — the ones worth collecting call-site blocks for.
         block_methods: members.select { |m| BlockSignatureResolver.untyped_block_return?(m) }.map(&:name).to_set,
         method_owners: nested_method_owners(members),
-        mixin_index: @mixin_index
+        mixin_index: @mixin_index,
+        invoker_self_types: @invoker_self_types
       )
 
       caller_files(target_methods, is_module: is_module) do |file, force_bare|
@@ -235,7 +237,8 @@ module RbsInfer::Inference
         init_positional_params: init_positional_params(parsed_target),
         target_methods: target_method_params(parsed_target),
         steep_bridge: @steep_bridge,
-        mixin_index: @mixin_index
+        mixin_index: @mixin_index,
+        invoker_self_types: @invoker_self_types
       )
       @source_index.files_referencing(@target_class).flat_map { |file| analyzer.analyze(file) }
     end

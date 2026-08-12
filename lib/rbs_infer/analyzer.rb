@@ -672,7 +672,7 @@ module RbsInfer
   # e variáveis locais com mesmo nome de um attr_accessor.
 
   def method_type_resolver
-    @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache, constant_resolver: env_only_constant_resolver, mixin_index: mixin_index)
+    @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache, constant_resolver: env_only_constant_resolver, mixin_index: mixin_index, invoker_self_types: invoker_self_types)
   end
 
   # Shared by both `RbsBuilder` call-sites so a concern's file is read and
@@ -726,7 +726,8 @@ module RbsInfer
       steep_bridge: steep_bridge,
       parse_cache: @parse_cache,
       file_index: @file_index,
-      caller_file_cache: @caller_file_cache
+      caller_file_cache: @caller_file_cache,
+      invoker_self_types: invoker_self_types
     )
   end
 
@@ -736,6 +737,10 @@ module RbsInfer
 
   def mixin_index
     @corpus.mixin_index
+  end
+
+  def invoker_self_types
+    @corpus.invoker_self_types
   end
 
   # ─── Resolver quais namespaces da classe-alvo são class (não module) ──
@@ -839,6 +844,7 @@ require_relative "inference/constant_arg_type_resolver"
 require_relative "inference/self_return_type_context"
 require_relative "inference/rest_param_marker"
 require_relative "inference/method_key"
+require_relative "inference/invoker_self_types"
 require_relative "inference/send_call"
 require_relative "inference/type_merger"
 require_relative "inference/ivar_type_set"
