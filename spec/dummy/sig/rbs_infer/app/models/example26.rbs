@@ -1,30 +1,30 @@
-class Example25
+class Example26
   module Foo
-    def bazinga: ((singleton(::Example25::Baz) | singleton(::Example25::BazOther)) module_included) -> untyped
+    def bazinga: ((singleton(::Example26::Baz) | singleton(::Example26::BazOther)) module_included) -> untyped
     def bazingado: (untyped base_foo) -> nil
   end
 
   module Baz
-    extend ::Example25::Foo
+    extend ::Example26::Foo
   end
 
   module BazOther
-    extend ::Example25::Foo
+    extend ::Example26::Foo
 
-    def self.bazingado: (untyped base_foo) -> untyped
+    def self.bazingado: ((singleton(Example26::Bar) | singleton(Example26::BarOther)) base_foo) -> untyped
   end
 end
 
-class Example25
+class Example26
   class Bar
-    extend ::Example25::Foo
+    extend ::Example26::Foo
   end
 end
 
-class Example25
+class Example26
   class BarOther
-    extend ::Example25::Foo
+    extend ::Example26::Foo
 
-    def self.log_something: (untyped message) -> untyped
+    def self.log_something: (String message) -> String
   end
 end

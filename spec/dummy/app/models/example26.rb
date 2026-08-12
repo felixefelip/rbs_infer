@@ -1,4 +1,4 @@
-class Example25
+class Example26
   module Foo
     def bazinga(module_included)
       module_included.bazingado(self)
@@ -10,11 +10,11 @@ class Example25
   end
 
   module Baz
-    extend Example25::Foo
+    extend Example26::Foo
   end
 
   module BazOther
-    extend Example25::Foo
+    extend Example26::Foo
 
     def self.bazingado(base_foo)
       base_foo.log_something("bazingado")
@@ -22,14 +22,14 @@ class Example25
   end
 
   class Bar
-    extend Example25::Foo
+    extend Example26::Foo
 
     # Runs at class-body time, so `Baz` above has to be defined already.
-    bazinga(Example25::Baz)
+    bazinga(Example26::Baz)
   end
 
   class BarOther
-    extend Example25::Foo
+    extend Example26::Foo
 
     def self.log_something(message)
       puts message
@@ -37,6 +37,6 @@ class Example25
       message
     end
 
-    bazinga(Example25::BazOther)
+    bazinga(Example26::BazOther)
   end
 end
