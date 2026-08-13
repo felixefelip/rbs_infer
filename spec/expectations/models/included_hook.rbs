@@ -20,3 +20,11 @@ class IncludedHook
   include Sugared
   include Homespun
 end
+
+class IncludedHookCaller
+  def fill: () -> String
+  def read_slot: () -> String?
+  def read_badge: () -> String?
+  def read_stamp: () -> String?
+  def read_shared: () -> Integer
+end

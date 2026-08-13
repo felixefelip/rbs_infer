@@ -44,8 +44,13 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   # To regenerate expectations after intentional changes:
   #   UPDATE_EXPECTATIONS=1 bundle exec rspec spec/integration/
-  def assert_snapshot(name, target_class:, target_file:, **kwargs)
-    rbs = generate_rbs(target_class: target_class, target_file: target_file, **kwargs)
+  def assert_snapshot(name, target_class: nil, target_file:, **kwargs)
+    rbs = RbsInfer::Analyzer.new(
+      target_class: target_class,
+      target_file: target_file,
+      source_files: source_files,
+      **kwargs
+    ).generate_rbs
 
     if ENV["UPDATE_EXPECTATIONS"]
       expectations_dir.join("#{name}.rbs").write(rbs)
@@ -127,9 +132,8 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # sugar over the same shape. `ClassEvalExpander` declines it correctly for what it
   # knows: the receiver is a method parameter, so the call names no class — the hosts
   # have to come from the mixin graph.
-  it "IncludedHook (self.included hook) matches expected RBS" do
-    assert_snapshot("models/included_hook", target_class: "IncludedHook",
-                    target_file: "app/models/included_hook.rb")
+  it "IncludedHook file matches expected RBS for every declared target" do
+    assert_snapshot("models/included_hook", target_file: "app/models/included_hook.rb")
   end
 
   it "IncludedHook::Slots (the hook block's super target) matches expected RBS" do
