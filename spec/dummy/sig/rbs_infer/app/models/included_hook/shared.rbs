@@ -1,7 +1,5 @@
 class IncludedHook
   module Shared
     def self.included: (Module base) -> Symbol
-
-    def from_shared: () -> Integer
   end
 end

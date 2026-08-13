@@ -2,11 +2,11 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Inference::ClassMemberCollector do
-  def collect(source)
+  def collect(source, target_class: nil)
     result = Prism.parse(source)
     comments = result.comments
     lines = source.lines
-    visitor = described_class.new(comments: comments, lines: lines)
+    visitor = described_class.new(comments: comments, lines: lines, target_class: target_class)
     result.value.accept(visitor)
     visitor
   end
@@ -153,6 +153,23 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
     RUBY
 
     expect(collect(source).members.map(&:name)).to include("available_now")
+  end
+
+  it "coleta o corpo de uma declaração explícita dentro de bloco no seu próprio escopo" do
+    source = <<~RUBY
+      Rails.application.config.to_prepare do
+        module ActiveStorage::Authorize
+          def enforce_access
+            true
+          end
+        end
+      end
+    RUBY
+
+    collector = collect(source, target_class: "ActiveStorage::Authorize")
+
+    expect(collector.is_module).to be(true)
+    expect(collector.members.map(&:name)).to include("enforce_access")
   end
 
   it "defere o return type quando a última expressão é uma constante (felixefelip/rbs_infer#46)" do

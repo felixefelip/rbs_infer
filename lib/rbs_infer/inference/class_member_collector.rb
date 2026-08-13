@@ -127,8 +127,19 @@ module RbsInfer::Inference
     #
     # Do not call `super`: besides defs, an arbitrary block can contain attrs,
     # includes and visibility calls that likewise must not leak to its lexical
-    # owner. Control-flow nodes still use Prism's normal traversal.
-    def visit_block_node(_node); end
+    # owner. An explicit `class`/`module` declaration is different: it opens
+    # its own structural scope, even when a framework runs that declaration in
+    # a hook such as `to_prepare do`. Visit those direct declarations so their
+    # members are collected from the declared owner, never from the block's
+    # lexical owner. Control-flow nodes still use Prism's normal traversal.
+    def visit_block_node(node)
+      statements = node.body
+      return unless statements.is_a?(Prism::StatementsNode)
+
+      statements.body.each do |statement|
+        statement.accept(self) if statement.is_a?(Prism::ClassNode) || statement.is_a?(Prism::ModuleNode)
+      end
+    end
 
     def visit_def_node(node)
       # Only collect defs lexically inside the target. A def in a sibling
