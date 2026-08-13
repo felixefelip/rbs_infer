@@ -20,8 +20,14 @@ class RbsInfer::Signatures::SteepBridge
         str = str.gsub(/:(\w+) =>/, '\1:')
 
         # Normalize nilable types in nested contexts: (Type | nil) → Type?
-        str = str.gsub(/\(([^|()]+) \| nil\)/) { "#{$1.strip}?" }
-        str = str.gsub(/\(nil \| ([^|()]+)\)/) { "#{$1.strip}?" }
+        #
+        # Through `nilablize` rather than by appending, here and in the four
+        # spellings below: what the `?` may be appended to bare is one question
+        # with one answer, and hand-rolling it got the answer wrong for a proc —
+        # `^() -> Symbol?` is a proc whose RETURN is optional
+        # (felixefelip/rbs_infer#237).
+        str = str.gsub(/\(([^|()]+) \| nil\)/) { nilablize($1.strip) }
+        str = str.gsub(/\(nil \| ([^|()]+)\)/) { nilablize($1.strip) }
 
         # Normalize void out of union types: (void | T) → T?
         # void in a union means "return value not used in that branch", treat as nil
@@ -32,23 +38,27 @@ class RbsInfer::Signatures::SteepBridge
           if parts.empty?
             return "void"
           elsif parts.size == 1
-            return "#{parts.first}?"
+            return nilablize(parts.first)
           else
-            return "(#{parts.join(" | ")})?"
+            return nilablize("(#{parts.join(" | ")})")
           end
         end
 
         # Normalize (T | nil) to T?
         if str =~ /\A\((.+) \| nil\)\z/
           inner = $1.strip
-          return "#{inner}?" unless inner.include?("|")
+          return nilablize(inner) unless inner.include?("|")
         end
         if str =~ /\A\(nil \| (.+)\)\z/
           inner = $1.strip
-          return "#{inner}?" unless inner.include?("|")
+          return nilablize(inner) unless inner.include?("|")
         end
 
         str
+      end
+
+      def nilablize(type_str)
+        RbsInfer::Signatures::RbsParserUtil.nilablize(type_str)
       end
 
       def intrinsic_type_of(node, typing)

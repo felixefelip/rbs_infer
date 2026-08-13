@@ -203,16 +203,36 @@ module RbsInfer::Signatures
     # top-level unions/intersections in parens before they're
     # substituted into signatures.
     def parenthesize_compound(type_str)
-      return type_str unless type_str && (type_str.include?("|") || type_str.include?("&"))
+      wrap_top_level(type_str, /[|&]/, [RBS::Types::Union, RBS::Types::Intersection])
+    end
+
+    # What may not carry a bare `?`. The two above plus the PROC: `?` binds
+    # tighter than a proc's `->`, so `^() -> Symbol?` is a proc whose RETURN is
+    # optional and the proc itself still mandatory — the opposite of what the
+    # caller asked for. It cost a `MethodBodyTypeMismatch` on a method whose
+    # inference was right and only whose spelling was wrong
+    # (felixefelip/rbs_infer#237).
+    #
+    # Kept apart from `parenthesize_compound` because the two answer different
+    # questions. That one is about what the member parser can READ: a bare `|`
+    # in method-type position is an overload separator, so it has to go. This
+    # one is about what the `?` BINDS to. A bare proc return type reads fine,
+    # so wrapping it there would be noise for no one.
+    def parenthesize_before_optional(type_str)
+      wrap_top_level(type_str, /[|&^]/, [RBS::Types::Union, RBS::Types::Intersection, RBS::Types::Proc])
+    end
+
+    # Wraps `type_str` in parens when it parses to one of `kinds`. `trigger` is
+    # the cheap pre-check — no character that could start one of those shapes,
+    # no parse.
+    def wrap_top_level(type_str, trigger, kinds)
+      return type_str unless type_str&.match?(trigger)
       # Already wrapped (parens are transparent to the RBS parser, so the
       # parse below can't distinguish `(A | B)` from `A | B`).
       return type_str if outer_parenthesized?(type_str)
 
       parsed = RBS::Parser.parse_type(type_str)
-      case parsed
-      when RBS::Types::Union, RBS::Types::Intersection then "(#{type_str})"
-      else type_str
-      end
+      kinds.any? { |kind| parsed.is_a?(kind) } ? "(#{type_str})" : type_str
     rescue RBS::ParsingError, RBS::BaseError
       type_str
     end
@@ -368,14 +388,15 @@ module RbsInfer::Signatures
       outer_parenthesized?(type) ? type[1..-2] : type
     end
 
-    # Appends `?` to a type, parenthesizing compounds first — a bare
-    # `A & B?` binds the `?` to the LAST component only (semantically
-    # wrong) and is a syntax error in return position. No-op when the
-    # type is already optional.
+    # Appends `?` to a type, parenthesizing first whatever the `?` would
+    # otherwise bind to a part of — a bare `A & B?` makes only the LAST
+    # component optional (and is a syntax error in return position), and a bare
+    # `^() -> T?` makes the proc's RETURN optional instead of the proc. No-op
+    # when the type is already optional.
     def nilablize(type_str)
       return type_str if type_str.nil? || type_str.end_with?("?")
 
-      "#{parenthesize_compound(type_str)}?"
+      "#{parenthesize_before_optional(type_str)}?"
     end
 
     # True when the first `(` closes only at the last character —
