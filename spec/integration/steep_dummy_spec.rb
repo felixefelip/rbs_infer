@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "open3"
 require "pathname"
+require "tempfile"
 require "yaml"
+require_relative "../support/steep_baseline_runner"
 
 # Baseline-style steep check: runs `steep check` against the dummy app and
 # compares the resulting error list to spec/expectations/steep_baseline.txt.
@@ -54,11 +55,6 @@ RSpec.describe "Steep type check on dummy app", :dummy_app do
     end
   end
 
-  # Match the compact "path:line:col: [severity] message" lines steep prints
-  # to stdout. Ignore stderr warnings (rbs collection version mismatch noise)
-  # and the trailing "Detected N problems" summary.
-  STEEP_ERROR_LINE = /\A(?<path>[^\s:]+\.[a-z]+):(?<line>\d+):(?<col>\d+):\s+\[(?<severity>error|warning)\]\s+(?<message>.+)\z/.freeze
-
   # `steep check` on the dummy takes ~35s and BOTH examples need its result — one reads
   # the sidecar it regenerates, the other its diagnostics. Run once and share.
   #
@@ -70,38 +66,19 @@ RSpec.describe "Steep type check on dummy app", :dummy_app do
   #
   # Safe to share because the run has no inputs either example varies — the dummy's files
   # are fixed by the `before(:all)` generator sweep above, and neither example writes to
-  # them. `UPDATE_*` env vars only change what is done with the OUTPUT. Run without the
-  # daemon and serially: the checker writes sidecars, and reusing daemon/worker state made
-  # the same on-disk project report different diagnostic sets between baseline refreshes.
-  def self.steep_output
-    @steep_output ||= begin
-      env = {
-        "STEEP_ERB_CONVENTION" => "1",
-        "STEEP_MODULE_CONVENTION" => "1"
-      }
-
-      Bundler.with_unbundled_env do
-        Dir.chdir(DUMMY_APP_ROOT) do
-          stdout, _stderr, _status = Open3.capture3(
-            env, "bundle", "exec", "steep", "check", "--no-daemon", "--jobs=1"
-          )
-          stdout
-        end
-      end
-    end
+  # them. `UPDATE_*` env vars only change what is done with the OUTPUT.
+  #
+  # The runner asks Steep to save its complete LSP diagnostic set as expectations instead
+  # of parsing the human-readable formatter. That formatter can crash while rendering a
+  # source excerpt; its stdout then contains only a valid-looking prefix of the errors.
+  # The runner also requires a successful exit and a valid artifact before a refresh can
+  # reach write_baseline, so partial output can never erase existing entries again.
+  def self.steep_result
+    @steep_result ||= SteepBaselineRunner.new(project_root: DUMMY_APP_ROOT).call
   end
 
   def run_steep
-    self.class.steep_output
-  end
-
-  def parse_errors(steep_output)
-    steep_output.lines.filter_map do |line|
-      m = line.chomp.match(STEEP_ERROR_LINE)
-      next unless m
-
-      "#{m[:path]}:#{m[:line]}:#{m[:col]}: [#{m[:severity]}] #{m[:message]}"
-    end.sort.uniq
+    self.class.steep_result
   end
 
   def load_baseline
@@ -112,7 +89,16 @@ RSpec.describe "Steep type check on dummy app", :dummy_app do
 
   def write_baseline(errors)
     baseline_path.parent.mkpath
-    baseline_path.write(errors.join("\n") + "\n")
+    contents = errors.join("\n") + "\n"
+
+    Tempfile.create(["steep_baseline", ".txt"], baseline_path.dirname) do |temporary|
+      temporary.write(contents)
+      temporary.flush
+      temporary.fsync
+      temporary.chmod(0o644)
+      temporary.close
+      File.rename(temporary.path, baseline_path)
+    end
   end
 
   it "regenerates sig/generated/.steep_contracts.yml with the expected entries" do
@@ -142,7 +128,7 @@ RSpec.describe "Steep type check on dummy app", :dummy_app do
   end
 
   it "produces only the errors recorded in the baseline" do
-    current = parse_errors(run_steep)
+    current = run_steep.diagnostics
 
     if ENV["UPDATE_STEEP_BASELINE"]
       write_baseline(current)
