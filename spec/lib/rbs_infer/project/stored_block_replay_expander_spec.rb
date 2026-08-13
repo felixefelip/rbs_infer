@@ -39,7 +39,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     expanded = described_class.expand(source)
 
     expect(expanded).to include("class Wrap::Target\ndef installed")
-    expect(expanded.scan("def installed").size).to eq(1)
+    expect(expanded.scan("def installed").size).to eq(2)
     expect(Prism.parse(expanded).success?).to be(true)
   end
 

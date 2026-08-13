@@ -119,6 +119,17 @@ module RbsInfer::Inference
       end
     end
 
+    # A block has its own execution context. Its `self` can be rebound by a
+    # DSL, `class_eval`, or a stored proc replayed much later, so a definition
+    # found there does not belong to the surrounding lexical class/module by
+    # default. Contextual source expanders expose the statically known cases as
+    # ordinary class/module reopenings before this collector runs (#238).
+    #
+    # Do not call `super`: besides defs, an arbitrary block can contain attrs,
+    # includes and visibility calls that likewise must not leak to its lexical
+    # owner. Control-flow nodes still use Prism's normal traversal.
+    def visit_block_node(_node); end
+
     def visit_def_node(node)
       # Only collect defs lexically inside the target. A def in a sibling
       # declaration or a bare block (e.g. `on_load do def x; end end` that

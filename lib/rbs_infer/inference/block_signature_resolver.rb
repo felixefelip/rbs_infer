@@ -37,13 +37,9 @@ module RbsInfer::Inference
     end
 
     # `parsed_target` may be nil (a consumer that never parsed a target file); the
-    # bridge answers every question here, so both are required. The block-return
-    # target is normally the same parsed file. A contextual source relocation
-    # supplies its pre-relocation form there because that is where the call-site
-    # block still exists.
-    def initialize(parsed_target:, parsed_block_return_target:, steep_bridge:)
+    # bridge answers every question here, so both are required.
+    def initialize(parsed_target:, steep_bridge:)
       @parsed_target = parsed_target
-      @parsed_block_return_target = parsed_block_return_target
       @steep_bridge = steep_bridge
     end
 
@@ -175,12 +171,11 @@ module RbsInfer::Inference
     # caller files resolve theirs through `NewCallCollector`, which already knows
     # how (#131).
     def collect_returns(method_names, caller_returns)
-      evidence_target = @parsed_block_return_target || @parsed_target
       collector = RbsInfer::Inference::BlockReturnCollector.new(
         methods: method_names,
-        expression_types: @steep_bridge.all_expression_types(evidence_target.source)
+        expression_types: @steep_bridge.all_expression_types(@parsed_target.source)
       )
-      evidence_target.tree.accept(collector)
+      @parsed_target.tree.accept(collector)
 
       returns = collector.returns
       caller_returns&.each do |name, types|

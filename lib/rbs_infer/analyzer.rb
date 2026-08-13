@@ -98,11 +98,6 @@ module RbsInfer
     # `class_eval`/`module_eval` on another. The contextual expander moves its
     # body to that statically resolved receiver before the ordinary collector
     # attributes the `def`s to the lexical source object (rbs_infer#238).
-    # Keep the unrelocated view solely as evidence for what call-site blocks
-    # return. Relocation blanks the original body so that member collection does
-    # not emit it on the lexical source object; that must not erase the block's
-    # own return evidence (#155, #238).
-    block_return_source = source
     replay_expanded = RbsInfer::Project::StoredBlockReplayExpander.expand(source)
     if replay_expanded
       @expanded_source = replay_expanded
@@ -119,14 +114,10 @@ module RbsInfer
     # away (`class_methods do`); the entries are injected into the expanded
     # `source` that the pipeline parses.
     if @target_class
-      annotate = lambda do |candidate|
-        RbsInfer::Project::SelfTypeAnnotators.apply(
-          candidate, detect_source: original_source, path: @target_file, module_name: @target_class,
-          mixin_index: mixin_index
-        )
-      end
-      source = annotate.call(source)
-      block_return_source = annotate.call(block_return_source) if replay_expanded
+      source = RbsInfer::Project::SelfTypeAnnotators.apply(
+        source, detect_source: original_source, path: @target_file, module_name: @target_class,
+        mixin_index: mixin_index
+      )
     end
 
     result = Prism.parse(source)
@@ -136,17 +127,6 @@ module RbsInfer
       comments: result.comments,
       lines: source.lines
     )
-    if replay_expanded
-      block_return_result = Prism.parse(block_return_source)
-      @parsed_block_return_target = RbsInfer::ParsedFile.new(
-        result: block_return_result,
-        source: block_return_source,
-        comments: block_return_result.comments,
-        lines: block_return_source.lines
-      )
-    else
-      @parsed_block_return_target = @parsed_target
-    end
   end
 
   # A single file can define or reopen several types (initializers,
@@ -729,7 +709,6 @@ module RbsInfer
   def block_signature_resolver
     @block_signature_resolver ||= RbsInfer::Inference::BlockSignatureResolver.new(
       parsed_target: @parsed_target,
-      parsed_block_return_target: @parsed_block_return_target,
       steep_bridge: steep_bridge
     )
   end

@@ -28,10 +28,10 @@ module RbsInfer::Project
   #   end
   #
   # It expands that to a virtual reopening of Target containing `installed`.
-  # The original body is blanked in the in-memory source so the ordinary member
-  # collector cannot incorrectly attribute it to Source as well. This is plain
-  # Ruby rather than a framework convention, so it lives in Project alongside
-  # ClassEvalExpander.
+  # ClassMemberCollector deliberately ignores arbitrary blocks, so the original
+  # lexical call site remains available as type evidence without emitting the
+  # method on Source. This is plain Ruby rather than a framework convention, so
+  # it lives in Project alongside ClassEvalExpander.
   #
   # Deliberately conservative: a chain must name one storage method, one reader,
   # one stored block, and one constant target. Any ambiguity declines the replay.
@@ -53,24 +53,9 @@ module RbsInfer::Project
     end
 
     def apply_replays(source, replays)
-      # A source block can only be moved once. Multiple targets for the same
-      # block are ambiguous at runtime, so Collector rejects them; keep this
-      # guard here too because overlapping replacements corrupt byte offsets.
+      # A source block can only be replayed against one statically known target.
+      # Multiple targets are ambiguous at runtime, so Collector rejects them.
       return nil unless replays.map { |replay| replay.block.body.location }.uniq.size == replays.size
-
-      masked = replays.map do |replay|
-        body = replay.block.body
-        {
-          start: body.location.start_offset,
-          end: body.location.end_offset,
-          text: source.byteslice(body.location.start_offset, body.location.end_offset - body.location.start_offset).gsub(/[^\n]/, " ")
-        }
-      end
-
-      out = source.dup
-      masked.sort_by { |replacement| -replacement[:start] }.each do |replacement|
-        out = out.byteslice(0, replacement[:start]) + replacement[:text] + out.byteslice(replacement[:end]..)
-      end
 
       virtual_reopens = replays.map do |replay|
         body = replay.block.body
@@ -78,7 +63,7 @@ module RbsInfer::Project
         "#{replay.kind} #{replay.target}\n#{body_source}\nend\n"
       end
 
-      [out, virtual_reopens.join("\n")].join("\n")
+      [source, virtual_reopens.join("\n")].join("\n")
     end
 
     Replay = Data.define(:target, :block, :kind)

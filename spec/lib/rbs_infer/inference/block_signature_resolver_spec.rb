@@ -43,7 +43,7 @@ RSpec.describe RbsInfer::Inference::BlockSignatureResolver do
     # bridge has nothing to be asked about. Guarded once here rather than four times.
     it "does nothing without a parsed target" do
       target = member(signature: "run: () ?{ (*untyped) -> untyped } -> untyped")
-      resolver = described_class.new(parsed_target: nil, parsed_block_return_target: nil, steep_bridge: nil)
+      resolver = described_class.new(parsed_target: nil, steep_bridge: nil)
 
       expect { resolver.apply([target], caller_returns: nil) }.not_to change(target, :signature)
     end

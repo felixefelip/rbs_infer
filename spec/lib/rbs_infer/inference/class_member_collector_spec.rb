@@ -127,6 +127,34 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
     expect(collector.members.find { |m| m.name == "build_count" }.signature).to include("-> Integer")
   end
 
+  it "não atribui definições dentro de blocos à classe léxica" do
+    source = <<~RUBY
+      class Foo
+        configure do
+          def installed_later
+            true
+          end
+        end
+      end
+    RUBY
+
+    expect(collect(source).members.map(&:name)).not_to include("installed_later")
+  end
+
+  it "continua coletando definições dentro de estruturas de controle" do
+    source = <<~RUBY
+      class Foo
+        if enabled?
+          def available_now
+            true
+          end
+        end
+      end
+    RUBY
+
+    expect(collect(source).members.map(&:name)).to include("available_now")
+  end
+
   it "defere o return type quando a última expressão é uma constante (felixefelip/rbs_infer#46)" do
     source = <<~RUBY
       class Foo
