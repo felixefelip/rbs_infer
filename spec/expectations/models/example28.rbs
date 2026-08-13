@@ -7,8 +7,6 @@ class Example28
 
   module Baz
     extend ::Example28::Foo
-
-    def greet: () -> String
   end
 
   class AfterBazingado
@@ -20,6 +18,7 @@ class Example28
   class Bar
     extend ::Example28::Foo
 
-    def call_test: () -> untyped
+    def call_test: () -> String
+    def greet: () -> String
   end
 end

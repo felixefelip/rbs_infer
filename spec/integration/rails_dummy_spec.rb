@@ -663,7 +663,8 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # `bazingado` stores its block and `bazinga` later replays it through
   # `class_eval`. The stored proc may be nil, but a bare `^() -> Symbol?` makes
   # the PROC'S RETURN optional instead of the proc itself. This snapshot pins
-  # the parens required for `(^() -> Symbol)?` (felixefelip/rbs_infer#237).
+  # the parens required for `(^() -> Symbol)?` (felixefelip/rbs_infer#237), as
+  # well as the replay target: `greet` belongs to Bar rather than Baz (#238).
   it "example28" do
     name = "models/example28"
     rbs = RbsInfer::Analyzer.new(
