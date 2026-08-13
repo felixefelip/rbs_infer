@@ -61,11 +61,11 @@ module RbsInfer::Project
         body = replay.block.body
         body_source = source.byteslice(body.location.start_offset, body.location.end_offset - body.location.start_offset)
         # Prism's body range starts at its first token, dropping the whitespace
-        # that indented that line in the source. Put only that prefix back: the
-        # remaining lines retain their original whitespace, so heredoc content
-        # is never rewritten merely to make this debug view prettier.
+        # that indented that line in the source. The virtual reopening is
+        # top-level, so normalize that common margin to its conventional two
+        # spaces while preserving every indentation level beneath it.
         first_line_indent = line_indent(source, body.location.start_offset)
-        "#{replay.kind} #{replay.target}\n#{first_line_indent}#{body_source}\nend\n"
+        "#{replay.kind} #{replay.target}\n#{reindent_body(body_source, first_line_indent)}\nend\n"
       end
 
       [source, virtual_reopens.join("\n")].join("\n")
@@ -77,6 +77,14 @@ module RbsInfer::Project
       return "" unless scan.zero? || source.byteslice(scan - 1, 1) == "\n"
 
       source.byteslice(scan, offset - scan)
+    end
+
+    def reindent_body(body_source, source_indent)
+      return "  #{body_source}" if source_indent.empty?
+
+      # The first line starts at Prism's first token and therefore has no
+      # source margin in `body_source`; following lines still have it.
+      ["  ", body_source.gsub(/(?<=\n)#{Regexp.escape(source_indent)}/, "  ")].join
     end
 
     Replay = Data.define(:target, :block, :kind)

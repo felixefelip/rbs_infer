@@ -36,7 +36,7 @@ class Example28
 end
 
 class Example28::Bar
-      def greet
-        "Hello, world!"
-      end
+  def greet
+    "Hello, world!"
+  end
 end
