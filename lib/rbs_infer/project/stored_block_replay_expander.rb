@@ -60,10 +60,23 @@ module RbsInfer::Project
       virtual_reopens = replays.map do |replay|
         body = replay.block.body
         body_source = source.byteslice(body.location.start_offset, body.location.end_offset - body.location.start_offset)
-        "#{replay.kind} #{replay.target}\n#{body_source}\nend\n"
+        # Prism's body range starts at its first token, dropping the whitespace
+        # that indented that line in the source. Put only that prefix back: the
+        # remaining lines retain their original whitespace, so heredoc content
+        # is never rewritten merely to make this debug view prettier.
+        first_line_indent = line_indent(source, body.location.start_offset)
+        "#{replay.kind} #{replay.target}\n#{first_line_indent}#{body_source}\nend\n"
       end
 
       [source, virtual_reopens.join("\n")].join("\n")
+    end
+
+    def line_indent(source, offset)
+      scan = offset
+      scan -= 1 while scan.positive? && [" ", "\t"].include?(source.byteslice(scan - 1, 1))
+      return "" unless scan.zero? || source.byteslice(scan - 1, 1) == "\n"
+
+      source.byteslice(scan, offset - scan)
     end
 
     Replay = Data.define(:target, :block, :kind)
