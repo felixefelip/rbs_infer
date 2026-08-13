@@ -70,7 +70,9 @@ RSpec.describe "Steep type check on dummy app", :dummy_app do
   #
   # Safe to share because the run has no inputs either example varies — the dummy's files
   # are fixed by the `before(:all)` generator sweep above, and neither example writes to
-  # them. `UPDATE_*` env vars only change what is done with the OUTPUT.
+  # them. `UPDATE_*` env vars only change what is done with the OUTPUT. Run without the
+  # daemon and serially: the checker writes sidecars, and reusing daemon/worker state made
+  # the same on-disk project report different diagnostic sets between baseline refreshes.
   def self.steep_output
     @steep_output ||= begin
       env = {
@@ -80,7 +82,9 @@ RSpec.describe "Steep type check on dummy app", :dummy_app do
 
       Bundler.with_unbundled_env do
         Dir.chdir(DUMMY_APP_ROOT) do
-          stdout, _stderr, _status = Open3.capture3(env, "bundle", "exec", "steep", "check")
+          stdout, _stderr, _status = Open3.capture3(
+            env, "bundle", "exec", "steep", "check", "--no-daemon", "--jobs=1"
+          )
           stdout
         end
       end
