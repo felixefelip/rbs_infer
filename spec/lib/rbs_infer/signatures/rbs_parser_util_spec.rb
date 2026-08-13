@@ -423,9 +423,26 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
       expect(described_class.nilablize("Integer | Float")).to eq("(Integer | Float)?")
     end
 
+    # `^() -> Symbol?` is a proc whose RETURN is optional, the proc itself still
+    # mandatory — the opposite of what the caller asked for, and a
+    # `MethodBodyTypeMismatch` on the method that stores such a block
+    # (felixefelip/rbs_infer#237).
+    it "parenthesizes a proc, whose `->` the ? would otherwise bind inside" do
+      expect(described_class.nilablize("^(*untyped) -> Symbol"))
+        .to eq("(^(*untyped) -> Symbol)?")
+    end
+
     it "appends ? directly to simple types" do
       expect(described_class.nilablize("User")).to eq("User?")
       expect(described_class.nilablize("Array[User]")).to eq("Array[User]?")
+      # A proc nested in a type argument is already delimited by the brackets.
+      expect(described_class.nilablize("Array[^() -> void]")).to eq("Array[^() -> void]?")
+    end
+
+    # The parens `nilablize` needs are not the parens the member parser needs: a
+    # bare proc in return position reads fine, so this one leaves it alone.
+    it "leaves a proc alone in .parenthesize_compound" do
+      expect(described_class.parenthesize_compound("^() -> void")).to eq("^() -> void")
     end
 
     it "is a no-op for already-optional types and nil" do

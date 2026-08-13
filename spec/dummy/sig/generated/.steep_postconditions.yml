@@ -869,6 +869,15 @@ postconditions:
   effects:
     may_write:
     - "@holder"
+- class: Example28::Foo
+  method: bazingado
+  unconditional:
+    ivars:
+      "@bazingado_block": "(^(*untyped) -> ::Symbol | nil)"
+    self: "::Example28::Foo & ::Example28::Foo::AfterBazingado"
+  effects:
+    may_write:
+    - "@bazingado_block"
 - class: Example2::Foo
   method: user=
   unconditional:

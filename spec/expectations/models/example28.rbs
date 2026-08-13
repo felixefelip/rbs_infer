@@ -1,0 +1,25 @@
+class Example28
+  module Foo
+    attr_reader bazingado_block: untyped
+    def bazinga: (singleton(::Example28::Baz) module_included) -> untyped
+    def bazingado: () ?{ (*untyped) -> Symbol } -> (^(*untyped) -> Symbol)?
+  end
+
+  module Baz
+    extend ::Example28::Foo
+
+    def greet: () -> String
+  end
+
+  class AfterBazingado
+    attr_reader bazingado_block: (^(*untyped) -> Symbol)?
+  end
+end
+
+class Example28
+  class Bar
+    extend ::Example28::Foo
+
+    def call_test: () -> untyped
+  end
+end

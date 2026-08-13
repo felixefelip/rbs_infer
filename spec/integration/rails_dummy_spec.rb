@@ -660,6 +660,26 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # `bazingado` stores its block and `bazinga` later replays it through
+  # `class_eval`. The stored proc may be nil, but a bare `^() -> Symbol?` makes
+  # the PROC'S RETURN optional instead of the proc itself. This snapshot pins
+  # the parens required for `(^() -> Symbol)?` (felixefelip/rbs_infer#237).
+  it "example28" do
+    name = "models/example28"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example28.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   it "example20" do
     name = "models/example20"
     rbs = RbsInfer::Analyzer.new(
