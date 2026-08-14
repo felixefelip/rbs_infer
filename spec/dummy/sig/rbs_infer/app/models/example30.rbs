@@ -1,0 +1,7 @@
+module Example30
+  class Foo
+    def name: () -> String
+    def build_age: () -> Symbol
+    def call_age: () -> untyped
+  end
+end
