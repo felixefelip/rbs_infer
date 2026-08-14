@@ -18,7 +18,9 @@ class Example28
   class Bar
     extend ::Example28::Foo
 
+    def age: () -> Integer
     def call_test: () -> String
     def greet: () -> String
+    def age_after_a_decade: () -> BigDecimal
   end
 end

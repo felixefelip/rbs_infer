@@ -21,6 +21,10 @@ class Example28
       def greet
         "Hello, world!"
       end
+
+      def age_after_a_decade
+        age + 10
+      end
     end
   end
 
@@ -28,6 +32,10 @@ class Example28
     extend Example28::Foo
 
     bazinga(Example28::Baz)
+
+    def age
+      42
+    end
 
     def call_test
       greet
@@ -38,5 +46,9 @@ end
 class Example28::Bar
   def greet
     "Hello, world!"
+  end
+
+  def age_after_a_decade
+    age + 10
   end
 end
