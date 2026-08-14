@@ -198,6 +198,12 @@ UPDATE_EXPECTATIONS=1 bundle exec rspec spec/integration/
 
 Review the resulting diff against the previous expectation before committing.
 
+`spec/integration/expanded_source_spec.rb` pins the other half: the *expanded view*
+(`spec/expectations/expanded/`), which is the pipeline's actual input for every file a
+macro touches. It asserts both the set of sources an expander rewrites and what each one
+becomes — an expander can change its output without moving any emitted RBS, and that
+would otherwise go unnoticed. Same `UPDATE_EXPECTATIONS=1` workflow.
+
 ### Unit specs
 
 ```bash
