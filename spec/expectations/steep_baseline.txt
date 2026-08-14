@@ -5,7 +5,7 @@ app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not
 app/models/example15.rb:25:25: [error] Type `(::Example15::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
 app/models/example21.rb:96:29: [error] Type `(::Example21::Ticket | nil)` does not have method `holder`
-app/models/example28.rb:31:6: [error] Type `::Example28::Bar` does not have method `greet`
+app/models/example28.rb:19:10: [warning] Method `::Example28::Baz#greet` is not declared in RBS
 app/models/example3.rb:123:11: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:64:13: [error] Type `(::Example3::User | nil)` does not have method `name`
 app/models/example3.rb:65:26: [error] Type `(::Example3::User | nil)` does not have method `name`
@@ -17,7 +17,17 @@ app/models/example4.rb:27:23: [error] Type `(::String | nil)` does not have meth
 app/models/example4.rb:40:23: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example7.rb:31:28: [error] Type `(::Integer | nil)` does not have method `abs`
 app/models/example7.rb:34:27: [error] Type `(::String | nil)` does not have method `upcase`
-app/models/included_hook/home_made.rb:27:22: [warning] Cannot pass a value of type `(^(*untyped) [self: ::Module] -> untyped | nil)` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(235)`
+app/models/included_hook.rb:105:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS
+app/models/included_hook.rb:133:11: [error] Type `::IncludedHook` does not have method `from_hook`
+app/models/included_hook.rb:165:26: [error] Type `::IncludedHookFirst` does not have method `from_shared`
+app/models/included_hook.rb:31:12: [warning] Method `::IncludedHook::Hookable#from_hook` is not declared in RBS
+app/models/included_hook.rb:39:12: [warning] Method `::IncludedHook::Hookable#slot` is not declared in RBS
+app/models/included_hook.rb:60:10: [warning] Method `::IncludedHook::Sugared#from_sugar` is not declared in RBS
+app/models/included_hook.rb:66:10: [warning] Method `::IncludedHook::Sugared#badge` is not declared in RBS
+app/models/included_hook.rb:82:10: [warning] Method `::IncludedHook::Homespun#from_homespun` is not declared in RBS
+app/models/included_hook.rb:86:10: [warning] Method `::IncludedHook::Homespun#stamp` is not declared in RBS
+app/models/included_hook/home_made.rb:27:22: [warning] Cannot pass a value of type `(^(*untyped) [self: ::Module] -> untyped | nil)` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(243)`
+app/models/included_hook/shared.rb:17:10: [warning] Method `::IncludedHook::Shared#from_shared` is not declared in RBS
 app/models/post/notifiable.rb:28:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/send_dispatch.rb:107:33: [error] `public_send` cannot call `stamp` on `::SendDispatch`, which declares it private
 app/models/send_dispatch.rb:114:26: [error] `send` names `no_such_method_anywhere`, which type `::SendDispatch` does not have

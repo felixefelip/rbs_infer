@@ -94,6 +94,16 @@ module RbsInfer
     @expanded_source = RbsInfer::Project::SourceExpanders.apply(original_source)
     source = @expanded_source || original_source
 
+    # A block can be stored by one singleton receiver and later replayed via
+    # `class_eval`/`module_eval` on another. The contextual expander moves its
+    # body to that statically resolved receiver before the ordinary collector
+    # attributes the `def`s to the lexical source object (rbs_infer#238).
+    replay_expanded = RbsInfer::Project::StoredBlockReplayExpander.expand(source)
+    if replay_expanded
+      @expanded_source = replay_expanded
+      source = replay_expanded
+    end
+
     # Inject `@type self:`/`@type instance:` for concerns/modules (and the
     # desugared `module ClassMethods` of a `class_methods do` block) so the
     # pipeline — and Steep, as the return-type oracle — sees the right
@@ -864,4 +874,7 @@ require_relative "project/source_expanders"
 # Core, not an extension, and registered unconditionally: `class_eval` is plain Ruby,
 # so every project gets the reopen read whether or not it uses a framework.
 require_relative "project/class_eval_expander"
+require_relative "project/stored_block_replay_expander"
+require_relative "project/stored_block_replay_expander/reader_collector"
+require_relative "project/stored_block_replay_expander/collector"
 require_relative "project/self_type_annotators"
