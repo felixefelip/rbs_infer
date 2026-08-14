@@ -1,0 +1,66 @@
+# frozen_string_literal: true
+
+module Post::Taggable
+  extend ActiveSupport::Concern
+
+  included do
+    has_many :post_tags, dependent: :destroy
+    has_many :tags, through: :post_tags
+
+    scope :recently_tagged, -> { joins(:tags).order(created_at: :desc) }
+  end
+
+  module ClassMethods
+def default_tag_names
+      %w[news featured]
+    end
+
+    def known_tag?(name)
+      default_tag_names.include?(name)
+    end
+
+    def tags_ordered_by_tag_name
+      joins(:tag).order('tags.name ASC')
+    end
+
+    def touch_recently_tagged
+      recently_tagged.find_each do |post|
+        post.touch
+      end
+    end
+end
+
+  def tag_names
+    tags.pluck(:name)
+  end
+
+  # The `self` handed out here is the concern's, and a module's instance-method
+  # `self` is whoever includes it — `Post & Post::Taggable`, which the self-type
+  # annotators already say and the call-site scan now asks for. Naming the
+  # module alone loses the host half (felixefelip/rbs_infer#161).
+  def tag_digest
+    Post::TagDigest.for(self)
+  end
+
+  def tag_with(name)
+    tag = Tag.find_or_create_by!(name: name)
+    post_tags.find_or_create_by!(tag: tag)
+    tag
+  end
+
+  def untag(name)
+    tag = Tag.find_by(name: name)
+    post_tags.where(tag: tag).destroy_all if tag
+  end
+
+  def tagged_with?(name)
+    tags.exists?(name: name)
+  end
+
+  def replace_tags(names)
+    transaction do
+      post_tags.destroy_all
+      names.each { |name| tag_with(name) }
+    end
+  end
+end
