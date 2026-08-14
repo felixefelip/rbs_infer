@@ -875,6 +875,7 @@ require_relative "project/source_expanders"
 # so every project gets the reopen read whether or not it uses a framework.
 require_relative "project/class_eval_expander"
 require_relative "project/self_class_eval_expander"
+require_relative "project/self_class_eval_marker"
 require_relative "project/stored_block_replay_expander"
 require_relative "project/stored_block_replay_expander/reader_collector"
 require_relative "project/stored_block_replay_expander/collector"

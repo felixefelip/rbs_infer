@@ -3,6 +3,13 @@ module Example30
     def name: () -> String
     def build_age: () -> Symbol
     def call_age: () -> Integer
-    def age: () -> Integer
+  end
+end
+
+module Example30
+  class Foo
+    class AfterBuildAge
+      def age: () -> Integer
+    end
   end
 end

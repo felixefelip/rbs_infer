@@ -1,0 +1,7 @@
+---
+version: 1
+postconditions:
+- class: Example30::Foo
+  method: build_age
+  unconditional:
+    self: "::Example30::Foo & ::Example30::Foo::AfterBuildAge"
