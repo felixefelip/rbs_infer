@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "prism"
+require_relative "block_reopen"
 
 module RbsInfer::Project
   # Moves a block's *definition site* to the class/module that later evaluates
@@ -63,38 +64,21 @@ module RbsInfer::Project
     end
 
     def apply_replays(source, replays)
+      # A body-less block (`keep do end`) relocates to nothing, and asking it
+      # for a location raises. Drop it before the uniqueness check reads one.
+      replays = replays.select { |replay| replay.block.body }
+
       # A source block can only be replayed against one statically known target.
       # Multiple targets are ambiguous at runtime, so Collector rejects them.
       return nil unless replays.map { |replay| replay.block.body.location }.uniq.size == replays.size
 
-      virtual_reopens = replays.map do |replay|
-        body = replay.block.body
-        body_source = source.byteslice(body.location.start_offset, body.location.end_offset - body.location.start_offset)
-        # Prism's body range starts at its first token, dropping the whitespace
-        # that indented that line in the source. The virtual reopening is
-        # top-level, so normalize that common margin to its conventional two
-        # spaces while preserving every indentation level beneath it.
-        first_line_indent = line_indent(source, body.location.start_offset)
-        "#{replay.kind} #{replay.target}\n#{reindent_body(body_source, first_line_indent)}\nend\n"
+      virtual_reopens = replays.filter_map do |replay|
+        BlockReopen.appended(source: source, block: replay.block, kind: replay.kind, target: replay.target)
       end
+      virtual_reopens = BlockReopen.missing_from(source, virtual_reopens)
+      return nil if virtual_reopens.empty?
 
       [source, virtual_reopens.join("\n")].join("\n")
-    end
-
-    def line_indent(source, offset)
-      scan = offset
-      scan -= 1 while scan.positive? && [" ", "\t"].include?(source.byteslice(scan - 1, 1))
-      return "" unless scan.zero? || source.byteslice(scan - 1, 1) == "\n"
-
-      source.byteslice(scan, offset - scan)
-    end
-
-    def reindent_body(body_source, source_indent)
-      return "  #{body_source}" if source_indent.empty?
-
-      # The first line starts at Prism's first token and therefore has no
-      # source margin in `body_source`; following lines still have it.
-      ["  ", body_source.gsub(/(?<=\n)#{Regexp.escape(source_indent)}/, "  ")].join
     end
   end
 end
