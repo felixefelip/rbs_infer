@@ -108,6 +108,22 @@ app/models/example28.rb:
   blocks:
   - call: bazingado
     implements: "::Example28::Bar"
+app/models/example29.rb:
+  modules:
+  - anchor: Foo
+    annotations:
+    - "# @type instance: (singleton(Example29::Bar)) | (singleton(Example29::BarOther))
+      | (singleton(Example29::Baz)) | (singleton(Example29::BazOther))"
+    defs:
+      bazinga: singleton(Example29::Bar) | singleton(Example29::BarOther)
+    paths:
+      bazinga:
+      - when:
+          module_included: singleton(Example29::Baz)
+        self: singleton(Example29::Bar)
+      - when:
+          module_included: singleton(Example29::BazOther)
+        self: singleton(Example29::BarOther)
 app/models/example3.rb:
   modules:
   - anchor: GeneratedAttributes
