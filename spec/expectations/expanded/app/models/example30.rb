@@ -23,7 +23,7 @@ module Example30
 end
 
 class Example30::Foo
-  def age
-    25
-  end
+        def age
+          25
+        end
 end

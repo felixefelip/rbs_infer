@@ -19,7 +19,9 @@ RSpec.describe RbsInfer::Project::SelfClassEvalExpander do
       end
     RUBY
 
-    expect(expanded).to include("class Foo\n  def age\n    25\n  end\nend")
+    # The body keeps its source indentation: re-indenting it to the reopening's
+    # column reads better and rewrites the contents of any heredoc inside it.
+    expect(expanded).to include("class Foo\n      def age\n        25\n      end\nend")
     expect(Prism.parse(expanded).success?).to be(true)
   end
 
@@ -136,6 +138,49 @@ RSpec.describe RbsInfer::Project::SelfClassEvalExpander do
       expect(Prism).not_to receive(:parse)
       expect(expand("class Foo; end\n")).to be_nil
     end
+  end
+
+  # `SourceExpanders` requires an expander to be idempotent over its own output.
+  # Appending does not consume the call that produced it, so without a guard a
+  # second run appends a second copy of the same reopening.
+  it "appends nothing the source already carries" do
+    source = <<~RUBY
+      class Foo
+        def build
+          self.class.class_eval { def age; 25; end }
+        end
+      end
+    RUBY
+
+    once = expand(source)
+
+    expect(expand(once)).to be_nil
+    expect(once.scan("class Foo\n").size).to eq(2)
+  end
+
+  # Re-indenting the relocated body to the reopening's column reads better and
+  # changes what the program SAYS: a heredoc's contents are string data, and
+  # shifting their margin edits the string.
+  it "does not rewrite a heredoc's contents to line the body up" do
+    source = <<~RUBY
+      class Foo
+        def build
+          self.class.class_eval do
+            def note
+              <<-TEXT
+        deliberately indented
+              TEXT
+            end
+          end
+        end
+      end
+    RUBY
+
+    # Read the line off the source rather than spelling it, so the assertion
+    # cannot drift from what the fixture actually says.
+    heredoc_line = source[/^.*deliberately indented$/]
+
+    expect(expand(source)).to include("\n#{heredoc_line}\n")
   end
 
   it "is registered on the SourceExpanders seam" do

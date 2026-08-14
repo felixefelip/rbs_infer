@@ -2,7 +2,8 @@
 
 require "prism"
 require_relative "source_expanders"
-require_relative "virtual_reopen"
+require_relative "reopening_call"
+require_relative "block_reopen"
 
 module RbsInfer::Project
   # Desugars `self.class.class_eval do … end` written inside an INSTANCE method
@@ -31,7 +32,7 @@ module RbsInfer::Project
   # It cannot rewrite in place the way ClassEvalExpander does: the call sits in a
   # method body, where `class Foo … end` is a SyntaxError, not merely the wrong
   # scope. The body is emitted as a top-level reopening instead, through the
-  # `VirtualReopen` the stored-block replay uses for the same reason.
+  # `BlockReopen` the stored-block replay uses for the same reason.
   #
   # This is plain Ruby, not a framework convention, so it is CORE and registered
   # unconditionally, alongside ClassEvalExpander.
@@ -42,12 +43,10 @@ module RbsInfer::Project
   # checker stop reporting — see #245 for the marker that brings it back for the
   # right reason.
   module SelfClassEvalExpander
-    REOPENING_METHODS = %i[class_eval module_eval].freeze
-
     module_function
 
     def expand(source)
-      return nil unless REOPENING_METHODS.any? { |name| source.include?(name.to_s) }
+      return nil unless ReopeningCall.possible?(source)
 
       parsed = Prism.parse(source)
       return nil unless parsed.success?
@@ -57,8 +56,9 @@ module RbsInfer::Project
       return nil if collector.found.empty?
 
       reopens = collector.found.filter_map do |found|
-        VirtualReopen.build(source: source, block: found.block, kind: found.kind, target: found.target)
+        BlockReopen.appended(source: source, block: found.block, kind: found.kind, target: found.target)
       end
+      reopens = BlockReopen.missing_from(source, reopens)
       return nil if reopens.empty?
 
       [source, reopens.join("\n")].join("\n")
@@ -124,9 +124,7 @@ module RbsInfer::Project
       end
 
       def collect(node)
-        return unless REOPENING_METHODS.include?(node.name)
-        return unless node.block.is_a?(Prism::BlockNode)
-        return if node.arguments
+        return unless ReopeningCall.shape?(node)
         return unless self_class?(node.receiver)
 
         owner, kind = @scope.last

@@ -2,6 +2,8 @@
 
 require "prism"
 require_relative "source_expanders"
+require_relative "reopening_call"
+require_relative "block_reopen"
 
 module RbsInfer::Project
   # Desugars `X.class_eval do ... end` / `X.module_eval do ... end` with a CONSTANT
@@ -34,12 +36,6 @@ module RbsInfer::Project
   # call shape as an implicit `@implements` so `super` inside the block resolves
   # against the receiver's ancestors.
   module ClassEvalExpander
-    # `instance_eval` is deliberately absent: its default definee is the receiver's
-    # SINGLETON class, so rewriting it to `class X` would attribute the def to the
-    # instance side — the wrong half. steep#135 declines it for the same reason, which
-    # keeps the two sides agreeing.
-    REOPENING_METHODS = %w[class_eval module_eval].freeze
-
     # A block nested inside another match is rewritten on a later pass, once the outer
     # one has become an ordinary class body. Replacing both at once would corrupt the
     # source: the offsets of the inner match are inside the outer's replaced range.
@@ -62,7 +58,7 @@ module RbsInfer::Project
     end
 
     def expand_once(source)
-      return nil unless REOPENING_METHODS.any? { |name| source.include?(name) }
+      return nil unless ReopeningCall.possible?(source)
 
       parsed = Prism.parse(source)
       return nil unless parsed.success?
@@ -74,19 +70,13 @@ module RbsInfer::Project
       apply_replacements(source, replacements)
     end
 
-    # `X.class_eval do ... end` with no arguments. The STRING form
-    # (`class_eval "def x; end"`) is excluded by requiring a block and no arguments:
-    # its body is not source this can read, and is the genuinely undecidable case the
-    # README reserves for `eval`. A non-constant receiver (`obj.class_eval`,
-    # `self.class_eval`) reopens whatever class the value happens to be, which the
-    # shape does not say.
+    # A reopening call (`ReopeningCall.shape?`) whose receiver is a CONSTANT, so
+    # it names its class outright. A non-constant receiver (`obj.class_eval`)
+    # reopens whatever class the value happens to be, which the shape does not
+    # say — except for `self.class` inside an instance method, where the
+    # enclosing declaration says it and `SelfClassEvalExpander` reads it.
     def reopening_block?(node)
-      return false unless node.is_a?(Prism::CallNode)
-      return false unless REOPENING_METHODS.include?(node.name.to_s)
-      return false unless node.block.is_a?(Prism::BlockNode)
-      return false if node.arguments
-
-      constant_receiver?(node.receiver)
+      ReopeningCall.shape?(node) && constant_receiver?(node.receiver)
     end
 
     def constant_receiver?(node)
@@ -110,50 +100,11 @@ module RbsInfer::Project
       name = RbsInfer::Analyzer.extract_constant_path(call.receiver)
       return nil unless name && !name.empty?
 
-      body = call.block.body
-      body_source = body ? slice_with_indent(source, body) : ""
-
-      # `class #{name}` lands at the call's own column, since it replaces the call in
-      # place — so the closing `end` is indented to match rather than to column 0.
-      indent = line_indent(source, call.location.start_offset)
-
       {
         start: call.location.start_offset,
         end: call.location.end_offset,
-        text: "class #{name}\n#{body_source}\n#{indent}end",
+        text: BlockReopen.in_place(source: source, call: call, name: name),
       }
-    end
-
-    # The whitespace between the start of `offset`'s line and `offset`, or "" when
-    # anything else precedes it on that line.
-    def line_indent(source, offset)
-      scan = offset
-      scan -= 1 while scan.positive? && [" ", "\t"].include?(source.byteslice(scan - 1, 1))
-      return "" unless scan.zero? || source.byteslice(scan - 1, 1) == "\n"
-
-      source.byteslice(scan, offset - scan)
-    end
-
-    # The body, sliced from the start of its own LINE rather than from its first
-    # token, so the indentation the source already had survives.
-    #
-    # Slicing from the token dropped the FIRST line's indentation and nothing else,
-    # leaving `def` at column 0 with its own `end` still at column 2. Legal Ruby, and
-    # invisible to the pipeline, but the `.expanded/` sidecar exists to be read while
-    # debugging and that made it harder to read than the source it mirrors.
-    #
-    # Only the indentation is reclaimed — the body is never RE-indented, because that
-    # would rewrite the contents of any heredoc or multi-line string inside it.
-    def slice_with_indent(source, node)
-      start = node.location.start_offset
-      scan = start
-      scan -= 1 while scan.positive? && [" ", "\t"].include?(source.byteslice(scan - 1, 1))
-
-      # Only when the body genuinely opens its own line. `class_eval do def x; end end`
-      # on one line would otherwise pull in the space after `do`.
-      start = scan if scan.zero? || source.byteslice(scan - 1, 1) == "\n"
-
-      source.byteslice(start, node.location.end_offset - start)
     end
 
     # Back to front so earlier byte offsets stay valid (mirrors the other expanders).

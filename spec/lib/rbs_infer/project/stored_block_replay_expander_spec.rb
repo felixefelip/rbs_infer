@@ -38,7 +38,10 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
 
     expanded = described_class.expand(source)
 
-    expect(expanded).to include("class Wrap::Target\n  def installed")
+    # The body keeps the indentation it had in the source. Re-indenting it to
+    # the reopening's column reads better and rewrites the contents of any
+    # heredoc inside it, so the reopening wears the source's margin instead.
+    expect(expanded).to include("class Wrap::Target\n      def installed")
     expect(expanded.scan("def installed").size).to eq(2)
     expect(Prism.parse(expanded).success?).to be(true)
   end
@@ -95,7 +98,9 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
 
     expanded = described_class.expand(source)
 
-    expect(expanded).to include("module Wrap::Target\n  def installed")
+    # A one-line block (`keep { … }`) has no margin of its own to reclaim, so
+    # its body arrives exactly as written.
+    expect(expanded).to include("module Wrap::Target\ndef installed; end")
     expect(Prism.parse(expanded).success?).to be(true)
   end
 end

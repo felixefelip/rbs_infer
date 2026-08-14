@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "prism"
-require_relative "virtual_reopen"
+require_relative "block_reopen"
 
 module RbsInfer::Project
   # Moves a block's *definition site* to the class/module that later evaluates
@@ -73,8 +73,9 @@ module RbsInfer::Project
       return nil unless replays.map { |replay| replay.block.body.location }.uniq.size == replays.size
 
       virtual_reopens = replays.filter_map do |replay|
-        VirtualReopen.build(source: source, block: replay.block, kind: replay.kind, target: replay.target)
+        BlockReopen.appended(source: source, block: replay.block, kind: replay.kind, target: replay.target)
       end
+      virtual_reopens = BlockReopen.missing_from(source, virtual_reopens)
       return nil if virtual_reopens.empty?
 
       [source, virtual_reopens.join("\n")].join("\n")
