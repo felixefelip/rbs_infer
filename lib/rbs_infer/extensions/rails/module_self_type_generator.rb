@@ -100,9 +100,22 @@ module RbsInfer
           end
         end
 
-        # Still keyed on the file's own name: a `class_methods do` block belongs
-        # to the concern the file is written for.
+        # Two contributors, one list. A stored block replayed through
+        # `class_eval` is plain Ruby, so its entries come from the CORE
+        # (`Project::StoredBlockReplayImplements`) and need no name for the
+        # file: the target is read off the replay chain, not off the file's own
+        # module (felixefelip/rbs_infer#238).
+        #
+        # The `class_methods do` half is still keyed on the file's own name — a
+        # `class_methods do` block belongs to the concern the file is written
+        # for — so it is the only half that needs the extractor, and a file with
+        # no primary declaration can still contribute the first half.
         def blocks_for(abs, rel, source)
+          RbsInfer::Project::StoredBlockReplayImplements.blocks_for(source: source) +
+            class_methods_blocks_for(abs, rel, source)
+        end
+
+        def class_methods_blocks_for(abs, rel, source)
           extractor = RbsInfer::AST::ClassNameExtractor.new(file_path: abs)
           Prism.parse(source).value.accept(extractor)
           module_name = extractor.class_name
