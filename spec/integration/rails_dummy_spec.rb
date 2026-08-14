@@ -710,6 +710,31 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # `self.class.class_eval` inside an instance method: `self` is an instance of
+  # the enclosing class, so the receiver IS that class, statically. The methods
+  # it defines belong to `Foo` and the snapshot says so — before
+  # felixefelip/rbs_infer#244 they belonged to nothing and `call_age` was
+  # `untyped`.
+  #
+  # What the snapshot does NOT say is WHEN they exist. `call_age` reads `age`
+  # before calling `build_age`, which is a real NoMethodError, and declaring
+  # `age` on `Foo` is what makes the checker stop reporting it — see #245.
+  it "example30" do
+    name = "models/example30"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example30.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   it "example20" do
     name = "models/example20"
     rbs = RbsInfer::Analyzer.new(
