@@ -105,6 +105,9 @@ app/models/example28.rb:
     - "# @type instance: (singleton(Example28::Bar)) | (singleton(Example28::Baz))"
     defs:
       bazinga: singleton(Example28::Bar)
+  blocks:
+  - call: bazingado
+    implements: "::Example28::Bar"
 app/models/example3.rb:
   modules:
   - anchor: GeneratedAttributes

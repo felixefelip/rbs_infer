@@ -145,6 +145,41 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
     end
   end
 
+  # The other `blocks` contributor is CORE (`class_eval` is plain Ruby), and it
+  # names its target from the replay chain rather than from the file's own
+  # module — so it fires in a file whose primary declaration is a plain class.
+  it "adds a `blocks` @implements entry for a stored block replayed elsewhere" do
+    in_app(
+      "app/models/replayed.rb" => <<~RUBY
+        class Replayed
+          module DSL
+            attr_reader :body
+            def keep(&block) = @body = block
+            def apply(source) = class_eval(&source.body)
+          end
+
+          module Src
+            extend DSL
+            keep do
+              def installed; end
+            end
+          end
+
+          class Target
+            extend DSL
+            apply(Src)
+          end
+        end
+      RUBY
+    ) do |dir|
+      entry = described_class.new(app_dir: dir).build_table.fetch("app/models/replayed.rb")
+
+      expect(entry["blocks"]).to eq(
+        [{ "call" => "keep", "implements" => "::Replayed::Target" }]
+      )
+    end
+  end
+
   it "removes a stale sidecar when nothing qualifies" do
     in_app("lib/foo.rb" => "module Foo\nend\n") do |dir|
       out = File.join(dir, described_class::SIDECAR_PATH)

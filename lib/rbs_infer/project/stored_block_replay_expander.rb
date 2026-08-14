@@ -40,7 +40,11 @@ module RbsInfer::Project
   module StoredBlockReplayExpander
     REPLAY_METHODS = %i[class_eval module_eval].freeze
 
-    Replay = Data.define(:target, :block, :kind)
+    # `call` is the STORAGE method's name (`bazingado`), not the replay's
+    # (`bazinga`): it is the name written on the block being moved, which is
+    # what `StoredBlockReplayImplements` needs to point Steep at that block in
+    # the real source.
+    Replay = Data.define(:target, :block, :kind, :call)
 
     module_function
 

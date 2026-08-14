@@ -205,7 +205,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
           kind = @declaration_kinds[apply.subject]
           next unless kind
 
-          candidates << Replay.new(target: apply.subject, block: blocks.first.block, kind: kind)
+          candidates << Replay.new(target: apply.subject, block: blocks.first.block, kind: kind,
+                                   call: storage_method)
         end
       end
 
