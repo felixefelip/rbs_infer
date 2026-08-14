@@ -21,6 +21,6 @@ class Example28
     def age: () -> Integer
     def call_test: () -> String
     def greet: () -> String
-    def age_after_a_decade: () -> BigDecimal
+    def age_after_a_decade: () -> Integer
   end
 end

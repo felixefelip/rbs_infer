@@ -69,7 +69,7 @@ module RbsInfer::Signatures
       end || name
     end
 
-    def resolve(class_name, method_name, block_body_type: nil)
+    def resolve(class_name, method_name, block_body_type: nil, arg_types: nil)
       return nil unless class_name && class_name != "untyped"
 
       # Nilable receiver (`User?`): the call has TWO branches and both are real
@@ -89,7 +89,8 @@ module RbsInfer::Signatures
       # false when the association is nil, which Steep then rejects with
       # "Cannot allow method body have type `(true | false)` … declared as `true`".
       if class_name.end_with?("?")
-        return resolve_nilable(class_name.delete_suffix("?"), method_name, block_body_type: block_body_type)
+        return resolve_nilable(class_name.delete_suffix("?"), method_name, block_body_type: block_body_type,
+                               arg_types: arg_types)
       end
 
       # Intersection types (e.g. `(OrderImport & OrderImport::Validated)` from
@@ -99,7 +100,7 @@ module RbsInfer::Signatures
       # which gives precedence to later components in the intersection.
       if (components = parse_intersection(class_name))
         components.reverse_each do |component|
-          result = resolve(component, method_name, block_body_type: block_body_type)
+          result = resolve(component, method_name, block_body_type: block_body_type, arg_types: arg_types)
           return result if result && result != "untyped"
         end
         return nil
@@ -111,14 +112,16 @@ module RbsInfer::Signatures
       # components agree on the return type; divergence → nil (ambiguous,
       # better untyped than a guess) — felixefelip/rbs_infer#19.
       if (components = parse_union(class_name))
-        results = components.map { |c| resolve(c, method_name, block_body_type: block_body_type) }
+        results = components.map { |c| resolve(c, method_name, block_body_type: block_body_type, arg_types: arg_types) }
         return nil if results.any?(&:nil?)
         return results.first if results.uniq.length == 1
         return nil
       end
 
       # Tentar via RBS DefinitionBuilder primeiro (resolve genéricos corretamente)
-      rbs_result = @rbs_definition_resolver.resolve_via_rbs_builder(:instance, class_name, method_name, block_body_type: block_body_type)
+      rbs_result = @rbs_definition_resolver.resolve_via_rbs_builder(:instance, class_name, method_name,
+                                                                    block_body_type: block_body_type,
+                                                                    arg_types: arg_types)
       return rbs_result if rbs_result && rbs_result != "untyped"
 
       # Fallback: source + regex-based resolution
@@ -128,8 +131,8 @@ module RbsInfer::Signatures
 
     # The two branches of a call on a nilable receiver, unioned. See `resolve`
     # for why the nil branch is not optional.
-    private def resolve_nilable(base, method_name, block_body_type:)
-      base_result = resolve(base, method_name, block_body_type: block_body_type)
+    private def resolve_nilable(base, method_name, block_body_type:, arg_types: nil)
+      base_result = resolve(base, method_name, block_body_type: block_body_type, arg_types: arg_types)
       return base_result if base_result.nil? || base_result == "untyped"
 
       nil_result = nil_branch(method_name, block_body_type)
