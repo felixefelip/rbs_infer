@@ -54,6 +54,15 @@ RSpec.describe SteepBaselineRunner do
     )
   end
 
+  it "drops a fresh type variable's number, which is not part of its identity" do
+    runner = described_class.new(project_root: DUMMY_APP_ROOT)
+
+    expect(runner.send(:normalize_message, "as a block-pass-argument of type `^(::Module) -> U(243)`"))
+      .to eq("as a block-pass-argument of type `^(::Module) -> U(_)`")
+    expect(runner.send(:normalize_message, "Type `::Integer` does not have method `abs`"))
+      .to eq("Type `::Integer` does not have method `abs`")
+  end
+
   it "rejects a failed Steep process instead of accepting its partial stdout" do
     allow(Open3).to receive(:capture3).and_return([
       "app/models/example.rb:1:0: [error] partial",

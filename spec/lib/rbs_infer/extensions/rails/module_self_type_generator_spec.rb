@@ -175,7 +175,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
       entry = described_class.new(app_dir: dir).build_table.fetch("app/models/replayed.rb")
 
       expect(entry["blocks"]).to eq(
-        [{ "call" => "keep", "implements" => "::Replayed::Target" }]
+        [{ "call" => "keep", "in" => "::Replayed::Src", "implements" => "::Replayed::Target" }]
       )
     end
   end

@@ -107,6 +107,7 @@ app/models/example28.rb:
       bazinga: singleton(Example28::Bar)
   blocks:
   - call: bazingado
+    in: "::Example28::Baz"
     implements: "::Example28::Bar"
 app/models/example29.rb:
   modules:
@@ -124,6 +125,13 @@ app/models/example29.rb:
       - when:
           module_included: singleton(Example29::BazOther)
         self: singleton(Example29::BarOther)
+  blocks:
+  - call: bazingado
+    in: "::Example29::Baz"
+    implements: "::Example29::Bar"
+  - call: bazingado
+    in: "::Example29::BazOther"
+    implements: "::Example29::BarOther"
 app/models/example3.rb:
   modules:
   - anchor: GeneratedAttributes

@@ -32,13 +32,13 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
     RUBY
 
     expect(described_class.blocks_for(source: source))
-      .to eq([{ "call" => "keep", "implements" => "::Target" }])
+      .to eq([{ "call" => "keep", "in" => "::Src", "implements" => "::Target" }])
   end
 
-  # Steep matches an entry by call name over the whole file, so a name written
-  # twice would put BOTH entries on BOTH blocks — including on the block whose
-  # target is the other one.
-  it "declines a storage call written more than once in the file" do
+  # One DSL name, two blocks, two targets. Steep matches an entry by call name
+  # over the whole file, so the `in` scope is what keeps each entry on its own
+  # block instead of putting both on both (felixefelip/steep#145).
+  it "tells two blocks of the same storage call apart by the scope they sit in" do
     source = dsl + <<~RUBY
       module SrcA
         extend DSL
@@ -61,13 +61,15 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source)).to eq([])
+    expect(described_class.blocks_for(source: source)).to eq(
+      [{ "call" => "keep", "in" => "::SrcA", "implements" => "::First" },
+       { "call" => "keep", "in" => "::SrcB", "implements" => "::Second" }]
+    )
   end
 
-  # A second block Steep would also annotate is a reason to decline even when
-  # the Collector never produced a replay for it — the count has to be taken
-  # the way Steep takes it.
-  it "declines when an unrelated block reuses the storage call's name" do
+  # An unrelated block of the same name gets no entry of its own, and the
+  # `in` scope keeps it from picking up someone else's.
+  it "leaves an unrelated block reusing the storage call's name alone" do
     source = dsl + <<~RUBY
       module Src
         extend DSL
@@ -84,7 +86,10 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source)).to eq([])
+    entries = described_class.blocks_for(source: source)
+
+    expect(entries).to eq([{ "call" => "keep", "in" => "::Src", "implements" => "::Target" }])
+    expect(entries.map { |entry| entry["line"] }).not_to include(17)
   end
 
   it "returns nothing for a file with no replay" do
