@@ -69,7 +69,7 @@ module RbsInfer::Signatures
       end || name
     end
 
-    def resolve(class_name, method_name, block_body_type: nil, arg_types: nil)
+    def resolve(class_name, method_name, arg_types:, block_body_type: nil)
       return nil unless class_name && class_name != "untyped"
 
       # Nilable receiver (`User?`): the call has TWO branches and both are real
@@ -131,11 +131,11 @@ module RbsInfer::Signatures
 
     # The two branches of a call on a nilable receiver, unioned. See `resolve`
     # for why the nil branch is not optional.
-    private def resolve_nilable(base, method_name, block_body_type:, arg_types: nil)
+    private def resolve_nilable(base, method_name, arg_types:, block_body_type:)
       base_result = resolve(base, method_name, block_body_type: block_body_type, arg_types: arg_types)
       return base_result if base_result.nil? || base_result == "untyped"
 
-      nil_result = nil_branch(method_name, block_body_type)
+      nil_result = nil_branch(method_name, block_body_type, arg_types)
       return base_result if nil_result.nil? || nil_result == "untyped"
       return base_result if base_result == nil_result
 
@@ -151,11 +151,17 @@ module RbsInfer::Signatures
 
     # `NilClass`'s own surface, memoized: every nilable receiver in the project
     # asks the same question, and the answer never varies by call-site.
-    private def nil_branch(method_name, block_body_type)
-      key = [method_name, block_body_type]
+    #
+    # The nil branch is the SAME call, so it gets the same arguments — and they
+    # belong in the key: `NilClass#+` answered for one argument list must not be
+    # served to another, which is the bug the memo would otherwise introduce the
+    # moment overload selection started depending on them.
+    private def nil_branch(method_name, block_body_type, arg_types)
+      key = [method_name, block_body_type, arg_types]
       return @nil_branch_cache[key] if @nil_branch_cache.key?(key)
 
-      @nil_branch_cache[key] = resolve("NilClass", method_name, block_body_type: block_body_type)
+      @nil_branch_cache[key] = resolve("NilClass", method_name, block_body_type: block_body_type,
+                                                               arg_types: arg_types)
     end
 
     private def self_relative?(type)
@@ -194,7 +200,11 @@ module RbsInfer::Signatures
       return nil unless class_name && class_name != "untyped"
 
       # Tentar via RBS DefinitionBuilder primeiro (resolve genéricos corretamente)
-      resolved = @rbs_definition_resolver.resolve_via_rbs_builder(:singleton, class_name, method_name, block_body_type: block_body_type)
+      # The singleton path does not carry the call's arguments yet: every caller
+      # below reaches it with a method NAME only. Saying so keeps the gap visible
+      # rather than letting it read as an oversight.
+      resolved = @rbs_definition_resolver.resolve_via_rbs_builder(:singleton, class_name, method_name,
+                                                                 arg_types: nil, block_body_type: block_body_type)
       return resolved if resolved
 
       # Fallback: regex-based lookup
@@ -578,7 +588,8 @@ module RbsInfer::Signatures
 
           infer_block_return_type(node.block, class_name)
         elsif node.receiver.nil? && class_name
-          resolved = @rbs_definition_resolver.resolve_via_rbs_builder(:instance, class_name, node.name.to_s)
+          resolved = @rbs_definition_resolver.resolve_via_rbs_builder(:instance, class_name, node.name.to_s,
+                                                                     arg_types: nil)
           return resolved if resolved && resolved != "untyped"
 
           infer_block_return_type(node.block, class_name)

@@ -230,7 +230,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
       result.value.accept(collector)
       member = collector.members.find { |candidate| candidate.name == "set_current_session" }
       resolver = instance_double("MethodTypeResolver")
-      allow(resolver).to receive(:resolve).with("Session", "signed_id").and_return("String")
+      allow(resolver).to receive(:resolve).with("Session", "signed_id", arg_types: nil).and_return("String")
 
       merger.resolve_method_return_types_from_attrs(
         collector.members,
@@ -264,7 +264,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
       expect(member.signature).to include("?{ (*untyped) -> untyped } -> untyped")
 
       resolver = instance_double("MethodTypeResolver")
-      allow(resolver).to receive(:resolve).with("Session", "signed_id").and_return("String")
+      allow(resolver).to receive(:resolve).with("Session", "signed_id", arg_types: nil).and_return("String")
 
       merger.resolve_method_return_types_from_attrs(
         collector.members,

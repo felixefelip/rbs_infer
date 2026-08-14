@@ -539,7 +539,7 @@ module RbsInfer::Inference
           # receiver.method → tentar resolver
           receiver_type = resolve_arg_value_type(node.receiver, local_var_types, method_return_types)
           if receiver_type && receiver_type != "untyped"
-            @method_type_resolver.resolve(receiver_type, node.name.to_s) || "untyped"
+            @method_type_resolver.resolve(receiver_type, node.name.to_s, arg_types: nil) || "untyped"
           else
             "untyped"
           end
@@ -631,7 +631,7 @@ module RbsInfer::Inference
             else
               receiver_type = resolve_arg_value_type(assign.value.receiver, local_var_types, method_return_types)
               if receiver_type && receiver_type != "untyped"
-                resolved = @method_type_resolver.resolve(receiver_type, assign.value.name.to_s)
+                resolved = @method_type_resolver.resolve(receiver_type, assign.value.name.to_s, arg_types: nil)
                 local_var_types[var_name] = resolved if resolved && resolved != "untyped"
               end
             end

@@ -634,7 +634,7 @@ module RbsInfer
       target_class = info.target.split("_").map(&:capitalize).join
 
       info.methods.each do |method_name|
-        return_type = method_type_resolver.resolve(target_class, method_name) || "untyped"
+        return_type = method_type_resolver.resolve(target_class, method_name, arg_types: nil) || "untyped"
         return_type = RbsInfer::Signatures::RbsParserUtil.nilablize(return_type) if info.allow_nil
 
         generated_name = case info.prefix

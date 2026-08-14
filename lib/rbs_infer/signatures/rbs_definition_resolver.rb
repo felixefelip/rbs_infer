@@ -16,13 +16,20 @@ module RbsInfer::Signatures
       @method_owners = {}
     end
 
-    # `arg_types` is the call site's positional argument types, when the caller
-    # has them (`["Integer"]` for `age + 10`). Without them an overloaded method
-    # can only be guessed at, and the guess is DECLARATION ORDER — which across
-    # reopens is load order and means nothing: `bigdecimal`'s RBS reopens
-    # `Integer` with `def +: (BigDecimal) -> BigDecimal | ...`, so `age + 10`
-    # resolved to `BigDecimal` and the emitted RBS contradicted its own body.
-    def resolve_via_rbs_builder(kind, class_name, method_name, block_body_type: nil, arg_types: nil)
+    # `arg_types` is the call site's positional argument types (`["Integer"]` for
+    # `age + 10`), or nil when the caller has none to offer. Without them an
+    # overloaded method can only be guessed at, and the guess is DECLARATION
+    # ORDER — which across reopens is load order and means nothing: `bigdecimal`'s
+    # RBS reopens `Integer` with `def +: (BigDecimal) -> BigDecimal | ...`, so
+    # `age + 10` resolved to `BigDecimal` and the emitted RBS contradicted its own
+    # body.
+    #
+    # REQUIRED, not defaulted, per docs/engineering/required-threaded-deps.md: a
+    # caller that forgets it is not loudly broken, it silently goes back to that
+    # guess. Writing `arg_types: nil` is a caller SAYING it has no argument
+    # information, which is a different statement from having said nothing — and
+    # the sites that say it are the list of what is left to wire.
+    def resolve_via_rbs_builder(kind, class_name, method_name, arg_types:, block_body_type: nil)
       return nil unless rbs_builder
 
       # Intersection types (e.g. `(Order & Order::Validated)` yielded by

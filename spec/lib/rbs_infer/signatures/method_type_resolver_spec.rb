@@ -24,6 +24,15 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     )
   end
 
+  # Test-only wrapper, same reasoning as the builder above: `arg_types:` is
+  # REQUIRED in production, because a caller that omits it silently falls back to
+  # picking an overload by declaration order (docs/engineering/required-threaded-deps.md).
+  # None of these examples exercises an overloaded method, so they pass no
+  # arguments — said once here rather than sixteen times below.
+  def resolve(resolver, class_name, method_name, arg_types: nil, **kwargs)
+    resolver.resolve(class_name, method_name, arg_types: arg_types, **kwargs)
+  end
+
   it "resolve tipo de método anotado com #:" do
     files = {
       "foo.rb" => <<~RUBY
@@ -38,7 +47,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
     with_temp_files(files) do |dir, paths|
       resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
-      expect(resolver.resolve("Foo", "name")).to eq("String")
+      expect(resolve(resolver, "Foo", "name")).to eq("String")
     end
   end
 
@@ -53,7 +62,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
     with_temp_files(files) do |dir, paths|
       resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
-      expect(resolver.resolve("Foo", "count")).to eq("Integer")
+      expect(resolve(resolver, "Foo", "count")).to eq("Integer")
     end
   end
 
@@ -72,7 +81,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
     with_temp_files(files) do |dir, paths|
       resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
-      expect(resolver.resolve("Foo", "repo")).to eq("DefaultRepo")
+      expect(resolve(resolver, "Foo", "repo")).to eq("DefaultRepo")
     end
   end
 
@@ -97,7 +106,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
     with_temp_files(files) do |dir, paths|
       resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
-      expect(resolver.resolve("MyApp::Foo", "widget")).to eq("Widget")
+      expect(resolve(resolver, "MyApp::Foo", "widget")).to eq("Widget")
     end
   end
 
@@ -129,7 +138,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
     with_temp_files("my_app/entity.rb" => entity_src, "my_app/service.rb" => service_src) do |dir, paths|
       resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
-      expect(resolver.resolve("MyApp::Entity", "nome")).to eq("String")
+      expect(resolve(resolver, "MyApp::Entity", "nome")).to eq("String")
     end
   end
 
@@ -161,7 +170,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
     with_temp_files("my_app/entity.rb" => entity_src, "my_app/caller.rb" => caller_src) do |dir, paths|
       resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
-      expect(resolver.resolve("MyApp::Entity", "email")).to eq("Wrapper")
+      expect(resolve(resolver, "MyApp::Entity", "email")).to eq("Wrapper")
       expect(resolver.resolve_init_param_types("MyApp::Entity")["email"]).to eq("String")
     end
   end
@@ -194,8 +203,8 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
     with_temp_files(files) do |dir, paths|
       resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
-      expect(resolver.resolve("Model & Model::Validated", "file")).to eq("Uploader")
-      expect(resolver.resolve("(Model & Model::Validated)", "file")).to eq("Uploader")
+      expect(resolve(resolver, "Model & Model::Validated", "file")).to eq("Uploader")
+      expect(resolve(resolver, "(Model & Model::Validated)", "file")).to eq("Uploader")
     end
   end
 
@@ -224,7 +233,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
     with_temp_files(files) do |dir, paths|
       resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
-      expect(resolver.resolve("(LeftClass & RightClass)", "shared")).to eq("Symbol")
+      expect(resolve(resolver, "(LeftClass & RightClass)", "shared")).to eq("Symbol")
     end
   end
 
@@ -294,7 +303,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
         # `sig/`). The source fallback is more forgiving — `FileIndex` matches on a
         # path SUFFIX, so even a bare `Archiver` finds `post/archiver.rb` — which is
         # precisely why this miss went unnoticed: it degraded only on the RBS path.
-        expect(resolver.resolve("Post::Archiver", "call")).to eq("String")
+        expect(resolve(resolver, "Post::Archiver", "call")).to eq("String")
       end
     end
 
@@ -350,7 +359,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
       expect(resolver.resolve_all("Example")).to include("ticket" => "Ticket?")
       # The single-method path already answered this; the two agreeing is the point.
-      expect(resolver.resolve("Example", "ticket")).to eq("Ticket?")
+      expect(resolve(resolver, "Example", "ticket")).to eq("Ticket?")
     end
 
     it "keeps a type the source itself states, over the RBS" do
@@ -381,25 +390,25 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
     it "unions the nil branch when NilClass defines the method" do
       # `Object#nil?: () -> false` against `NilClass#nil?: () -> true`.
-      expect(resolver.resolve("String", "nil?")).to eq("false")
-      expect(resolver.resolve("String?", "nil?")).to eq("bool")
+      expect(resolve(resolver, "String", "nil?")).to eq("false")
+      expect(resolve(resolver, "String?", "nil?")).to eq("bool")
     end
 
     it "drops the nil branch's literal when the base's class already covers it" do
       # `NilClass#to_s: () -> ""`, and `"" <: String` — the union is `String`.
-      expect(resolver.resolve("Integer?", "to_s")).to eq("String")
+      expect(resolve(resolver, "Integer?", "to_s")).to eq("String")
     end
 
     it "keeps the optimistic base answer when NilClass does not define it" do
       # The nil branch would be a NoMethodError — the app's steep check flags the
       # unhandled nil; there is no second return type to union in.
-      expect(resolver.resolve("String?", "upcase")).to eq("String")
+      expect(resolve(resolver, "String?", "upcase")).to eq("String")
     end
 
     it "keeps the base answer when a branch's type is receiver-relative" do
       # `self` means a different type in each branch, and the caller resolves a
       # returned `self` against ONE receiver, so the union isn't expressible.
-      expect(resolver.resolve("String?", "itself")).to eq("self")
+      expect(resolve(resolver, "String?", "itself")).to eq("self")
     end
   end
 end

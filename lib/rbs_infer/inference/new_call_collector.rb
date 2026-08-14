@@ -965,7 +965,7 @@ module RbsInfer::Inference
       refined = @current_method && @self_types_by_method[@current_method]
       return nil if refined.nil? || refined.empty?
 
-      resolved = @method_type_resolver.resolve(refined, method_name)
+      resolved = @method_type_resolver.resolve(refined, method_name, arg_types: nil)
       resolved if resolved && resolved != "untyped"
     end
 
@@ -987,7 +987,7 @@ module RbsInfer::Inference
       receiver_type = resolve_receiver_type(node.receiver)
       return nil unless receiver_type && receiver_type != "untyped"
 
-      resolved = @method_type_resolver.resolve(receiver_type, node.name.to_s)
+      resolved = @method_type_resolver.resolve(receiver_type, node.name.to_s, arg_types: nil)
       # `a&.b` with a nilable receiver: the nil flows into the result (on
       # a plain call the resolve is optimistic — `a.b` raises on nil).
       if resolved && node.safe_navigation? && receiver_type.end_with?("?")

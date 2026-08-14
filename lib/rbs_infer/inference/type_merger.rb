@@ -572,7 +572,7 @@ module RbsInfer::Inference
         else
           parent_type = resolve_receiver_type(node.receiver, self_ctx, method_type_resolver, local_types: local_types)
           if parent_type && parent_type != "untyped"
-            resolved = method_type_resolver.resolve(parent_type, node.name.to_s)
+            resolved = method_type_resolver.resolve(parent_type, node.name.to_s, arg_types: nil)
             # "self" means the method returns the same type as the receiver
             resolved = parent_type if resolved == "self"
             if resolved.nil? || resolved == "untyped"
