@@ -30,9 +30,21 @@ module RbsInfer::Project
     module_function
 
     # @param source [String] the file's source
-    # @return [Array<Hash>] `[{ "call" => "<storage method>", "implements" =>
-    #   "::<Target>" }]`, one per stored block whose replay target is decided,
-    #   else `[]`.
+    # @return [Array<Hash>] `[{ "call" => "<storage method>", "in" => "::<Scope>",
+    #   "implements" => "::<Target>" }]`, one per stored block whose replay
+    #   target is decided, else `[]`.
+    #
+    # `in` is the class/module the block is WRITTEN in, and it is what makes one
+    # DSL name usable twice in a file: a call name alone cannot tell `bazingado
+    # do` in `Baz` (replayed onto `Bar`) from the one in `BazOther` (replayed
+    # onto `BarOther`), and Steep would put both entries on both blocks.
+    # Requires felixefelip/steep#145; before it this had to decline such a file
+    # entirely and neither block was checked against its real definee.
+    #
+    # Not the block's LINE, which is the obvious key and the wrong one: Steep
+    # applies the module-wide annotations first and those may add lines, so a
+    # line measured against the real file no longer points at the same call by
+    # the time the block entries are read. A scope survives that rewrite.
     #
     # No `self` key: `@implements <Target>` already runs the block's `def`
     # bodies with an instance of `<Target>` as self, which is what a
@@ -46,31 +58,12 @@ module RbsInfer::Project
       return [] unless parsed.success?
 
       replays = StoredBlockReplayExpander::Collector.new(source).collect(parsed.value)
-      return [] if replays.empty?
-
-      entries_for(parsed.value, replays)
-    end
-
-    # Steep matches a `blocks` entry by CALL NAME alone (every receiverless
-    # `name do … end` in the file gets the annotation), so a name written twice
-    # cannot be annotated: the two blocks may well have different targets, and
-    # both would receive both entries. Emit only the names written once, and
-    # count them the way Steep does rather than from the replays — a second
-    # block that the Collector declined is still a second block to Steep.
-    def entries_for(root, replays)
-      counts = block_call_counts(root)
 
       replays.filter_map do |replay|
-        next unless counts[replay.call] == 1
+        next unless replay.scope
 
-        { "call" => replay.call, "implements" => "::#{replay.target}" }
-      end.uniq
-    end
-
-    def block_call_counts(root)
-      RbsInfer::Analyzer.find_all_nodes(root) do |node|
-        node.is_a?(Prism::CallNode) && node.receiver.nil? && node.block.is_a?(Prism::BlockNode)
-      end.each_with_object(Hash.new(0)) { |node, counts| counts[node.name.to_s] += 1 }
+        { "call" => replay.call, "in" => "::#{replay.scope}", "implements" => "::#{replay.target}" }
+      end
     end
   end
 end

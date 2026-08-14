@@ -76,10 +76,20 @@ class SteepBaselineRunner
       entry.fetch("diagnostics").map do |diagnostic|
         start = diagnostic.fetch("range").fetch("start")
         severity = SEVERITIES.fetch(diagnostic.fetch("severity"))
-        message = diagnostic.fetch("message").lines.first.chomp
+        message = normalize_message(diagnostic.fetch("message").lines.first.chomp)
 
         "#{file}:#{start.fetch("line")}:#{start.fetch("character")}: [#{severity}] #{message}"
       end
     end.sort.uniq
+  end
+
+  # A fresh type variable is numbered from a counter that spans the whole check,
+  # so `U(243)` becomes `U(257)` when an unrelated file starts inferring more —
+  # a baseline diff that says nothing happened. The identity is what matters
+  # here and the number is not part of it, so drop it.
+  FRESH_TYPE_VARIABLE = /\b([A-Z])\(\d+\)/
+
+  def normalize_message(message)
+    message.gsub(FRESH_TYPE_VARIABLE, '\1(_)')
   end
 end

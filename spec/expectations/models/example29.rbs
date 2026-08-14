@@ -1,0 +1,42 @@
+class Example29
+  module Foo
+    attr_reader bazingado_block: untyped
+    def bazinga: ((singleton(::Example29::Baz) | singleton(::Example29::BazOther)) module_included) -> untyped
+    def bazingado: () ?{ (*untyped) -> Symbol } -> (^(*untyped) -> Symbol)?
+  end
+
+  module Baz
+    extend ::Example29::Foo
+  end
+
+  module BazOther
+    extend ::Example29::Foo
+  end
+
+  class AfterBazingado
+    attr_reader bazingado_block: (^(*untyped) -> Symbol)?
+  end
+end
+
+class Example29
+  class Bar
+    extend ::Example29::Foo
+
+    def self.validade_age: () -> String
+
+    def age: () -> Integer
+    def call_test: () -> String
+    def greet: () -> String
+    def age_after_a_decade: () -> Integer
+  end
+end
+
+class Example29
+  class BarOther
+    extend ::Example29::Foo
+
+    def name: () -> String
+    def call_name_upcase: () -> String
+    def name_upcase: () -> String
+  end
+end

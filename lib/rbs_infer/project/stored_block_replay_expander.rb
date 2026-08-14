@@ -41,10 +41,12 @@ module RbsInfer::Project
     REPLAY_METHODS = %i[class_eval module_eval].freeze
 
     # `call` is the STORAGE method's name (`bazingado`), not the replay's
-    # (`bazinga`): it is the name written on the block being moved, which is
-    # what `StoredBlockReplayImplements` needs to point Steep at that block in
-    # the real source.
-    Replay = Data.define(:target, :block, :kind, :call)
+    # (`bazinga`): it is the name written on the block being moved. `scope` is
+    # the class/module that block is written IN (`Example29::Baz`), which is not
+    # the `target` it is replayed onto. Together they point Steep at this one
+    # block in the real source, which a name alone cannot do once a file writes
+    # the same DSL call twice — see `StoredBlockReplayImplements`.
+    Replay = Data.define(:target, :block, :kind, :call, :scope)
 
     module_function
 

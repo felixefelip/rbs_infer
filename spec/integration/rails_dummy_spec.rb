@@ -685,6 +685,31 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # The same replay TWICE in one file: `Baz` stores a block replayed onto `Bar`,
+  # `BazOther` stores another replayed onto `BarOther`. One `bazingado` name, two
+  # blocks, two targets — which is what the `blocks` sidecar could not express
+  # until its entries carried the opener's line (felixefelip/steep#145). Before
+  # that, the file had to be declined whole and each block was checked against
+  # its lexical module, where `age`/`name` do not exist.
+  #
+  # Each block's body reaches its OWN target's methods (`age` on Bar, `name` on
+  # BarOther), so this pins that the two replays never cross.
+  it "example29" do
+    name = "models/example29"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example29.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   it "example20" do
     name = "models/example20"
     rbs = RbsInfer::Analyzer.new(
