@@ -22,7 +22,7 @@ module Example30
   end
 end
 
-class Example30::Foo
+class Example30::Foo::AfterBuildAge
         def age
           25
         end

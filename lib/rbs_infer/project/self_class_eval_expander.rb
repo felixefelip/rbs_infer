@@ -4,6 +4,7 @@ require "prism"
 require_relative "source_expanders"
 require_relative "reopening_call"
 require_relative "block_reopen"
+require "steep/postconditions/marker_naming"
 
 module RbsInfer::Project
   # Desugars `self.class.class_eval do … end` written inside an INSTANCE method
@@ -45,18 +46,28 @@ module RbsInfer::Project
   module SelfClassEvalExpander
     module_function
 
-    def expand(source)
-      return nil unless ReopeningCall.possible?(source)
+    # Every relocated block the file holds, as `Found` records. Public because
+    # WHERE the methods land and WHEN they exist are two answers to one reading
+    # of the source, and `SelfClassEvalMarker` gives the second — from these
+    # same records, so the two cannot disagree about which method defines what.
+    def relocations(source)
+      return [] unless ReopeningCall.possible?(source)
 
       parsed = Prism.parse(source)
-      return nil unless parsed.success?
+      return [] unless parsed.success?
 
       collector = Collector.new
       parsed.value.accept(collector)
-      return nil if collector.found.empty?
+      collector.found
+    end
 
-      reopens = collector.found.filter_map do |found|
-        BlockReopen.appended(source: source, block: found.block, kind: found.kind, target: found.target)
+    def expand(source)
+      found = relocations(source)
+      return nil if found.empty?
+
+      reopens = found.filter_map do |relocation|
+        target = marker_for(relocation)&.delete_prefix("::") || relocation.target
+        BlockReopen.appended(source: source, block: relocation.block, kind: relocation.kind, target: target)
       end
       reopens = BlockReopen.missing_from(source, reopens)
       return nil if reopens.empty?
@@ -64,11 +75,40 @@ module RbsInfer::Project
       [source, reopens.join("\n")].join("\n")
     end
 
+    # The marker class the relocated `def`s are DECLARED on, or nil when the
+    # method cannot name one.
+    #
+    # Not the class they land on at runtime: `build_age` is what puts them
+    # there, so declaring them on `Foo` says they are always present and a read
+    # before the call stops being the `NoMethodError` it is. They go on
+    # `Foo::AfterBuildAge` instead, which `SelfClassEvalMarker` pairs with the
+    # postcondition that calling `build_age` narrows the receiver to
+    # `Foo & Foo::AfterBuildAge` (felixefelip/rbs_infer#245).
+    #
+    # Computed HERE and read from here by the sidecar half, because a marker the
+    # RBS does not declare makes the narrowing silently no-op — the two ends have
+    # to agree on the string, so only one of them may compose it.
+    #
+    # nil when the composed name is not a constant: `MarkerNaming` strips a
+    # trailing `?`/`!`/`=` and stops there, so an operator method (`[]=`) still
+    # yields `After[]`. The caller then falls back to the class itself — the #244
+    # behaviour, wrong about WHEN but right about WHERE, and better than dropping
+    # the methods entirely.
+    def marker_for(relocation)
+      return nil unless relocation.method
+      return nil unless Steep::Postconditions::MarkerNaming.valid_method_name?(relocation.method)
+
+      name = Steep::Postconditions::MarkerNaming.marker_name_for(relocation.target, relocation.method)
+      name.split("::").last&.match?(/\A[A-Z]\w*\z/) ? name : nil
+    end
+
     # Finds the calls whose receiver is statically the enclosing class. It is a
     # lexical walk because that is what decides the answer: which class the
     # method is written in, and that `self` there is an instance of it.
     class Collector < Prism::Visitor
-      Found = Data.define(:block, :kind, :target)
+      # `target` is the class the `def`s land on at runtime; `method` is the
+      # method that puts them there, which is what names the marker.
+      Found = Data.define(:block, :kind, :target, :method)
 
       attr_reader :found
 
@@ -79,6 +119,7 @@ module RbsInfer::Project
         # The scope depth of the instance method being visited, when that method
         # is written directly in a class body; nil otherwise.
         @instance_def_scope = nil
+        @instance_def_name = nil
         @found = []
         super()
       end
@@ -96,11 +137,16 @@ module RbsInfer::Project
       end
 
       def visit_def_node(node)
-        outer = @instance_def_scope
-        @instance_def_scope = @scope.size if instance_method?(node) && @block_depth.zero?
+        outer_scope = @instance_def_scope
+        outer_name = @instance_def_name
+        if instance_method?(node) && @block_depth.zero?
+          @instance_def_scope = @scope.size
+          @instance_def_name = node.name.to_s
+        end
         super
       ensure
-        @instance_def_scope = outer
+        @instance_def_scope = outer_scope
+        @instance_def_name = outer_name
       end
 
       def visit_block_node(node)
@@ -137,7 +183,7 @@ module RbsInfer::Project
         # owner (felixefelip/rbs_infer#238).
         return unless @instance_def_scope == @scope.size && @block_depth.zero?
 
-        @found << Found.new(block: node.block, kind: kind, target: owner)
+        @found << Found.new(block: node.block, kind: kind, target: owner, method: @instance_def_name)
       end
 
       # `self.class`, and nothing else that spells a class: `self.class.new.class`

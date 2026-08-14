@@ -3,6 +3,7 @@
 
 require "rbs_infer"
 require "fileutils"
+require "yaml"
 require "optparse"
 
 output = false
@@ -213,4 +214,32 @@ if output
   end
 else
   generate.call(files)
+end
+
+# The `.steep_postconditions.yml` half of the marker: WHERE the relocated
+# methods are declared is the RBS above, WHEN they exist is this
+# (felixefelip/rbs_infer#245). Steep globs `sig/**/.steep_postconditions.yml`
+# and merges, so this sits beside the one Steep writes itself rather than
+# fighting it for the same path.
+#
+# Swept once over the inputs at the end, not accumulated during generation:
+# `generate` runs once per dependency level and again per stabilization pass,
+# and the entries would be written as many times over.
+if output
+  postconditions = files.sort.flat_map do |file|
+    RbsInfer::Project::SelfClassEvalMarker.postconditions_for(File.read(file))
+  rescue StandardError
+    []
+  end
+
+  sidecar = File.join(output_dir, ".steep_postconditions.yml")
+  if postconditions.empty?
+    # Removed rather than left behind: a stale entry names a marker the RBS no
+    # longer declares, and the narrowing then silently stops applying.
+    FileUtils.rm_f(sidecar)
+  else
+    FileUtils.mkdir_p(File.dirname(sidecar))
+    File.write(sidecar, YAML.dump("version" => 1, "postconditions" => postconditions))
+    puts sidecar
+  end
 end

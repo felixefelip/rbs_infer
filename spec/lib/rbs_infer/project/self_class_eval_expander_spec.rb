@@ -6,7 +6,10 @@ require "rbs_infer"
 RSpec.describe RbsInfer::Project::SelfClassEvalExpander do
   def expand(source) = described_class.expand(source)
 
-  it "reopens the class the instance method is defined in" do
+  # The reopening names the MARKER, not the class: the methods exist only once
+  # `build` has run, and `SelfClassEvalMarker` pairs this with the
+  # postcondition that makes calling it say so.
+  it "reopens the marker of the class the instance method is defined in" do
     expanded = expand(<<~RUBY)
       class Foo
         def build
@@ -21,7 +24,7 @@ RSpec.describe RbsInfer::Project::SelfClassEvalExpander do
 
     # The body keeps its source indentation: re-indenting it to the reopening's
     # column reads better and rewrites the contents of any heredoc inside it.
-    expect(expanded).to include("class Foo\n      def age\n        25\n      end\nend")
+    expect(expanded).to include("class Foo::AfterBuild\n      def age\n        25\n      end\nend")
     expect(Prism.parse(expanded).success?).to be(true)
   end
 
@@ -36,7 +39,7 @@ RSpec.describe RbsInfer::Project::SelfClassEvalExpander do
       end
     RUBY
 
-    expect(expanded).to include("class Wrap::Foo\n")
+    expect(expanded).to include("class Wrap::Foo::AfterBuild\n")
   end
 
   it "reopens a module target as a module" do
@@ -48,7 +51,7 @@ RSpec.describe RbsInfer::Project::SelfClassEvalExpander do
       end
     RUBY
 
-    expect(expanded).to include("module Foo\n")
+    expect(expanded).to include("module Foo::AfterBuild\n")
   end
 
   # Each of these is a receiver or a `self` the call shape does not decide.
@@ -155,7 +158,7 @@ RSpec.describe RbsInfer::Project::SelfClassEvalExpander do
     once = expand(source)
 
     expect(expand(once)).to be_nil
-    expect(once.scan("class Foo\n").size).to eq(2)
+    expect(once.scan("class Foo::AfterBuild\n").size).to eq(1)
   end
 
   # Re-indenting the relocated body to the reopening's column reads better and
