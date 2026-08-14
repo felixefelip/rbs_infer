@@ -18,6 +18,8 @@ class Example28
     extend Example28::Foo
 
     bazingado do
+      validade_age
+
       def greet
         "Hello, world!"
       end
@@ -30,6 +32,10 @@ class Example28
 
   class Bar
     extend Example28::Foo
+
+    def self.validade_age
+      "validating age"
+    end
 
     bazinga(Example28::Baz)
 
@@ -44,6 +50,8 @@ class Example28
 end
 
 class Example28::Bar
+  validade_age
+
   def greet
     "Hello, world!"
   end

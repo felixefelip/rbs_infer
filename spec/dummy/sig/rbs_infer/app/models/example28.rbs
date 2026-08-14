@@ -18,6 +18,8 @@ class Example28
   class Bar
     extend ::Example28::Foo
 
+    def self.validade_age: () -> String
+
     def age: () -> Integer
     def call_test: () -> String
     def greet: () -> String
