@@ -14,6 +14,14 @@
 # sugar over exactly this shape, so a fix here is a fix there, with no framework
 # knowledge involved.
 #
+# Since #239 the defs below are emitted NOWHERE. `ClassMemberCollector` no longer
+# attributes a block's body to the module that lexically contains it — a block's `self`
+# can be rebound, so the lexical owner was never the right answer — and nothing puts it
+# on the host yet. What these snapshots pin today is therefore ABSENCE, and the Steep
+# baseline records the `does not have method` errors that follow. That is the state #216
+# has to end: not by putting the defs back on the module, which was the wrong owner all
+# along, but by landing them on the host.
+#
 # A plain class on purpose — nothing here is Active Record, so the fixture needs no
 # table.
 class IncludedHook
@@ -26,8 +34,8 @@ class IncludedHook
 
         # The load-bearing half, and the store-accessor shape: `super` can only resolve
         # if this def belongs to the HOST, whose ancestors have `IncludedHook::Slots`.
-        # Attributed to `Hookable` it sits in a module that includes nothing, so there
-        # is no super method at all and the return degrades to `untyped`.
+        # Today it belongs to nobody — the override is emitted nowhere — so `super`
+        # is never typed and a read of `slot` reaches `Slots`' plain accessor instead.
         def slot
           super || "default"
         end
@@ -81,6 +89,10 @@ class IncludedHook
   # `foo_included` is ever called, let alone with an includer — what it would define
   # belongs to nobody. Here as the limit case, so a fix for the hook above cannot
   # quietly generalise to any `*_included` name.
+  #
+  # Since #239 that is also what the snapshot shows for the real hooks above, so absence
+  # alone no longer tells the two apart. The criterion is what #216 changes: the hooks'
+  # defs land on their hosts, and this one still lands nowhere.
   module Arbitrary
     def self.foo_included(base)
       base.class_eval do
@@ -100,7 +112,9 @@ end
 
 # The call sites: the slot's writer is what gives `super` a type to return, and the
 # reads are what a regression would surface as `NoMethod` rather than as a silently
-# missing method.
+# missing method. Today `fill`'s `from_hook` and `read_shared`'s `from_shared` ARE that
+# `NoMethod` — both sit in the Steep baseline, because since #239 neither method is
+# declared anywhere.
 class IncludedHookCaller
   # Writes both slots, which is what gives each `super` a type to return. Kept apart
   # from the reads below so those measure the ancestor chain rather than a local
@@ -115,8 +129,9 @@ class IncludedHookCaller
 
   # The success criterion, visible in a snapshot rather than in a diagnostic: `slot`
   # returns `super || "default"` over a `String?` slot, so this is `String` once the
-  # hook's defs belong to the host. It reads `untyped` today because `super` resolves
-  # against `Hookable`, which includes nothing.
+  # hook's defs belong to the host. It reads `String?` today because the override is
+  # emitted nowhere: the read resolves to `Slots#slot`, and the `|| "default"` that
+  # removes the nil is never seen.
   def read_slot
     IncludedHook.new.slot
   end
@@ -124,8 +139,8 @@ class IncludedHookCaller
   # The same criterion for the sugared half, over a slot with a UNIQUE name: `tag` was
   # borrowed from the dummy's Tag model closely enough to pick up a type from
   # elsewhere, which made the two halves look asymmetric when they are not.
-  # Both read `untyped` today and both have to become `String` — one fix, or the two
-  # shapes have been treated as two problems.
+  # Both read `String?` today, for the same reason `read_slot` does, and both have to
+  # become `String` — one fix, or the two shapes have been treated as two problems.
   def read_badge
     IncludedHook.new.badge
   end
@@ -135,6 +150,11 @@ class IncludedHookCaller
     IncludedHook.new.stamp
   end
 
+  # The two-hosts half, and the one place where the two sides say different things out
+  # loud: this still infers `Integer` from the block's body, while the emitted RBS
+  # declares no `from_shared` at all, so Steep reports the call as a missing method.
+  # Both are pinned — the type here, the error in the baseline — so #216 has to close
+  # the gap on both sides at once.
   def read_shared
     IncludedHookFirst.new.from_shared
   end
