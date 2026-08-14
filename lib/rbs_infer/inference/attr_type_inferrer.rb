@@ -119,7 +119,7 @@ module RbsInfer::Inference
         # self.x = param.method → resolve the param's type, then the method's
         param_type = init_arg_types[expr_info[:param_name]]
         param_type = nil if param_type.nil? || param_type == "untyped"
-        @method_type_resolver.resolve(param_type, expr_info[:method_name]) if param_type
+        @method_type_resolver.resolve(param_type, expr_info[:method_name], arg_types: nil) if param_type
       when :call
         # self.x = something.method → resolve it through RBS
         if expr_info[:class_name] && expr_info[:method_name] && @method_type_resolver

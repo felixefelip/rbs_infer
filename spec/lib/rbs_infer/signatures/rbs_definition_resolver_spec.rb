@@ -59,7 +59,7 @@ RSpec.describe RbsInfer::Signatures::RbsDefinitionResolver do
       # Use `Integer & Comparable` — both are present in core RBS.
       # `Integer#succ` exists on the left component; the resolver should
       # return a result instead of nil.
-      result = resolver.resolve_via_rbs_builder(:instance, "Integer & Comparable", :succ)
+      result = resolver.resolve_via_rbs_builder(:instance, "Integer & Comparable", :succ, arg_types: nil)
       expect(result).not_to be_nil
     end
   end

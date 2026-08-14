@@ -16,7 +16,20 @@ module RbsInfer::Signatures
       @method_owners = {}
     end
 
-    def resolve_via_rbs_builder(kind, class_name, method_name, block_body_type: nil)
+    # `arg_types` is the call site's positional argument types (`["Integer"]` for
+    # `age + 10`), or nil when the caller has none to offer. Without them an
+    # overloaded method can only be guessed at, and the guess is DECLARATION
+    # ORDER — which across reopens is load order and means nothing: `bigdecimal`'s
+    # RBS reopens `Integer` with `def +: (BigDecimal) -> BigDecimal | ...`, so
+    # `age + 10` resolved to `BigDecimal` and the emitted RBS contradicted its own
+    # body.
+    #
+    # REQUIRED, not defaulted, per docs/engineering/required-threaded-deps.md: a
+    # caller that forgets it is not loudly broken, it silently goes back to that
+    # guess. Writing `arg_types: nil` is a caller SAYING it has no argument
+    # information, which is a different statement from having said nothing — and
+    # the sites that say it are the list of what is left to wire.
+    def resolve_via_rbs_builder(kind, class_name, method_name, arg_types:, block_body_type: nil)
       return nil unless rbs_builder
 
       # Intersection types (e.g. `(Order & Order::Validated)` yielded by
@@ -26,7 +39,8 @@ module RbsInfer::Signatures
       # `Steep::Interface::Builder.intersection_shape`'s later-wins merge.
       if (components = parse_intersection_components(class_name))
         components.reverse_each do |component|
-          result = resolve_via_rbs_builder(kind, component, method_name, block_body_type: block_body_type)
+          result = resolve_via_rbs_builder(kind, component, method_name, block_body_type: block_body_type,
+                                                                        arg_types: arg_types)
           return result if result && result != "untyped"
         end
         return nil
@@ -45,7 +59,11 @@ module RbsInfer::Signatures
       return nil unless method
 
       best = nil
-      method.defs.each do |d|
+      # One overload that the arguments single out answers the call; anything
+      # else keeps the previous first-that-formats walk, so a caller with no
+      # argument information is exactly as resolved as before.
+      candidates = select_overload(method.defs, arg_types)&.then { |d| [d] } || method.defs
+      candidates.each do |d|
         formatted = format_rbs_return_type(d.type.type.return_type, class_name)
         # For type variables (e.g. T in [T] { -> T } -> T), use the variable name
         # so it can be substituted by the type_params loop below
@@ -67,6 +85,46 @@ module RbsInfer::Signatures
       best
     rescue RBS::BaseError
       nil
+    end
+
+    # The one overload the call's arguments single out, or nil — "nil" meaning
+    # "this walk has nothing to say", which leaves the previous behaviour in
+    # place rather than replacing one guess with another.
+    #
+    # Matching is NOMINAL and exact, deliberately: a real answer is subtyping,
+    # which needs a checker, and Steep already is that checker — the return pass
+    # asks it for anything left `untyped`. What this has to be is SOUND, so it
+    # only ever speaks when one overload names exactly the argument types the
+    # call passes and no other overload does. Two matches, none, or a single
+    # unknown argument all say nothing.
+    def select_overload(defs, arg_types)
+      return nil if arg_types.nil? || arg_types.empty? || arg_types.any?(&:nil?)
+
+      matches = defs.select { |d| accepts_arguments?(d.type, arg_types) }
+      matches.first if matches.size == 1
+    end
+
+    # A method type whose REQUIRED positionals are exactly these types. Anything
+    # with optionals, a rest, trailing positionals or keywords is skipped: those
+    # accept argument lists this comparison does not model, so calling them a
+    # match would be the guess this method exists to avoid.
+    def accepts_arguments?(method_type, arg_types)
+      function = method_type.type
+      return false unless function.is_a?(RBS::Types::Function)
+      return false unless function.optional_positionals.empty? && function.trailing_positionals.empty?
+      return false if function.rest_positionals
+      return false unless function.required_keywords.empty? && function.optional_keywords.empty?
+      return false if function.rest_keywords
+      return false unless function.required_positionals.size == arg_types.size
+
+      function.required_positionals.zip(arg_types).all? do |param, arg|
+        normalize_type_name(param.type.to_s) == normalize_type_name(arg)
+      end
+    end
+
+    # `::Integer` from RBS and `Integer` from the analyzer are one type.
+    def normalize_type_name(name)
+      name.to_s.strip.delete_prefix("::")
     end
 
     # Resolve the element type of a collection by looking up the `each` method's

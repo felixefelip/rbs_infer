@@ -491,11 +491,14 @@ module RbsInfer::Inference
           block_body_type = infer_block_body_type(call_node.block, self_ctx) if call_node.block
           constant_receiver = call_node.receiver.is_a?(Prism::ConstantReadNode) || call_node.receiver.is_a?(Prism::ConstantPathNode)
           # Use singleton lookup for constant receivers (class method calls like ActiveRecord::Base.transaction)
+          arg_types = argument_types(call_node, self_ctx, method_type_resolver, local_types: local_types)
           resolved = if constant_receiver
                        method_type_resolver.resolve_class_method(receiver_type, call_node.name.to_s, block_body_type: block_body_type) ||
-                         method_type_resolver.resolve(receiver_type, call_node.name.to_s, block_body_type: block_body_type)
+                         method_type_resolver.resolve(receiver_type, call_node.name.to_s, block_body_type: block_body_type,
+                                                                                          arg_types: arg_types)
                      else
-                       method_type_resolver.resolve(receiver_type, call_node.name.to_s, block_body_type: block_body_type)
+                       method_type_resolver.resolve(receiver_type, call_node.name.to_s, block_body_type: block_body_type,
+                                                                                        arg_types: arg_types)
                      end
           resolved = receiver_type if resolved == "self"
           resolved = local_self_return(self_ctx, receiver_type, call_node.name.to_s, constant_receiver) if resolved.nil? || resolved == "untyped"
@@ -516,6 +519,43 @@ module RbsInfer::Inference
       result
     end
 
+    # The call's POSITIONAL argument types, or nil when the list is not one this
+    # can answer whole. An overload is only picked when every argument is known,
+    # so a partial answer is worth nothing — and `nil` is the difference between
+    # "the arguments say this overload" and "say nothing", which is what keeps
+    # the selection sound.
+    #
+    # Splats, block-passes, keywords and forwarding all decline: they describe
+    # an argument list this array cannot stand for.
+    def argument_types(call_node, self_ctx, method_type_resolver, local_types: {})
+      arguments = call_node.arguments&.arguments
+      return nil if arguments.nil? || arguments.empty?
+      return nil unless arguments.all? { |argument| positional_argument?(argument) }
+
+      types = arguments.map do |argument|
+        argument_type(argument, self_ctx, method_type_resolver, local_types: local_types)
+      end
+      types.any?(&:nil?) ? nil : types
+    end
+
+    # A CONSTANT in argument position is the class OBJECT — `singleton(Foo)` —
+    # which is the opposite of what `resolve_receiver_type` answers for it: as a
+    # RECEIVER a constant names the class whose singleton is being called, so it
+    # returns the bare `Foo`. Handing that to the selection would match an
+    # overload taking an INSTANCE. Decline instead; a wrong type here is exactly
+    # the failure this whole path exists to remove.
+    def argument_type(node, self_ctx, method_type_resolver, local_types: {})
+      return nil if node.is_a?(Prism::ConstantReadNode) || node.is_a?(Prism::ConstantPathNode)
+
+      infer_literal_type(node) ||
+        resolve_receiver_type(node, self_ctx, method_type_resolver, local_types: local_types)
+    end
+
+    def positional_argument?(node)
+      !(node.is_a?(Prism::SplatNode) || node.is_a?(Prism::BlockArgumentNode) ||
+        node.is_a?(Prism::KeywordHashNode) || node.is_a?(Prism::ForwardingArgumentsNode))
+    end
+
     def resolve_receiver_type(node, self_ctx, method_type_resolver, local_types: {})
       case node
       when Prism::CallNode
@@ -532,7 +572,7 @@ module RbsInfer::Inference
         else
           parent_type = resolve_receiver_type(node.receiver, self_ctx, method_type_resolver, local_types: local_types)
           if parent_type && parent_type != "untyped"
-            resolved = method_type_resolver.resolve(parent_type, node.name.to_s)
+            resolved = method_type_resolver.resolve(parent_type, node.name.to_s, arg_types: nil)
             # "self" means the method returns the same type as the receiver
             resolved = parent_type if resolved == "self"
             if resolved.nil? || resolved == "untyped"

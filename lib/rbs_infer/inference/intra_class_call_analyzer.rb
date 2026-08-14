@@ -242,7 +242,7 @@ module RbsInfer::Inference
         elsif node.receiver.is_a?(Prism::LocalVariableReadNode)
           var_type = @local_var_types[node.receiver.name.to_s]
           if var_type && @method_type_resolver
-            @method_type_resolver.resolve(var_type, node.name.to_s) || "untyped"
+            @method_type_resolver.resolve(var_type, node.name.to_s, arg_types: nil) || "untyped"
           else
             "untyped"
           end
