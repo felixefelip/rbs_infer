@@ -10,7 +10,7 @@ class Example31
   end
 
   module Age
-    def age: () -> Integer
+    def age: () -> Float
   end
 
   class AfterBazingado
@@ -21,7 +21,8 @@ end
 class Example31
   class Bar
     extend ::Example31::Foo
+    include ::Example31::Age
 
-    def age: () -> Integer
+    def age: () -> Float
   end
 end

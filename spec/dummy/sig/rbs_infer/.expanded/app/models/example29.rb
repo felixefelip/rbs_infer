@@ -74,19 +74,19 @@ class Example29
 end
 
 class Example29::Bar
-  validade_age
+      validade_age
 
-  def greet
-    "Hello, world!"
-  end
+      def greet
+        "Hello, world!"
+      end
 
-  def age_after_a_decade
-    age + 10
-  end
+      def age_after_a_decade
+        age + 10
+      end
 end
 
 class Example29::BarOther
-  def name_upcase
-    name.upcase
-  end
+      def name_upcase
+        name.upcase
+      end
 end

@@ -30,6 +30,8 @@ class Example31
   class Bar
     extend Example31::Foo
 
+    include Example31::Age
+
     bazinga(Example31::Baz)
   end
 end

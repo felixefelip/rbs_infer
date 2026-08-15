@@ -139,6 +139,9 @@ app/models/example3.rb:
     - "# @type instance: Example3::Foo & Example3::Foo::GeneratedAttributes"
 app/models/example31.rb:
   modules:
+  - anchor: Age
+    annotations:
+    - "# @type instance: Example31::Bar & Example31::Age"
   - anchor: Foo
     annotations:
     - "# @type instance: (singleton(Example31::Bar)) | (singleton(Example31::Baz))"
