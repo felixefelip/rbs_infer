@@ -994,6 +994,11 @@ postconditions:
   effects:
     may_write:
     - "@_bazingado_block"
+- class: Example33::Foo
+  method: bazingado
+  effects:
+    may_write:
+    - "@_bazingado_block"
 - class: Example3::Foo
   method: user=
   unconditional:

@@ -162,6 +162,29 @@ app/models/example32.rb:
   - call: bazingado
     in: "::Example32::Baz"
     implements: "::Example32::Bar"
+app/models/example33.rb:
+  modules:
+  - anchor: Foo
+    annotations:
+    - "# @type instance: (singleton(Example33::Bar)) | (singleton(Example33::BarOther))
+      | (singleton(Example33::Baz)) | (singleton(Example33::BazOther))"
+    defs:
+      bazinga: singleton(Example33::Bar) | singleton(Example33::BarOther)
+    paths:
+      bazinga:
+      - when:
+          module_included: singleton(Example33::Baz)
+        self: singleton(Example33::Bar)
+      - when:
+          module_included: singleton(Example33::BazOther)
+        self: singleton(Example33::BarOther)
+  blocks:
+  - call: bazingado
+    in: "::Example33::Baz"
+    implements: "::Example33::Bar"
+  - call: bazingado
+    in: "::Example33::BazOther"
+    implements: "::Example33::BarOther"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade
