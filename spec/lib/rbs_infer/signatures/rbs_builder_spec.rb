@@ -25,8 +25,8 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
   # forgotten one is silent-wrong, not a valid empty case
   # (docs/engineering/required-threaded-deps.md). This helper supplies the
   # test-only empty defaults so examples state only what they exercise.
-  def build_rbs(builder, members, init_arg_types = {}, attr_types = {}, *rest, ivar_types: {}, singleton_ivar_types: {}, markers: [])
-    builder.build(members, init_arg_types, attr_types, *rest, ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, markers: markers)
+  def build_rbs(builder, members, init_arg_types = {}, attr_types = {}, *rest, ivar_types: {}, singleton_ivar_types: {}, module_ivar_types: {}, markers: [])
+    builder.build(members, init_arg_types, attr_types, *rest, ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types, markers: markers)
   end
 
   describe "#has_class_methods_module?", :dummy_app do
@@ -322,6 +322,54 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
 
     it "produces parseable RBS" do
       result = build_rbs(builder, [], {}, {}, singleton_ivar_types: { "config" => "String?" })
+
+      expect { RBS::Parser.parse_signature(result) }.not_to raise_error
+    end
+  end
+
+  # A method in a nested module writes on whoever includes or extends it, never
+  # on the enclosing class — so the module is where the slot is declared, next to
+  # the members the owner mechanism already puts there
+  # (felixefelip/rbs_infer#249).
+  describe "#build with nested-module ivars" do
+    let(:builder) { make_builder(target_class: "Outer", superclass_name: nil) }
+
+    def owned_method(name, owner)
+      RbsInfer::Inference::Member.new(
+        kind: :method, name: name, signature: "#{name}: () -> void", visibility: :public, owner: owner
+      )
+    end
+
+    it "declares them inside the owning module, not on the class" do
+      result = build_rbs(builder, [owned_method("configure", "Generated")],
+                         module_ivar_types: { "Generated" => { "setting" => "Integer?" } })
+
+      expect(result).to match(/module Generated\n\s+@setting: Integer\?/)
+      expect(result).not_to match(/^  @setting:/)
+    end
+
+    it "files each module's ivars under its own module" do
+      result = build_rbs(builder, [owned_method("a", "One"), owned_method("b", "Two")],
+                         module_ivar_types: { "One" => { "x" => "String?" }, "Two" => { "y" => "Integer?" } })
+
+      expect(result).to match(/module One\n\s+@x: String\?/)
+      expect(result).to match(/module Two\n\s+@y: Integer\?/)
+    end
+
+    # The class keeps its own, so an ivar written in both places is not moved
+    # out from under the class that also writes it.
+    it "leaves the class's own ivars where they are" do
+      result = build_rbs(builder, [owned_method("configure", "Generated")],
+                         ivar_types: { "ran" => "bool?" },
+                         module_ivar_types: { "Generated" => { "setting" => "Integer?" } })
+
+      expect(result).to match(/^  @ran: bool\?/)
+      expect(result).to match(/module Generated\n\s+@setting: Integer\?/)
+    end
+
+    it "produces parseable RBS" do
+      result = build_rbs(builder, [owned_method("configure", "Generated")],
+                         module_ivar_types: { "Generated" => { "setting" => "Integer?" } })
 
       expect { RBS::Parser.parse_signature(result) }.not_to raise_error
     end

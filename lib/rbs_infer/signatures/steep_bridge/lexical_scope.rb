@@ -8,31 +8,31 @@ class RbsInfer::Signatures::SteepBridge
         name ? namespace + [[name, node.type]] : namespace
       end
 
-      # True when the lexical class path `namespace` (array of segments) is
-      # `target_class` *or* something nested under it. The nested case is
-      # required: an expander (e.g. CurrentAttributes) can emit a nested
-      # `module GeneratedAttributeMethods` that is `include`d into the class
-      # and writes the same ivars, so its writes belong to the target. The
-      # `::` boundary keeps a sibling like `BoardMember` from matching
-      # target `Board`. A nil `target_class` means "don't scope" (whole
-      # file), preserved for callers with no single target.
       # Whether a write at lexical `namespace` (a list of `[name, kind]` frames,
-      # outermost first) belongs to `target_class`.
+      # outermost first) belongs to `target_class`. Exactly — the scope that
+      # WRITES an ivar is the scope that owns it. A nil `target_class` means
+      # "don't scope" (whole file), preserved for callers with no single target.
       #
-      # Frames strictly below the target only count while they are *modules*:
-      # a nested module's members are the target's, emitted in place by the
-      # owner mechanism (felixefelip/rbs_infer#22). A nested *class* is its own
-      # target, so its writes are not the target's — without this, `@name = name`
-      # in `Example3::User#initialize` surfaced as `@name: String` on `Example3`.
+      # A nested module used to count as the target too, so that a nested
+      # `module GeneratedAttributeMethods` the class `include`s would put its
+      # ivars on the class. It reached the right conclusion the wrong way: the
+      # includer sees the slot because RBS resolves instance variables through
+      # ANCESTORS, so declaring `@x` on the module already gives every includer
+      # `@x` — the loophole was never what made that case work.
+      #
+      # What it did do is claim ivars from modules nobody includes. `Example32`'s
+      # `Foo` is only ever `extend`ed, so `@_bazingado_block` was declared on
+      # `Example32`, which no runtime object ever writes it on, and Steep
+      # answered `Cannot find the declaration of instance variable` at the write
+      # itself (felixefelip/rbs_infer#249).
+      #
+      # The nested module's ivars are emitted in its own `module … end` block by
+      # `RbsBuilder`, alongside the members the owner mechanism already put there
+      # (felixefelip/rbs_infer#22).
       def class_scope_match?(namespace, target_class)
         return true if target_class.nil?
 
-        target = target_class.to_s.sub(/\A::/, "")
-        current = namespace.map(&:first).join("::")
-        return true if current == target
-        return false unless current.start_with?("#{target}::")
-
-        namespace.drop(target.split("::").size).all? { |(_, kind)| kind == :module }
+        namespace.map(&:first).join("::") == target_class.to_s.sub(/\A::/, "")
       end
 
       private

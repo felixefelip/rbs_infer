@@ -24,7 +24,7 @@ module RbsInfer::Signatures
 
     ATTR_KINDS = %i[attr_reader attr_writer attr_accessor].freeze
 
-    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types:, singleton_ivar_types:, markers:)
+    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types:, singleton_ivar_types:, module_ivar_types:, markers:)
       members = reconcile_attrs_with_explicit_defs(members)
       parts = @target_class.split("::")
       class_name = parts.pop
@@ -69,7 +69,7 @@ module RbsInfer::Signatures
       # parsing the pseudo-source, with the core unaware of the extension
       # (felixefelip/rbs_infer#19, #22).
       nested = []
-      emit_parsed_nested_modules(nested, members, member_indent, attr_types, method_param_types)
+      emit_parsed_nested_modules(nested, members, member_indent, attr_types, method_param_types, module_ivar_types)
       add_group(lines, body_start, nested)
 
       # Mixins: extend (e.g. ActiveSupport::Concern) + include (concerns),
@@ -287,7 +287,7 @@ module RbsInfer::Signatures
     # parsed `include X` is emitted separately as a direct member, so the
     # module declaration here gives that include a real target — no
     # dangling mixin (felixefelip/rbs_infer#22).
-    def emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types)
+    def emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types, module_ivar_types)
       owned = members.reject { |m| m.owner.nil? }
       return if owned.empty?
 
@@ -305,6 +305,15 @@ module RbsInfer::Signatures
         # members. Emitting the lines flat made a nested module the one place in
         # the file where everything touched.
         body_start = lines.size
+
+        # The module's own instance variables. A method here writes them on
+        # whatever includes or extends the module, never on the enclosing class,
+        # so this is the only declaration site Steep will look at from inside
+        # `owner` — and includers still see the slot, because RBS resolves
+        # instance variables through ancestors (felixefelip/rbs_infer#249).
+        add_group(lines, body_start, (module_ivar_types[owner] || {}).map do |name, type|
+          "#{inner_indent}@#{name}: #{type}"
+        end)
 
         add_group(lines, body_start, mod_members.select { |m| m.kind == :constant }.map do |const|
           "#{inner_indent}#{const.signature}"

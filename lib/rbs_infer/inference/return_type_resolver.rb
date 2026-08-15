@@ -13,7 +13,13 @@ module RbsInfer::Inference
     # type for plain instance variables (`@x: T`); `singleton` maps ivar name
     # → type for class-instance variables written inside `def self.x` /
     # `class << self` (`self.@x: T`) — felixefelip/rbs_infer#86.
-    IvarInference = Struct.new(:instance, :singleton)
+    #
+    # `by_module` is the same instance split one level down: `owner name →
+    # { ivar name → type }` for the ivars a NESTED module writes, which are the
+    # module's and not the class's. The builder emits them inside that module's
+    # own block, where the method that writes them will look for them
+    # (felixefelip/rbs_infer#249).
+    IvarInference = Struct.new(:instance, :singleton, :by_module)
 
     def initialize(target_file:, target_class:, method_type_resolver:, constant_resolver:, instance_types: [], steep_bridge: nil)
       @target_file = target_file
@@ -256,7 +262,7 @@ module RbsInfer::Inference
     end
 
     def infer_ivar_types(members, attr_types, parsed_target: nil, method_param_types: {})
-      return IvarInference.new({}, {}) unless parsed_target
+      return IvarInference.new({}, {}, {}) unless parsed_target
 
       # Attr names already declared → the ivar they back is typed by the attr,
       # so we skip re-emitting it. Split by receiver scope: an instance attr
@@ -265,8 +271,16 @@ module RbsInfer::Inference
       # attr (`class << self; attr_accessor :x`) covers that one
       # (felixefelip/rbs_infer#86).
       attrs = members.select { |m| [:attr_accessor, :attr_reader, :attr_writer].include?(m.kind) }
+      # Every non-singleton attr, wherever it is declared: one in a nested module
+      # the class includes still types the class's `@x`, so it still means "don't
+      # re-emit". The owner matters for WHERE a slot is declared, not for whether
+      # an accessor already covers it.
       instance_attr_names = attrs.reject(&:singleton).map(&:name).to_set
       singleton_attr_names = attrs.select(&:singleton).map(&:name).to_set
+      # The same coverage question asked of one module: its own attrs cover its
+      # own ivars, and a sibling module's do not.
+      module_attr_names = Hash.new { |h, k| h[k] = Set.new }
+      attrs.reject(&:singleton).select(&:owner).each { |a| module_attr_names[a.owner] << a.name }
 
       ivar_types = {}
 
@@ -281,6 +295,7 @@ module RbsInfer::Inference
       # Don't close the door on the Prism fallback: the nil becomes mere
       # nilability and the fallback adds the call-sites' nominal types.
       steep_nil_only = Set.new
+      module_ivar_types = Hash.new { |h, k| h[k] = {} }
       if @steep_bridge && parsed_target.source
         steep_ivars = @steep_bridge.ivar_write_types(parsed_target.source, target_class: @target_class)
         steep_ivars.each do |name, type|
@@ -290,6 +305,19 @@ module RbsInfer::Inference
             next
           end
           ivar_types[name] = type
+        end
+
+        # Each nested module is its own scope for this question, so it is asked
+        # as one — `ivar_write_types` already takes the scope to answer for, and
+        # since felixefelip/rbs_infer#249 it answers for that scope EXACTLY
+        # rather than sweeping nested modules into their enclosing class.
+        members.filter_map(&:owner).uniq.each do |owner|
+          @steep_bridge.ivar_write_types(parsed_target.source, target_class: "#{@target_class}::#{owner}")
+                       .each do |name, type|
+            next if module_attr_names[owner].include?(name) || type == "nil"
+
+            module_ivar_types[owner][name] = type
+          end
         end
       end
 
@@ -308,18 +336,37 @@ module RbsInfer::Inference
       # (DefCollector already knows which defs are singleton).
       singleton_type_sets = Hash.new { |h, k| h[k] = IvarTypeSet.new }
 
+      # The fallback's half of the owner split. A nested module's instance
+      # methods write the MODULE's ivars, so they get their own bucket rather
+      # than pooling into the class's — the same division the Steep pass above
+      # makes by asking per scope (felixefelip/rbs_infer#249).
+      module_type_sets = Hash.new { |h, k| h[k] = Hash.new { |i, j| i[j] = IvarTypeSet.new } }
+
       collector.defs.each do |defn|
         singleton = collector.class_method?(defn)
+        owner = collector.owner_of(defn)
         # Keyed by the method's identity, not its name — see MethodKey
         # (felixefelip/rbs_infer#215).
         param_types = RbsInfer::Inference::MethodKey.lookup(
           method_param_types,
           defn.name.to_s,
-          owner: RbsInfer::Inference::MethodKey.qualify_owner(@target_class, collector.owner_of(defn)),
+          owner: RbsInfer::Inference::MethodKey.qualify_owner(@target_class, owner),
           kind: singleton ? :class_method : :method
         ) || {}
-        target = singleton ? singleton_type_sets : fallback_type_sets
-        skip_names = singleton ? singleton_attr_names : instance_attr_names
+        target = if singleton
+                   singleton_type_sets
+                 elsif owner
+                   module_type_sets[owner]
+                 else
+                   fallback_type_sets
+                 end
+        skip_names = if singleton
+                       singleton_attr_names
+                     elsif owner
+                       module_attr_names[owner]
+                     else
+                       instance_attr_names
+                     end
         collect_ivar_writes(defn, known_return_types, target, skip_names, param_types: param_types)
       end
 
@@ -351,7 +398,20 @@ module RbsInfer::Inference
         singleton_ivar_types[name] = emitted if emitted
       end
 
-      IvarInference.new(ivar_types, singleton_ivar_types)
+      # A module has no constructor of its own — whoever includes or extends it
+      # runs the write, and nothing here can say it ran. So every ivar a nested
+      # module writes is nilable, which is the same conclusion the class-level
+      # rule reaches for an ivar that `initialize` never touches.
+      module_type_sets.each do |owner, type_sets|
+        type_sets.each do |name, type_set|
+          next if module_ivar_types[owner].key?(name)
+
+          emitted = type_set.emit(force_nilable: true)
+          module_ivar_types[owner][name] = emitted if emitted
+        end
+      end
+
+      IvarInference.new(ivar_types, singleton_ivar_types, module_ivar_types.reject { |_, ivars| ivars.empty? })
     end
 
     # Returns Set[String] of ivar names (without `@`) definitely initialized in

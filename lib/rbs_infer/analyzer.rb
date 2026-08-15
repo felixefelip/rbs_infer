@@ -193,7 +193,7 @@ module RbsInfer
       is_module: false,
       type_params: method_type_resolver.type_param_string(receiver),
       class_methods_index: class_methods_index
-    ).build(members, {}, {}, ivar_types: {}, singleton_ivar_types: {}, markers: [])
+    ).build(members, {}, {}, ivar_types: {}, singleton_ivar_types: {}, module_ivar_types: {}, markers: [])
   end
 
   def build_single_target_rbs
@@ -246,19 +246,33 @@ module RbsInfer
     # (felixefelip/rbs_infer#86). Threaded straight to the builder — the
     # marker/widening machinery below is about instance ivars only.
     singleton_ivar_types = ivar_inference.singleton
+    # Ivars a NESTED module writes belong to that module, and are DECLARED in its
+    # own block — the class never had the slot (felixefelip/rbs_infer#249).
+    module_ivar_types = ivar_inference.by_module
+
+    # Where a slot is declared and what an instance may hold are two questions
+    # with two answers. Declaration follows the writer, which is what the module
+    # split above is for; inference wants everything reachable on an instance,
+    # and a class that `include`s the module reaches the module's slots too — so
+    # the passes below read the union.
+    #
+    # Splitting these was not optional: giving the inference passes the narrow
+    # map turned every `Current` reader into `-> untyped`, because the accessors
+    # live in the same nested module as the ivars they read.
+    reachable_ivar_types = module_ivar_types.values.reduce(ivar_types.dup) { |all, ivars| all.merge(ivars) }
 
     # Params assigned directly to ivars (`def x=(v); @x = v; end`) accept
     # everything the ivar can hold — align `User` → `User?` when the ivar
     # is nilable (felixefelip/rbs_infer#19, mirroring the rbs_rails
     # setter convention: `(T?) -> T?`).
-    widen_assigned_param_types(method_param_types, ivar_types)
+    widen_assigned_param_types(method_param_types, reachable_ivar_types)
 
     # Melhorar return types de métodos que retornam untyped usando chain resolution
     return_type_resolver.improve_method_return_types(target_members, attr_types, parsed_target: @parsed_target)
 
     # Second TypeMerger pass: now benefits from Steep-resolved types, inferred
     # param types and ivar types (ivar getters/setters — rbs_infer#19)
-    type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target, method_param_types: method_param_types, ivar_types: ivar_types)
+    type_merger.resolve_method_return_types_from_attrs(target_members, attr_types, method_type_resolver: method_type_resolver, parsed_target: @parsed_target, method_param_types: method_param_types, ivar_types: reachable_ivar_types)
 
     # A body with an early `return` can return nil however its tail was typed. Runs
     # AFTER every pass that sets a return type — each used to widen (or forget to) on
@@ -296,7 +310,7 @@ module RbsInfer
 
     namespace_classes = resolve_namespace_classes
     rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class), class_methods_index: class_methods_index)
-    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, markers: markers)
+    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types, markers: markers)
   end
 
   # Builds the marker class list to inject into the generated RBS.
@@ -319,7 +333,20 @@ module RbsInfer
   end
 
   def synthesize_setter_markers(target_members, attr_types)
-    per_method = steep_bridge.ivar_write_types_per_method(@parsed_target.source, target_class: @target_class)
+    # Every scope whose methods can narrow an ivar on this receiver: the class
+    # and the modules nested in it. Asked one by one because a scope is what
+    # `ivar_write_types_per_method` takes, and since felixefelip/rbs_infer#249 it
+    # answers for that scope exactly — a nested module's writers used to arrive
+    # in the class's answer, and reading only the class dropped their markers
+    # (`Example29::AfterBazingado`) entirely.
+    #
+    # Merged rather than kept apart because a marker is named for the RECEIVER,
+    # and `Baz.bazingado` narrows the same object whichever scope `bazingado` is
+    # written in. WHERE such a marker should be declared is the same question
+    # this PR settles for ivars, one level up, and is not settled here.
+    per_method = [@target_class, *target_members.filter_map(&:owner).uniq.map { |o| "#{@target_class}::#{o}" }]
+                 .map { |scope| steep_bridge.ivar_write_types_per_method(@parsed_target.source, target_class: scope) }
+                 .reduce({}) { |all, scoped| all.merge(scoped) { |_, a, b| a.merge(b) } }
     return [] if per_method.empty?
 
     declared_ivar_types = collect_declared_attr_types(target_members, attr_types)

@@ -87,6 +87,10 @@ postconditions:
       author_name: "::String"
       user: "((::User & ::User::Validated) | ::User)"
       viewer_name: "::String"
+  effects:
+    may_write:
+    - "@author_name"
+    - "@viewer_name"
 - class: Current
   method: __rbs_infer_instance
   effects:
@@ -158,6 +162,42 @@ postconditions:
     - "@account"
     - "@author_name"
     - "@user"
+    - "@viewer_name"
+- class: Current::GeneratedAttributeMethods
+  method: account
+  effects:
+    returns_ivar: "@account"
+- class: Current::GeneratedAttributeMethods
+  method: account=
+  effects:
+    may_write:
+    - "@account"
+- class: Current::GeneratedAttributeMethods
+  method: author_name
+  effects:
+    returns_ivar: "@author_name"
+- class: Current::GeneratedAttributeMethods
+  method: author_name=
+  effects:
+    may_write:
+    - "@author_name"
+- class: Current::GeneratedAttributeMethods
+  method: user
+  effects:
+    returns_ivar: "@user"
+- class: Current::GeneratedAttributeMethods
+  method: user=
+  effects:
+    may_write:
+    - "@user"
+- class: Current::GeneratedAttributeMethods
+  method: viewer_name
+  effects:
+    returns_ivar: "@viewer_name"
+- class: Current::GeneratedAttributeMethods
+  method: viewer_name=
+  effects:
+    may_write:
     - "@viewer_name"
 - class: DashboardController
   method: __rbs_infer__run_show
@@ -940,6 +980,11 @@ postconditions:
   effects:
     may_write:
     - "@bazingado_block"
+- class: Example32::Foo
+  method: bazingado
+  effects:
+    may_write:
+    - "@_bazingado_block"
 - class: Example3::Foo
   method: user=
   unconditional:

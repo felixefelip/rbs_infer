@@ -512,11 +512,27 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         expect(outer).not_to have_key("name")
       end
 
-      it "atribui os writes de um módulo aninhado à classe externa" do
+      # O escopo que ESCREVE é o dono. `Generated#configure` roda com `self`
+      # sendo quem inclui/estende `Generated` — nunca `Outer` — então declarar
+      # `@setting` em `Outer` inventa um slot que nenhum objeto tem, e o Steep
+      # responde `Cannot find the declaration of instance variable` no próprio
+      # write (felixefelip/rbs_infer#249).
+      #
+      # Um includer continua enxergando o slot: RBS resolve ivar por ANCESTRAIS,
+      # então declarar no módulo já serve `Outer` quando ele de fato inclui —
+      # que era o único caso que a regra antiga acertava.
+      it "não atribui os writes de um módulo aninhado à classe externa" do
         outer = bridge.ivar_write_types(nested_code, target_class: "Outer")
 
-        expect(outer).to have_key("setting")
+        expect(outer).not_to have_key("setting")
         expect(outer).to have_key("ran")
+      end
+
+      it "atribui os writes do módulo aninhado ao próprio módulo" do
+        generated = bridge.ivar_write_types(nested_code, target_class: "Outer::Generated")
+
+        expect(generated).to have_key("setting")
+        expect(generated).not_to have_key("ran")
       end
 
       it "atribui os writes da classe aninhada ao seu próprio alvo" do
