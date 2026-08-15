@@ -1,8 +1,8 @@
 class Example34
   module Foo
-    @_bazingado_block: (^(*untyped) -> Symbol)?
+    @_bazingado_block: (^(*untyped) [self: Module] -> Symbol)?
 
-    def included: (?untyped base) ?{ (*untyped) -> Symbol } -> (^(*untyped) -> Symbol)?
+    def included: (?Module? base) ?{ (*untyped) [self: Module] -> Symbol } -> (^(*untyped) [self: Module] -> Symbol | nil | Symbol)
   end
 
   module Baz
