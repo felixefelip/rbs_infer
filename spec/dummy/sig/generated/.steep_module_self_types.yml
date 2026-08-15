@@ -137,6 +137,17 @@ app/models/example3.rb:
   - anchor: GeneratedAttributes
     annotations:
     - "# @type instance: Example3::Foo & Example3::Foo::GeneratedAttributes"
+app/models/example31.rb:
+  modules:
+  - anchor: Foo
+    annotations:
+    - "# @type instance: (singleton(Example31::Bar)) | (singleton(Example31::Baz))"
+    defs:
+      bazinga: singleton(Example31::Bar)
+  blocks:
+  - call: bazingado
+    in: "::Example31::Baz"
+    implements: "::Example31::Bar"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade
