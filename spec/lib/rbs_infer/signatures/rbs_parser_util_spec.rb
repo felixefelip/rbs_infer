@@ -538,6 +538,63 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
       expect(described_class.replace_block_return_type("m: () ?{ () -> untyped } -> untyped", "Post"))
         .to eq("m: () ?{ () -> Post } -> untyped")
     end
+
+    # `bind_block_self` runs FIRST and puts the binding between the parameter
+    # list and the arrow, so a clause that reaches here has usually got one.
+    it "reaches past a `self` binding to the return behind it" do
+      expect(described_class.replace_block_return_type("m: () ?{ (*untyped) [self: singleton(Bar)] -> untyped } -> untyped", "Symbol"))
+        .to eq("m: () ?{ (*untyped) [self: singleton(Bar)] -> Symbol } -> untyped")
+    end
+
+    it "reads a bound clause whose self type is itself bracketed" do
+      expect(described_class.replace_block_return_type("m: () { (String) [self: Array[Foo]] -> untyped } -> untyped", "Post"))
+        .to eq("m: () { (String) [self: Array[Foo]] -> Post } -> untyped")
+    end
+  end
+
+  describe ".bind_block_self" do
+    it "binds `self` between the parameter list and the arrow" do
+      expect(described_class.bind_block_self("m: () ?{ (*untyped) -> untyped } -> untyped", "singleton(Bar)"))
+        .to eq("m: () ?{ (*untyped) [self: singleton(Bar)] -> untyped } -> untyped")
+    end
+
+    it "adds only the binding — not the `?`, not the parameter list" do
+      expect(described_class.bind_block_self("m: () ?{ (String, Integer) -> Post } -> untyped", "Module"))
+        .to eq("m: () ?{ (String, Integer) [self: Module] -> Post } -> untyped")
+    end
+
+    it "leaves alone what it cannot account for" do
+      [
+        # the clause already binds one — a hand-written annotation is the authority
+        ["m: () ?{ (*untyped) [self: Module] -> untyped } -> untyped", "singleton(Bar)"],
+        # no block at all
+        ["m: (untyped a) -> untyped", "Module"],
+        # nothing to say
+        ["m: () ?{ (*untyped) -> untyped } -> untyped", nil],
+        ["m: () ?{ (*untyped) -> untyped } -> untyped", "untyped"]
+      ].each { |sig, self_type| expect(described_class.bind_block_self(sig, self_type)).to eq(sig) }
+    end
+
+    # A method that STORES its block also returns it, and that returned proc
+    # carries the binding — which is not the block clause's, and must not be read
+    # as one. Taking it for one left the clause unbound on exactly the passes
+    # where the ivar holding the proc had already picked the binding up, so the
+    # two alternated and the file never converged (felixefelip/rbs_infer#209).
+    it "is not fooled by a `self` binding in the RETURN type" do
+      sig = "bazingado: (?singleton(Bar)? base) ?{ (*untyped) -> Symbol } -> (^(*untyped) [self: singleton(Bar)] -> Symbol)?"
+
+      expect(described_class.bind_block_self(sig, "singleton(Bar)"))
+        .to eq("bazingado: (?singleton(Bar)? base) ?{ (*untyped) [self: singleton(Bar)] -> Symbol } -> (^(*untyped) [self: singleton(Bar)] -> Symbol)?")
+    end
+
+    # The pair, in the order `BlockSignatureResolver` applies them: binding, then
+    # return. Both have to land, or the clause is a different type each pass.
+    it "composes with the return replacement that follows it" do
+      bound = described_class.bind_block_self("bazingado: (?singleton(Bar)? base) ?{ (*untyped) -> untyped } -> untyped", "singleton(Bar)")
+
+      expect(described_class.replace_block_return_type(bound, "Symbol"))
+        .to eq("bazingado: (?singleton(Bar)? base) ?{ (*untyped) [self: singleton(Bar)] -> Symbol } -> untyped")
+    end
   end
 
   describe ".require_block" do
