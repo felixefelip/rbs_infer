@@ -5,13 +5,13 @@ class Current
   self.@viewer_name: String?
   self.@__rbs_infer_instance: Current?
 
-  @user: ((User & User::Validated) | User)?
-  @author_name: String?
-  @account: (Account & Account::Validated)?
-  @viewer_name: String?
-
   module GeneratedAttributeMethods
-    def user: () -> ((User & User::Validated) | User)?
+    @user: ((User & User::Validated) | User)?
+    @author_name: String?
+    @account: (Account & Account::Validated)?
+    @viewer_name: String?
+
+    def user: () -> ((User & User::Validated) | User | nil)
     def user=: (((User & User::Validated) | User?) value) -> ((User & User::Validated) | User)?
     def author_name: () -> String?
     def author_name=: (String? value) -> String?
