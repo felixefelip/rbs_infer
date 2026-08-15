@@ -30,6 +30,14 @@ class Example32
     extend Example32::Foo
 
     bazinga(Example32::Baz)
+
+    def test
+      @test = "test"
+    end
+
+    def use_test
+      @test.upcase if @test
+    end
   end
 end
 

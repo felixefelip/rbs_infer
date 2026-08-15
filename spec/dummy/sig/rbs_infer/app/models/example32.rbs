@@ -13,8 +13,12 @@ end
 
 class Example32
   class Bar
+    @test: String?
+
     extend ::Example32::Foo
 
+    def test: () -> String
+    def use_test: () -> String?
     def age: () -> Integer
   end
 end
