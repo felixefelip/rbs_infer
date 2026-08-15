@@ -1,9 +1,9 @@
 class Example32
-  @_bazingado_block: (^(*untyped) -> Symbol)?
+  @_bazingado_block: (^(*untyped) [self: singleton(Example32::Bar)] -> Symbol)?
 
   module Foo
-    def bazinga: (singleton(::Example32::Baz) module_included) -> (^(*untyped) [self: singleton(Example32::Bar)] -> untyped)?
-    def bazingado: (?singleton(Example32::Bar)? base) ?{ (*untyped) [self: singleton(Example32::Bar)] -> untyped } -> (^(*untyped) -> Symbol)?
+    def bazinga: (singleton(::Example32::Baz) module_included) -> (^(*untyped) [self: singleton(Example32::Bar)] -> Symbol)?
+    def bazingado: (?singleton(Example32::Bar)? base) ?{ (*untyped) [self: singleton(Example32::Bar)] -> Symbol } -> (^(*untyped) [self: singleton(Example32::Bar)] -> Symbol)?
   end
 
   module Baz

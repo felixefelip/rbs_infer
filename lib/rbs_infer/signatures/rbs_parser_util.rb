@@ -340,7 +340,15 @@ module RbsInfer::Signatures
     # A union is PARENTHESIZED here, unlike in the parameter list: `{ () -> A | B }`
     # is a syntax error, while `{ (A | B) -> untyped }` is fine. Measured, not
     # assumed — the two positions really do differ.
-    BLOCK_RETURN = /(?<open>\??\{ \([^)]*\) -> )untyped(?<close> \})/
+    #
+    # The `[self: T]` is optional because `bind_block_self` runs FIRST and puts it
+    # exactly here, between the parameter list and the arrow. Requiring the arrow
+    # to follow the list directly made this a silent no-op for every block that
+    # got a binding — and since the binding itself only lands on the passes where
+    # the checker can resolve the replay, the two answers alternated instead of
+    # accumulating: a stored block never reached a fixed point at all
+    # (felixefelip/rbs_infer#209).
+    BLOCK_RETURN = /(?<open>\??\{ \([^)]*\) (?:\[self: .+?\] )?-> )untyped(?<close> \})/
 
     def replace_block_return_type(method_sig, type)
       return method_sig unless method_sig && usable_type?(type)
@@ -357,12 +365,21 @@ module RbsInfer::Signatures
     # (felixefelip/rbs_infer#208).
     #
     # A clause that already binds `self` is left alone: that binding came from a
-    # hand-written annotation, and an annotation is the authority.
+    # hand-written annotation, and an annotation is the authority. Scoped to the
+    # BLOCK clause, because a method that stores its block also tends to RETURN
+    # it, and a returned proc carries the very binding this asks about
+    # (`-> (^(*untyped) [self: singleton(Bar)] -> Symbol)?`). Read off the whole
+    # signature, that return made the guard trip on a block clause that had no
+    # binding at all — and since the return only carries one on the passes where
+    # the ivar holding the proc had already picked it up, the binding appeared
+    # and vanished on alternating passes, which is a file that never converges
+    # (felixefelip/rbs_infer#209).
     BLOCK_SELF_BINDING = /(?<open>\??\{ \([^)]*\) )(?=->)/
+    BOUND_BLOCK = /\??\{ \([^)]*\) \[self: /
 
     def bind_block_self(method_sig, self_type)
       return method_sig unless method_sig && usable_type?(self_type)
-      return method_sig if method_sig.include?("[self:")
+      return method_sig if method_sig.match?(BOUND_BLOCK)
 
       method_sig.sub(BLOCK_SELF_BINDING) { "#{Regexp.last_match[:open]}[self: #{self_type}] " }
     end
