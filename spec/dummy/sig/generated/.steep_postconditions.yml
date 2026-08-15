@@ -931,6 +931,15 @@ postconditions:
     consts:
       Example3::Foo.name: "::String"
       Example3::Foo.user: "::Example3::User"
+- class: Example31::Foo
+  method: bazingado
+  unconditional:
+    ivars:
+      "@bazingado_block": "(^(*untyped) -> ::Symbol | nil)"
+    self: "::Example31::Foo & ::Example31::Foo::AfterBazingado"
+  effects:
+    may_write:
+    - "@bazingado_block"
 - class: Example3::Foo
   method: user=
   unconditional:
