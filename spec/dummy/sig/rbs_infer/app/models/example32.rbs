@@ -14,5 +14,7 @@ end
 class Example32
   class Bar
     extend ::Example32::Foo
+
+    def age: () -> Integer
   end
 end
