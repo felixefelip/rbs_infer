@@ -151,6 +151,13 @@ app/models/example31.rb:
   - call: bazingado
     in: "::Example31::Baz"
     implements: "::Example31::Bar"
+app/models/example32.rb:
+  modules:
+  - anchor: Foo
+    annotations:
+    - "# @type instance: (singleton(Example32::Bar)) | (singleton(Example32::Baz))"
+    defs:
+      bazinga: singleton(Example32::Bar)
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade
