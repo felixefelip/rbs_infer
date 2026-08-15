@@ -980,6 +980,15 @@ postconditions:
   effects:
     may_write:
     - "@bazingado_block"
+- class: Example32::Bar
+  method: test
+  unconditional:
+    ivars:
+      "@test": "::String"
+    self: "::Example32::Bar & ::Example32::Bar::AfterTest"
+  effects:
+    may_write:
+    - "@test"
 - class: Example32::Foo
   method: bazingado
   effects:
