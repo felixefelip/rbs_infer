@@ -735,6 +735,38 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
   end
 
+  # `ActiveSupport::Concern`'s own direction, which example29 is the mirror of:
+  # `bazingado(base = nil, &block)` keeps the block when handed no base and
+  # replays it with `base.class_eval(&@_bazingado_block)` when handed one, so
+  # `self` is the module that STORED the block and the target arrives as a
+  # parameter. `Bar` reaches it through a forward, `bazinga(Baz)` →
+  # `Baz.bazingado(self)`, because in this direction the target cannot be the
+  # receiver (felixefelip/rbs_infer#247).
+  #
+  # Two things the snapshot pins:
+  #
+  # - `age` lands on `Bar`, not on `Baz` where it is lexically written. No
+  #   `attr_reader` anywhere in the fixture — the ivar is the whole join, which
+  #   is what the expander had to learn.
+  # - the stored proc keeps `[self: singleton(Example32::Bar)]` on both the
+  #   block clause and the returned type. Those two used to alternate, and a
+  #   file whose types alternate never converges (#246).
+  it "example32" do
+    name = "models/example32"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "app/models/example32.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+  end
+
   it "example20" do
     name = "models/example20"
     rbs = RbsInfer::Analyzer.new(
