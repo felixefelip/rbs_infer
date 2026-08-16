@@ -293,4 +293,103 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(described_class.expand(source)).to be_nil
     end
   end
+
+  # `apply(*modules)` forwarding inside an iteration, which is the shape the
+  # generated `Module#include` pseudo-code uses. The receiver is a BLOCK
+  # parameter rather than a method parameter, and the call site passes several
+  # constants at once — neither was read before felixefelip/rbs_infer#253.
+  context "a DSL forwarding to each of several modules" do
+    def splat(sources: %w[First Second], applied: "apply(First, Second)", iteration: "reverse_each")
+      kept = sources.map do |name|
+        <<~RUBY
+          class #{name} < Base
+            keep do
+              def installed_#{name.downcase}
+                "#{name.downcase}"
+              end
+            end
+          end
+        RUBY
+      end
+
+      <<~RUBY
+        class Wrap
+          class Base
+            def self.apply(*modules)
+              modules.#{iteration} { |mod| mod.keep(self) }
+            end
+
+            def self.keep(base = nil, &block)
+              if base.nil?
+                @body = block
+              else
+                base.class_eval(&@body) if @body
+              end
+            end
+          end
+
+        #{kept.join("\n").gsub(/^(?=.)/, "  ")}
+          class Target < Base
+            #{applied}
+          end
+        end
+      RUBY
+    end
+
+    it "moves every named module's block onto the target" do
+      expanded = described_class.expand(splat)
+
+      expect(expanded).to include("class Wrap::Target\n      def installed_first")
+      expect(expanded).to include("class Wrap::Target\n      def installed_second")
+      expect(Prism.parse(expanded).success?).to be(true)
+    end
+
+    it "resolves a single argument through the same iteration" do
+      expanded = described_class.expand(splat(sources: %w[First], applied: "apply(First)"))
+
+      expect(expanded).to include("class Wrap::Target\n      def installed_first")
+      expect(expanded).not_to include("installed_second")
+    end
+
+    # The relation is "this name holds something we were handed", and it holds
+    # for any iteration that yields the receiver's elements.
+    it "reads the other element-yielding iterations too" do
+      %w[each map select each_with_index].each do |iteration|
+        expect(described_class.expand(splat(iteration: iteration)))
+          .to include("class Wrap::Target\n      def installed_first"), "#{iteration} was not read"
+      end
+    end
+
+    it "adds nothing on a second pass over its own output" do
+      expect(described_class.expand(described_class.expand(splat))).to be_nil
+    end
+
+    # `instance_eval` hands the block no element at all, so its block parameter
+    # is not a name this pass can claim anything about.
+    it "declines an iteration that does not yield elements" do
+      expect(described_class.expand(splat(iteration: "instance_eval"))).to be_nil
+    end
+
+    it "declines a receiver that is neither a parameter nor an element of one" do
+      source = splat.sub("modules.reverse_each { |mod| mod.keep(self) }",
+                         "Registry.all.reverse_each { |mod| mod.keep(self) }")
+
+      expect(described_class.expand(source)).to be_nil
+    end
+
+    # Only the FIRST value yielded is an element; a destructured block gives
+    # this pass no single name to follow.
+    it "declines a block that destructures what it is yielded" do
+      source = splat.sub("{ |mod| mod.keep(self) }", "{ |(mod, _extra)| mod.keep(self) }")
+
+      expect(described_class.expand(source)).to be_nil
+    end
+
+    it "resolves an element of an element" do
+      source = splat.sub("modules.reverse_each { |mod| mod.keep(self) }",
+                         "modules.each { |group| group.each { |mod| mod.keep(self) } }")
+
+      expect(described_class.expand(source)).to include("class Wrap::Target\n      def installed_first")
+    end
+  end
 end
