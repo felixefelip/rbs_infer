@@ -1050,6 +1050,16 @@ postconditions:
   unconditional:
     consts:
       Example4::Foo.name: "::String"
+- class: Example40::Bazinga
+  method: bazingado
+  effects:
+    may_write:
+    - "@_bazingado_block"
+- class: Example40::Foo
+  method: bazingado
+  effects:
+    may_write:
+    - "@_bazingado_holder"
 - class: Example4::Foo
   method: name
   effects:

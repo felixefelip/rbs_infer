@@ -487,4 +487,101 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(described_class.expand(source)).to include("class Wrap::Target\n      def installed")
     end
   end
+
+  context "a DSL method that delegates to an object it holds" do
+    def delegated(kept: "keep", memo: "@holder ||= Holder.new", call: "@holder.#{kept}(base, &block)")
+      <<~RUBY
+        class Wrap
+          module DSL
+            def apply(*modules)
+              modules.reverse_each { |mod| mod.send(:keep, self) }
+            end
+
+            private
+
+            def keep(base = nil, &block)
+              #{memo}
+              #{call}
+            end
+          end
+
+          class Holder
+            def #{kept}(base = nil, &block)
+              if base.nil?
+                @body = block
+              else
+                base.class_eval(&@body) if @body
+              end
+            end
+          end
+
+          module Source
+            extend DSL
+
+            keep do
+              def installed
+                "yes"
+              end
+            end
+          end
+
+          class Target
+            extend DSL
+            apply(Source)
+          end
+        end
+      RUBY
+    end
+
+    it "follows the delegation to the object that keeps the block" do
+      expanded = described_class.expand(delegated)
+
+      expect(expanded).to include("class Wrap::Target\n      def installed")
+      expect(Prism.parse(expanded).success?).to be(true)
+    end
+
+    # The name the SOURCE writes is the delegating method's, never the held
+    # object's. Reading the keeper's name works only while the two are spelled
+    # alike, and renaming the held method changes nothing about the program.
+    it "does not depend on the two methods sharing a name" do
+      expect(described_class.expand(delegated(kept: "keep_or_replay")))
+        .to include("class Wrap::Target\n      def installed")
+    end
+
+    it "reads a plain assignment as well as a memoization" do
+      expect(described_class.expand(delegated(memo: "@holder = Holder.new")))
+        .to include("class Wrap::Target\n      def installed")
+    end
+
+    it "resolves the held class through the enclosing namespace" do
+      expect(described_class.expand(delegated(memo: "@holder ||= Wrap::Holder.new")))
+        .to include("class Wrap::Target\n      def installed")
+    end
+
+    it "adds nothing on a second pass over its own output" do
+      expect(described_class.expand(described_class.expand(delegated))).to be_nil
+    end
+
+    # Forwarding the block is the whole claim: without it the storage on the
+    # other side keeps nothing, so the call is not the pass-through it looks like.
+    it "declines a delegation that drops the block" do
+      expect(described_class.expand(delegated(call: "@holder.keep(base)"))).to be_nil
+    end
+
+    it "declines a delegation to an object built somewhere else" do
+      expect(described_class.expand(delegated(memo: "@holder ||= registry.fetch(:holder)"))).to be_nil
+    end
+
+    it "declines a held class this file does not declare" do
+      expect(described_class.expand(delegated(memo: "@holder ||= External::Holder.new"))).to be_nil
+    end
+
+    # Two constructions under one name say nothing decidable about which object
+    # the block reached, and declaration order must not decide it.
+    it "declines an ivar filled with two different classes" do
+      source = delegated(memo: "@holder ||= Holder.new\n              @holder = Other.new")
+
+      expect(described_class.expand(source)).to be_nil
+    end
+  end
 end
