@@ -224,12 +224,16 @@ app/models/example38.rb:
   modules:
   - anchor: Foo
     annotations:
-    - "# @type instance: (singleton(Example38::Bar)) | (singleton(Example38::Baz))"
+    - "# @type instance: (singleton(Example38::Bar)) | (singleton(Example38::Baz))
+      | (singleton(Example38::BazOther))"
     defs:
       bazinga: singleton(Example38::Bar)
   blocks:
   - call: bazingado
     in: "::Example38::Baz"
+    implements: "::Example38::Bar"
+  - call: bazingado
+    in: "::Example38::BazOther"
     implements: "::Example38::Bar"
 app/models/included_hook/home_made.rb:
   modules:

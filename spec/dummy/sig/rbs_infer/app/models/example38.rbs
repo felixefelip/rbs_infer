@@ -2,7 +2,7 @@ class Example38
   module Foo
     @_bazingado_block: (^(*untyped) [self: singleton(Example38::Bar)] -> Symbol)?
 
-    def bazinga: (*singleton(::Example38::Baz) modules) -> Array[singleton(Example38::Baz)]
+    def bazinga: (*(singleton(::Example38::Baz) | singleton(::Example38::BazOther)) modules) -> Array[(singleton(Example38::Baz) | singleton(Example38::BazOther))]
 
     private
 
@@ -17,10 +17,17 @@ class Example38
 end
 
 class Example38
+  class BazOther
+    extend ::Example38::Foo
+  end
+end
+
+class Example38
   class Bar
     extend ::Example38::Foo
 
     def call_age: () -> Integer
     def age: () -> Integer
+    def name: () -> String
   end
 end

@@ -30,10 +30,20 @@ class Example38
     end
   end
 
+  class BazOther
+    extend Example38::Foo
+
+    bazingado do
+      def name
+        "John Doe"
+      end
+    end
+  end
+
   class Bar
     extend Example38::Foo
 
-    bazinga(Example38::Baz)
+    bazinga(Example38::Baz, Example38::BazOther)
 
     def call_age
       age + 10
@@ -44,5 +54,11 @@ end
 class Example38::Bar
       def age
         31
+      end
+end
+
+class Example38::Bar
+      def name
+        "John Doe"
       end
 end
