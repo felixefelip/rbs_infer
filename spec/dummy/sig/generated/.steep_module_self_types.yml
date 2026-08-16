@@ -242,6 +242,14 @@ app/models/example39.rb:
     - "# @type instance: (singleton(Example39::Bar)) | (singleton(Example39::Baz))"
     defs:
       bananed: singleton(Example39::Baz)
+app/models/example40.rb:
+  modules:
+  - anchor: Foo
+    annotations:
+    - "# @type instance: (singleton(Example40::Bar)) | (singleton(Example40::Baz))
+      | (singleton(Example40::BazOther))"
+    defs:
+      bazinga: singleton(Example40::Bar)
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade

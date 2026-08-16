@@ -7,7 +7,7 @@ OUTPUT_DIR = sig/rbs_infer
 
 ## Gerar RBS para todo o app/ do dummy
 rbs_infer:
-	cd $(DUMMY_DIR) && $(RBS_INFER) app/ sig/ --output --output-dir $(OUTPUT_DIR)
+	cd $(DUMMY_DIR) && $(RBS_INFER) app/ lib/ sig/ --output --output-dir $(OUTPUT_DIR)
 
 rbs_rails_custom:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/extensions/rails/custom_generator'; RbsInfer::Extensions::Rails::CustomGenerator.new(output_dir: 'sig/rbs_rails_custom').generate_all"
