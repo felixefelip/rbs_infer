@@ -1,0 +1,7 @@
+class Module
+  def banana: (*singleton(::Example39::Baz) modules) -> Module
+
+  private
+
+  def bananed: () -> untyped
+end
