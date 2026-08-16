@@ -12,8 +12,6 @@ app/models/example3.rb:67:13: [error] Type `(::String | nil)` does not have meth
 app/models/example30.rb:16:6: [error] Type `::Example30::Foo` does not have method `age`
 app/models/example30.rb:9:12: [warning] Method `::Example30::Foo#age` is not declared in RBS
 app/models/example31.rb:26:8: [error] Cannot allow method body have type `::Integer` because declared as type `::Float`
-app/models/example38.rb:25:10: [warning] Method `::Example38::Baz#age` is not declared in RBS
-app/models/example38.rb:37:6: [error] Type `::Example38::Bar` does not have method `age`
 app/models/example4.rb:14:25: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:22:25: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:27:23: [error] Type `(::String | nil)` does not have method `upcase`

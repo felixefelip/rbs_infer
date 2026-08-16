@@ -212,6 +212,35 @@ module RbsInfer::Project::StoredBlockReplayExpander
       names
     end
 
+    SEND_METHODS = %i[send public_send __send__].freeze
+
+    # What a call actually dispatches: `[method_name, arguments]`.
+    #
+    # `send` and its siblings name their callee in the first ARGUMENT, so
+    # `x.send(:foo, a)` is statically the same call as `x.foo(a)` — the
+    # indirection is a spelling, not a data-flow question, as long as that
+    # first argument is a literal name. Reading `node.name` directly answered
+    # `send` and left the real callee sitting in the argument list, so every
+    # shape below silently missed the spelling (felixefelip/rbs_infer#255).
+    #
+    # That spelling is exactly what a caller reaches for when the method is
+    # private, which is why a DSL keeping its storage method private was
+    # invisible — and it is what the generated `Module#include` pseudo-code
+    # writes (`mod.send(:included, self)`), for the same reason.
+    #
+    # A COMPUTED name (`x.send(meth, a)`) is the arbitrary-dispatch case this
+    # pass exists to decline: nil, so the caller skips the node rather than
+    # guessing which method runs.
+    def dispatched(node)
+      arguments = node.arguments&.arguments || []
+      return [node.name, arguments] unless SEND_METHODS.include?(node.name)
+
+      callee, *rest = arguments
+      return nil unless callee.is_a?(Prism::SymbolNode) || callee.is_a?(Prism::StringNode)
+
+      [callee.unescaped.to_sym, rest]
+    end
+
     def stored_block_ivar(body, block_name)
       nodes(body).filter_map do |node|
         next unless node.is_a?(Prism::InstanceVariableWriteNode)
@@ -228,14 +257,18 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # pass does not have and must decline rather than guess.
     def replay_shape(body)
       shapes = nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::CallNode) && REPLAY_METHODS.include?(node.name)
+        next unless node.is_a?(Prism::CallNode)
+        evaluator, = dispatched(node)
+        next unless evaluator && REPLAY_METHODS.include?(evaluator)
         pass = node.block
         next unless pass.is_a?(Prism::BlockArgumentNode)
         reader_call = pass.expression
-        next unless reader_call.is_a?(Prism::CallNode) && reader_call.arguments.nil?
+        next unless reader_call.is_a?(Prism::CallNode)
+        reader, reader_arguments = dispatched(reader_call)
+        next unless reader && reader_arguments.empty?
         next unless reader_call.receiver.is_a?(Prism::LocalVariableReadNode)
 
-        [reader_call.receiver.name.to_s, reader_call.name.to_s]
+        [reader_call.receiver.name.to_s, reader.to_s]
       end.uniq
       shapes.first if shapes.size == 1
     end
@@ -250,7 +283,9 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # shape — the whole body is scanned, exactly as `replay_shape` scans it.
     def inward_replay_shape(body, parameters)
       shapes = nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::CallNode) && REPLAY_METHODS.include?(node.name)
+        next unless node.is_a?(Prism::CallNode)
+        evaluator, = dispatched(node)
+        next unless evaluator && REPLAY_METHODS.include?(evaluator)
         receiver = node.receiver
         next unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
         pass = node.block
@@ -274,10 +309,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
         next unless node.is_a?(Prism::CallNode)
         receiver = node.receiver
         next unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
-        arguments = node.arguments&.arguments || []
+        callee, arguments = dispatched(node)
+        next unless callee
         next unless arguments.size == 1 && arguments.first.is_a?(Prism::SelfNode)
 
-        [receiver.name.to_s, node.name.to_s]
+        [receiver.name.to_s, callee.to_s]
       end.uniq
       shapes.first if shapes.size == 1
     end

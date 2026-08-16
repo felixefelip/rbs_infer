@@ -395,4 +395,96 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(described_class.expand(source)).to include("class Wrap::Target\n      def installed_first")
     end
   end
+
+  # `x.send(:foo, a)` is statically the same call as `x.foo(a)` — the callee
+  # has moved into the first argument, that is all. Reading `node.name` got
+  # `send` back and left the real callee unexamined, so a DSL keeping its
+  # storage method private (the reason to write `send` at all) resolved
+  # nothing (felixefelip/rbs_infer#255).
+  context "a replay dispatched through `send`" do
+    def dispatched(call: "mod.send(:keep, self)", visibility: "private")
+      <<~RUBY
+        class Wrap
+          module DSL
+            def apply(*modules)
+              modules.reverse_each { |mod| #{call} }
+            end
+
+            #{visibility}
+
+            def keep(base = nil, &block)
+              if base.nil?
+                @body = block
+              else
+                base.class_eval(&@body) if @body
+              end
+            end
+          end
+
+          module Source
+            extend DSL
+
+            keep do
+              def installed
+                "yes"
+              end
+            end
+          end
+
+          class Target
+            extend DSL
+            apply(Source)
+          end
+        end
+      RUBY
+    end
+
+    it "reads through `send` to the method it dispatches" do
+      expanded = described_class.expand(dispatched)
+
+      expect(expanded).to include("class Wrap::Target\n      def installed")
+      expect(Prism.parse(expanded).success?).to be(true)
+    end
+
+    it "reads `public_send` and `__send__` the same way" do
+      ["mod.public_send(:keep, self)", "mod.__send__(:keep, self)"].each do |call|
+        expect(described_class.expand(dispatched(call: call)))
+          .to include("class Wrap::Target\n      def installed"), "#{call} was not read"
+      end
+    end
+
+    it "reads a string name as well as a symbol" do
+      expect(described_class.expand(dispatched(call: 'mod.send("keep", self)')))
+        .to include("class Wrap::Target\n      def installed")
+    end
+
+    # Visibility is not something this pass reads — `send` is what hid the
+    # call, not `private`. The public spelling resolves identically.
+    it "does not depend on the method being private" do
+      expect(described_class.expand(dispatched(visibility: "public")))
+        .to include("class Wrap::Target\n      def installed")
+    end
+
+    it "adds nothing on a second pass over its own output" do
+      expect(described_class.expand(described_class.expand(dispatched))).to be_nil
+    end
+
+    # A computed name is the arbitrary-dispatch case: which method runs is a
+    # runtime answer, and guessing is what this pass exists not to do.
+    it "declines a `send` whose method name is computed" do
+      expect(described_class.expand(dispatched(call: "mod.send(hook_name, self)"))).to be_nil
+    end
+
+    it "declines a `send` that hands over something other than self" do
+      expect(described_class.expand(dispatched(call: "mod.send(:keep, Registry.default)"))).to be_nil
+    end
+
+    # The replay half reads the same way: `base.send(:class_eval, &@body)` is
+    # `base.class_eval(&@body)`.
+    it "reads a `class_eval` dispatched through `send`" do
+      source = dispatched.sub("base.class_eval(&@body)", "base.send(:class_eval, &@body)")
+
+      expect(described_class.expand(source)).to include("class Wrap::Target\n      def installed")
+    end
+  end
 end
