@@ -166,6 +166,53 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
     end
   end
 
+  # A nested module's body used to be rendered flat, so its members' visibility
+  # never reached the RBS — every `def` under a `private` came out public,
+  # contradicting the source it was generated from
+  # (felixefelip/rbs_infer#254). It goes through the class body's emitter now.
+  describe "#build with a nested module's visibility" do
+    let(:builder) { make_builder(target_class: "Foo", superclass_name: nil) }
+
+    let(:members) do
+      [
+        RbsInfer::Inference::Member.new(kind: :method, name: "pub", signature: "pub: () -> void",
+                                        visibility: :public, owner: "Bar"),
+        RbsInfer::Inference::Member.new(kind: :method, name: "priv", signature: "priv: () -> void",
+                                        visibility: :private, owner: "Bar")
+      ]
+    end
+
+    it "emits `private` inside the module, not at the class level" do
+      result = build_rbs(builder, members, {}, {})
+
+      expect(result).to match(/module Bar\n.*def pub: \(\) -> void\n\n\s+private\n\n\s+def priv: \(\) -> void/m)
+      expect { RBS::Parser.parse_signature(result) }.not_to raise_error
+    end
+
+    it "keeps each module's `private` inside its own body" do
+      result = build_rbs(builder, members + [
+        RbsInfer::Inference::Member.new(kind: :method, name: "other", signature: "other: () -> void",
+                                        visibility: :public, owner: "Baz")
+      ], {}, {})
+
+      expect(result.scan("private").size).to eq(1)
+      expect(result).to match(/module Baz\n\s+def other: \(\) -> void\n\s+end/)
+    end
+
+    # The class's own members and a module's are separate bodies; `owner` is
+    # what keeps one from being written into the other's.
+    it "does not pull the class's own private methods into the module" do
+      result = build_rbs(builder, members + [
+        RbsInfer::Inference::Member.new(kind: :method, name: "own", signature: "own: () -> void",
+                                        visibility: :private, owner: nil)
+      ], {}, {})
+
+      expect(result.scan("def own: () -> void").size).to eq(1)
+      expect(result).not_to match(/module Bar\n(?:(?!end).)*def own/m)
+      expect { RBS::Parser.parse_signature(result) }.not_to raise_error
+    end
+  end
+
   describe "#build com constantes (felixefelip/rbs_infer#37)" do
     # `signature` de um membro :constant já chega como "NOME: Tipo"
     # (resolvido pelo Analyzer); o builder só emite a linha.

@@ -3,6 +3,9 @@ class Example38
     @_bazingado_block: (^(*untyped) [self: singleton(Example38::Bar)] -> Symbol)?
 
     def bazinga: (*singleton(::Example38::Baz) modules) -> Array[singleton(Example38::Baz)]
+
+    private
+
     def bazingado: (?singleton(Example38::Bar)? base) ?{ (*untyped) [self: singleton(Example38::Bar)] -> Symbol } -> (^(*untyped) [self: singleton(Example38::Bar)] -> Symbol | nil | Symbol)
   end
 end
