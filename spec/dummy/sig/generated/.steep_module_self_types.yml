@@ -261,6 +261,14 @@ app/models/example40.rb:
   - call: bazingado
     in: "::Example40::BazOther"
     implements: "::Example40::Bar"
+app/models/example41.rb:
+  modules:
+  - anchor: Baz
+    annotations:
+    - "# @type instance: Example41::Bar & Example41::Baz"
+  - anchor: Foo
+    annotations:
+    - "# @type instance: (singleton(Example41::Bar)) | (singleton(Example41::Baz))"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade

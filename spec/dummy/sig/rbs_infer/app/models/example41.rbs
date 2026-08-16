@@ -1,0 +1,18 @@
+class Example41
+  module Foo
+    @_bazingado_block: (^(*untyped) -> Symbol)?
+
+    def included: (?untyped base) ?{ (*untyped) -> Symbol } -> (^(*untyped) -> Symbol)?
+  end
+
+  module Baz
+    extend ::Example41::Foo
+  end
+end
+
+class Example41
+  class Bar
+    extend ::Example41::Foo
+    include ::Example41::Baz
+  end
+end
