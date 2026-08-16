@@ -194,6 +194,7 @@ app/models/example34.rb:
     annotations:
     - "# @type instance: (singleton(Example34::Bar)) | (singleton(Example34::Baz))"
     defs:
+      include: singleton(Example34::Bar)
       included: singleton(Example34::Baz)
 app/models/example35.rb:
   blocks:

@@ -2,6 +2,7 @@ class Example34
   module Foo
     @_bazingado_block: (^(*untyped) [self: Module] -> Symbol)?
 
+    def include: (*singleton(::Example34::Baz) modules) -> Array[singleton(Example34::Baz)]
     def included: (?Module? base) ?{ (*untyped) [self: Module] -> Symbol } -> (^(*untyped) [self: Module] -> Symbol | nil | Symbol)
   end
 

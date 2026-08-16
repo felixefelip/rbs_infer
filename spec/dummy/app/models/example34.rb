@@ -1,8 +1,10 @@
 class Example34
   module Foo
-    # def include(module_included)
-    #   module_included.bazingado(self)
-    # end
+    def include(*modules)
+      modules.reverse_each do |mod|
+        mod.bazingado(self)
+      end
+    end
 
     def included(base=nil, &block)
       if base.nil?
