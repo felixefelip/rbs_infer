@@ -743,6 +743,31 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
 
       expect(expand(expand(concern, sources: sources), sources: sources)).to be_nil
     end
+
+    # `class Object; def banana` makes the applier callable in every class body
+    # exactly as `class Module` does, which is the reason the chain is derived
+    # rather than listed — a hand-written `%w[Module Class]` stops here.
+    it "reads an applier reopened further up the chain" do
+      expect(expand(concern, sources: project(Object: core_applier(name: "Object"))))
+        .to include("class Wrap::Target\n      def installed")
+    end
+
+    describe "the chain it consults" do
+      let(:chains) { RbsInfer::Project::StoredBlockReplayExpander::Collector::CORE_SELF_CHAINS }
+
+      it "is what `self` in each kind of body actually inherits from" do
+        expect(chains).to eq("class" => %w[Class Module Object BasicObject],
+                             "module" => %w[Module Object BasicObject])
+      end
+
+      # `ancestors` would answer this too, and would also answer whatever the
+      # ANALYZER's own gems injected into `Object` (`PP::ObjectMixin`,
+      # `JSON::GeneratorMethods`) — no fact about the project being read, and
+      # different from one environment to the next.
+      it "carries no module injected into the live process" do
+        expect(chains.values.flatten).to all(satisfy { |name| Object.const_get(name).is_a?(Class) })
+      end
+    end
   end
 
   # The half of #256 that needs no other file: the applier and the keeper are

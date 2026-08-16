@@ -10,10 +10,46 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # syntax, not guessed types: resolving `Foo` in `extend Foo` and `Baz` in
   # `apply(Baz)` uses the declarations that are actually present in the file.
   class Collector < Prism::Visitor
-    # The two classes every class and module body inherits its callable
-    # instance methods from. Always consulted, because a reopening of either is
-    # the one provider relation that cannot be read off this file.
-    CORE_REOPENS = %w[Module Class].freeze
+    # What a class body and a module body can call with no receiver, beyond
+    # anything this file says: `self` there is an instance of `Class` or of
+    # `Module`, so the callable methods are those two chains' instance methods.
+    #
+    # Read off Ruby rather than listed. `%w[Module Class]` was the same claim
+    # asserted, and it was both arbitrary and short: `class Object; def banana`
+    # makes `banana` callable in every class body just as surely, and the pair
+    # missed it.
+    #
+    # The SUPERCLASS chain, not `ancestors`. Both derive, but `ancestors` reads
+    # the live process rather than the language: measured, `Class.ancestors`
+    # answers `PP::ObjectMixin` and `JSON::GeneratorMethods` here, because `pp`
+    # and `json` inject into `Object` and rbs_infer loads them. Which gems the
+    # ANALYZER happens to require is no fact about the analyzed project, and it
+    # would make this list differ between environments. A superclass chain
+    # cannot be injected into, so it says the same thing everywhere.
+    #
+    # That leaves out `Kernel`, and knowingly: it is a module, so nothing at
+    # runtime distinguishes it from the two above. A `module Kernel` reopening
+    # holding a DSL applier is not a shape worth reading the live process for.
+    #
+    # Deliberately NOT the ancestors RBS knows, either. That query answers
+    # (measured: `singleton(::Example39::Bar)` + `banana` -> `::Module`), but
+    # only once `sig/` already holds a signature for the reopening — which
+    # rbs_infer generated. A pre-parse source rewrite reading its own previous
+    # output is the circularity of felixefelip/rbs_infer#156: on a cold
+    # checkout the same query answers `nil` and nothing expands. This pass
+    # keeps syntax, not generated types.
+    def self.self_chain(klass)
+      chain = []
+      while klass
+        chain << klass.name
+        klass = klass.superclass
+      end
+      chain.freeze
+    end
+
+    CORE_SELF_CHAINS = { "class" => self_chain(Class), "module" => self_chain(Module) }.freeze
+
+    CORE_REOPENS = CORE_SELF_CHAINS.values.flatten.uniq.freeze
 
     Storage = Data.define(:owner, :method, :ivar)
     ReplayMethod = Data.define(:owner, :method, :parameter, :reader)
@@ -579,19 +615,18 @@ module RbsInfer::Project::StoredBlockReplayExpander
         superclasses(subject, parents).each { |ancestor| providers[ancestor] << subject }
       end
 
-      # Every class and module body can call `Module`'s instance methods, and a
-      # class body `Class`'s too: `self` in that body IS one. To the caller this
-      # is indistinguishable from the two relations above — the method arrives
-      # with no receiver either way — but it is neither an `extend` nor an
-      # ancestor of the subject, so nothing above can express it, and a DSL
-      # whose applier is written as a core reopening had no provider at all
-      # (felixefelip/rbs_infer#256).
+      # What the subject's own `self` makes callable: a class body reaches
+      # `Class`'s instance methods and everything behind them, a module body
+      # `Module`'s. To the caller this is indistinguishable from the two
+      # relations above — the method arrives with no receiver either way — but
+      # it is neither an `extend` nor an ancestor of the SUBJECT, so nothing
+      # above can express it, and a DSL whose applier is written as a core
+      # reopening had no provider at all (felixefelip/rbs_infer#256).
       #
       # Costless when nothing reopens them: an owner with no collected shapes
       # answers no slot, so the join declines exactly where it declines today.
       @declaration_kinds.each do |subject, kind|
-        providers["Module"] << subject
-        providers["Class"] << subject if kind == "class"
+        CORE_SELF_CHAINS.fetch(kind, []).each { |ancestor| providers[ancestor] << subject }
       end
 
       providers
