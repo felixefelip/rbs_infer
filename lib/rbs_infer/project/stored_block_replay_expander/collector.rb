@@ -230,10 +230,9 @@ module RbsInfer::Project::StoredBlockReplayExpander
         @delegations << [current_scope, method_name, target, callee]
       end
 
-      return unless (forward = forward_shape(node.body, parameters))
-
-      parameter, callee = forward
-      @forwards << ForwardMethod.new(owner: current_scope, method: method_name, parameter: parameter, callee: callee)
+      forward_shapes(node.body, parameters).each do |parameter, callee|
+        @forwards << ForwardMethod.new(owner: current_scope, method: method_name, parameter: parameter, callee: callee)
+      end
     end
 
     # The names a `def` or a block binds its arguments to. One reader for both:
@@ -382,8 +381,24 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # Exactly one argument, and it must be `self`: that is what makes the call a
     # request to act ON US, as against any other message this method might send
     # the parameter on the way.
-    def forward_shape(body, parameters)
-      shapes = nodes(body).filter_map do |node|
+    #
+    # ALL of them, unlike the shapes above. A body sending the argument two such
+    # messages is forwarding twice — that is what `include` does, and both halves
+    # are real:
+    #
+    #   modules.reverse_each do |mod|
+    #     mod.send(:append_features, self)
+    #     mod.send(:included, self)
+    #   end
+    #
+    # Reporting one shape and declining when there were two read that as an
+    # ambiguity, and it is not one: which of the two leads to a stored block is
+    # decided downstream, by whether the callee's keeper actually replays, and
+    # `inward_slot` declines there if more than one does. The other shapes have
+    # no such downstream evidence — two different ivars behind one `class_eval`
+    # is undecidable wherever you ask — so they still decline on the count.
+    def forward_shapes(body, parameters)
+      nodes(body).filter_map do |node|
         next unless node.is_a?(Prism::CallNode)
         call = dispatched(node)
         receiver = call.receiver
@@ -393,7 +408,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
         [receiver.name.to_s, call.name.to_s]
       end.uniq
-      shapes.first if shapes.size == 1
     end
 
     # `@holder ||= Holder.new` plus `@holder.<callee>(…, &block)` in one body.
@@ -663,18 +677,27 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # the replay. One hop, not a chain: each additional link is another place a
     # runtime value could be substituted for the constant we resolved, and this
     # pass has no way to tell that it wasn't.
+    # Every forward the method writes is asked, and the ones leading nowhere
+    # simply answer nothing: `include` hands the argument to `append_features`
+    # as well, and that method keeps no block, so it contributes no slot. The
+    # count that decides ambiguity is therefore the number of forwards that
+    # reach a REPLAY, not the number written — a DSL applier is free to send its
+    # argument other messages on the way (felixefelip/rbs_infer#259).
     def inward_slot(owner, method, source_provider)
-      forwards = @forwards.select { |forward| forward.owner == owner && forward.method == method }
-      return nil unless forwards.size == 1
+      slots = @forwards.filter_map do |forward|
+        next unless forward.owner == owner && forward.method == method
 
-      # The callee runs on the ARGUMENT, so it is the argument's provider that
-      # has to supply it — reading it off the forward's own owner only works
-      # while one module happens to hold both halves of the DSL.
-      keeper_owner, keeper_method = keeper(source_provider, forwards.first.callee)
-      return nil unless keeper_owner
+        # The callee runs on the ARGUMENT, so it is the argument's provider that
+        # has to supply it — reading it off the forward's own owner only works
+        # while one module happens to hold both halves of the DSL.
+        keeper_owner, keeper_method = keeper(source_provider, forward.callee)
+        next unless keeper_owner
 
-      replays = @inward_replays.select { |replay| replay.owner == keeper_owner && replay.method == keeper_method }
-      [keeper_owner, replays.first.ivar] if replays.size == 1
+        replays = @inward_replays.select { |replay| replay.owner == keeper_owner && replay.method == keeper_method }
+        [keeper_owner, replays.first.ivar] if replays.size == 1
+      end.uniq
+
+      slots.first if slots.size == 1
     end
 
     # Where `owner#method` actually keeps things. Usually `owner` itself; one

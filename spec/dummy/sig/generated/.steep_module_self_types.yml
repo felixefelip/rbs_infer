@@ -269,6 +269,10 @@ app/models/example41.rb:
   - anchor: Foo
     annotations:
     - "# @type instance: (singleton(Example41::Bar)) | (singleton(Example41::Baz))"
+  blocks:
+  - call: included
+    in: "::Example41::Baz"
+    implements: "::Example41::Bar"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade
@@ -299,6 +303,10 @@ app/models/included_hook.rb:
     annotations:
     - "# @type self: singleton(IncludedHook) & singleton(IncludedHook::Sugared)"
     - "# @type instance: IncludedHook & IncludedHook::Sugared"
+  blocks:
+  - call: included
+    in: "::IncludedHook::Homespun"
+    implements: "::IncludedHook"
 app/models/post/notifiable.rb:
   modules:
   - anchor: Notifiable

@@ -19,12 +19,15 @@ class IncludedHook
   include Hookable
   include Sugared
   include Homespun
+
+  def from_homespun: () -> String
+  def stamp: () -> String
 end
 
 class IncludedHookCaller
   def fill: () -> String
   def read_slot: () -> String?
   def read_badge: () -> String?
-  def read_stamp: () -> String?
+  def read_stamp: () -> String
   def read_shared: () -> Integer
 end
