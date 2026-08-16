@@ -149,7 +149,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @forwards << ForwardMethod.new(owner: current_scope, method: method_name, parameter: parameter, callee: callee)
     end
 
-    # The method's own parameter names.
+    # The names a `def` or a block binds its arguments to. One reader for both:
+    # `BlockParametersNode#parameters` IS a `ParametersNode`, so "what does this
+    # bind" has one answer regardless of which construct asked.
+    #
+    # A destructuring target (`|(a, b)|`) is a `MultiTargetNode` and carries no
+    # `name`, so it is skipped — the same way a method's would be.
     def parameter_names(params)
       return Set.new unless params.is_a?(Prism::ParametersNode)
 
@@ -159,72 +164,52 @@ module RbsInfer::Project::StoredBlockReplayExpander
       Set.new(names)
     end
 
-    # Enumerable methods that yield each ELEMENT of the receiver as the first
-    # thing they hand the block. `each_with_index`/`each_with_object` yield a
-    # second value that is not an element, which is why only the first block
-    # parameter is read below.
-    #
-    # A list rather than "any method taking a block": `hash.each { |k, v| }`
-    # hands a KEY first, and `obj.instance_eval { }` hands nothing at all. The
-    # claim being made is specifically "this name holds an element of that
-    # collection", and only these methods support it.
-    ELEMENT_ITERATIONS = %i[
-      each reverse_each each_entry each_with_index each_with_object
-      map flat_map collect select filter reject find detect
-    ].freeze
-
     # Every name the method can be HANDED an object under. A replay against
     # arbitrary state is what this pass declines to guess about, so the shapes
     # below require their receiver to be one of these rather than any local that
     # happens to be in scope.
     #
-    # That is the method's parameters, and ALSO the block parameter of an
-    # iteration over one of them: a rest parameter holds the objects the caller
-    # passed, and iterating it yields exactly those objects — `mod` in
-    # `modules.reverse_each { |mod| mod.apply(self) }` is as much "something we
-    # were handed" as `modules` is. Restricting the receiver to a parameter
-    # NAME missed that, so a DSL forwarding to each of several modules resolved
-    # nothing (felixefelip/rbs_infer#253).
+    # That is the method's parameters, and also the parameters of a block passed
+    # to a call ON one of those names. The question the restriction asks is
+    # about PROVENANCE — "did this object reach us from the caller, or did we
+    # fetch it from somewhere else in the program" — and a value yielded by a
+    # method of a handed object answers it the same way the parameter does.
+    # `mod` in `modules.reverse_each { |mod| mod.apply(self) }` is as much
+    # something we were handed as `modules` is; restricting the receiver to a
+    # parameter NAME missed that, so a DSL forwarding to each of several modules
+    # resolved nothing (felixefelip/rbs_infer#253).
+    #
+    # Deliberately NOT a list of iteration methods. Which of the yielded values
+    # is "the element" is a question about the receiver's type, which this
+    # source-only pass cannot answer and — since the forward's parameter name is
+    # never read again, only its callee — does not need to: `Enumerable#inject`
+    # yields the memo first and `each_with_index` an index second, so any
+    # first-parameter rule would be wrong for one of them while the provenance
+    # claim holds for both.
     #
     # Iterated to a fixed point because the relation is transitive — a nested
-    # iteration yields elements of an element — and the loop terminates because
-    # a body has finitely many names and the set only grows.
-    #
-    # This is not a claim about the objects' type; it is a claim about where
-    # they came from, which is the only thing the receiver restriction ever
-    # asked. The `Module#include` pseudo-code the pipeline generates has this
-    # exact shape (`modules.reverse_each { |mod| mod.send(:included, self) }`),
-    # so it is not a fixture-only spelling.
+    # iteration still yields values that came from the caller — terminating
+    # because a body binds finitely many names and the set only grows.
     def handed_names(body, parameters)
       names = parameters.dup
 
       loop do
         grown = false
         nodes(body).each do |node|
-          next unless node.is_a?(Prism::CallNode) && ELEMENT_ITERATIONS.include?(node.name)
+          next unless node.is_a?(Prism::CallNode)
           receiver = node.receiver
           next unless receiver.is_a?(Prism::LocalVariableReadNode) && names.include?(receiver.name.to_s)
+          next unless node.block.is_a?(Prism::BlockNode)
 
-          element = first_block_parameter(node.block)
-          grown = true if element && names.add?(element)
+          bound = node.block.parameters
+          next unless bound.is_a?(Prism::BlockParametersNode)
+
+          parameter_names(bound.parameters).each { |name| grown = true if names.add?(name) }
         end
         break unless grown
       end
 
       names
-    end
-
-    # The name bound to a block's first required parameter, or nil for a block
-    # that destructures, splats, or takes none — shapes where "the first thing
-    # yielded" is not a single name this pass can follow.
-    def first_block_parameter(block)
-      return nil unless block.is_a?(Prism::BlockNode)
-
-      parameters = block.parameters
-      return nil unless parameters.is_a?(Prism::BlockParametersNode)
-
-      first = parameters.parameters&.requireds&.first
-      first.name.to_s if first.is_a?(Prism::RequiredParameterNode) && first.name
     end
 
     def stored_block_ivar(body, block_name)

@@ -351,41 +351,44 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(expanded).not_to include("installed_second")
     end
 
-    # The relation is "this name holds something we were handed", and it holds
-    # for any iteration that yields the receiver's elements.
-    it "reads the other element-yielding iterations too" do
-      %w[each map select each_with_index].each do |iteration|
+    # The claim is about provenance, not about which yielded value is "the
+    # element" — so it does not depend on knowing what the method does. Any
+    # call on a handed receiver hands its block values that came from the
+    # caller, including ones no first-parameter rule would survive:
+    # `inject` yields the memo first, `each_with_index` an index second.
+    it "does not depend on which method does the yielding" do
+      %w[each map select each_with_index reverse_each each_entry tap].each do |iteration|
         expect(described_class.expand(splat(iteration: iteration)))
           .to include("class Wrap::Target\n      def installed_first"), "#{iteration} was not read"
       end
+    end
+
+    it "reads a name bound anywhere in the block's parameters" do
+      source = splat.sub("{ |mod| mod.keep(self) }", "{ |index, mod| mod.keep(self) }")
+
+      expect(described_class.expand(source)).to include("class Wrap::Target\n      def installed_first")
     end
 
     it "adds nothing on a second pass over its own output" do
       expect(described_class.expand(described_class.expand(splat))).to be_nil
     end
 
-    # `instance_eval` hands the block no element at all, so its block parameter
-    # is not a name this pass can claim anything about.
-    it "declines an iteration that does not yield elements" do
-      expect(described_class.expand(splat(iteration: "instance_eval"))).to be_nil
-    end
-
-    it "declines a receiver that is neither a parameter nor an element of one" do
+    it "declines a receiver that is neither a parameter nor bound from one" do
       source = splat.sub("modules.reverse_each { |mod| mod.keep(self) }",
                          "Registry.all.reverse_each { |mod| mod.keep(self) }")
 
       expect(described_class.expand(source)).to be_nil
     end
 
-    # Only the FIRST value yielded is an element; a destructured block gives
-    # this pass no single name to follow.
+    # A destructuring target carries no name — the same reason a method's
+    # would be skipped, not a rule of its own.
     it "declines a block that destructures what it is yielded" do
       source = splat.sub("{ |mod| mod.keep(self) }", "{ |(mod, _extra)| mod.keep(self) }")
 
       expect(described_class.expand(source)).to be_nil
     end
 
-    it "resolves an element of an element" do
+    it "follows a value through a nested iteration" do
       source = splat.sub("modules.reverse_each { |mod| mod.keep(self) }",
                          "modules.each { |group| group.each { |mod| mod.keep(self) } }")
 
