@@ -834,4 +834,100 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(expand(split(applier_body: "modules.reverse_each { |mod| mod.send(:absent, self) }"))).to be_nil
     end
   end
+
+  # `Module#include` is written this way — `append_features` first, then the
+  # `included` notification — so an applier handing its argument two messages is
+  # the shape a plain `include X` has, not an exotic one
+  # (felixefelip/rbs_infer#259).
+  context "an applier that hands its argument more than one message" do
+    def notes_nothing
+      <<~BODY
+        def noted(base)
+          nil
+        end
+      BODY
+    end
+
+    def notes_a_block
+      <<~BODY
+        def noted(base = nil, &block)
+          if base.nil?
+            @other = block
+          else
+            base.class_eval(&@other) if @other
+          end
+        end
+      BODY
+    end
+
+    def two(noted: notes_nothing)
+      <<~RUBY
+        module Wrap
+          module DSL
+            def banana(*modules)
+              modules.reverse_each do |mod|
+                mod.send(:noted, self)
+                mod.send(:bananed, self)
+              end
+            end
+
+            def bananed(base = nil, &block)
+              if base.nil?
+                @body = block
+              else
+                base.class_eval(&@body) if @body
+              end
+            end
+
+            #{noted.gsub("\n", "\n    ").rstrip}
+          end
+
+          module Source
+            extend DSL
+
+            bananed do
+              def installed
+                "yes"
+              end
+            end
+          end
+
+          class Target
+            extend DSL
+
+            banana(Source)
+          end
+        end
+      RUBY
+    end
+
+    it "reads the forward that reaches a replay" do
+      expanded = expand(two)
+
+      expect(expanded).to include("class Wrap::Target\n      def installed")
+      expect(Prism.parse(expanded).success?).to be(true)
+    end
+
+    # The other message is a real forward by every syntactic measure — same
+    # receiver, same lone `self` argument. What separates them is that `noted`
+    # keeps nothing, and only the join can see that.
+    it "is not told apart by the call shape" do
+      expect(two).to include("mod.send(:noted, self)")
+      expect(two).to include("def noted(base)")
+    end
+
+    it "adds nothing on a second pass over its own output" do
+      expect(expand(expand(two))).to be_nil
+    end
+
+    # Two forwards BOTH reaching a replay is the ambiguity the count was meant
+    # to catch, and it still declines — the block a target asks for cannot be
+    # decided by which `def` came first.
+    it "declines when two of them reach a replay" do
+      source = two(noted: notes_a_block)
+
+      expect(Prism.parse(source).success?).to be(true)
+      expect(expand(source)).to be_nil
+    end
+  end
 end

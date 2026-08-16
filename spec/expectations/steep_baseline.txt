@@ -25,8 +25,6 @@ app/models/included_hook.rb:31:12: [warning] Method `::IncludedHook::Hookable#fr
 app/models/included_hook.rb:39:12: [warning] Method `::IncludedHook::Hookable#slot` is not declared in RBS
 app/models/included_hook.rb:60:10: [warning] Method `::IncludedHook::Sugared#from_sugar` is not declared in RBS
 app/models/included_hook.rb:66:10: [warning] Method `::IncludedHook::Sugared#badge` is not declared in RBS
-app/models/included_hook.rb:82:10: [warning] Method `::IncludedHook::Homespun#from_homespun` is not declared in RBS
-app/models/included_hook.rb:86:10: [warning] Method `::IncludedHook::Homespun#stamp` is not declared in RBS
 app/models/included_hook/shared.rb:17:10: [warning] Method `::IncludedHook::Shared#from_shared` is not declared in RBS
 app/models/post/notifiable.rb:28:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/send_dispatch.rb:107:33: [error] `public_send` cannot call `stamp` on `::SendDispatch`, which declares it private
