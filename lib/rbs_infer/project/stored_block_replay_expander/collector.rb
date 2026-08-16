@@ -38,6 +38,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @declarations = Set.new
       @declaration_kinds = {}
       @extends = []
+      @superclasses = []
       @storages = []
       @readers = []
       @replay_methods = []
@@ -83,6 +84,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
       qualified = qualify(name)
       @declarations << qualified
       @declaration_kinds[qualified] = node.is_a?(Prism::ModuleNode) ? "module" : "class"
+      # Kept raw and resolved in `resolve_replays`, exactly like `extend`: a
+      # superclass written relatively may name a class the walk has not reached
+      # yet, and only the finished declaration set can say which one it is.
+      @superclasses << [qualified, node.superclass] if node.is_a?(Prism::ClassNode) && node.superclass
       @scope << qualified
       yield
     ensure
@@ -251,19 +256,15 @@ module RbsInfer::Project::StoredBlockReplayExpander
     end
 
     def resolve_replays
-      extenders = Hash.new { |hash, key| hash[key] = Set.new }
-      @extends.each do |subject, raw_module|
-        mod = resolve_constant(raw_module, subject)
-        extenders[mod] << subject if mod
-      end
-
       # `attr_reader :body` is collected from its lexical owner after all
       # declarations are known, so a relative `extend Builder` can resolve.
       collect_readers_from_source
 
+      providers = dsl_providers
+
       candidates = []
       @apply_calls.each do |apply|
-        extenders.each do |owner, subjects|
+        providers.each do |owner, subjects|
           next unless subjects.include?(apply.subject)
 
           source_subject = resolve_constant(apply.argument, apply.subject)
@@ -296,6 +297,50 @@ module RbsInfer::Project::StoredBlockReplayExpander
         targets = entries.map(&:target).uniq
         entries.first if targets.size == 1
       end
+    end
+
+    # Which classes/modules can call each owner's DSL, as `owner => subjects`.
+    #
+    # `extend Builder` is one way to be handed those methods; `class Sub < Base`
+    # is the other, and to a caller they are indistinguishable — `bazingado`
+    # arrives with no receiver in the class body either way. Reading only the
+    # first was the whole reason a file spelling the same replay through
+    # inheritance produced nothing (felixefelip/rbs_infer#251).
+    #
+    # Ancestry is transitive because Ruby's is: `Bar < Baz < Foo` puts Foo's
+    # singleton methods in Bar's body just as directly as `Bar < Foo` would.
+    def dsl_providers
+      providers = Hash.new { |hash, key| hash[key] = Set.new }
+
+      @extends.each do |subject, raw_module|
+        mod = resolve_constant(raw_module, subject)
+        providers[mod] << subject if mod
+      end
+
+      parents = @superclasses.to_h do |subject, raw_superclass|
+        [subject, resolve_constant(raw_superclass, subject)]
+      end
+      parents.compact!
+
+      @declarations.each do |subject|
+        superclasses(subject, parents).each { |ancestor| providers[ancestor] << subject }
+      end
+
+      providers
+    end
+
+    # `subject`'s superclass chain, nearest first, limited to classes declared
+    # in this file. A chain that revisits a class it already yielded stops
+    # there: `class A < B` reopened as `class B < A` is not something to reason
+    # about, but it must not hang the pass either.
+    def superclasses(subject, parents)
+      chain = []
+      current = parents[subject]
+      while current && !chain.include?(current)
+        chain << current
+        current = parents[current]
+      end
+      chain
     end
 
     # The slot behind `class_eval(&param.reader)`, when `method` is itself the
