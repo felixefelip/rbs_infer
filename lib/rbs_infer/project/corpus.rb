@@ -2,6 +2,7 @@ require_relative "parse_cache"
 require_relative "source_index"
 require_relative "file_index"
 require_relative "caller_file_cache"
+require_relative "constant_sources"
 require_relative "mixin_index"
 require_relative "../inference/invoker_self_types"
 
@@ -59,6 +60,15 @@ module RbsInfer::Project
       @source_index = SourceIndex.new(source_files)
       @file_index = FileIndex.new(source_files)
       @caller_file_cache = CallerFileCache.new(@parse_cache)
+    end
+
+    # Lazy like the two below, and for the same reason: only a file writing a
+    # stored-block replay ever asks where a DSL's methods are declared, and the
+    # answer is memoized per constant for the whole run.
+    def constant_sources
+      @constant_sources ||= ConstantSources.new(
+        source_index: @source_index, file_index: @file_index, parse_cache: @parse_cache
+      )
     end
 
     # Lazy, unlike the four above: an analysis that never asks about a mixin

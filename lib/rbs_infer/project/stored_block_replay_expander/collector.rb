@@ -3,12 +3,18 @@
 require "prism"
 require "set"
 require_relative "../../inference/send_call"
+require_relative "../constant_sources"
 
 module RbsInfer::Project::StoredBlockReplayExpander
   # Collects declarations and class-body calls in one lexical pass. It keeps
   # syntax, not guessed types: resolving `Foo` in `extend Foo` and `Baz` in
   # `apply(Baz)` uses the declarations that are actually present in the file.
   class Collector < Prism::Visitor
+    # The two classes every class and module body inherits its callable
+    # instance methods from. Always consulted, because a reopening of either is
+    # the one provider relation that cannot be read off this file.
+    CORE_REOPENS = %w[Module Class].freeze
+
     Storage = Data.define(:owner, :method, :ivar)
     ReplayMethod = Data.define(:owner, :method, :parameter, :reader)
     StoredCall = Data.define(:owner, :subject, :method, :block)
@@ -44,8 +50,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # relatively may name a class the walk has not reached yet.
     Delegation = Data.define(:owner, :method, :target, :callee)
 
-    def initialize(source)
+    # `sources` is required, and `ConstantSources::NONE` is the way to say "no
+    # project here". A DSL whose methods are declared in another file resolves
+    # to nothing without it and reports nothing about why, which is the
+    # silent-wrong case (docs/engineering/required-threaded-deps.md).
+    def initialize(source, sources:)
       @source = source
+      @sources = sources
       @scope = []
       @method_depth = 0
       @declarations = Set.new
@@ -68,8 +79,26 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     def collect(root)
       root.accept(self)
+      absorb_external_shapes
       resolve_replays
     end
+
+    # Everything this file says about method shapes, for a collector reading it
+    # on another file's behalf. Its delegations are resolved here, against the
+    # declarations of the file they were written in — which is the only place
+    # the constant they name can be looked up.
+    def collect_shapes(root)
+      root.accept(self)
+      collect_readers_from_source
+      @resolved_delegations = resolve_delegations
+      self
+    end
+
+    protected
+
+    attr_reader :storages, :readers, :replay_methods, :inward_replays, :forwards, :resolved_delegations
+
+    public
 
     def visit_class_node(node)
       with_scope(node) { super }
@@ -419,22 +448,75 @@ module RbsInfer::Project::StoredBlockReplayExpander
       node.receiver.nil? || node.receiver.is_a?(Prism::SelfNode)
     end
 
+    # Method shapes declared OUTSIDE this file.
+    #
+    # The call sites stay this file's — the expander rewrites this source and
+    # nothing else, so an `apply` written elsewhere would name a target this
+    # rewrite cannot reach — but the DSL those calls arrive at may be declared
+    # anywhere. For a reopening of a core class it always is: `Module#include`
+    # is how `ActiveSupport::Concern` writes the applier, and no file that USES
+    # a concern declares it (felixefelip/rbs_infer#256).
+    #
+    # Asked about `Module` and `Class` always, and about any `extend`/superclass
+    # this file names but does not declare. A name the project has nothing for
+    # simply yields no roots, which is the same as today's answer.
+    def absorb_external_shapes
+      external_owners.each do |name|
+        @sources.parsed_for(name).each do |entry|
+          shapes = self.class.new(entry.source, sources: RbsInfer::Project::ConstantSources::NONE)
+                       .collect_shapes(entry.result.value)
+          absorb(shapes)
+        end
+        @declarations << name
+      end
+    end
+
+    def external_owners
+      names = Set.new(CORE_REOPENS)
+
+      (@extends + @superclasses).each do |subject, raw_constant|
+        next if resolve_constant(raw_constant, subject)
+
+        name = RbsInfer::Analyzer.extract_constant_path(raw_constant)
+        names << name.sub(/\A::/, "") if name
+      end
+
+      names
+    end
+
+    def absorb(shapes)
+      @storages.concat(shapes.storages)
+      @readers.concat(shapes.readers)
+      @replay_methods.concat(shapes.replay_methods)
+      @inward_replays.concat(shapes.inward_replays)
+      @forwards.concat(shapes.forwards)
+      @resolved_delegations.concat(shapes.resolved_delegations)
+    end
+
     def resolve_replays
       # `attr_reader :body` is collected from its lexical owner after all
       # declarations are known, so a relative `extend Builder` can resolve.
       collect_readers_from_source
 
       providers = dsl_providers
-      @resolved_delegations = resolve_delegations
+      @resolved_delegations.concat(resolve_delegations)
 
       candidates = []
       @apply_calls.each do |apply|
-        providers.each do |owner, subjects|
-          next unless subjects.include?(apply.subject)
+        source_subject = resolve_constant(apply.argument, apply.subject)
+        next unless source_subject
 
-          source_subject = resolve_constant(apply.argument, apply.subject)
-          next unless source_subject && subjects.include?(source_subject)
+        # Two provider questions, not one. The applier is dispatched on the
+        # SUBJECT (`banana` arrives in `Bar`'s body) and the callee it forwards
+        # to on the ARGUMENT (`mod.send(:bananed, self)` runs on `Baz`), so the
+        # two are answered by whatever supplies each — which need not be the
+        # same module. Requiring one provider for both is what `ActiveSupport`'s
+        # own shape breaks: `Module#include` reaches for `append_features`, a
+        # method of the concern (felixefelip/rbs_infer#256).
+        appliers = providers.select { |_, subjects| subjects.include?(apply.subject) }.keys
+        sources = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
 
+        appliers.product(sources).each do |applier, source_provider|
           # Both directions answer with the SLOT — and with the object that owns
           # it, which is not always the provider: a delegating DSL method keeps
           # the block on something it holds. From there the chain is one and the
@@ -442,11 +524,14 @@ module RbsInfer::Project::StoredBlockReplayExpander
           # source wrote under that name holds the block. Asking both and
           # requiring a single answer is what keeps a file that somehow reads as
           # both from being resolved by declaration order.
-          slots = [outward_slot(owner, apply.method), inward_slot(owner, apply.method)].compact.uniq
+          slots = [outward_slot(applier, apply.method),
+                   inward_slot(applier, apply.method, source_provider)].compact.uniq
           next unless slots.size == 1
 
           storage_owner, ivar = slots.first
-          storage_method = storage_method_for(owner, storage_owner, ivar)
+          # The SOURCE's provider, not the applier's: the name being looked up
+          # is the one the source wrote in its own body.
+          storage_method = storage_method_for(source_provider, storage_owner, ivar)
           next unless storage_method
 
           blocks = @stored_calls.select { |stored| stored.subject == source_subject && stored.method == storage_method }
@@ -494,6 +579,21 @@ module RbsInfer::Project::StoredBlockReplayExpander
         superclasses(subject, parents).each { |ancestor| providers[ancestor] << subject }
       end
 
+      # Every class and module body can call `Module`'s instance methods, and a
+      # class body `Class`'s too: `self` in that body IS one. To the caller this
+      # is indistinguishable from the two relations above — the method arrives
+      # with no receiver either way — but it is neither an `extend` nor an
+      # ancestor of the subject, so nothing above can express it, and a DSL
+      # whose applier is written as a core reopening had no provider at all
+      # (felixefelip/rbs_infer#256).
+      #
+      # Costless when nothing reopens them: an owner with no collected shapes
+      # answers no slot, so the join declines exactly where it declines today.
+      @declaration_kinds.each do |subject, kind|
+        providers["Module"] << subject
+        providers["Class"] << subject if kind == "class"
+      end
+
       providers
     end
 
@@ -528,11 +628,14 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # the replay. One hop, not a chain: each additional link is another place a
     # runtime value could be substituted for the constant we resolved, and this
     # pass has no way to tell that it wasn't.
-    def inward_slot(owner, method)
+    def inward_slot(owner, method, source_provider)
       forwards = @forwards.select { |forward| forward.owner == owner && forward.method == method }
       return nil unless forwards.size == 1
 
-      keeper_owner, keeper_method = keeper(owner, forwards.first.callee)
+      # The callee runs on the ARGUMENT, so it is the argument's provider that
+      # has to supply it — reading it off the forward's own owner only works
+      # while one module happens to hold both halves of the DSL.
+      keeper_owner, keeper_method = keeper(source_provider, forwards.first.callee)
       return nil unless keeper_owner
 
       replays = @inward_replays.select { |replay| replay.owner == keeper_owner && replay.method == keeper_method }

@@ -242,6 +242,10 @@ app/models/example39.rb:
     - "# @type instance: (singleton(Example39::Bar)) | (singleton(Example39::Baz))"
     defs:
       bananed: singleton(Example39::Baz)
+  blocks:
+  - call: bananed
+    in: "::Example39::Baz"
+    implements: "::Example39::Bar"
 app/models/example40.rb:
   modules:
   - anchor: Foo

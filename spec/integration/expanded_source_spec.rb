@@ -26,7 +26,12 @@ RSpec.describe "expanded sources", :dummy_app do
   # `.expanded/` is invisible to this glob (a leading dot is exactly why the
   # directory is named that way), so the dumped views are never read back in as
   # sources of their own.
-  let(:source_files) { Dir["app/**/*.rb"] + Dir["sig/**/*.rb"] }
+  # The same three roots the Makefile hands the CLI. `lib/` matters and is easy
+  # to leave out: a DSL's applier can be a reopening of a core class, which by
+  # convention lives under `lib/` and is where nothing else would look for it
+  # (felixefelip/rbs_infer#256). Omitting it made this spec assert an expanded
+  # view the pipeline never actually produces.
+  let(:source_files) { Dir["app/**/*.rb"] + Dir["lib/**/*.rb"] + Dir["sig/**/*.rb"] }
   let(:expectations_dir) { Pathname.new(File.expand_path("../expectations/expanded", __dir__)) }
 
   # path => expanded source, for every dummy source an expander rewrites.

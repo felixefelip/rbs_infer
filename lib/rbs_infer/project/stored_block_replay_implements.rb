@@ -51,13 +51,13 @@ module RbsInfer::Project
     # `class_eval`ed def gets at runtime. The `class_methods do` entries need
     # that key because their self is the INCLUDER's singleton, a type the
     # `@implements` module does not name.
-    def blocks_for(source:)
+    def blocks_for(source:, sources:)
       return [] unless source.include?("class_eval") || source.include?("module_eval")
 
       parsed = Prism.parse(source)
       return [] unless parsed.success?
 
-      replays = StoredBlockReplayExpander::Collector.new(source).collect(parsed.value)
+      replays = StoredBlockReplayExpander::Collector.new(source, sources: sources).collect(parsed.value)
 
       replays.filter_map do |replay|
         next unless replay.scope

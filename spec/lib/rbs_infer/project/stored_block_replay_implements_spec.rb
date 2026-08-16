@@ -4,6 +4,8 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
+  NO_SOURCES = RbsInfer::Project::ConstantSources::NONE
+
   # The chain the expander recognizes: one storage method, one reader, one
   # stored block, one constant target. Same shape as `Example28`.
   def dsl(reader: "attr_reader :body")
@@ -31,7 +33,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source))
+    expect(described_class.blocks_for(source: source, sources: NO_SOURCES))
       .to eq([{ "call" => "keep", "in" => "::Src", "implements" => "::Target" }])
   end
 
@@ -61,7 +63,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source)).to eq(
+    expect(described_class.blocks_for(source: source, sources: NO_SOURCES)).to eq(
       [{ "call" => "keep", "in" => "::SrcA", "implements" => "::First" },
        { "call" => "keep", "in" => "::SrcB", "implements" => "::Second" }]
     )
@@ -86,20 +88,20 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    entries = described_class.blocks_for(source: source)
+    entries = described_class.blocks_for(source: source, sources: NO_SOURCES)
 
     expect(entries).to eq([{ "call" => "keep", "in" => "::Src", "implements" => "::Target" }])
     expect(entries.map { |entry| entry["line"] }).not_to include(17)
   end
 
   it "returns nothing for a file with no replay" do
-    expect(described_class.blocks_for(source: "class Foo\n  def bar = 1\nend\n")).to eq([])
+    expect(described_class.blocks_for(source: "class Foo\n  def bar = 1\nend\n", sources: NO_SOURCES)).to eq([])
   end
 
   # The substring gate: no `class_eval`/`module_eval` anywhere means no parse.
   it "does not parse a file that cannot contain a replay" do
     expect(Prism).not_to receive(:parse)
 
-    expect(described_class.blocks_for(source: "class Foo; end\n")).to eq([])
+    expect(described_class.blocks_for(source: "class Foo; end\n", sources: NO_SOURCES)).to eq([])
   end
 end

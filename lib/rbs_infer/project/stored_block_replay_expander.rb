@@ -55,13 +55,18 @@ module RbsInfer::Project
 
     module_function
 
-    def expand(source)
+    # `sources` is a `Project::ConstantSources` — where the DSL's own methods
+    # are declared, which need not be this file. Required, with
+    # `ConstantSources::NONE` as the explicit way to say "no project": defaulted,
+    # a caller that forgot it would quietly resolve less
+    # (docs/engineering/required-threaded-deps.md).
+    def expand(source, sources:)
       return nil unless source.include?("class_eval") || source.include?("module_eval")
 
       parsed = Prism.parse(source)
       return nil unless parsed.success?
 
-      replays = Collector.new(source).collect(parsed.value)
+      replays = Collector.new(source, sources: sources).collect(parsed.value)
       return nil if replays.empty?
 
       apply_replays(source, replays)
