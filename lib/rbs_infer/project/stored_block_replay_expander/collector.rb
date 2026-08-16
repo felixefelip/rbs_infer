@@ -2,6 +2,7 @@
 
 require "prism"
 require "set"
+require_relative "../../inference/send_call"
 
 module RbsInfer::Project::StoredBlockReplayExpander
   # Collects declarations and class-body calls in one lexical pass. It keeps
@@ -212,6 +213,27 @@ module RbsInfer::Project::StoredBlockReplayExpander
       names
     end
 
+    # The call a node stands for, reading `x.send(:foo, a)` as the `x.foo(a)`
+    # it is. `Inference::SendCall` is the one place that knows that spelling
+    # (felixefelip/rbs_infer#205) and it answers with a real `Prism::CallNode`,
+    # so every matcher below reads `name`, `arguments`, `receiver` and `block`
+    # off it exactly as it read them off the original.
+    #
+    # Reading `node.name` directly answered `send` and left the real callee
+    # sitting in the argument list, so every shape below missed the spelling —
+    # which is the spelling a caller reaches for when the method is private,
+    # and the one the generated `Module#include` pseudo-code writes
+    # (`mod.send(:included, self)`), for exactly that reason
+    # (felixefelip/rbs_infer#255).
+    #
+    # `desugar` answers nil for a COMPUTED name, and falling back to the node
+    # itself is what declines it: the matchers then see `send` with the name
+    # still in the argument list and no shape fits. Which method a computed
+    # dispatch runs is a runtime answer, and this pass does not guess.
+    def dispatched(node)
+      RbsInfer::Inference::SendCall.desugar(node) || node
+    end
+
     def stored_block_ivar(body, block_name)
       nodes(body).filter_map do |node|
         next unless node.is_a?(Prism::InstanceVariableWriteNode)
@@ -228,14 +250,17 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # pass does not have and must decline rather than guess.
     def replay_shape(body)
       shapes = nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::CallNode) && REPLAY_METHODS.include?(node.name)
-        pass = node.block
+        next unless node.is_a?(Prism::CallNode)
+        call = dispatched(node)
+        next unless REPLAY_METHODS.include?(call.name)
+        pass = call.block
         next unless pass.is_a?(Prism::BlockArgumentNode)
-        reader_call = pass.expression
-        next unless reader_call.is_a?(Prism::CallNode) && reader_call.arguments.nil?
-        next unless reader_call.receiver.is_a?(Prism::LocalVariableReadNode)
+        next unless pass.expression.is_a?(Prism::CallNode)
+        reader = dispatched(pass.expression)
+        next unless (reader.arguments&.arguments || []).empty?
+        next unless reader.receiver.is_a?(Prism::LocalVariableReadNode)
 
-        [reader_call.receiver.name.to_s, reader_call.name.to_s]
+        [reader.receiver.name.to_s, reader.name.to_s]
       end.uniq
       shapes.first if shapes.size == 1
     end
@@ -250,10 +275,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # shape — the whole body is scanned, exactly as `replay_shape` scans it.
     def inward_replay_shape(body, parameters)
       shapes = nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::CallNode) && REPLAY_METHODS.include?(node.name)
-        receiver = node.receiver
+        next unless node.is_a?(Prism::CallNode)
+        call = dispatched(node)
+        next unless REPLAY_METHODS.include?(call.name)
+        receiver = call.receiver
         next unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
-        pass = node.block
+        pass = call.block
         next unless pass.is_a?(Prism::BlockArgumentNode)
         ivar = pass.expression
         next unless ivar.is_a?(Prism::InstanceVariableReadNode)
@@ -272,12 +299,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def forward_shape(body, parameters)
       shapes = nodes(body).filter_map do |node|
         next unless node.is_a?(Prism::CallNode)
-        receiver = node.receiver
+        call = dispatched(node)
+        receiver = call.receiver
         next unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
-        arguments = node.arguments&.arguments || []
+        arguments = call.arguments&.arguments || []
         next unless arguments.size == 1 && arguments.first.is_a?(Prism::SelfNode)
 
-        [receiver.name.to_s, node.name.to_s]
+        [receiver.name.to_s, call.name.to_s]
       end.uniq
       shapes.first if shapes.size == 1
     end

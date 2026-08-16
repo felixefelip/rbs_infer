@@ -227,6 +227,10 @@ app/models/example38.rb:
     - "# @type instance: (singleton(Example38::Bar)) | (singleton(Example38::Baz))"
     defs:
       bazinga: singleton(Example38::Bar)
+  blocks:
+  - call: bazingado
+    in: "::Example38::Baz"
+    implements: "::Example38::Bar"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade
