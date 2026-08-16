@@ -111,7 +111,7 @@ module RbsInfer
         # for — so it is the only half that needs the extractor, and a file with
         # no primary declaration can still contribute the first half.
         def blocks_for(abs, rel, source)
-          RbsInfer::Project::StoredBlockReplayImplements.blocks_for(source: source) +
+          RbsInfer::Project::StoredBlockReplayImplements.blocks_for(source: source, sources: constant_sources) +
             class_methods_blocks_for(abs, rel, source)
         end
 
@@ -133,6 +133,33 @@ module RbsInfer
         # in-process annotation read one project and cannot disagree.
         def mixin_index
           @mixin_index ||= RbsInfer::Project::MixinIndex.new(source_files)
+        end
+
+        # Where a DSL's own methods are declared, over the SAME files again — a
+        # replay's target must be the one the expander moves the block to, and
+        # two readers looking at different projects could not guarantee that
+        # (felixefelip/rbs_infer#238).
+        def constant_sources
+          @constant_sources ||= RbsInfer::Project::Corpus.for(declared_files).constant_sources
+        end
+
+        # The files the project DECLARES, which is not the list of files it
+        # type-checks. A Steepfile `ignore` says "report no diagnostics here",
+        # not "this file is not part of the program" — and a framework-patching
+        # file is exactly the shape that gets ignored while still declaring the
+        # DSL a checked file calls (`lib/rails_ext/**` in the dummy, and #38's
+        # reason for ignoring it: stock Steep cannot impl-check a raw
+        # `on_load` reopening).
+        #
+        # Reading the narrow list here would let this sidecar resolve fewer
+        # replays than the expander does, and the two disagreeing about which
+        # class a block defines its methods on is the one thing
+        # `StoredBlockReplayImplements` exists to prevent.
+        def declared_files
+          @declared_files ||= steep_targets.flat_map { |target| paths_in(target, ignores: false) }
+                                           .select { |path| path.extname == ".rb" }
+                                           .uniq.sort
+                                           .map { |path| File.join(@app_dir, path) }
         end
 
         # Narrows a module method's `self` to the hosts that call it
@@ -172,9 +199,14 @@ module RbsInfer
           []
         end
 
-        def paths_in(target)
+        def paths_in(target, ignores: true)
+          pattern = target.source_pattern
+          unless ignores
+            pattern = Steep::Project::Pattern.new(patterns: pattern.patterns, ext: pattern.ext, ignores: [])
+          end
+
           Steep::Services::FileLoader.new(base_dir: Pathname(@app_dir))
-                                     .each_path_in_patterns(target.source_pattern).to_a
+                                     .each_path_in_patterns(pattern).to_a
         end
 
         def relative(abs)
