@@ -195,7 +195,10 @@ app/models/example34.rb:
     - "# @type instance: (singleton(Example34::Bar)) | (singleton(Example34::Baz))"
     defs:
       include: singleton(Example34::Bar)
-      included: singleton(Example34::Baz)
+  blocks:
+  - call: included
+    in: "::Example34::Baz"
+    implements: "::Example34::Bar"
 app/models/example35.rb:
   blocks:
   - call: bazingado

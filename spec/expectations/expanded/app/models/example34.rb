@@ -31,3 +31,9 @@ class Example34
     include(Example34::Baz)
   end
 end
+
+class Example34::Bar
+      def age
+        31
+      end
+end

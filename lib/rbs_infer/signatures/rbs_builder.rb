@@ -82,7 +82,8 @@ module RbsInfer::Signatures
 
       # Instance attrs and methods, grouped attrs-then-methods per visibility,
       # each block blank-separated.
-      emit_instance_members(lines, body_start, members, member_indent, init_arg_types, attr_types, method_param_types, optional_params)
+      emit_instance_members(lines, body_start, members, member_indent, init_arg_types, attr_types, method_param_types,
+                            optional_params, owner: nil)
 
       # Mailers: emit the class method send_mail (ActionMailer pattern).
       if mailer_class?
@@ -172,9 +173,17 @@ module RbsInfer::Signatures
     # another, so an attr group and a method group are blank-separated
     # (`attr_reader x` / `def foo`). `private` introduces its section with the
     # keyword, itself blank-separated from what precedes and follows it.
-    def emit_instance_members(lines, body_start, members, indent, init_arg_types, attr_types, method_param_types, optional_params)
+    #
+    # `owner` says WHOSE body is being written: `nil` is the target class,
+    # a name is the nested module of that name. A nested module used to emit
+    # its members flat instead, which dropped their visibility on the floor —
+    # every `def` under a `private` came out public, contradicting the source
+    # it was generated from (felixefelip/rbs_infer#254). Required rather than
+    # defaulted: the wrong answer here silently emits somebody else's members.
+    def emit_instance_members(lines, body_start, members, indent, init_arg_types, attr_types, method_param_types,
+                              optional_params, owner:)
       %i[public protected private].each do |vis|
-        vis_members = members.select { |m| m.visibility == vis && m.owner.nil? && !NON_INSTANCE_KINDS.include?(m.kind) }
+        vis_members = members.select { |m| m.visibility == vis && m.owner == owner && !NON_INSTANCE_KINDS.include?(m.kind) }
         next if vis_members.empty?
 
         if vis == :private
@@ -341,9 +350,12 @@ module RbsInfer::Signatures
         end
         add_group(lines, body_start, class_level)
 
-        add_group(lines, body_start, mod_members.filter_map do |m|
-          render_value_member(m, inner_indent, {}, attr_types, method_param_types, Set.new)
-        end)
+        # The module's instance attrs and methods go through the SAME emitter
+        # the class body uses, so `private` inside a nested module reaches the
+        # RBS exactly as it does at the top level. Rendering them flat here was
+        # what dropped it (felixefelip/rbs_infer#254).
+        emit_instance_members(lines, body_start, mod_members, inner_indent, {}, attr_types, method_param_types,
+                              Set.new, owner: owner)
 
         lines << "#{member_indent}end"
       end
