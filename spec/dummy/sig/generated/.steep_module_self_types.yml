@@ -250,6 +250,13 @@ app/models/example40.rb:
       | (singleton(Example40::BazOther))"
     defs:
       bazinga: singleton(Example40::Bar)
+  blocks:
+  - call: bazingado
+    in: "::Example40::Baz"
+    implements: "::Example40::Bar"
+  - call: bazingado
+    in: "::Example40::BazOther"
+    implements: "::Example40::Bar"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade

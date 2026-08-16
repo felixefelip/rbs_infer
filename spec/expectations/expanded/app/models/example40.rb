@@ -1,4 +1,4 @@
-class Example38
+class Example40
   module Foo
     def bazinga(*modules)
       modules.reverse_each do |mod|
@@ -9,6 +9,16 @@ class Example38
     private
 
     def bazingado(base=nil, &block)
+      # Memoized on the extending module, not built per call: the block is kept
+      # on the holder, so a fresh `Bazinga` per call stores it on an object that
+      # is discarded before the replay ever asks for it.
+      @_bazingado_holder ||= Example40::Bazinga.new
+      @_bazingado_holder.bazingado(base, &block)
+    end
+  end
+
+  class Bazinga
+    def bazingado(base=nil, &block)
       if base.nil?
         @_bazingado_block = block
       else
@@ -18,7 +28,7 @@ class Example38
   end
 
   class Baz
-    extend Example38::Foo
+    extend Example40::Foo
 
     bazingado do
       def age
@@ -28,7 +38,7 @@ class Example38
   end
 
   class BazOther
-    extend Example38::Foo
+    extend Example40::Foo
 
     bazingado do
       def name
@@ -38,9 +48,9 @@ class Example38
   end
 
   class Bar
-    extend Example38::Foo
+    extend Example40::Foo
 
-    bazinga(Example38::Baz, Example38::BazOther)
+    bazinga(Example40::Baz, Example40::BazOther)
 
     def call_age
       age + 10
@@ -48,13 +58,13 @@ class Example38
   end
 end
 
-class Example38::Bar
+class Example40::Bar
       def age
         31
       end
 end
 
-class Example38::Bar
+class Example40::Bar
       def name
         "John Doe"
       end

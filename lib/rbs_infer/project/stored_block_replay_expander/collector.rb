@@ -32,6 +32,18 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # cannot be the one calling it.
     ForwardMethod = Data.define(:owner, :method, :parameter, :callee)
 
+    # `def bazingado(base = nil, &block)` whose body is
+    # `(@holder ||= Holder.new).bazingado(base, &block)` — a method that keeps
+    # nothing itself and hands the whole call, block included, to an object it
+    # holds. The block then lives in `Holder`, which nothing extends, so without
+    # this hop the storage and the replay sit in an owner no subject can reach
+    # (felixefelip/rbs_infer#257).
+    #
+    # `target` is the class the holder is built from, resolved in
+    # `resolve_replays` like `extend`'s and a superclass's: a constructor written
+    # relatively may name a class the walk has not reached yet.
+    Delegation = Data.define(:owner, :method, :target, :callee)
+
     def initialize(source)
       @source = source
       @scope = []
@@ -45,6 +57,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @replay_methods = []
       @inward_replays = []
       @forwards = []
+      # Raw like `@extends`/`@superclasses`, for the same reason: the constant
+      # is resolved once every declaration in the file is known.
+      @delegations = []
+      @resolved_delegations = []
       @stored_calls = []
       @apply_calls = []
       super()
@@ -142,6 +158,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
       if (inward = inward_replay_shape(node.body, parameters))
         parameter, ivar = inward
         @inward_replays << InwardReplay.new(owner: current_scope, method: method_name, parameter: parameter, ivar: ivar)
+      end
+
+      if (delegation = delegation_shape(node))
+        target, callee = delegation
+        @delegations << [current_scope, method_name, target, callee]
       end
 
       return unless (forward = forward_shape(node.body, parameters))
@@ -310,6 +331,64 @@ module RbsInfer::Project::StoredBlockReplayExpander
       shapes.first if shapes.size == 1
     end
 
+    # `@holder ||= Holder.new` plus `@holder.<callee>(…, &block)` in one body.
+    #
+    # Forwarding the block is the whole claim. What separates a pass-through from
+    # any other message the method happens to send its holder is that the block
+    # the CALLER wrote arrives at the callee — and it is the only thing that
+    # matters here, since the block is the object being relocated. A call that
+    # drops it reaches a storage that would keep nothing.
+    #
+    # The constructor has to sit in this body too. An ivar filled somewhere else
+    # is a data-flow question, and this pass answers only what one body shows —
+    # the same line `inward_replay_shape` draws when it insists the block come
+    # off `self` rather than from wherever a value might have been put.
+    def delegation_shape(node)
+      block_name = node.parameters&.block&.name&.to_s
+      return nil unless block_name
+
+      holders = held_constructions(node.body)
+      return nil unless holders.size == 1
+
+      ivar, constant = holders.first
+
+      callees = nodes(node.body).filter_map do |child|
+        next unless child.is_a?(Prism::CallNode)
+        call = dispatched(child)
+        receiver = call.receiver
+        next unless receiver.is_a?(Prism::InstanceVariableReadNode) && receiver.name.to_s == ivar
+        pass = call.block
+        next unless pass.is_a?(Prism::BlockArgumentNode)
+        next unless pass.expression.is_a?(Prism::LocalVariableReadNode)
+        next unless pass.expression.name.to_s == block_name
+
+        call.name.to_s
+      end.uniq
+
+      [constant, callees.first] if callees.size == 1
+    end
+
+    # Every ivar this body fills with a `Constant.new`, as `[ivar, constant]`.
+    # `@x ||= K.new` and `@x = K.new` say the same thing about what the slot
+    # holds. An ivar built from two different constants says nothing decidable
+    # and is dropped rather than resolved by write order.
+    def held_constructions(body)
+      writes = nodes(body).filter_map do |node|
+        next unless node.is_a?(Prism::InstanceVariableWriteNode) || node.is_a?(Prism::InstanceVariableOrWriteNode)
+
+        value = node.value
+        next unless value.is_a?(Prism::CallNode) && value.name == :new && value.receiver
+
+        [node.name.to_s, value.receiver]
+      end
+
+      writes.group_by(&:first).filter_map do |ivar, entries|
+        constants = entries.map(&:last)
+        names = constants.filter_map { |constant| RbsInfer::Analyzer.extract_constant_path(constant) }.uniq
+        [ivar, constants.first] if names.size == 1
+      end
+    end
+
     def collect_class_body_call(node)
       case node.name
       when :extend
@@ -346,6 +425,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       collect_readers_from_source
 
       providers = dsl_providers
+      @resolved_delegations = resolve_delegations
 
       candidates = []
       @apply_calls.each do |apply|
@@ -355,15 +435,18 @@ module RbsInfer::Project::StoredBlockReplayExpander
           source_subject = resolve_constant(apply.argument, apply.subject)
           next unless source_subject && subjects.include?(source_subject)
 
-          # Both directions answer with the SLOT, and from there the chain is
-          # one and the same: whoever fills that slot is the storage method, and
-          # the call the source wrote under that name holds the block. Asking
-          # both and requiring a single answer is what keeps a file that somehow
-          # reads as both from being resolved by declaration order.
-          ivars = [outward_ivar(owner, apply.method), inward_ivar(owner, apply.method)].compact.uniq
-          next unless ivars.size == 1
+          # Both directions answer with the SLOT — and with the object that owns
+          # it, which is not always the provider: a delegating DSL method keeps
+          # the block on something it holds. From there the chain is one and the
+          # same: whoever fills that slot is the storage method, and the call the
+          # source wrote under that name holds the block. Asking both and
+          # requiring a single answer is what keeps a file that somehow reads as
+          # both from being resolved by declaration order.
+          slots = [outward_slot(owner, apply.method), inward_slot(owner, apply.method)].compact.uniq
+          next unless slots.size == 1
 
-          storage_method = storage_method_for(owner, ivars.first)
+          storage_owner, ivar = slots.first
+          storage_method = storage_method_for(owner, storage_owner, ivar)
           next unless storage_method
 
           blocks = @stored_calls.select { |stored| stored.subject == source_subject && stored.method == storage_method }
@@ -432,36 +515,85 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # replay: the reader names it, and an `attr_reader` in the same owner says
     # which ivar the reader reaches. Recognising the reader explicitly is what
     # keeps an arbitrary method named `body` from being read as an accessor.
-    def outward_ivar(owner, method)
+    def outward_slot(owner, method)
       replays = @replay_methods.select { |replay| replay.owner == owner && replay.method == method }
       return nil unless replays.size == 1
 
       ivars = @readers.select { |reader_owner, name, _| reader_owner == owner && name == replays.first.reader }
       ivars = ivars.map(&:last).uniq
-      ivars.first if ivars.size == 1
+      [owner, ivars.first] if ivars.size == 1
     end
 
     # The slot behind `param.class_eval(&@ivar)`, when `method` only FORWARDS to
     # the replay. One hop, not a chain: each additional link is another place a
     # runtime value could be substituted for the constant we resolved, and this
     # pass has no way to tell that it wasn't.
-    def inward_ivar(owner, method)
+    def inward_slot(owner, method)
       forwards = @forwards.select { |forward| forward.owner == owner && forward.method == method }
       return nil unless forwards.size == 1
 
-      replays = @inward_replays.select { |replay| replay.owner == owner && replay.method == forwards.first.callee }
-      replays.first.ivar if replays.size == 1
+      keeper_owner, keeper_method = keeper(owner, forwards.first.callee)
+      return nil unless keeper_owner
+
+      replays = @inward_replays.select { |replay| replay.owner == keeper_owner && replay.method == keeper_method }
+      [keeper_owner, replays.first.ivar] if replays.size == 1
     end
 
-    # The one method in `owner` that fills `ivar` — the other half of the join,
-    # and the name the source's block was written under. Exactly one, and it must
-    # fill exactly that one slot: a method storing into two ivars cannot say
-    # which block a later replay is asking for.
-    def storage_method_for(owner, ivar)
-      entries = @storages.group_by { |storage| [storage.owner, storage.method] }.select do |(storage_owner, _), storages|
-        storage_owner == owner && storages.size == 1 && storages.first.ivar == ivar
+    # Where `owner#method` actually keeps things. Usually `owner` itself; one
+    # owner further along when the method delegates, because then it holds
+    # nothing and the block ends up on the object it hands the call to.
+    #
+    # One hop, for the same reason `inward_slot` takes one: each further link is
+    # another place a runtime value could stand in for the constant we resolved.
+    # Two delegations under one name answer nothing decidable.
+    def keeper(owner, method)
+      delegations = @resolved_delegations.select { |it| it.owner == owner && it.method == method }
+      return [owner, method] if delegations.empty?
+      return [nil, nil] unless delegations.size == 1
+
+      [delegations.first.target, delegations.first.callee]
+    end
+
+    # The one method in `storage_owner` that fills `ivar`, reported under the
+    # name a subject of `provider` writes to reach it — the other half of the
+    # join, since that name is what the source's block was written under.
+    # Exactly one, and it must fill exactly that one slot: a method storing into
+    # two ivars cannot say which block a later replay is asking for.
+    def storage_method_for(provider, storage_owner, ivar)
+      entries = @storages.group_by { |storage| [storage.owner, storage.method] }.select do |(owner, _), storages|
+        owner == storage_owner && storages.size == 1 && storages.first.ivar == ivar
       end
-      entries.keys.first.last if entries.size == 1
+      return nil unless entries.size == 1
+
+      names = written_names(provider, storage_owner, entries.keys.first.last)
+      names.first if names.size == 1
+    end
+
+    # What a subject extending `provider` writes to reach `storage_owner#method`.
+    # The keeper's own name when the provider IS the keeper; the delegating
+    # method's name when it is not. Reading the keeper's name in both cases only
+    # works while the two happen to be spelled alike — rename the held object's
+    # method and nothing about the program changes, so nothing about the answer
+    # may either.
+    def written_names(provider, storage_owner, storage_method)
+      names = []
+      names << storage_method if provider == storage_owner
+
+      @resolved_delegations.each do |delegation|
+        next unless delegation.owner == provider
+        next unless delegation.target == storage_owner && delegation.callee == storage_method
+
+        names << delegation.method
+      end
+
+      names.uniq
+    end
+
+    def resolve_delegations
+      @delegations.filter_map do |owner, method, raw_target, callee|
+        target = resolve_constant(raw_target, owner)
+        Delegation.new(owner: owner, method: method, target: target, callee: callee) if target
+      end
     end
 
     # `attr_reader` is a normal call in a class/module body; collect it in a
