@@ -136,7 +136,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
         @replay_methods << ReplayMethod.new(owner: current_scope, method: method_name, parameter: parameter, reader: reader)
       end
 
-      parameters = parameter_names(params)
+      parameters = handed_names(node.body, parameter_names(params))
 
       if (inward = inward_replay_shape(node.body, parameters))
         parameter, ivar = inward
@@ -149,10 +149,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @forwards << ForwardMethod.new(owner: current_scope, method: method_name, parameter: parameter, callee: callee)
     end
 
-    # Every name the method can be HANDED an object under. A replay against
-    # arbitrary state is what this pass declines to guess about, so both shapes
-    # below require their receiver to be one of these rather than any local that
-    # happens to be in scope.
+    # The names a `def` or a block binds its arguments to. One reader for both:
+    # `BlockParametersNode#parameters` IS a `ParametersNode`, so "what does this
+    # bind" has one answer regardless of which construct asked.
+    #
+    # A destructuring target (`|(a, b)|`) is a `MultiTargetNode` and carries no
+    # `name`, so it is skipped — the same way a method's would be.
     def parameter_names(params)
       return Set.new unless params.is_a?(Prism::ParametersNode)
 
@@ -160,6 +162,54 @@ module RbsInfer::Project::StoredBlockReplayExpander
       names = names.filter_map { |param| param.name.to_s if param.respond_to?(:name) && param.name }
       names << params.rest.name.to_s if params.rest.respond_to?(:name) && params.rest&.name
       Set.new(names)
+    end
+
+    # Every name the method can be HANDED an object under. A replay against
+    # arbitrary state is what this pass declines to guess about, so the shapes
+    # below require their receiver to be one of these rather than any local that
+    # happens to be in scope.
+    #
+    # That is the method's parameters, and also the parameters of a block passed
+    # to a call ON one of those names. The question the restriction asks is
+    # about PROVENANCE — "did this object reach us from the caller, or did we
+    # fetch it from somewhere else in the program" — and a value yielded by a
+    # method of a handed object answers it the same way the parameter does.
+    # `mod` in `modules.reverse_each { |mod| mod.apply(self) }` is as much
+    # something we were handed as `modules` is; restricting the receiver to a
+    # parameter NAME missed that, so a DSL forwarding to each of several modules
+    # resolved nothing (felixefelip/rbs_infer#253).
+    #
+    # Deliberately NOT a list of iteration methods. Which of the yielded values
+    # is "the element" is a question about the receiver's type, which this
+    # source-only pass cannot answer and — since the forward's parameter name is
+    # never read again, only its callee — does not need to: `Enumerable#inject`
+    # yields the memo first and `each_with_index` an index second, so any
+    # first-parameter rule would be wrong for one of them while the provenance
+    # claim holds for both.
+    #
+    # Iterated to a fixed point because the relation is transitive — a nested
+    # iteration still yields values that came from the caller — terminating
+    # because a body binds finitely many names and the set only grows.
+    def handed_names(body, parameters)
+      names = parameters.dup
+
+      loop do
+        grown = false
+        nodes(body).each do |node|
+          next unless node.is_a?(Prism::CallNode)
+          receiver = node.receiver
+          next unless receiver.is_a?(Prism::LocalVariableReadNode) && names.include?(receiver.name.to_s)
+          next unless node.block.is_a?(Prism::BlockNode)
+
+          bound = node.block.parameters
+          next unless bound.is_a?(Prism::BlockParametersNode)
+
+          parameter_names(bound.parameters).each { |name| grown = true if names.add?(name) }
+        end
+        break unless grown
+      end
+
+      names
     end
 
     def stored_block_ivar(body, block_name)
@@ -245,8 +295,15 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
         if node.block.is_a?(Prism::BlockNode)
           @stored_calls << StoredCall.new(owner: nil, subject: current_scope, method: node.name.to_s, block: node.block)
-        elsif node.arguments && node.arguments.arguments.size == 1
-          @apply_calls << ApplyCall.new(owner: nil, subject: current_scope, method: node.name.to_s, argument: node.arguments.arguments.first)
+        elsif node.arguments
+          # One apply per argument. `apply(A, B)` asks for A's block AND B's,
+          # which is what a `*modules` forward means at runtime — each gets its
+          # own candidate, and each resolves (or declines) on its own evidence.
+          # Only single-argument calls used to be read at all, so the plural
+          # form resolved nothing (felixefelip/rbs_infer#253).
+          node.arguments.arguments.each do |argument|
+            @apply_calls << ApplyCall.new(owner: nil, subject: current_scope, method: node.name.to_s, argument: argument)
+          end
         end
       end
     end

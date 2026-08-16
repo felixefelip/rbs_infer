@@ -293,4 +293,106 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(described_class.expand(source)).to be_nil
     end
   end
+
+  # `apply(*modules)` forwarding inside an iteration, which is the shape the
+  # generated `Module#include` pseudo-code uses. The receiver is a BLOCK
+  # parameter rather than a method parameter, and the call site passes several
+  # constants at once — neither was read before felixefelip/rbs_infer#253.
+  context "a DSL forwarding to each of several modules" do
+    def splat(sources: %w[First Second], applied: "apply(First, Second)", iteration: "reverse_each")
+      kept = sources.map do |name|
+        <<~RUBY
+          class #{name} < Base
+            keep do
+              def installed_#{name.downcase}
+                "#{name.downcase}"
+              end
+            end
+          end
+        RUBY
+      end
+
+      <<~RUBY
+        class Wrap
+          class Base
+            def self.apply(*modules)
+              modules.#{iteration} { |mod| mod.keep(self) }
+            end
+
+            def self.keep(base = nil, &block)
+              if base.nil?
+                @body = block
+              else
+                base.class_eval(&@body) if @body
+              end
+            end
+          end
+
+        #{kept.join("\n").gsub(/^(?=.)/, "  ")}
+          class Target < Base
+            #{applied}
+          end
+        end
+      RUBY
+    end
+
+    it "moves every named module's block onto the target" do
+      expanded = described_class.expand(splat)
+
+      expect(expanded).to include("class Wrap::Target\n      def installed_first")
+      expect(expanded).to include("class Wrap::Target\n      def installed_second")
+      expect(Prism.parse(expanded).success?).to be(true)
+    end
+
+    it "resolves a single argument through the same iteration" do
+      expanded = described_class.expand(splat(sources: %w[First], applied: "apply(First)"))
+
+      expect(expanded).to include("class Wrap::Target\n      def installed_first")
+      expect(expanded).not_to include("installed_second")
+    end
+
+    # The claim is about provenance, not about which yielded value is "the
+    # element" — so it does not depend on knowing what the method does. Any
+    # call on a handed receiver hands its block values that came from the
+    # caller, including ones no first-parameter rule would survive:
+    # `inject` yields the memo first, `each_with_index` an index second.
+    it "does not depend on which method does the yielding" do
+      %w[each map select each_with_index reverse_each each_entry tap].each do |iteration|
+        expect(described_class.expand(splat(iteration: iteration)))
+          .to include("class Wrap::Target\n      def installed_first"), "#{iteration} was not read"
+      end
+    end
+
+    it "reads a name bound anywhere in the block's parameters" do
+      source = splat.sub("{ |mod| mod.keep(self) }", "{ |index, mod| mod.keep(self) }")
+
+      expect(described_class.expand(source)).to include("class Wrap::Target\n      def installed_first")
+    end
+
+    it "adds nothing on a second pass over its own output" do
+      expect(described_class.expand(described_class.expand(splat))).to be_nil
+    end
+
+    it "declines a receiver that is neither a parameter nor bound from one" do
+      source = splat.sub("modules.reverse_each { |mod| mod.keep(self) }",
+                         "Registry.all.reverse_each { |mod| mod.keep(self) }")
+
+      expect(described_class.expand(source)).to be_nil
+    end
+
+    # A destructuring target carries no name — the same reason a method's
+    # would be skipped, not a rule of its own.
+    it "declines a block that destructures what it is yielded" do
+      source = splat.sub("{ |mod| mod.keep(self) }", "{ |(mod, _extra)| mod.keep(self) }")
+
+      expect(described_class.expand(source)).to be_nil
+    end
+
+    it "follows a value through a nested iteration" do
+      source = splat.sub("modules.reverse_each { |mod| mod.keep(self) }",
+                         "modules.each { |group| group.each { |mod| mod.keep(self) } }")
+
+      expect(described_class.expand(source)).to include("class Wrap::Target\n      def installed_first")
+    end
+  end
 end
