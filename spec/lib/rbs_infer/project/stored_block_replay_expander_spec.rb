@@ -216,4 +216,81 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(described_class.expand(source)).to be_nil
     end
   end
+
+  # `extend DSL` and `class Sub < Base` are the same thing to the caller: the
+  # DSL method arrives with no receiver in the class body either way. Reading
+  # only `extend` made a file spelling the replay through inheritance produce
+  # nothing at all (felixefelip/rbs_infer#251).
+  context "a DSL shared by inheritance" do
+    def inherited(source_super: "Base", target_super: "Base")
+      <<~RUBY
+        class Wrap
+          class Base
+            def self.apply(mod)
+              mod.keep(self)
+            end
+
+            def self.keep(base = nil, &block)
+              if base.nil?
+                @body = block
+              else
+                base.class_eval(&@body) if @body
+              end
+            end
+          end
+
+          class Source < #{source_super}
+            keep do
+              def installed
+                "yes"
+              end
+            end
+          end
+
+          class Target < #{target_super}
+            apply(Source)
+          end
+        end
+      RUBY
+    end
+
+    it "moves the block onto the target, with no `extend` anywhere" do
+      expanded = described_class.expand(inherited)
+
+      expect(inherited).not_to include("extend")
+      expect(expanded).to include("class Wrap::Target\n      def installed")
+      expect(expanded.scan("def installed").size).to eq(2)
+      expect(Prism.parse(expanded).success?).to be(true)
+    end
+
+    # Ruby's ancestry is transitive, so this pass's has to be: `Target < Source`
+    # reaches `keep` through `Source`, exactly as a direct subclass would.
+    it "reaches a DSL inherited through an intermediate class" do
+      expect(described_class.expand(inherited(target_super: "Source"))).to include("class Wrap::Target\n      def installed")
+    end
+
+    it "declines when the target never asks for the replay" do
+      expect(described_class.expand(inherited.sub("    apply(Source)\n", ""))).to be_nil
+    end
+
+    it "adds nothing on a second pass over its own output" do
+      expect(described_class.expand(described_class.expand(inherited))).to be_nil
+    end
+
+    # Reopening a class under a different superclass is not something to reason
+    # about, but walking the chain must not hang on it either.
+    it "terminates on a superclass chain that loops" do
+      source = inherited(source_super: "Target", target_super: "Source")
+
+      expect { described_class.expand(source) }.not_to raise_error
+    end
+
+    # An unresolvable superclass is simply not an edge — a class inheriting from
+    # something declared elsewhere still resolves its own `extend`s.
+    it "ignores a superclass it cannot resolve in this file" do
+      source = inherited.sub("class Source < Base", "class Source < ::Elsewhere::Base")
+
+      expect(described_class.expand(source)).to be_nil
+    end
+  end
 end

@@ -28,6 +28,10 @@ module RbsInfer::Project
   #   end
   #
   # It expands that to a virtual reopening of Target containing `installed`.
+  #
+  # `extend Builder` is one way for Source and Target to have those methods;
+  # `class Source < Builder` (with `def self.keep`) is the other, and the call
+  # sites read the same either way. Both are recognised.
   # ClassMemberCollector deliberately ignores arbitrary blocks, so the original
   # lexical call site remains available as type evidence without emitting the
   # method on Source. This is plain Ruby rather than a framework convention, so
