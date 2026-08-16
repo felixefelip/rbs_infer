@@ -16,7 +16,7 @@ end
 
 class Example3
   class Foo
-    self.@foo_instance: Foo?
+    self.@foo_instance: Example3::Foo?
 
     module GeneratedAttributes
       attr_accessor user: (Example3::User | nil)?

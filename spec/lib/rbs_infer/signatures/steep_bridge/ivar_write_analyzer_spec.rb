@@ -19,7 +19,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       expect(result["x"]).to eq("String")
     end
 
@@ -32,7 +32,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       expect(result["x"]).to eq("String?")
     end
 
@@ -49,7 +49,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       expect(result["x"]).to eq("String?")
     end
 
@@ -62,7 +62,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       expect(result["x"]).to eq("String?")
     end
 
@@ -78,7 +78,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       expect(result).not_to have_key("count")
     end
 
@@ -95,7 +95,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       expect(result["x"]).to eq("((Comment & Comment::Validated) | Comment)?")
     end
 
@@ -112,7 +112,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       expect(result["x"]).to eq("Comment | (Comment & Comment::Validated)")
     end
 
@@ -129,7 +129,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       expect(result["x"]).to eq("(Comment & Comment::Validated)?")
     end
 
@@ -144,7 +144,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       expect(result["x"]).to eq("String?")
     end
 
@@ -163,7 +163,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       expect(result["x"]).to eq("Comment | (Comment & Comment::Validated)")
     end
 
@@ -178,7 +178,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       expect(result["x"]).to eq("String")
     end
 
@@ -195,7 +195,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       expect(result["x"]).to eq("String?")
     end
 
@@ -210,7 +210,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       # class-body ivasgn is class-instance variable scope; method
       # ivasgn is instance scope. Per the issue, we treat the class-body
       # write as initialized for the same name (best-effort).
@@ -226,7 +226,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
         end
       RUBY
 
-      result = bridge.ivar_write_types(code, target_class: "Foo")
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
       # Only `nil` was observed; nilable, no concrete type. The emitter
       # returns "nil" which is a valid RBS type.
       expect(result["x"]).to eq("nil")
@@ -470,10 +470,10 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
       # assigned in Beta#configure outside init — so it is nilable *for
       # Beta*. Without scoping, Alpha's initialize would suppress the `?`
       # and Alpha's "String" would merge in.
-      alpha = bridge.ivar_write_types(code, target_class: "Alpha")
+      alpha = bridge.ivar_write_types(code, target_class: "Alpha", singleton: false)
       expect(alpha["shared"]).to eq("String")
 
-      beta = bridge.ivar_write_types(code, target_class: "Beta")
+      beta = bridge.ivar_write_types(code, target_class: "Beta", singleton: false)
       expect(beta["shared"]).to eq("Integer?")
       expect(beta).not_to have_key("only_alpha")
     end
@@ -507,7 +507,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
       end
 
       it "não atribui os writes de uma classe aninhada à classe externa" do
-        outer = bridge.ivar_write_types(nested_code, target_class: "Outer")
+        outer = bridge.ivar_write_types(nested_code, target_class: "Outer", singleton: false)
 
         expect(outer).not_to have_key("name")
       end
@@ -522,21 +522,21 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
       # então declarar no módulo já serve `Outer` quando ele de fato inclui —
       # que era o único caso que a regra antiga acertava.
       it "não atribui os writes de um módulo aninhado à classe externa" do
-        outer = bridge.ivar_write_types(nested_code, target_class: "Outer")
+        outer = bridge.ivar_write_types(nested_code, target_class: "Outer", singleton: false)
 
         expect(outer).not_to have_key("setting")
         expect(outer).to have_key("ran")
       end
 
       it "atribui os writes do módulo aninhado ao próprio módulo" do
-        generated = bridge.ivar_write_types(nested_code, target_class: "Outer::Generated")
+        generated = bridge.ivar_write_types(nested_code, target_class: "Outer::Generated", singleton: false)
 
         expect(generated).to have_key("setting")
         expect(generated).not_to have_key("ran")
       end
 
       it "atribui os writes da classe aninhada ao seu próprio alvo" do
-        user = bridge.ivar_write_types(nested_code, target_class: "Outer::User")
+        user = bridge.ivar_write_types(nested_code, target_class: "Outer::User", singleton: false)
 
         expect(user).to have_key("name")
         expect(user).not_to have_key("ran")
@@ -555,7 +555,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
           end
         RUBY
 
-        result = bridge.ivar_write_types(code, target_class: "Foo")
+        result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
         expect(result["name"]).to eq("String")
         expect(result["size"]).to eq("Integer")
       end
@@ -573,7 +573,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
           end
         RUBY
 
-        result = bridge.ivar_write_types(code, target_class: "Foo")
+        result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
         expect(result["name"]).to eq("String")
       end
 
@@ -586,10 +586,108 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
           end
         RUBY
 
-        result = bridge.ivar_write_types(code, target_class: "Foo")
+        result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
         expect(result).not_to have_key("a")
         expect(result).not_to have_key("b")
       end
+    end
+  end
+
+  # A class has two ivar scopes, and they are different slots: the instance
+  # `@x` and the class-instance `self.@x` a `def self.x` / `class << self` /
+  # the class body writes. `singleton:` says which one to answer for. Before
+  # felixefelip/rbs_infer#252 the singleton one had no answer at all — the walk
+  # refused to descend into `:defs` and `:sclass`, so nothing type-checked those
+  # writes and the fallback that covered them reads literals and little else.
+  describe "#ivar_write_types with singleton: true" do
+    it "types a write in a `def self.x`, which the instance scope does not see" do
+      code = <<~RUBY
+        class Foo
+          def self.store
+            @cached = "hello"
+          end
+        end
+      RUBY
+
+      expect(bridge.ivar_write_types(code, target_class: "Foo", singleton: true)["cached"]).to eq("String?")
+      expect(bridge.ivar_write_types(code, target_class: "Foo", singleton: false)).not_to have_key("cached")
+    end
+
+    it "types a write in a `class << self` method the same way" do
+      code = <<~RUBY
+        class Foo
+          class << self
+            def store
+              @cached = 3
+            end
+          end
+        end
+      RUBY
+
+      expect(bridge.ivar_write_types(code, target_class: "Foo", singleton: true)["cached"]).to eq("Integer?")
+      expect(bridge.ivar_write_types(code, target_class: "Foo", singleton: false)).not_to have_key("cached")
+    end
+
+    it "leaves an instance method's write to the instance scope" do
+      code = <<~RUBY
+        class Foo
+          def store
+            @cached = "hello"
+          end
+        end
+      RUBY
+
+      expect(bridge.ivar_write_types(code, target_class: "Foo", singleton: true)).not_to have_key("cached")
+      expect(bridge.ivar_write_types(code, target_class: "Foo", singleton: false)["cached"]).to eq("String?")
+    end
+
+    # A class-instance variable has no constructor, so the only definite
+    # initialization it can have is the class body — and `initialize` writing
+    # the same NAME is a different slot that must not suppress the `| nil`.
+    it "takes a class-body write as definite initialization" do
+      code = <<~RUBY
+        class Foo
+          @cached = "hello"
+        end
+      RUBY
+
+      expect(bridge.ivar_write_types(code, target_class: "Foo", singleton: true)["cached"]).to eq("String")
+    end
+
+    it "does not let `initialize` suppress the singleton slot's nilability" do
+      code = <<~RUBY
+        class Foo
+          def initialize
+            @cached = "hello"
+          end
+
+          def self.store
+            @cached = "world"
+          end
+        end
+      RUBY
+
+      expect(bridge.ivar_write_types(code, target_class: "Foo", singleton: true)["cached"]).to eq("String?")
+      expect(bridge.ivar_write_types(code, target_class: "Foo", singleton: false)["cached"]).to eq("String")
+    end
+
+    it "keeps a sibling class's singleton write out" do
+      code = <<~RUBY
+        class Foo
+          def self.store
+            @cached = "hello"
+          end
+        end
+
+        class Bar
+          def self.store
+            @cached = 3
+          end
+        end
+      RUBY
+
+      expect(bridge.ivar_write_types(code, target_class: "Foo", singleton: true)["cached"]).to eq("String?")
+      expect(bridge.ivar_write_types(code, target_class: "Bar", singleton: true)["cached"]).to eq("Integer?")
     end
   end
 

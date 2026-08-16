@@ -27,7 +27,14 @@ class RbsInfer::Signatures::SteepBridge
     # scope) of `target_class`, the emitted type gets `| nil`
     # (definite-initialization rule). The narrowing is then reabsorbed by
     # steep#16 within methods that explicitly assign before reading.
-    def ivar_write_types(source_code, target_class:)
+    #
+    # `singleton:` picks WHICH of the class's two ivar scopes to answer for.
+    # `false` is the instance `@x`; `true` is the class-instance `self.@x`
+    # written by `def self.x` / `class << self` / the class body. They are
+    # different slots, so they are different questions — and asking the wrong
+    # one silently returns `{}` rather than failing, which is why the argument
+    # is required rather than defaulted (felixefelip/rbs_infer#252).
+    def ivar_write_types(source_code, target_class:, singleton:)
       typing = @steep_bridge.type_check(source_code)
       return {} unless typing
 
@@ -35,7 +42,7 @@ class RbsInfer::Signatures::SteepBridge
       return {} unless source_node
 
       type_sets = Hash.new { |h, k| h[k] = RbsInfer::Inference::IvarTypeSet.new }
-      initialized = collect_initialized_ivars(source_node, target_class: target_class)
+      initialized = collect_initialized_ivars(source_node, target_class: target_class, singleton: singleton)
       attr_writer_to_ivar = collect_attr_writers(source_node)
       # Only writes lexically inside `target_class` count. A single file can
       # define several classes (initializers, `lib/*_ext.rb`, the dummy-app
@@ -43,7 +50,7 @@ class RbsInfer::Signatures::SteepBridge
       # like `initialize` — pool into each other (felixefelip/rbs_infer#38).
       # `each_typing` enumerates the whole file, so we filter it by node
       # identity against the set of writes that belong to `target_class`.
-      in_scope = collect_scoped_write_node_ids(source_node, attr_writer_to_ivar, target_class)
+      in_scope = collect_scoped_write_node_ids(source_node, attr_writer_to_ivar, target_class, singleton)
       masgn_values = collect_masgn_target_values(source_node)
 
       typing.each_typing do |node, type|
@@ -150,9 +157,14 @@ class RbsInfer::Signatures::SteepBridge
     # decide whether `nil` is added to the union — so it must be scoped to
     # the same class the writes are, or an `@x` initialized in a *sibling*
     # class in the same file would wrongly suppress the `| nil` here.
-    def collect_initialized_ivars(node, target_class:)
+    #
+    # `singleton: true` asks the same question of the `self.@x` slot, where the
+    # only definite initialization available is a class-body write: no
+    # constructor runs for a class-instance variable, so `initialize` says
+    # nothing about it and is not walked (felixefelip/rbs_infer#252).
+    def collect_initialized_ivars(node, target_class:, singleton:)
       result = Set.new
-      walk_ivar_init_targets(node, in_init: false, in_class_body: false,
+      walk_ivar_init_targets(node, in_init: false, in_class_body: false, singleton: singleton,
                                    namespace: [], target_class: target_class, result: result)
       result
     end
@@ -160,28 +172,34 @@ class RbsInfer::Signatures::SteepBridge
     # Walks `node` looking for `:ivasgn` targets that count as definite
     # initialization (inside `def initialize` or directly in a class body
     # outside any method). Does not descend into non-initialize defs.
-    def walk_ivar_init_targets(node, in_init:, in_class_body:, namespace:, target_class:, result:)
+    def walk_ivar_init_targets(node, in_init:, in_class_body:, singleton:, namespace:, target_class:, result:)
       return unless node.is_a?(::Parser::AST::Node)
 
       case node.type
       when :class, :module
         body = node.type == :class ? node.children[2] : node.children[1]
-        walk_ivar_init_targets(body, in_init: false, in_class_body: true,
+        walk_ivar_init_targets(body, in_init: false, in_class_body: true, singleton: singleton,
                                      namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
                                      target_class: target_class, result: result) if body
       when :sclass
         body = node.children[1]
-        walk_ivar_init_targets(body, in_init: false, in_class_body: true,
+        walk_ivar_init_targets(body, in_init: false, in_class_body: true, singleton: singleton,
                                      namespace: namespace, target_class: target_class, result: result) if body
       when :def
-        if node.children[0] == :initialize
+        # `initialize` initializes the INSTANCE slot. A class-instance variable
+        # has no constructor at all, so when answering for `self.@x` this says
+        # nothing and walking it would let an instance `@x = ...` wrongly
+        # suppress the singleton slot's `| nil`.
+        if node.children[0] == :initialize && !singleton
           body = node.children[2]
-          walk_ivar_init_targets(body, in_init: true, in_class_body: false,
+          walk_ivar_init_targets(body, in_init: true, in_class_body: false, singleton: singleton,
                                        namespace: namespace, target_class: target_class, result: result) if body
         end
       when :defs
         # def self.X — singleton method, skip; ivar there is class-instance
-        # variable, not relevant for instance ivar initialization.
+        # variable, not relevant for instance ivar initialization. Nor for the
+        # singleton slot's: a method body is not definite initialization in
+        # either scope, which is the whole point of the rule.
       when :ivasgn
         if (in_init || in_class_body) && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace,
                                                                                                             target_class)
@@ -191,7 +209,7 @@ class RbsInfer::Signatures::SteepBridge
         # also walk RHS for nested classes (`@x = Class.new { @y = ... }` is
         # exotic but harmless to descend)
         rhs = node.children[1]
-        walk_ivar_init_targets(rhs, in_init: in_init, in_class_body: in_class_body,
+        walk_ivar_init_targets(rhs, in_init: in_init, in_class_body: in_class_body, singleton: singleton,
                                     namespace: namespace, target_class: target_class, result: result) if rhs
       when :send
         receiver, method_name, *args = node.children
@@ -214,19 +232,19 @@ class RbsInfer::Signatures::SteepBridge
           result << ivar unless ivar.empty?
         end
         node.children.each do |c|
-          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body,
+          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body, singleton: singleton,
                                     namespace: namespace, target_class: target_class, result: result)
         end
       when :begin
         node.children.each do |c|
-          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body,
+          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body, singleton: singleton,
                                     namespace: namespace, target_class: target_class, result: result)
         end
       else
         # Descend through everything else (if/case/blocks/etc.) while
         # keeping the current scope flags.
         node.children.each do |c|
-          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body,
+          walk_ivar_init_targets(c, in_init: in_init, in_class_body: in_class_body, singleton: singleton,
                                     namespace: namespace, target_class: target_class, result: result)
         end
       end
@@ -287,66 +305,70 @@ class RbsInfer::Signatures::SteepBridge
     # object-ids (not the nodes) sidesteps `Parser::AST::Node`'s
     # structural `==`, which would conflate two identical writes in
     # different classes.
-    def collect_scoped_write_node_ids(node, attr_writer_to_ivar, target_class, namespace: [], in_def: false,
-                                      result: Set.new)
+    #
+    # `singleton` picks which of the two slots to answer for, and the walk
+    # tracks which one each write lands in with `on_singleton` — literally "is
+    # `self` the class here". It is true in a class body, in `def self.x`, and
+    # in a `class << self` body; false in an instance method. A write counts
+    # only when that answer matches what the caller asked for.
+    #
+    # This replaced a flat `in_def` flag that refused to descend into `:sclass`
+    # and `:defs` at all. Refusing kept singleton writes out of the instance map
+    # correctly, but it also meant nothing ever type-checked them: the class
+    # scope was answered by a Prism fallback that can read a literal and little
+    # else, so `@block = block` in a `def self.store` produced no declaration at
+    # all and the proc type it holds lost its `[self:]` binding
+    # (felixefelip/rbs_infer#252).
+    def collect_scoped_write_node_ids(node, attr_writer_to_ivar, target_class, singleton, namespace: [],
+                                      in_sclass: false, on_singleton: true, result: Set.new)
       return result unless node.is_a?(::Parser::AST::Node)
+
+      collect = lambda do |child, **overrides|
+        collect_scoped_write_node_ids(child, attr_writer_to_ivar, target_class, singleton,
+                                      **{ namespace: namespace, in_sclass: in_sclass, on_singleton: on_singleton,
+                                          result: result }.merge(overrides))
+      end
+      # A write belongs to the caller's question when the `self` it runs against
+      # is the one they asked about, and it is lexically in the target class.
+      in_scope = on_singleton == singleton &&
+                 RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
 
       case node.type
       when :class, :module
         body = node.type == :class ? node.children[2] : node.children[1]
-        collect_scoped_write_node_ids(body, attr_writer_to_ivar, target_class,
-                                      namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
-                                      in_def: false, result: result) if body
-      when :sclass, :defs
-        # Singleton scope (`class << self` / `def self.x`): `self` is the class,
-        # so every `@x = ...` inside is a class-instance variable (`self.@x`),
-        # never an instance ivar. Don't descend — these writes must not land in
-        # the instance-ivar map (felixefelip/rbs_infer#86). The Prism path in
-        # ReturnTypeResolver collects them separately.
+        collect.call(body, namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
+                           in_sclass: false, on_singleton: true) if body
+      when :sclass
+        # `class << self` — `self` is the singleton class, and the instance
+        # methods defined inside it run with the class as `self`.
+        collect.call(node.children[1], in_sclass: true, on_singleton: true) if node.children[1]
+      when :defs
+        # `def self.x` — `self` is the class, so `@x = ...` here is `self.@x`.
+        # `(defs (self) :name (args) body)` carries the receiver, so the body is
+        # one child further along than a `:def`'s.
+        collect.call(node.children[3], in_sclass: false, on_singleton: true) if node.children[3]
       when :def
-        body = node.children[2]
-        collect_scoped_write_node_ids(body, attr_writer_to_ivar, target_class,
-                                      namespace: namespace, in_def: true, result: result) if body
+        # An instance method's `self` is an instance — unless the `def` is
+        # inside `class << self`, where the instance IS the class.
+        collect.call(node.children[2], in_sclass: false, on_singleton: in_sclass) if node.children[2]
       when :ivasgn
-        # Only writes inside an instance method are instance ivars. A bare
-        # `@x = v` in the class body (`in_def` false) is a class-instance
-        # variable — `self` is the class there too (felixefelip/rbs_infer#86).
-        result << node.object_id if in_def && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(
-          namespace, target_class
-        )
-        node.children.each do |c|
-          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def,
-                                                                              result: result)
-        end
+        result << node.object_id if in_scope
+        node.children.each { |c| collect.call(c) }
       when :or_asgn, :and_asgn
         # `@x ||= v` / `@x &&= v`: the write `each_typing` will key on is this
         # whole node, not its argument-less inner `:ivasgn`, so collect this
         # id (felixefelip/rbs_infer#85).
-        if in_def && node.children[0].type == :ivasgn && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(
-          namespace, target_class
-        )
-          result << node.object_id
-        end
-        node.children.each do |c|
-          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def,
-                                                                              result: result)
-        end
+        result << node.object_id if in_scope && node.children[0].type == :ivasgn
+        node.children.each { |c| collect.call(c) }
       when :send
         receiver, method_name = node.children[0], node.children[1]
-        if in_def && attr_writer_to_ivar.key?(method_name) &&
-           (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
-           RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace, target_class)
+        if in_scope && attr_writer_to_ivar.key?(method_name) &&
+           (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self))
           result << node.object_id
         end
-        node.children.each do |c|
-          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def,
-                                                                              result: result)
-        end
+        node.children.each { |c| collect.call(c) }
       else
-        node.children.each do |c|
-          collect_scoped_write_node_ids(c, attr_writer_to_ivar, target_class, namespace: namespace, in_def: in_def,
-                                                                              result: result)
-        end
+        node.children.each { |c| collect.call(c) }
       end
 
       result

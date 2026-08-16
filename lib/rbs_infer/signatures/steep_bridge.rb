@@ -258,8 +258,8 @@ module RbsInfer::Signatures
       candidates.uniq
     end
 
-    def ivar_write_types(source_code, target_class:)
-      steep_bridge_ivar_write_analyzer.ivar_write_types(source_code, target_class: target_class)
+    def ivar_write_types(source_code, target_class:, singleton:)
+      steep_bridge_ivar_write_analyzer.ivar_write_types(source_code, target_class: target_class, singleton: singleton)
     end
 
     def ivar_write_types_per_method(source_code, target_class:)

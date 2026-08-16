@@ -4,7 +4,7 @@ end
 
 class Example13
   class Registry
-    self.@registry_instance: Registry?
+    self.@registry_instance: Example13::Registry?
 
     module GeneratedAttributes
       attr_accessor user: (Example13Viewer | nil)?

@@ -271,6 +271,25 @@ module RbsInfer::Signatures
       "#{method_sig[0...arrow].rstrip} -> #{wrapped}"
     end
 
+    # The method's OWN return type: the text past the LAST top-level `->`,
+    # or nil when the signature has no return arrow.
+    #
+    # A block clause carries an arrow of its own (`?{ () -> Symbol } -> T`),
+    # and a leftmost-matching `/->\s*(.+)$/` reads THAT one — handing back
+    # `Symbol } -> T`, a string nothing downstream can compare or substitute.
+    # Every guard reading it then fails open, so the passes that correct a
+    # declaration contradicting its body silently skipped any method that takes
+    # a block: `bazingado`'s return kept a proc type without the `[self:]`
+    # binding its body actually returns, and the corrector written for exactly
+    # that (felixefelip/rbs_infer#191) never got a parseable type to test
+    # (felixefelip/rbs_infer#252).
+    def return_type_of(method_sig)
+      arrow = last_top_level_arrow_index(method_sig)
+      return nil unless arrow
+
+      method_sig[(arrow + 2)..]&.strip
+    end
+
     # Index of the last `->` sitting at bracket depth 0, or nil. Used to
     # locate the real return arrow past nested proc/block arrows.
     def last_top_level_arrow_index(str)

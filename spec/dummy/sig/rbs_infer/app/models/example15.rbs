@@ -20,7 +20,7 @@ end
 
 class Example15
   class Registry
-    self.@user: User?
+    self.@user: Example15::User?
 
     def self.user: () -> Example15::User?
     def self.user=: (User value) -> User
