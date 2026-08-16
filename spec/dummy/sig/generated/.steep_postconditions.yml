@@ -1014,6 +1014,16 @@ postconditions:
   effects:
     may_write:
     - "@_bazingado_block"
+- class: Example37::Foo
+  method: bazingado
+  effects:
+    may_write:
+    - "@_bazingado_block"
+- class: Example38::Foo
+  method: bazingado
+  effects:
+    may_write:
+    - "@_bazingado_block"
 - class: Example3::Foo
   method: user=
   unconditional:
