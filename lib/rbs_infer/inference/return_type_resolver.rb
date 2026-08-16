@@ -115,7 +115,7 @@ module RbsInfer::Inference
             next if m.signature =~ /->\s*untyped$/
             steep_type = steep_returns_for(m, steep_returns)[m.name]
             next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
-            current_type = m.signature[/->\s*(.+)$/, 1]&.strip
+            current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next if current_type == steep_type
             # Only override Array types (block generic correction)
             next unless current_type&.start_with?("Array[") && steep_type.start_with?("Array[")
@@ -133,7 +133,7 @@ module RbsInfer::Inference
           members.each do |m|
             next unless method_member?(m)
             next if m.name == "initialize"
-            current_type = m.signature[/->\s*(.+)$/, 1]&.strip
+            current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next unless current_type&.end_with?("?")
 
             steep_type = steep_returns_for(m, steep_returns)[m.name]
@@ -152,7 +152,7 @@ module RbsInfer::Inference
           members.each do |m|
             next unless method_member?(m)
             next if m.name == "initialize"
-            current_type = m.signature[/->\s*(.+)$/, 1]&.strip
+            current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next unless current_type&.start_with?("{") && current_type.include?("untyped")
 
             steep_type = steep_returns_for(m, steep_returns)[m.name]
@@ -196,7 +196,7 @@ module RbsInfer::Inference
             next if m.name == "initialize"
             next if setter_name?(m.name)
 
-            current_type = m.signature[/->\s*(.+)$/, 1]&.strip
+            current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next unless current_type && current_type != "untyped"
 
             steep_type = steep_returns_for(m, steep_returns)[m.name]
@@ -251,7 +251,7 @@ module RbsInfer::Inference
         # value — neither is the body's own tail type, so neither is ours to widen.
         next if m.name == "initialize" || setter_name?(m.name)
 
-        current = m.signature[/->\s*(.+)\z/, 1]&.strip
+        current = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
         next if current.nil? || current == "untyped" || current == "void" || current.end_with?("?")
 
         defn = def_map(parsed_target)[m.name]
@@ -296,8 +296,17 @@ module RbsInfer::Inference
       # nilability and the fallback adds the call-sites' nominal types.
       steep_nil_only = Set.new
       module_ivar_types = Hash.new { |h, k| h[k] = {} }
+      # The `self.@x` slot, answered by the same machinery as the instance one.
+      # It used to have only the Prism fallback below, which reads literals and
+      # little else — so `@block = block` in a `def self.store` produced no
+      # declaration at all, and the proc the slot holds lost the `[self:]`
+      # binding it carries (felixefelip/rbs_infer#252).
+      steep_singleton_ivars = {}
       if @steep_bridge && parsed_target.source
-        steep_ivars = @steep_bridge.ivar_write_types(parsed_target.source, target_class: @target_class)
+        steep_singleton_ivars = @steep_bridge.ivar_write_types(parsed_target.source, target_class: @target_class,
+                                                                                     singleton: true)
+        steep_ivars = @steep_bridge.ivar_write_types(parsed_target.source, target_class: @target_class,
+                                                                          singleton: false)
         steep_ivars.each do |name, type|
           next if instance_attr_names.include?(name)
           if type == "nil"
@@ -312,7 +321,8 @@ module RbsInfer::Inference
         # since felixefelip/rbs_infer#249 it answers for that scope EXACTLY
         # rather than sweeping nested modules into their enclosing class.
         members.filter_map(&:owner).uniq.each do |owner|
-          @steep_bridge.ivar_write_types(parsed_target.source, target_class: "#{@target_class}::#{owner}")
+          @steep_bridge.ivar_write_types(parsed_target.source, target_class: "#{@target_class}::#{owner}",
+                                                               singleton: false)
                        .each do |name, type|
             next if module_attr_names[owner].include?(name) || type == "nil"
 
@@ -388,8 +398,12 @@ module RbsInfer::Inference
         end
       end
 
-      singleton_ivar_types = {}
+      # Steep first, exactly as the instance slot does it: the fallback only
+      # fills what the checker did not see.
+      singleton_ivar_types = steep_singleton_ivars.reject { |name, _| singleton_attr_names.include?(name) }
       singleton_type_sets.each do |name, type_set|
+        next if singleton_ivar_types.key?(name)
+
         # No constructor initializes a class-instance variable, so the
         # definite-init rule keys off a class-body write (where `self` is the
         # class) rather than `initialize` — nilable everywhere else.

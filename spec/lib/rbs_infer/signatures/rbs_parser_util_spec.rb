@@ -597,6 +597,36 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
     end
   end
 
+  # The passes that CORRECT a declaration contradicting its body all start by
+  # reading the declared return. A leftmost-matching `/->\s*(.+)$/` reads a
+  # block clause's arrow instead, so every one of them silently skipped any
+  # method taking a block (felixefelip/rbs_infer#252).
+  describe ".return_type_of" do
+    it "reads past a block clause's own arrow" do
+      sig = "bazingado: (?singleton(Bar)? base) ?{ (*untyped) [self: singleton(Bar)] -> Symbol } -> " \
+            "(^(*untyped) -> Symbol)?"
+
+      expect(described_class.return_type_of(sig)).to eq("(^(*untyped) -> Symbol)?")
+    end
+
+    it "reads past a proc-typed parameter's arrow" do
+      expect(described_class.return_type_of("m: (^(String) -> void callback) -> Integer")).to eq("Integer")
+    end
+
+    it "reads past the arrow inside the returned proc" do
+      expect(described_class.return_type_of("m: () -> (^(*untyped) [self: singleton(Bar)] -> Symbol)?"))
+        .to eq("(^(*untyped) [self: singleton(Bar)] -> Symbol)?")
+    end
+
+    it "reads a plain return" do
+      expect(described_class.return_type_of("m: (String name) -> Integer")).to eq("Integer")
+    end
+
+    it "answers nil when there is no return arrow" do
+      expect(described_class.return_type_of("attr_reader name: String")).to be_nil
+    end
+  end
+
   describe ".require_block" do
     it "adopts the callee's block: required, and shaped like theirs" do
       expect(described_class.require_block("m: () ?{ (*untyped) -> untyped } -> untyped", ["String", "Integer"]))

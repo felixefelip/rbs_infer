@@ -13,7 +13,6 @@ app/models/example30.rb:16:6: [error] Type `::Example30::Foo` does not have meth
 app/models/example30.rb:9:12: [warning] Method `::Example30::Foo#age` is not declared in RBS
 app/models/example31.rb:26:8: [error] Cannot allow method body have type `::Integer` because declared as type `::Float`
 app/models/example34.rb:21:10: [warning] Method `::Example34::Baz#age` is not declared in RBS
-app/models/example35.rb:7:13: [error] Cannot allow method body have type `(^(*untyped) [self: singleton(::Example35::Foo)] -> ::Symbol | nil)` because declared as type `(^(*untyped) -> ::Symbol | nil)`
 app/models/example4.rb:14:25: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:22:25: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:27:23: [error] Type `(::String | nil)` does not have method `upcase`
