@@ -44,6 +44,11 @@ postconditions:
   method: authenticate_with_http_token
   when_true:
     block_truthy: true
+- class: ActiveSupport::Concern
+  method: included
+  effects:
+    may_write:
+    - "@_included_block"
 - class: ApplicationController
   method: authenticate_user
   effects:

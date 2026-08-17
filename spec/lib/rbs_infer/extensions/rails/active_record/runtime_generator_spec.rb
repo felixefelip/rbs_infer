@@ -21,6 +21,14 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
     result.find { |f| f.filename == filename }&.source
   end
 
+  # The entries derived from THIS app's models. The framework transcriptions
+  # (`ActiveSupport::Concern`) are emitted unconditionally — they describe Rails,
+  # not the app — so "nothing was derived from these models" is a statement about
+  # what remains once they are set aside, not about the whole result.
+  def app_reopens(result)
+    result.reject { |f| f.filename == RbsInfer::Extensions::Rails::ActiveRecord::Runtime::ConcernPseudoCode::FILENAME }
+  end
+
   ASSIGNMENT = <<~RUBY
     class Assignment < ApplicationRecord
       belongs_to :post
@@ -103,7 +111,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       # its class/proxy can't be modeled — the association is skipped, and with
       # no before_validation callback either, nothing is emitted.
       in_app("app/models/post.rb" => POST) do |dir|
-        expect(described_class.new(app_dir: dir).build).to be_empty
+        expect(app_reopens(described_class.new(app_dir: dir).build)).to be_empty
       end
     end
   end
@@ -433,7 +441,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       # Neither resolves (Rails would raise on this too); the point is that it
       # terminates rather than recursing forever.
       in_app("app/models/loop.rb" => "class Loop < ApplicationRecord\n  has_many :as, through: :bs\n  has_many :bs, through: :as\nend\n") do |dir|
-        expect(described_class.new(app_dir: dir).build).to be_empty
+        expect(app_reopens(described_class.new(app_dir: dir).build)).to be_empty
       end
     end
   end
@@ -973,7 +981,25 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
     end
   end
 
+  # The transcriptions of what Rails itself runs. They answer `included do` the same
+  # way whether or not this app writes one, so they are not derived from the models —
+  # gating them on a model would make the first app file to write one the thing that
+  # made them appear.
+  describe "framework transcriptions" do
+    it "emits ActiveSupport::Concern for an app with no models at all" do
+      in_app({}) do |dir|
+        expect(described_class.new(app_dir: dir).build.map(&:filename)).to eq(["active_support/concern.rb"])
+      end
+    end
+  end
+
   describe "#generate (disk)" do
+    # Globbed rather than `Dir.children`, which would see the directory a
+    # framework transcription lives in rather than the file itself.
+    def written(out)
+      Pathname(out).glob("**/*.rb").map { |p| p.relative_path_from(Pathname(out)).to_s }.sort
+    end
+
     it "writes one file per reopened class and removes a stale dir" do
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
         stale = File.join(dir, described_class::SIDECAR_DIR)
@@ -981,18 +1007,21 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         File.write(File.join(stale, "Old.rb"), "old")
 
         out = described_class.new(app_dir: dir).generate
-        expect(Dir.children(out).sort).to eq(["assignment.rb", "post.rb", "post_assignment.rb"])
+        expect(written(out)).to eq(["active_support/concern.rb", "assignment.rb", "post.rb", "post_assignment.rb"])
       end
     end
 
-    it "removes the sidecar when nothing qualifies" do
+    # The framework transcriptions describe Rails, so a run with nothing to
+    # derive from the app still has something to say. What it has to drop is the
+    # stale file, not the directory.
+    it "removes a stale file when no model qualifies" do
       in_app("app/models/post.rb" => POST) do |dir|
         out = File.join(dir, described_class::SIDECAR_DIR)
         FileUtils.mkdir_p(out)
         File.write(File.join(out, "Stale.rb"), "stale")
 
         described_class.new(app_dir: dir).generate
-        expect(File.exist?(out)).to be(false)
+        expect(written(out)).to eq(["active_support/concern.rb"])
       end
     end
   end

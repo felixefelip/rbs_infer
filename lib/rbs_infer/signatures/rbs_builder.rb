@@ -154,7 +154,7 @@ module RbsInfer::Signatures
         # felixefelip/rbs_infer#19.
         inferred = inferred_param_types(member, method_param_types)
         sig = apply_inferred_param_types(sig, inferred) if inferred
-        out << "#{indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
+        out << "#{indent}def self.#{overloadable(sig, member)}"
       end
       members.select { |m| m.kind == :singleton_alias && m.owner.nil? }.each do |a|
         out << "#{indent}alias self.#{a.name} self.#{a.old_name}"
@@ -265,6 +265,23 @@ module RbsInfer::Signatures
       )
     end
 
+    # The rendered signature, in RBS's *overloading* form when the member asked for
+    # it: this signature goes AHEAD of the ones something else already declares for
+    # the same method, instead of colliding with them. Requested by `# @rbs_infer |...`
+    # above the def and confirmed against the environment before it gets here — see
+    # `ClassMemberCollector#find_overloading_marker` and `Analyzer#confirm_overloading!`.
+    #
+    # Here rather than at each `def` site because there are three of them — instance,
+    # top-level singleton, nested-module singleton — and only the instance one honoured
+    # the flag. A `def self.` carrying the marker emitted the PLAIN form, which is the
+    # duplicate declaration the marker exists to avoid, and it fails quietly: RBS raises
+    # only when something builds the class, so the collision waits in the environment
+    # until a call site reaches it. `ActiveSupport::Concern.extended` is one.
+    def overloadable(sig, member)
+      rendered = RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)
+      member.overloading ? "#{rendered} | ..." : rendered
+    end
+
     # Renders a single value member (method / attr_*) as one RBS line, or
     # nil for other kinds. Shared between the class body and nested-module
     # emission (felixefelip/rbs_infer#22).
@@ -277,13 +294,7 @@ module RbsInfer::Signatures
         elsif (inferred = inferred_param_types(member, method_param_types))
           sig = apply_inferred_param_types(sig, inferred)
         end
-        rendered = RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)
-        # RBS's *overloading* form: this signature goes AHEAD of the ones something else
-        # already declares for the same method, instead of colliding with them. Requested
-        # by `# @rbs_infer |...` above the def and confirmed against the environment
-        # before it gets here — see `ClassMemberCollector#find_overloading_marker`.
-        rendered = "#{rendered} | ..." if member.overloading
-        "#{indent}def #{rendered}"
+        "#{indent}def #{overloadable(sig, member)}"
       when :attr_accessor, :attr_reader, :attr_writer
         sig = member.signature
         sig = "#{member.name}: #{attr_types[member.name]}" if sig.end_with?(": untyped") && attr_types[member.name]
@@ -340,7 +351,7 @@ module RbsInfer::Signatures
           sig = m.signature
           inferred = inferred_param_types(m, method_param_types)
           sig = apply_inferred_param_types(sig, inferred) if inferred
-          "#{inner_indent}def self.#{RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)}"
+          "#{inner_indent}def self.#{overloadable(sig, m)}"
         end
         class_level += mod_members.select { |m| m.kind == :singleton_alias }.map do |a|
           "#{inner_indent}alias self.#{a.name} self.#{a.old_name}"

@@ -193,8 +193,6 @@ app/models/example34.rb:
   - anchor: Foo
     annotations:
     - "# @type instance: (singleton(Example34::Bar)) | (singleton(Example34::Baz))"
-    defs:
-      include: singleton(Example34::Bar)
   blocks:
   - call: included
     in: "::Example34::Baz"
@@ -309,6 +307,9 @@ app/models/included_hook.rb:
     implements: "::IncludedHook"
     method: included
   - call: included
+    in: "::IncludedHook::Sugared"
+    implements: "::IncludedHook"
+  - call: included
     in: "::IncludedHook::Homespun"
     implements: "::IncludedHook"
 app/models/post/notifiable.rb:
@@ -357,6 +358,14 @@ app/models/widget/publishable.rb:
     annotations:
     - "# @type self: singleton(Widget) & singleton(Widget::Publishable)"
     - "# @type instance: Widget & Widget::Publishable"
+sig/generated/steep_ar_runtime/active_support/concern.rb:
+  modules:
+  - anchor: Concern
+    annotations:
+    - "# @type instance: (singleton(Eventable)) | (singleton(FilterConfiguration))
+      | (singleton(IncludedHook::Sugared)) | (singleton(Post::Notifiable)) | (singleton(Post::Taggable))
+      | (singleton(Test::Filtrable)) | (singleton(User::Displayable)) | (singleton(User::Notifiable))
+      | (singleton(User::Recoverable)) | (singleton(Widget::Closeable)) | (singleton(Widget::Publishable))"
 sig/generated/steep_ar_runtime/notification/generated_store_accessors.rb:
   modules:
   - anchor: GeneratedStoreAccessors
