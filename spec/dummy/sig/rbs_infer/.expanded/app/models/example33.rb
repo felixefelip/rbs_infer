@@ -58,13 +58,13 @@ class Example33
 end
 
 class Example33::Bar
-      def age
-        31
-      end
+  def age
+    31
+  end
 end
 
 class Example33::BarOther
-      def name_upcase
-        name.upcase
-      end
+  def name_upcase
+    name.upcase
+  end
 end

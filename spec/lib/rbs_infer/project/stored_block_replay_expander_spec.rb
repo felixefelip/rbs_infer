@@ -48,7 +48,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     # The body keeps the indentation it had in the source. Re-indenting it to
     # the reopening's column reads better and rewrites the contents of any
     # heredoc inside it, so the reopening wears the source's margin instead.
-    expect(expanded).to include("class Wrap::Target\n      def installed")
+    expect(expanded).to include("class Wrap::Target\n  def installed")
     expect(expanded.scan("def installed").size).to eq(2)
     expect(Prism.parse(expanded).success?).to be(true)
   end
@@ -107,7 +107,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
 
     # A one-line block (`keep { … }`) has no margin of its own to reclaim, so
     # its body arrives exactly as written.
-    expect(expanded).to include("module Wrap::Target\ndef installed; end")
+    expect(expanded).to include("module Wrap::Target\n  def installed; end")
     expect(Prism.parse(expanded).success?).to be(true)
   end
 
@@ -155,7 +155,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     it "moves the block onto the target the replay was handed" do
       expanded = expand(concern)
 
-      expect(expanded).to include("class Wrap::Target\n      def installed")
+      expect(expanded).to include("class Wrap::Target\n  def installed")
       expect(expanded.scan("def installed").size).to eq(2)
       expect(Prism.parse(expanded).success?).to be(true)
     end
@@ -265,7 +265,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expanded = expand(inherited)
 
       expect(inherited).not_to include("extend")
-      expect(expanded).to include("class Wrap::Target\n      def installed")
+      expect(expanded).to include("class Wrap::Target\n  def installed")
       expect(expanded.scan("def installed").size).to eq(2)
       expect(Prism.parse(expanded).success?).to be(true)
     end
@@ -273,7 +273,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     # Ruby's ancestry is transitive, so this pass's has to be: `Target < Source`
     # reaches `keep` through `Source`, exactly as a direct subclass would.
     it "reaches a DSL inherited through an intermediate class" do
-      expect(expand(inherited(target_super: "Source"))).to include("class Wrap::Target\n      def installed")
+      expect(expand(inherited(target_super: "Source"))).to include("class Wrap::Target\n  def installed")
     end
 
     it "declines when the target never asks for the replay" do
@@ -346,15 +346,15 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     it "moves every named module's block onto the target" do
       expanded = expand(splat)
 
-      expect(expanded).to include("class Wrap::Target\n      def installed_first")
-      expect(expanded).to include("class Wrap::Target\n      def installed_second")
+      expect(expanded).to include("class Wrap::Target\n  def installed_first")
+      expect(expanded).to include("class Wrap::Target\n  def installed_second")
       expect(Prism.parse(expanded).success?).to be(true)
     end
 
     it "resolves a single argument through the same iteration" do
       expanded = expand(splat(sources: %w[First], applied: "apply(First)"))
 
-      expect(expanded).to include("class Wrap::Target\n      def installed_first")
+      expect(expanded).to include("class Wrap::Target\n  def installed_first")
       expect(expanded).not_to include("installed_second")
     end
 
@@ -366,14 +366,14 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     it "does not depend on which method does the yielding" do
       %w[each map select each_with_index reverse_each each_entry tap].each do |iteration|
         expect(expand(splat(iteration: iteration)))
-          .to include("class Wrap::Target\n      def installed_first"), "#{iteration} was not read"
+          .to include("class Wrap::Target\n  def installed_first"), "#{iteration} was not read"
       end
     end
 
     it "reads a name bound anywhere in the block's parameters" do
       source = splat.sub("{ |mod| mod.keep(self) }", "{ |index, mod| mod.keep(self) }")
 
-      expect(expand(source)).to include("class Wrap::Target\n      def installed_first")
+      expect(expand(source)).to include("class Wrap::Target\n  def installed_first")
     end
 
     it "adds nothing on a second pass over its own output" do
@@ -399,7 +399,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       source = splat.sub("modules.reverse_each { |mod| mod.keep(self) }",
                          "modules.each { |group| group.each { |mod| mod.keep(self) } }")
 
-      expect(expand(source)).to include("class Wrap::Target\n      def installed_first")
+      expect(expand(source)).to include("class Wrap::Target\n  def installed_first")
     end
   end
 
@@ -449,27 +449,27 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     it "reads through `send` to the method it dispatches" do
       expanded = expand(dispatched)
 
-      expect(expanded).to include("class Wrap::Target\n      def installed")
+      expect(expanded).to include("class Wrap::Target\n  def installed")
       expect(Prism.parse(expanded).success?).to be(true)
     end
 
     it "reads `public_send` and `__send__` the same way" do
       ["mod.public_send(:keep, self)", "mod.__send__(:keep, self)"].each do |call|
         expect(expand(dispatched(call: call)))
-          .to include("class Wrap::Target\n      def installed"), "#{call} was not read"
+          .to include("class Wrap::Target\n  def installed"), "#{call} was not read"
       end
     end
 
     it "reads a string name as well as a symbol" do
       expect(expand(dispatched(call: 'mod.send("keep", self)')))
-        .to include("class Wrap::Target\n      def installed")
+        .to include("class Wrap::Target\n  def installed")
     end
 
     # Visibility is not something this pass reads — `send` is what hid the
     # call, not `private`. The public spelling resolves identically.
     it "does not depend on the method being private" do
       expect(expand(dispatched(visibility: "public")))
-        .to include("class Wrap::Target\n      def installed")
+        .to include("class Wrap::Target\n  def installed")
     end
 
     it "adds nothing on a second pass over its own output" do
@@ -491,7 +491,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     it "reads a `class_eval` dispatched through `send`" do
       source = dispatched.sub("base.class_eval(&@body)", "base.send(:class_eval, &@body)")
 
-      expect(expand(source)).to include("class Wrap::Target\n      def installed")
+      expect(expand(source)).to include("class Wrap::Target\n  def installed")
     end
   end
 
@@ -543,7 +543,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     it "follows the delegation to the object that keeps the block" do
       expanded = expand(delegated)
 
-      expect(expanded).to include("class Wrap::Target\n      def installed")
+      expect(expanded).to include("class Wrap::Target\n  def installed")
       expect(Prism.parse(expanded).success?).to be(true)
     end
 
@@ -552,17 +552,17 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     # alike, and renaming the held method changes nothing about the program.
     it "does not depend on the two methods sharing a name" do
       expect(expand(delegated(kept: "keep_or_replay")))
-        .to include("class Wrap::Target\n      def installed")
+        .to include("class Wrap::Target\n  def installed")
     end
 
     it "reads a plain assignment as well as a memoization" do
       expect(expand(delegated(memo: "@holder = Holder.new")))
-        .to include("class Wrap::Target\n      def installed")
+        .to include("class Wrap::Target\n  def installed")
     end
 
     it "resolves the held class through the enclosing namespace" do
       expect(expand(delegated(memo: "@holder ||= Wrap::Holder.new")))
-        .to include("class Wrap::Target\n      def installed")
+        .to include("class Wrap::Target\n  def installed")
     end
 
     it "adds nothing on a second pass over its own output" do
@@ -657,7 +657,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     it "reads an applier reopened on `Module` in another file" do
       expanded = expand(concern, sources: project(Module: core_applier))
 
-      expect(expanded).to include("class Wrap::Target\n      def installed")
+      expect(expanded).to include("class Wrap::Target\n  def installed")
       expect(Prism.parse(expanded).success?).to be(true)
     end
 
@@ -669,7 +669,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
 
     it "reads a `Class` reopening for a class body" do
       expect(expand(concern, sources: project(Class: core_applier(name: "Class"))))
-        .to include("class Wrap::Target\n      def installed")
+        .to include("class Wrap::Target\n  def installed")
     end
 
     # `Class`'s instance methods are not in a MODULE's body, so a module target
@@ -694,7 +694,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       RUBY
 
       expect(expand(source, sources: project("Elsewhere::Applier": declared)))
-        .to include("class Wrap::Target\n      def installed")
+        .to include("class Wrap::Target\n  def installed")
     end
 
     # A deliberate limit, not an oversight. `expand` gates on the source naming
@@ -735,7 +735,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expanded = expand(concern, sources: project(Module: elsewhere))
 
       expect(expanded).not_to include("elsewhere_only")
-      expect(expanded).to include("class Wrap::Target\n      def installed")
+      expect(expanded).to include("class Wrap::Target\n  def installed")
     end
 
     it "adds nothing on a second pass over its own output" do
@@ -749,7 +749,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     # rather than listed — a hand-written `%w[Module Class]` stops here.
     it "reads an applier reopened further up the chain" do
       expect(expand(concern, sources: project(Object: core_applier(name: "Object"))))
-        .to include("class Wrap::Target\n      def installed")
+        .to include("class Wrap::Target\n  def installed")
     end
 
     describe "the chain it consults" do
@@ -815,7 +815,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     it "resolves the forwarded callee against the argument's provider" do
       expanded = expand(split)
 
-      expect(expanded).to include("class Wrap::Target\n      def installed")
+      expect(expanded).to include("class Wrap::Target\n  def installed")
       expect(Prism.parse(expanded).success?).to be(true)
     end
 
@@ -904,7 +904,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     it "reads the forward that reaches a replay" do
       expanded = expand(two)
 
-      expect(expanded).to include("class Wrap::Target\n      def installed")
+      expect(expanded).to include("class Wrap::Target\n  def installed")
       expect(Prism.parse(expanded).success?).to be(true)
     end
 
@@ -966,7 +966,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     it "moves the block onto the class that includes the hook" do
       expanded = expand(hook)
 
-      expect(expanded).to include("class Host\n        def from_hook")
+      expect(expanded).to include("class Host\n  def from_hook")
       expect(Prism.parse(expanded).success?).to be(true)
     end
 
@@ -1042,7 +1042,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     end
 
     it "answers for a subclass" do
-      expect(expand(singleton_dsl)).to include("class Target\n      def installed")
+      expect(expand(singleton_dsl)).to include("class Target\n  def installed")
     end
 
     it "declines for a module that extends it instead" do

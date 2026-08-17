@@ -33,7 +33,7 @@ module Example39
 end
 
 class Example39::Bar
-      def age
-        31
-      end
+  def age
+    31
+  end
 end
