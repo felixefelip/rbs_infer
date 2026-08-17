@@ -304,6 +304,10 @@ app/models/included_hook.rb:
     - "# @type self: singleton(IncludedHook) & singleton(IncludedHook::Sugared)"
     - "# @type instance: IncludedHook & IncludedHook::Sugared"
   blocks:
+  - call: class_eval
+    in: "::IncludedHook::Hookable"
+    implements: "::IncludedHook"
+    method: included
   - call: included
     in: "::IncludedHook::Homespun"
     implements: "::IncludedHook"

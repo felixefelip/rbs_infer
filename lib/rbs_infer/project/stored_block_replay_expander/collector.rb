@@ -68,6 +68,18 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # either way, and `attr_reader` was only ever one spelling of reaching it.
     InwardReplay = Data.define(:owner, :method, :parameter, :ivar)
 
+    # The same replay again, with the block written where it is run instead of
+    # kept for later: `def self.included(base) = base.class_eval do … end`, which
+    # is what Ruby's own `included` hook looks like when nobody has wrapped it in
+    # a DSL (felixefelip/rbs_infer#260).
+    #
+    # No storage, so nothing to look up — the block is right there in the
+    # replaying method, and only the target is unknown. `call` and `scope` name
+    # the call the block belongs to (`class_eval`, in the module holding the
+    # hook) rather than the storage call and the module that wrote it, since
+    # there is no storage call here; both feed the `blocks:` sidecar the same way.
+    LiteralReplay = Data.define(:owner, :method, :scope, :call, :block)
+
     # `def bazinga(mod) = mod.bazingado(self)` — the hop from the method a target
     # NAMES to the method that replays. The inward direction needs it: the replay
     # runs on the source with the target passed in, so the target's own body
@@ -103,6 +115,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @readers = []
       @replay_methods = []
       @inward_replays = []
+      # Never absorbed from another file, unlike the shapes above. This one
+      # carries a block, and the rewrite slices THIS source at the block's
+      # offsets — a block from elsewhere would cut the wrong file.
+      @literal_replays = []
       @forwards = []
       # Raw like `@extends`/`@superclasses`, for the same reason: the constant
       # is resolved once every declaration in the file is known.
@@ -205,34 +221,68 @@ module RbsInfer::Project::StoredBlockReplayExpander
     end
 
     def collect_method_shape(node)
+      owner = shape_owner(node)
+      return unless owner
+
       params = node.parameters
       block_name = params&.block&.name&.to_s
       method_name = node.name.to_s
 
       if block_name && (ivar = stored_block_ivar(node.body, block_name))
-        @storages << Storage.new(owner: current_scope, method: method_name, ivar: ivar)
+        @storages << Storage.new(owner: owner, method: method_name, ivar: ivar)
       end
 
       if (replay = replay_shape(node.body))
         parameter, reader = replay
-        @replay_methods << ReplayMethod.new(owner: current_scope, method: method_name, parameter: parameter, reader: reader)
+        @replay_methods << ReplayMethod.new(owner: owner, method: method_name, parameter: parameter, reader: reader)
       end
 
       parameters = handed_names(node.body, parameter_names(params))
 
       if (inward = inward_replay_shape(node.body, parameters))
         parameter, ivar = inward
-        @inward_replays << InwardReplay.new(owner: current_scope, method: method_name, parameter: parameter, ivar: ivar)
+        @inward_replays << InwardReplay.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar)
+      end
+
+      if (literal = literal_replay_shape(node.body, parameters))
+        call, block = literal
+        @literal_replays << LiteralReplay.new(owner: owner, method: method_name, scope: current_scope,
+                                              call: call, block: block)
       end
 
       if (delegation = delegation_shape(node))
         target, callee = delegation
-        @delegations << [current_scope, method_name, target, callee]
+        @delegations << [owner, method_name, target, callee]
       end
 
       forward_shapes(node.body, parameters).each do |parameter, callee|
-        @forwards << ForwardMethod.new(owner: current_scope, method: method_name, parameter: parameter, callee: callee)
+        @forwards << ForwardMethod.new(owner: owner, method: method_name, parameter: parameter, callee: callee)
       end
+    end
+
+    # Which method table a `def` puts the method in, in the terms
+    # `dsl_providers` keys on. `def keep` goes in the module's own, reached by
+    # whoever `extend`s it; `def self.keep` goes in the SINGLETON's, reached by
+    # the subject in its own body and by its subclasses. Both used to be
+    # recorded under the lexical scope, which happened to work only because no
+    # shape yet needed telling the two apart — `IncludedHook::Hookable` does,
+    # since its `def self.included` is reached by nothing but Hookable itself
+    # (felixefelip/rbs_infer#260).
+    #
+    # `def SomeOther.foo` and `def obj.foo` answer nothing: which object that
+    # names is not a question this pass asks, so the method is not collected at
+    # all rather than filed under the wrong owner.
+    def shape_owner(node)
+      return current_scope unless node.receiver
+      return singleton_owner(current_scope) if node.receiver.is_a?(Prism::SelfNode)
+
+      nil
+    end
+
+    # No file can declare a constant by this name, so a singleton owner cannot
+    # collide with a real one.
+    def singleton_owner(name)
+      "singleton(#{name})"
     end
 
     # The names a `def` or a block binds its arguments to. One reader for both:
@@ -372,6 +422,25 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
         [receiver.name.to_s, ivar.name.to_s]
       end.uniq
+      shapes.first if shapes.size == 1
+    end
+
+    # `<parameter>.class_eval do … end` — the inward replay with the block
+    # written in place rather than fetched from a slot. Same receiver rule as
+    # `inward_replay_shape` and for the same reason; what differs is only where
+    # the block comes from, so what it answers is the block itself.
+    def literal_replay_shape(body, parameters)
+      shapes = nodes(body).filter_map do |node|
+        next unless node.is_a?(Prism::CallNode)
+        call = dispatched(node)
+        next unless REPLAY_METHODS.include?(call.name)
+        receiver = call.receiver
+        next unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
+        block = call.block
+        next unless block.is_a?(Prism::BlockNode)
+
+        [call.name.to_s, block]
+      end
       shapes.first if shapes.size == 1
     end
 
@@ -576,7 +645,20 @@ module RbsInfer::Project::StoredBlockReplayExpander
           # both from being resolved by declaration order.
           slots = [outward_slot(applier, apply.method),
                    inward_slot(applier, apply.method, source_provider)].compact.uniq
-          next unless slots.size == 1
+          # And the third way to reach a block: not through a slot at all,
+          # because the replaying method wrote it in place. Counted together
+          # with the slots, so a file reading as both still declines.
+          literals = literal_replays_for(applier, apply.method, source_provider)
+          next unless slots.size + literals.size == 1
+
+          kind = @declaration_kinds[apply.subject]
+          next unless kind
+
+          if (literal = literals.first)
+            candidates << Replay.new(target: apply.subject, block: literal.block, kind: kind,
+                                     call: literal.call, scope: literal.scope, in_method: literal.method)
+            next
+          end
 
           storage_owner, ivar = slots.first
           # The SOURCE's provider, not the applier's: the name being looked up
@@ -587,11 +669,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
           blocks = @stored_calls.select { |stored| stored.subject == source_subject && stored.method == storage_method }
           next unless blocks.size == 1
 
-          kind = @declaration_kinds[apply.subject]
-          next unless kind
-
           candidates << Replay.new(target: apply.subject, block: blocks.first.block, kind: kind,
-                                   call: storage_method, scope: blocks.first.subject)
+                                   call: storage_method, scope: blocks.first.subject, in_method: nil)
         end
       end
 
@@ -625,8 +704,14 @@ module RbsInfer::Project::StoredBlockReplayExpander
       end
       parents.compact!
 
+      # Through the SINGLETON, both of them. `keep` in a class body is a call on
+      # the class object, so it is found in `singleton(Base)` — where
+      # `def self.keep` put it — and never in `Base`'s own method table, where
+      # `extend`'s half lives. Keyed alike, an `attr_reader :body` in a class
+      # body would answer for a `def self.apply` that could not call it.
       @declarations.each do |subject|
-        superclasses(subject, parents).each { |ancestor| providers[ancestor] << subject }
+        providers[singleton_owner(subject)] << subject
+        superclasses(subject, parents).each { |ancestor| providers[singleton_owner(ancestor)] << subject }
       end
 
       # What the subject's own `self` makes callable: a class body reaches
@@ -698,6 +783,21 @@ module RbsInfer::Project::StoredBlockReplayExpander
       end.uniq
 
       slots.first if slots.size == 1
+    end
+
+    # The replays reached from `owner#method` that carry their own block. Same
+    # walk as `inward_slot` — every forward, resolved through the ARGUMENT's
+    # provider — differing only in what the keeper turns out to hold.
+    def literal_replays_for(owner, method, source_provider)
+      @forwards.filter_map do |forward|
+        next unless forward.owner == owner && forward.method == method
+
+        keeper_owner, keeper_method = keeper(source_provider, forward.callee)
+        next unless keeper_owner
+
+        replays = @literal_replays.select { |replay| replay.owner == keeper_owner && replay.method == keeper_method }
+        replays.first if replays.size == 1
+      end.uniq
     end
 
     # Where `owner#method` actually keeps things. Usually `owner` itself; one

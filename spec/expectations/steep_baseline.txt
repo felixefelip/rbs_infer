@@ -18,13 +18,10 @@ app/models/example4.rb:27:23: [error] Type `(::String | nil)` does not have meth
 app/models/example4.rb:40:23: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example7.rb:31:28: [error] Type `(::Integer | nil)` does not have method `abs`
 app/models/example7.rb:34:27: [error] Type `(::String | nil)` does not have method `upcase`
-app/models/included_hook.rb:105:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS
-app/models/included_hook.rb:133:11: [error] Type `::IncludedHook` does not have method `from_hook`
-app/models/included_hook.rb:165:26: [error] Type `::IncludedHookFirst` does not have method `from_shared`
-app/models/included_hook.rb:31:12: [warning] Method `::IncludedHook::Hookable#from_hook` is not declared in RBS
-app/models/included_hook.rb:39:12: [warning] Method `::IncludedHook::Hookable#slot` is not declared in RBS
-app/models/included_hook.rb:60:10: [warning] Method `::IncludedHook::Sugared#from_sugar` is not declared in RBS
-app/models/included_hook.rb:66:10: [warning] Method `::IncludedHook::Sugared#badge` is not declared in RBS
+app/models/included_hook.rb:109:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS
+app/models/included_hook.rb:167:26: [error] Type `::IncludedHookFirst` does not have method `from_shared`
+app/models/included_hook.rb:61:10: [warning] Method `::IncludedHook::Sugared#from_sugar` is not declared in RBS
+app/models/included_hook.rb:70:10: [warning] Method `::IncludedHook::Sugared#badge` is not declared in RBS
 app/models/included_hook/shared.rb:17:10: [warning] Method `::IncludedHook::Shared#from_shared` is not declared in RBS
 app/models/post/notifiable.rb:28:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/send_dispatch.rb:107:33: [error] `public_send` cannot call `stamp` on `::SendDispatch`, which declares it private
