@@ -37,7 +37,7 @@ class Example31
 end
 
 class Example31::Bar
-      def age
-        super + 10.5
-      end
+  def age
+    super + 10.5
+  end
 end

@@ -24,7 +24,7 @@ RSpec.describe RbsInfer::Project::SelfClassEvalExpander do
 
     # The body keeps its source indentation: re-indenting it to the reopening's
     # column reads better and rewrites the contents of any heredoc inside it.
-    expect(expanded).to include("class Foo::AfterBuild\n      def age\n        25\n      end\nend")
+    expect(expanded).to include("class Foo::AfterBuild\n  def age\n    25\n  end\nend")
     expect(Prism.parse(expanded).success?).to be(true)
   end
 

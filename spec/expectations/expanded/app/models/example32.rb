@@ -39,7 +39,7 @@ class Example32
 end
 
 class Example32::Bar
-      def age
-        31
-      end
+  def age
+    31
+  end
 end

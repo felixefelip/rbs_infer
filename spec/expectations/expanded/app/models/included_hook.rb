@@ -163,24 +163,24 @@ class IncludedHookCaller
 end
 
 class IncludedHook
-        def from_hook
-          "hook"
-        end
+  def from_hook
+    "hook"
+  end
 
-        # The load-bearing half, and the store-accessor shape: `super` can only resolve
-        # if this def belongs to the HOST, whose ancestors have `IncludedHook::Slots`.
-        # It does since #260, which is what `read_slot` below measures.
-        def slot
-          super || "default"
-        end
+  # The load-bearing half, and the store-accessor shape: `super` can only resolve
+  # if this def belongs to the HOST, whose ancestors have `IncludedHook::Slots`.
+  # It does since #260, which is what `read_slot` below measures.
+  def slot
+    super || "default"
+  end
 end
 
 class IncludedHook
-      def from_homespun
-        "homespun"
-      end
+  def from_homespun
+    "homespun"
+  end
 
-      def stamp
-        super || "homespun"
-      end
+  def stamp
+    super || "homespun"
+  end
 end

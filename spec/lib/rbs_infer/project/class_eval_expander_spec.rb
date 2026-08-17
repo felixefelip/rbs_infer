@@ -16,8 +16,10 @@ RSpec.describe RbsInfer::Project::ClassEvalExpander do
   # The `.expanded/` sidecar is read while debugging, so the rewrite keeps the source's
   # own layout: the body is sliced from the start of its LINE (not from its first
   # token, which dropped the first line's indentation and nothing else) and the closing
-  # `end` is aligned to the call it replaces. Nothing is RE-indented — that would
-  # rewrite the contents of a heredoc in the body.
+  # `end` is aligned to the call it replaces. An in-place rewrite puts `class Foo` where
+  # `Foo.class_eval do` stood, so the body is already one level in and the re-indent
+  # BlockReopen does has nothing to move — the heredoc here says so directly, and is the
+  # in-place half of the guarantee `block_reopen_spec.rb` pins for the relocating one.
   it "keeps the source layout, including a nested call and a heredoc" do
     expect(expand("class Wrap\n  Foo.class_eval do\n    def bar\n      1\n    end\n  end\nend\n"))
       .to eq("class Wrap\n  class Foo\n    def bar\n      1\n    end\n  end\nend\n")
@@ -27,10 +29,10 @@ RSpec.describe RbsInfer::Project::ClassEvalExpander do
   end
 
   # A body opening on the same line as `do` has no indentation to reclaim, and must not
-  # pull in the space after `do`.
-  it "leaves a single-line body alone" do
+  # pull in the space after `do` — it is indented like any other, from a margin of zero.
+  it "does not pull in the space after `do` for a single-line body" do
     expect(expand("Foo.class_eval do def bar; 1; end end\n"))
-      .to eq("class Foo\ndef bar; 1; end\nend\n")
+      .to eq("class Foo\n  def bar; 1; end\nend\n")
   end
 
   it "rewrites module_eval the same way" do
