@@ -40,7 +40,7 @@ class Example37
 end
 
 class Example37::Bar
-      def age
-        31
-      end
+  def age
+    31
+  end
 end

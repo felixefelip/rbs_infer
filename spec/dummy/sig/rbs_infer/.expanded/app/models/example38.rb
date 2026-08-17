@@ -52,13 +52,13 @@ class Example38
 end
 
 class Example38::Bar
-      def age
-        31
-      end
+  def age
+    31
+  end
 end
 
 class Example38::Bar
-      def name
-        "John Doe"
-      end
+  def name
+    "John Doe"
+  end
 end
