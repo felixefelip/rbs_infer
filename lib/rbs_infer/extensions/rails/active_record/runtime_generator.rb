@@ -3,6 +3,7 @@
 require "fileutils"
 require_relative "runtime/reflection_scanner"
 require_relative "runtime/concern_resolver"
+require_relative "runtime/concern_pseudo_code"
 require_relative "runtime/pseudo_code_builder"
 
 module RbsInfer
@@ -38,29 +39,36 @@ module RbsInfer
             @app_dir = app_dir
           end
 
-          # Returns [Runtime::PseudoCodeBuilder::FileEntry] (empty when no model
-          # registers a `before_validation` callback). Public so the CLI/specs
+          # Returns [Runtime::PseudoCodeBuilder::FileEntry]. Public so the CLI/specs
           # can inspect the pseudo-code without touching disk.
+          #
+          # The per-model reopens are empty until some model registers a
+          # `before_validation` callback or a has_many; the Concern transcription is
+          # unconditional, because it describes the FRAMEWORK rather than this app —
+          # `included do` is answered the same way whether or not a model uses it, and
+          # the first app file to write one would otherwise be the thing that made it
+          # appear.
           def build
             models = scan_models
-            Runtime::PseudoCodeBuilder.new(models: models).build
+            [Runtime::ConcernPseudoCode.file_entry(Runtime::PseudoCodeBuilder::FileEntry)] +
+              Runtime::PseudoCodeBuilder.new(models: models).build
           end
 
-          # Writes the sidecar directory (one file per reopened class), removing
-          # a stale dir when nothing qualifies. Returns the sidecar dir path.
+          # Writes the sidecar directory (one file per reopened class), dropping
+          # whatever a previous run left behind. Returns the sidecar dir path.
+          # Always writes at least the framework transcriptions, so — unlike
+          # before they existed — there is no "nothing qualifies" case that
+          # leaves no directory at all.
           def generate
             files = build
             dir = File.join(@app_dir, SIDECAR_DIR)
 
             FileUtils.rm_rf(dir)
-            unless files.empty?
-              FileUtils.mkdir_p(dir)
-              files.each do |file|
-                path = File.join(dir, file.filename)
-                # A filename can name a subdirectory (`post/generated_relation_methods.rb`).
-                FileUtils.mkdir_p(File.dirname(path))
-                File.write(path, file.source)
-              end
+            files.each do |file|
+              path = File.join(dir, file.filename)
+              # A filename can name a subdirectory (`post/generated_relation_methods.rb`).
+              FileUtils.mkdir_p(File.dirname(path))
+              File.write(path, file.source)
             end
 
             dir

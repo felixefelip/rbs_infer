@@ -1,0 +1,10 @@
+module ActiveSupport
+  module Concern
+    @_included_block: (^(*untyped) -> untyped)?
+
+    def self.extended: (untyped base) -> untyped | ...
+
+    def append_features: (Module base) -> bool? | ...
+    def included: (?Module? base) ?{ (*untyped) -> Symbol } -> (^(*untyped) -> untyped)? | ...
+  end
+end

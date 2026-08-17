@@ -22,10 +22,11 @@
 # Between #239 and #260 the defs below were emitted NOWHERE: `ClassMemberCollector`
 # stopped attributing a block's body to the module that lexically contains it — a
 # block's `self` can be rebound, so the lexical owner was never the right answer — and
-# nothing yet put it on the host. #259 and #260 finish that for two of the three shapes
-# here, the way #216 asked for: not by putting the defs back on the module, but by
-# landing them on the host. `Sugared` is the one still open, and no longer for a reason
-# about inference — see its comment.
+# nothing yet put it on the host. #259 and #260 finish that the way #216 asked for: not
+# by putting the defs back on the module, but by landing them on the host. All three
+# shapes below do now, `Sugared` last — and it took no inference work, only putting
+# `active_support/concern.rb` in the corpus, which is what the AR-runtime sidecar's
+# transcription of it does.
 #
 # A plain class on purpose — nothing here is Active Record, so the fixture needs no
 # table.
@@ -64,10 +65,10 @@ class IncludedHook
       end
 
       # The Concern-side criterion, over the other slot so it cannot collide with
-      # `Hookable`'s. `super` only resolves if this def belongs to the HOST, and this
-      # is the one of the three that still does not — measured (#260): the chain
-      # resolves the moment `active_support/concern.rb` is in the corpus, and the
-      # corpus is `app/ lib/ sig/`. A question about reach, not about inference.
+      # `Hookable`'s. `super` only resolves if this def belongs to the HOST, and it
+      # does: `append_features` replays the stored block on the includer, and the
+      # AR-runtime sidecar is what puts that method in the corpus (`app/ lib/ sig/`)
+      # for the replay reader to follow. Nothing here is keyed on Concern by name.
       def badge
         super || "sugared"
       end
@@ -144,7 +145,8 @@ class IncludedHookCaller
   # The same criterion for the sugared half, over a slot with a UNIQUE name: `tag` was
   # borrowed from the dummy's Tag model closely enough to pick up a type from
   # elsewhere, which made the two halves look asymmetric when they are not.
-  # The last one still reading `String?`, and the only criterion here left open.
+  # `String` since the Concern transcription joined the corpus; `String?` before it,
+  # which is the shape a regression would take.
   def read_badge
     IncludedHook.new.badge
   end
@@ -175,6 +177,21 @@ class IncludedHook
   # It does since #260, which is what `read_slot` below measures.
   def slot
     super || "default"
+  end
+end
+
+class IncludedHook
+  def from_sugar
+    "sugar"
+  end
+
+  # The Concern-side criterion, over the other slot so it cannot collide with
+  # `Hookable`'s. `super` only resolves if this def belongs to the HOST, and it
+  # does: `append_features` replays the stored block on the includer, and the
+  # AR-runtime sidecar is what puts that method in the corpus (`app/ lib/ sig/`)
+  # for the replay reader to follow. Nothing here is keyed on Concern by name.
+  def badge
+    super || "sugared"
   end
 end
 
