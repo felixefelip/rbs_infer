@@ -594,6 +594,14 @@ module RbsInfer
   # Our own previous output is excluded: it already declares the method, and confirming
   # against it would be circular — a method only we declare would gain `| ...` and then
   # have nothing left to overload.
+  #
+  # Asked of the member's OWNER, not of the target. A member in a module nested inside
+  # the target belongs to `Target::Owner` (the same `#{@target_class}::#{owner}` join the
+  # rest of the analyzer uses), and asking under the target's own name finds nothing —
+  # which drops the marker and emits the plain form, i.e. the duplicate declaration the
+  # marker is there to avoid. It fails that way silently: RBS only raises when something
+  # BUILDS the class, so a collision nothing references yet sits in the environment
+  # unexercised. `ActiveSupport::Concern` is a nested module in exactly that position.
   def confirm_overloading!(members)
     marked = members.select(&:overloading)
     return if marked.empty?
@@ -601,8 +609,9 @@ module RbsInfer
     own_output_suffix = @target_file&.sub(/\.rb\z/, ".rbs")
 
     marked.each do |member|
+      owner = member.owner ? "#{@target_class}::#{member.owner}" : @target_class
       confirmed = rbs_definition_resolver.foreign_plain_declaration?(
-        @target_class, member.name, excluding_suffix: own_output_suffix
+        owner, member.name, excluding_suffix: own_output_suffix
       )
       member.overloading = false unless confirmed
     end

@@ -49,6 +49,43 @@ RSpec.describe "the `# @rbs_infer |...` overloading marker" do
     expect(rbs).not_to include("| ...")
   end
 
+  # A `def self.` is rendered by its own branch, and for a while only the instance one
+  # honoured the flag: the marked singleton came out PLAIN, which is the duplicate
+  # declaration the marker exists to avoid. It fails quietly — RBS raises only when
+  # something builds the class — so the collision waits in the environment for a call
+  # site to reach it.
+  it "emits the overloading form for a `def self.` too" do
+    rbs = rbs_for("Process", <<~RUBY)
+      module Process
+        # @rbs_infer |...
+        def self.pid
+          0
+        end
+      end
+    RUBY
+
+    expect(rbs).to include("def self.pid: () -> Integer | ...")
+  end
+
+  # Confirmed against the member's OWNER. A def in a nested module belongs to
+  # `Target::Owner`, and asking under the target's own name finds nothing — dropping the
+  # marker and emitting the plain form, i.e. the collision again. `ActiveSupport::Concern`
+  # is a nested module in exactly this position.
+  it "confirms a nested module's method against that module, not the file's target" do
+    rbs = rbs_for("Process", <<~RUBY)
+      module Process
+        module Sys
+          # @rbs_infer |...
+          def self.getuid
+            0
+          end
+        end
+      end
+    RUBY
+
+    expect(rbs).to include("def self.getuid: () -> Integer | ...")
+  end
+
   it "leaves an unmarked method alone even when the environment declares it" do
     rbs = rbs_for("Module", <<~RUBY)
       class Module
