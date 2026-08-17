@@ -930,4 +930,123 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(expand(source)).to be_nil
     end
   end
+
+  # Ruby's own `included` hook with no DSL wrapped around it: the block is
+  # written where it runs instead of being kept for later, so there is no
+  # storage step to look it up through (felixefelip/rbs_infer#260).
+  context "a replay whose block is written in the hook itself" do
+    def hook(name: "included", applied: "include(Hookable)")
+      <<~RUBY
+        class Module
+          def include(*modules)
+            modules.reverse_each do |mod|
+              mod.send(:append_features, self)
+              mod.send(:included, self)
+            end
+            self
+          end
+        end
+
+        class Host
+          module Hookable
+            def self.#{name}(base)
+              base.class_eval do
+                def from_hook
+                  "hook"
+                end
+              end
+            end
+          end
+
+          #{applied}
+        end
+      RUBY
+    end
+
+    it "moves the block onto the class that includes the hook" do
+      expanded = expand(hook)
+
+      expect(expanded).to include("class Host\n        def from_hook")
+      expect(Prism.parse(expanded).success?).to be(true)
+    end
+
+    it "keeps the block where it was written, with nothing stored anywhere" do
+      expect(hook).not_to include("&block")
+      expect(hook).not_to include("@")
+    end
+
+    it "adds nothing on a second pass over its own output" do
+      expect(expand(expand(hook))).to be_nil
+    end
+
+    # The `include` is the only thing that says who `base` is. Ruby calls no
+    # hook named `after_included`, so nothing does.
+    it "declines a hook under a name nothing calls" do
+      expect(expand(hook(name: "after_included"))).to be_nil
+    end
+
+    it "declines when nothing includes the module" do
+      expect(expand(hook(applied: "# nothing"))).to be_nil
+    end
+
+    # `def self.included` is reached by Hookable and by nothing else. Recording
+    # it as an instance method would offer it to whoever extends the module,
+    # which is a different table entirely.
+    it "does not offer the hook to a module that extends it" do
+      source = hook(applied: "# nothing").sub("class Host", <<~EXTENDER)
+        class Extender
+          extend Host::Hookable
+        end
+
+        class Host
+      EXTENDER
+
+      expect(expand(source)).to be_nil
+    end
+  end
+
+  # A `def self.` DSL is reached through the singleton, so it answers for the
+  # module itself and for its subclasses — never for a module that `extend`s it,
+  # whose calls land in the instance table instead.
+  context "the table a `def self.` DSL is found in" do
+    def singleton_dsl(relation: "class Target < Wrap::Base")
+      <<~RUBY
+        class Wrap
+          class Base
+            def self.apply(mod)
+              mod.keep(self)
+            end
+
+            def self.keep(base = nil, &block)
+              if base.nil?
+                @body = block
+              else
+                base.class_eval(&@body) if @body
+              end
+            end
+          end
+
+          class Source < Base
+            keep do
+              def installed
+                "yes"
+              end
+            end
+          end
+        end
+
+        #{relation}
+          apply(Wrap::Source)
+        end
+      RUBY
+    end
+
+    it "answers for a subclass" do
+      expect(expand(singleton_dsl)).to include("class Target\n      def installed")
+    end
+
+    it "declines for a module that extends it instead" do
+      expect(expand(singleton_dsl(relation: "class Target\n  extend Wrap::Base"))).to be_nil
+    end
+  end
 end

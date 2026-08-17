@@ -51,7 +51,13 @@ module RbsInfer::Project
     # the `target` it is replayed onto. Together they point Steep at this one
     # block in the real source, which a name alone cannot do once a file writes
     # the same DSL call twice — see `StoredBlockReplayImplements`.
-    Replay = Data.define(:target, :block, :kind, :call, :scope)
+    # `in_method` is the def the call sits inside, and is nil for a DSL block —
+    # `bazingado do` is written in the module body, so the scope already picks
+    # it out. A hook writes its block inside `def self.included` instead, where
+    # the call is `class_eval` on a parameter: that name says nothing about
+    # which block is meant, so the def is what tells two of them apart
+    # (felixefelip/rbs_infer#260).
+    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method)
 
     module_function
 

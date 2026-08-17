@@ -62,7 +62,12 @@ module RbsInfer::Project
       replays.filter_map do |replay|
         next unless replay.scope
 
-        { "call" => replay.call, "in" => "::#{replay.scope}", "implements" => "::#{replay.target}" }
+        entry = { "call" => replay.call, "in" => "::#{replay.scope}", "implements" => "::#{replay.target}" }
+        # Only for a block written inside a def. Emitting it as nil for the DSL
+        # shape would put a key in every sidecar entry ever written, to say
+        # nothing.
+        entry["method"] = replay.in_method if replay.in_method
+        entry
       end
     end
   end
