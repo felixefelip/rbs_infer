@@ -303,6 +303,22 @@ app/models/example43.rb:
   - call: bazingado
     in: "::Example43::BazOther"
     implements: "::Example43::BarOther2"
+app/models/example44.rb:
+  modules:
+  - anchor: Baz
+    annotations:
+    - "# @type instance: (Example44::Bar & Example44::Baz) | (Example44::BarOther
+      & Example44::Baz)"
+  - anchor: Foo
+    annotations:
+    - "# @type instance: (singleton(Example44::Bar)) | (singleton(Example44::BarOther))
+      | (singleton(Example44::Baz))"
+  blocks:
+  - call: included
+    in: "::Example44::Baz"
+    implements:
+    - "::Example44::Bar"
+    - "::Example44::BarOther"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade

@@ -133,15 +133,6 @@ methods:
           kind: self
         method: ticket
     enforced: false
-  Example43::BarOther2#call_name:
-    requires:
-    - kind: not_nil
-      expr:
-        kind: send
-        receiver:
-          kind: self
-        method: name
-    enforced: false
   Post#author_name:
     requires:
     - kind: not_nil
