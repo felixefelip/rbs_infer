@@ -16,6 +16,7 @@ app/models/example4.rb:14:25: [error] Type `(::String | nil)` does not have meth
 app/models/example4.rb:22:25: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:27:23: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:40:23: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example42.rb:25:10: [warning] Method `::Example42::Baz#age` is not declared in RBS
 app/models/example7.rb:31:28: [error] Type `(::Integer | nil)` does not have method `abs`
 app/models/example7.rb:34:27: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/included_hook.rb:110:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS

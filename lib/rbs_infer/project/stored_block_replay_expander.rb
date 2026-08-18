@@ -38,7 +38,10 @@ module RbsInfer::Project
   # it lives in Project alongside ClassEvalExpander.
   #
   # Deliberately conservative: a chain must name one storage method, one reader,
-  # one stored block, and one constant target. Any ambiguity declines the replay.
+  # one stored block, and one constant target PER CALL SITE. Any ambiguity
+  # declines the replay — but a source applied from two class bodies is not one:
+  # each site names its own target and the block runs on both, so both
+  # reopenings are emitted (felixefelip/rbs_infer#263).
   #
   # Recognising the chain is `Collector`'s job (with `ReaderCollector` for the
   # `attr_reader` half); this module is only the rewrite it decides on.
@@ -83,9 +86,14 @@ module RbsInfer::Project
       # for a location raises. Drop it before the uniqueness check reads one.
       replays = replays.select { |replay| replay.block.body }
 
-      # A source block can only be replayed against one statically known target.
-      # Multiple targets are ambiguous at runtime, so Collector rejects them.
-      return nil unless replays.map { |replay| replay.block.body.location }.uniq.size == replays.size
+      # One reopening per (block, target) PAIR, not per block. A block replayed
+      # onto two classes is two reopenings and both are real — `Collector`
+      # resolves each apply call site on its own, and two of them naming the
+      # same source is what a module reused by two classes looks like. Keyed on
+      # the block alone this declined the whole file for exactly that shape
+      # (felixefelip/rbs_infer#263).
+      keys = replays.map { |replay| [replay.block.body.location, replay.target] }
+      return nil unless keys.uniq.size == replays.size
 
       virtual_reopens = replays.filter_map do |replay|
         BlockReopen.appended(source: source, block: replay.block, kind: replay.kind, target: replay.target)

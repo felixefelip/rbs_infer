@@ -94,6 +94,64 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
     expect(entries.map { |entry| entry["line"] }).not_to include(17)
   end
 
+  # `@implements` names one module and rides the block's own opener, so there is
+  # one place to put an answer and two answers to put there. The EXPANDER emits
+  # both reopenings all the same (felixefelip/rbs_infer#263) — only the sidecar
+  # half declines.
+  it "says nothing about a block replayed onto more than one target" do
+    source = dsl + <<~RUBY
+      module Src
+        extend DSL
+        keep { def installed; end }
+      end
+
+      class First
+        extend DSL
+        apply(Src)
+      end
+
+      class Second
+        extend DSL
+        apply(Src)
+      end
+    RUBY
+
+    expect(described_class.blocks_for(source: source, sources: NO_SOURCES)).to eq([])
+  end
+
+  # Per block, not per file: the one that does decide its target is still named.
+  it "keeps annotating the blocks that do decide a single target" do
+    source = dsl + <<~RUBY
+      module Shared
+        extend DSL
+        keep { def installed; end }
+      end
+
+      module Lone
+        extend DSL
+        keep { def only; end }
+      end
+
+      class First
+        extend DSL
+        apply(Shared)
+      end
+
+      class Second
+        extend DSL
+        apply(Shared)
+      end
+
+      class Third
+        extend DSL
+        apply(Lone)
+      end
+    RUBY
+
+    expect(described_class.blocks_for(source: source, sources: NO_SOURCES))
+      .to eq([{ "call" => "keep", "in" => "::Lone", "implements" => "::Third" }])
+  end
+
   it "returns nothing for a file with no replay" do
     expect(described_class.blocks_for(source: "class Foo\n  def bar = 1\nend\n", sources: NO_SOURCES)).to eq([])
   end

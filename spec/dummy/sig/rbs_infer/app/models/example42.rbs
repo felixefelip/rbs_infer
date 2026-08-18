@@ -20,7 +20,8 @@ class Example42
   class Bar
     extend ::Example42::Foo
 
-    def call_age: () -> untyped
+    def call_age: () -> Integer
+    def age: () -> Integer
   end
 end
 
@@ -28,6 +29,7 @@ class Example42
   class BarOther
     extend ::Example42::Foo
 
-    def call_age: () -> untyped
+    def call_age: () -> Integer
+    def age: () -> Integer
   end
 end
