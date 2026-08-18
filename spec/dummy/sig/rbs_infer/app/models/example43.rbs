@@ -1,0 +1,52 @@
+class Example43
+  module Foo
+    @_bazingado_block: (^(*untyped) [self: singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2)] -> Symbol)?
+
+    def bazinga: (*(singleton(::Example43::Baz) | singleton(::Example43::BazOther)) modules) -> Array[(singleton(Example43::Baz) | singleton(Example43::BazOther))]
+
+    private
+
+    def bazingado: (?(singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2))? base) ?{ (*untyped) [self: (singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2))] -> Symbol } -> (^(*untyped) [self: (singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2))] -> Symbol | nil | Symbol)
+  end
+end
+
+class Example43
+  class Baz
+    extend ::Example43::Foo
+  end
+end
+
+class Example43
+  class BazOther
+    extend ::Example43::Foo
+  end
+end
+
+class Example43
+  class Bar
+    extend ::Example43::Foo
+
+    def call_age: () -> Integer
+    def age: () -> Integer
+  end
+end
+
+class Example43
+  class BarOther
+    extend ::Example43::Foo
+
+    def call_age: () -> Integer
+    def age: () -> Integer
+  end
+end
+
+class Example43
+  class BarOther2
+    extend ::Example43::Foo
+
+    def call_age: () -> Integer
+    def call_name: () -> String
+    def age: () -> Integer
+    def name: () -> String
+  end
+end

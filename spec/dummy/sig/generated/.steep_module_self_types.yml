@@ -285,6 +285,24 @@ app/models/example42.rb:
     implements:
     - "::Example42::Bar"
     - "::Example42::BarOther"
+app/models/example43.rb:
+  modules:
+  - anchor: Foo
+    annotations:
+    - "# @type instance: (singleton(Example43::Bar)) | (singleton(Example43::BarOther))
+      | (singleton(Example43::BarOther2)) | (singleton(Example43::Baz)) | (singleton(Example43::BazOther))"
+    defs:
+      bazinga: singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2)
+  blocks:
+  - call: bazingado
+    in: "::Example43::Baz"
+    implements:
+    - "::Example43::Bar"
+    - "::Example43::BarOther"
+    - "::Example43::BarOther2"
+  - call: bazingado
+    in: "::Example43::BazOther"
+    implements: "::Example43::BarOther2"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade
