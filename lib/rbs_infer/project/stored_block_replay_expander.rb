@@ -60,7 +60,12 @@ module RbsInfer::Project
     # the call is `class_eval` on a parameter: that name says nothing about
     # which block is meant, so the def is what tells two of them apart
     # (felixefelip/rbs_infer#260).
-    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method)
+    # `source` is the file `block` was sliced from, which need NOT be the file
+    # being expanded: a concern's block is written where the concern is, and the
+    # `include` naming its target is written in the host. A location is only a
+    # pair of offsets, so the string they index has to travel with them
+    # (felixefelip/rbs_infer#265).
+    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method, :source)
 
     module_function
 
@@ -70,7 +75,14 @@ module RbsInfer::Project
     # a caller that forgot it would quietly resolve less
     # (docs/engineering/required-threaded-deps.md).
     def expand(source, sources:)
-      return nil unless source.include?("class_eval") || source.include?("module_eval")
+      # This file's own text is no longer the whole question. A concern writes
+      # `base.class_eval do … end` in its own file and the `include` naming the
+      # target is written in the host, which mentions no eval — so gating on the
+      # local substring skipped exactly the file the block had to be moved INTO
+      # (felixefelip/rbs_infer#265). The project-wide answer keeps what the gate
+      # was for: a project with no eval anywhere still pays nothing.
+      return nil unless source.include?("class_eval") || source.include?("module_eval") ||
+                        sources.eval_anywhere?
 
       parsed = Prism.parse(source)
       return nil unless parsed.success?
@@ -92,11 +104,18 @@ module RbsInfer::Project
       # same source is what a module reused by two classes looks like. Keyed on
       # the block alone this declined the whole file for exactly that shape
       # (felixefelip/rbs_infer#263).
-      keys = replays.map { |replay| [replay.block.body.location, replay.target] }
+      #
+      # The block's SOURCE is part of its identity, not only its offsets: two
+      # blocks in two files are routinely at the same offset, and a location
+      # carries no file to tell them apart.
+      keys = replays.map { |replay| [replay.source, replay.block.body.location, replay.target] }
       return nil unless keys.uniq.size == replays.size
 
+      # Sliced from the file the block was WRITTEN in, which is what makes
+      # relocating a foreign block possible at all — reading these offsets
+      # against the file being expanded cuts unrelated text.
       virtual_reopens = replays.filter_map do |replay|
-        BlockReopen.appended(source: source, block: replay.block, kind: replay.kind, target: replay.target)
+        BlockReopen.appended(source: replay.source, block: replay.block, kind: replay.kind, target: replay.target)
       end
       virtual_reopens = BlockReopen.missing_from(source, virtual_reopens)
       return nil if virtual_reopens.empty?

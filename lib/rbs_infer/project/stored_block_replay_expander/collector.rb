@@ -53,7 +53,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     Storage = Data.define(:owner, :method, :ivar)
     ReplayMethod = Data.define(:owner, :method, :parameter, :reader)
-    StoredCall = Data.define(:owner, :subject, :method, :block)
+    # `source` is the file the block was written in, and it travels with the
+    # block because a `Prism::Location` is only offsets — meaningless without
+    # the string they index. The rewrite slices it to move the body, and the
+    # block may come from another file (see `absorb`).
+    StoredCall = Data.define(:owner, :subject, :method, :block, :source)
     ApplyCall = Data.define(:owner, :subject, :method, :argument)
 
     # The same replay written from the other end — `base.class_eval(&@block)`,
@@ -78,7 +82,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # the call the block belongs to (`class_eval`, in the module holding the
     # hook) rather than the storage call and the module that wrote it, since
     # there is no storage call here; both feed the `blocks:` sidecar the same way.
-    LiteralReplay = Data.define(:owner, :method, :scope, :call, :block)
+    # `source` for the same reason `StoredCall` carries one.
+    LiteralReplay = Data.define(:owner, :method, :scope, :call, :block, :source)
 
     # `def bazinga(mod) = mod.bazingado(self)` — the hop from the method a target
     # NAMES to the method that replays. The inward direction needs it: the replay
@@ -115,9 +120,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @readers = []
       @replay_methods = []
       @inward_replays = []
-      # Never absorbed from another file, unlike the shapes above. This one
-      # carries a block, and the rewrite slices THIS source at the block's
-      # offsets — a block from elsewhere would cut the wrong file.
+      # Absorbed from another file like the shapes above, but only because each
+      # one carries the source it was sliced from. Without that they could not
+      # be: a block is a pair of offsets, and reading them against the wrong
+      # file cuts the wrong text (felixefelip/rbs_infer#265).
       @literal_replays = []
       @forwards = []
       # Raw like `@extends`/`@superclasses`, for the same reason: the constant
@@ -148,7 +154,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     protected
 
-    attr_reader :storages, :readers, :replay_methods, :inward_replays, :forwards, :resolved_delegations
+    attr_reader :storages, :readers, :replay_methods, :inward_replays, :forwards, :resolved_delegations,
+                :literal_replays, :stored_calls
 
     public
 
@@ -247,7 +254,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       if (literal = literal_replay_shape(node.body, parameters))
         call, block = literal
         @literal_replays << LiteralReplay.new(owner: owner, method: method_name, scope: current_scope,
-                                              call: call, block: block)
+                                              call: call, block: block, source: @source)
       end
 
       if (delegation = delegation_shape(node))
@@ -549,7 +556,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
         return unless bare_or_self?(node)
 
         if node.block.is_a?(Prism::BlockNode)
-          @stored_calls << StoredCall.new(owner: nil, subject: current_scope, method: node.name.to_s, block: node.block)
+          @stored_calls << StoredCall.new(owner: nil, subject: current_scope, method: node.name.to_s,
+                                          block: node.block, source: @source)
         elsif node.arguments
           # One apply per argument. `apply(A, B)` asks for A's block AND B's,
           # which is what a `*modules` forward means at runtime — each gets its
@@ -577,13 +585,19 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # a concern declares it (felixefelip/rbs_infer#256).
     #
     # Asked about `Module` and `Class` always, and about any `extend`/superclass
-    # this file names but does not declare. A name the project has nothing for
-    # simply yields no roots, which is the same as today's answer.
+    # or APPLY ARGUMENT this file names but does not declare. A name the project
+    # has nothing for simply yields no roots, which is the same as today's
+    # answer.
     def absorb_external_shapes
       external_owners.each do |name|
         @sources.parsed_for(name).each do |entry|
-          shapes = self.class.new(entry.source, sources: RbsInfer::Project::ConstantSources::NONE)
-                       .collect_shapes(entry.result.value)
+          # Memoized per FILE, not per asking file: what a file says about its
+          # own DSL is the same answer however many hosts ask, and a concern
+          # used across an app is asked about by every one of them.
+          shapes = @sources.derived(entry) do
+            self.class.new(entry.source, sources: RbsInfer::Project::ConstantSources::NONE)
+                .collect_shapes(entry.result.value)
+          end
           absorb(shapes)
         end
         @declarations << name
@@ -593,7 +607,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def external_owners
       names = Set.new(CORE_REOPENS)
 
-      (@extends + @superclasses).each do |subject, raw_constant|
+      external_constants.each do |subject, raw_constant|
         next if resolve_constant(raw_constant, subject)
 
         name = RbsInfer::Analyzer.extract_constant_path(raw_constant)
@@ -603,6 +617,21 @@ module RbsInfer::Project::StoredBlockReplayExpander
       names
     end
 
+    # Every constant this file NAMES but may not declare, as
+    # `[naming scope, node]`.
+    #
+    # `extend`'s and a superclass's, which say where the applier's own methods
+    # come from — and the APPLY ARGUMENT, which says where the block does.
+    # `include IncludedHook::Shared` names the module holding the block, and it
+    # is the only mention of it in the file: without asking about it the module
+    # is not in `@declarations`, so `resolve_constant` answers nil for the very
+    # argument being applied and the chain ends before it starts. That is the
+    # ordinary shape of a concern — declared in its own file, used from
+    # another — rather than an exotic one (felixefelip/rbs_infer#265).
+    def external_constants
+      @extends + @superclasses + @apply_calls.map { |apply| [apply.subject, apply.argument] }
+    end
+
     def absorb(shapes)
       @storages.concat(shapes.storages)
       @readers.concat(shapes.readers)
@@ -610,6 +639,14 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @inward_replays.concat(shapes.inward_replays)
       @forwards.concat(shapes.forwards)
       @resolved_delegations.concat(shapes.resolved_delegations)
+      # The two that carry a BLOCK. A DSL is routinely written in one file and
+      # used from another — a concern in `app/models/concerns` and the class
+      # that includes it — so the block and the `include` naming its target are
+      # in different files, and reading only this one resolved neither half
+      # (felixefelip/rbs_infer#265). They travel with the source they were
+      # sliced from, which is what makes moving a foreign block safe.
+      @literal_replays.concat(shapes.literal_replays)
+      @stored_calls.concat(shapes.stored_calls)
     end
 
     def resolve_replays
@@ -624,7 +661,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       # Two apply calls naming the same source in the same class body are one
       # replay written twice, not two — the block relocates to that class once.
-      resolved.uniq { |replay| [replay.target, replay.block.location.start_offset] }
+      # Keyed on the block's own SOURCE as well as its offset, since two files
+      # hold blocks at the same offset all the time and a location says nothing
+      # about which file it indexes.
+      resolved.uniq { |replay| [replay.target, replay.source, replay.block.location.start_offset] }
     end
 
     # The one block `apply` relocates, or nil when the file does not decide it.
@@ -664,7 +704,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # dispatch reaches is not a question the source answers. The same block
       # reached twice is no disagreement, so it is deduplicated rather than
       # counted.
-      return nil unless candidates.uniq { |candidate| candidate.block.location.start_offset }.size == 1
+      return nil unless candidates.uniq { |candidate| [candidate.source, candidate.block.location.start_offset] }.size == 1
 
       candidates.first
     end
@@ -690,7 +730,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       if (literal = literals.first)
         return Replay.new(target: apply.subject, block: literal.block, kind: kind,
-                          call: literal.call, scope: literal.scope, in_method: literal.method)
+                          call: literal.call, scope: literal.scope, in_method: literal.method,
+                          source: literal.source)
       end
 
       storage_owner, ivar = slots.first
@@ -703,7 +744,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
       return nil unless blocks.size == 1
 
       Replay.new(target: apply.subject, block: blocks.first.block, kind: kind,
-                 call: storage_method, scope: blocks.first.subject, in_method: nil)
+                 call: storage_method, scope: blocks.first.subject, in_method: nil,
+                 source: blocks.first.source)
     end
 
     # Which classes/modules can call each owner's DSL, as `owner => subjects`.
