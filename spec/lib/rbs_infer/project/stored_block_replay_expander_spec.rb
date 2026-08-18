@@ -649,13 +649,20 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     # A project of exactly the constants named, as `ConstantSources` answers
     # for them. The lookup itself is `ConstantSources`' own spec; here the
     # question is only what the join does once the roots arrive.
+    # `eval_anywhere?` is asked of the PROJECT, so the double answers from the
+    # declarations it was built with — which is what the real `ConstantSources`
+    # computes by scanning the corpus.
     def project(**declarations)
       table = declarations.to_h do |name, source|
         [name.to_s, [RbsInfer::Project::ParseCache::Entry.new(source: source, result: Prism.parse(source))]]
       end
+      evals = declarations.each_value.any? { |source| source.match?(/class_eval|module_eval/) }
 
       Class.new do
         define_method(:parsed_for) { |name| table.fetch(name, []) }
+        define_method(:eval_anywhere?) { evals }
+        # The real one memoizes; a double only has to answer.
+        define_method(:derived) { |_entry, &derivation| derivation.call }
       end.new
     end
 
@@ -745,12 +752,12 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
         .to include("class Wrap::Target\n  def installed")
     end
 
-    # A deliberate limit, not an oversight. `expand` gates on the source naming
-    # `class_eval`/`module_eval` before it parses anything, which is what keeps
-    # the pass off every file in the project; a DSL with no trace at all in the
-    # file using it is not examined. Every shape above still shows the replay
-    # half here, which is how the real fixtures are written.
-    it "does not examine a file whose DSL leaves no trace in it" do
+    # A file with NO trace of the DSL is examined all the same, once the project
+    # writes an eval somewhere. It has to be: a concern writes its `class_eval`
+    # in its own file and the host writes only `include`, so the file the block
+    # must be moved INTO is precisely the one that never says `class_eval`
+    # (felixefelip/rbs_infer#265).
+    it "examines a file whose DSL leaves no trace in it" do
       source = <<~RUBY
         module Wrap
           class Target
@@ -760,7 +767,40 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       RUBY
 
       expect(source).not_to include("class_eval")
-      expect(expand(source, sources: project(Module: core_applier))).to be_nil
+
+      # The shape the fix is about: the block is written in the SOURCE's own
+      # file, inside the hook the applier forwards to, and the host file says
+      # only `banana(Source)`.
+      declared = <<~RUBY
+        module Source
+          def self.bananed(base)
+            base.class_eval do
+              def installed; end
+            end
+          end
+        end
+      RUBY
+
+      expect(expand(source, sources: project(Module: core_applier, Source: declared)))
+        .to include("class Wrap::Target\n  def installed")
+    end
+
+    # What the gate still buys: a project that writes no eval anywhere can hold
+    # no replay anywhere, so the pass costs it one memoized answer and never
+    # parses a thing.
+    it "does not examine any file when the project writes no eval at all" do
+      source = <<~RUBY
+        module Wrap
+          class Target
+            banana(Source)
+          end
+        end
+      RUBY
+
+      sources = project(Module: "class Module\nend\n")
+
+      expect(Prism).not_to receive(:parse)
+      expect(expand(source, sources: sources)).to be_nil
     end
 
     # An `apply` written in the OTHER file names a target this rewrite cannot

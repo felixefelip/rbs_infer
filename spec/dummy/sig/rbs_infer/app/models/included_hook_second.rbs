@@ -1,3 +1,5 @@
 class IncludedHookSecond
   include IncludedHook::Shared
+
+  def from_shared: () -> Integer
 end

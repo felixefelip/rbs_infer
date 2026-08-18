@@ -59,7 +59,7 @@ module RbsInfer::Project
 
       replays = StoredBlockReplayExpander::Collector.new(source, sources: sources).collect(parsed.value)
 
-      per_block(replays).filter_map do |entries|
+      per_block(written_here(replays, source)).filter_map do |entries|
         replay = entries.first
         next unless replay.scope
 
@@ -70,6 +70,23 @@ module RbsInfer::Project
         entry["method"] = replay.in_method if replay.in_method
         entry
       end
+    end
+
+    # The replays whose block is written in THIS file.
+    #
+    # Since felixefelip/rbs_infer#265 a replay may move a block from another
+    # file — the host of a concern resolves one, and the block lives with the
+    # concern. The annotation this sidecar places rides the block's own opener,
+    # so it has to be injected into the file holding that block; an entry filed
+    # under the host would name a scope the host does not contain and match
+    # nothing there. Skipped rather than misfiled, which leaves `steep check`
+    # reading such a block where it is written — the RBS half is unaffected,
+    # since the expander moved it either way.
+    #
+    # Identity, not equality: `Collector` keeps the very string it was handed,
+    # so the local replays carry this exact object and a foreign one cannot.
+    def written_here(replays, source)
+      replays.select { |replay| replay.source.equal?(source) }
     end
 
     # The replays grouped by the BLOCK they move, since that is what an entry
