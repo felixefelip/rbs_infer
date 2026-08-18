@@ -53,7 +53,11 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     expect(Prism.parse(expanded).success?).to be(true)
   end
 
-  it "declines a stored block replayed against more than one target" do
+  # Two call sites, two targets, one block — and nothing ambiguous about it:
+  # each site names the class it applies the source TO, and at runtime the block
+  # runs on both. Declining this dropped the whole file, which is the shape a
+  # module reused by two classes has (felixefelip/rbs_infer#263).
+  it "reopens every target a stored block is replayed against" do
     source = <<~RUBY
       class Wrap
         module DSL
@@ -74,6 +78,45 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
 
         class Second
           extend DSL
+          apply(Source)
+        end
+      end
+    RUBY
+
+    expanded = expand(source)
+
+    expect(expanded).to include("class Wrap::First\n  def installed; end\nend")
+    expect(expanded).to include("class Wrap::Second\n  def installed; end\nend")
+    expect(Prism.parse(expanded).success?).to be(true)
+  end
+
+  # What a call site genuinely cannot decide: two providers reachable from the
+  # same `apply`, answering with two DIFFERENT blocks.
+  it "declines a call site two providers answer with different blocks" do
+    source = <<~RUBY
+      class Wrap
+        module DSL
+          attr_reader :body
+          def keep(&block) = @body = block
+          def apply(source) = class_eval(&source.body)
+        end
+
+        module Other
+          attr_reader :other_body
+          def keep_other(&block) = @other_body = block
+          def apply(source) = class_eval(&source.other_body)
+        end
+
+        module Source
+          extend DSL
+          extend Other
+          keep { def installed; end }
+          keep_other { def other_installed; end }
+        end
+
+        class Target
+          extend DSL
+          extend Other
           apply(Source)
         end
       end
@@ -206,8 +249,9 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(expand(source)).to be_nil
     end
 
-    # Same ambiguity rule the outward direction has: one block, one target.
-    it "declines a stored block replayed against more than one target" do
+    # Same per-call-site rule the outward direction has: one block per site,
+    # and two sites naming one source are two replays.
+    it "reopens every target a stored block is replayed against" do
       source = concern.sub(/  class Target.*?\n  end\n/m, <<~RUBY)
           class First
             extend DSL
@@ -220,7 +264,11 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
           end
       RUBY
 
-      expect(expand(source)).to be_nil
+      expanded = expand(source)
+
+      expect(expanded).to include("class Wrap::First\n  def installed")
+      expect(expanded).to include("class Wrap::Second\n  def installed")
+      expect(Prism.parse(expanded).success?).to be(true)
     end
   end
 

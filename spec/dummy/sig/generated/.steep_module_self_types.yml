@@ -271,6 +271,14 @@ app/models/example41.rb:
   - call: included
     in: "::Example41::Baz"
     implements: "::Example41::Bar"
+app/models/example42.rb:
+  modules:
+  - anchor: Foo
+    annotations:
+    - "# @type instance: (singleton(Example42::Bar)) | (singleton(Example42::BarOther))
+      | (singleton(Example42::Baz))"
+    defs:
+      bazinga: singleton(Example42::Bar) | singleton(Example42::BarOther)
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade

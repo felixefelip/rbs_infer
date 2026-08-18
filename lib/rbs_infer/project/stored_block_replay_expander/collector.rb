@@ -620,65 +620,90 @@ module RbsInfer::Project::StoredBlockReplayExpander
       providers = dsl_providers
       @resolved_delegations.concat(resolve_delegations)
 
-      candidates = []
-      @apply_calls.each do |apply|
-        source_subject = resolve_constant(apply.argument, apply.subject)
-        next unless source_subject
+      resolved = @apply_calls.filter_map { |apply| resolve_apply(apply, providers) }
 
-        # Two provider questions, not one. The applier is dispatched on the
-        # SUBJECT (`banana` arrives in `Bar`'s body) and the callee it forwards
-        # to on the ARGUMENT (`mod.send(:bananed, self)` runs on `Baz`), so the
-        # two are answered by whatever supplies each — which need not be the
-        # same module. Requiring one provider for both is what `ActiveSupport`'s
-        # own shape breaks: `Module#include` reaches for `append_features`, a
-        # method of the concern (felixefelip/rbs_infer#256).
-        appliers = providers.select { |_, subjects| subjects.include?(apply.subject) }.keys
-        sources = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
+      # Two apply calls naming the same source in the same class body are one
+      # replay written twice, not two — the block relocates to that class once.
+      resolved.uniq { |replay| [replay.target, replay.block.location.start_offset] }
+    end
 
-        appliers.product(sources).each do |applier, source_provider|
-          # Both directions answer with the SLOT — and with the object that owns
-          # it, which is not always the provider: a delegating DSL method keeps
-          # the block on something it holds. From there the chain is one and the
-          # same: whoever fills that slot is the storage method, and the call the
-          # source wrote under that name holds the block. Asking both and
-          # requiring a single answer is what keeps a file that somehow reads as
-          # both from being resolved by declaration order.
-          slots = [outward_slot(applier, apply.method),
-                   inward_slot(applier, apply.method, source_provider)].compact.uniq
-          # And the third way to reach a block: not through a slot at all,
-          # because the replaying method wrote it in place. Counted together
-          # with the slots, so a file reading as both still declines.
-          literals = literal_replays_for(applier, apply.method, source_provider)
-          next unless slots.size + literals.size == 1
+    # The one block `apply` relocates, or nil when the file does not decide it.
+    #
+    # Per CALL SITE, which is the unit the question is actually asked about: an
+    # `apply(Baz)` written in one class body relocates one block onto that one
+    # class, and what would make it undecidable is two different blocks arriving
+    # under it.
+    #
+    # Emphatically NOT per block. Grouping the answers by block and keeping only
+    # the blocks with a single target read `Bar` and `BarOther` both applying
+    # `Baz` as an ambiguity and dropped BOTH, so a source module used twice
+    # relocated nothing — which is the shape `ActiveSupport::Concern` has, and
+    # the common case rather than an exotic one. Nothing is ambiguous there:
+    # each call site names its own target, and the block simply runs twice, as
+    # it does at runtime (felixefelip/rbs_infer#263).
+    def resolve_apply(apply, providers)
+      source_subject = resolve_constant(apply.argument, apply.subject)
+      return nil unless source_subject
 
-          kind = @declaration_kinds[apply.subject]
-          next unless kind
+      # Two provider questions, not one. The applier is dispatched on the
+      # SUBJECT (`banana` arrives in `Bar`'s body) and the callee it forwards
+      # to on the ARGUMENT (`mod.send(:bananed, self)` runs on `Baz`), so the
+      # two are answered by whatever supplies each — which need not be the
+      # same module. Requiring one provider for both is what `ActiveSupport`'s
+      # own shape breaks: `Module#include` reaches for `append_features`, a
+      # method of the concern (felixefelip/rbs_infer#256).
+      appliers = providers.select { |_, subjects| subjects.include?(apply.subject) }.keys
+      sources = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
 
-          if (literal = literals.first)
-            candidates << Replay.new(target: apply.subject, block: literal.block, kind: kind,
-                                     call: literal.call, scope: literal.scope, in_method: literal.method)
-            next
-          end
-
-          storage_owner, ivar = slots.first
-          # The SOURCE's provider, not the applier's: the name being looked up
-          # is the one the source wrote in its own body.
-          storage_method = storage_method_for(source_provider, storage_owner, ivar)
-          next unless storage_method
-
-          blocks = @stored_calls.select { |stored| stored.subject == source_subject && stored.method == storage_method }
-          next unless blocks.size == 1
-
-          candidates << Replay.new(target: apply.subject, block: blocks.first.block, kind: kind,
-                                   call: storage_method, scope: blocks.first.subject, in_method: nil)
-        end
+      candidates = appliers.product(sources).filter_map do |applier, source_provider|
+        replay_for(apply, applier, source_provider, source_subject)
       end
 
-      by_block = candidates.group_by { |candidate| candidate.block.location.start_offset }
-      by_block.values.filter_map do |entries|
-        targets = entries.map(&:target).uniq
-        entries.first if targets.size == 1
+      # One block per call site. Two providers answering with two DIFFERENT
+      # blocks is the ambiguity this pass declines — which of them a runtime
+      # dispatch reaches is not a question the source answers. The same block
+      # reached twice is no disagreement, so it is deduplicated rather than
+      # counted.
+      return nil unless candidates.uniq { |candidate| candidate.block.location.start_offset }.size == 1
+
+      candidates.first
+    end
+
+    def replay_for(apply, applier, source_provider, source_subject)
+      # Both directions answer with the SLOT — and with the object that owns
+      # it, which is not always the provider: a delegating DSL method keeps
+      # the block on something it holds. From there the chain is one and the
+      # same: whoever fills that slot is the storage method, and the call the
+      # source wrote under that name holds the block. Asking both and
+      # requiring a single answer is what keeps a file that somehow reads as
+      # both from being resolved by declaration order.
+      slots = [outward_slot(applier, apply.method),
+               inward_slot(applier, apply.method, source_provider)].compact.uniq
+      # And the third way to reach a block: not through a slot at all,
+      # because the replaying method wrote it in place. Counted together
+      # with the slots, so a file reading as both still declines.
+      literals = literal_replays_for(applier, apply.method, source_provider)
+      return nil unless slots.size + literals.size == 1
+
+      kind = @declaration_kinds[apply.subject]
+      return nil unless kind
+
+      if (literal = literals.first)
+        return Replay.new(target: apply.subject, block: literal.block, kind: kind,
+                          call: literal.call, scope: literal.scope, in_method: literal.method)
       end
+
+      storage_owner, ivar = slots.first
+      # The SOURCE's provider, not the applier's: the name being looked up
+      # is the one the source wrote in its own body.
+      storage_method = storage_method_for(source_provider, storage_owner, ivar)
+      return nil unless storage_method
+
+      blocks = @stored_calls.select { |stored| stored.subject == source_subject && stored.method == storage_method }
+      return nil unless blocks.size == 1
+
+      Replay.new(target: apply.subject, block: blocks.first.block, kind: kind,
+                 call: storage_method, scope: blocks.first.subject, in_method: nil)
     end
 
     # Which classes/modules can call each owner's DSL, as `owner => subjects`.
