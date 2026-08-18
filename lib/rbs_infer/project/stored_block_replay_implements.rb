@@ -59,10 +59,11 @@ module RbsInfer::Project
 
       replays = StoredBlockReplayExpander::Collector.new(source, sources: sources).collect(parsed.value)
 
-      single_target(replays).filter_map do |replay|
+      per_block(replays).filter_map do |entries|
+        replay = entries.first
         next unless replay.scope
 
-        entry = { "call" => replay.call, "in" => "::#{replay.scope}", "implements" => "::#{replay.target}" }
+        entry = { "call" => replay.call, "in" => "::#{replay.scope}", "implements" => implements(entries) }
         # Only for a block written inside a def. Emitting it as nil for the DSL
         # shape would put a key in every sidecar entry ever written, to say
         # nothing.
@@ -71,24 +72,23 @@ module RbsInfer::Project
       end
     end
 
-    # The replays whose block has exactly one target, which is all this sidecar
-    # can speak about: `@implements` names ONE module, and the annotation rides
-    # the block's own opener — so a block replayed onto two classes has one
-    # place to put two answers and no way to choose.
+    # The replays grouped by the BLOCK they move, since that is what an entry
+    # speaks about: the annotation rides one block's opener, so every target
+    # that block is replayed onto has to be named in that one entry.
+    def per_block(replays)
+      replays.group_by { |replay| replay.block.location.start_offset }.values
+    end
+
+    # Every target the block defines its methods on. A LIST once there is more
+    # than one, which `@implements` now takes and Steep checks the body against
+    # one by one — a block replayed onto two classes runs twice, and checking it
+    # against one of them says nothing about the other (felixefelip/steep#149).
     #
-    # A real limit rather than a conservatism, and narrower than it was: the
-    # EXPANDER emits both reopenings, so the RBS declares the methods on both
-    # targets (felixefelip/rbs_infer#263). What is left undone is only
-    # `steep check` reading the real file, where those `def`s still sit
-    # lexically in the source module and get attributed to it. Expressing it
-    # would need `@implements` to take more than one module, which is a change
-    # to Steep's annotation grammar rather than to anything here.
-    #
-    # Dropped per BLOCK, not per file: another block in the same file that does
-    # decide its target is still annotated.
-    def single_target(replays)
-      by_block = replays.group_by { |replay| replay.block.location.start_offset }
-      by_block.each_value.filter_map { |entries| entries.first if entries.map(&:target).uniq.size == 1 }
+    # A lone target stays a plain string: it is what every sidecar written so
+    # far says, it reads better, and Steep takes either.
+    def implements(entries)
+      targets = entries.map { |replay| "::#{replay.target}" }.uniq
+      targets.size == 1 ? targets.first : targets
     end
   end
 end
