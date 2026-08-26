@@ -181,6 +181,9 @@ module RbsInfer
   # receiver has no body in this file, just the mixin. RbsBuilder handles
   # the namespace wrapping (`module ActiveStorage; module Blobs; class
   # RedirectController; include ...`).
+  #
+  # No body is also why it declares no nested module: `nested_modules` is
+  # empty for the same reason the member list holds nothing but the mixins.
   def build_include_reopen(receiver, modules)
     members = modules.map do |mod|
       RbsInfer::Inference::Member.new(kind: :include, name: mod, signature: mod, visibility: :public, owner: nil)
@@ -193,7 +196,8 @@ module RbsInfer
       is_module: false,
       type_params: method_type_resolver.type_param_string(receiver),
       class_methods_index: class_methods_index
-    ).build(members, {}, {}, ivar_types: {}, singleton_ivar_types: {}, module_ivar_types: {}, markers: [])
+    ).build(members, {}, {}, ivar_types: {}, singleton_ivar_types: {}, module_ivar_types: {}, markers: [],
+            nested_modules: [])
   end
 
   def build_single_target_rbs
@@ -310,7 +314,7 @@ module RbsInfer
 
     namespace_classes = resolve_namespace_classes
     rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class), class_methods_index: class_methods_index)
-    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types, markers: markers)
+    rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types, markers: markers, nested_modules: @nested_modules)
   end
 
   # Builds the marker class list to inject into the generated RBS.
@@ -660,6 +664,7 @@ module RbsInfer
     @superclass_name = visitor.superclass_name
     @is_module = visitor.is_module if @is_module.nil?
     @delegates = visitor.delegates
+    @nested_modules = visitor.nested_modules
     visitor.members
   end
 
@@ -911,6 +916,9 @@ require_relative "project/source_expanders"
 # so every project gets the reopen read whether or not it uses a framework.
 require_relative "project/class_eval_expander"
 require_relative "project/self_class_eval_expander"
+# Core for the same reason: `Module.new`/`const_set` are plain Ruby, and a
+# constant they fill is a declaration whatever gem is or is not present.
+require_relative "project/constant_declaration_expander"
 require_relative "project/self_class_eval_marker"
 require_relative "project/stored_block_replay_expander"
 require_relative "project/stored_block_replay_expander/reader_collector"

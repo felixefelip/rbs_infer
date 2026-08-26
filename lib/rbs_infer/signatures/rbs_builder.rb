@@ -24,7 +24,12 @@ module RbsInfer::Signatures
 
     ATTR_KINDS = %i[attr_reader attr_writer attr_accessor].freeze
 
-    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types:, singleton_ivar_types:, module_ivar_types:, markers:)
+    # `nested_modules` is what the source DECLARES inside the target, which is
+    # not the same list as the owners its members carry: an empty module has no
+    # members to be found through. Required, because a caller that forgets it
+    # silently drops those declarations rather than failing
+    # (docs/engineering/required-threaded-deps.md).
+    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types:, singleton_ivar_types:, module_ivar_types:, markers:, nested_modules:)
       members = reconcile_attrs_with_explicit_defs(members)
       parts = @target_class.split("::")
       class_name = parts.pop
@@ -69,7 +74,8 @@ module RbsInfer::Signatures
       # parsing the pseudo-source, with the core unaware of the extension
       # (felixefelip/rbs_infer#19, #22).
       nested = []
-      emit_parsed_nested_modules(nested, members, member_indent, attr_types, method_param_types, module_ivar_types)
+      emit_parsed_nested_modules(nested, members, member_indent, attr_types, method_param_types, module_ivar_types,
+                                 nested_modules)
       add_group(lines, body_start, nested)
 
       # Mixins: extend (e.g. ActiveSupport::Concern) + include (concerns),
@@ -307,11 +313,18 @@ module RbsInfer::Signatures
     # parsed `include X` is emitted separately as a direct member, so the
     # module declaration here gives that include a real target — no
     # dangling mixin (felixefelip/rbs_infer#22).
-    def emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types, module_ivar_types)
-      owned = members.reject { |m| m.owner.nil? }
-      return if owned.empty?
+    def emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types, module_ivar_types,
+                                   nested_modules)
+      by_owner = members.reject { |m| m.owner.nil? }.group_by(&:owner)
+      # Declaration order first, so the RBS reads in the order the file does.
+      # The union is what admits an EMPTY module: it declares one and carries no
+      # member, so grouping members alone found nothing to emit it from
+      # (felixefelip/rbs_infer#268).
+      owners = nested_modules | by_owner.keys
+      return if owners.empty?
 
-      owned.group_by(&:owner).each do |owner, mod_members|
+      owners.each do |owner|
+        mod_members = by_owner[owner] || []
         inner_indent = member_indent + "  "
         # Sibling modules are member blocks like any other, so they are
         # blank-separated the same way `add_group` separates the groups of a
