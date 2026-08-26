@@ -1085,6 +1085,11 @@ postconditions:
   effects:
     may_write:
     - "@_bazingado_block"
+- class: Example45::Foo
+  method: banana_class_method
+  effects:
+    may_write:
+    - "@_banana_block"
 - class: Example4::Foo
   method: name
   effects:

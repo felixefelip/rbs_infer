@@ -319,6 +319,15 @@ app/models/example44.rb:
     implements:
     - "::Example44::Bar"
     - "::Example44::BarOther"
+app/models/example45.rb:
+  modules:
+  - anchor: Baz
+    annotations:
+    - "# @type instance: (Example45::Bar & Example45::Baz) | (Example45::BarOther
+      & Example45::Baz)"
+  - anchor: Foo
+    annotations:
+    - "# @type instance: singleton(Example45::Baz)"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade
