@@ -1,0 +1,12 @@
+class Example46
+  module Baz
+    BananaWritten: Module
+  end
+end
+
+class Example46
+  class Bar
+    def written: () -> Module
+    def dynamic: () -> untyped
+  end
+end

@@ -334,6 +334,22 @@ app/models/example45.rb:
     implements:
     - singleton(::Example45::Bar)
     - singleton(::Example45::BarOther)
+app/models/example47.rb:
+  modules:
+  - anchor: BananaMethods
+    annotations:
+    - "# @type instance: singleton(Example47::Bar)"
+  - anchor: Foo
+    annotations:
+    - "# @type instance: singleton(Example47::Baz)"
+app/models/example48.rb:
+  modules:
+  - anchor: Baz
+    annotations:
+    - "# @type instance: Example48::Bar & Example48::Baz"
+  - anchor: Foo
+    annotations:
+    - "# @type instance: singleton(Example48::Baz)"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade
