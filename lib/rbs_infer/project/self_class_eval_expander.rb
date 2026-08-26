@@ -67,7 +67,11 @@ module RbsInfer::Project
 
       reopens = found.filter_map do |relocation|
         target = marker_for(relocation)&.delete_prefix("::") || relocation.target
-        BlockReopen.appended(source: source, block: relocation.block, kind: relocation.kind, target: target)
+        # `self.class.class_eval` reopens the class itself, never its
+        # singleton — `self.class` in an instance method is the object's class,
+        # and the block's `def`s land in its instance method table.
+        BlockReopen.appended(source: source, block: relocation.block, kind: relocation.kind, target: target,
+                             singleton: false)
       end
       reopens = BlockReopen.missing_from(source, reopens)
       return nil if reopens.empty?

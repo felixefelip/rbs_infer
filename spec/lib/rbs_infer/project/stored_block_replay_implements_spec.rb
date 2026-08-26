@@ -166,4 +166,33 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
 
     expect(described_class.blocks_for(source: "class Foo; end\n", sources: NO_SOURCES)).to eq([])
   end
+
+  # A block replayed onto the target's SINGLETON defines `Target.age`, so the
+  # annotation has to name that table — checking the body against `Target`'s
+  # instances would report a method the RBS declares on the class object
+  # (felixefelip/rbs_infer#267, felixefelip/steep#152).
+  it "names the singleton when that is where the block's defs land" do
+    source = <<~RUBY
+      module DSL
+        attr_reader :body
+        def keep(&block) = @body = block
+        def apply(source) = singleton_class.class_eval(&source.body)
+      end
+
+      module Src
+        extend DSL
+        keep do
+          def age; 31; end
+        end
+      end
+
+      class Target
+        extend DSL
+        apply(Src)
+      end
+    RUBY
+
+    expect(described_class.blocks_for(source: source, sources: NO_SOURCES))
+      .to eq([{ "call" => "keep", "in" => "::Src", "implements" => "singleton(::Target)" }])
+  end
 end

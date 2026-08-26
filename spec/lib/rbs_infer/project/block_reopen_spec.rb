@@ -25,7 +25,7 @@ RSpec.describe RbsInfer::Project::BlockReopen do
     "class A\n  module B\n    def self.included(base)\n      base.class_eval do\n#{body}      end\n    end\n  end\nend\n"
   end
 
-  def relocated(body)
+  def relocated(body, singleton: false)
     source = hook(body)
     call = nil
     Prism.parse(source).value.breadth_first_search do |node|
@@ -33,7 +33,7 @@ RSpec.describe RbsInfer::Project::BlockReopen do
       false
     end
 
-    described_class.appended(source: source, block: call.block, kind: "class", target: "Host")
+    described_class.appended(source: source, block: call.block, kind: "class", target: "Host", singleton: singleton)
   end
 
   # What `check` returns from the program as WRITTEN, and from the program as expanded.
@@ -56,6 +56,20 @@ RSpec.describe RbsInfer::Project::BlockReopen do
     RUBY
 
     expect(relocated(body)).to eq("class Host\n  def check\n    \"hook\"\n  end\nend\n")
+  end
+
+  # `base.singleton_class.class_eval` runs the same block against the class object, so the
+  # `def`s land in the singleton — one more scope to open, and one more level to indent to.
+  # The body itself is moved by exactly the same rule.
+  it "nests a singleton replay's body inside a `class << self`" do
+    body = <<-RUBY
+        def check
+          "hook"
+        end
+    RUBY
+
+    expect(relocated(body, singleton: true))
+      .to eq("class Host\n  class << self\n    def check\n      \"hook\"\n    end\n  end\nend\n")
   end
 
   it "keeps the body's own shape while moving it" do

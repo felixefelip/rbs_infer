@@ -1137,4 +1137,139 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(expand(singleton_dsl(relation: "class Target\n  extend Wrap::Base"))).to be_nil
     end
   end
+  # `base.singleton_class.class_eval(&@block)` — the same relocation onto the
+  # same class, landing in the other method table. It is what a DSL spelling
+  # `class_methods do` is written to do, and reading only the bare parameter as
+  # a target made it no shape at all (felixefelip/rbs_infer#267).
+  context "a replay onto the target's singleton" do
+    def concern(receiver: "base.singleton_class")
+      <<~RUBY
+        class Module
+          def include(*modules)
+            modules.reverse_each do |mod|
+              mod.send(:append_features, self)
+              mod.send(:included, self)
+            end
+            self
+          end
+        end
+
+        class Wrap
+          module DSL
+            def keep(&block)
+              @body = block
+            end
+
+            def included(base)
+              #{receiver}.class_eval(&@body) if @body
+            end
+          end
+
+          module Source
+            extend DSL
+
+            keep do
+              def age
+                31
+              end
+            end
+          end
+
+          class Target
+            include(Wrap::Source)
+          end
+        end
+      RUBY
+    end
+
+    it "reopens the target's singleton, not the target" do
+      expanded = expand(concern)
+
+      expect(expanded).to include("class Wrap::Target
+  class << self
+    def age")
+      expect(Prism.parse(expanded).success?).to be(true)
+    end
+
+    # The same file with the hop removed. Both spellings resolve; what changes
+    # is which table the `def` is emitted in, so the pair is what says the
+    # singleton answer is read off the receiver rather than assumed.
+    it "reopens the target itself when the hop is not written" do
+      expanded = expand(concern(receiver: "base"))
+
+      expect(expanded).to include("class Wrap::Target
+  def age")
+      expect(expanded).not_to include("class << self")
+    end
+
+    it "adds nothing on a second pass over its own output" do
+      expect(expand(expand(concern))).to be_nil
+    end
+
+    # `singleton_class` takes no arguments, so a same-named method that does is
+    # somebody else's and says nothing about a method table.
+    it "declines a `singleton_class` call that is not Ruby's" do
+      expect(expand(concern(receiver: "base.singleton_class(:eager)"))).to be_nil
+    end
+
+    # The hop is only safe because the object it starts from is the one we were
+    # handed. `Other.singleton_class` is a class this pass never resolved.
+    it "declines a singleton hop off something not handed to the method" do
+      expect(expand(concern(receiver: "Wrap::Other.singleton_class"))).to be_nil
+    end
+  end
+
+  # The outward direction of the same question: the DSL replays onto its own
+  # `self` rather than onto something passed in, and `singleton_class` there
+  # names the applying class's own class object.
+  context "a replay onto the applier's own singleton" do
+    def outward(receiver: "singleton_class.")
+      <<~RUBY
+        class Wrap
+          module DSL
+            attr_reader :body
+
+            def keep(&block)
+              @body = block
+            end
+
+            def apply(source)
+              #{receiver}class_eval(&source.body)
+            end
+          end
+
+          module Source
+            extend DSL
+
+            keep do
+              def age
+                31
+              end
+            end
+          end
+
+          class Target
+            extend DSL
+            apply(Source)
+          end
+        end
+      RUBY
+    end
+
+    it "reopens the applier's singleton" do
+      expect(expand(outward)).to include("class Wrap::Target
+  class << self
+    def age")
+    end
+
+    it "reopens the applier itself when the hop is not written" do
+      expect(expand(outward(receiver: ""))).not_to include("class << self")
+    end
+
+    # The rewrite emits a reopening of the class whose body wrote `apply`, so a
+    # replay running on some other object is an answer about the wrong class.
+    it "declines a replay written on something other than the applier" do
+      expect(expand(outward(receiver: "Wrap::Other."))).to be_nil
+    end
+  end
 end

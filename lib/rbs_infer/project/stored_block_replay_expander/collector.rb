@@ -51,8 +51,23 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     CORE_REOPENS = CORE_SELF_CHAINS.values.flatten.uniq.freeze
 
+    # What `singleton_class_of` answers for a call written on no receiver at
+    # all. A `Symbol` rather than a fabricated node: nothing reads it back as
+    # syntax, only compares it.
+    IMPLICIT_RECEIVER = :self
+
     Storage = Data.define(:owner, :method, :ivar)
-    ReplayMethod = Data.define(:owner, :method, :parameter, :reader)
+
+    # `singleton` — carried by all three replay shapes below — is WHICH method
+    # table the block's `def`s land in. `target.class_eval` puts them in the
+    # target's own, reached by its instances; `target.singleton_class.class_eval`
+    # puts them in the target's singleton, reached by the class object itself.
+    # That is the one difference between a DSL spelling `included do` and one
+    # spelling `class_methods do`, and it is a difference in the emitted RBS
+    # (`def age` against `def self.age`), so it has to travel with the replay
+    # rather than be re-derived from the call at rewrite time
+    # (felixefelip/rbs_infer#267).
+    ReplayMethod = Data.define(:owner, :method, :parameter, :reader, :singleton)
     # `source` is the file the block was written in, and it travels with the
     # block because a `Prism::Location` is only offsets — meaningless without
     # the string they index. The rewrite slices it to move the body, and the
@@ -70,7 +85,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # the replaying method is already inside the object that owns it. So the ivar
     # is named here where `ReplayMethod` names a reader — the slot is the join
     # either way, and `attr_reader` was only ever one spelling of reaching it.
-    InwardReplay = Data.define(:owner, :method, :parameter, :ivar)
+    InwardReplay = Data.define(:owner, :method, :parameter, :ivar, :singleton)
 
     # The same replay again, with the block written where it is run instead of
     # kept for later: `def self.included(base) = base.class_eval do … end`, which
@@ -83,7 +98,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # hook) rather than the storage call and the module that wrote it, since
     # there is no storage call here; both feed the `blocks:` sidecar the same way.
     # `source` for the same reason `StoredCall` carries one.
-    LiteralReplay = Data.define(:owner, :method, :scope, :call, :block, :source)
+    LiteralReplay = Data.define(:owner, :method, :scope, :call, :block, :source, :singleton)
 
     # `def bazinga(mod) = mod.bazingado(self)` — the hop from the method a target
     # NAMES to the method that replays. The inward direction needs it: the replay
@@ -240,21 +255,23 @@ module RbsInfer::Project::StoredBlockReplayExpander
       end
 
       if (replay = replay_shape(node.body))
-        parameter, reader = replay
-        @replay_methods << ReplayMethod.new(owner: owner, method: method_name, parameter: parameter, reader: reader)
+        parameter, reader, singleton = replay
+        @replay_methods << ReplayMethod.new(owner: owner, method: method_name, parameter: parameter, reader: reader,
+                                            singleton: singleton)
       end
 
       parameters = handed_names(node.body, parameter_names(params))
 
       if (inward = inward_replay_shape(node.body, parameters))
-        parameter, ivar = inward
-        @inward_replays << InwardReplay.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar)
+        parameter, ivar, singleton = inward
+        @inward_replays << InwardReplay.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar,
+                                            singleton: singleton)
       end
 
       if (literal = literal_replay_shape(node.body, parameters))
-        call, block = literal
+        call, block, singleton = literal
         @literal_replays << LiteralReplay.new(owner: owner, method: method_name, scope: current_scope,
-                                              call: call, block: block, source: @source)
+                                              call: call, block: block, source: @source, singleton: singleton)
       end
 
       if (delegation = delegation_shape(node))
@@ -402,9 +419,78 @@ module RbsInfer::Project::StoredBlockReplayExpander
         next unless (reader.arguments&.arguments || []).empty?
         next unless reader.receiver.is_a?(Prism::LocalVariableReadNode)
 
-        [reader.receiver.name.to_s, reader.name.to_s]
+        next unless (own = own_receiver(call.receiver))
+
+        [reader.receiver.name.to_s, reader.name.to_s, own == :singleton]
       end.uniq
       shapes.first if shapes.size == 1
+    end
+
+    # Which object a replay runs ON, as `[parameter name, singleton?]`, or nil
+    # when the receiver is not one this pass will move a block onto.
+    #
+    # `base.class_eval` and `base.singleton_class.class_eval` are the same
+    # relocation asked about two different method tables — `base`'s own, and
+    # `base`'s singleton — which is exactly the difference between a DSL
+    # spelling `included do` and one spelling `class_methods do`. Reading only
+    # the bare parameter made the second one no shape at all, so a `def` a human
+    # can see landing on the class object was left in the module that wrote it
+    # (felixefelip/rbs_infer#267).
+    #
+    # The parameter restriction is unchanged and is the whole conservatism here:
+    # `singleton_class` is a hop to a DIFFERENT OBJECT, and taking it is only
+    # safe because that object is decided by the one we were handed. An
+    # arbitrary receiver still declines, singleton or not.
+    def replayed_on(receiver, parameters)
+      return nil unless receiver
+
+      if (inner = singleton_class_of(receiver))
+        return nil unless inner.is_a?(Prism::LocalVariableReadNode) && parameters.include?(inner.name.to_s)
+
+        return [inner.name.to_s, true]
+      end
+
+      return nil unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
+
+      [receiver.name.to_s, false]
+    end
+
+    # The same question for the outward direction, where the replay runs on the
+    # DSL's own `self` rather than on something handed to it — `:instance` for
+    # `class_eval`, `:singleton` for `singleton_class.class_eval`, nil for a
+    # receiver that is neither.
+    #
+    # The receiver used to go unread here, which happened to be harmless while
+    # every shape it could take meant the same thing. It no longer does: the
+    # rewrite emits a reopening of the SUBJECT — the class whose body wrote the
+    # apply call — so a replay written on anything else (`Other.class_eval`) is
+    # a block running on a class this pass never resolved, and naming the
+    # subject would be an answer about the wrong one.
+    def own_receiver(receiver)
+      return :instance if receiver.nil? || receiver.is_a?(Prism::SelfNode)
+      return :singleton if singleton_class_of(receiver) == IMPLICIT_RECEIVER
+
+      nil
+    end
+
+    # The receiver of a `singleton_class` call — the node it is written on,
+    # `IMPLICIT_RECEIVER` when it is written on none, or nil when the node is
+    # not a `singleton_class` call at all. Three answers rather than two,
+    # because "no receiver" is a receiver here: it names the DSL's own `self`.
+    #
+    # No arguments, because `singleton_class` takes none: a same-named method
+    # that does is somebody else's, and it says nothing about a method table.
+    def singleton_class_of(node)
+      return nil unless node.is_a?(Prism::CallNode)
+
+      call = dispatched(node)
+      return nil unless call.name == :singleton_class
+      return nil unless (call.arguments&.arguments || []).empty?
+
+      receiver = call.receiver
+      return IMPLICIT_RECEIVER if receiver.nil? || receiver.is_a?(Prism::SelfNode)
+
+      receiver
     end
 
     # `<parameter>.class_eval(&@ivar)` — the target is the parameter and the
@@ -420,14 +506,14 @@ module RbsInfer::Project::StoredBlockReplayExpander
         next unless node.is_a?(Prism::CallNode)
         call = dispatched(node)
         next unless REPLAY_METHODS.include?(call.name)
-        receiver = call.receiver
-        next unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
+        target, singleton = replayed_on(call.receiver, parameters)
+        next unless target
         pass = call.block
         next unless pass.is_a?(Prism::BlockArgumentNode)
         ivar = pass.expression
         next unless ivar.is_a?(Prism::InstanceVariableReadNode)
 
-        [receiver.name.to_s, ivar.name.to_s]
+        [target, ivar.name.to_s, singleton]
       end.uniq
       shapes.first if shapes.size == 1
     end
@@ -441,12 +527,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
         next unless node.is_a?(Prism::CallNode)
         call = dispatched(node)
         next unless REPLAY_METHODS.include?(call.name)
-        receiver = call.receiver
-        next unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
+        target, singleton = replayed_on(call.receiver, parameters)
+        next unless target
         block = call.block
         next unless block.is_a?(Prism::BlockNode)
 
-        [call.name.to_s, block]
+        [call.name.to_s, block, singleton]
       end
       shapes.first if shapes.size == 1
     end
@@ -664,7 +750,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # Keyed on the block's own SOURCE as well as its offset, since two files
       # hold blocks at the same offset all the time and a location says nothing
       # about which file it indexes.
-      resolved.uniq { |replay| [replay.target, replay.source, replay.block.location.start_offset] }
+      resolved.uniq { |replay| [replay.target, replay.singleton, replay.source, replay.block.location.start_offset] }
     end
 
     # The one block `apply` relocates, or nil when the file does not decide it.
@@ -704,7 +790,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # dispatch reaches is not a question the source answers. The same block
       # reached twice is no disagreement, so it is deduplicated rather than
       # counted.
-      return nil unless candidates.uniq { |candidate| [candidate.source, candidate.block.location.start_offset] }.size == 1
+      candidates = candidates.uniq do |candidate|
+        [candidate.source, candidate.block.location.start_offset, candidate.singleton]
+      end
+      return nil unless candidates.size == 1
 
       candidates.first
     end
@@ -731,10 +820,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
       if (literal = literals.first)
         return Replay.new(target: apply.subject, block: literal.block, kind: kind,
                           call: literal.call, scope: literal.scope, in_method: literal.method,
-                          source: literal.source)
+                          source: literal.source, singleton: literal.singleton)
       end
 
-      storage_owner, ivar = slots.first
+      storage_owner, ivar, singleton = slots.first
       # The SOURCE's provider, not the applier's: the name being looked up
       # is the one the source wrote in its own body.
       storage_method = storage_method_for(source_provider, storage_owner, ivar)
@@ -745,7 +834,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       Replay.new(target: apply.subject, block: blocks.first.block, kind: kind,
                  call: storage_method, scope: blocks.first.subject, in_method: nil,
-                 source: blocks.first.source)
+                 source: blocks.first.source, singleton: singleton)
     end
 
     # Which classes/modules can call each owner's DSL, as `owner => subjects`.
@@ -822,7 +911,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       ivars = @readers.select { |reader_owner, name, _| reader_owner == owner && name == replays.first.reader }
       ivars = ivars.map(&:last).uniq
-      [owner, ivars.first] if ivars.size == 1
+      [owner, ivars.first, replays.first.singleton] if ivars.size == 1
     end
 
     # The slot behind `param.class_eval(&@ivar)`, when `method` only FORWARDS to
@@ -846,7 +935,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
         next unless keeper_owner
 
         replays = @inward_replays.select { |replay| replay.owner == keeper_owner && replay.method == keeper_method }
-        [keeper_owner, replays.first.ivar] if replays.size == 1
+        [keeper_owner, replays.first.ivar, replays.first.singleton] if replays.size == 1
       end.uniq
 
       slots.first if slots.size == 1

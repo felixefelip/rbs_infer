@@ -65,7 +65,13 @@ module RbsInfer::Project
     # `include` naming its target is written in the host. A location is only a
     # pair of offsets, so the string they index has to travel with them
     # (felixefelip/rbs_infer#265).
-    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method, :source)
+    # `singleton` says which of the target's two method tables the block's
+    # `def`s land in — its own, or the class object's. `base.class_eval` and
+    # `base.singleton_class.class_eval` are the same relocation onto the same
+    # target and differ only in that, which is the difference between the RBS
+    # reading `def age` and reading `def self.age`
+    # (felixefelip/rbs_infer#267).
+    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method, :source, :singleton)
 
     module_function
 
@@ -108,14 +114,15 @@ module RbsInfer::Project
       # The block's SOURCE is part of its identity, not only its offsets: two
       # blocks in two files are routinely at the same offset, and a location
       # carries no file to tell them apart.
-      keys = replays.map { |replay| [replay.source, replay.block.body.location, replay.target] }
+      keys = replays.map { |replay| [replay.source, replay.block.body.location, replay.target, replay.singleton] }
       return nil unless keys.uniq.size == replays.size
 
       # Sliced from the file the block was WRITTEN in, which is what makes
       # relocating a foreign block possible at all — reading these offsets
       # against the file being expanded cuts unrelated text.
       virtual_reopens = replays.filter_map do |replay|
-        BlockReopen.appended(source: replay.source, block: replay.block, kind: replay.kind, target: replay.target)
+        BlockReopen.appended(source: replay.source, block: replay.block, kind: replay.kind, target: replay.target,
+                             singleton: replay.singleton)
       end
       virtual_reopens = BlockReopen.missing_from(source, virtual_reopens)
       return nil if virtual_reopens.empty?
