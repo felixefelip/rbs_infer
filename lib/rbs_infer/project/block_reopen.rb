@@ -43,13 +43,35 @@ module RbsInfer::Project
       Prism::InterpolatedMatchLastLineNode
     ].freeze
 
+    # @param singleton [Boolean] whether the block was replayed onto the
+    #   target's SINGLETON — `Target.singleton_class.class_eval` rather than
+    #   `Target.class_eval` — in which case the body is nested one level deeper,
+    #   inside the `class << self` that is where those `def`s went.
+    #
+    #   Required, and passed explicitly even by the caller that can only ever be
+    #   replaying onto instances: forgetting it is the silent-wrong case, since
+    #   the reopening still parses and simply declares the methods on the wrong
+    #   half of the class (docs/engineering/required-threaded-deps.md).
+    #
     # @return [String, nil] a top-level reopening, or nil for a block with no
     #   body — which relocates to nothing, and whose `location` would raise.
-    def appended(source:, block:, kind:, target:)
+    def appended(source:, block:, kind:, target:, singleton:)
       body = block.body
       return nil unless body
 
-      "#{kind} #{target}\n#{body_source(source, body, indent: INDENT)}\nend\n"
+      return "#{kind} #{target}\n#{body_source(source, body, indent: INDENT)}\nend\n" unless singleton
+
+      # `class << self` rather than rewriting each `def x` into `def self.x`:
+      # the body is moved BYTE FOR BYTE everywhere else in this module — that is
+      # what keeps a heredoc's data intact — and a singleton reopening is the
+      # one spelling that needs no edit inside it.
+      [
+        "#{kind} #{target}",
+        "#{INDENT}class << self",
+        body_source(source, body, indent: INDENT * 2),
+        "#{INDENT}end",
+        "end\n"
+      ].join("\n")
     end
 
     # The text that replaces the call, `class X` landing at the call's own

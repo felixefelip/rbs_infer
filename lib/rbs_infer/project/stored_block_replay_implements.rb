@@ -104,8 +104,19 @@ module RbsInfer::Project
     # A lone target stays a plain string: it is what every sidecar written so
     # far says, it reads better, and Steep takes either.
     def implements(entries)
-      targets = entries.map { |replay| "::#{replay.target}" }.uniq
+      targets = entries.map { |replay| name_for(replay) }.uniq
       targets.size == 1 ? targets.first : targets
+    end
+
+    # `singleton(::Bar)` for a block replayed onto the target's singleton, which
+    # is what `@implements` has to name for the `def`s to be checked against the
+    # method table they actually land in — `Bar.age`, not `Bar#age`. Needs
+    # felixefelip/steep#152; before it, `@implements` could name only a module,
+    # so the singleton half of a `class_methods`-shaped DSL had no annotation to
+    # write and its `def`s were read where they are written
+    # (felixefelip/rbs_infer#267).
+    def name_for(replay)
+      replay.singleton ? "singleton(::#{replay.target})" : "::#{replay.target}"
     end
   end
 end

@@ -328,6 +328,12 @@ app/models/example45.rb:
   - anchor: Foo
     annotations:
     - "# @type instance: singleton(Example45::Baz)"
+  blocks:
+  - call: banana_class_method
+    in: "::Example45::Baz"
+    implements:
+    - singleton(::Example45::Bar)
+    - singleton(::Example45::BarOther)
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade

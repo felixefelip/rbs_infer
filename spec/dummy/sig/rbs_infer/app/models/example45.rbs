@@ -15,7 +15,8 @@ class Example45
   class Bar
     include ::Example45::Baz
 
-    def self.call_age: () -> untyped
+    def self.call_age: () -> Integer
+    def self.age: () -> Integer
   end
 end
 
@@ -23,6 +24,7 @@ class Example45
   class BarOther
     include ::Example45::Baz
 
-    def self.call_age: () -> untyped
+    def self.call_age: () -> Integer
+    def self.age: () -> Integer
   end
 end
