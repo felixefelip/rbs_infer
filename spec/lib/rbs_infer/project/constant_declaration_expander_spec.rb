@@ -101,6 +101,20 @@ RSpec.describe RbsInfer::Project::ConstantDeclarationExpander do
     RUBY
   end
 
+  # The pass bound comes from the source, so nesting has no ceiling to hit. A
+  # fixed ten stopped exactly here — at ten nested constructors — and returned a
+  # file still holding one, which is both wrong and an output the expander
+  # wanted to rewrite again.
+  it "converges however deep the nesting goes" do
+    inner = "M = Module.new\n"
+    12.downto(1) { |i| inner = "C#{i} = Class.new do\n#{inner}end\n" }
+    expanded = expand("class Wrap\n#{inner}end\n")
+
+    expect(expanded).not_to include(".new")
+    expect(expanded).to include("module M")
+    expect(expand(expanded)).to be_nil
+  end
+
   it "adds nothing on a second pass over its own output" do
     source = "module Wrap\n  Banana = Module.new\nend\n"
 

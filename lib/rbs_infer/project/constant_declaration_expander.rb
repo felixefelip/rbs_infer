@@ -38,20 +38,10 @@ module RbsInfer::Project
   # because the desugared declaration then flows through the same
   # member/visibility/return-type machinery every keyword-declared module uses.
   module ConstantDeclarationExpander
-    # `X = Class.new do Y = Module.new end` — the inner statement is inside a
-    # BLOCK on the first pass, so nothing collects it; once the outer one is a
-    # real class body it is an ordinary statement. Same reason
-    # `ClassEvalExpander` iterates.
-    #
-    # Not only about covering that shape: stopping after one pass would leave
-    # an output the expander still wants to rewrite, and `SourceExpanders`
-    # requires an expander to be idempotent over its own output. Converging
-    # here is what makes a second application answer nil.
-    #
-    # A cap rather than `loop`: each pass consumes at least one constructor, so
-    # it terminates on its own — the number only bounds the nesting depth that
-    # converges, and ten of these inside one another is not a program.
-    MAX_PASSES = 10
+    # The constructors this reads, as text. One expression for the cheap gate
+    # and for the pass bound, since both ask the same question: how many of
+    # these does the file write?
+    CONSTRUCTORS_AT = /Module\.new|Class\.new|const_set/
 
     # The two constructors this reads, and what each declares. Listed rather
     # than duck-typed on `.new`: `Struct.new` and `Data.define` also answer with
@@ -68,10 +58,27 @@ module RbsInfer::Project
     module_function
 
     # Returns the expanded source, or nil when there is nothing to rewrite.
+    #
+    # Iterated because one pass does not reach a constructor nested in another:
+    # `X = Class.new do Y = Module.new end` has the inner statement inside a
+    # BLOCK while the outer is still a call, and only once the outer is a real
+    # class body is the inner an ordinary statement. Convergence is also what
+    # `SourceExpanders` asks for — an expander must be idempotent over its own
+    # output, and a half-desugared source is one it still wants to rewrite.
+    #
+    # The bound comes from the SOURCE, not a constant. A pass rewrites at least
+    # one constructor and the declaration it emits carries none — the body is
+    # moved byte for byte, so no rewrite can manufacture one — which makes the
+    # count of constructors written in the file both strictly decreasing and an
+    # upper bound on the passes needed. A fixed ceiling looks equivalent and is
+    # not: measured, ten of these nested left the file half-desugared and
+    # non-idempotent, a silently wrong answer for a deep file rather than a
+    # guard against anything. This still terminates if some future rewrite
+    # stops reducing, which is what a ceiling is really for.
     def expand(source)
       result = nil
 
-      MAX_PASSES.times do
+      source.scan(CONSTRUCTORS_AT).size.times do
         expanded = expand_once(result || source)
         break unless expanded
 
@@ -97,9 +104,9 @@ module RbsInfer::Project
     end
 
     # The cheap gate. A project that never builds a module at runtime pays one
-    # substring scan and nothing else.
+    # scan and nothing else.
     def possible?(source)
-      source.include?("Module.new") || source.include?("Class.new") || source.include?("const_set")
+      source.match?(CONSTRUCTORS_AT)
     end
 
     # Every statement written DIRECTLY in a class body, a module body, or at top
