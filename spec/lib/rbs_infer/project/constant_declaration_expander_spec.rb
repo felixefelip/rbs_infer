@@ -76,6 +76,31 @@ RSpec.describe RbsInfer::Project::ConstantDeclarationExpander do
     RUBY
   end
 
+  # The one shape that needs more than a single pass. The inner constant is
+  # inside a BLOCK while the outer one is still a constructor call, so nothing
+  # collects it; once the outer is a real class body it is an ordinary
+  # statement. Stopping after one pass would leave the file half-desugared —
+  # and would break the seam's contract, since applying the expander to its own
+  # output would change it again (`SourceExpanders`).
+  it "desugars a constructor nested in a constructor" do
+    expanded = expand(<<~RUBY)
+      class Wrap
+        Outer = Class.new do
+          Inner = Module.new
+        end
+      end
+    RUBY
+
+    expect(expanded).to eq(<<~RUBY)
+      class Wrap
+        class Outer
+          module Inner
+          end
+        end
+      end
+    RUBY
+  end
+
   it "adds nothing on a second pass over its own output" do
     source = "module Wrap\n  Banana = Module.new\nend\n"
 

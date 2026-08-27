@@ -42,6 +42,15 @@ module RbsInfer::Project
     # BLOCK on the first pass, so nothing collects it; once the outer one is a
     # real class body it is an ordinary statement. Same reason
     # `ClassEvalExpander` iterates.
+    #
+    # Not only about covering that shape: stopping after one pass would leave
+    # an output the expander still wants to rewrite, and `SourceExpanders`
+    # requires an expander to be idempotent over its own output. Converging
+    # here is what makes a second application answer nil.
+    #
+    # A cap rather than `loop`: each pass consumes at least one constructor, so
+    # it terminates on its own — the number only bounds the nesting depth that
+    # converges, and ten of these inside one another is not a program.
     MAX_PASSES = 10
 
     # The two constructors this reads, and what each declares. Listed rather
