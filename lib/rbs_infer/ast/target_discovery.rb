@@ -121,12 +121,23 @@ module RbsInfer::AST
       @targets << { name: qualified, is_module: is_module, namespace: wrapper }
     end
 
-    # A module declared directly in `node`'s body that is not itself a pure
-    # namespace — so it has members, and the owner mechanism has to write them
-    # into `node`'s block because a nested module is never a target of its own.
-    # That is what makes an otherwise droppable wrapper worth keeping.
+    # A module declared directly in `node`'s body that has something of its own
+    # to emit — so the owner mechanism has to write it into `node`'s block,
+    # because a nested module is never a target of its own. That is what makes
+    # an otherwise droppable wrapper worth keeping.
+    #
+    # Recursive, because a namespace module can host one: `module Baz` holding
+    # nothing but two empty modules is a wrapper by the rule above, and dropping
+    # its enclosing target dropped BOTH of them — an empty module still declares
+    # a type, and it is the only place that type can be written
+    # (felixefelip/rbs_infer#268). A nested CLASS never needs this: classes are
+    # targets at any depth and emit their own block.
     def hosts_orphan_module?(node)
-      node.body.body.any? { |stmt| stmt.is_a?(Prism::ModuleNode) && !namespace_wrapper?(stmt) }
+      node.body.body.any? do |stmt|
+        next false unless stmt.is_a?(Prism::ModuleNode)
+
+        !namespace_wrapper?(stmt) || hosts_orphan_module?(stmt)
+      end
     end
 
     # A declaration whose body is nothing but other class/module declarations

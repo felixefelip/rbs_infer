@@ -44,6 +44,12 @@ module RbsInfer::Inference
 
     attr_reader :members, :delegates, :superclass_name, :is_module
 
+    # Every module DECLARED inside the target, in source order, by the owner
+    # path its members would carry. Kept apart from `members` because a
+    # declaration is not a member: an empty one has nothing to be collected
+    # from, and is still a module the RBS has to name.
+    attr_reader :nested_modules
+
     # Structural collector: constant value/hash defaults are peeled off before
     # they reach the resolver path (bare constants → deferred to the Analyzer),
     # so this never types a value-position constant itself (felixefelip/rbs_infer#56).
@@ -55,6 +61,7 @@ module RbsInfer::Inference
       @comments = comments
       @lines = lines
       @members = []
+      @nested_modules = []
       @delegates = []
       @current_visibility = :public
       @is_controller = false
@@ -74,6 +81,13 @@ module RbsInfer::Inference
       segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
       with_scope(:module, segment) do
         @is_module = true unless @superclass_name if capture_metadata_here?
+        # A nested module is emitted from the OWNER its members carry, so one
+        # with no members was emitted nowhere — a declaration the source makes
+        # and the RBS does not, which is only invisible until something names
+        # it (`include`, or a constant reference). Recorded here, where the
+        # declaration is, rather than inferred from members that may not exist
+        # (felixefelip/rbs_infer#268).
+        @nested_modules << current_owner if current_owner
         super
       end
     end
