@@ -133,6 +133,23 @@ methods:
           kind: self
         method: ticket
     enforced: false
+  Example53::Baz#age:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: origin
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: origin
+        chain:
+        - length
+    enforced: false
   Post#author_name:
     requires:
     - kind: not_nil
