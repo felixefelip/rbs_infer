@@ -392,6 +392,18 @@ app/models/example52.rb:
   - call: banana_class_method
     in: "::Example52::Baz"
     implements: "::Example52::Baz::BananaMethods"
+app/models/example53.rb:
+  modules:
+  - anchor: Baz
+    annotations:
+    - "# @type instance: Example53::Bar & Example53::Baz"
+  - anchor: Foo
+    annotations:
+    - "# @type instance: singleton(Example53::Baz)"
+  blocks:
+  - call: banana_class_method
+    in: "::Example53::Baz"
+    implements: "::Example53::Baz::BananaMethods"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade
