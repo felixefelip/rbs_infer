@@ -27,6 +27,18 @@ module RbsInfer::Project
       METHODS.any? { |name| source.include?(name) }
     end
 
+    # How many the source writes — the same question `possible?` asks, counted.
+    #
+    # It is an upper bound on the passes a rewriting expander can need: a pass
+    # consumes at least one of these and the reopening it emits carries none
+    # (the body is moved byte for byte, so no rewrite can manufacture one), so
+    # the count strictly decreases. Loose on purpose — a `class_eval` this
+    # expander declines, or the word inside a comment, only inflates a ceiling
+    # the loop stops short of anyway.
+    def count(source)
+      METHODS.sum { |name| source.scan(name).size }
+    end
+
     # The call shape, receiver aside. The STRING form (`class_eval "def x; end"`)
     # is excluded by requiring a block and no arguments: its body is not source
     # this can read, and is the genuinely undecidable case the README reserves

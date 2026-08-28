@@ -36,18 +36,27 @@ module RbsInfer::Project
   # call shape as an implicit `@implements` so `super` inside the block resolves
   # against the receiver's ancestors.
   module ClassEvalExpander
-    # A block nested inside another match is rewritten on a later pass, once the outer
-    # one has become an ordinary class body. Replacing both at once would corrupt the
-    # source: the offsets of the inner match are inside the outer's replaced range.
-    MAX_PASSES = 10
-
     module_function
 
     # Returns the expanded source, or nil when there is nothing to rewrite.
+    #
+    # A block nested inside another match is rewritten on a later pass, once the outer
+    # one has become an ordinary class body. Replacing both at once would corrupt the
+    # source: the offsets of the inner match are inside the outer's replaced range.
+    # Only NESTING costs a pass — any number of non-overlapping calls are rewritten
+    # together (measured: fifteen siblings, one pass).
+    #
+    # The bound is what the source writes, not a constant. A fixed ten looked like a
+    # guard and was a depth limit: measured, eleven nested reopenings came out still
+    # holding a `class_eval`, which is both a wrong answer and an output this expander
+    # wants to rewrite again — the non-idempotent result `SourceExpanders` asks an
+    # expander not to produce (felixefelip/rbs_infer#269 fixed the same shape in
+    # `ConstantDeclarationExpander`). Bounding by the count still terminates if some
+    # future rewrite stops reducing, which is what a ceiling is really for.
     def expand(source)
       result = nil
 
-      MAX_PASSES.times do
+      ReopeningCall.count(source).times do
         expanded = expand_once(result || source)
         break unless expanded
 
