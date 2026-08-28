@@ -90,6 +90,27 @@ RSpec.describe RbsInfer::Project::ClassEvalExpander do
     expect(Prism.parse(expanded).success?).to be(true)
   end
 
+  # Only nesting costs a pass, and the pass bound comes from the source — so
+  # depth has no ceiling to hit. A fixed ten stopped at eleven nested reopenings
+  # and returned a file still holding a `class_eval`: wrong, and an output this
+  # expander wanted to rewrite again.
+  it "converges however deep the nesting goes" do
+    source = "def leaf\n  1\nend\n"
+    12.downto(1) { |i| source = "C#{i}.class_eval do\n#{source}end\n" }
+    expanded = expand(source)
+
+    expect(expanded).not_to include("class_eval")
+    expect(expanded).to include("class C12")
+    expect(expand(expanded)).to be_nil
+  end
+
+  # The other half of the same claim: what costs a pass is nesting, not count.
+  it "rewrites any number of non-overlapping calls in one pass" do
+    source = (1..15).map { |i| "C#{i}.class_eval do\n  def m#{i}; 1; end\nend\n" }.join
+
+    expect(described_class.expand_once(source)).not_to include("class_eval")
+  end
+
   describe "declines" do
     # `instance_eval`'s default definee is the receiver's SINGLETON class, so
     # rewriting it to `class X` would attribute the def to the instance side — the
