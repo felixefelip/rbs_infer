@@ -2,6 +2,7 @@
 
 require "prism"
 require "set"
+require_relative "../../ast/constant_reference"
 require_relative "../../inference/send_call"
 require_relative "../constant_sources"
 
@@ -100,6 +101,26 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # `source` for the same reason `StoredCall` carries one.
     LiteralReplay = Data.define(:owner, :method, :scope, :call, :block, :source, :singleton)
 
+    # `base.extend(<module>)` — the other thing a hook does to the object it is
+    # handed, and the one that carries no block at all: the target's SINGLETON
+    # gains a module that already exists, rather than a block's `def`s being
+    # moved onto it. It is the half of `ActiveSupport::Concern` that turns
+    # `class_methods do` into the host's class methods, and the transcription of
+    # `append_features` has been writing it since felixefelip/rbs_infer#262 with
+    # nothing reading it (felixefelip/rbs_infer#268).
+    #
+    # `name` is the module, and `dynamic` says which question is left to answer
+    # about it. A constant written as SYNTAX is resolved where it was written —
+    # its lexical scope is the file's, and nothing about the target changes it.
+    # A name fetched as DATA (`const_get(:ClassMethods)`) is resolved against
+    # whatever `self` is when the hook runs, which is the module being included
+    # and so is only known at the call site.
+    InwardExtend = Data.define(:owner, :method, :parameter, :name, :dynamic)
+
+    # One `extend` an apply call site puts on its target, resolved: the class or
+    # module to reopen, and the module its singleton gains.
+    Extension = Data.define(:target, :kind, :name)
+
     # `def bazinga(mod) = mod.bazingado(self)` — the hop from the method a target
     # NAMES to the method that replays. The inward direction needs it: the replay
     # runs on the source with the target passed in, so the target's own body
@@ -135,6 +156,18 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @readers = []
       @replay_methods = []
       @inward_replays = []
+      # Raw like `@delegations`, and resolved the same way: a constant written
+      # in a hook's body may name a module declared later in the file.
+      @inward_extends = []
+      @resolved_inward_extends = []
+      # What the files this one absorbs shapes from DECLARE. Read for one
+      # question only — is the module a `const_get` names actually there — which
+      # is why it is kept apart from `@declaration_kinds` rather than merged
+      # into it: every other reader of that hash is asking about a declaration
+      # THIS file makes, and widening it would answer them about somebody
+      # else's.
+      @absorbed_kinds = {}
+      @extensions = []
       # Absorbed from another file like the shapes above, but only because each
       # one carries the source it was sliced from. Without that they could not
       # be: a block is a pair of offsets, and reading them against the wrong
@@ -164,13 +197,19 @@ module RbsInfer::Project::StoredBlockReplayExpander
       root.accept(self)
       collect_readers_from_source
       @resolved_delegations = resolve_delegations
+      @resolved_inward_extends = resolve_inward_extends
       self
     end
+
+    # The `extend`s the apply calls in this file put on their targets. Populated
+    # by `collect`, alongside the replays it answers with: both are what a call
+    # site here does to a class here, read off the same resolution.
+    attr_reader :extensions
 
     protected
 
     attr_reader :storages, :readers, :replay_methods, :inward_replays, :forwards, :resolved_delegations,
-                :literal_replays, :stored_calls
+                :literal_replays, :stored_calls, :resolved_inward_extends, :declaration_kinds
 
     public
 
@@ -266,6 +305,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
         parameter, ivar, singleton = inward
         @inward_replays << InwardReplay.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar,
                                             singleton: singleton)
+      end
+
+      inward_extend_shapes(node.body, parameters).each do |parameter, name, dynamic|
+        @inward_extends << [owner, method_name, parameter, name, dynamic]
       end
 
       if (literal = literal_replay_shape(node.body, parameters))
@@ -537,6 +580,42 @@ module RbsInfer::Project::StoredBlockReplayExpander
       shapes.first if shapes.size == 1
     end
 
+    # `<parameter>.extend(<module>)` — every one the body writes, as
+    # `[parameter, name, dynamic?]`.
+    #
+    # ALL of them rather than one, and no count to decline on. Two `class_eval`s
+    # behind one name are an ambiguity — only one block can be the one meant —
+    # but a hook that extends two modules has simply extended two modules, and
+    # at runtime both happen. Same reason `forward_shapes` reports every forward.
+    #
+    # The receiver must be the parameter itself, with no `singleton_class` hop:
+    # unlike a replay, where the hop names the other method table the same `def`s
+    # could land in, `base.singleton_class.extend(M)` puts M in a third place
+    # again — the singleton's own singleton — and nothing downstream can say that.
+    #
+    # The `if const_defined?(:ClassMethods)` guard `ActiveSupport::Concern`
+    # writes around this is deliberately not read. What it asks is whether the
+    # module is there, and `extension_name` answers that with the declarations
+    # the pass has actually seen — the same question, decided by the project
+    # rather than by re-implementing the condition.
+    def inward_extend_shapes(body, parameters)
+      nodes(body).flat_map do |node|
+        next [] unless node.is_a?(Prism::CallNode)
+        call = dispatched(node)
+        next [] unless call.name == :extend
+        receiver = call.receiver
+        next [] unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
+
+        (call.arguments&.arguments || []).filter_map do |argument|
+          # Both spellings of naming a module, and the pair says which is which:
+          # a constant is syntax and resolves in the file it was WRITTEN in, a
+          # `const_get` is data and resolves against the `self` the hook runs on.
+          named = RbsInfer::AST::ConstantReference.named(argument)
+          [receiver.name.to_s, *named] if named
+        end
+      end
+    end
+
     # `<parameter>.<callee>(self)` — handing ourselves to the object that holds
     # the block, which is the only way a target can start an inward replay.
     #
@@ -725,6 +804,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @inward_replays.concat(shapes.inward_replays)
       @forwards.concat(shapes.forwards)
       @resolved_delegations.concat(shapes.resolved_delegations)
+      @resolved_inward_extends.concat(shapes.resolved_inward_extends)
+      # And what that file DECLARES, which no other shape needs: a `const_get`
+      # is resolved under the module being included, and whether that module
+      # holds the constant is a fact about the concern's own file.
+      @absorbed_kinds.merge!(shapes.declaration_kinds)
       # The two that carry a BLOCK. A DSL is routinely written in one file and
       # used from another — a concern in `app/models/concerns` and the class
       # that includes it — so the block and the `include` naming its target are
@@ -742,6 +826,9 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       providers = dsl_providers
       @resolved_delegations.concat(resolve_delegations)
+      @resolved_inward_extends.concat(resolve_inward_extends)
+
+      @extensions = @apply_calls.flat_map { |apply| resolve_extensions(apply, providers) }.uniq
 
       resolved = @apply_calls.filter_map { |apply| resolve_apply(apply, providers) }
 
@@ -796,6 +883,113 @@ module RbsInfer::Project::StoredBlockReplayExpander
       return nil unless candidates.size == 1
 
       candidates.first
+    end
+
+    # The `extend`s one apply call site puts on its target.
+    #
+    # The same walk `resolve_apply` makes, over the same providers, and separate
+    # from it on purpose: an `extend` and a block replay are two effects of one
+    # hook — `ActiveSupport::Concern#append_features` does both — so neither may
+    # count as evidence against the other. A concern with a `ClassMethods` and
+    # no `included do` must still be read, and one with both must not decline
+    # for having two answers.
+    #
+    # The count that DOES decide is between providers: two different modules
+    # answering `included` for one subject is one runtime dispatch that this
+    # pass cannot pick a winner for, so it says nothing. Several `extend`s from
+    # one provider are not that — see `inward_extend_shapes`.
+    def resolve_extensions(apply, providers)
+      source_subject = resolve_constant(apply.argument, apply.subject)
+      return [] unless source_subject
+
+      kind = @declaration_kinds[apply.subject]
+      return [] unless kind
+
+      appliers = providers.select { |_, subjects| subjects.include?(apply.subject) }.keys
+      sources = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
+
+      answers = appliers.product(sources).filter_map do |applier, source_provider|
+        names = extension_names(applier, apply.method, source_provider, source_subject)
+        names unless names.empty?
+      end.uniq
+      return [] unless answers.size == 1
+
+      answers.first.map { |name| Extension.new(target: apply.subject, kind: kind, name: name) }
+    end
+
+    # The modules reached from `owner#method` that a hook extends its argument
+    # with. Same walk as `inward_slot` — every forward, resolved through the
+    # ARGUMENT's provider — differing only in what the keeper turns out to do
+    # with what it was handed.
+    def extension_names(owner, method, source_provider, source_subject)
+      @forwards.flat_map do |forward|
+        next [] unless forward.owner == owner && forward.method == method
+
+        keeper_owner, keeper_method = keeper(source_provider, forward.callee)
+        next [] unless keeper_owner
+
+        # `self` inside the keeper is the object the call was dispatched on,
+        # which is the source subject — unless a delegation took the call
+        # somewhere else, in which case `self` is the object it was handed to
+        # and a `const_get` names that object's constants instead. Passing nil
+        # is what declines those: the syntactic spelling still resolves, since
+        # a written constant means the same thing wherever it is dispatched.
+        under = keeper_owner == source_provider ? source_subject : nil
+        @resolved_inward_extends.filter_map do |extension|
+          next unless extension.owner == keeper_owner && extension.method == keeper_method
+
+          extension_name(extension, under)
+        end
+      end.uniq
+    end
+
+    # The module an `InwardExtend` names, or nil when this call site does not
+    # decide it.
+    #
+    # A name fetched as data is looked up under the `self` it was fetched from,
+    # and it must actually BE there: `const_get(:ClassMethods)` on a concern
+    # that declares none raises at runtime, which is why the source guards it
+    # with `const_defined?`. Emitting the `extend` regardless would name a type
+    # nothing declares.
+    def extension_name(extension, under)
+      return extension.name unless extension.dynamic
+      return nil unless under
+
+      name = "#{under}::#{extension.name}"
+      declared_module?(name) ? name : nil
+    end
+
+    # Whether a MODULE by that name is declared — in this file, or in one whose
+    # shapes were absorbed. `extend` takes a module, so a class of that name is
+    # not the thing being asked about.
+    def declared_module?(name)
+      @declaration_kinds[name] == "module" || @absorbed_kinds[name] == "module"
+    end
+
+    # The collected `extend`s with their written constants resolved, against the
+    # declarations of the file they were WRITTEN in — which is the only place
+    # that name can be looked up, and the same reason `resolve_delegations` runs
+    # here and again in `collect_shapes`. A dynamic name has nothing to resolve
+    # yet and passes through; it is decided per call site, in `extension_name`.
+    def resolve_inward_extends
+      @inward_extends.filter_map do |owner, method, parameter, name, dynamic|
+        if dynamic
+          InwardExtend.new(owner: owner, method: method, parameter: parameter, name: name, dynamic: true)
+        else
+          resolved = resolve_constant(name, lexical_context(owner))
+          next unless resolved && @declaration_kinds[resolved] == "module"
+
+          InwardExtend.new(owner: owner, method: method, parameter: parameter, name: resolved, dynamic: false)
+        end
+      end
+    end
+
+    # The lexical scope a constant written in `owner`'s body resolves against.
+    # `def self.included` is collected under `singleton(Foo)`, which names a
+    # method table rather than a namespace: the constants a body there sees are
+    # `Foo`'s.
+    def lexical_context(owner)
+      owner.to_s.sub(/\Asingleton\((.*)\)\z/, "\\1")
     end
 
     def replay_for(apply, applier, source_provider, source_subject)

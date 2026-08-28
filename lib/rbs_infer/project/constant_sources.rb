@@ -25,14 +25,26 @@ module RbsInfer::Project
     NONE = Object.new
     def NONE.parsed_for(_name) = []
     # No project to look in, so the file at hand is the whole world and its own
-    # text is the complete answer to the question below.
+    # text is the complete answer to the two questions below.
     def NONE.eval_anywhere? = false
+    def NONE.inward_extend_anywhere? = false
     def NONE.derived(_entry) = yield
     NONE.freeze
 
     # The calls whose block becomes a class body, which is the whole subject of
     # the pass that asks.
     BLOCK_EVALS = %w[class_eval module_eval].freeze
+
+    # An `extend` written ON something, which is what a hook does to the object
+    # it is handed (`base.extend(ClassMethods)`) — as against the bare
+    # `extend Foo` of a class body, which nearly every project writes and which
+    # says nothing about a hook.
+    #
+    # The leading dot is what tells the two apart, and it survives
+    # `files_mentioning`'s word boundaries: `\b\.extend\b` requires a word
+    # character immediately before the dot, which `base.extend` has and a line
+    # starting `  extend Foo` does not.
+    INWARD_EXTEND = ".extend"
 
     def initialize(source_index:, file_index:, parse_cache:)
       @source_index = source_index
@@ -94,6 +106,21 @@ module RbsInfer::Project
       return @eval_anywhere if defined?(@eval_anywhere)
 
       @eval_anywhere = BLOCK_EVALS.any? { |name| @source_index.files_mentioning(name).any? }
+    end
+
+    # Whether any file writes an `extend` on a receiver — the same question as
+    # `eval_anywhere?`, for the other thing a hook does with the object it is
+    # handed (felixefelip/rbs_infer#268). Over-approximating in the same
+    # direction, and for the same reason: a false yes costs a walk, a false no
+    # loses the `extend`.
+    #
+    # Asked only when `eval_anywhere?` has already said no, so a project that
+    # writes a block eval anywhere — every Rails app does, through the
+    # transcribed `ActiveSupport::Concern` — never pays for this scan at all.
+    def inward_extend_anywhere?
+      return @inward_extend_anywhere if defined?(@inward_extend_anywhere)
+
+      @inward_extend_anywhere = @source_index.files_mentioning(INWARD_EXTEND).any?
     end
 
     private
