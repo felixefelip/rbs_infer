@@ -219,8 +219,24 @@ end
 # The `.steep_postconditions.yml` half of the marker: WHERE the relocated
 # methods are declared is the RBS above, WHEN they exist is this
 # (felixefelip/rbs_infer#245). Steep globs `sig/**/.steep_postconditions.yml`
-# and merges, so this sits beside the one Steep writes itself rather than
-# fighting it for the same path.
+# and merges, so this sits BESIDE the one Steep writes itself — in a directory
+# of its own, never on top of it.
+#
+# The directory is the whole point. Steep writes its own inferred
+# postconditions to `sig/generated/.steep_postconditions.yml`
+# (`Steep::Postconditions::Runner::DEFAULT_OUTPUT_PATH`), which is exactly
+# `File.join(output_dir, ".steep_postconditions.yml")` under the default
+# `--output-dir`. Sharing that path means whoever runs last wins: a project
+# with no `self.class.class_eval` swept the file away on every run (the
+# `rm_f` below), so `make steep && make rbs_infer_all` deleted the facts
+# `make steep` had just inferred, and the next run lost every type that
+# depended on them — a controller's `@x = current_user.things` fell back to
+# `nil` and stopped being declared at all. A project that HAS one clobbered
+# Steep's entries with its own instead. Both directions are the same bug.
+#
+# Not a dot-directory: Steep's glob is a plain `Dir.glob`, whose `**` does not
+# descend into hidden directories, so a `.rbs_infer_postconditions/` here would
+# be written and never read.
 #
 # Swept once over the inputs at the end, not accumulated during generation:
 # `generate` runs once per dependency level and again per stabilization pass,
@@ -232,10 +248,11 @@ if output
     []
   end
 
-  sidecar = File.join(output_dir, ".steep_postconditions.yml")
+  sidecar = File.join(output_dir, "rbs_infer_postconditions", ".steep_postconditions.yml")
   if postconditions.empty?
     # Removed rather than left behind: a stale entry names a marker the RBS no
-    # longer declares, and the narrowing then silently stops applying.
+    # longer declares, and the narrowing then silently stops applying. Safe to
+    # remove now that the path is ours alone.
     FileUtils.rm_f(sidecar)
   else
     FileUtils.mkdir_p(File.dirname(sidecar))
