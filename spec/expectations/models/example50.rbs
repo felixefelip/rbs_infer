@@ -1,0 +1,22 @@
+class Example50
+  module Foo
+    def banana_class_method: () ?{ (*untyped) -> Symbol } -> untyped
+  end
+
+  module Baz
+    extend ::Example50::Foo
+  end
+
+  module Baz::BananaMethods
+    def color: () -> String
+  end
+end
+
+class Example50
+  class Bar
+    extend ::Example50::Baz::BananaMethods
+
+    def self.call_color: () -> String
+    def self.call_age: () -> untyped
+  end
+end

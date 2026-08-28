@@ -241,6 +241,18 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example48", target_file: "app/models/example48.rb")
   end
 
+  it "example50 (a replay whose receiver is a local bound to a constant) matches expected RBS" do
+    assert_snapshot("models/example50", target_file: "app/models/example50.rb")
+  end
+
+  it "example51 (a replay onto a module `const_set` creates in the method) matches expected RBS" do
+    assert_snapshot("models/example51", target_file: "app/models/example51.rb")
+  end
+
+  it "example52 (`ActiveSupport::Concern#class_methods` letter for letter) matches expected RBS" do
+    assert_snapshot("models/example52", target_file: "app/models/example52.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
