@@ -101,6 +101,24 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # `source` for the same reason `StoredCall` carries one.
     LiteralReplay = Data.define(:owner, :method, :scope, :call, :block, :source, :singleton)
 
+    # `def keep(&block) = <target>.module_eval(&block)` — the DSL that runs the
+    # block it was just handed, with no slot in between. Both other outward
+    # shapes reach their block through storage (`keep` fills an ivar, `apply`
+    # reads it back through a reader), so a DSL that evaluates immediately had
+    # no shape at all — not even the plainest one, `class_eval(&block)`
+    # (felixefelip/rbs_infer#268).
+    #
+    # `name` is what it runs ON, and nil is an answer: the DSL's own `self`,
+    # which is the subject that called it. A CONSTANT is the other answer, and
+    # it carries the same syntax/data distinction every constant does — written,
+    # it means what it means where the DSL is written; fetched with `const_get`,
+    # it is looked up under the caller's `self`, which is the subject.
+    #
+    # `singleton` is the same bit it is on every other replay: `class_eval` puts
+    # the block's `def`s in the subject's own table, `singleton_class.class_eval`
+    # in the class object's.
+    OwnBlockReplay = Data.define(:owner, :method, :name, :dynamic, :singleton)
+
     # `base.extend(<module>)` — the other thing a hook does to the object it is
     # handed, and the one that carries no block at all: the target's SINGLETON
     # gains a module that already exists, rather than a block's `def`s being
@@ -160,6 +178,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # in a hook's body may name a module declared later in the file.
       @inward_extends = []
       @resolved_inward_extends = []
+      # Raw and resolved like the extends above, and for the same reason: the
+      # constant a DSL names may be declared further down its own file.
+      @own_replays = []
+      @resolved_own_replays = []
       # What the files this one absorbs shapes from DECLARE. Read for one
       # question only — is the module a `const_get` names actually there — which
       # is why it is kept apart from `@declaration_kinds` rather than merged
@@ -198,6 +220,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       collect_readers_from_source
       @resolved_delegations = resolve_delegations
       @resolved_inward_extends = resolve_inward_extends
+      @resolved_own_replays = resolve_own_replays
       self
     end
 
@@ -209,7 +232,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
     protected
 
     attr_reader :storages, :readers, :replay_methods, :inward_replays, :forwards, :resolved_delegations,
-                :literal_replays, :stored_calls, :resolved_inward_extends, :declaration_kinds
+                :literal_replays, :stored_calls, :resolved_inward_extends, :declaration_kinds,
+                :resolved_own_replays
 
     public
 
@@ -305,6 +329,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
         parameter, ivar, singleton = inward
         @inward_replays << InwardReplay.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar,
                                             singleton: singleton)
+      end
+
+      if (own = own_block_replay_shape(node.body, block_name))
+        name, dynamic, singleton = own
+        @own_replays << [owner, method_name, name, dynamic, singleton]
       end
 
       inward_extend_shapes(node.body, parameters).each do |parameter, name, dynamic|
@@ -580,6 +609,56 @@ module RbsInfer::Project::StoredBlockReplayExpander
       shapes.first if shapes.size == 1
     end
 
+    # `<target>.class_eval(&block)` where `block` is the METHOD'S OWN parameter,
+    # as `[name, dynamic?, singleton?]`.
+    #
+    # The mirror of `replay_shape`: there the receiver is the DSL's own `self`
+    # and the block is fetched from the source object, here the block is the one
+    # we were handed and the receiver is what may be somewhere else. So the
+    # conservatism moves with it — what has to be decidable is the TARGET, and
+    # `own_receiver` answers for the two spellings that name our own `self`
+    # while `ConstantReference` answers for the two that name a constant.
+    #
+    # Anything else declines: a receiver that is a local, an ivar, or a method
+    # call is an object this pass cannot name, and a block relocated onto the
+    # wrong class is worse than one left where it was written.
+    #
+    # One shape per method, like the other replay readers. Two `class_eval`s of
+    # one block onto two different targets is not something the source decides
+    # for a caller — which of them a runtime dispatch reaches is the question
+    # this pass declines rather than guesses at.
+    def own_block_replay_shape(body, block_name)
+      return nil unless block_name
+
+      shapes = nodes(body).filter_map do |node|
+        next unless node.is_a?(Prism::CallNode)
+        call = dispatched(node)
+        next unless REPLAY_METHODS.include?(call.name)
+        pass = call.block
+        next unless pass.is_a?(Prism::BlockArgumentNode)
+        next unless pass.expression.is_a?(Prism::LocalVariableReadNode)
+        next unless pass.expression.name.to_s == block_name
+
+        replayed_onto(call.receiver)
+      end.uniq
+
+      shapes.first if shapes.size == 1
+    end
+
+    # What such a replay runs ON, as `[name, dynamic?, singleton?]`, or nil for a
+    # receiver this pass will not name. A nil NAME is an answer rather than a
+    # refusal: it is the DSL's own `self`, whoever that turns out to be at the
+    # call site.
+    def replayed_onto(receiver)
+      case own_receiver(receiver)
+      when :instance then [nil, false, false]
+      when :singleton then [nil, false, true]
+      else
+        named = receiver && RbsInfer::AST::ConstantReference.named(receiver)
+        [named.first, named.last, false] if named
+      end
+    end
+
     # `<parameter>.extend(<module>)` — every one the body writes, as
     # `[parameter, name, dynamic?]`.
     #
@@ -805,6 +884,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @forwards.concat(shapes.forwards)
       @resolved_delegations.concat(shapes.resolved_delegations)
       @resolved_inward_extends.concat(shapes.resolved_inward_extends)
+      @resolved_own_replays.concat(shapes.resolved_own_replays)
       # And what that file DECLARES, which no other shape needs: a `const_get`
       # is resolved under the module being included, and whether that module
       # holds the constant is a fact about the concern's own file.
@@ -827,10 +907,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
       providers = dsl_providers
       @resolved_delegations.concat(resolve_delegations)
       @resolved_inward_extends.concat(resolve_inward_extends)
+      @resolved_own_replays.concat(resolve_own_replays)
 
       @extensions = @apply_calls.flat_map { |apply| resolve_extensions(apply, providers) }.uniq
 
-      resolved = @apply_calls.filter_map { |apply| resolve_apply(apply, providers) }
+      resolved = @stored_calls.filter_map { |stored| resolve_own_block(stored, providers) } +
+                 @apply_calls.filter_map { |apply| resolve_apply(apply, providers) }
 
       # Two apply calls naming the same source in the same class body are one
       # replay written twice, not two — the block relocates to that class once.
@@ -838,6 +920,54 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # hold blocks at the same offset all the time and a location says nothing
       # about which file it indexes.
       resolved.uniq { |replay| [replay.target, replay.singleton, replay.source, replay.block.location.start_offset] }
+    end
+
+    # The block a DSL call runs where it stands, or nil when the file does not
+    # decide it.
+    #
+    # The same call `resolve_apply`'s chain treats as STORAGE, asked the other
+    # question: not "which earlier block does this apply", but "does the method
+    # this call reaches run the block right here". A DSL may do either, and one
+    # that does both is not a contradiction — the block runs now AND is kept for
+    # later — so this is resolved on its own evidence rather than counted
+    # against the storage path.
+    #
+    # Only for a call written in THIS file. A stored call absorbed from another
+    # one names a subject that file's own expansion reopens; emitting it here as
+    # well would relocate the block twice. Identity, not equality, for the same
+    # reason `StoredBlockReplayImplements` uses it: the collector keeps the very
+    # string it was handed.
+    def resolve_own_block(stored, providers)
+      return nil unless stored.source.equal?(@source)
+
+      candidates = providers.select { |_, subjects| subjects.include?(stored.subject) }.keys.filter_map do |provider|
+        replays = @resolved_own_replays.select { |own| own.owner == provider && own.method == stored.method }
+        next unless replays.size == 1
+
+        replay_where_written(stored, replays.first)
+      end.uniq
+
+      # Two providers answering one call with two different targets is one
+      # runtime dispatch this pass cannot pick a winner for — the same count
+      # `resolve_apply` declines on.
+      candidates.first if candidates.size == 1
+    end
+
+    # The `Replay` an own-block DSL call stands for, or nil when its target is
+    # not a type this file can name.
+    #
+    # `self` inside the DSL method is the SUBJECT — the class or module whose
+    # body wrote the call — so that is both the target when the DSL replays onto
+    # its own `self` and the namespace a `const_get` is looked up under.
+    def replay_where_written(stored, own)
+      target = own.name ? named_constant(own, stored.subject) : stored.subject
+      return nil unless target
+
+      kind = declared_kind(target)
+      return nil unless kind
+
+      Replay.new(target: target, block: stored.block, kind: kind, call: stored.method,
+                 scope: stored.subject, in_method: nil, source: stored.source, singleton: own.singleton)
     end
 
     # The one block `apply` relocates, or nil when the file does not decide it.
@@ -952,18 +1082,32 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # with `const_defined?`. Emitting the `extend` regardless would name a type
     # nothing declares.
     def extension_name(extension, under)
-      return extension.name unless extension.dynamic
-      return nil unless under
-
-      name = "#{under}::#{extension.name}"
-      declared_module?(name) ? name : nil
+      name = named_constant(extension, under)
+      name if name && declared_module?(name)
     end
 
-    # Whether a MODULE by that name is declared — in this file, or in one whose
-    # shapes were absorbed. `extend` takes a module, so a class of that name is
-    # not the thing being asked about.
+    # The constant a shape names, resolved for one call site: a written one is
+    # already the answer, and a fetched one is looked up under the `self` it was
+    # fetched from — which must actually declare it, since `const_get` on a
+    # module that does not raises at runtime.
+    def named_constant(shape, under)
+      return shape.name unless shape.dynamic
+      return nil unless under
+
+      name = "#{under}::#{shape.name}"
+      declared_kind(name) ? name : nil
+    end
+
+    # What a name is declared AS — "module", "class", or nil — in this file or in
+    # one whose shapes were absorbed. Two callers want different halves of it: an
+    # `extend` takes a module, so a class of that name is not the thing being
+    # asked about; a replay takes either and needs the keyword to reopen it with.
+    def declared_kind(name)
+      @declaration_kinds[name] || @absorbed_kinds[name]
+    end
+
     def declared_module?(name)
-      @declaration_kinds[name] == "module" || @absorbed_kinds[name] == "module"
+      declared_kind(name) == "module"
     end
 
     # The collected `extend`s with their written constants resolved, against the
@@ -980,6 +1124,24 @@ module RbsInfer::Project::StoredBlockReplayExpander
           next unless resolved && @declaration_kinds[resolved] == "module"
 
           InwardExtend.new(owner: owner, method: method, parameter: parameter, name: resolved, dynamic: false)
+        end
+      end
+    end
+
+    # The collected own-block replays with their written constants resolved,
+    # against the declarations of the file they were WRITTEN in — the same
+    # two-place resolution `resolve_inward_extends` does, and for the same
+    # reason. A target that is our own `self`, or a name fetched as data, has
+    # nothing to resolve here: both are decided per call site.
+    def resolve_own_replays
+      @own_replays.filter_map do |owner, method, name, dynamic, singleton|
+        if name.nil? || dynamic
+          OwnBlockReplay.new(owner: owner, method: method, name: name, dynamic: dynamic, singleton: singleton)
+        else
+          resolved = resolve_constant(name, lexical_context(owner))
+          next unless resolved
+
+          OwnBlockReplay.new(owner: owner, method: method, name: resolved, dynamic: false, singleton: singleton)
         end
       end
     end
