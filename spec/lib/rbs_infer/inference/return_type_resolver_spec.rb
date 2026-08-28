@@ -151,4 +151,57 @@ RSpec.describe RbsInfer::Inference::ReturnTypeResolver do
       expect(init).not_to include("xml")
     end
   end
+
+  # felixefelip/rbs_infer#286. The predicate decides whether a body's `return`
+  # widens the method's type to `T?`. It used to answer from the parse alone, so
+  # a guard the checker had already refuted still nilablized the signature. It
+  # now takes the ranges Steep proved dead and skips the `return`s inside them.
+  describe "#has_nil_return?" do
+    # One dead `return` and one live one, so the filter has to answer per node
+    # rather than for the method as a whole.
+    let(:source) do
+      <<~RUBY
+        def label
+          return if refuted?
+
+          return nil if genuinely_unknown?
+
+          "x"
+        end
+      RUBY
+    end
+
+    let(:defn) { def_node(source) }
+    let(:dead_guard) { range_of("return if") }
+    let(:live_guard) { range_of("return nil") }
+
+    # The byte range of the `return` keyword opening the given line.
+    def range_of(snippet)
+      start = source.index(snippet)
+      start...(start + "return".bytesize)
+    end
+
+    it "counts a bare `return` when nothing is proved dead" do
+      expect(resolver.send(:has_nil_return?, defn, dead_ranges: [])).to be(true)
+    end
+
+    it "counts a `return` a range does not cover" do
+      # A dead branch elsewhere in the file says nothing about these two.
+      elsewhere = (source.bytesize + 10)...(source.bytesize + 20)
+      expect(resolver.send(:has_nil_return?, defn, dead_ranges: [elsewhere])).to be(true)
+    end
+
+    it "still counts the live `return` when only the other one is dead" do
+      expect(resolver.send(:has_nil_return?, defn, dead_ranges: [dead_guard])).to be(true)
+    end
+
+    it "counts nothing once every `return` is proved dead" do
+      expect(resolver.send(:has_nil_return?, defn, dead_ranges: [dead_guard, live_guard])).to be(false)
+    end
+
+    it "ignores a `return` with a value, dead or not" do
+      valued = def_node("def label\n  return \"x\" if cond?\n\n  \"y\"\nend\n")
+      expect(resolver.send(:has_nil_return?, valued, dead_ranges: [])).to be(false)
+    end
+  end
 end

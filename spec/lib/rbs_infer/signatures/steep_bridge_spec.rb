@@ -588,4 +588,68 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       expect(bridge.accepts?("String", "not a type[")).to be_nil
     end
   end
+
+  # felixefelip/rbs_infer#286. Steep decides reachability while typing the `if`;
+  # this reads that verdict back so the return-type widening can follow the
+  # checker instead of the parser.
+  describe "#unreachable_branch_ranges" do
+    it "covers the `return` of a guard the checker has already refuted" do
+      code = <<~RUBY
+        class Foo
+          def bar
+            name = "farm"
+            return if name.nil?
+
+            name
+          end
+        end
+      RUBY
+
+      ranges = bridge.unreachable_branch_ranges(code)
+
+      expect(ranges.size).to eq(1)
+      expect(code.byteslice(ranges[0].begin, ranges[0].size)).to eq("return")
+    end
+
+    it "is empty for a guard that can genuinely run" do
+      code = <<~RUBY
+        class Foo
+          def bar
+            name = User.where(active: true).first
+            return if name.nil?
+
+            name
+          end
+        end
+      RUBY
+
+      expect(bridge.unreachable_branch_ranges(code)).to be_empty
+    end
+
+    # The consumer reads Prism nodes, which carry BYTE offsets; Steep's parser
+    # indexes its buffer by CHARACTER. On an ASCII file the two agree, which is
+    # why every snapshot fixture would miss this — one multibyte character before
+    # the guard is enough to slide the range onto the wrong node.
+    it "answers in byte offsets, not character offsets" do
+      code = <<~RUBY
+        class Foo
+          # ação, coração, não — multibyte antes da guarda
+          def bar
+            name = "fazenda"
+            return if name.nil?
+
+            name
+          end
+        end
+      RUBY
+
+      range = bridge.unreachable_branch_ranges(code).fetch(0)
+
+      expect(code.byteslice(range.begin, range.size)).to eq("return")
+      # What a character-indexed range would have pointed at, spelled out so a
+      # regression reads as "it went back to characters" rather than an offset
+      # nobody can place.
+      expect(code[range.begin, range.size]).not_to eq("return")
+    end
+  end
 end
