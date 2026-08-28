@@ -6,10 +6,6 @@ class Example50
   module Baz
     extend ::Example50::Foo
   end
-
-  module Baz::BananaMethods
-    def color: () -> String
-  end
 end
 
 class Example50
@@ -17,6 +13,15 @@ class Example50
     extend ::Example50::Baz::BananaMethods
 
     def self.call_color: () -> String
-    def self.call_age: () -> untyped
+    def self.call_age: () -> Integer
+  end
+end
+
+class Example50
+  module Baz
+    module BananaMethods
+      def color: () -> String
+      def age: () -> Integer
+    end
   end
 end

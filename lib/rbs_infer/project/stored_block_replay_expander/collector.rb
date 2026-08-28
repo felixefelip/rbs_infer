@@ -639,7 +639,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
         next unless pass.expression.is_a?(Prism::LocalVariableReadNode)
         next unless pass.expression.name.to_s == block_name
 
-        replayed_onto(call.receiver)
+        replayed_onto(call.receiver, body)
       end.uniq
 
       shapes.first if shapes.size == 1
@@ -649,14 +649,79 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # receiver this pass will not name. A nil NAME is an answer rather than a
     # refusal: it is the DSL's own `self`, whoever that turns out to be at the
     # call site.
-    def replayed_onto(receiver)
+    #
+    # A LOCAL is read through to what the body puts in it. `ActiveSupport` writes
+    # the module to a local before evaluating into it, and so does anyone who
+    # needs the name twice — a local is where you put a value you are about to
+    # use, not an object this pass cannot name (felixefelip/rbs_infer#268).
+    def replayed_onto(receiver, body)
       case own_receiver(receiver)
       when :instance then [nil, false, false]
       when :singleton then [nil, false, true]
       else
-        named = receiver && RbsInfer::AST::ConstantReference.named(receiver)
+        return nil unless receiver
+
+        named = if receiver.is_a?(Prism::LocalVariableReadNode)
+                  local_constant(receiver.name.to_s, body)
+                else
+                  RbsInfer::AST::ConstantReference.named(receiver)
+                end
         [named.first, named.last, false] if named
       end
+    end
+
+    # The constant a local holds, when the body says so plainly: EVERY way it is
+    # filled names the same one.
+    #
+    # Every way, because the two spellings of filling it conditionally are the
+    # same claim — `mod = c ? A : B` is one assignment holding a conditional and
+    # `if c then mod = A else mod = B end` is two assignments — and reading one
+    # without the other would decide by syntax what Ruby decides by value. Arms
+    # that disagree are the undecidable case and answer nothing, which is also
+    # what an unassigned local answers: a parameter's value comes from the call
+    # site, and that is a different shape entirely.
+    def local_constant(name, body)
+      writes = nodes(body).filter_map do |node|
+        node.value if node.is_a?(Prism::LocalVariableWriteNode) && node.name.to_s == name
+      end
+      return nil if writes.empty?
+
+      named = writes.flat_map { |value| constant_alternatives(value) }
+      return nil if named.empty? || named.any?(&:nil?)
+
+      answers = named.uniq { |constant, dynamic| [constant_key(constant), dynamic] }
+      answers.first if answers.size == 1
+    end
+
+    # The constants an expression may evaluate to, as `named` answers them, with
+    # a conditional read as its branches. Anything else is one expression and so
+    # one alternative.
+    #
+    # `nil` is NO alternative rather than an unnamed one, and a missing branch is
+    # that same nil: on such a path the local holds nothing, so `mod.module_eval`
+    # raises and no block lands anywhere. Reading past it names the only module
+    # the code can reach, which is what the rest of this pass does with a guard
+    # (`if @block` changes nothing about which object is meant). Declining it
+    # would also make `mod = A if c` and `mod = (if c then A end)` — the same
+    # Ruby, written twice — answer differently.
+    #
+    # An alternative that is some OTHER expression is a different matter and
+    # still declines: it may well be a module, and one this pass failed to name.
+    def constant_alternatives(value)
+      return [] if value.is_a?(Prism::NilNode)
+      return [RbsInfer::AST::ConstantReference.named(value)] unless value.is_a?(Prism::IfNode)
+
+      [value.statements, value.subsequent].compact.flat_map do |branch|
+        statements = branch.respond_to?(:statements) ? branch.statements : branch
+        (statements&.body || []).flat_map { |node| constant_alternatives(node) }
+      end
+    end
+
+    # Two `named` answers are the same constant when they name the same thing:
+    # a written one by its path, a fetched one by the name itself. Prism nodes
+    # compare by identity, so the path is what has to be compared.
+    def constant_key(constant)
+      constant.is_a?(String) ? constant : RbsInfer::Analyzer.extract_constant_path(constant)
     end
 
     # `<parameter>.extend(<module>)` — every one the body writes, as
