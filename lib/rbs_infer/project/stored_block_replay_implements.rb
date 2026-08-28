@@ -46,12 +46,19 @@ module RbsInfer::Project
     # line measured against the real file no longer points at the same call by
     # the time the block entries are read. A scope survives that rewrite.
     #
-    # No `self` key: `@implements <Target>` already runs the block's `def`
-    # bodies with an instance of `<Target>` as self, which is what a
-    # `class_eval`ed def gets at runtime. The `class_methods do` entries need
-    # that key because their self is the INCLUDER's singleton, a type the
-    # `@implements` module does not name.
-    def blocks_for(source:, sources:)
+    # A `self` key only where `@implements` is not the whole answer. For a
+    # `class_eval`ed block it is: the bodies run with an instance of `<Target>`,
+    # which is what they get at run time. For a block whose target is HANDED to
+    # the host — a hook doing `base.extend(M)` — it is not: the bodies run on
+    # the host's class object, where the host's own class methods live, and
+    # naming only `M` type-checks them against a self they never have.
+    #
+    # `mixin_index` is required for that, with no default. The hosts are the
+    # other half of the answer and they are written in THEIR files, not this
+    # one; a caller that forgot to thread it would emit an entry that is right
+    # about the module and silent about the self, which is the silent-wrong case
+    # (docs/engineering/required-threaded-deps.md).
+    def blocks_for(source:, sources:, mixin_index:)
       return [] unless source.include?("class_eval") || source.include?("module_eval")
 
       parsed = Prism.parse(source)
@@ -64,6 +71,9 @@ module RbsInfer::Project
         next unless replay.scope
 
         entry = { "call" => replay.call, "in" => "::#{replay.scope}", "implements" => implements(entries) }
+        if (running_self = handed_self(entries, mixin_index))
+          entry["self"] = running_self
+        end
         # Only for a block written inside a def. Emitting it as nil for the DSL
         # shape would put a key in every sidecar entry ever written, to say
         # nothing.
@@ -115,6 +125,23 @@ module RbsInfer::Project
     # so the singleton half of a `class_methods`-shaped DSL had no annotation to
     # write and its `def`s were read where they are written
     # (felixefelip/rbs_infer#267).
+    # The self a handed-out module's methods actually run with, for `steep
+    # check` to read.
+    #
+    # `StoredBlockReplayExpander.running_selves` is the derivation, called
+    # rather than repeated: the expander writes the same answer into the
+    # reopening it emits, and the two must not disagree about the self one
+    # method has. Nothing when no replay here is handed out, and nothing when
+    # the mixin graph names no host — an unmixed module's methods run with a
+    # self this pass cannot state, and naming the module alone would be a wrong
+    # answer rather than a partial one.
+    def handed_self(entries, mixin_index)
+      parts = entries.flat_map { |replay| StoredBlockReplayExpander.running_selves(replay, mixin_index) }.uniq
+      return nil if parts.empty?
+
+      StoredBlockReplayExpander.union(parts)
+    end
+
     def name_for(replay)
       replay.singleton ? "singleton(::#{replay.target})" : "::#{replay.target}"
     end

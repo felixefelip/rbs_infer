@@ -1025,7 +1025,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
         replays = @resolved_own_replays.select { |own| own.owner == provider && own.method == stored.method }
         next unless replays.size == 1
 
-        replay_where_written(stored, replays.first)
+        replay_where_written(stored, replays.first, providers)
       end.uniq
 
       # Two providers answering one call with two different targets is one
@@ -1040,7 +1040,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # `self` inside the DSL method is the SUBJECT — the class or module whose
     # body wrote the call — so that is both the target when the DSL replays onto
     # its own `self` and the namespace a `const_get` is looked up under.
-    def replay_where_written(stored, own)
+    def replay_where_written(stored, own, providers)
       target = own.name ? named_constant(own, stored.subject) : stored.subject
       return nil unless target
 
@@ -1052,7 +1052,26 @@ module RbsInfer::Project::StoredBlockReplayExpander
       return nil unless kind
 
       Replay.new(target: target, block: stored.block, kind: kind, call: stored.method,
-                 scope: stored.subject, in_method: nil, source: stored.source, singleton: own.singleton)
+                 scope: stored.subject, in_method: nil, source: stored.source, singleton: own.singleton,
+                 extended: handed_to_hosts?(target, stored.subject, providers))
+    end
+
+    # Whether a hook in `subject`'s provider chain hands this very module to
+    # whoever mixes the subject in — `base.extend(const_get(:X))`, the other half
+    # of what a concern does.
+    #
+    # Read from the SUBJECT's side, where the `include` naming the hosts is
+    # written in their files rather than this one: what this file can say is that
+    # the module is handed out, and to whom is the mixin graph's answer. Both
+    # halves are needed and neither is a guess — the extend is read off the
+    # provider's own source, exactly as `resolve_extensions` reads it from the
+    # host's side.
+    def handed_to_hosts?(target, subject, providers)
+      owners = providers.select { |_, subjects| subjects.include?(subject) }.keys
+
+      @resolved_inward_extends.any? do |extension|
+        owners.include?(extension.owner) && named_constant(extension, subject) == target
+      end
     end
 
     # The one block `apply` relocates, or nil when the file does not decide it.
@@ -1272,7 +1291,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       if (literal = literals.first)
         return Replay.new(target: apply.subject, block: literal.block, kind: kind,
                           call: literal.call, scope: literal.scope, in_method: literal.method,
-                          source: literal.source, singleton: literal.singleton)
+                          source: literal.source, singleton: literal.singleton, extended: false)
       end
 
       storage_owner, ivar, singleton = slots.first
@@ -1286,7 +1305,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       Replay.new(target: apply.subject, block: blocks.first.block, kind: kind,
                  call: storage_method, scope: blocks.first.subject, in_method: nil,
-                 source: blocks.first.source, singleton: singleton)
+                 source: blocks.first.source, singleton: singleton, extended: false)
     end
 
     # Which classes/modules can call each owner's DSL, as `owner => subjects`.

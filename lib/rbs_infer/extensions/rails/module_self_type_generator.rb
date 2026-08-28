@@ -111,7 +111,8 @@ module RbsInfer
         # for — so it is the only half that needs the extractor, and a file with
         # no primary declaration can still contribute the first half.
         def blocks_for(abs, rel, source)
-          RbsInfer::Project::StoredBlockReplayImplements.blocks_for(source: source, sources: constant_sources) +
+          RbsInfer::Project::StoredBlockReplayImplements.blocks_for(source: source, sources: constant_sources,
+                                                                     mixin_index: mixin_index) +
             class_methods_blocks_for(abs, rel, source)
         end
 

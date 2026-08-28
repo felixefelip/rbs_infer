@@ -37,6 +37,7 @@ class Example53
 end
 
 module Example53::Baz::BananaMethods
+  # @type instance: singleton(::Example53::Bar) & ::Example53::Baz::BananaMethods
   def age
     origin.length + 31
   end

@@ -6,6 +6,19 @@ require "rbs_infer"
 RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
   NO_SOURCES = RbsInfer::Project::ConstantSources::NONE
 
+  # The mixin graph is the other half of the `self` answer, and these examples
+  # describe one file with no project around it — so they say "nobody mixes
+  # anything in" explicitly rather than leaving the seam unthreaded.
+  NO_HOSTS = Object.new
+  def NO_HOSTS.hosts_of(_name) = []
+
+  # A graph that does, for the examples about the handed-out shape.
+  def hosts(table)
+    index = Object.new
+    index.define_singleton_method(:hosts_of) { |name| table.fetch(name, []) }
+    index
+  end
+
   # The chain the expander recognizes: one storage method, one reader, one
   # stored block, one constant target. Same shape as `Example28`.
   def dsl(reader: "attr_reader :body")
@@ -33,7 +46,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source, sources: NO_SOURCES))
+    expect(described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS))
       .to eq([{ "call" => "keep", "in" => "::Src", "implements" => "::Target" }])
   end
 
@@ -63,7 +76,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source, sources: NO_SOURCES)).to eq(
+    expect(described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS)).to eq(
       [{ "call" => "keep", "in" => "::SrcA", "implements" => "::First" },
        { "call" => "keep", "in" => "::SrcB", "implements" => "::Second" }]
     )
@@ -88,7 +101,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    entries = described_class.blocks_for(source: source, sources: NO_SOURCES)
+    entries = described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS)
 
     expect(entries).to eq([{ "call" => "keep", "in" => "::Src", "implements" => "::Target" }])
     expect(entries.map { |entry| entry["line"] }).not_to include(17)
@@ -117,7 +130,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source, sources: NO_SOURCES))
+    expect(described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS))
       .to eq([{ "call" => "keep", "in" => "::Src", "implements" => ["::First", "::Second"] }])
   end
 
@@ -151,20 +164,20 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source, sources: NO_SOURCES))
+    expect(described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS))
       .to eq([{ "call" => "keep", "in" => "::Shared", "implements" => ["::First", "::Second"] },
               { "call" => "keep", "in" => "::Lone", "implements" => "::Third" }])
   end
 
   it "returns nothing for a file with no replay" do
-    expect(described_class.blocks_for(source: "class Foo\n  def bar = 1\nend\n", sources: NO_SOURCES)).to eq([])
+    expect(described_class.blocks_for(source: "class Foo\n  def bar = 1\nend\n", sources: NO_SOURCES, mixin_index: NO_HOSTS)).to eq([])
   end
 
   # The substring gate: no `class_eval`/`module_eval` anywhere means no parse.
   it "does not parse a file that cannot contain a replay" do
     expect(Prism).not_to receive(:parse)
 
-    expect(described_class.blocks_for(source: "class Foo; end\n", sources: NO_SOURCES)).to eq([])
+    expect(described_class.blocks_for(source: "class Foo; end\n", sources: NO_SOURCES, mixin_index: NO_HOSTS)).to eq([])
   end
 
   # A block replayed onto the target's SINGLETON defines `Target.age`, so the
@@ -192,7 +205,85 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source, sources: NO_SOURCES))
+    expect(described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS))
       .to eq([{ "call" => "keep", "in" => "::Src", "implements" => "singleton(::Target)" }])
   end
+  # A module the DSL builds and a hook HANDS to the host: the block's `def`s land
+  # in the module, but they run on the host's class object, where the host's own
+  # class methods live. `@implements` alone would check them against a self they
+  # never have.
+  context "a target the hook hands to the host" do
+    def concern
+      <<~RUBY
+        class Module
+          def include(*modules)
+            modules.reverse_each do |mod|
+              mod.send(:append_features, self)
+              mod.send(:included, self)
+            end
+            self
+          end
+        end
+
+        module Wrap
+          module DSL
+            def keep(&block)
+              const_set(:Methods, Module.new).module_eval(&block)
+            end
+
+            def included(base)
+              base.extend(const_get(:Methods))
+            end
+          end
+
+          module Source
+            extend Wrap::DSL
+
+            keep do
+              def age; 31; end
+            end
+          end
+        end
+      RUBY
+    end
+
+    it "names the host's singleton intersected with the module" do
+      entries = described_class.blocks_for(source: concern, sources: NO_SOURCES,
+                                           mixin_index: hosts("Wrap::Source" => ["Wrap::Host"]))
+
+      expect(entries).to eq(
+        [{ "call" => "keep", "in" => "::Wrap::Source", "implements" => "::Wrap::Source::Methods",
+           "self" => "singleton(::Wrap::Host) & ::Wrap::Source::Methods" }]
+      )
+    end
+
+    it "unions the hosts when the module is mixed into several" do
+      entries = described_class.blocks_for(source: concern, sources: NO_SOURCES,
+                                           mixin_index: hosts("Wrap::Source" => ["Wrap::One", "Wrap::Two"]))
+
+      expect(entries.first["self"])
+        .to eq("(singleton(::Wrap::One) & ::Wrap::Source::Methods) | (singleton(::Wrap::Two) & ::Wrap::Source::Methods)")
+    end
+
+    # An unmixed module's methods run with a self this pass cannot state, and
+    # naming the module alone would be the wrong answer rather than a partial one.
+    it "says nothing when the graph names no host" do
+      entries = described_class.blocks_for(source: concern, sources: NO_SOURCES, mixin_index: NO_HOSTS)
+
+      expect(entries.first).not_to have_key("self")
+      expect(entries.first["implements"]).to eq("::Wrap::Source::Methods")
+    end
+
+    # The `class_eval`ed block keeps its old answer: `@implements` is the self
+    # its bodies get at run time, and there is no host to hand anything to.
+    it "leaves a replay nobody hands out without a self" do
+      source = concern.sub("base.extend(const_get(:Methods))", "base.class_eval { }")
+
+      entries = described_class.blocks_for(source: source, sources: NO_SOURCES,
+                                           mixin_index: hosts("Wrap::Source" => ["Wrap::Host"]))
+
+      expect(entries.first).not_to have_key("self")
+    end
+  end
+
 end

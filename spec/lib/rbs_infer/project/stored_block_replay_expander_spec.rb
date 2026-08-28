@@ -7,8 +7,15 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
   # The seam takes `sources:` with no default, so a caller cannot forget to
   # thread it. These examples describe one file with no project behind it, so
   # they say so explicitly (docs/engineering/required-threaded-deps.md).
-  def expand(source, sources: RbsInfer::Project::ConstantSources::NONE)
-    described_class.expand(source, sources: sources)
+  # `mixin_index` is required too, and for the same reason: the `self` a
+  # handed-out module's methods run with is half this file's answer and half the
+  # graph's. These examples describe one file with no project around it, so they
+  # say "nobody mixes anything in" explicitly.
+  NO_HOSTS = Object.new
+  def NO_HOSTS.hosts_of(_name) = []
+
+  def expand(source, sources: RbsInfer::Project::ConstantSources::NONE, mixin_index: NO_HOSTS)
+    described_class.expand(source, sources: sources, mixin_index: mixin_index)
   end
 
   it "moves a stored block into the class that replays it" do

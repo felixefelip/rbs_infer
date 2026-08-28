@@ -30,6 +30,7 @@ class Example52
 end
 
 module Example52::Baz::BananaMethods
+  # @type instance: singleton(::Example52::Bar) & ::Example52::Baz::BananaMethods
   def age
     31
   end
