@@ -81,7 +81,13 @@ module RbsInfer::Project
     # target and differ only in that, which is the difference between the RBS
     # reading `def age` and reading `def self.age`
     # (felixefelip/rbs_infer#267).
-    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method, :source, :singleton)
+    # `extended` says the target is reached by EXTENDING whoever mixes the
+    # scope in, rather than by being the scope itself: a hook in the scope's
+    # provider chain hands its base this very module. It changes nothing about
+    # where the block's `def`s go — that is `target` — and everything about the
+    # `self` they run with, which is then the host's class object rather than an
+    # instance of the module (felixefelip/rbs_infer#268).
+    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method, :source, :singleton, :extended)
 
     module_function
 
@@ -90,7 +96,7 @@ module RbsInfer::Project
     # `ConstantSources::NONE` as the explicit way to say "no project": defaulted,
     # a caller that forgot it would quietly resolve less
     # (docs/engineering/required-threaded-deps.md).
-    def expand(source, sources:)
+    def expand(source, sources:, mixin_index:)
       # This file's own text is no longer the whole question. A concern writes
       # `base.class_eval do … end` in its own file and the `include` naming the
       # target is written in the host, which mentions no eval — so gating on the
@@ -110,10 +116,10 @@ module RbsInfer::Project
       extensions = collector.extensions
       return nil if replays.empty? && extensions.empty?
 
-      apply_replays(source, replays, extensions)
+      apply_replays(source, replays, extensions, mixin_index)
     end
 
-    def apply_replays(source, replays, extensions)
+    def apply_replays(source, replays, extensions, mixin_index)
       # A body-less block (`keep do end`) relocates to nothing, and asking it
       # for a location raises. Drop it before the uniqueness check reads one.
       replays = replays.select { |replay| replay.block.body }
@@ -141,13 +147,56 @@ module RbsInfer::Project
       # against the file being expanded cuts unrelated text.
       virtual_reopens = replays.filter_map do |replay|
         BlockReopen.appended(source: replay.source, block: replay.block, kind: replay.kind, target: replay.target,
-                             singleton: replay.singleton)
+                             singleton: replay.singleton, annotations: annotations_for(replay, mixin_index))
       end
       virtual_reopens += extensions.map { |extension| extension_reopen(extension) }
       virtual_reopens = BlockReopen.missing_from(source, virtual_reopens)
       return nil if virtual_reopens.empty?
 
       [source, virtual_reopens.join("\n")].join("\n")
+    end
+
+    # The `@type instance:` line a relocated block needs, or none.
+    #
+    # A block moved onto a class needs nothing: its `def`s are members of that
+    # class and their self is an instance of it, which the reopening already
+    # says. One moved into a module the host is HANDED — a hook doing
+    # `base.extend(M)` — needs it: those bodies run on the host's class object,
+    # and without saying so every call they make to one of the host's own class
+    # methods resolves to nothing (felixefelip/rbs_infer#268).
+    #
+    # Written into the reopening rather than injected afterwards, because the
+    # reopening is where it belongs and because `ModuleSelfTypes.inject` cannot
+    # place it: its anchor puts lines inside a NESTED module's body, and this
+    # one is compact and top-level, so the annotation would land at end of file
+    # bound to nothing.
+    def annotations_for(replay, mixin_index)
+      parts = running_selves(replay, mixin_index)
+      return [] if parts.empty?
+
+      ["# @type instance: #{union(parts)}"]
+    end
+
+    # The selves a handed-out module's methods run with — `singleton(<host>) & <module>`,
+    # one per class the mixin graph says mixes the scope in.
+    #
+    # Both terms earn their place. The singleton is where the host's own class
+    # methods live, which is what these bodies reach for; the module keeps calls
+    # BETWEEN the block's own methods resolving, whether or not the host's RBS
+    # ends up naming it.
+    #
+    # One derivation, two consumers: this is also what the `blocks:` sidecar
+    # records for `steep check`, and the two must not disagree about the self a
+    # method has (see `StoredBlockReplayImplements`).
+    def running_selves(replay, mixin_index)
+      return [] unless replay.extended
+
+      mixin_index.hosts_of(replay.scope).map { |host| "singleton(::#{host}) & ::#{replay.target}" }
+    end
+
+    # An intersection is only legal bare, so a union of them parenthesizes each.
+    def union(parts)
+      parts.size == 1 ? parts.first : parts.map { |part| "(#{part})" }.join(" | ")
     end
 
     # The reopening an inward `extend` stands for. Not a `BlockReopen`: there is

@@ -15,14 +15,14 @@ class Example53
     include ::Example53::Baz
 
     def self.origin: () -> String
-    def self.call_age: () -> untyped
+    def self.call_age: () -> Integer
   end
 end
 
 class Example53
   module Baz
     module BananaMethods
-      def age: () -> untyped
+      def age: () -> Integer
     end
   end
 end

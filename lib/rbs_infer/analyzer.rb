@@ -98,7 +98,8 @@ module RbsInfer
     # `class_eval`/`module_eval` on another. The contextual expander moves its
     # body to that statically resolved receiver before the ordinary collector
     # attributes the `def`s to the lexical source object (rbs_infer#238).
-    replay_expanded = RbsInfer::Project::StoredBlockReplayExpander.expand(source, sources: @corpus.constant_sources)
+    replay_expanded = RbsInfer::Project::StoredBlockReplayExpander.expand(source, sources: @corpus.constant_sources,
+                                                                          mixin_index: mixin_index)
     if replay_expanded
       @expanded_source = replay_expanded
       source = replay_expanded

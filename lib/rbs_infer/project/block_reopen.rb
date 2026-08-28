@@ -43,6 +43,12 @@ module RbsInfer::Project
       Prism::InterpolatedMatchLastLineNode
     ].freeze
 
+    # @param annotations [Array<String>] `@type` comment lines to place at the
+    #   top of the reopening's body. A block moved into a module the host is
+    #   HANDED runs its bodies on the host's class object, and nothing in the
+    #   reopening says so — see `StoredBlockReplayExpander#annotations_for`.
+    #   Empty for every other relocation, which needs none.
+    #
     # @param singleton [Boolean] whether the block was replayed onto the
     #   target's SINGLETON — `Target.singleton_class.class_eval` rather than
     #   `Target.class_eval` — in which case the body is nested one level deeper,
@@ -55,11 +61,15 @@ module RbsInfer::Project
     #
     # @return [String, nil] a top-level reopening, or nil for a block with no
     #   body — which relocates to nothing, and whose `location` would raise.
-    def appended(source:, block:, kind:, target:, singleton:)
+    def appended(source:, block:, kind:, target:, singleton:, annotations: [])
       body = block.body
       return nil unless body
 
-      return "#{kind} #{target}\n#{body_source(source, body, indent: INDENT)}\nend\n" unless singleton
+      lines = annotations.map { |annotation| "#{INDENT}#{annotation}" }
+
+      unless singleton
+        return ["#{kind} #{target}", *lines, body_source(source, body, indent: INDENT), "end\n"].join("\n")
+      end
 
       # `class << self` rather than rewriting each `def x` into `def self.x`:
       # the body is moved BYTE FOR BYTE everywhere else in this module — that is
@@ -67,6 +77,7 @@ module RbsInfer::Project
       # one spelling that needs no edit inside it.
       [
         "#{kind} #{target}",
+        *lines,
         "#{INDENT}class << self",
         body_source(source, body, indent: INDENT * 2),
         "#{INDENT}end",
