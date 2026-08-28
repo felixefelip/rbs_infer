@@ -342,6 +342,10 @@ app/models/example47.rb:
   - anchor: Foo
     annotations:
     - "# @type instance: singleton(Example47::Baz)"
+  blocks:
+  - call: banana_class_method
+    in: "::Example47::Baz"
+    implements: "::Example47::Baz::BananaMethods"
 app/models/example48.rb:
   modules:
   - anchor: Baz

@@ -1095,6 +1095,94 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     end
   end
 
+
+  # The DSL that runs the block it was just handed, with nothing stored: both
+  # other outward shapes fetch their block from a slot, so an immediate
+  # `class_eval(&block)` was no shape at all — the plainest spelling there is
+  # (felixefelip/rbs_infer#268).
+  context "a DSL that evaluates the block it was handed" do
+    def immediate(runs: "class_eval(&block)", declares: "", applied: "bazinga do\n      def age; 31; end\n    end")
+      <<~RUBY
+        class Wrap
+          module DSL
+            def bazinga(&block)
+              #{runs}
+            end
+          end
+
+          class Target
+            extend Wrap::DSL
+
+            #{declares}
+            #{applied}
+          end
+        end
+      RUBY
+    end
+
+    it "runs it on the class whose body wrote the call" do
+      expanded = expand(immediate)
+
+      expect(expanded).to include("class Wrap::Target\n  def age; 31; end")
+      expect(Prism.parse(expanded).success?).to be(true)
+    end
+
+    it "runs it on that class's singleton when the DSL takes the hop" do
+      expanded = expand(immediate(runs: "singleton_class.class_eval(&block)"))
+
+      expect(expanded).to include("class Wrap::Target\n  class << self\n    def age; 31; end")
+    end
+
+    # `self` inside the DSL is the subject, so `const_get` reads ITS constants —
+    # the shape `ActiveSupport::Concern#class_methods` is written in.
+    it "runs it on a module the DSL fetches by name" do
+      expanded = expand(immediate(runs: "const_get(:Methods).module_eval(&block)", declares: "module Methods; end\n"))
+
+      expect(expanded).to include("module Wrap::Target::Methods\n  def age; 31; end")
+    end
+
+    # Written as syntax it means what it means where the DSL is written, which
+    # is not where the call site is.
+    it "runs it on a module the DSL names outright" do
+      source = immediate(runs: "Written.module_eval(&block)").sub("module DSL", "module Written; end\n\n  module DSL")
+
+      expect(expand(source)).to include("module Wrap::Written\n  def age; 31; end")
+    end
+
+    it "declines a name the project declares nothing for" do
+      expect(expand(immediate(runs: "const_get(:Missing).module_eval(&block)"))).to be_nil
+    end
+
+    # An object this pass cannot name is one it will not relocate a block onto.
+    it "declines a receiver that names neither our own self nor a constant" do
+      expect(expand(immediate(runs: "@holder.class_eval(&block)"))).to be_nil
+      expect(expand(immediate(runs: "other.class_eval(&block)"))).to be_nil
+    end
+
+    it "declines when the DSL evaluates the block onto two different targets" do
+      source = immediate(declares: "module A; end\n    module B; end\n")
+               .sub("class_eval(&block)\n", "const_get(:A).module_eval(&block)\n              const_get(:B).module_eval(&block)\n")
+
+      expect(expand(source)).to be_nil
+    end
+
+    it "declines when nothing calls the DSL" do
+      expect(expand(immediate(applied: "# nothing"))).to be_nil
+    end
+
+    it "adds nothing on a second pass over its own output" do
+      expect(expand(expand(immediate))).to be_nil
+    end
+
+    # The storage path is untouched: a DSL that keeps the block for later is
+    # still read as storage, and one that does both does both.
+    it "still reads a DSL that keeps the block instead of running it" do
+      source = immediate.sub("class_eval(&block)", "@body = block")
+
+      expect(expand(source)).to be_nil
+    end
+  end
+
   # The hook's OTHER effect: `base.extend(M)` puts a module in the target's
   # singleton, with no block moved anywhere. It is what makes a concern's
   # `ClassMethods` the host's class methods, and the transcribed
