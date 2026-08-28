@@ -10,8 +10,8 @@ module Post::Taggable
     scope :recently_tagged, -> { joins(:tags).order(created_at: :desc) }
   end
 
-  module ClassMethods
-def default_tag_names
+  class_methods do
+    def default_tag_names
       %w[news featured]
     end
 
@@ -28,7 +28,7 @@ def default_tag_names
         post.touch
       end
     end
-end
+  end
 
   def tag_names
     tags.pluck(:name)
@@ -61,6 +61,27 @@ end
     transaction do
       post_tags.destroy_all
       names.each { |name| tag_with(name) }
+    end
+  end
+end
+
+module Post::Taggable::ClassMethods
+  # @type instance: singleton(::Post) & ::Post::Taggable::ClassMethods
+  def default_tag_names
+    %w[news featured]
+  end
+
+  def known_tag?(name)
+    default_tag_names.include?(name)
+  end
+
+  def tags_ordered_by_tag_name
+    joins(:tag).order('tags.name ASC')
+  end
+
+  def touch_recently_tagged
+    recently_tagged.find_each do |post|
+      post.touch
     end
   end
 end

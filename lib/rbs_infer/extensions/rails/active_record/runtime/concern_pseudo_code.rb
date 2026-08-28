@@ -97,6 +97,21 @@ module RbsInfer
                     end
                   end
 
+                  # What `class_methods do … end` runs, transcribed from
+                  # activesupport: fetch the module if the concern already has one,
+                  # build it if not, and evaluate the block into it. `append_features`
+                  # above is what then hands it to the includer.
+                  #
+                  # `const_defined?(:ClassMethods, false)` in the real source; the
+                  # second argument only excludes ancestors, which nothing here reads
+                  # either way.
+                  # @rbs_infer |...
+                  def class_methods(&class_methods_module_definition)
+                    mod = const_defined?(:ClassMethods) ? const_get(:ClassMethods) : const_set(:ClassMethods, Module.new)
+
+                    mod.module_eval(&class_methods_module_definition)
+                  end
+
                   # The storage, and both call forms. `included do … end` arrives with no
                   # base and a block, and keeps the block; `included(base)` is Ruby's hook
                   # arriving with a base and no block, and forwards to `Module#included`.
