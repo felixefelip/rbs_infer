@@ -1,6 +1,4 @@
 module ApplicationHelper
-  # @type self: singleton(ApplicationHelper) & singleton(ApplicationController)
-	# @type instance: ApplicationHelper & ApplicationController
   def test_helper_method
 		"I'm a helper method"
   end
