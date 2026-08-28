@@ -657,10 +657,12 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
         [name.to_s, [RbsInfer::Project::ParseCache::Entry.new(source: source, result: Prism.parse(source))]]
       end
       evals = declarations.each_value.any? { |source| source.match?(/class_eval|module_eval/) }
+      extends = declarations.each_value.any? { |source| source.include?(".extend") }
 
       Class.new do
         define_method(:parsed_for) { |name| table.fetch(name, []) }
         define_method(:eval_anywhere?) { evals }
+        define_method(:inward_extend_anywhere?) { extends }
         # The real one memoizes; a double only has to answer.
         define_method(:derived) { |_entry, &derivation| derivation.call }
       end.new
@@ -1090,6 +1092,131 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       EXTENDER
 
       expect(expand(source)).to be_nil
+    end
+  end
+
+  # The hook's OTHER effect: `base.extend(M)` puts a module in the target's
+  # singleton, with no block moved anywhere. It is what makes a concern's
+  # `ClassMethods` the host's class methods, and the transcribed
+  # `ActiveSupport::Concern#append_features` has been writing exactly this line
+  # since felixefelip/rbs_infer#262 with nothing reading it
+  # (felixefelip/rbs_infer#268).
+  context "an `extend` the hook puts on the target" do
+    def hook(extended: "const_get(:BananaMethods)",
+             declares: "module BananaMethods; def age; 31; end; end",
+             applied: "include(Host::Hookable)")
+      <<~RUBY
+        class Module
+          def include(*modules)
+            modules.reverse_each do |mod|
+              mod.send(:append_features, self)
+              mod.send(:included, self)
+            end
+            self
+          end
+        end
+
+        class Host
+          module Applier
+            def included(base)
+              base.extend(#{extended})
+            end
+          end
+
+          module Hookable
+            extend Host::Applier
+
+            #{declares}
+          end
+
+          class Target
+            #{applied}
+          end
+        end
+      RUBY
+    end
+
+    # `self` inside the hook is the module being included — that is the object
+    # the call was dispatched on — so `const_get` reads ITS constants, not the
+    # applier's.
+    it "extends the target with the module the hook fetches by name" do
+      expanded = expand(hook)
+
+      expect(expanded).to include("class Host::Target\n  extend Host::Hookable::BananaMethods\nend")
+      expect(Prism.parse(expanded).success?).to be(true)
+    end
+
+    # Written as syntax, it means what it means where it is WRITTEN: the
+    # applier's lexical scope, which is not the module being included.
+    it "extends it with a module the hook names outright" do
+      source = hook(extended: "Written", declares: "# nothing").sub(
+        "def included(base)", "module Written; def age; 31; end; end\n\n    def included(base)"
+      )
+
+      expect(expand(source)).to include("class Host::Target\n  extend Host::Applier::Written\nend")
+    end
+
+    it "extends every class that includes the hook" do
+      expanded = expand(hook.sub("class Target", "class Other\n    include(Host::Hookable)\n  end\n\n  class Target"))
+
+      expect(expanded).to include("class Host::Other\n  extend Host::Hookable::BananaMethods\nend")
+      expect(expanded).to include("class Host::Target\n  extend Host::Hookable::BananaMethods\nend")
+    end
+
+    it "reads every module one hook extends the target with" do
+      expanded = expand(
+        hook(extended: "const_get(:BananaMethods)",
+             declares: "module BananaMethods; end\n    module OtherMethods; end")
+          .sub("base.extend(const_get(:BananaMethods))",
+               "base.extend(const_get(:BananaMethods))\n      base.extend(const_get(:OtherMethods))")
+      )
+
+      expect(expanded).to include("extend Host::Hookable::BananaMethods")
+      expect(expanded).to include("extend Host::Hookable::OtherMethods")
+    end
+
+    # What `if const_defined?(:ClassMethods)` says, answered by the project
+    # rather than by reading the condition: a concern that declares no such
+    # module is extended with nothing, and emitting the line would name a type
+    # nothing declares.
+    it "declines a name the project declares nothing for" do
+      expect(expand(hook(declares: "# nothing"))).to be_nil
+    end
+
+    # `extend` takes a module. A class of that name is not the thing being
+    # asked about, and reopening the target with it would not even run.
+    it "declines a class of that name" do
+      expect(expand(hook(declares: "class BananaMethods; end"))).to be_nil
+    end
+
+    # Which constant an interpolated name reaches is a runtime answer — the
+    # same line felixefelip/rbs_infer#268 draws around `const_set`.
+    it "declines a name the source computes" do
+      expect(expand(hook(extended: 'const_get(:"\#{prefix}Methods")'))).to be_nil
+    end
+
+    # The parameter is the whole provenance claim: it is the object the caller
+    # handed us, and nothing says what any other receiver is.
+    it "declines an extend written on something else" do
+      expect(expand(hook.sub("base.extend", "Object.extend"))).to be_nil
+    end
+
+    it "declines when nothing includes the module" do
+      expect(expand(hook(applied: "# nothing"))).to be_nil
+    end
+
+    # Two modules answering `included` for one include is one runtime dispatch,
+    # and which of them wins is not something the source says.
+    it "declines when two appliers answer the same hook" do
+      source = hook(declares: "module BananaMethods; end\n    module OtherMethods; end")
+               .sub("module Hookable\n", "module Other\n    def included(base)\n      base.extend(const_get(:OtherMethods))\n    end\n  end\n\n  module Hookable\n")
+               .sub("extend Host::Applier", "extend Host::Applier\n    extend Host::Other")
+
+      expect(expand(source)).to be_nil
+    end
+
+    it "adds nothing on a second pass over its own output" do
+      expect(expand(expand(hook))).to be_nil
     end
   end
 

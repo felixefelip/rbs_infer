@@ -45,6 +45,16 @@ module RbsInfer::Project
   #
   # Recognising the chain is `Collector`'s job (with `ReaderCollector` for the
   # `attr_reader` half); this module is only the rewrite it decides on.
+  #
+  # And the `extend` a hook writes alongside the replay — `base.extend(M)`,
+  # which the same chain resolves and which reopens the same target, differing
+  # only in that there is no block to move: the module is already written
+  # somewhere and the target's SINGLETON gains it. It is the half of
+  # `ActiveSupport::Concern` that makes a `ClassMethods` the host's class
+  # methods, and it lives here rather than in an expander of its own because
+  # every question it raises — who the target is, which module supplies the
+  # hook, whether a delegation moved `self` — is one this chain already answers
+  # (felixefelip/rbs_infer#268).
   module StoredBlockReplayExpander
     REPLAY_METHODS = %i[class_eval module_eval].freeze
 
@@ -86,20 +96,24 @@ module RbsInfer::Project
       # target is written in the host, which mentions no eval — so gating on the
       # local substring skipped exactly the file the block had to be moved INTO
       # (felixefelip/rbs_infer#265). The project-wide answer keeps what the gate
-      # was for: a project with no eval anywhere still pays nothing.
+      # was for: a project that writes neither an eval nor an inward `extend`
+      # anywhere still pays nothing.
       return nil unless source.include?("class_eval") || source.include?("module_eval") ||
-                        sources.eval_anywhere?
+                        source.include?(RbsInfer::Project::ConstantSources::INWARD_EXTEND) ||
+                        sources.eval_anywhere? || sources.inward_extend_anywhere?
 
       parsed = Prism.parse(source)
       return nil unless parsed.success?
 
-      replays = Collector.new(source, sources: sources).collect(parsed.value)
-      return nil if replays.empty?
+      collector = Collector.new(source, sources: sources)
+      replays = collector.collect(parsed.value)
+      extensions = collector.extensions
+      return nil if replays.empty? && extensions.empty?
 
-      apply_replays(source, replays)
+      apply_replays(source, replays, extensions)
     end
 
-    def apply_replays(source, replays)
+    def apply_replays(source, replays, extensions)
       # A body-less block (`keep do end`) relocates to nothing, and asking it
       # for a location raises. Drop it before the uniqueness check reads one.
       replays = replays.select { |replay| replay.block.body }
@@ -115,7 +129,12 @@ module RbsInfer::Project
       # blocks in two files are routinely at the same offset, and a location
       # carries no file to tell them apart.
       keys = replays.map { |replay| [replay.source, replay.block.body.location, replay.target, replay.singleton] }
-      return nil unless keys.uniq.size == replays.size
+      # The file's `extend`s survive an ambiguity among its BLOCKS. Which block
+      # a name reaches and which module a hook extends with are answered by
+      # different evidence, so a file that fails to decide the first has said
+      # nothing about the second. With no extends this reads exactly as the
+      # `return nil` it replaces — an empty reopening list declines below.
+      replays = [] unless keys.uniq.size == replays.size
 
       # Sliced from the file the block was WRITTEN in, which is what makes
       # relocating a foreign block possible at all — reading these offsets
@@ -124,10 +143,19 @@ module RbsInfer::Project
         BlockReopen.appended(source: replay.source, block: replay.block, kind: replay.kind, target: replay.target,
                              singleton: replay.singleton)
       end
+      virtual_reopens += extensions.map { |extension| extension_reopen(extension) }
       virtual_reopens = BlockReopen.missing_from(source, virtual_reopens)
       return nil if virtual_reopens.empty?
 
       [source, virtual_reopens.join("\n")].join("\n")
+    end
+
+    # The reopening an inward `extend` stands for. Not a `BlockReopen`: there is
+    # no block to slice and nothing to re-indent, only the one line the hook
+    # runs — but it goes in the same place, for the same reason, and is dropped
+    # on a second pass by the same `missing_from`.
+    def extension_reopen(extension)
+      "#{extension.kind} #{extension.target}\n#{BlockReopen::INDENT}extend #{extension.name}\nend\n"
     end
   end
 end
