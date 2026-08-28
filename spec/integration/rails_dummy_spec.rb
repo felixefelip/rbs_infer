@@ -278,6 +278,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example55/baz", target_file: "app/models/example55/baz.rb")
   end
 
+  it "example56 (a guard the checker has already refuted) matches expected RBS" do
+    assert_snapshot("models/example56", target_file: "app/models/example56.rb")
+  end
+
   it "example55/foo (the DSL in a file of its own) matches expected RBS" do
     assert_snapshot("models/example55/foo", target_file: "app/models/example55/foo.rb")
   end

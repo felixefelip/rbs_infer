@@ -571,6 +571,11 @@ module RbsInfer::Inference
       type
     end
 
+    # Purely syntactic, unlike `ReturnTypeResolver`'s: this pass runs BEFORE any
+    # type-check, so there is no reachability verdict to consult yet. A `return`
+    # the checker will later prove dead is counted here and taken back by the
+    # resolver's narrowing pass, which does have the bridge
+    # (felixefelip/rbs_infer#286).
     def has_nil_return?(defn)
       RbsInfer::Analyzer.find_all_nodes(defn) do |node|
         next false unless node.is_a?(Prism::ReturnNode)

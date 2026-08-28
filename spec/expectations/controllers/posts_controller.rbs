@@ -19,5 +19,5 @@ class PostsController < ApplicationController
   def set_post: () -> (Post & Post::Validated)
   def set_test: () -> (Post & Post::Validated)?
   def post_params: () -> untyped
-  def build_filtering_for_current_user: () -> PostFiltering?
+  def build_filtering_for_current_user: () -> PostFiltering
 end
