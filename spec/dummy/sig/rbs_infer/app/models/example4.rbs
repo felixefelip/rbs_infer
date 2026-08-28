@@ -8,7 +8,7 @@ class Example4
     self.@name: String?
 
     def self.name: () -> String?
-    def self.name=: ((String | nil) value) -> (String | nil)
+    def self.name=: ((String | nil) value) -> String?
   end
 end
 

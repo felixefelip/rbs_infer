@@ -416,4 +416,49 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     expect(result.diagnostics).to be_empty
   end
 
+
+  # felixefelip/rbs_infer#287. A setter's DECLARED return is its body's tail,
+  # like any other method's. `obj.x = v` evaluating to `v` is a property of the
+  # assignment operator — Ruby discards the method's return there — so the
+  # declaration is not what an assignment reads; it is what `super` reads, and
+  # `super` into a setter is the shape `ActiveSupport::CurrentAttributes`
+  # overrides are written in.
+  #
+  # The Widget scenario above is the same rule where body and parameter agree
+  # (`@user = value` evaluates to `value`). Here they diverge, which is where
+  # skipping setters wholesale left `-> untyped`.
+  it "types a setter from its body, not from its parameter" do
+    result = steep_scenario(<<~RUBY)
+      class Holder
+        attr_accessor :label
+
+        def user=(value)
+          @user = value
+
+          unless value.nil?
+            self.label = value.name
+          end
+        end
+
+        def install
+          self.user = candidate
+        end
+
+        def candidate
+          [nil, Person.new].sample
+        end
+      end
+
+      class Person
+        def name
+          "jo"
+        end
+      end
+    RUBY
+
+    # `String?` — the `unless` yields the assigned label or nil — and NOT
+    # `Person`, which is what the parameter says.
+    expect(result.generated_rbs).to include("def user=: (Person? value) -> String?")
+    expect(result.diagnostics).to be_empty
+  end
 end

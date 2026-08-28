@@ -16,9 +16,9 @@ class Example13
 
     def self.registry_instance: () -> Example13::Registry
     def self.user: () -> (Example13Viewer | nil)?
-    def self.user=: ((Example13Viewer | nil) value) -> (Example13Viewer | nil)
+    def self.user=: ((Example13Viewer | nil) value) -> Example13Viewer?
     def self.tenant: () -> (Example13Tenant | nil)?
-    def self.tenant=: ((Example13Tenant | nil) value) -> (Example13Tenant | nil)
+    def self.tenant=: ((Example13Tenant | nil) value) -> Example13Tenant?
   end
 end
 
