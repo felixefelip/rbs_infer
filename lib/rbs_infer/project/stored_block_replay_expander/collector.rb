@@ -117,7 +117,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # `singleton` is the same bit it is on every other replay: `class_eval` puts
     # the block's `def`s in the subject's own table, `singleton_class.class_eval`
     # in the class object's.
-    OwnBlockReplay = Data.define(:owner, :method, :name, :dynamic, :singleton)
+    OwnBlockReplay = Data.define(:owner, :method, :name, :dynamic, :creates, :singleton)
 
     # `base.extend(<module>)` — the other thing a hook does to the object it is
     # handed, and the one that carries no block at all: the target's SINGLETON
@@ -133,7 +133,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # A name fetched as DATA (`const_get(:ClassMethods)`) is resolved against
     # whatever `self` is when the hook runs, which is the module being included
     # and so is only known at the call site.
-    InwardExtend = Data.define(:owner, :method, :parameter, :name, :dynamic)
+    InwardExtend = Data.define(:owner, :method, :parameter, :name, :dynamic, :creates)
 
     # One `extend` an apply call site puts on its target, resolved: the class or
     # module to reopen, and the module its singleton gains.
@@ -189,6 +189,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # THIS file makes, and widening it would answer them about somebody
       # else's.
       @absorbed_kinds = {}
+      # Namespaces this file's own DSL calls BRING INTO EXISTENCE —
+      # `const_set(:X, Module.new)` under the subject that called it. Filled
+      # while the replays resolve and read back by everything that asks whether
+      # a name is declared: the module is not in any file's text, and the
+      # reopening this pass emits for it is what declares it.
+      @created_kinds = {}
       @extensions = []
       # Absorbed from another file like the shapes above, but only because each
       # one carries the source it was sliced from. Without that they could not
@@ -332,12 +338,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
       end
 
       if (own = own_block_replay_shape(node.body, block_name))
-        name, dynamic, singleton = own
-        @own_replays << [owner, method_name, name, dynamic, singleton]
+        name, dynamic, creates, singleton = own
+        @own_replays << [owner, method_name, name, dynamic, creates, singleton]
       end
 
-      inward_extend_shapes(node.body, parameters).each do |parameter, name, dynamic|
-        @inward_extends << [owner, method_name, parameter, name, dynamic]
+      inward_extend_shapes(node.body, parameters).each do |parameter, name, dynamic, creates|
+        @inward_extends << [owner, method_name, parameter, name, dynamic, creates]
       end
 
       if (literal = literal_replay_shape(node.body, parameters))
@@ -656,8 +662,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # use, not an object this pass cannot name (felixefelip/rbs_infer#268).
     def replayed_onto(receiver, body)
       case own_receiver(receiver)
-      when :instance then [nil, false, false]
-      when :singleton then [nil, false, true]
+      when :instance then [nil, false, nil, false]
+      when :singleton then [nil, false, nil, true]
       else
         return nil unless receiver
 
@@ -666,7 +672,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
                 else
                   RbsInfer::AST::ConstantReference.named(receiver)
                 end
-        [named.first, named.last, false] if named
+        [*named, false] if named
       end
     end
 
@@ -689,8 +695,14 @@ module RbsInfer::Project::StoredBlockReplayExpander
       named = writes.flat_map { |value| constant_alternatives(value) }
       return nil if named.empty? || named.any?(&:nil?)
 
-      answers = named.uniq { |constant, dynamic| [constant_key(constant), dynamic] }
-      answers.first if answers.size == 1
+      answers = named.uniq { |constant, dynamic, _| [constant_key(constant), dynamic] }
+      return nil unless answers.size == 1
+
+      # Created by ANY of them. `const_defined?(:X) ? const_get(:X) : const_set(:X, …)`
+      # is one claim written as two paths — the module is there afterwards either
+      # way, and which path ran is exactly what the source does not say.
+      constant, dynamic, = answers.first
+      [constant, dynamic, named.filter_map { |_, _, creates| creates }.uniq.first]
     end
 
     # The constants an expression may evaluate to, as `named` answers them, with
@@ -974,10 +986,14 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @resolved_inward_extends.concat(resolve_inward_extends)
       @resolved_own_replays.concat(resolve_own_replays)
 
+      # The own-block replays FIRST: one may create the very module the `extend`
+      # below asks about, and a concern writes both halves — `class_methods do`
+      # builds `ClassMethods`, `append_features` extends the host with it.
+      resolved = @stored_calls.filter_map { |stored| resolve_own_block(stored, providers) }
+
       @extensions = @apply_calls.flat_map { |apply| resolve_extensions(apply, providers) }.uniq
 
-      resolved = @stored_calls.filter_map { |stored| resolve_own_block(stored, providers) } +
-                 @apply_calls.filter_map { |apply| resolve_apply(apply, providers) }
+      resolved += @apply_calls.filter_map { |apply| resolve_apply(apply, providers) }
 
       # Two apply calls naming the same source in the same class body are one
       # replay written twice, not two — the block relocates to that class once.
@@ -1028,6 +1044,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
       target = own.name ? named_constant(own, stored.subject) : stored.subject
       return nil unless target
 
+      # A created namespace says its own keyword — `Module.new` is a module —
+      # and is recorded, because nothing else in the project can answer for it
+      # and the `extend` half of a concern asks.
+      @created_kinds[target] = own.creates if own.name && own.creates
       kind = declared_kind(target)
       return nil unless kind
 
@@ -1160,6 +1180,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
       return nil unless under
 
       name = "#{under}::#{shape.name}"
+      # A constant the expression CREATES needs no prior declaration — being
+      # undeclared is the normal state of one, and this pass emitting a reopening
+      # for it is what declares it. `const_get` is the other case and keeps the
+      # check: on a module nobody defined it raises, and the guard a DSL writes
+      # around it says so.
+      return name if shape.creates
+
       declared_kind(name) ? name : nil
     end
 
@@ -1168,7 +1195,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # `extend` takes a module, so a class of that name is not the thing being
     # asked about; a replay takes either and needs the keyword to reopen it with.
     def declared_kind(name)
-      @declaration_kinds[name] || @absorbed_kinds[name]
+      @declaration_kinds[name] || @absorbed_kinds[name] || @created_kinds[name]
     end
 
     def declared_module?(name)
@@ -1181,14 +1208,16 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # here and again in `collect_shapes`. A dynamic name has nothing to resolve
     # yet and passes through; it is decided per call site, in `extension_name`.
     def resolve_inward_extends
-      @inward_extends.filter_map do |owner, method, parameter, name, dynamic|
+      @inward_extends.filter_map do |owner, method, parameter, name, dynamic, creates|
         if dynamic
-          InwardExtend.new(owner: owner, method: method, parameter: parameter, name: name, dynamic: true)
+          InwardExtend.new(owner: owner, method: method, parameter: parameter, name: name, dynamic: true,
+                           creates: creates)
         else
           resolved = resolve_constant(name, lexical_context(owner))
           next unless resolved && @declaration_kinds[resolved] == "module"
 
-          InwardExtend.new(owner: owner, method: method, parameter: parameter, name: resolved, dynamic: false)
+          InwardExtend.new(owner: owner, method: method, parameter: parameter, name: resolved, dynamic: false,
+                           creates: creates)
         end
       end
     end
@@ -1199,14 +1228,16 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # reason. A target that is our own `self`, or a name fetched as data, has
     # nothing to resolve here: both are decided per call site.
     def resolve_own_replays
-      @own_replays.filter_map do |owner, method, name, dynamic, singleton|
+      @own_replays.filter_map do |owner, method, name, dynamic, creates, singleton|
         if name.nil? || dynamic
-          OwnBlockReplay.new(owner: owner, method: method, name: name, dynamic: dynamic, singleton: singleton)
+          OwnBlockReplay.new(owner: owner, method: method, name: name, dynamic: dynamic, creates: creates,
+                             singleton: singleton)
         else
           resolved = resolve_constant(name, lexical_context(owner))
           next unless resolved
 
-          OwnBlockReplay.new(owner: owner, method: method, name: resolved, dynamic: false, singleton: singleton)
+          OwnBlockReplay.new(owner: owner, method: method, name: resolved, dynamic: false, creates: creates,
+                             singleton: singleton)
         end
       end
     end

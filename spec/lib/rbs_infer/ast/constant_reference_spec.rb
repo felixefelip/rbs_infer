@@ -17,27 +17,46 @@ RSpec.describe RbsInfer::AST::ConstantReference do
     it "answers the node itself for a constant written as syntax" do
       written = node("Foo::Bar")
 
-      expect(described_class.named(written)).to eq([written, false])
+      expect(described_class.named(written)).to eq([written, false, nil])
     end
 
     it "answers the same for a bare constant" do
       written = node("Bar")
 
-      expect(described_class.named(written)).to eq([written, false])
+      expect(described_class.named(written)).to eq([written, false, nil])
     end
 
     # A name fetched as data is looked up in whatever `self` is when the line
     # runs, which the writing scope does not decide — so the NAME travels and
     # the namespace is the caller's to supply.
     it "answers the name for a constant fetched as data" do
-      expect(described_class.named(node("const_get(:Bar)"))).to eq(["Bar", true])
+      expect(described_class.named(node("const_get(:Bar)"))).to eq(["Bar", true, nil])
     end
 
     # The distinction is the point: the same name, written the two ways in one
     # body, reaches two different modules.
     it "tells the two apart" do
-      expect(described_class.named(node("Bar")).last).to be(false)
-      expect(described_class.named(node("const_get(:Bar)")).last).to be(true)
+      expect(described_class.named(node("Bar"))[1]).to be(false)
+      expect(described_class.named(node("const_get(:Bar)"))[1]).to be(true)
+    end
+
+    # `const_set` gives both answers at once: it names the constant AND is the
+    # reason it exists, which is what a caller requiring prior declaration has to
+    # tell apart.
+    it "answers the name and the kind for a constant a `const_set` creates" do
+      expect(described_class.named(node("const_set(:Bar, Module.new)"))).to eq(["Bar", true, "module"])
+      expect(described_class.named(node("const_set(:Bar, Class.new)"))).to eq(["Bar", true, "class"])
+    end
+
+    # It names Bar, but says nothing about what Bar is, and a caller reading this
+    # wants a type it can reopen.
+    it "declines a `const_set` of something that is not a fresh namespace" do
+      expect(described_class.named(node("const_set(:Bar, whatever)"))).to be_nil
+      expect(described_class.named(node("const_set(:Bar, Struct.new(:a))"))).to be_nil
+    end
+
+    it "declines a `const_set` into another object's namespace" do
+      expect(described_class.named(node("other.const_set(:Bar, Module.new)"))).to be_nil
     end
 
     it "answers nothing for an expression that names no constant" do

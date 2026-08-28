@@ -10,6 +10,14 @@ end
 
 class Example51
   class Bar
-    def methods_module: () -> untyped
+    def methods_module: () -> singleton(Example51::Baz::BananaMethods)
+  end
+end
+
+class Example51
+  module Baz
+    module BananaMethods
+      def age: () -> Integer
+    end
   end
 end
