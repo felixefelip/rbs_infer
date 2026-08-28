@@ -3,6 +3,7 @@
 require "prism"
 require_relative "source_expanders"
 require_relative "block_reopen"
+require_relative "../ast/constant_reference"
 
 module RbsInfer::Project
   # Desugars a constant whose value is a FRESH module or class into the
@@ -49,11 +50,6 @@ module RbsInfer::Project
     # `class X` would emit a class whose accessors are missing, which is worse
     # than emitting nothing.
     CONSTRUCTORS = { "Module" => "module", "Class" => "class" }.freeze
-
-    # What a constant may be named. `const_set` takes its name as data, so this
-    # is also the check that the data IS a constant name — `const_set(:foo, …)`
-    # raises at runtime and declares nothing.
-    CONSTANT_NAME = /\A[A-Z][A-Za-z0-9_]*\z/
 
     module_function
 
@@ -179,18 +175,10 @@ module RbsInfer::Project
       arguments = node.arguments&.arguments || []
       return nil unless arguments.size == 2
 
-      name = literal_name(arguments.first)
+      # A name written as data rather than computed. The undecidable case — an
+      # interpolated symbol, a variable — answers nil there and declines here.
+      name = RbsInfer::AST::ConstantReference.literal_name(arguments.first)
       [name, arguments.last] if name
-    end
-
-    # The name a `const_set` is given, when it is written as data rather than
-    # computed. An interpolated symbol or a variable is the undecidable case and
-    # answers nil.
-    def literal_name(node)
-      return nil unless node.is_a?(Prism::SymbolNode) || node.is_a?(Prism::StringNode)
-
-      name = node.unescaped
-      name if name&.match?(CONSTANT_NAME)
     end
 
     # The declaration `value` stands for, rendered at `indent`, or nil when the

@@ -2,8 +2,8 @@
 
 require "prism"
 require "set"
+require_relative "../../ast/constant_reference"
 require_relative "../../inference/send_call"
-require_relative "../constant_declaration_expander"
 require_relative "../constant_sources"
 
 module RbsInfer::Project::StoredBlockReplayExpander
@@ -607,43 +607,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
         next [] unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
 
         (call.arguments&.arguments || []).filter_map do |argument|
-          named = extended_module(argument)
+          # Both spellings of naming a module, and the pair says which is which:
+          # a constant is syntax and resolves in the file it was WRITTEN in, a
+          # `const_get` is data and resolves against the `self` the hook runs on.
+          named = RbsInfer::AST::ConstantReference.named(argument)
           [receiver.name.to_s, *named] if named
         end
       end
-    end
-
-    # What an `extend` argument names, as `[name, dynamic?]`, or nil when the
-    # source does not decide it. A constant is syntax and travels as the node it
-    # is, resolved lexically once the file is walked; a `const_get` is a name
-    # written as data and travels as that name.
-    def extended_module(node)
-      return [node, false] if RbsInfer::Analyzer.extract_constant_path(node)
-
-      name = fetched_constant_name(node)
-      [name, true] if name
-    end
-
-    # The name in `const_get(:X)` / `const_get("X")` on our own `self`.
-    #
-    # A receiver names another object, and which module that is is not a
-    # question this pass answers — the same line `ConstantDeclarationExpander`
-    # draws for `const_set`. A COMPUTED name is declined for the reason
-    # felixefelip/rbs_infer#268 draws it: which constant `const_get(:"#{p}X")`
-    # names is a runtime answer. Both readings are that expander's, called
-    # rather than copied so one file says what a constant name written as data
-    # is.
-    def fetched_constant_name(node)
-      return nil unless node.is_a?(Prism::CallNode)
-
-      call = dispatched(node)
-      return nil unless call.name == :const_get
-      return nil unless call.receiver.nil? || call.receiver.is_a?(Prism::SelfNode)
-
-      arguments = call.arguments&.arguments || []
-      return nil unless arguments.size == 1
-
-      RbsInfer::Project::ConstantDeclarationExpander.literal_name(arguments.first)
     end
 
     # `<parameter>.<callee>(self)` — handing ourselves to the object that holds
