@@ -376,6 +376,10 @@ app/models/example51.rb:
   - anchor: Foo
     annotations:
     - "# @type instance: singleton(Example51::Baz)"
+  blocks:
+  - call: banana_class_method
+    in: "::Example51::Baz"
+    implements: "::Example51::Baz::BananaMethods"
 app/models/example52.rb:
   modules:
   - anchor: Baz
@@ -384,6 +388,10 @@ app/models/example52.rb:
   - anchor: Foo
     annotations:
     - "# @type instance: singleton(Example52::Baz)"
+  blocks:
+  - call: banana_class_method
+    in: "::Example52::Baz"
+    implements: "::Example52::Baz::BananaMethods"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade

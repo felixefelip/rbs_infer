@@ -44,13 +44,6 @@ module RbsInfer::Project
     # these does the file write?
     CONSTRUCTORS_AT = /Module\.new|Class\.new|const_set/
 
-    # The two constructors this reads, and what each declares. Listed rather
-    # than duck-typed on `.new`: `Struct.new` and `Data.define` also answer with
-    # a fresh class, and they declare MEMBERS too — reading them as a bare
-    # `class X` would emit a class whose accessors are missing, which is worse
-    # than emitting nothing.
-    CONSTRUCTORS = { "Module" => "module", "Class" => "class" }.freeze
-
     module_function
 
     # Returns the expanded source, or nil when there is nothing to rewrite.
@@ -184,9 +177,9 @@ module RbsInfer::Project
     # The declaration `value` stands for, rendered at `indent`, or nil when the
     # value is not a fresh module or class.
     def rendered(source, name, value, indent:)
-      return nil unless value.is_a?(Prism::CallNode) && value.name == :new
-
-      kind = CONSTRUCTORS[top_level_constant(value.receiver)]
+      # `Module.new` / `Class.new` and nothing else — the same reading
+      # `const_set(:X, Module.new)` needs, so it is written once next door.
+      kind = RbsInfer::AST::ConstantReference.constructed_kind(value)
       return nil unless kind
 
       arguments = value.arguments&.arguments || []
@@ -200,16 +193,6 @@ module RbsInfer::Project
       inner = body && BlockReopen.body_source(source, body, indent: indent + BlockReopen::INDENT)
 
       [header, inner, "#{indent}end"].compact.join("\n")
-    end
-
-    # `Module` and `Class` themselves, written bare or fully qualified. Any
-    # other receiver — including a constant that merely ENDS in `Class` — is
-    # somebody else's `new`.
-    def top_level_constant(node)
-      case node
-      when Prism::ConstantReadNode then node.name.to_s
-      when Prism::ConstantPathNode then node.parent.nil? ? node.name.to_s : nil
-      end
     end
 
     # `" < Super"`, `""`, or `:decline`.

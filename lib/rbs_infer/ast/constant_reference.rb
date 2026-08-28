@@ -32,17 +32,80 @@ module RbsInfer
       # `const_get(:foo)` raises at runtime and names nothing.
       CONSTANT_NAME = /\A[A-Z][A-Za-z0-9_]*\z/
 
+      # The two constructors that build a fresh namespace, and what each
+      # declares. Listed rather than duck-typed on `.new`: `Struct.new` and
+      # `Data.define` also answer with a fresh class, and they declare MEMBERS
+      # too, so reading them as a bare `class X` would name a type whose
+      # accessors are missing.
+      CONSTRUCTORS = { "Module" => "module", "Class" => "class" }.freeze
+
       module_function
 
-      # `[node, false]` for a constant written as syntax — the node itself, since
-      # resolving it needs the lexical scope the caller knows and this module does
-      # not. `[name, true]` for one fetched as data. nil when the expression names
-      # no constant the source decides.
+      # What an expression names, as `[name, dynamic?, creates]`.
+      #
+      # `[node, false, nil]` for a constant written as syntax — the node itself,
+      # since resolving it needs the lexical scope the caller knows and this
+      # module does not. `[name, true, nil]` for one fetched as data. nil when
+      # the expression names no constant the source decides.
+      #
+      # `creates` is what the expression brings into existence — "module",
+      # "class", or nil for one that only reaches for something already there.
+      # A third answer rather than a second question, because
+      # `const_set(:X, Module.new)` gives both at once: it names X, and it is the
+      # reason X exists. A caller that requires the constant to be declared
+      # already has to tell the two apart — `const_get` on a module nobody
+      # defined raises, and `const_set` is what defines it
+      # (felixefelip/rbs_infer#268).
       def named(node)
-        return [node, false] if RbsInfer::Analyzer.extract_constant_path(node)
+        return [node, false, nil] if RbsInfer::Analyzer.extract_constant_path(node)
+        if (created = set_name(node))
+          return created
+        end
+
 
         name = fetched_name(node)
-        [name, true] if name
+        [name, true, nil] if name
+      end
+
+      # `const_set(:X, Module.new)` on our own `self` — the name it gives and
+      # what it makes. Same two restrictions as `fetched_name`, for the same
+      # reasons: a receiver names another object's namespace, and a computed name
+      # is a runtime answer.
+      #
+      # Only a FRESH module or class counts. `const_set(:X, whatever)` names X
+      # too, but says nothing about what X is, and a caller reading this wants a
+      # type it can reopen — the line `ConstantDeclarationExpander` draws for the
+      # assignment spelling, drawn once here for both.
+      def set_name(node)
+        return nil unless node.is_a?(Prism::CallNode)
+
+        call = RbsInfer::Inference::SendCall.desugar(node) || node
+        return nil unless call.name == :const_set
+        return nil unless call.receiver.nil? || call.receiver.is_a?(Prism::SelfNode)
+
+        arguments = call.arguments&.arguments || []
+        return nil unless arguments.size == 2
+
+        name = literal_name(arguments.first)
+        kind = constructed_kind(arguments.last)
+        [name, true, kind] if name && kind
+      end
+
+      # What a `Module.new` / `Class.new` constructs, as the keyword that
+      # declares it, or nil for anything else. `Module` and `Class` themselves,
+      # written bare or fully qualified — a constant that merely ENDS in `Class`
+      # is somebody else's `new`.
+      def constructed_kind(node)
+        return nil unless node.is_a?(Prism::CallNode) && node.name == :new
+
+        CONSTRUCTORS[top_level_constant(node.receiver)]
+      end
+
+      def top_level_constant(node)
+        case node
+        when Prism::ConstantReadNode then node.name.to_s
+        when Prism::ConstantPathNode then node.parent.nil? ? node.name.to_s : nil
+        end
       end
 
       # The name in `const_get(:X)` / `const_get("X")` on our own `self`.

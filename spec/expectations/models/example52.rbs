@@ -11,8 +11,17 @@ end
 
 class Example52
   class Bar
+    extend ::Example52::Baz::BananaMethods
     include ::Example52::Baz
 
-    def self.call_age: () -> untyped
+    def self.call_age: () -> Integer
+  end
+end
+
+class Example52
+  module Baz
+    module BananaMethods
+      def age: () -> Integer
+    end
   end
 end

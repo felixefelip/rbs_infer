@@ -1247,6 +1247,42 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       end
     end
 
+    # A module the DSL BUILDS, which is what `ActiveSupport::Concern` does:
+    # `const_defined?(:ClassMethods) ? const_get(:ClassMethods) : const_set(:ClassMethods, Module.new)`.
+    # Being undeclared is the normal state of one — the reopening this pass emits
+    # is what declares it.
+    context "with a module the DSL creates" do
+      it "runs the block on a module `const_set` builds" do
+        expect(expand(immediate(runs: "const_set(:Methods, Module.new).module_eval(&block)")))
+          .to include("module Wrap::Target::Methods\n  def age; 31; end")
+      end
+
+      it "takes the keyword from the constructor" do
+        expect(expand(immediate(runs: "const_set(:Methods, Class.new).class_eval(&block)")))
+          .to include("class Wrap::Target::Methods\n  def age; 31; end")
+      end
+
+      # The Concern spelling: fetch it if it is there, build it if it is not.
+      # One claim written as two paths, and the module is there afterwards
+      # either way.
+      it "reads the fetch-or-build ternary as one answer" do
+        expect(expand(immediate(runs: "mod = const_defined?(:Methods) ? const_get(:Methods) : const_set(:Methods, Module.new)\n              mod.module_eval(&block)")))
+          .to include("module Wrap::Target::Methods\n  def age; 31; end")
+      end
+
+      # It names Methods, but says nothing about what Methods is, and a block
+      # cannot be relocated onto a type this pass cannot write down.
+      it "declines a `const_set` of something that is not a fresh namespace" do
+        expect(expand(immediate(runs: "const_set(:Methods, whatever).module_eval(&block)"))).to be_nil
+      end
+
+      it "adds nothing on a second pass over its own output" do
+        source = immediate(runs: "const_set(:Methods, Module.new).module_eval(&block)")
+
+        expect(expand(expand(source))).to be_nil
+      end
+    end
+
     # The storage path is untouched: a DSL that keeps the block for later is
     # still read as storage, and one that does both does both.
     it "still reads a DSL that keeps the block instead of running it" do
