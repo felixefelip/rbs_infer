@@ -1,7 +1,8 @@
 class Example54
   class Bar
+    extend ::Example54::Baz::BananaMethods
     include ::Example54::Baz
 
-    def self.call_age: () -> untyped
+    def self.call_age: () -> Integer
   end
 end

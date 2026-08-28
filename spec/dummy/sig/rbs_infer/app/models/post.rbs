@@ -29,4 +29,5 @@ class Post < ApplicationRecord
   def full_name: () -> String
   def user_created_at: () -> ActiveSupport::TimeWithZone?
   def name: () -> String?
+  def user_updated_at: () -> ActiveSupport::TimeWithZone?
 end

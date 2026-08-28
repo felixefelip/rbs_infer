@@ -104,9 +104,7 @@ module RbsInfer::Project
       # (felixefelip/rbs_infer#265). The project-wide answer keeps what the gate
       # was for: a project that writes neither an eval nor an inward `extend`
       # anywhere still pays nothing.
-      return nil unless source.include?("class_eval") || source.include?("module_eval") ||
-                        source.include?(RbsInfer::Project::ConstantSources::INWARD_EXTEND) ||
-                        sources.eval_anywhere? || sources.inward_extend_anywhere?
+      return nil unless possible?(source, sources)
 
       parsed = Prism.parse(source)
       return nil unless parsed.success?
@@ -117,6 +115,16 @@ module RbsInfer::Project
       return nil if replays.empty? && extensions.empty?
 
       apply_replays(source, replays, extensions, mixin_index)
+    end
+
+    # Whether a replay can be in this file at all — asked of the PROJECT, since
+    # the DSL that relocates a block is routinely declared somewhere else.
+    # Shared with `StoredBlockReplayImplements`, which reads the same replays and
+    # must not skip a file this one would expand.
+    def possible?(source, sources)
+      source.include?("class_eval") || source.include?("module_eval") ||
+        source.include?(RbsInfer::Project::ConstantSources::INWARD_EXTEND) ||
+        sources.eval_anywhere? || sources.inward_extend_anywhere?
     end
 
     def apply_replays(source, replays, extensions, mixin_index)

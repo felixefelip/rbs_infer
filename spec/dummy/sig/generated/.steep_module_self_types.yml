@@ -424,6 +424,11 @@ app/models/example55/baz.rb:
   - anchor: Baz
     annotations:
     - "# @type instance: Example55::Bar & Example55::Baz"
+  blocks:
+  - call: banana_class_method
+    in: "::Example55::Baz"
+    implements: "::Example55::Baz::BananaMethods"
+    self: singleton(::Example55::Bar) & ::Example55::Baz::BananaMethods
 app/models/example55/foo.rb:
   modules:
   - anchor: Foo
