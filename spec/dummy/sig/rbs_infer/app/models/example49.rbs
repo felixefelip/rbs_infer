@@ -1,0 +1,15 @@
+class Example49
+  class Bar
+    extend ::Example49::Baz
+
+    def self.call_color: () -> String
+    def self.call_age: () -> Integer
+  end
+end
+
+class Example49
+  module Baz
+    def color: () -> String
+    def age: () -> Integer
+  end
+end
