@@ -1,0 +1,18 @@
+class Example52
+  module Foo
+    def banana_class_method: () ?{ (*untyped) -> Symbol } -> untyped
+    def included: (Module base) -> Module?
+  end
+
+  module Baz
+    extend ::Example52::Foo
+  end
+end
+
+class Example52
+  class Bar
+    include ::Example52::Baz
+
+    def self.call_age: () -> untyped
+  end
+end
