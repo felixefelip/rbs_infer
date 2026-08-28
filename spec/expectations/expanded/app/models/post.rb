@@ -1,0 +1,158 @@
+# frozen_string_literal: true
+
+class Post < ApplicationRecord
+  include Post::Taggable
+  include Post::Notifiable
+  include Test::Filtrable
+
+  extend Enumerize
+
+  belongs_to :user
+  has_many :comments, dependent: :destroy
+  has_many :assignments, dependent: :destroy
+  has_many :post_tags, dependent: :destroy
+  has_many :tags, through: :post_tags
+
+  enumerize :status, in: [:draft, :published, :archived], default: :draft, predicates: true, scope: :shallow
+  enumerize :priority, in: [:low, :medium, :high]
+  enumerize :category, in: { tech: 1, lifestyle: 2, travel: 3, food: 4 }, default: :tech, scope: :shallow
+
+  scope :by_title, ->(title) { where("title ILIKE ?", "%#{title}%") if title.present? }
+  scope :by_body, ->(body) { where("body ILIKE ?", "%#{body}%") if body.present? }
+  scope :query_filter, ->(filter) {
+    by_title(filter[:title])
+      .by_body(filter[:body])
+  }
+
+  validates :title, presence: true
+  validates :body, presence: true
+
+  delegate :email, to: :user, prefix: true
+  delegate :full_name, to: :user
+  delegate :created_at, to: :user, prefix: true
+  delegate :name, to: :tag, allow_nil: true
+
+  def summary(length = 100)
+    body.to_s.truncate(length)
+  end
+
+  def test_status
+    status
+  end
+
+	def was_archived?
+		status.archived?
+	end
+
+  def creator
+    user
+  end
+
+  def author_name
+    user.full_name
+  end
+
+  # Satisfying call site: guard self.user not-nil before calling author_name,
+  # so Contracts::Enforcement marks the contract enforced and the narrowing
+  # inside author_name applies. The guard returns a non-nil default so the
+  # helper's own inferred type stays consistent (no implicit nil return path).
+  def display_author
+    return "anonymous" unless user
+
+    author_name
+  end
+
+  def publish!
+    update!(published: true, published_at: Time.current)
+  end
+
+  def comments_count
+    comments.count
+  end
+
+  def add_comment(author:, body:)
+    comments.create!(user: author, body: body)
+  end
+
+  def was_priority_high
+	  priority&.high?
+  end
+
+  def publish_in_transaction
+    ActiveRecord::Base.transaction do
+      publish!
+      self
+    end
+  end
+
+  # Two halves of the same rule (felixefelip/rbs_infer#185): Active Record
+  # delegates a model's public CLASS methods to its relations and collection
+  # proxies (`Relation#method_missing` compiles them into
+  # `<Model>::GeneratedRelationMethods`), so `popular` — a `class << self` on Tag
+  # — is a real call on the has_many proxy, and `default_tag_names` — a
+  # `class_methods do` in Post::Taggable — is one on a scope's relation.
+  def popular_tags(limit = 5)
+    tags.popular(limit)
+  end
+
+  def tag_limit
+    tags.default_limit
+  end
+
+  # The ARGUMENT direction of that same delegation: the receiver is the has_many
+  # proxy, so `Tag.named`'s parameter is only typed if the proxy's type is
+  # recognized as reaching `Tag::GeneratedRelationMethods#named` through its
+  # ancestry — the name it is spelled with (`Post_Tag::…CollectionProxy`) says
+  # nothing about either link.
+  def tag_named
+    tags.named(title.to_s)
+  end
+
+  def sibling_tag_names
+    Post.recently_tagged.default_tag_names
+  end
+
+  def iterate_tags
+    my_tags = tags.order(:name)
+    my_tags.each do |tag|
+      puts tag.name
+    end
+  end
+
+  # `Archiver` is `Post::Archiver` — written bare, as Ruby resolves it from the
+  # enclosing namespace outward. Both the instance path (`.new(...).call`, a
+  # CHAINED call) and the singleton path (`.run`, a direct constant receiver)
+  # have to find it; matching the bare name against top-level `Archiver` finds
+  # nothing and silently yields `untyped` (felixefelip/rbs_infer#129).
+  def archive
+    Archiver.new(self).call
+  end
+
+  def archive_via_singleton
+    Archiver.run(self)
+  end
+
+  def test_enumerize_status
+    Post.status
+  end
+
+  def test_enumerize_status_options
+    Post.status.options
+  end
+end
+
+class Post
+  has_many :post_tags, dependent: :destroy
+  has_many :tags, through: :post_tags
+
+  scope :recently_tagged, -> { joins(:tags).order(created_at: :desc) }
+end
+
+class Post
+  delegate :updated_at, to: :user, prefix: true
+end
+
+class Post
+  scope :pinned, -> { where(pinned: true) }
+  scope :unpinned, -> { where(pinned: false) }
+end

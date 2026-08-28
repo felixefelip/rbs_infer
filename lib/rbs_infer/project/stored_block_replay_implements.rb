@@ -59,7 +59,11 @@ module RbsInfer::Project
     # about the module and silent about the self, which is the silent-wrong case
     # (docs/engineering/required-threaded-deps.md).
     def blocks_for(source:, sources:, mixin_index:)
-      return [] unless source.include?("class_eval") || source.include?("module_eval")
+      # The expander's gate, not a narrower one of our own. A concern writes
+      # `class_methods do` and no eval at all — the eval is in the DSL, declared
+      # somewhere else entirely — so asking this file's own text skipped exactly
+      # the files whose blocks needed annotating (felixefelip/rbs_infer#268).
+      return [] unless StoredBlockReplayExpander.possible?(source, sources)
 
       parsed = Prism.parse(source)
       return [] unless parsed.success?

@@ -189,6 +189,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # THIS file makes, and widening it would answer them about somebody
       # else's.
       @absorbed_kinds = {}
+      # Who can call whose DSL, as the files this one absorbs write it. Kept
+      # apart from the table this file builds for the same reason
+      # `@absorbed_kinds` is: one is a fact about this source, the other about
+      # somebody else's, and only the merge answers "who supplies this method".
+      @absorbed_providers = Hash.new { |hash, key| hash[key] = Set.new }
       # Namespaces this file's own DSL calls BRING INTO EXISTENCE —
       # `const_set(:X, Module.new)` under the subject that called it. Filled
       # while the replays resolve and read back by everything that asks whether
@@ -227,6 +232,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @resolved_delegations = resolve_delegations
       @resolved_inward_extends = resolve_inward_extends
       @resolved_own_replays = resolve_own_replays
+      # Who can call whose DSL, as THIS file writes it. A shape is only half of
+      # what another file needs: `extend ActiveSupport::Concern` is written in
+      # the concern, and without it a host holding the concern's shapes still
+      # cannot say which owner supplies them.
+      @providers = dsl_providers
       self
     end
 
@@ -239,7 +249,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     attr_reader :storages, :readers, :replay_methods, :inward_replays, :forwards, :resolved_delegations,
                 :literal_replays, :stored_calls, :resolved_inward_extends, :declaration_kinds,
-                :resolved_own_replays
+                :resolved_own_replays, :providers
 
     public
 
@@ -909,8 +919,26 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # or APPLY ARGUMENT this file names but does not declare. A name the project
     # has nothing for simply yields no roots, which is the same as today's
     # answer.
+    # Transitively, because a DSL chain is written across as many files as it
+    # takes. A host includes a concern, the concern extends the module holding
+    # the DSL, and the DSL is declared in a third file the host never names —
+    # `Post` / `Post::Taggable` / `ActiveSupport::Concern`, which is the ordinary
+    # shape rather than an exotic one. Reading one hop, the host saw the
+    # concern's shapes and nothing about the DSL that gives the concern its
+    # methods (felixefelip/rbs_infer#268).
+    #
+    # A worklist rather than a recursion, `seen`-guarded because two concerns
+    # can name each other. It terminates because a project has finitely many
+    # constants and each is asked about once; in practice the chain is two or
+    # three files, and every parse and walk along it is memoized by file.
     def absorb_external_shapes
-      external_owners.each do |name|
+      queue = external_owners.to_a
+      seen = Set.new
+
+      until queue.empty?
+        name = queue.shift
+        next unless seen.add?(name)
+
         @sources.parsed_for(name).each do |entry|
           # Memoized per FILE, not per asking file: what a file says about its
           # own DSL is the same answer however many hosts ask, and a concern
@@ -920,6 +948,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
                 .collect_shapes(entry.result.value)
           end
           absorb(shapes)
+          # What THAT file reaches for, which is how the chain continues.
+          queue.concat(shapes.external_owners.to_a)
         end
         @declarations << name
       end
@@ -953,6 +983,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @extends + @superclasses + @apply_calls.map { |apply| [apply.subject, apply.argument] }
     end
 
+    # Read by the collector ABSORBING this one, to follow the chain past it: a
+    # concern names the module holding its DSL, and that module's file is one
+    # the host never mentions. Protected rather than listed with the readers
+    # above, because the method is written below among the private ones and a
+    # reader there would only be shadowed by it.
+    protected :external_owners
+
     def absorb(shapes)
       @storages.concat(shapes.storages)
       @readers.concat(shapes.readers)
@@ -966,6 +1003,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # is resolved under the module being included, and whether that module
       # holds the constant is a fact about the concern's own file.
       @absorbed_kinds.merge!(shapes.declaration_kinds)
+      shapes.providers.each { |owner, subjects| @absorbed_providers[owner].merge(subjects) }
       # The two that carry a BLOCK. A DSL is routinely written in one file and
       # used from another — a concern in `app/models/concerns` and the class
       # that includes it — so the block and the `include` naming its target are
@@ -989,7 +1027,14 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # The own-block replays FIRST: one may create the very module the `extend`
       # below asks about, and a concern writes both halves — `class_methods do`
       # builds `ClassMethods`, `append_features` extends the host with it.
+      # EVERY stored call, not only this file's. What a DSL call creates is a
+      # fact about the file that wrote it — the same kind of fact as a
+      # declaration, and absorbed the same way — while whether the block is
+      # RELOCATED here is the separate question of whose file this is. Reading
+      # only the local ones left a host unable to see the module its own concern
+      # builds, so the `extend` that hands it over declined.
       resolved = @stored_calls.filter_map { |stored| resolve_own_block(stored, providers) }
+                              .select { |replay| replay.source.equal?(@source) }
 
       @extensions = @apply_calls.flat_map { |apply| resolve_extensions(apply, providers) }.uniq
 
@@ -1013,14 +1058,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # later — so this is resolved on its own evidence rather than counted
     # against the storage path.
     #
-    # Only for a call written in THIS file. A stored call absorbed from another
-    # one names a subject that file's own expansion reopens; emitting it here as
+    # Resolved for every stored call, wherever it was written — a foreign one
+    # registers the module it CREATES and is then dropped by the caller, since
+    # the file that wrote it reopens its own subject and emitting it here as
     # well would relocate the block twice. Identity, not equality, for the same
     # reason `StoredBlockReplayImplements` uses it: the collector keeps the very
     # string it was handed.
     def resolve_own_block(stored, providers)
-      return nil unless stored.source.equal?(@source)
-
       candidates = providers.select { |_, subjects| subjects.include?(stored.subject) }.keys.filter_map do |provider|
         replays = @resolved_own_replays.select { |own| own.owner == provider && own.method == stored.method }
         next unless replays.size == 1
@@ -1320,9 +1364,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # singleton methods in Bar's body just as directly as `Bar < Foo` would.
     def dsl_providers
       providers = Hash.new { |hash, key| hash[key] = Set.new }
+      @absorbed_providers.each { |owner, subjects| providers[owner].merge(subjects) }
 
       @extends.each do |subject, raw_module|
-        mod = resolve_constant(raw_module, subject)
+        mod = resolve_constant(raw_module, subject) || written_constant(raw_module)
         providers[mod] << subject if mod
       end
 
@@ -1356,6 +1401,19 @@ module RbsInfer::Project::StoredBlockReplayExpander
       end
 
       providers
+    end
+
+    # The name an `extend` writes, for a module this file does not declare.
+    #
+    # `resolve_constant` answers nil for those, and rightly: it is picking a
+    # NAMESPACE, and only a declaration it can see settles which one. A provider
+    # key needs no such confirmation — it either matches the shapes some other
+    # file supplied or it matches nothing, and a name nobody supplies methods
+    # under changes no answer. Without the fallback, a concern extending a DSL
+    # declared in another file recorded no provider at all, so the host holding
+    # both halves could not join them (felixefelip/rbs_infer#268).
+    def written_constant(node)
+      RbsInfer::Analyzer.extract_constant_path(node)&.sub(/\A::/, "")
     end
 
     # `subject`'s superclass chain, nearest first, limited to classes declared
