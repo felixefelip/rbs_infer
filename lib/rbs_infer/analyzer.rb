@@ -665,7 +665,61 @@ module RbsInfer
     @is_module = visitor.is_module if @is_module.nil?
     @delegates = visitor.delegates
     @nested_modules = visitor.nested_modules
-    visitor.members
+    disown_promoted_modules(visitor.members)
+  end
+
+  # The members and declarations of a nested module the FILE gives a target of
+  # its own, dropped from this pass.
+  #
+  # One module, two spellings: `class A; module B; …` nests it, and
+  # `module A::B; …` written at top level in the same file reopens it. The two
+  # are the same module — Ruby merges them — but they reach the pipeline through
+  # different mechanisms. The nested one is emitted IN PLACE, inside `A`'s block,
+  # by the owner mechanism (felixefelip/rbs_infer#22); the top-level one is a
+  # declaration target of its own, and `LexicalScope` matches BOTH spellings for
+  # it, so its pass already collects everything either declaration says.
+  #
+  # Emitted from both, the file declares the module twice and every method the
+  # nested spelling wrote appears in both — which RBS rejects outright
+  # (`DuplicatedMethodDefinitionError` from `build_instance`, so it poisons the
+  # whole environment rather than the one file). Measured on a 20-line file with
+  # no DSL in it.
+  #
+  # This is the rule `LexicalScope` already states for a nested CLASS — "a nested
+  # class is its own target, so members inside one belong to that target's pass
+  # and are not this target's at all" — applied to the one case where a nested
+  # module is a target too. A module written ONLY nested has no other home and is
+  # untouched, which is every module in the dummy today.
+  def disown_promoted_modules(members)
+    promoted = promoted_module_targets
+    return members if promoted.empty?
+
+    @nested_modules = @nested_modules.reject { |owner| promoted?(owner, promoted) }
+    members.reject { |member| member.owner && promoted?(member.owner, promoted) }
+  end
+
+  # Modules under this target that the file declares at top level, fully
+  # qualified. Only that spelling can produce one: a module written nested is
+  # never promoted, which is what makes this set exactly "the modules with a
+  # second home".
+  def promoted_module_targets
+    return @promoted_module_targets if defined?(@promoted_module_targets)
+
+    discovery = RbsInfer::AST::TargetDiscovery.new
+    @parsed_target.tree.accept(discovery)
+    prefix = "#{@target_class}::"
+    @promoted_module_targets = discovery.declaration_targets
+                                        .select { |target| target[:is_module] && target[:name].start_with?(prefix) }
+                                        .map { |target| target[:name] }.to_set
+  end
+
+  # Whether an owner path — relative to this target, as members carry it — names
+  # a promoted module or something inside one. `Baz::Inner` goes with `Baz`: a
+  # module nested in a promoted one is emitted by ITS pass, the same way this
+  # target emits its own nested modules.
+  def promoted?(owner, promoted)
+    segments = owner.split("::")
+    (1..segments.size).any? { |count| promoted.include?("#{@target_class}::#{segments.take(count).join("::")}") }
   end
 
   def resolve_delegate_methods(target_members)

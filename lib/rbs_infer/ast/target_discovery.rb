@@ -73,8 +73,9 @@ module RbsInfer::AST
     # on the wrapper via
     # `ClassNameExtractor`, and adding it here would only flatten that nesting.
     def declaration_targets
-      real = @targets.reject { |t| t[:namespace] }
-      chosen = real.empty? ? real : @targets
+      kept = @targets.reject { |t| t[:namespace] && housed_elsewhere?(t) }
+      real = kept.reject { |t| t[:namespace] }
+      chosen = real.empty? ? real : kept
       chosen.map { |t| { name: t[:name], is_module: t[:is_module] } }
     end
 
@@ -98,13 +99,14 @@ module RbsInfer::AST
     end
 
     def record_declaration(node, is_module:)
-      wrapper = namespace_wrapper?(node)
-      return if wrapper && !hosts_orphan_module?(node)
-
       name = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
       return unless name && !name.empty?
 
       qualified = (@namespace + [name]).join("::")
+
+      wrapper = namespace_wrapper?(node)
+      orphans = wrapper ? orphan_modules(node, qualified) : []
+      return if wrapper && orphans.empty?
 
       # ONE target per name, however many times the file reopens it. Ruby reopens a
       # class rather than redefining it, and a target's pass already collects members
@@ -118,13 +120,13 @@ module RbsInfer::AST
       # beside the one the file already writes.
       return if @targets.any? { |t| t[:name] == qualified }
 
-      @targets << { name: qualified, is_module: is_module, namespace: wrapper }
+      @targets << { name: qualified, is_module: is_module, namespace: wrapper, orphans: orphans }
     end
 
-    # A module declared directly in `node`'s body that has something of its own
-    # to emit — so the owner mechanism has to write it into `node`'s block,
-    # because a nested module is never a target of its own. That is what makes
-    # an otherwise droppable wrapper worth keeping.
+    # The modules declared inside `node` that have something of their own to
+    # emit — so the owner mechanism has to write them into `node`'s block,
+    # because a nested module is never a target of its own. Having any is what
+    # makes an otherwise droppable wrapper worth keeping.
     #
     # Recursive, because a namespace module can host one: `module Baz` holding
     # nothing but two empty modules is a wrapper by the rule above, and dropping
@@ -132,12 +134,30 @@ module RbsInfer::AST
     # a type, and it is the only place that type can be written
     # (felixefelip/rbs_infer#268). A nested CLASS never needs this: classes are
     # targets at any depth and emit their own block.
-    def hosts_orphan_module?(node)
-      node.body.body.any? do |stmt|
-        next false unless stmt.is_a?(Prism::ModuleNode)
+    #
+    # NAMES rather than a yes/no, because "is this module homeless" cannot be
+    # settled here: the file may reopen it at top level FURTHER DOWN, which
+    # gives it a target and a home of its own. That answer only exists once the
+    # walk is over, so the names travel to `declaration_targets`.
+    def orphan_modules(node, qualified)
+      node.body.body.flat_map do |stmt|
+        next [] unless stmt.is_a?(Prism::ModuleNode)
 
-        !namespace_wrapper?(stmt) || hosts_orphan_module?(stmt)
+        name = RbsInfer::Analyzer.extract_constant_path(stmt.constant_path)
+        next [] unless name && !name.empty?
+
+        child = "#{qualified}::#{name}"
+        namespace_wrapper?(stmt) ? orphan_modules(stmt, child) : [child]
       end
+    end
+
+    # Whether every module a wrapper is kept for has a target of its own, which
+    # is what a `module A::B` written at top level gives one. Then the wrapper is
+    # housing nobody: the module is emitted by its own pass, and keeping the
+    # wrapper would emit an empty block beside it — the very thing
+    # `namespace_wrapper?` exists to avoid.
+    def housed_elsewhere?(target)
+      target[:orphans].any? && target[:orphans].all? { |name| @targets.any? { |t| t[:name] == name } }
     end
 
     # A declaration whose body is nothing but other class/module declarations

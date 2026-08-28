@@ -350,6 +350,11 @@ app/models/example48.rb:
   - anchor: Foo
     annotations:
     - "# @type instance: singleton(Example48::Baz)"
+app/models/example49.rb:
+  modules:
+  - anchor: Baz
+    annotations:
+    - "# @type instance: singleton(Example49::Bar)"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade

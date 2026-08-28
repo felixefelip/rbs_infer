@@ -141,6 +141,22 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
                     target_file: "app/models/included_hook/slots.rb")
   end
 
+  # One module written both ways in one file: `class Example49; module Baz` nests it
+  # and `module Example49::Baz` reopens it at top level. Ruby merges the two, and so
+  # must the RBS — emitted from both mechanisms, the file declared `Baz` twice with
+  # `color` in each copy, which RBS rejects outright
+  # (`DuplicatedMethodDefinitionError`, raised by `build_instance` and so poisoning
+  # the whole environment rather than this file).
+  #
+  # The whole FILE, with no `target_class`: the bug lives in the multi-target path,
+  # which is what decides how many blocks a file emits and is skipped entirely when a
+  # single target is named. Its symptom is a second declaration, so a snapshot is
+  # what states it directly — the Steep baseline would catch the regression only as
+  # an environment-wide failure that names no file.
+  it "Example49 (a module reopened at top level) is declared once, not once per spelling" do
+    assert_snapshot("models/example49", target_file: "app/models/example49.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that

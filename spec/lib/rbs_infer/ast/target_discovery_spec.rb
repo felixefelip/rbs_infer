@@ -309,4 +309,70 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
 
     expect(d.include_targets).to be_empty
   end
+  # One module, two spellings: `class A; module B` nests it and `module A::B`
+  # reopens it at top level. Ruby merges the two; the pipeline used to emit both
+  # — the nested one in place, inside `A`'s block, and the top-level one as a
+  # target of its own — so every method the nested spelling wrote was declared
+  # twice and RBS rejected the file (`DuplicatedMethodDefinitionError`).
+  #
+  # The top-level target is the one that keeps everything: `LexicalScope` matches
+  # BOTH spellings for it, so its pass collects what either declaration says.
+  context "a module the file writes both nested and at top level" do
+    def two_spellings(extra: "")
+      <<~RUBY
+        class ZzBoth
+          module Baz
+            def color; end
+          end
+          #{extra}
+        end
+
+        module ZzBoth::Baz
+          def age; end
+        end
+      RUBY
+    end
+
+    it "gives it one target" do
+      expect(discover(two_spellings).declaration_targets)
+        .to eq([{ name: "ZzBoth::Baz", is_module: true }])
+    end
+
+    # `ZzBoth` was kept only to host a module that had nowhere else to go. With
+    # the module housed by its own target it is a pure namespace again, and
+    # emitting it would add the empty block `namespace_wrapper?` exists to avoid.
+    it "drops the wrapper that was only housing it" do
+      expect(discover(two_spellings).declaration_targets.map { |t| t[:name] })
+        .not_to include("ZzBoth")
+    end
+
+    # The wrapper's other reasons to exist are untouched.
+    it "keeps the wrapper when it hosts a module with no other home" do
+      names = discover(two_spellings(extra: "module Other; def x; end; end")).declaration_targets.map { |t| t[:name] }
+
+      expect(names).to include("ZzBoth")
+    end
+
+    it "keeps a sibling class of its own" do
+      names = discover(two_spellings(extra: "class Bar; def x; end; end")).declaration_targets.map { |t| t[:name] }
+
+      expect(names).to include("ZzBoth::Bar", "ZzBoth::Baz")
+    end
+  end
+
+  # A module written only nested is emitted in place by the owner mechanism and
+  # is not a target — the rule this is all built on, unchanged.
+  it "gives a module written only nested no target of its own" do
+    d = discover(<<~RUBY)
+      class ZzOnce
+        module Baz
+          def color; end
+        end
+        def own; end
+      end
+    RUBY
+
+    expect(d.declaration_targets).to eq([{ name: "ZzOnce", is_module: false }])
+  end
+
 end
