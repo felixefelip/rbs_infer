@@ -2242,6 +2242,12 @@ method_entry_facts:
   ivars:
     "@post": "(::Post & ::Post::Validated)"
 - class: PostsHelper
+  method: comment_author_badge
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
+- class: PostsHelper
   method: post_index_marker
   consts:
     Current.author_name: "::String"

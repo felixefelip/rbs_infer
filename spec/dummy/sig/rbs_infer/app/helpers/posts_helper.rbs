@@ -3,4 +3,5 @@ module PostsHelper
   def post_summary: ((Post & Post::Validated) post, ?Integer length) -> String
   def post_weights: (?Array[Integer] weights, ?Integer length, ?singleton(::Palette) klass) -> String
   def post_index_marker: ((Post & Post::Validated) post) -> String
+  def comment_author_badge: (Comment & Comment::Validated comment) -> String
 end

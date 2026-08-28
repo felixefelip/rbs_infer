@@ -33,4 +33,20 @@ module PostsHelper
   def post_index_marker(post)
     content_tag(:span, post.title, class: "post-marker")
   end
+
+  # Helper called ONLY from a PARTIAL (`posts/_comment.html.erb`). Regression
+  # fixture for the mixin chain that runs through RBS: a partial's generated
+  # class includes `ActionViewContext` and nothing else, and it is
+  # `ActionViewContext` — emitted as `.rbs`, so absent from the source corpus —
+  # that carries `PostsHelper`. Reading the include chain from source alone
+  # stopped one link short, the partial was swept as a caller of nothing, and
+  # this parameter came out `untyped` while Steep typed the very same argument
+  # `Comment & Comment::Validated`.
+  #
+  # The pair with `post_index_marker` above is the point: that one is reached
+  # from a non-partial view, whose class DOES write `include PostsHelper`. If
+  # only this one regresses, the RBS half of the chain broke.
+  def comment_author_badge(comment)
+    content_tag(:span, comment.author_name, class: "comment-badge")
+  end
 end
