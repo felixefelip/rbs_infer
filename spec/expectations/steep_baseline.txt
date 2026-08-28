@@ -16,6 +16,9 @@ app/models/example4.rb:14:25: [error] Type `(::String | nil)` does not have meth
 app/models/example4.rb:22:25: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:27:23: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:40:23: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example54.rb:6:6: [error] Type `singleton(::Example54::Bar)` does not have method `age`
+app/models/example55.rb:6:6: [error] Type `singleton(::Example55::Bar)` does not have method `age`
+app/models/example55/baz.rb:5:8: [warning] Method `::Example55::Baz#age` is not declared in RBS
 app/models/example7.rb:31:28: [error] Type `(::Integer | nil)` does not have method `abs`
 app/models/example7.rb:34:27: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/included_hook.rb:110:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS

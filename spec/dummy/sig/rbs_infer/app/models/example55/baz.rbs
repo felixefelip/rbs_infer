@@ -1,0 +1,13 @@
+class Example55
+  module Baz
+    extend ::Example55::Foo
+  end
+end
+
+class Example55
+  module Baz
+    module BananaMethods
+      def age: () -> Integer
+    end
+  end
+end

@@ -53,7 +53,12 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     ).generate_rbs
 
     if ENV["UPDATE_EXPECTATIONS"]
-      expectations_dir.join("#{name}.rbs").write(rbs)
+      path = expectations_dir.join("#{name}.rbs")
+      # A snapshot named for a nested target (`models/example55/baz`) is the
+      # first file in its directory; without this the write raises ENOENT and
+      # the refresh silently covers less than it was asked to.
+      path.dirname.mkpath
+      path.write(rbs)
     end
 
     expect(rbs.chomp).to eq(expected_rbs(name).chomp)
@@ -255,6 +260,26 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   it "example53 (a created module whose body reaches the host's singleton) matches expected RBS" do
     assert_snapshot("models/example53", target_file: "app/models/example53.rb")
+  end
+
+  it "example54 (the host, one file away from the concern that builds the module) matches expected RBS" do
+    assert_snapshot("models/example54", target_file: "app/models/example54.rb")
+  end
+
+  it "example54/baz (the concern and its DSL together) matches expected RBS" do
+    assert_snapshot("models/example54/baz", target_file: "app/models/example54/baz.rb")
+  end
+
+  it "example55 (the host, two files away from the DSL) matches expected RBS" do
+    assert_snapshot("models/example55", target_file: "app/models/example55.rb")
+  end
+
+  it "example55/baz (the concern, one file away from its DSL) matches expected RBS" do
+    assert_snapshot("models/example55/baz", target_file: "app/models/example55/baz.rb")
+  end
+
+  it "example55/foo (the DSL in a file of its own) matches expected RBS" do
+    assert_snapshot("models/example55/foo", target_file: "app/models/example55/foo.rb")
   end
 
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the

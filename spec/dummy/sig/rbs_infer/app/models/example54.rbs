@@ -1,0 +1,7 @@
+class Example54
+  class Bar
+    include ::Example54::Baz
+
+    def self.call_age: () -> untyped
+  end
+end
