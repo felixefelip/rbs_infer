@@ -18,6 +18,28 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     described_class.expand(source, sources: sources, mixin_index: mixin_index)
   end
 
+  # A project of exactly the constants named, as `ConstantSources` answers
+  # for them. The lookup itself is `ConstantSources`' own spec; here the
+  # question is only what the join does once the roots arrive.
+  # `eval_anywhere?` is asked of the PROJECT, so the double answers from the
+  # declarations it was built with — which is what the real `ConstantSources`
+  # computes by scanning the corpus.
+  def project(**declarations)
+    table = declarations.to_h do |name, source|
+      [name.to_s, [RbsInfer::Project::ParseCache::Entry.new(source: source, result: Prism.parse(source))]]
+    end
+    evals = declarations.each_value.any? { |source| source.match?(/class_eval|module_eval/) }
+    extends = declarations.each_value.any? { |source| source.include?(".extend") }
+
+    Class.new do
+      define_method(:parsed_for) { |name| table.fetch(name, []) }
+      define_method(:eval_anywhere?) { evals }
+      define_method(:inward_extend_anywhere?) { extends }
+      # The real one memoizes; a double only has to answer.
+      define_method(:derived) { |_entry, &derivation| derivation.call }
+    end.new
+  end
+
   it "moves a stored block into the class that replays it" do
     source = <<~RUBY
       class Wrap
@@ -653,27 +675,6 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
   # core reopening as a provider, and the two halves sharing an owner
   # (felixefelip/rbs_infer#256).
   context "a DSL whose applier is declared elsewhere" do
-    # A project of exactly the constants named, as `ConstantSources` answers
-    # for them. The lookup itself is `ConstantSources`' own spec; here the
-    # question is only what the join does once the roots arrive.
-    # `eval_anywhere?` is asked of the PROJECT, so the double answers from the
-    # declarations it was built with — which is what the real `ConstantSources`
-    # computes by scanning the corpus.
-    def project(**declarations)
-      table = declarations.to_h do |name, source|
-        [name.to_s, [RbsInfer::Project::ParseCache::Entry.new(source: source, result: Prism.parse(source))]]
-      end
-      evals = declarations.each_value.any? { |source| source.match?(/class_eval|module_eval/) }
-      extends = declarations.each_value.any? { |source| source.include?(".extend") }
-
-      Class.new do
-        define_method(:parsed_for) { |name| table.fetch(name, []) }
-        define_method(:eval_anywhere?) { evals }
-        define_method(:inward_extend_anywhere?) { extends }
-        # The real one memoizes; a double only has to answer.
-        define_method(:derived) { |_entry, &derivation| derivation.call }
-      end.new
-    end
 
     def core_applier(name: "Module")
       <<~RUBY
@@ -1421,6 +1422,131 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
 
     it "adds nothing on a second pass over its own output" do
       expect(expand(expand(hook))).to be_nil
+    end
+  end
+
+
+  # A concern's two halves are read by two different files. The host includes the
+  # concern, the concern extends the module holding the DSL, and that module is
+  # declared in a third file the host never names — `Post` / `Post::Taggable` /
+  # `ActiveSupport::Concern` (felixefelip/rbs_infer#268).
+  context "a DSL chain written across files" do
+    # The host, and nothing else: it names the concern and no more.
+    def host
+      <<~RUBY
+        class Wrap
+          class Target
+            include Elsewhere::Source
+          end
+        end
+      RUBY
+    end
+
+    def core_include
+      <<~RUBY
+        class Module
+          def include(*modules)
+            modules.reverse_each do |mod|
+              mod.send(:append_features, self)
+              mod.send(:included, self)
+            end
+            self
+          end
+        end
+      RUBY
+    end
+
+    # The concern: it writes the block and names the DSL, declaring neither.
+    def source_file(extended: "Elsewhere::DSL")
+      <<~RUBY
+        module Elsewhere
+          module Source
+            extend #{extended}
+
+            keep do
+              def installed; "yes"; end
+            end
+          end
+        end
+      RUBY
+    end
+
+    def dsl_file
+      <<~RUBY
+        module Elsewhere
+          module DSL
+            def keep(&block)
+              const_set(:Methods, Module.new).module_eval(&block)
+            end
+
+            def included(base)
+              base.extend(const_get(:Methods))
+            end
+          end
+        end
+      RUBY
+    end
+
+    def chain(**overrides)
+      project(Module: core_include, "Elsewhere::Source": source_file, "Elsewhere::DSL": dsl_file, **overrides)
+    end
+
+    # Two hops: the host reads the concern because it names it, and the DSL
+    # because the concern names it.
+    it "reaches a DSL the host never names, through the concern that does" do
+      expect(expand(host, sources: chain))
+        .to include("class Wrap::Target\n  extend Elsewhere::Source::Methods")
+    end
+
+    # The relation, not just the shapes. `extend Elsewhere::DSL` is written in
+    # the concern's file, and without it the host holds the DSL's methods and
+    # cannot say who may call them.
+    it "declines when the concern extends nothing" do
+      source = source_file.sub("    extend Elsewhere::DSL\n", "")
+
+      expect(expand(host, sources: chain("Elsewhere::Source": source))).to be_nil
+    end
+
+    # The DSL's own file is where its methods are. Naming it and never reading
+    # it is the one-hop answer, and it resolves nothing.
+    it "declines when the file the concern names is not in the project" do
+      sources = project(Module: core_include, "Elsewhere::Source": source_file)
+
+      expect(expand(host, sources: sources)).to be_nil
+    end
+
+    # The provider key is the name as WRITTEN. Resolving it would mean picking a
+    # namespace, and the concern's own file — which is where the name is written
+    # — declares nothing to pick from. So a bare name matches only a DSL
+    # declared under that bare name, and a namespaced one is left to whoever
+    # writes it out.
+    it "declines a bare name whose DSL is declared under a namespace" do
+      source = source_file(extended: "DSL")
+
+      expect(expand(host, sources: chain("Elsewhere::Source": source))).to be_nil
+    end
+
+    # Two concerns naming each other is a chain that would not terminate if the
+    # walk did not remember where it has been.
+    it "terminates on a cycle between two files" do
+      mutual = <<~RUBY
+        module Elsewhere
+          module DSL
+            extend Elsewhere::Source
+
+            def keep(&block)
+              const_set(:Methods, Module.new).module_eval(&block)
+            end
+
+            def included(base)
+              base.extend(const_get(:Methods))
+            end
+          end
+        end
+      RUBY
+
+      expect(expand(host, sources: chain("Elsewhere::DSL": mutual)))
+        .to include("class Wrap::Target\n  extend Elsewhere::Source::Methods")
     end
   end
 

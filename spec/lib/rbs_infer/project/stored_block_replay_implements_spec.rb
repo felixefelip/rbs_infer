@@ -12,6 +12,22 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
   NO_HOSTS = Object.new
   def NO_HOSTS.hosts_of(_name) = []
 
+  # A project of exactly the constants named, as `ConstantSources` answers for
+  # them — the same double the expander's own spec uses.
+  def project(**declarations)
+    table = declarations.to_h do |name, source|
+      [name.to_s, [RbsInfer::Project::ParseCache::Entry.new(source: source, result: Prism.parse(source))]]
+    end
+    evals = declarations.each_value.any? { |source| source.match?(/class_eval|module_eval/) }
+
+    Class.new do
+      define_method(:parsed_for) { |name| table.fetch(name, []) }
+      define_method(:eval_anywhere?) { evals }
+      define_method(:inward_extend_anywhere?) { false }
+      define_method(:derived) { |_entry, &derivation| derivation.call }
+    end.new
+  end
+
   # A graph that does, for the examples about the handed-out shape.
   def hosts(table)
     index = Object.new
@@ -208,6 +224,39 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
     expect(described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS))
       .to eq([{ "call" => "keep", "in" => "::Src", "implements" => "singleton(::Target)" }])
   end
+  # The gate is the expander's, asked of the PROJECT. A concern writes
+  # `class_methods do` and no eval at all — the eval is in the DSL, declared
+  # somewhere else — so asking this file's own text skipped exactly the files
+  # whose blocks needed annotating (felixefelip/rbs_infer#268).
+  it "annotates a block in a file whose own text writes no eval" do
+    concern = <<~RUBY
+      module Source
+        extend Elsewhere::DSL
+
+        keep do
+          def installed; "yes"; end
+        end
+      end
+    RUBY
+    dsl = <<~RUBY
+      module Elsewhere
+        module DSL
+          def keep(&block)
+            const_set(:Methods, Module.new).module_eval(&block)
+          end
+        end
+      end
+    RUBY
+
+    expect(concern).not_to include("class_eval")
+    expect(concern).not_to include("module_eval")
+
+    entries = described_class.blocks_for(source: concern, sources: project("Elsewhere::DSL": dsl),
+                                         mixin_index: NO_HOSTS)
+
+    expect(entries).to eq([{ "call" => "keep", "in" => "::Source", "implements" => "::Source::Methods" }])
+  end
+
   # A module the DSL builds and a hook HANDS to the host: the block's `def`s land
   # in the module, but they run on the host's class object, where the host's own
   # class methods live. `@implements` alone would check them against a self they
