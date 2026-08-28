@@ -1174,6 +1174,79 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(expand(expand(immediate))).to be_nil
     end
 
+    # A local is where you put a value you are about to use — `ActiveSupport`
+    # writes the module to one before evaluating into it — not an object this
+    # pass cannot name.
+    context "with the target held in a local" do
+      def held(binds, declares: "module Methods; end\n")
+        immediate(runs: "#{binds}\n              mod.module_eval(&block)", declares: declares)
+      end
+
+      it "reads a local bound to a fetched constant" do
+        expect(expand(held("mod = const_get(:Methods)")))
+          .to include("module Wrap::Target::Methods\n  def age; 31; end")
+      end
+
+      it "reads a local bound to a written constant" do
+        source = held("mod = Written", declares: "").sub("module DSL", "module Written; end\n\n  module DSL")
+
+        expect(expand(source)).to include("module Wrap::Written\n  def age; 31; end")
+      end
+
+      # The two spellings of filling it conditionally are one claim, so both are
+      # read: a ternary is one assignment holding a conditional, an if/else is
+      # two assignments.
+      it "reads a ternary whose arms name the same module" do
+        expect(expand(held("mod = flag? ? const_get(:Methods) : const_get(:Methods)")))
+          .to include("module Wrap::Target::Methods\n  def age; 31; end")
+      end
+
+      it "reads an if/else whose arms name the same module" do
+        expect(expand(held("if flag?\n                mod = const_get(:Methods)\n              else\n                mod = const_get(:Methods)\n              end")))
+          .to include("module Wrap::Target::Methods\n  def age; 31; end")
+      end
+
+      # The two spellings resolve in different places — one under the caller's
+      # `self`, one where the DSL is written — so agreeing on the LETTERS is not
+      # agreeing on the module.
+      it "declines arms that name it two different ways" do
+        source = held("mod = flag? ? const_get(:Methods) : Wrap::Target::Methods")
+
+        expect(expand(source)).to be_nil
+      end
+
+      it "declines arms that name different modules" do
+        source = held("mod = flag? ? const_get(:Methods) : const_get(:Other)",
+                      declares: "module Methods; end\n    module Other; end\n")
+
+        expect(expand(source)).to be_nil
+      end
+
+      # A path where the local holds nothing is a path where `mod.module_eval`
+      # raises, so it names no other module — the same reading the rest of the
+      # pass gives a guard. Both spellings of it, since they are the same Ruby.
+      it "reads past a path that leaves the local empty" do
+        expect(expand(held("mod = const_get(:Methods) if flag?")))
+          .to include("module Wrap::Target::Methods\n  def age; 31; end")
+        expect(expand(held("mod = flag? ? const_get(:Methods) : nil")))
+          .to include("module Wrap::Target::Methods\n  def age; 31; end")
+      end
+
+      # An arm that is some other expression may well be a module, and one this
+      # pass failed to name.
+      it "declines an arm it cannot name" do
+        expect(expand(held("mod = flag? ? const_get(:Methods) : fetch_it"))).to be_nil
+      end
+
+      # Which module a parameter holds comes from the call site, and that is the
+      # `apply` shape rather than this one.
+      it "declines a local the body never fills" do
+        source = immediate(runs: "mod.module_eval(&block)").sub("bazinga(&block)", "bazinga(mod, &block)")
+
+        expect(expand(source)).to be_nil
+      end
+    end
+
     # The storage path is untouched: a DSL that keeps the block for later is
     # still read as storage, and one that does both does both.
     it "still reads a DSL that keeps the block instead of running it" do
