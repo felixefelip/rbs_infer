@@ -99,7 +99,7 @@ module RbsInfer::Inference
               steep_type = "self" if self_return?(m, steep_type, self_types)
 
               # Check for early return nil in body
-              if defn && has_nil_return?(defn)
+              if defn && has_nil_return?(defn, dead_ranges: dead_ranges(parsed_target))
                 steep_type = RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type)
               end
 
@@ -142,7 +142,7 @@ module RbsInfer::Inference
             next unless RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type) == current_type
 
             defn = def_map[m.name]
-            next if defn && has_nil_return?(defn)
+            next if defn && has_nil_return?(defn, dead_ranges: dead_ranges(parsed_target))
 
             steep_type = "self" if self_return?(m, steep_type, self_types)
             m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> #{steep_type}")
@@ -163,7 +163,7 @@ module RbsInfer::Inference
             steep_type = "self" if self_return?(m, steep_type, self_types)
 
             defn = def_map[m.name]
-            if defn && has_nil_return?(defn)
+            if defn && has_nil_return?(defn, dead_ranges: dead_ranges(parsed_target))
               steep_type = RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type)
             end
 
@@ -208,7 +208,9 @@ module RbsInfer::Inference
 
             steep_type = "self" if self_return?(m, steep_type, self_types)
             defn = def_map[m.name]
-            steep_type = RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type) if defn && has_nil_return?(defn)
+            if defn && has_nil_return?(defn, dead_ranges: dead_ranges(parsed_target))
+              steep_type = RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type)
+            end
             next if steep_type == current_type
             # Compared against the declared type WIDENED BY NIL, so a body that
             # differs from it only by nilability is left alone. That axis is the
@@ -255,7 +257,7 @@ module RbsInfer::Inference
         next if current.nil? || current == "untyped" || current == "void" || current.end_with?("?")
 
         defn = def_map(parsed_target)[m.name]
-        next unless defn && has_nil_return?(defn)
+        next unless defn && has_nil_return?(defn, dead_ranges: dead_ranges(parsed_target))
 
         m.signature = m.signature.sub(/-> #{Regexp.escape(current)}\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.nilablize(current)}")
       end
@@ -639,12 +641,33 @@ module RbsInfer::Inference
     end
 
     # Verifica se o corpo do método contém `return nil` ou `return` (implícito nil)
-    def has_nil_return?(defn)
+    def has_nil_return?(defn, dead_ranges:)
       RbsInfer::Analyzer.find_all_nodes(defn) do |node|
         next false unless node.is_a?(Prism::ReturnNode)
+        # A `return` that cannot run says nothing about what the method returns.
+        # `return if current_user.nil?`, written under a guard that already
+        # established `current_user`, reads as dead code to a human — and Steep,
+        # which computed exactly that, reports the branch as unreachable. Counting
+        # it made a method that never returns nil come out `T?`, and every fact
+        # downstream of that type went with it (felixefelip/rbs_infer#286).
+        next false if dead_ranges.any? { |range| range.cover?(node.location.start_offset) }
+
         node.arguments.nil? ||
           node.arguments.arguments.any? { |arg| arg.is_a?(Prism::NilNode) }
       end.any?
+    end
+
+    # The dead branches of the target's source, memoized per target the way
+    # `def_map` is: all five passes above ask, and the answer is one type-check
+    # away. Empty without a bridge or a source — the honest "nothing proved
+    # dead", which leaves every `return` counted exactly as before.
+    def dead_ranges(parsed_target)
+      @dead_ranges ||=
+        if @steep_bridge && parsed_target&.source
+          @steep_bridge.unreachable_branch_ranges(parsed_target.source)
+        else
+          []
+        end
     end
 
     # Conditional tail expressions (`if`/`unless`/`case` — including the

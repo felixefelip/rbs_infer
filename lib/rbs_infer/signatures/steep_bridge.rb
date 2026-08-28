@@ -266,6 +266,32 @@ module RbsInfer::Signatures
       steep_bridge_ivar_write_analyzer.ivar_write_types_per_method(source_code, target_class: target_class)
     end
 
+    # Byte ranges of the branches Steep proved cannot run in `source_code`.
+    #
+    # Steep decides this while typing an `if`/`unless`: when the condition makes
+    # the truthy (or falsy) environment `unreachable`, the clause is dead, and it
+    # says so as a `Ruby::UnreachableBranch`. That verdict is the entire answer to
+    # "does this `return` happen" — a question a syntactic walk over the body
+    # cannot ask, and the reason a guard the checker has already refuted still
+    # widened the method's return type (felixefelip/rbs_infer#286).
+    #
+    # Answered in BYTE offsets, because the caller reads Prism nodes: Steep's
+    # parser indexes its buffer by CHARACTER, so one non-ASCII byte earlier in the
+    # file is enough to slide every range onto the wrong node.
+    def unreachable_branch_ranges(source_code)
+      typing = type_check(source_code)
+      return [] unless typing
+
+      typing.errors.filter_map do |error|
+        next unless error.is_a?(Steep::Diagnostic::Ruby::UnreachableBranch)
+
+        range = error.node&.loc&.expression
+        next unless range
+
+        byte_offset(source_code, range.begin_pos)...byte_offset(source_code, range.end_pos)
+      end
+    end
+
     # Runs Steep's `Postconditions::Inferrer` against the source and
     # returns the resulting `InferredEntry` array. These describe what
     # ivars each method narrows (unconditional for setters, when_true
@@ -523,6 +549,14 @@ module RbsInfer::Signatures
                      type.is_a?(RBS::Types::Bases::Class)
 
       type.each_type.any? { |t| context_dependent?(t) }
+    end
+
+    # A character offset into `source` as a byte offset. Identical for an
+    # ASCII-only file, which is the common case and worth not scanning for.
+    def byte_offset(source, char_offset)
+      return char_offset if source.ascii_only?
+
+      source[0, char_offset].to_s.bytesize
     end
 
     def steep_bridge_ivar_write_analyzer
