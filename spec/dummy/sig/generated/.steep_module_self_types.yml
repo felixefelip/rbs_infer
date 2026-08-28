@@ -489,6 +489,7 @@ app/models/post/taggable.rb:
     - "# @type instance: Post & Post::Taggable"
   blocks:
   - call: class_methods
+    in: "::Post::Taggable"
     implements: "::Post::Taggable::ClassMethods"
     self: singleton(::Post) & ::Post::Taggable::ClassMethods
 app/models/user/displayable.rb:
@@ -529,6 +530,8 @@ sig/generated/steep_ar_runtime/active_support/concern.rb:
       | (singleton(IncludedHook::Sugared)) | (singleton(Post::Notifiable)) | (singleton(Post::Taggable))
       | (singleton(Test::Filtrable)) | (singleton(User::Displayable)) | (singleton(User::Notifiable))
       | (singleton(User::Recoverable)) | (singleton(Widget::Closeable)) | (singleton(Widget::Publishable))"
+    defs:
+      class_methods: singleton(Post::Taggable)
 sig/generated/steep_ar_runtime/notification/generated_store_accessors.rb:
   modules:
   - anchor: GeneratedStoreAccessors

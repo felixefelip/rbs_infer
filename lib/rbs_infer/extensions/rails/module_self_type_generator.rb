@@ -3,7 +3,6 @@
 require "prism"
 require "yaml"
 require "fileutils"
-require_relative "class_methods_implements"
 # The whole gem, not a leaf: this generator now reads the `include`s through
 # `Project::MixinIndex`, which walks sources with the analyzer's own helpers.
 # `rbs_infer.rb` does not load this file, so there is no cycle.
@@ -25,10 +24,14 @@ module RbsInfer
       # derivation that used to live in Steep.
       #
       # It also records, in the same entry, the `blocks` that Steep should
-      # annotate with `# @implements` — currently a concern's `class_methods do`
-      # block, resolved by `ClassMethodsImplements` (felixefelip/rbs_infer#60,
-      # felixefelip/steep#47). A file can produce a `blocks`-only entry even
-      # when it has no self-type annotations.
+      # annotate with `# @implements` — every block this file writes that some
+      # DSL replays somewhere else, resolved by the core's
+      # `Project::StoredBlockReplayImplements` (felixefelip/rbs_infer#238,
+      # felixefelip/steep#47). A concern's `class_methods do` is one of them and
+      # is no longer special: the transcribed `ActiveSupport::Concern` says what
+      # it runs, and the replay chain reads it like any other
+      # (felixefelip/rbs_infer#268). A file can produce a `blocks`-only entry
+      # even when it has no self-type annotations.
       class ModuleSelfTypeGenerator
         SIDECAR_PATH = "sig/generated/.steep_module_self_types.yml"
 
@@ -100,30 +103,20 @@ module RbsInfer
           end
         end
 
-        # Two contributors, one list. A stored block replayed through
-        # `class_eval` is plain Ruby, so its entries come from the CORE
-        # (`Project::StoredBlockReplayImplements`) and need no name for the
-        # file: the target is read off the replay chain, not off the file's own
-        # module (felixefelip/rbs_infer#238).
+        # One contributor. A block replayed through `class_eval`/`module_eval` is
+        # plain Ruby, so its entries come from the CORE
+        # (`Project::StoredBlockReplayImplements`) and need no name for the file:
+        # the target is read off the replay chain, not off the file's own module
+        # (felixefelip/rbs_infer#238).
         #
-        # The `class_methods do` half is still keyed on the file's own name — a
-        # `class_methods do` block belongs to the concern the file is written
-        # for — so it is the only half that needs the extractor, and a file with
-        # no primary declaration can still contribute the first half.
-        def blocks_for(abs, rel, source)
+        # `class_methods do` used to be the second contributor, keyed on the
+        # file's own name because the DSL was recognised by it. It is read as the
+        # replay it is now — `ActiveSupport::Concern#class_methods` is
+        # transcribed, and the chain resolves it like any other
+        # (felixefelip/rbs_infer#268).
+        def blocks_for(_abs, _rel, source)
           RbsInfer::Project::StoredBlockReplayImplements.blocks_for(source: source, sources: constant_sources,
-                                                                     mixin_index: mixin_index) +
-            class_methods_blocks_for(abs, rel, source)
-        end
-
-        def class_methods_blocks_for(abs, rel, source)
-          extractor = RbsInfer::AST::ClassNameExtractor.new(file_path: abs)
-          Prism.parse(source).value.accept(extractor)
-          module_name = extractor.class_name
-          return [] unless module_name
-
-          ClassMethodsImplements.blocks_for(path: rel, module_name: module_name, source: source,
-                                            mixin_index: mixin_index)
+                                                                    mixin_index: mixin_index)
         end
 
         # The `include`s written across the app, so a module's self-type comes

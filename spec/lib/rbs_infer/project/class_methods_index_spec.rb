@@ -36,9 +36,12 @@ RSpec.describe RbsInfer::Project::ClassMethodsIndex do
     expect(index_for(file).has?("Post::Taggable", enclosing: "Post")).to eq(true)
   end
 
-  # The shape the expanders leave behind is what this index matches — the
-  # `class_methods do` DSL itself is never named here.
-  it "encontra ClassMethods desugarado de um bloco class_methods" do
+  # A `class_methods do` block is NOT one of them, and no longer needs to be:
+  # nothing desugars it into a nested module any more. The transcribed
+  # `ActiveSupport::Concern` says what the DSL runs, the replay chain reads it,
+  # and the `extend` reaches the host from the concern's own `append_features`
+  # rather than from this index's convention (felixefelip/rbs_infer#268).
+  it "não encontra nada num bloco class_methods, que não declara módulo nenhum" do
     file = write_file("post/taggable.rb", <<~RUBY)
       module Post::Taggable
         extend ActiveSupport::Concern
@@ -49,7 +52,7 @@ RSpec.describe RbsInfer::Project::ClassMethodsIndex do
       end
     RUBY
 
-    expect(index_for(file).has?("Post::Taggable", enclosing: "Post")).to eq(true)
+    expect(index_for(file).has?("Post::Taggable", enclosing: "Post")).to eq(false)
   end
 
   # The Fizzy shape: `include Params` written inside `class Filter` means
@@ -57,7 +60,7 @@ RSpec.describe RbsInfer::Project::ClassMethodsIndex do
   it "resolve o nome do módulo no escopo léxico do includer" do
     file = write_file("filter/params.rb", <<~RUBY)
       module Filter::Params
-        class_methods do
+        module ClassMethods
           def find_by_params(params) = nil
         end
       end

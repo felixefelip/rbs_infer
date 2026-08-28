@@ -159,3 +159,7 @@ class Post
   scope :pinned, -> { where(pinned: true) }
   scope :unpinned, -> { where(pinned: false) }
 end
+
+class Post
+  extend Post::Taggable::ClassMethods
+end

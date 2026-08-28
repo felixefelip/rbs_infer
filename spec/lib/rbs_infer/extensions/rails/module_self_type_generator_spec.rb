@@ -1,6 +1,7 @@
 require "spec_helper"
 require "rbs_infer"
 require "rbs_infer/extensions/rails/module_self_type_generator"
+require "rbs_infer/extensions/rails/active_record/runtime_generator"
 require "tmpdir"
 require "fileutils"
 require "yaml"
@@ -16,9 +17,17 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
     end
   RUBY
 
+  # The transcribed `ActiveSupport::Concern`, which every app has on disk once
+  # the AR-runtime sidecar has run. `class_methods do` is read through it — the
+  # DSL is a method with a body now, not a name the generator knows
+  # (felixefelip/rbs_infer#268) — so an app without it resolves nothing, exactly
+  # as a real one would not.
+  CONCERN = RbsInfer::Extensions::Rails::ActiveRecord::Runtime::ConcernPseudoCode::SOURCE
+
   def in_app(files)
     Dir.mktmpdir do |dir|
-      files = { "Steepfile" => STEEPFILE }.merge(files)
+      files = { "Steepfile" => STEEPFILE,
+                "sig/generated/steep_ar_runtime/active_support/concern.rb" => CONCERN }.merge(files)
       files.each do |rel, content|
         path = File.join(dir, rel)
         FileUtils.mkdir_p(File.dirname(path))
@@ -59,11 +68,13 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
       table = described_class.new(app_dir: dir).build_table
 
       # `app/models/post.rb` declares a class nobody includes, and `lib/` is not
-      # scanned at all.
+      # scanned at all. The transcribed Concern is covered like any other module
+      # with extenders — the dummy's own sidecar carries the same entry.
       expect(table.keys).to contain_exactly(
         "app/models/post/taggable.rb",
         "app/helpers/posts_helper.rb",
-        "app/controllers/concerns/filterable.rb"
+        "app/controllers/concerns/filterable.rb",
+        "sig/generated/steep_ar_runtime/active_support/concern.rb"
       )
       expect(table["app/helpers/posts_helper.rb"]["modules"].first["annotations"].first)
         .to include("ApplicationController & PostsHelper")
@@ -115,6 +126,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
       expect(entry["blocks"]).to eq(
         [{
           "call" => "class_methods",
+          "in" => "::Post::Taggable",
           "implements" => "::Post::Taggable::ClassMethods",
           "self" => "singleton(::Post) & ::Post::Taggable::ClassMethods"
         }]
@@ -140,7 +152,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
 
       expect(entry).not_to have_key("anchor")
       expect(entry["blocks"]).to eq(
-        [{ "call" => "class_methods", "implements" => "::Greetable::ClassMethods" }]
+        [{ "call" => "class_methods", "in" => "::Greetable", "implements" => "::Greetable::ClassMethods" }]
       )
     end
   end

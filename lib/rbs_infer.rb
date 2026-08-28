@@ -53,20 +53,9 @@ require_relative "rbs_infer/project/dependency_sorter"
 # into a plain class reopening (felixefelip/rbs_infer#38) — pure Prism,
 # self-gates on the `on_load` substring, so it is always safe to load.
 require_relative "rbs_infer/extensions/rails/on_load_expander"
-# The class_methods expander rewrites an ActiveSupport::Concern's
-# `class_methods do ... end` into a nested `module ClassMethods ... end`
-# (felixefelip/rbs_infer#60) — pure Prism, self-gates on the
-# `class_methods` substring, so it is always safe to load.
-require_relative "rbs_infer/extensions/rails/class_methods_expander"
 # Computes module/concern self-type annotations from the AST (correct
 # acronym casing) + Rails path conventions, for Steep's generic injector
 # (felixefelip/rbs_infer#52). Pure Prism/string logic, safe to always load.
 require_relative "rbs_infer/extensions/rails/module_self_type_annotator"
-# Resolves the `self` a `class_methods do` block runs with (the includer's
-# singleton intersected with `…::ClassMethods`). Used both to emit the
-# downstream `blocks` sidecar and to inject the same self-type onto the
-# desugared `module ClassMethods` during the analyzer's own type-check
-# (felixefelip/rbs_infer#60). Pure Prism/string logic, safe to always load.
-require_relative "rbs_infer/extensions/rails/class_methods_implements"
 
 require_relative "rbs_infer/railtie" if defined?(Rails::Railtie)
