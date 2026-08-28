@@ -2,6 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 require "open3"
+require "yaml"
 
 RSpec.describe "bin/rbs_infer" do
   let(:bin_path) { File.expand_path("../../bin/rbs_infer", __dir__) }
@@ -298,6 +299,90 @@ RSpec.describe "bin/rbs_infer" do
       # param cai para `untyped`. Com a correção, resolve para String.
       expect(stdout).to include("def initialize: (name: String) -> void")
       expect(stdout).not_to include("name: untyped")
+    end
+  end
+
+  # ─── O sidecar de postconditions não é do rbs_infer sozinho ───────
+  #
+  # Steep escreve os postconditions que ele mesmo infere em
+  # `sig/generated/.steep_postconditions.yml`
+  # (`Steep::Postconditions::Runner::DEFAULT_OUTPUT_PATH`) — o MESMO caminho que
+  # `File.join(output_dir, ".steep_postconditions.yml")` dá no `--output-dir`
+  # padrão. Enquanto os dois dividiram o caminho, quem rodasse por último
+  # vencia, nos dois sentidos: um projeto sem `self.class.class_eval` apagava o
+  # arquivo do Steep a cada run (o `rm_f`), e um projeto com um sobrescrevia as
+  # entradas dele. O `sig/**/.steep_postconditions.yml` do Steep faz merge de
+  # vários arquivos — o que faltava era o rbs_infer escrever no diretório dele.
+  describe "sidecar de postconditions" do
+    def setup_class_eval_project
+      write_file("app/models/foo.rb", <<~RUBY)
+        class Foo
+          def build_age
+            self.class.class_eval do
+              def age
+                42
+              end
+            end
+          end
+        end
+      RUBY
+    end
+
+    # O arquivo do Steep é um dado de entrada do rbs_infer: sem ele o
+    # `current_user` de um controller volta a ser nilable, o `@x = current_user.y`
+    # vira erro de tipo, e o ivar deixa de ser declarado.
+    def write_steep_sidecar(content = "--- {}\n")
+      write_file("sig/generated/.steep_postconditions.yml", content)
+    end
+
+    it "não apaga o sidecar do Steep quando não tem nada a emitir" do
+      setup_project
+      write_steep_sidecar
+
+      _stdout, _stderr, status = run_rbs_infer("--output", "app/models/user.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(File.exist?(File.join(@tmpdir, "sig/generated/.steep_postconditions.yml"))).to be true
+    end
+
+    it "não sobrescreve o sidecar do Steep quando tem o que emitir" do
+      setup_class_eval_project
+      write_steep_sidecar
+
+      _stdout, _stderr, status = run_rbs_infer("--output", "app/models/foo.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(File.read(File.join(@tmpdir, "sig/generated/.steep_postconditions.yml"))).to eq("--- {}\n")
+    end
+
+    # Num diretório próprio, e não um dot-directory: o glob do Steep é um
+    # `Dir.glob` comum, cujo `**` não desce em diretório oculto — um
+    # `.rbs_infer_postconditions/` seria escrito e nunca lido.
+    it "emite no próprio diretório, onde o glob do Steep alcança" do
+      setup_class_eval_project
+
+      stdout, _stderr, status = run_rbs_infer("--output", "app/models/foo.rb", dir: @tmpdir)
+
+      sidecar = "sig/generated/rbs_infer_postconditions/.steep_postconditions.yml"
+      expect(status).to be_success
+      expect(stdout).to include(sidecar)
+      expect(YAML.safe_load(File.read(File.join(@tmpdir, sidecar)))["postconditions"]).to include(
+        a_hash_including("class" => "Foo", "method" => "build_age")
+      )
+      expect(Dir.glob(File.join(@tmpdir, "sig/**/.steep_postconditions.yml")))
+        .to include(File.join(@tmpdir, sidecar))
+    end
+
+    it "remove o próprio sidecar quando deixa de ter o que emitir" do
+      setup_class_eval_project
+      run_rbs_infer("--output", "app/models/foo.rb", dir: @tmpdir)
+
+      write_file("app/models/foo.rb", "class Foo\n  def build_age\n    nil\n  end\nend\n")
+      _stdout, _stderr, status = run_rbs_infer("--output", "app/models/foo.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(File.exist?(File.join(@tmpdir,
+                                   "sig/generated/rbs_infer_postconditions/.steep_postconditions.yml"))).to be false
     end
   end
 end
