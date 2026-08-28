@@ -157,6 +157,90 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example49", target_file: "app/models/example49.rb")
   end
 
+  it "example14 (a halt check whose establisher always runs) matches expected RBS" do
+    assert_snapshot("models/example14", target_file: "app/models/example14.rb")
+  end
+
+  it "example15 (the same, established through a class-level registry) matches expected RBS" do
+    assert_snapshot("models/example15", target_file: "app/models/example15.rb")
+  end
+
+  it "example16 (the authentication chain in the shape an app writes it) matches expected RBS" do
+    assert_snapshot("models/example16", target_file: "app/models/example16.rb")
+  end
+
+  it "example27 (nil defaults on a DSL method whose parameters arrive by two routes) matches expected RBS" do
+    assert_snapshot("models/example27", target_file: "app/models/example27.rb")
+  end
+
+  it "example31 (a replayed block whose `super` resolves against the includer's chain) matches expected RBS" do
+    assert_snapshot("models/example31", target_file: "app/models/example31.rb")
+  end
+
+  it "example33 (two DSL pairs in one file, each block belonging to its own source) matches expected RBS" do
+    assert_snapshot("models/example33", target_file: "app/models/example33.rb")
+  end
+
+  it "example34 (`Module#include` reopened by the DSL, replaying `included do`) matches expected RBS" do
+    assert_snapshot("models/example34", target_file: "app/models/example34.rb")
+  end
+
+  it "example35 (a `def self.` DSL reached by inheritance) matches expected RBS" do
+    assert_snapshot("models/example35", target_file: "app/models/example35.rb")
+  end
+
+  it "example36 (the same, with an applier taking `*modules`) matches expected RBS" do
+    assert_snapshot("models/example36", target_file: "app/models/example36.rb")
+  end
+
+  it "example37 (a `*modules` applier reached by `extend`) matches expected RBS" do
+    assert_snapshot("models/example37", target_file: "app/models/example37.rb")
+  end
+
+  it "example38 (an applier reaching a private storage through `send`) matches expected RBS" do
+    assert_snapshot("models/example38", target_file: "app/models/example38.rb")
+  end
+
+  it "example39 (an applier written as a core reopening in another file) matches expected RBS" do
+    assert_snapshot("models/example39", target_file: "app/models/example39.rb")
+  end
+
+  it "example40 (a DSL that delegates to a holder object it memoizes) matches expected RBS" do
+    assert_snapshot("models/example40", target_file: "app/models/example40.rb")
+  end
+
+  it "example41 (a hand-rolled `included do`, hook and storage in one method) matches expected RBS" do
+    assert_snapshot("models/example41", target_file: "app/models/example41.rb")
+  end
+
+  it "example42 (one source applied by two classes) matches expected RBS" do
+    assert_snapshot("models/example42", target_file: "app/models/example42.rb")
+  end
+
+  it "example43 (three appliers over two sources, one applying both) matches expected RBS" do
+    assert_snapshot("models/example43", target_file: "app/models/example43.rb")
+  end
+
+  it "example44 (`included do` with the deref in each includer) matches expected RBS" do
+    assert_snapshot("models/example44", target_file: "app/models/example44.rb")
+  end
+
+  it "example45 (a replay onto the target's singleton, landing class methods) matches expected RBS" do
+    assert_snapshot("models/example45", target_file: "app/models/example45.rb")
+  end
+
+  it "example46 (a constant filled with a fresh module, written and `const_set`) matches expected RBS" do
+    assert_snapshot("models/example46", target_file: "app/models/example46.rb")
+  end
+
+  it "example47 (`const_get(:X).module_eval(&block)`, the gap #268 still has open) matches expected RBS" do
+    assert_snapshot("models/example47", target_file: "app/models/example47.rb")
+  end
+
+  it "example48 (`base.extend(const_get(:X))` in a hook, landing the extend on the host) matches expected RBS" do
+    assert_snapshot("models/example48", target_file: "app/models/example48.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that

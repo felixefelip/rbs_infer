@@ -1,0 +1,20 @@
+class Example35
+  class Foo
+    self.@_bazingado_block: (^(*untyped) [self: singleton(Example35::Foo)] -> Symbol)?
+
+    def self.bazinga: (singleton(::Example35::Baz) module_included) -> (^(*untyped) [self: singleton(Example35::Foo)] -> Symbol | nil | Symbol)
+    def self.bazingado: (?singleton(Example35::Foo)? base) ?{ (*untyped) [self: singleton(Example35::Foo)] -> Symbol } -> (^(*untyped) [self: singleton(Example35::Foo)] -> Symbol | nil | Symbol)
+  end
+end
+
+class Example35
+  class Baz < ::Example35::Foo
+  end
+end
+
+class Example35
+  class Bar < Baz
+    def call_age: () -> Integer
+    def age: () -> Integer
+  end
+end

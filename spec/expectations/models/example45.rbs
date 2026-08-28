@@ -1,0 +1,30 @@
+class Example45
+  module Foo
+    @_banana_block: (^(*untyped) [self: Class] -> Symbol)?
+
+    def banana_class_method: () ?{ (*untyped) [self: Class] -> Symbol } -> (^(*untyped) [self: Class] -> Symbol)?
+    def included: (Module base) -> Symbol?
+  end
+
+  module Baz
+    extend ::Example45::Foo
+  end
+end
+
+class Example45
+  class Bar
+    include ::Example45::Baz
+
+    def self.call_age: () -> Integer
+    def self.age: () -> Integer
+  end
+end
+
+class Example45
+  class BarOther
+    include ::Example45::Baz
+
+    def self.call_age: () -> Integer
+    def self.age: () -> Integer
+  end
+end

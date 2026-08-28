@@ -1,0 +1,31 @@
+class Example44
+  module Foo
+    @_bazingado_block: (^(*untyped) [self: Module] -> Symbol)?
+
+    def included: (?Module? base) ?{ (*untyped) [self: Module] -> Symbol } -> (^(*untyped) [self: Module] -> Symbol | nil | Symbol)
+  end
+
+  module Baz
+    extend ::Example44::Foo
+  end
+end
+
+class Example44
+  class Bar
+    extend ::Example44::Foo
+    include ::Example44::Baz
+
+    def call_age: () -> Integer
+    def age: () -> Integer
+  end
+end
+
+class Example44
+  class BarOther
+    extend ::Example44::Foo
+    include ::Example44::Baz
+
+    def call_age: () -> Integer
+    def age: () -> Integer
+  end
+end

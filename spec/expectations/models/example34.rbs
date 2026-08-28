@@ -1,0 +1,21 @@
+class Example34
+  module Foo
+    @_bazingado_block: (^(*untyped) [self: singleton(Example34::Bar) | singleton(Example34::Baz) | Module] -> Symbol)?
+
+    def include: (*singleton(::Example34::Baz) modules) -> Array[singleton(Example34::Baz)]
+    def included: (?(singleton(Example34::Bar) | singleton(Example34::Baz) | Module)? base) ?{ (*untyped) [self: (singleton(Example34::Bar) | singleton(Example34::Baz) | Module)] -> Symbol } -> (^(*untyped) [self: (singleton(Example34::Bar) | singleton(Example34::Baz) | Module)] -> Symbol | nil | Symbol)
+  end
+
+  module Baz
+    extend ::Example34::Foo
+  end
+end
+
+class Example34
+  class Bar
+    extend ::Example34::Foo
+    include ::Example34::Baz
+
+    def age: () -> Integer
+  end
+end

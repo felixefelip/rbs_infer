@@ -1,0 +1,22 @@
+class Example48
+  module Foo
+    def included: (Module base) -> Module
+  end
+
+  module Baz
+    extend ::Example48::Foo
+  end
+
+  module Baz::BananaMethods
+    def age: () -> Integer
+  end
+end
+
+class Example48
+  class Bar
+    extend ::Example48::Baz::BananaMethods
+    include ::Example48::Baz
+
+    def self.call_age: () -> Integer
+  end
+end
