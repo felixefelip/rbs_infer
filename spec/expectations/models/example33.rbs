@@ -1,0 +1,34 @@
+class Example33
+  module Foo
+    @_bazingado_block: (^(*untyped) [self: singleton(Example33::Bar) | singleton(Example33::BarOther)] -> Symbol)?
+
+    def bazinga: ((singleton(::Example33::Baz) | singleton(::Example33::BazOther)) module_included) -> (^(*untyped) [self: (singleton(Example33::Bar) | singleton(Example33::BarOther))] -> Symbol | nil | Symbol)
+    def bazingado: (?(singleton(Example33::Bar) | singleton(Example33::BarOther))? base) ?{ (*untyped) [self: (singleton(Example33::Bar) | singleton(Example33::BarOther))] -> Symbol } -> (^(*untyped) [self: (singleton(Example33::Bar) | singleton(Example33::BarOther))] -> Symbol | nil | Symbol)
+  end
+
+  module Baz
+    extend ::Example33::Foo
+  end
+
+  module BazOther
+    extend ::Example33::Foo
+  end
+end
+
+class Example33
+  class Bar
+    extend ::Example33::Foo
+
+    def age: () -> Integer
+  end
+end
+
+class Example33
+  class BarOther
+    extend ::Example33::Foo
+
+    def name: () -> String
+    def call_name_upcase: () -> String
+    def name_upcase: () -> String
+  end
+end

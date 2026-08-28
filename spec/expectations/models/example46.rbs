@@ -1,0 +1,17 @@
+class Example46
+  module Baz
+  end
+
+  module Baz::BananaWritten
+  end
+
+  module Baz::BananaDynamic
+  end
+end
+
+class Example46
+  class Bar
+    def written: () -> singleton(Example46::Baz::BananaWritten)
+    def dynamic: () -> singleton(Example46::Baz::BananaDynamic)
+  end
+end

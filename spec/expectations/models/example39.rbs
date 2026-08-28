@@ -1,0 +1,21 @@
+module Example39
+  module Foo
+    @_bananed_block: (^(*untyped) [self: Module] -> Symbol)?
+
+    private
+
+    def bananed: (?untyped base) ?{ (*untyped) [self: Module] -> Symbol } -> (^(*untyped) [self: Module] -> Symbol | nil | Symbol)
+  end
+
+  module Baz
+    extend ::Example39::Foo
+  end
+end
+
+module Example39
+  class Bar
+    extend ::Example39::Foo
+
+    def call_age: () -> Integer
+  end
+end
