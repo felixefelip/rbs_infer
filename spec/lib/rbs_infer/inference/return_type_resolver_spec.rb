@@ -41,6 +41,20 @@ RSpec.describe RbsInfer::Inference::ReturnTypeResolver do
     it "is false for any method returning some other class" do
       expect(resolver.send(:self_return?, member(:method), "Other", self_types)).to be(false)
     end
+
+    # felixefelip/rbs_infer#287. `self` is the RECEIVER, and a setter returns
+    # neither the receiver nor anything its identity implies: `def user=(v);
+    # @user = v; end` on a `Widget` hands `super`'s caller the ASSIGNED widget.
+    # Emitting `-> self` there says the assignment came back, which it did not.
+    it "is false for a setter, even when its body evaluates to the target class" do
+      setter = RbsInfer::Inference::Member.new(
+        kind: :method, name: "user=", signature: "user=: (X value) -> untyped", visibility: :public
+      )
+
+      expect(resolver.send(:self_return?, setter, "X", self_types)).to be(false)
+      # ...while the same body in a non-setter still resolves to `self`.
+      expect(resolver.send(:self_return?, member(:method), "X", self_types)).to be(true)
+    end
   end
 
   describe "#unconditional_nil_tail?" do

@@ -50,12 +50,13 @@ module RbsInfer::Inference
       # Aplicar tipos já resolvidos pelo resolver (ex: chamadas a métodos herdados)
       untyped_methods.each do |m|
         next if m.name == "initialize"
-        # Setters' return is body/assignment-specific (`obj.x = v` evaluates
-        # to the RHS, not the method's return) and is set by the owner-aware
-        # TypeMerger passes from each def's body. `known_return_types` is
-        # name-keyed, so resolving a setter here would leak a colliding
-        # setter's return (e.g. a CurrentAttributes override onto the
-        # generated module accessor) — felixefelip/rbs_infer#22.
+        # Skipped for the map, not for being a setter: `known_return_types` is
+        # keyed by NAME alone — no owner, no kind — so resolving a setter here
+        # would leak a colliding setter's return (a CurrentAttributes override
+        # onto the generated module accessor) — felixefelip/rbs_infer#22. The
+        # Steep pass below has no such skip: its map is kind-split (#33) and it
+        # reads each def's own body, which is what a setter returns
+        # (felixefelip/rbs_infer#287).
         next if setter_name?(m.name)
         resolved = return_types_for(m, known_return_types, class_return_types)[m.name]
         if resolved && resolved != "untyped"
@@ -75,7 +76,6 @@ module RbsInfer::Inference
           self_types = Set.new([@target_class] + @instance_types)
 
           still_untyped.each do |m|
-            next if setter_name?(m.name)
             steep_type = steep_returns_for(m, steep_returns)[m.name]
             # `nil` is a genuine inference, not a fallback: the env is built with
             # `implicitly_returns_nil: false`, so Steep types a body as `nil` only
@@ -194,7 +194,6 @@ module RbsInfer::Inference
           members.each do |m|
             next unless method_member?(m)
             next if m.name == "initialize"
-            next if setter_name?(m.name)
 
             current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next unless current_type && current_type != "untyped"
@@ -249,9 +248,12 @@ module RbsInfer::Inference
 
       members.each do |m|
         next unless method_member?(m)
-        # `initialize` is `-> void` by convention, and a setter's return is the assigned
-        # value — neither is the body's own tail type, so neither is ours to widen.
-        next if m.name == "initialize" || setter_name?(m.name)
+        # `initialize` is `-> void` by convention, so it is not the body's tail type
+        # and not ours to widen. A setter's IS: `obj.x = v` evaluating to `v` is a
+        # property of the assignment operator, which discards the method's return —
+        # the declaration describes what `super` gets, which is the body
+        # (felixefelip/rbs_infer#287).
+        next if m.name == "initialize"
 
         current = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
         next if current.nil? || current == "untyped" || current == "void" || current.end_with?("?")
@@ -624,6 +626,14 @@ module RbsInfer::Inference
     # declared as type `self`". Mirrors the `own_kind != :class_method` guard
     # in TypeMerger (felixefelip/rbs_infer#33/#34).
     def self_return?(member, steep_type, self_types)
+      # Never for a setter, whatever its body evaluates to. `self` is the
+      # RECEIVER, and a setter returns neither the receiver nor — on the one
+      # path that observes it, `super` — anything the receiver's identity
+      # implies: `def user=(v); @user = v; end` on a `Widget` hands `super`'s
+      # caller the assigned `Widget`, not the `Widget` it was called on
+      # (felixefelip/rbs_infer#287).
+      return false if setter_name?(member.name)
+
       member.kind != :class_method && self_types.include?(steep_type)
     end
 
