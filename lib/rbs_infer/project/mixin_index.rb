@@ -31,6 +31,7 @@ module RbsInfer::Project
       @parse_cache = parse_cache || ParseCache.new
       @included_shorts = {}                            # file → Set[short name]
       @extended_shorts = {}                            # file → Set[short name]
+      @written_mixin_names = Set.new                   # every name written in an include/extend
       @files_defining = Hash.new { |h, k| h[k] = [] }  # short name → [file]
       @includes_by_class = Hash.new { |h, k| h[k] = Set.new } # class FQN → Set[written name]
       @extends_by_class = Hash.new { |h, k| h[k] = Set.new }  # class FQN → Set[written name]
@@ -39,18 +40,29 @@ module RbsInfer::Project
       @extenders_by_target = {}                               # target FQN → [extender FQN]
       @hosts_of_cache = {}                                    # target FQN → resolved hosts
       @extenders_of_cache = {}                                # target FQN → resolved extenders
+      @ancestor_builder = nil                                 # RBS env the memo below belongs to
+      @ancestor_shorts = {}                                   # written name → Set[ancestor short]
       build(source_files)
     end
 
     # Files whose bare calls can reach instance methods of `module_name`
     # (the host + the host's sibling concerns).
+    #
+    # A host is any file mixing in something that CARRIES the target, not only
+    # one naming it: `include` chains, and the chain may run through a module
+    # the corpus has no Ruby for. Every ERB template includes `ActionViewContext`,
+    # which is emitted as `.rbs` and includes every app helper — so a partial
+    # calling `idade_recomendada_para(recomendacao_vacina)` was not a host of
+    # `SugestoesHelper`, was swept by no other route either (it names no
+    # constant, and the call is bare), and the helper's parameter came out
+    # `untyped` with the call site never read.
     def files_reaching(module_name)
-      short = module_name.split("::").last
+      carriers = carrier_shorts(module_name)
       result = Set.new
-      host_files(short).each do |host|
+      host_files(carriers).each do |host|
         result << host
         @included_shorts.fetch(host, EMPTY).each do |sibling_short|
-          next if sibling_short == short
+          next if carriers.include?(sibling_short)
           @files_defining[sibling_short].each { |f| result << f }
         end
       end
@@ -132,13 +144,70 @@ module RbsInfer::Project
       (direct + inherited).uniq.sort
     end
 
-    # Files whose class/module mixes `short` in, by either route. A file that
-    # only EXTENDS the module still makes bare calls into it — `bazinga(Baz)` in
-    # a class body is a call on the class object — so reachability does not care
-    # which of the two ancestries carries it.
-    def host_files(short)
-      @included_shorts.filter_map { |file, shorts| file if shorts.include?(short) } |
-        @extended_shorts.filter_map { |file, shorts| file if shorts.include?(short) }
+    # The short names that carry `module_name` — itself, plus every mixin name
+    # the sources write whose ANCESTRY reaches it.
+    #
+    # The source alone cannot answer the second half. A module declared only in
+    # RBS has no `include` line in the corpus for `build` to read, so the chain
+    # through it is invisible and `host_files` — which matches a written name
+    # against the target's — stops one link short. The RBS environment already
+    # holds the answer, transitively and for `.rbs`-only modules alike; this
+    # asks it instead of re-deriving a closure over what the corpus happens to
+    # show.
+    #
+    # Asked once per WRITTEN mixin name (dozens), not once per file (hundreds):
+    # what a name carries is a property of the name.
+    def carrier_shorts(module_name)
+      short = module_name.split("::").last
+      carriers = Set[short]
+      @written_mixin_names.each do |name|
+        carriers << name.split("::").last if ancestor_shorts(name).include?(short)
+      end
+      carriers
+    end
+
+    # Short names of every instance ancestor of `name`, per RBS. Empty when the
+    # environment cannot answer — a module the generated RBS does not declare
+    # yet (a cold run, before `sig/` exists) among them, which is why an empty
+    # answer must read as "nothing to add here", never as "includes nothing":
+    # the source-derived half of `files_reaching` stands on its own.
+    #
+    # Memoized against the environment's IDENTITY rather than held for the life
+    # of the index. `Corpus` keeps one `MixinIndex` for the whole run because
+    # its answers are a pure function of the source files, and this one is not:
+    # the CLI regenerates `sig/` between dependency levels and passes and calls
+    # `SteepEnvironment.reset!`, which makes the next builder a different
+    # object and drops these answers with it — the same key `SteepBridge` hangs
+    # its type-check cache on, so there is no new invalidation hook to wire.
+    def ancestor_shorts(name)
+      builder = RbsInfer::Signatures::SteepEnvironment.definition_builder
+      return EMPTY unless builder
+
+      unless @ancestor_builder.equal?(builder)
+        @ancestor_builder = builder
+        @ancestor_shorts = {}
+      end
+
+      @ancestor_shorts[name] ||= compute_ancestor_shorts(builder, name)
+    end
+
+    def compute_ancestor_shorts(builder, name)
+      type_name = RBS::TypeName.parse("::#{name.sub(/\A::/, "")}")
+      builder.ancestor_builder.instance_ancestors(type_name)
+             .ancestors.map { |a| a.name.to_s.split("::").last }.to_set
+    rescue StandardError
+      # An unknown name raises rather than answering empty, and so does a
+      # declaration RBS cannot build. Neither is a reason to fail the sweep.
+      EMPTY
+    end
+
+    # Files whose class/module mixes any of `carriers` in, by either route. A
+    # file that only EXTENDS the module still makes bare calls into it —
+    # `bazinga(Baz)` in a class body is a call on the class object — so
+    # reachability does not care which of the two ancestries carries it.
+    def host_files(carriers)
+      @included_shorts.filter_map { |file, shorts| file if shorts.intersect?(carriers) } |
+        @extended_shorts.filter_map { |file, shorts| file if shorts.intersect?(carriers) }
     end
 
     def build(source_files)
@@ -174,6 +243,9 @@ module RbsInfer::Project
         # anything anything in it mixes in.
         @included_shorts[file] = written.map { |name| name.split("::").last }.to_set
         @extended_shorts[file] = extended.map { |name| name.split("::").last }.to_set
+        # Kept unshortened as well: resolving one against RBS needs the name the
+        # source wrote (`ActionView::Helpers`), which the short form has lost.
+        @written_mixin_names.merge(written).merge(extended)
         # Self-types cannot use that union — they key on the DECLARATION that
         # wrote the mixin. Attributing a file's every `include` to its headline
         # class made `class Example23; module Baz; extend Foo; end; end` answer
@@ -350,3 +422,5 @@ module RbsInfer::Project
     private_constant :MixinWriter
   end
 end
+
+require_relative "../signatures/steep_environment"

@@ -389,4 +389,50 @@ RSpec.describe RbsInfer::Project::MixinIndex do
       expect(index.files_reaching("Foo")).to include(bar)
     end
   end
+
+  # The include chain is not always written in Ruby. A generated `.rbs` can
+  # declare a module and what it mixes in — `ActionViewContext` includes every
+  # Rails helper — and a file including THAT reaches the far end of the chain
+  # without ever naming it.
+  describe "a chain running through a module declared only in RBS" do
+    around do |example|
+      Dir.chdir(@dir) do
+        RbsInfer::Signatures::SteepEnvironment.reset!
+        example.run
+      end
+      RbsInfer::Signatures::SteepEnvironment.reset!
+    end
+
+    it "reaches a module carried by an RBS-only mixin" do
+      write_file("sig/generated/context.rbs", <<~RBS)
+        module ViewContext
+          include Sharable
+        end
+
+        module Sharable
+          def badge: (untyped) -> void
+        end
+      RBS
+      sharable = write_file("sharable.rb", "module Sharable\n  def badge(x) = nil\nend\n")
+      template = write_file("template.rb", "class Template\n  include ViewContext\n  badge(thing)\nend\n")
+
+      index = described_class.new([sharable, template])
+
+      expect(index.files_reaching("Sharable")).to include(template)
+    end
+
+    # The RBS half is additive. A cold run has no generated `sig/` yet, and an
+    # environment that cannot answer must leave the source-derived answer
+    # standing rather than reading as "this mixin carries nothing".
+    it "still reaches what the source alone shows when RBS knows nothing" do
+      sharable = write_file("sharable.rb", "module Sharable\n  def badge(x) = nil\nend\n")
+      direct = write_file("direct.rb", "class Direct\n  include Sharable\n  badge(thing)\nend\n")
+      template = write_file("template.rb", "class Template\n  include ViewContext\n  badge(thing)\nend\n")
+
+      index = described_class.new([sharable, direct, template])
+
+      expect(index.files_reaching("Sharable")).to include(direct)
+      expect(index.files_reaching("Sharable")).not_to include(template)
+    end
+  end
 end
