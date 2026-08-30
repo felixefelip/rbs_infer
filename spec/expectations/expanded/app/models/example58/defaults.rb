@@ -1,3 +1,12 @@
+# The `class_methods do` block is what makes this file TWO top-level modules
+# once expanded — the concern, then the desugared `module …::ClassMethods` —
+# and that is what used to cost the concern its self type. The self-type
+# annotation was appended at end-of-file, where it binds to the file's sole
+# node: for a one-module file that node IS the module, and for this one it is
+# the file's `begin`. `self.class` fell back to Steep's default module self,
+# `(::Object & ::Example58::Defaults)`, `default_values` was not on it, and
+# `default_indexed_by` came out `untyped` (felixefelip/steep#155). The
+# annotation now goes inside the anchor module's body, where it always binds.
 module Example58::Defaults
   extend ActiveSupport::Concern
 
