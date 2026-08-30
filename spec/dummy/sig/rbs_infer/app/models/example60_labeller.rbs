@@ -1,0 +1,3 @@
+class Example60Labeller
+  def call: () -> String
+end

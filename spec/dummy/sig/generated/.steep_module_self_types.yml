@@ -480,6 +480,17 @@ app/models/example59/naming.rb:
     in: "::Example59::Naming"
     implements: "::Example59::Naming::ClassMethods"
     self: singleton(::Example59) & ::Example59::Naming::ClassMethods
+app/models/example60/labels.rb:
+  modules:
+  - anchor: Labels
+    annotations:
+    - "# @type self: singleton(Example60) & singleton(Example60::Labels)"
+    - "# @type instance: Example60 & Example60::Labels"
+  blocks:
+  - call: class_methods
+    in: "::Example60::Labels"
+    implements: "::Example60::Labels::ClassMethods"
+    self: singleton(::Example60) & ::Example60::Labels::ClassMethods
 app/models/included_hook.rb:
   modules:
   - anchor: Homespun
@@ -596,13 +607,13 @@ sig/generated/steep_ar_runtime/active_support/concern.rb:
     annotations:
     - "# @type instance: (singleton(Eventable)) | (singleton(Example57::Fields)) |
       (singleton(Example57Windowed)) | (singleton(Example58::Defaults)) | (singleton(Example59::Naming))
-      | (singleton(FilterConfiguration)) | (singleton(IncludedHook::Sugared)) | (singleton(Post::Notifiable))
-      | (singleton(Post::Taggable)) | (singleton(Test::Filtrable)) | (singleton(User::Displayable))
-      | (singleton(User::Notifiable)) | (singleton(User::Recoverable)) | (singleton(Widget::Closeable))
-      | (singleton(Widget::Publishable))"
+      | (singleton(Example60::Labels)) | (singleton(FilterConfiguration)) | (singleton(IncludedHook::Sugared))
+      | (singleton(Post::Notifiable)) | (singleton(Post::Taggable)) | (singleton(Test::Filtrable))
+      | (singleton(User::Displayable)) | (singleton(User::Notifiable)) | (singleton(User::Recoverable))
+      | (singleton(Widget::Closeable)) | (singleton(Widget::Publishable))"
     defs:
       class_methods: singleton(Example58::Defaults) | singleton(Example59::Naming)
-        | singleton(Post::Taggable)
+        | singleton(Example60::Labels) | singleton(Post::Taggable)
 sig/generated/steep_ar_runtime/notification/generated_store_accessors.rb:
   modules:
   - anchor: GeneratedStoreAccessors

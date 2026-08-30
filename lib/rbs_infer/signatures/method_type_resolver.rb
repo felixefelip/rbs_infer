@@ -217,6 +217,17 @@ module RbsInfer::Signatures
       @cache[class_name] ||= build_class_types(class_name)
     end
 
+    # What a method ACCEPTS, as its class declares it — the counterpart of
+    # `resolve`/`resolve_class_method`, which answer what it RETURNS. One
+    # rendered parameter list per overload, `[]` when no declaration answers.
+    # See `RbsDefinitionResolver#method_parameters`.
+    def resolve_method_parameters(kind, class_name, method_name)
+      return [] unless class_name && class_name != "untyped"
+
+      @rbs_definition_resolver.method_parameters(kind, class_name, method_name)
+    end
+
+
     # All class (singleton) method return types for a class, keyed by name —
     # the singleton counterpart of `resolve_all`. Lets callers resolve a
     # class method's body against other class methods without pulling in the

@@ -1,0 +1,8 @@
+class Example60
+  extend ::Example60::Labels::ClassMethods
+  include Labels
+
+  def example60_printer: () -> Example60Printer
+  def print_label: () -> String
+  def stamp: (String label, Integer times) -> String
+end
