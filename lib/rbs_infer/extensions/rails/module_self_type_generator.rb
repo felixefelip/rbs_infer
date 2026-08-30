@@ -35,8 +35,6 @@ module RbsInfer
       class ModuleSelfTypeGenerator
         SIDECAR_PATH = "sig/generated/.steep_module_self_types.yml"
 
-        STEEPFILE = "Steepfile"
-
         def initialize(app_dir:)
           @app_dir = app_dir
         end
@@ -201,10 +199,7 @@ module RbsInfer
         # class a block defines its methods on is the one thing
         # `StoredBlockReplayImplements` exists to prevent.
         def declared_files
-          @declared_files ||= steep_targets.flat_map { |target| paths_in(target, ignores: false) }
-                                           .select { |path| path.extname == ".rb" }
-                                           .uniq.sort
-                                           .map { |path| File.join(@app_dir, path) }
+          @declared_files ||= steepfile_ruby(ignores: false)
         end
 
         # Narrows a module method's `self` to the hosts that call it
@@ -227,31 +222,15 @@ module RbsInfer
         # No Steepfile, no files: this sidecar exists for `steep check` and for
         # nothing else, so a project that does not run it has nothing to write.
         def source_files
-          @source_files ||= steep_targets.flat_map { |target| paths_in(target) }
-                                         .select { |path| path.extname == ".rb" }
-                                         .uniq.sort
-                                         .map { |path| File.join(@app_dir, path) }
+          @source_files ||= steepfile_ruby(ignores: true)
         end
 
-        def steep_targets
-          path = Pathname(File.join(@app_dir, STEEPFILE))
-          return [] unless path.file?
-
-          project = Steep::Project.new(steepfile_path: path.expand_path)
-          Steep::Project::DSL.parse(project, path.read)
-          project.targets
-        rescue StandardError
-          []
-        end
-
-        def paths_in(target, ignores: true)
-          pattern = target.source_pattern
-          unless ignores
-            pattern = Steep::Project::Pattern.new(patterns: pattern.patterns, ext: pattern.ext, ignores: [])
-          end
-
-          Steep::Services::FileLoader.new(base_dir: Pathname(@app_dir))
-                                     .each_path_in_patterns(pattern).to_a
+        # `.rb` only: this generator reads Ruby declarations, and a Steepfile may
+        # well check `.erb` too.
+        def steepfile_ruby(ignores:)
+          paths = RbsInfer::Project::SteepfileSources.call(dir: @app_dir, ignores: ignores) || []
+          paths.select { |path| File.extname(path) == ".rb" }
+               .map { |path| File.join(@app_dir, path) }
         end
 
         def relative(abs)
