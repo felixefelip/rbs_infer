@@ -73,14 +73,14 @@ end
 # `sig/generated/steep_ar_runtime/`, is what says a `class_methods do` block is
 # later `module_eval`ed into a `ClassMethods` constant).
 #
-# It comes from the project's Steepfile, not from a guess at the Rails layout.
-# `check` is where the project itself says its Ruby lives — and it is the same
-# list `steep check` reads, so the corpus cannot drift from what the checker
-# sees. Hardcoding `app/`/`engines/`/`lib/` was wrong in both directions: it
-# missed a project that keeps code elsewhere, and it missed the pseudo-code
-# sidecars under `sig/`, which erased a concern's whole `ClassMethods` block
-# from a one-file run (felixefelip/rbs_infer#291) — a Steepfile that already
-# said `check 'sig/**/*.rb'` had been saying so all along.
+# It is the project's Steepfile, and nothing else. `check` is where the project
+# itself says its Ruby lives — the same list `steep check` reads, so the corpus
+# cannot drift from what the checker sees. Guessing a Rails layout
+# (`app/`/`engines/`/`lib/`) was wrong in both directions: it missed a project
+# that keeps code elsewhere, and it missed the pseudo-code sidecars under
+# `sig/`, which erased a concern's whole `ClassMethods` block from a one-file
+# run (felixefelip/rbs_infer#291) — a Steepfile that already said
+# `check 'sig/**/*.rb'` had been saying so all along.
 #
 # `ignores: false`, because the corpus is not the check list. A Steepfile
 # `ignore` says "report no diagnostics here", not "this file is not part of the
@@ -92,20 +92,19 @@ end
 # The INPUT paths stay unioned in: `source_files` must include what this run
 # was asked to analyze even when the Steepfile does not check it (a caller
 # living outside the checked tree is otherwise invisible and the param it
-# types degrades to `untyped` — felixefelip/rbs_infer#76).
-#
-# The fallback is for a project with no Steepfile at all, which the CLI still
-# serves — `.erb` sits alongside `.rb` there because ParseCache reads it as a
-# source format, not because of anything Rails: a template's calls are call
-# sites like any other, and leaving them out is what made a helper's
-# parameters (and a view's `render`) `untyped`.
-default_layout = lambda do
-  Dir["app/**/*.rb", "engines/**/*.rb", "lib/**/*.rb", "sig/**/*.rb"] +
-    Dir["app/**/*.erb", "engines/**/*.erb", "lib/**/*.erb"]
+# types degrades to `untyped` — felixefelip/rbs_infer#76). With no Steepfile
+# they are the whole corpus — a run resolves against what it was pointed at
+# and says so, rather than against a layout nobody declared. There is no
+# second, quieter answer to fall back to: what this RBS is FOR is
+# `steep check`, and a project not running it has no Steepfile to read.
+steepfile_sources = RbsInfer::Project::SteepfileSources.call(ignores: false)
+if steepfile_sources.nil?
+  warn "rbs_infer: no usable Steepfile; resolving call sites only against " \
+       "the paths given (#{inputs.join(', ')}). Types that depend on a call " \
+       "site elsewhere will be `untyped`."
 end
 
-steepfile_sources = RbsInfer::Project::SteepfileSources.call(ignores: false)
-source_files = (files + (steepfile_sources || default_layout.call)).uniq
+source_files = (files + steepfile_sources.to_a).uniq
 
 rails_project = Gem::Specification.find_by_name("rails") rescue nil
 

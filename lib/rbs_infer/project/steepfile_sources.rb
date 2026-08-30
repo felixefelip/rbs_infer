@@ -39,21 +39,23 @@ module RbsInfer::Project
       @ignores = ignores
     end
 
-    # The paths, relative to `dir`, or `nil` when there is no Steepfile to
-    # read — the CLI runs against plain directories too, and a project that
-    # never adopted Steep still has a corpus. `nil` rather than `[]` so a
-    # caller can tell "no Steepfile" from "a Steepfile that matched nothing",
-    # which are not the same answer.
+    # The paths, relative to `dir`, or `nil` when there is nothing usable to
+    # read. `nil` rather than `[]` so a caller can tell "this project declares
+    # no Ruby" from "I could not find out", which are not the same answer and
+    # do not deserve the same handling.
+    #
+    # Says nothing when the Steepfile is simply absent — that is a fact about
+    # the project, and what to do about it is the caller's to decide. The two
+    # cases below are different: a Steepfile that IS there and yields nothing
+    # is a broken read, and staying quiet about it would degrade every type in
+    # the run to `untyped` with nothing said about why.
     def call
       path = @dir + STEEPFILE
       return nil unless path.file?
 
       paths = expand(parse(path))
-      # A Steepfile that resolves to nothing is a broken read, not a project
-      # with no code: falling through in silence would degrade every type in
-      # the run to `untyped` with nothing said about why.
       if paths.empty?
-        warn "#{path}: no source files matched; falling back."
+        warn "#{path}: no source files matched."
         return nil
       end
 
@@ -62,7 +64,7 @@ module RbsInfer::Project
     # so a typo in it arrives as a `SyntaxError`, which is not a StandardError
     # and used to abort the whole run.
     rescue StandardError, ScriptError => e
-      warn "#{path}: could not be read (#{e.class}: #{e.message}); falling back."
+      warn "#{path}: could not be read (#{e.class}: #{e.message})."
       nil
     end
 

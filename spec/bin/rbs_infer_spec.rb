@@ -395,7 +395,10 @@ RSpec.describe "bin/rbs_infer" do
       expect(stdout).to include("def initialize: (name: String) -> void")
     end
 
-    it "cai no layout padrão, avisando, quando o Steepfile não pode ser lido" do
+    # Sem Steepfile utilizável não há segunda resposta, mais silenciosa, para
+    # onde cair: o run resolve contra o que lhe apontaram e DIZ isso. Um layout
+    # adivinhado seria pior — degradaria tipo sem deixar rastro do motivo.
+    it "avisa e resolve só os inputs quando o Steepfile não pode ser lido" do
       write_file("Steepfile", "target :app do\n  check\n")
       setup_project
 
@@ -403,7 +406,28 @@ RSpec.describe "bin/rbs_infer" do
 
       expect(status).to be_success
       expect(stderr).to include("could not be read")
+      expect(stderr).to include("resolving call sites only against the paths given")
       expect(stdout).to include("class User")
+    end
+
+    it "avisa quando o projeto não tem Steepfile nenhum" do
+      setup_project
+
+      _stdout, stderr, status = run_rbs_infer("app/models/user.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stderr).to include("no usable Steepfile")
+    end
+
+    # O input continua sendo corpus, então apontar para o diretório inteiro
+    # resolve o que vive dentro dele mesmo sem Steepfile.
+    it "resolve dentro dos inputs mesmo sem Steepfile" do
+      setup_project
+
+      stdout, _stderr, status = run_rbs_infer("app", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stdout).to include("def initialize: (name: String, age: Integer) -> void")
     end
   end
 
@@ -419,6 +443,16 @@ RSpec.describe "bin/rbs_infer" do
   # `sig/` como INPUT (`rbs_infer app/ lib/ sig/`).
   describe "com declarações sob sig/ (pseudo-código no corpus)" do
     def setup_concern_project
+      # `check "sig/**/*.rb"` é o que o app que reportou o bug já dizia: o
+      # pseudo-código é Ruby que o projeto manda o Steep checar.
+      write_file("Steepfile", <<~RUBY)
+        target :app do
+          check "app"
+          check "sig/**/*.rb"
+          signature "sig"
+        end
+      RUBY
+
       # A transcrição que o gerador de AR-runtime emite, reduzida ao que este
       # caso lê: `class_methods` guardando o bloco num `ClassMethods`.
       write_file("sig/generated/steep_ar_runtime/active_support/concern.rb", <<~RUBY)
@@ -464,6 +498,13 @@ RSpec.describe "bin/rbs_infer" do
     # do app — não entrar no corpus: com ela dentro, cada constante ganharia um
     # segundo arquivo declarando-a.
     it "não puxa a view expandida de volta para o corpus" do
+      write_file("Steepfile", <<~RUBY)
+        target :app do
+          check "app"
+          check "sig/**/*.rb"
+          signature "sig"
+        end
+      RUBY
       setup_project
       run_rbs_infer("--output", "app/models/user.rb", dir: @tmpdir)
       expect(File.exist?(File.join(@tmpdir, "sig/generated/.expanded/app/models/user.rb"))).to be false
