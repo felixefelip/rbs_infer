@@ -261,7 +261,12 @@ module RbsInfer::Signatures
       return [] unless method
 
       method.defs.filter_map { |d| render_parameters(d.type) }.uniq
-    rescue RBS::BaseError
+    rescue RBS::BaseError => e
+      # An environment that cannot build this definition costs the caller the
+      # parameters it came for, and the delegate it is emitting goes out as
+      # `()`. Say so: a signature that quietly loses its parameters reads as an
+      # answer, and the run has no other place this shows up.
+      warn "[rbs_infer] could not read #{kind} parameters of #{class_name}##{method_name}: #{e.class}: #{e.message}"
       []
     end
 
@@ -401,7 +406,12 @@ module RbsInfer::Signatures
       # with the `::` still on it. What must survive is the `::` INSIDE a name
       # (`Example60::Labels`), which is the one preceded by an identifier.
       rendered.gsub(/(?<![A-Za-z0-9_:])::/, "")
-    rescue RBS::BaseError, NoMethodError
+    rescue RBS::BaseError => e
+      # One overload that will not render drops out of the list; the others
+      # still stand. Only `RBS::BaseError` — a shape this cannot print is a bug
+      # here, not a fact about the project being read, and swallowing it would
+      # hide it behind a delegate that merely looks under-typed.
+      warn "[rbs_infer] could not render #{method_type}: #{e.class}: #{e.message}"
       nil
     end
 
