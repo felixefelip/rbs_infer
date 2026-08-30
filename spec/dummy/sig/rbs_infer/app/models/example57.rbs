@@ -1,0 +1,15 @@
+class Example57
+  include Fields
+
+  def window_size: () -> Integer
+  def creation_window: () -> Integer
+end
+
+class Example57
+  class Inner
+    include Example57Windowed
+
+    def doubled: () -> Integer
+    def window_days: () -> Integer
+  end
+end

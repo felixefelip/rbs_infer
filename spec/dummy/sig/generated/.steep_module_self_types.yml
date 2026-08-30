@@ -22,6 +22,10 @@ app/models/concerns/test/filtrable.rb:
     annotations:
     - "# @type self: singleton(Post) & singleton(Test::Filtrable)"
     - "# @type instance: Post & Test::Filtrable"
+  blocks:
+  - call: included
+    in: "::Test::Filtrable"
+    implements: "::Post"
 app/models/eval_reopen/slots.rb:
   modules:
   - anchor: Slots
@@ -434,6 +438,26 @@ app/models/example55/foo.rb:
   - anchor: Foo
     annotations:
     - "# @type instance: singleton(Example55::Baz)"
+app/models/example57/fields.rb:
+  modules:
+  - anchor: Fields
+    annotations:
+    - "# @type self: singleton(Example57) & singleton(Example57::Fields)"
+    - "# @type instance: Example57 & Example57::Fields"
+  blocks:
+  - call: included
+    in: "::Example57::Fields"
+    implements: "::Example57"
+app/models/example57_windowed.rb:
+  modules:
+  - anchor: Example57Windowed
+    annotations:
+    - "# @type self: singleton(Example57::Inner) & singleton(Example57Windowed)"
+    - "# @type instance: Example57::Inner & Example57Windowed"
+  blocks:
+  - call: included
+    in: "::Example57Windowed"
+    implements: "::Example57::Inner"
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade
@@ -445,6 +469,13 @@ app/models/included_hook/shared.rb:
     annotations:
     - "# @type instance: (IncludedHookFirst & IncludedHook::Shared) | (IncludedHookSecond
       & IncludedHook::Shared)"
+  blocks:
+  - call: class_eval
+    in: "::IncludedHook::Shared"
+    implements:
+    - "::IncludedHookFirst"
+    - "::IncludedHookSecond"
+    method: included
 app/models/included_hook/slots.rb:
   modules:
   - anchor: Slots
@@ -481,6 +512,10 @@ app/models/post/notifiable.rb:
     annotations:
     - "# @type self: singleton(Post) & singleton(Post::Notifiable)"
     - "# @type instance: Post & Post::Notifiable"
+  blocks:
+  - call: included
+    in: "::Post::Notifiable"
+    implements: "::Post"
 app/models/post/taggable.rb:
   modules:
   - anchor: Taggable
@@ -492,6 +527,9 @@ app/models/post/taggable.rb:
     in: "::Post::Taggable"
     implements: "::Post::Taggable::ClassMethods"
     self: singleton(::Post) & ::Post::Taggable::ClassMethods
+  - call: included
+    in: "::Post::Taggable"
+    implements: "::Post"
 app/models/user/displayable.rb:
   modules:
   - anchor: Displayable
@@ -504,12 +542,20 @@ app/models/user/notifiable.rb:
     annotations:
     - "# @type self: singleton(User) & singleton(User::Notifiable)"
     - "# @type instance: User & User::Notifiable"
+  blocks:
+  - call: included
+    in: "::User::Notifiable"
+    implements: "::User"
 app/models/user/recoverable.rb:
   modules:
   - anchor: Recoverable
     annotations:
     - "# @type self: singleton(User) & singleton(User::Recoverable)"
     - "# @type instance: User & User::Recoverable"
+  blocks:
+  - call: included
+    in: "::User::Recoverable"
+    implements: "::User"
 app/models/widget/closeable.rb:
   modules:
   - anchor: Closeable
@@ -526,10 +572,11 @@ sig/generated/steep_ar_runtime/active_support/concern.rb:
   modules:
   - anchor: Concern
     annotations:
-    - "# @type instance: (singleton(Eventable)) | (singleton(FilterConfiguration))
-      | (singleton(IncludedHook::Sugared)) | (singleton(Post::Notifiable)) | (singleton(Post::Taggable))
-      | (singleton(Test::Filtrable)) | (singleton(User::Displayable)) | (singleton(User::Notifiable))
-      | (singleton(User::Recoverable)) | (singleton(Widget::Closeable)) | (singleton(Widget::Publishable))"
+    - "# @type instance: (singleton(Eventable)) | (singleton(Example57::Fields)) |
+      (singleton(Example57Windowed)) | (singleton(FilterConfiguration)) | (singleton(IncludedHook::Sugared))
+      | (singleton(Post::Notifiable)) | (singleton(Post::Taggable)) | (singleton(Test::Filtrable))
+      | (singleton(User::Displayable)) | (singleton(User::Notifiable)) | (singleton(User::Recoverable))
+      | (singleton(Widget::Closeable)) | (singleton(Widget::Publishable))"
     defs:
       class_methods: singleton(Post::Taggable)
 sig/generated/steep_ar_runtime/notification/generated_store_accessors.rb:

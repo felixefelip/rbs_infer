@@ -932,11 +932,17 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # constants and each is asked about once; in practice the chain is two or
     # three files, and every parse and walk along it is memoized by file.
     def absorb_external_shapes
-      queue = external_owners.to_a
+      queue = external_lookups.to_a
       seen = Set.new
 
       until queue.empty?
-        name = queue.shift
+        # A lexical lookup, not a name: `include Fields` written in `class Filter`
+        # means `Filter::Fields` if the project has one and top-level `Fields` if
+        # it does not, and only the project can say which. Reading the name as
+        # written asked for a `Fields` nobody declares, so the concern's file was
+        # never opened and its `included do` never moved
+        # (felixefelip/rbs_infer#289).
+        name = resolve_lookup(queue.shift)
         next unless seen.add?(name)
 
         @sources.parsed_for(name).each do |entry|
@@ -949,23 +955,20 @@ module RbsInfer::Project::StoredBlockReplayExpander
           end
           absorb(shapes)
           # What THAT file reaches for, which is how the chain continues.
-          queue.concat(shapes.external_owners.to_a)
+          queue.concat(shapes.external_lookups.to_a)
         end
         @declarations << name
       end
     end
 
-    def external_owners
-      names = Set.new(CORE_REOPENS)
-
-      external_constants.each do |subject, raw_constant|
-        next if resolve_constant(raw_constant, subject)
-
-        name = RbsInfer::Analyzer.extract_constant_path(raw_constant)
-        names << name.sub(/\A::/, "") if name
-      end
-
-      names
+    # The name a lookup lands on: the first candidate the project actually
+    # declares, or — when it declares none of them — the name as written, which
+    # is what this pass answered before it asked at all. Falling back rather
+    # than dropping the lookup matters for the names a project never declares
+    # in its own sources (`ApplicationRecord`, a gem's constant): they resolve
+    # to themselves today and the chains reading them keep working.
+    def resolve_lookup(candidates)
+      candidates.find { |candidate| @sources.parsed_for(candidate).any? } || candidates.last
     end
 
     # Every constant this file NAMES but may not declare, as
@@ -983,12 +986,55 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @extends + @superclasses + @apply_calls.map { |apply| [apply.subject, apply.argument] }
     end
 
+    # Every constant this file names but does not declare, each as the ORDERED
+    # list of names Ruby would try for it — innermost enclosing scope first,
+    # top level last.
+    #
+    # A name is not a constant. `include Fields` inside `class Filter` reaches
+    # `Filter::Fields` in one project and a top-level `Fields` in another, and
+    # the difference is which one is declared — the same question
+    # `resolve_constant` already asks of this file's own declarations, asked of
+    # the project instead. Reading the name as written, a relatively-included
+    # concern named a constant nothing declares: `parsed_for` opened no file, so
+    # the concern's shapes were never absorbed and its `included do` stayed on
+    # the concern (felixefelip/rbs_infer#289).
+    #
+    # Candidates, not an answer, because only `parsed_for` can decide between
+    # them and this method is also read by a collector that HAS no project (see
+    # `absorb`). The core reopens carry a one-element list for the same reason
+    # they carry a name: `Module` means `Module`, wherever it is written.
+    def external_lookups
+      lookups = CORE_REOPENS.map { |name| [name] }
+
+      external_constants.each do |subject, raw_constant|
+        next if resolve_constant(raw_constant, subject)
+
+        name = RbsInfer::Analyzer.extract_constant_path(raw_constant)
+        lookups << lookup_candidates(name, subject) if name
+      end
+
+      lookups.uniq
+    end
+
+    # The names Ruby tries for `name` written in `subject`, in order. Mirrors
+    # `resolve_constant`'s walk exactly — every enclosing prefix, longest first,
+    # then the name alone — so a lookup answered here resolves there.
+    #
+    # An explicitly absolute `::Foo` names the top level and nothing else, which
+    # is the one-element list.
+    def lookup_candidates(name, subject)
+      return [name.sub(/\A::/, "")] if name.start_with?("::")
+
+      prefixes = subject.to_s.split("::")
+      prefixes.length.downto(1).map { |length| "#{prefixes.take(length).join("::")}::#{name}" } + [name]
+    end
+
     # Read by the collector ABSORBING this one, to follow the chain past it: a
     # concern names the module holding its DSL, and that module's file is one
     # the host never mentions. Protected rather than listed with the readers
     # above, because the method is written below among the private ones and a
     # reader there would only be shadowed by it.
-    protected :external_owners
+    protected :external_lookups
 
     def absorb(shapes)
       @storages.concat(shapes.storages)

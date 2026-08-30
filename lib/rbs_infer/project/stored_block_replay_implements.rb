@@ -59,48 +59,95 @@ module RbsInfer::Project
     # about the module and silent about the self, which is the silent-wrong case
     # (docs/engineering/required-threaded-deps.md).
     def blocks_for(source:, sources:, mixin_index:)
+      written_here(blocks_by_source(source: source, sources: sources, mixin_index: mixin_index), source)
+    end
+
+    # Every entry this file's replays call for, filed under the source each
+    # block is WRITTEN in — which need not be this one.
+    #
+    # A concern is the ordinary case of the two being different: the `included
+    # do` is written with the concern and the `include` that decides its target
+    # is written in the host, so only the host's file resolves the replay and
+    # only the concern's file can carry the annotation. Answering with just this
+    # file's own blocks left that pair with nobody to write the entry — the host
+    # knew the target and had no block, the concern held the block and could not
+    # name a target — and `steep check` went on reading the `def` where it is
+    # written, reporting a method no RBS declares
+    # (felixefelip/rbs_infer#289).
+    #
+    # Keyed by IDENTITY on the source string, not by its content: `Collector`
+    # keeps the very string it was handed, and two files with identical text are
+    # two files.
+    #
+    # @return [Hash{String => Array<Hash>}] block source => entries
+    def blocks_by_source(source:, sources:, mixin_index:)
       # The expander's gate, not a narrower one of our own. A concern writes
       # `class_methods do` and no eval at all — the eval is in the DSL, declared
       # somewhere else entirely — so asking this file's own text skipped exactly
       # the files whose blocks needed annotating (felixefelip/rbs_infer#268).
-      return [] unless StoredBlockReplayExpander.possible?(source, sources)
+      return {} unless StoredBlockReplayExpander.possible?(source, sources)
 
       parsed = Prism.parse(source)
-      return [] unless parsed.success?
+      return {} unless parsed.success?
 
       replays = StoredBlockReplayExpander::Collector.new(source, sources: sources).collect(parsed.value)
 
-      per_block(written_here(replays, source)).filter_map do |entries|
-        replay = entries.first
-        next unless replay.scope
-
-        entry = { "call" => replay.call, "in" => "::#{replay.scope}", "implements" => implements(entries) }
-        if (running_self = handed_self(entries, mixin_index))
-          entry["self"] = running_self
-        end
-        # Only for a block written inside a def. Emitting it as nil for the DSL
-        # shape would put a key in every sidecar entry ever written, to say
-        # nothing.
-        entry["method"] = replay.in_method if replay.in_method
-        entry
+      by_source(replays).each_with_object({}.compare_by_identity) do |(written_in, group), table|
+        entries = per_block(group).filter_map { |per| entry_for(per, mixin_index) }
+        table[written_in] = entries if entries.any?
       end
     end
 
-    # The replays whose block is written in THIS file.
+    # One block's entry, or nothing when the file does not say where the block
+    # is written.
+    def entry_for(entries, mixin_index)
+      replay = entries.first
+      return unless replay.scope
+
+      entry = { "call" => replay.call, "in" => "::#{replay.scope}", "implements" => implements(entries) }
+      if (running_self = handed_self(entries, mixin_index))
+        entry["self"] = running_self
+      end
+      # Only for a block written inside a def. Emitting it as nil for the DSL
+      # shape would put a key in every sidecar entry ever written, to say
+      # nothing.
+      entry["method"] = replay.in_method if replay.in_method
+      entry
+    end
+
+    # Merges the entries two files wrote about ONE block — two hosts including
+    # one concern, which is one block replayed onto two classes and so is one
+    # entry naming both. Within a file `implements` already answers that; across
+    # files the entries are built by separate passes, and only the sidecar sees
+    # them together.
     #
-    # Since felixefelip/rbs_infer#265 a replay may move a block from another
-    # file — the host of a concern resolves one, and the block lives with the
-    # concern. The annotation this sidecar places rides the block's own opener,
-    # so it has to be injected into the file holding that block; an entry filed
-    # under the host would name a scope the host does not contain and match
-    # nothing there. Skipped rather than misfiled, which leaves `steep check`
-    # reading such a block where it is written — the RBS half is unaffected,
-    # since the expander moved it either way.
+    # Keyed on the block's identity as the sidecar states it — the call, the
+    # scope it is written in, and the def it sits inside — since that is exactly
+    # what Steep matches an entry against.
+    def merge(entries)
+      entries.group_by { |entry| entry.values_at("call", "in", "method") }.map do |_, group|
+        merged = group.first.dup
+        targets = group.flat_map { |entry| Array(entry["implements"]) }.uniq
+        merged["implements"] = targets.size == 1 ? targets.first : targets
+        selves = group.filter_map { |entry| entry["self"] }.uniq
+        merged["self"] = StoredBlockReplayExpander.union(selves) if selves.any?
+        merged
+      end
+    end
+
+    # The replays grouped by the source their block is written in.
+    def by_source(replays)
+      replays.each_with_object({}.compare_by_identity) do |replay, groups|
+        (groups[replay.source] ||= []) << replay
+      end
+    end
+
+    # The entries for blocks written in THIS file.
     #
     # Identity, not equality: `Collector` keeps the very string it was handed,
     # so the local replays carry this exact object and a foreign one cannot.
-    def written_here(replays, source)
-      replays.select { |replay| replay.source.equal?(source) }
+    def written_here(table, source)
+      table.fetch(source, [])
     end
 
     # The replays grouped by the BLOCK they move, since that is what an entry

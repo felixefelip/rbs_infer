@@ -1,0 +1,3 @@
+module Example57Windowed
+  extend ActiveSupport::Concern
+end

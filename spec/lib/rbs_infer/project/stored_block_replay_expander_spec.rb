@@ -1550,6 +1550,76 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     end
   end
 
+  # Which constant a NAME reaches is the project's answer, not the name's.
+  # `include Fields` in `class Filter` means `Filter::Fields` where the project
+  # declares one and top-level `Fields` where it does not, and the pass used to
+  # ask for `Fields` either way — so the ordinary nested concern was never even
+  # looked up (felixefelip/rbs_infer#289).
+  context "a concern included by its relative name" do
+    def core_include
+      <<~RUBY
+        class Module
+          def include(*modules)
+            modules.reverse_each do |mod|
+              mod.send(:append_features, self)
+              mod.send(:included, self)
+            end
+            self
+          end
+        end
+      RUBY
+    end
+
+    # A hand-rolled `included do`, so the shape under test is the LOOKUP and
+    # not any framework's transcription.
+    def concern(name)
+      <<~RUBY
+        module #{name}
+          def self.included(base)
+            base.class_eval do
+              def installed; "yes"; end
+            end
+          end
+        end
+      RUBY
+    end
+
+    def host(written)
+      <<~RUBY
+        class Filter
+          include #{written}
+        end
+      RUBY
+    end
+
+    it "reads the nested concern the enclosing scope names" do
+      sources = project(Module: core_include, "Filter::Fields": concern("Filter::Fields"))
+
+      expect(expand(host("Fields"), sources: sources))
+        .to include("class Filter\n  def installed")
+    end
+
+    # The fallback, and the reason the walk cannot simply prefer the nested
+    # name: a project that declares only the top-level one still has to reach
+    # it, which is every constant living outside the app's own namespaces.
+    it "falls back to the top level when no enclosing scope declares the name" do
+      sources = project(Module: core_include, Fields: concern("Fields"))
+
+      expect(expand(host("Fields"), sources: sources))
+        .to include("class Filter\n  def installed")
+    end
+
+    # And the order between them, which only shows when both exist: Ruby reads
+    # the innermost first, and so does this.
+    it "prefers the nested declaration over a same-named top-level one" do
+      sources = project(Module: core_include, Fields: concern("Fields"),
+                        "Filter::Fields": concern("Filter::Fields").sub('"yes"', "31"))
+
+      expect(expand(host("Fields"), sources: sources))
+        .to include("class Filter\n  def installed; 31; end")
+    end
+  end
+
   # A `def self.` DSL is reached through the singleton, so it answers for the
   # module itself and for its subclasses — never for a module that `extend`s it,
   # whose calls land in the instance table instead.

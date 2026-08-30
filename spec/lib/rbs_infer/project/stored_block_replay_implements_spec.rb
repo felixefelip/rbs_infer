@@ -335,4 +335,75 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
     end
   end
 
+  # A concern and its host are two files, and neither one alone can write the
+  # entry: the concern holds the block and names no target, the host names the
+  # target and holds no block. Filing entries under the file each block is
+  # WRITTEN in is what lets the pair answer together
+  # (felixefelip/rbs_infer#289).
+  context "a block written in another file" do
+    def core_include
+      <<~RUBY
+        class Module
+          def include(*modules)
+            modules.reverse_each do |mod|
+              mod.send(:append_features, self)
+              mod.send(:included, self)
+            end
+            self
+          end
+        end
+      RUBY
+    end
+
+    def concern(name = "Fields")
+      <<~RUBY
+        module #{name}
+          def self.included(base)
+            base.class_eval do
+              def installed; "yes"; end
+            end
+          end
+        end
+      RUBY
+    end
+
+    def host(name = "Filter", includes: "Fields")
+      <<~RUBY
+        class #{name}
+          include #{includes}
+        end
+      RUBY
+    end
+
+    it "files the entry under the source the block is written in" do
+      fields = concern
+      table = described_class.blocks_by_source(source: host, sources: project(Module: core_include, Fields: fields),
+                                               mixin_index: NO_HOSTS)
+
+      expect(table.keys.map(&:object_id)).to eq([fields.object_id])
+      expect(table.values.first)
+        .to eq([{ "call" => "class_eval", "in" => "::Fields", "implements" => "::Filter", "method" => "included" }])
+    end
+
+    # And `blocks_for` still answers only for the file it is handed, which is
+    # the host — it holds no block of its own.
+    it "leaves the host's own entry list empty" do
+      expect(described_class.blocks_for(source: host, sources: project(Module: core_include, Fields: concern),
+                                        mixin_index: NO_HOSTS)).to eq([])
+    end
+
+    # Two hosts including one concern: one block, two classes it runs on, and
+    # one entry naming both. The two halves are resolved by separate passes over
+    # separate files, so only the merge sees them together.
+    it "merges the entries two hosts write about one block" do
+      sources = project(Module: core_include, Fields: concern)
+      first = described_class.blocks_by_source(source: host("First"), sources: sources, mixin_index: NO_HOSTS)
+      second = described_class.blocks_by_source(source: host("Second"), sources: sources, mixin_index: NO_HOSTS)
+
+      merged = described_class.merge(first.values.first + second.values.first)
+
+      expect(merged).to eq([{ "call" => "class_eval", "in" => "::Fields", "method" => "included",
+                              "implements" => ["::First", "::Second"] }])
+    end
+  end
 end

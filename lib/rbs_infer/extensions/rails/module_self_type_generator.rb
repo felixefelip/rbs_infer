@@ -47,8 +47,11 @@ module RbsInfer
           table = {}
           # Built here rather than lazily inside `entry_for_file`, whose
           # `rescue StandardError` would turn a broken index into an empty
-          # table — and an empty table DELETES the sidecar, silently.
+          # table — and an empty table DELETES the sidecar, silently. The block
+          # table is project-wide for the same reason it is built once: a file's
+          # own entries are decided by what OTHER files replay.
           mixin_index
+          blocks_table
 
           source_files.each do |abs|
             rel = relative(abs)
@@ -82,8 +85,8 @@ module RbsInfer
           modules = self_types_for(rel, source, tree)
           entry["modules"] = modules if modules.any?
 
-          blocks = blocks_for(abs, rel, source)
-          entry["blocks"] = blocks if blocks.any?
+          blocks = blocks_table[rel]
+          entry["blocks"] = blocks if blocks&.any?
 
           entry.empty? ? nil : entry
         rescue StandardError
@@ -114,9 +117,57 @@ module RbsInfer
         # replay it is now — `ActiveSupport::Concern#class_methods` is
         # transcribed, and the chain resolves it like any other
         # (felixefelip/rbs_infer#268).
-        def blocks_for(_abs, _rel, source)
-          RbsInfer::Project::StoredBlockReplayImplements.blocks_for(source: source, sources: constant_sources,
-                                                                    mixin_index: mixin_index)
+        #
+        # Read over the WHOLE project rather than per file, because the file
+        # that resolves a replay and the file that must carry its annotation are
+        # routinely different: a concern's `included do` is written with the
+        # concern, and only the host's `include` says which class it lands on.
+        # Asked file by file, each of the two had half the answer and neither
+        # wrote an entry (felixefelip/rbs_infer#289).
+        #
+        # No extra work: this is the same one collector run per file the
+        # per-file call already made, with the results filed by the block's own
+        # path instead of discarded.
+        def blocks_table
+          @blocks_table ||= declared_files.each_with_object({}) do |abs, table|
+            entry = parse_cache.get(abs)
+            next unless entry
+
+            found = RbsInfer::Project::StoredBlockReplayImplements.blocks_by_source(
+              source: entry.source, sources: constant_sources, mixin_index: mixin_index
+            )
+            found.each do |written_in, blocks|
+              # A block whose file is outside the project has no path to file it
+              # under, and an entry keyed on nothing would be written into the
+              # sidecar as a null key. Dropped, which is where such a block was
+              # before this table existed.
+              path = paths_by_source[written_in] or next
+
+              (table[path] ||= []).concat(blocks)
+            end
+          end.transform_values { |blocks| RbsInfer::Project::StoredBlockReplayImplements.merge(blocks) }
+        end
+
+        # Project-relative path for each parsed source, by IDENTITY — the string
+        # a replay carries is the very one the cache handed out, and two files
+        # with identical text are two files.
+        def paths_by_source
+          @paths_by_source ||= declared_files.each_with_object({}.compare_by_identity) do |abs, map|
+            entry = parse_cache.get(abs)
+            map[entry.source] = relative(abs) if entry
+          end
+        end
+
+        # The corpus behind `constant_sources`, so the strings a replay carries
+        # are the ones `paths_by_source` has a path for. Two caches would hand
+        # out two different strings for one file and the identity lookup would
+        # answer nothing.
+        def parse_cache
+          corpus.parse_cache
+        end
+
+        def corpus
+          @corpus ||= RbsInfer::Project::Corpus.for(declared_files)
         end
 
         # The `include`s written across the app, so a module's self-type comes
@@ -134,7 +185,7 @@ module RbsInfer
         # two readers looking at different projects could not guarantee that
         # (felixefelip/rbs_infer#238).
         def constant_sources
-          @constant_sources ||= RbsInfer::Project::Corpus.for(declared_files).constant_sources
+          @constant_sources ||= corpus.constant_sources
         end
 
         # The files the project DECLARES, which is not the list of files it

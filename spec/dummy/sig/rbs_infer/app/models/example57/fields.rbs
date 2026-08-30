@@ -1,0 +1,5 @@
+class Example57
+  module Fields
+    extend ActiveSupport::Concern
+  end
+end
