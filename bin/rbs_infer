@@ -76,9 +76,26 @@ end
 # `.erb` sits alongside `.rb` here because ParseCache reads it as a source format,
 # not because of anything Rails: a template's calls are call sites like any other, and
 # leaving them out is what made a helper's parameters (and a view's `render`) `untyped`.
+#
+# `sig/**/*.rb` is the same argument for the other half of the corpus. The
+# pseudo-code sidecars are not only CALL SITES, they are DECLARATIONS the
+# passes read: `ActiveSupport::Concern` is transcribed under
+# `sig/generated/steep_ar_runtime/`, and it is the only source in the project
+# saying that `class_methods do` stores a block later `module_eval`ed into a
+# `ClassMethods` constant. Miss it and `StoredBlockReplayExpander` desugars
+# nothing, the `module ClassMethods` never appears in the parsed source, and
+# `--output` writes the degraded RBS over the good one — a whole block of
+# class methods erased by a one-file run. A full run only escaped it because
+# the usual invocation passes `sig/` as an INPUT (`rbs_infer app/ lib/ sig/`),
+# so `files +` happened to cover it; the corpus must not depend on that.
+#
+# Globbed, never an input: this widens what a run can RESOLVE, not what it
+# generates. `Dir.glob`'s `**` skips hidden directories, so the expanded-view
+# copies under `sig/generated/.expanded/` — which restate app sources verbatim —
+# stay out and no constant gets a second declaring file.
 source_files = (
   files +
-  Dir["app/**/*.rb", "engines/**/*.rb", "lib/**/*.rb"] +
+  Dir["app/**/*.rb", "engines/**/*.rb", "lib/**/*.rb", "sig/**/*.rb"] +
   Dir["app/**/*.erb", "engines/**/*.erb", "lib/**/*.erb"]
 ).uniq
 

@@ -302,6 +302,78 @@ RSpec.describe "bin/rbs_infer" do
     end
   end
 
+  # ─── Pseudo-código sob sig/ entra no corpus (sem ser input) ──────
+  #
+  # Os sidecars de runtime não são só CALL-SITES, são DECLARAÇÕES que os passes
+  # leem. `ActiveSupport::Concern` é transcrito sob
+  # `sig/generated/steep_ar_runtime/` e é a única fonte do projeto que diz que
+  # `class_methods do` guarda um bloco depois `module_eval`ado num
+  # `ClassMethods`. Fora do corpus, o `StoredBlockReplayExpander` não desugara
+  # nada e o `module ClassMethods` some do RBS — com `--output`, apagado por
+  # cima do bom. O run completo escapava só porque a invocação usual passa
+  # `sig/` como INPUT (`rbs_infer app/ lib/ sig/`).
+  describe "com declarações sob sig/ (pseudo-código no corpus)" do
+    def setup_concern_project
+      # A transcrição que o gerador de AR-runtime emite, reduzida ao que este
+      # caso lê: `class_methods` guardando o bloco num `ClassMethods`.
+      write_file("sig/generated/steep_ar_runtime/active_support/concern.rb", <<~RUBY)
+        module ActiveSupport
+          module Concern
+            def self.extended(base)
+              base.instance_variable_set(:@_dependencies, Array.new)
+            end
+
+            def class_methods(&class_methods_module_definition)
+              mod = const_defined?(:ClassMethods) ? const_get(:ClassMethods) : const_set(:ClassMethods, Module.new)
+
+              mod.module_eval(&class_methods_module_definition)
+            end
+          end
+        end
+      RUBY
+
+      write_file("app/models/greeter.rb", <<~RUBY)
+        module Greeter
+          extend ActiveSupport::Concern
+
+          class_methods do
+            def greeting
+              "hello"
+            end
+          end
+        end
+      RUBY
+    end
+
+    it "desugara `class_methods do` num run de arquivo único" do
+      setup_concern_project
+      stdout, _stderr, status = run_rbs_infer("app/models/greeter.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stdout).to include("module ClassMethods")
+      expect(stdout).to include("def greeting: () -> String")
+    end
+
+    # O `**` do `Dir.glob` não desce em diretório oculto, e é disso que depende
+    # a view expandida sob `sig/generated/.expanded/` — cópia literal das fontes
+    # do app — não entrar no corpus: com ela dentro, cada constante ganharia um
+    # segundo arquivo declarando-a.
+    it "não puxa a view expandida de volta para o corpus" do
+      setup_project
+      run_rbs_infer("--output", "app/models/user.rb", dir: @tmpdir)
+      expect(File.exist?(File.join(@tmpdir, "sig/generated/.expanded/app/models/user.rb"))).to be false
+
+      # Escrita à mão: o expander pode não ter emitido nada acima, e o que se
+      # pina aqui é o glob, não quem escreve o arquivo.
+      write_file("sig/generated/.expanded/app/models/user.rb", File.read(File.join(@tmpdir, "app/models/user.rb")))
+
+      stdout, _stderr, status = run_rbs_infer("app/models/user.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stdout.scan(/class User\b/).size).to eq(1)
+    end
+  end
+
   # ─── O sidecar de postconditions não é do rbs_infer sozinho ───────
   #
   # Steep escreve os postconditions que ele mesmo infere em
