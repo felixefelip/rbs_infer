@@ -463,11 +463,20 @@ module RbsInfer
 
             # `include Post::Taggable` → ["Post::Taggable"]. A non-constant
             # argument (`include Module.new { … }`) names nothing to splice.
+            #
+            # A leading `::` is KEPT rather than normalized away: it is the whole
+            # difference between a name Ruby resolves lexically and one it does
+            # not, and only the resolver can act on it. Stripping it here read
+            # `include ::Eventable` inside `module Card::Eventable` as a bare
+            # `Eventable`, whose lexical walk from that scope offers
+            # `Card::Eventable` — the enclosing module itself — before the
+            # top-level concern the source actually named
+            # (felixefelip/rbs_infer#295).
             def constant_args(call)
               call.arguments.arguments.filter_map do |arg|
                 next unless arg.is_a?(Prism::ConstantReadNode) || arg.is_a?(Prism::ConstantPathNode)
 
-                RbsInfer::Analyzer.extract_constant_path(arg)&.delete_prefix("::")
+                RbsInfer::Analyzer.extract_constant_path(arg)
               end
             end
 

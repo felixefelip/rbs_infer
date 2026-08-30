@@ -52,6 +52,16 @@ RSpec.describe RbsInfer::Inference::ConstantArgTypeResolver do
       expect(resolver.resolve(name: "Slots", namespace: "IncludedHook")).to eq("singleton(::IncludedHook::Slots)")
     end
 
+    # felixefelip/rbs_infer#295. `::Commentable` is not `Commentable`: the walk up
+    # `namespace` offers the enclosing `Post::Commentable` first, and the module
+    # would type its own argument. The env decides that — but only if the prefix
+    # survives the trip, so it is the WRITTEN name that goes to the bridge.
+    it "hands an absolute name to the env with its prefix intact" do
+      bridge = FakeBridge.new({}, { "::Commentable" => "::Commentable", "Commentable" => "::Post::Commentable" })
+      resolver = described_class.new(steep_bridge: bridge, caller_constant_types: {})
+      expect(resolver.resolve(name: "::Commentable", namespace: "Post::Commentable")).to eq("singleton(::Commentable)")
+    end
+
     it "returns nil for an unresolved constant (caller emits untyped, never a poisoning bare name)" do
       bridge = FakeBridge.new({}, {})
       resolver = described_class.new(steep_bridge: bridge, caller_constant_types: {})

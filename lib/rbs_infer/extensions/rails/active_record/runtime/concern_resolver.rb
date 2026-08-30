@@ -113,10 +113,18 @@ module RbsInfer
             # `include Taggable` inside `class Post` is `Post::Taggable` when that
             # exists — Ruby resolves a bare constant from the enclosing namespace
             # outward, and a concern is conventionally nested under its host.
+            #
+            # The candidate equal to the includer is skipped: a module including
+            # ITSELF is a cyclic include, which cannot run, so that candidate is
+            # never what the source meant — the lookup is coarser than Ruby here
+            # (it cannot see whether the module was opened nested or compact, and
+            # our oracle is only the scanned models). Accepting it made the
+            # `include` vanish rather than resolve, because `expand` then cut it
+            # as an already-visited module (felixefelip/rbs_infer#295).
             def lookup(name, enclosing, concerns)
               found = RbsInfer::AST::LexicalConstantResolver.resolve(
                 name: name, enclosing: enclosing
-              ) { |candidate| concerns.key?(candidate) }
+              ) { |candidate| candidate != enclosing && concerns.key?(candidate) }
 
               found && concerns[found]
             end

@@ -2,6 +2,7 @@ class Post < ApplicationRecord
   extend Enumerize
   extend ::Post::Taggable::ClassMethods
   include ::Post::Taggable
+  include ::Post::Commentable
   include ::Post::Notifiable
   include Test::Filtrable
 
