@@ -458,6 +458,17 @@ app/models/example57_windowed.rb:
   - call: included
     in: "::Example57Windowed"
     implements: "::Example57::Inner"
+app/models/example58/defaults.rb:
+  modules:
+  - anchor: Defaults
+    annotations:
+    - "# @type self: singleton(Example58) & singleton(Example58::Defaults)"
+    - "# @type instance: Example58 & Example58::Defaults"
+  blocks:
+  - call: class_methods
+    in: "::Example58::Defaults"
+    implements: "::Example58::Defaults::ClassMethods"
+    self: singleton(::Example58) & ::Example58::Defaults::ClassMethods
 app/models/included_hook/home_made.rb:
   modules:
   - anchor: HomeMade
@@ -573,12 +584,12 @@ sig/generated/steep_ar_runtime/active_support/concern.rb:
   - anchor: Concern
     annotations:
     - "# @type instance: (singleton(Eventable)) | (singleton(Example57::Fields)) |
-      (singleton(Example57Windowed)) | (singleton(FilterConfiguration)) | (singleton(IncludedHook::Sugared))
-      | (singleton(Post::Notifiable)) | (singleton(Post::Taggable)) | (singleton(Test::Filtrable))
-      | (singleton(User::Displayable)) | (singleton(User::Notifiable)) | (singleton(User::Recoverable))
-      | (singleton(Widget::Closeable)) | (singleton(Widget::Publishable))"
+      (singleton(Example57Windowed)) | (singleton(Example58::Defaults)) | (singleton(FilterConfiguration))
+      | (singleton(IncludedHook::Sugared)) | (singleton(Post::Notifiable)) | (singleton(Post::Taggable))
+      | (singleton(Test::Filtrable)) | (singleton(User::Displayable)) | (singleton(User::Notifiable))
+      | (singleton(User::Recoverable)) | (singleton(Widget::Closeable)) | (singleton(Widget::Publishable))"
     defs:
-      class_methods: singleton(Post::Taggable)
+      class_methods: singleton(Example58::Defaults) | singleton(Post::Taggable)
 sig/generated/steep_ar_runtime/notification/generated_store_accessors.rb:
   modules:
   - anchor: GeneratedStoreAccessors

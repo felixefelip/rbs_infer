@@ -1,0 +1,15 @@
+class Example58
+  module Defaults
+    extend ActiveSupport::Concern
+
+    def default_indexed_by: () -> String
+  end
+end
+
+class Example58
+  module Defaults
+    module ClassMethods
+      def default_values: () -> { indexed_by: String, sorted_by: String }
+    end
+  end
+end
