@@ -1,0 +1,13 @@
+class Example59
+  module Naming
+    extend ActiveSupport::Concern
+  end
+end
+
+class Example59
+  module Naming
+    module ClassMethods
+      def human_name: (String index) -> String
+    end
+  end
+end

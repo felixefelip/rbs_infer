@@ -1,0 +1,4 @@
+class Example59
+  extend ::Example59::Naming::ClassMethods
+  include Naming
+end
