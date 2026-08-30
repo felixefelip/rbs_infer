@@ -469,6 +469,17 @@ app/models/example58/defaults.rb:
     in: "::Example58::Defaults"
     implements: "::Example58::Defaults::ClassMethods"
     self: singleton(::Example58) & ::Example58::Defaults::ClassMethods
+app/models/example59/naming.rb:
+  modules:
+  - anchor: Naming
+    annotations:
+    - "# @type self: singleton(Example59) & singleton(Example59::Naming)"
+    - "# @type instance: Example59 & Example59::Naming"
+  blocks:
+  - call: class_methods
+    in: "::Example59::Naming"
+    implements: "::Example59::Naming::ClassMethods"
+    self: singleton(::Example59) & ::Example59::Naming::ClassMethods
 app/models/included_hook.rb:
   modules:
   - anchor: Homespun
@@ -584,12 +595,14 @@ sig/generated/steep_ar_runtime/active_support/concern.rb:
   - anchor: Concern
     annotations:
     - "# @type instance: (singleton(Eventable)) | (singleton(Example57::Fields)) |
-      (singleton(Example57Windowed)) | (singleton(Example58::Defaults)) | (singleton(FilterConfiguration))
-      | (singleton(IncludedHook::Sugared)) | (singleton(Post::Notifiable)) | (singleton(Post::Taggable))
-      | (singleton(Test::Filtrable)) | (singleton(User::Displayable)) | (singleton(User::Notifiable))
-      | (singleton(User::Recoverable)) | (singleton(Widget::Closeable)) | (singleton(Widget::Publishable))"
+      (singleton(Example57Windowed)) | (singleton(Example58::Defaults)) | (singleton(Example59::Naming))
+      | (singleton(FilterConfiguration)) | (singleton(IncludedHook::Sugared)) | (singleton(Post::Notifiable))
+      | (singleton(Post::Taggable)) | (singleton(Test::Filtrable)) | (singleton(User::Displayable))
+      | (singleton(User::Notifiable)) | (singleton(User::Recoverable)) | (singleton(Widget::Closeable))
+      | (singleton(Widget::Publishable))"
     defs:
-      class_methods: singleton(Example58::Defaults) | singleton(Post::Taggable)
+      class_methods: singleton(Example58::Defaults) | singleton(Example59::Naming)
+        | singleton(Post::Taggable)
 sig/generated/steep_ar_runtime/notification/generated_store_accessors.rb:
   modules:
   - anchor: GeneratedStoreAccessors

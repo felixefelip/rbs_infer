@@ -594,13 +594,40 @@ module RbsInfer::Inference
     # `singleton(Example24::Baz)`, and `Baz` extends `Foo`
     # (felixefelip/rbs_infer#229).
     def ancestry_match_key(component, method_name)
-      owner = rbs_definition_resolver.method_owner(component, method_name) or return nil
+      owner = method_owner_on_either_side(component, method_name) or return nil
 
       normalized_owner = owner.sub(/\A::/, "")
       return method_name if normalized_owner == @target_class.sub(/\A::/, "")
 
       entry = nested_owner_entry(normalized_owner, method_name) or return nil
       RbsInfer::Inference::MethodKey.for(method_name, owner: entry[0], kind: entry[1])
+    end
+
+    # The owner of `method_name` as reached from `component`, asking the
+    # INSTANCE side first and the SINGLETON side after.
+    #
+    # A bare `Foo` receiver spelling does not say which side was called:
+    # `resolve_receiver_type` returns the same string for a constant receiver
+    # (`Filter.indexed_by_human_name(index)`, a singleton call) and for a value
+    # of type `Filter` (an instance call). `owner_match_key` already treats both
+    # kinds as eligible for such a spelling and says so; this matcher asked only
+    # the instance side, so a class method reached through the SINGLETON
+    # ancestry — the shape `extend`ing a concern's `ClassMethods` produces, i.e.
+    # every `ActiveSupport::Concern` in the project — had no matcher at all, and
+    # its parameters stayed `untyped` however precisely the call site typed them
+    # (felixefelip/rbs_infer#293).
+    #
+    # The fallback is only reached when the instance side does NOT define the
+    # name, and then the class object is the only receiver that can answer the
+    # call — so the extra answer costs no precision. A spelling that already
+    # says `singleton(Foo)` has stated its side and gets no second question.
+    def method_owner_on_either_side(component, method_name)
+      resolver = rbs_definition_resolver
+      owner = resolver.method_owner(component, method_name)
+      return owner if owner
+      return nil if singleton_receiver(component)
+
+      resolver.method_owner("singleton(#{component})", method_name)
     end
 
     # The target's nested owner the ancestry landed on, as `[owner, kind]`.

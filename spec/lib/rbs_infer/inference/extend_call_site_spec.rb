@@ -151,6 +151,66 @@ RSpec.describe "a call site reaching the target through extend" do
     expect(rbs).to include("def notify: (untyped value) ->")
   end
 
+  # The same reach again, written the way source actually writes it: the CONSTANT is the
+  # receiver. `klass = Host` above gets Steep's `singleton(Host)` out of the local, which
+  # says which side is being called; a constant receiver resolves to the bare `"Host"`,
+  # which says nothing — `resolve_receiver_type` returns that same string for a value of
+  # type `Host`. `owner_match_key` keeps both kinds eligible for such a spelling, but this
+  # matcher asked RBS for the owner on the INSTANCE side alone, where an `extend`ed method
+  # is not, so the call site was dropped (felixefelip/rbs_infer#293).
+  #
+  # This is the shape every `ActiveSupport::Concern` has: `class_methods do` becomes a
+  # `ClassMethods` module the host extends, and it is called as `Host.the_method(arg)`.
+  it "types the parameter from a call written on the extending class's constant" do
+    target = write("app/mixin.rb", <<~RUBY)
+      module Mixin
+        def notify(target)
+          target
+        end
+      end
+    RUBY
+    write("app/host.rb", "class Host\n  extend Mixin\nend\n")
+    write("app/caller.rb", <<~RUBY)
+      class Caller
+        def run
+          Host.notify("hi")
+        end
+      end
+    RUBY
+    write_signatures
+
+    rbs = RbsInfer::Analyzer.new(target_class: "Mixin", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
+
+    expect(rbs).to include("def notify: (String target) ->")
+  end
+
+  # And the constant spelling earns no more than the typed one does: the singleton side is
+  # asked only because the instance side had no such method, and it answers off the same
+  # ancestry. A class that does not extend the target still says nothing.
+  it "leaves the parameter untyped when the constant's singleton does not reach the target" do
+    target = write("app/mixin.rb", <<~RUBY)
+      module Mixin
+        def notify(target)
+          target
+        end
+      end
+    RUBY
+    write("app/host.rb", "class Host\nend\n")
+    write("app/caller.rb", <<~RUBY)
+      class Caller
+        def run
+          Host.notify("hi")
+        end
+      end
+    RUBY
+    write("sig/generated/mixin.rbs", "module Mixin\n  def notify: (untyped target) -> untyped\nend\n")
+    write("sig/generated/host.rbs", "class Host\nend\n")
+
+    rbs = RbsInfer::Analyzer.new(target_class: "Mixin", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
+
+    expect(rbs).to include("def notify: (untyped target) ->")
+  end
+
   # The receiver's type is what decides, not the method's name: `singleton(Host)` reaches
   # `Mixin` only because `Host` extends it. A class that does not gives nothing away.
   it "leaves the parameter untyped when the receiver's singleton does not reach the target" do
