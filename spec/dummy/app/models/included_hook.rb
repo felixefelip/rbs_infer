@@ -154,11 +154,12 @@ class IncludedHookCaller
     IncludedHook.new.stamp
   end
 
-  # The two-hosts half, and the one place where the two sides say different things out
-  # loud: this still infers `Integer` from the block's body, while the emitted RBS
-  # declares no `from_shared` at all, so Steep reports the call as a missing method.
-  # Both are pinned — the type here, the error in the baseline — so #216 has to close
-  # the gap on both sides at once.
+  # The two-hosts half. Both sides now say the same thing: the RBS declares
+  # `from_shared` on each host (#263 stopped declining a block replayed onto two
+  # classes), and since #289 the sidecar names both in one `@implements`, so the
+  # block's `def` is checked where it actually lands instead of being reported as a
+  # method no RBS declares. What #216 still owes is `super` inside such a block,
+  # which resolves against a different chain per host.
   def read_shared
     IncludedHookFirst.new.from_shared
   end

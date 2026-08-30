@@ -282,6 +282,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example56", target_file: "app/models/example56.rb")
   end
 
+  # `include Fields` inside `class Example57` is the nested concern every Rails app
+  # writes, and the name it is written with is not the constant it reaches. The
+  # replay pass asked the project for `Fields` as spelled, found no file, and left
+  # the concern's `included do` where it was (felixefelip/rbs_infer#289).
+  it "example57 (a concern included by its relative name) matches expected RBS" do
+    assert_snapshot("models/example57", target_file: "app/models/example57.rb")
+  end
+
   it "example55/foo (the DSL in a file of its own) matches expected RBS" do
     assert_snapshot("models/example55/foo", target_file: "app/models/example55/foo.rb")
   end
