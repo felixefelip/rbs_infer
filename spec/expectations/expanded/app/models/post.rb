@@ -2,13 +2,13 @@
 
 class Post < ApplicationRecord
   include Post::Taggable
+  include Post::Commentable
   include Post::Notifiable
   include Test::Filtrable
 
   extend Enumerize
 
   belongs_to :user
-  has_many :comments, dependent: :destroy
   has_many :assignments, dependent: :destroy
   has_many :post_tags, dependent: :destroy
   has_many :tags, through: :post_tags

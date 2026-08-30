@@ -41,14 +41,20 @@ module RbsInfer::Inference
       # constant and poisons the shared env (felixefelip/rbs_infer#56).
       return nil unless @steep_bridge
 
-      value_type = @steep_bridge.constant_type_from_env(bare, namespace: namespace)
+      # `name`, not `bare`: a leading `::` tells the env lookup to skip the walk
+      # up `namespace`, and dropping it here made an absolute reference resolve
+      # relative instead. `include ::Commentable` inside `Post::Commentable`
+      # matched the enclosing module — a candidate the walk offers before the
+      # top-level one — and typed the argument `singleton(Post::Commentable)`
+      # (felixefelip/rbs_infer#295).
+      value_type = @steep_bridge.constant_type_from_env(name, namespace: namespace)
       return value_type if value_type
 
       # The FULLY QUALIFIED name the env matched, not the one the call site wrote: a
       # relative `Slots` inside `class IncludedHook` means `::IncludedHook::Slots`, and
       # the type is emitted into a signature that may live in another namespace
       # entirely, where the written name would mean something else or nothing at all.
-      fqn = @steep_bridge.class_or_module_name(bare, namespace: namespace)
+      fqn = @steep_bridge.class_or_module_name(name, namespace: namespace)
       fqn ? "singleton(#{fqn})" : nil
     end
   end

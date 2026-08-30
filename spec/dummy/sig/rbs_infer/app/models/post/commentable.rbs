@@ -1,0 +1,8 @@
+class Post
+  module Commentable
+    extend ActiveSupport::Concern
+    include ::Commentable
+
+    def commentable?: () -> bool
+  end
+end

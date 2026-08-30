@@ -338,6 +338,96 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         expect(source_of(files, "user.rb")).to match(/def notifications\n/)
       end
     end
+
+    # felixefelip/rbs_infer#295. A namespaced concern that re-exports the
+    # top-level one of the same name — `module Card::Eventable` doing
+    # `include ::Eventable` — is how an app shares an association across models
+    # while keeping a per-model hook. Both hops resolved, so `card.events` had
+    # no type at all: `Card` inherited nothing from `::Eventable`.
+    it "follows an absolute include naming the concern the enclosing one shadows" do
+      outer = <<~RUBY
+        module User::Notifiable
+          extend ActiveSupport::Concern
+
+          include ::Notifiable
+        end
+      RUBY
+      inner = <<~RUBY
+        module Notifiable
+          extend ActiveSupport::Concern
+
+          included do
+            has_many :notifications, dependent: :destroy
+          end
+        end
+      RUBY
+      concern_app(
+        "app/models/user/notifiable.rb" => outer,
+        "app/models/concerns/notifiable.rb" => inner
+      ) do |files|
+        expect(source_of(files, "user.rb")).to match(/def notifications\n/)
+      end
+    end
+
+    # The same shape written bare. Ruby would call that a cyclic include and
+    # refuse to run it, so the enclosing module is not a candidate the source
+    # can have meant — the walk has to carry on to the top-level concern.
+    it "skips the enclosing module when a bare include would resolve to itself" do
+      outer = <<~RUBY
+        module User::Notifiable
+          extend ActiveSupport::Concern
+
+          include Notifiable
+        end
+      RUBY
+      inner = <<~RUBY
+        module Notifiable
+          extend ActiveSupport::Concern
+
+          included do
+            has_many :notifications, dependent: :destroy
+          end
+        end
+      RUBY
+      concern_app(
+        "app/models/user/notifiable.rb" => outer,
+        "app/models/concerns/notifiable.rb" => inner
+      ) do |files|
+        expect(source_of(files, "user.rb")).to match(/def notifications\n/)
+      end
+    end
+
+    # An absolute name skips the lexical walk entirely, so the nested concern
+    # that would otherwise shadow it is NOT what `::Notifiable` picks up. The two
+    # declare different associations here, so only one answer can be right.
+    it "does not read an absolute include as the host's nested concern" do
+      concern_app(
+        "app/models/user.rb" => "class User < ApplicationRecord\n  include ::Notifiable\nend\n",
+        "app/models/user/notifiable.rb" => <<~RUBY,
+          module User::Notifiable
+            extend ActiveSupport::Concern
+
+            included do
+              has_many :bundles, dependent: :destroy
+            end
+          end
+        RUBY
+        "app/models/bundle.rb" => "class Bundle < ApplicationRecord\n  belongs_to :user\nend\n",
+        "app/models/concerns/notifiable.rb" => <<~RUBY
+          module Notifiable
+            extend ActiveSupport::Concern
+
+            included do
+              has_many :notifications, dependent: :destroy
+            end
+          end
+        RUBY
+      ) do |files|
+        user = source_of(files, "user.rb")
+        expect(user).to match(/def notifications\n/)
+        expect(user).not_to match(/def bundles\n/)
+      end
+    end
   end
 
   # felixefelip/rbs_infer#141. A `has_many :through`'s element class is not
