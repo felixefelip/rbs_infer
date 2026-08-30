@@ -232,6 +232,44 @@ module RbsInfer::Signatures
       @method_owners[key] = compute_method_owner(type_str, method_name)
     end
 
+    # What `class_name` declares that `method_name` ACCEPTS: the parameter list
+    # of each of its overloads, rendered the way RBS writes it and with the
+    # `::` prefixes dropped the same way every other emitted type has them
+    # dropped — `["(String label, ?Integer times) { (Integer) -> void }"]`.
+    #
+    # One entry per overload, in declaration order; `[]` when no declaration
+    # answers, which is a caller's cue that it has nothing to copy.
+    #
+    # `kind` is which side to ask, exactly as `method_owner` means it, and the
+    # definition is built rather than read off one declaration, so a method the
+    # class only has through a superclass, an `include` or an `extend` answers
+    # too.
+    #
+    # Rendered by RBS itself, via a method type whose return is replaced with
+    # `void` and then cut off the end. Splitting the printed method type on
+    # `->` cannot be done: a parameter can be a proc type and so can the return,
+    # so neither the first nor the last arrow is reliably the one between them.
+    def method_parameters(kind, class_name, method_name)
+      return [] unless rbs_builder
+
+      type_name = build_rbs_type_name(class_name)
+      return [] unless type_name
+      return [] unless rbs_builder.env.class_decls.key?(type_name)
+
+      definition = kind == :singleton ? rbs_builder.build_singleton(type_name) : rbs_builder.build_instance(type_name)
+      method = definition.methods[method_name.to_sym]
+      return [] unless method
+
+      method.defs.filter_map { |d| render_parameters(d.type) }.uniq
+    rescue RBS::BaseError => e
+      # An environment that cannot build this definition costs the caller the
+      # parameters it came for, and the delegate it is emitting goes out as
+      # `()`. Say so: a signature that quietly loses its parameters reads as an
+      # answer, and the run has no other place this shows up.
+      warn "[rbs_infer] could not read #{kind} parameters of #{class_name}##{method_name}: #{e.class}: #{e.message}"
+      []
+    end
+
     def format_rbs_return_type(rbs_type, context_class = nil)
       case rbs_type
       when RBS::Types::Bases::Instance
@@ -346,6 +384,34 @@ module RbsInfer::Signatures
         method_owner_in(build_rbs_type_name(type_str), method_name, :instance)
       end
     rescue RBS::ParsingError, RBS::BaseError
+      nil
+    end
+
+    # `method_type` minus its return type, as a string. See `method_parameters`.
+    def render_parameters(method_type)
+      function = method_type.type
+      return "(?)" if function.is_a?(RBS::Types::UntypedFunction)
+
+      void = RBS::Types::Bases::Void.new(location: nil)
+      sentinel = RBS::MethodType.new(
+        type_params: method_type.type_params,
+        type: function.update(return_type: void),
+        block: method_type.block,
+        location: nil
+      )
+      rendered = sentinel.to_s.delete_suffix(" -> void")
+      # Drop the leading `::` of every name, the way every other emitted type has
+      # it dropped. Not `format_rbs_return_type`'s pattern: a parameter list puts
+      # a name after `?`, `*`, `**` and `&` too, and `?::Integer times` came out
+      # with the `::` still on it. What must survive is the `::` INSIDE a name
+      # (`Example60::Labels`), which is the one preceded by an identifier.
+      rendered.gsub(/(?<![A-Za-z0-9_:])::/, "")
+    rescue RBS::BaseError => e
+      # One overload that will not render drops out of the list; the others
+      # still stand. Only `RBS::BaseError` — a shape this cannot print is a bug
+      # here, not a fact about the project being read, and swallowing it would
+      # hide it behind a delegate that merely looks under-typed.
+      warn "[rbs_infer] could not render #{method_type}: #{e.class}: #{e.message}"
       nil
     end
 

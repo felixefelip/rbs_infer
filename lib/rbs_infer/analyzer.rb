@@ -205,10 +205,11 @@ module RbsInfer
     # Parsear o arquivo-alvo para extrair todos os membros da classe
     target_members = parse_target_class
     confirm_overloading!(target_members)
-    resolve_delegate_methods(target_members)
-
     # Extrair classes da anotação @type instance (para concerns)
+    # Read BEFORE the delegates: `to: :class` resolves against them.
     @instance_types = extract_instance_types
+
+    resolve_delegate_methods(target_members)
 
     # Inferir tipos do initialize via call-sites
     init_arg_types = param_type_inferrer.infer_initialize_types(parsed_target: @parsed_target)
@@ -723,15 +724,33 @@ module RbsInfer
     (1..segments.size).any? { |count| promoted.include?("#{@target_class}::#{segments.take(count).join("::")}") }
   end
 
+  # A delegated method accepts what the method it forwards to accepts. That is
+  # the whole rule, and it used to be written as `() -> <return type>`: the
+  # return was resolved and the parameters were simply dropped, so
+  # `delegate :default_value?, to: :class` — a method taking `(key, value)` —
+  # was emitted as `def default_value?: () -> bool`, a signature its own single
+  # call site contradicts (felixefelip/rbs_infer#294).
+  #
+  # The parameter list is copied from the target's declaration, one overload per
+  # declared overload. Only the RBS answers it: the parameters live in the
+  # declaration, and building the definition is what reaches a method the target
+  # holds through a superclass, an `include` or an `extend`. A run whose target
+  # has no RBS yet keeps `()` and gets the parameters on the pass after — the
+  # same convergence every cross-file type here depends on.
+  #
+  # The RETURN keeps its own resolution, which reads more than the declaration
+  # does (intersections, nilable receivers, source-only classes) and already
+  # handles `allow_nil`.
   def resolve_delegate_methods(target_members)
     return if @delegates.nil? || @delegates.empty?
 
     @delegates.each do |info|
-      target_class = info.target.split("_").map(&:capitalize).join
+      kind = delegate_kind(info)
+      hosts = delegate_hosts(info)
 
       info.methods.each do |method_name|
-        return_type = method_type_resolver.resolve(target_class, method_name, arg_types: nil) || "untyped"
-        return_type = RbsInfer::Signatures::RbsParserUtil.nilablize(return_type) if info.allow_nil
+        host, params = delegate_signature_source(kind, hosts, method_name)
+        return_type = delegate_return_type(kind, host, method_name, info)
 
         generated_name = case info.prefix
                          when true   then "#{info.target}_#{method_name}"
@@ -739,14 +758,58 @@ module RbsInfer
                          else             method_name
                          end
 
+        overloads = params.map { |list| "#{list} -> #{return_type}" }.uniq.join(" | ")
+
         target_members << RbsInfer::Inference::Member.new(
           kind: :method,
           name: generated_name,
-          signature: "#{generated_name}: () -> #{return_type}",
+          signature: "#{generated_name}: #{overloads}",
           visibility: :public
         )
       end
     end
+  end
+
+  # `to: :class` forwards to `self.class`, so the receiver is a SINGLETON.
+  def delegate_kind(info)
+    info.target == "class" ? :singleton : :instance
+  end
+
+  # The classes the delegate's receiver may be, most specific first.
+  #
+  # For `to: :class` that is whatever `self` is: this target, or — when the
+  # target is a concern — the hosts its `@type instance:` annotation names,
+  # which is where a `class_methods do` block actually lands. Reading the
+  # receiver as the constant `Class` (what capitalizing `"class"` produces) sent
+  # every such lookup to `::Class`, which has none of them.
+  #
+  # Everything else keeps the reader's name capitalized, unchanged.
+  def delegate_hosts(info)
+    return [info.target.split("_").map(&:capitalize).join] unless info.target == "class"
+
+    [*@instance_types, @target_class].uniq
+  end
+
+  # The first host that declares the method, with its parameter lists — or the
+  # most specific host and no parameters, when none of them does.
+  def delegate_signature_source(kind, hosts, method_name)
+    hosts.each do |host|
+      params = method_type_resolver.resolve_method_parameters(kind, host, method_name)
+      return [host, params] if params.any?
+    end
+
+    [hosts.first, ["()"]]
+  end
+
+  def delegate_return_type(kind, host, method_name, info)
+    resolved =
+      if kind == :singleton
+        method_type_resolver.resolve_class_method(host, method_name)
+      else
+        method_type_resolver.resolve(host, method_name, arg_types: nil)
+      end
+    resolved ||= "untyped"
+    info.allow_nil ? RbsInfer::Signatures::RbsParserUtil.nilablize(resolved) : resolved
   end
 
   # ─── Extrair classes da anotação @type instance ────────────────────

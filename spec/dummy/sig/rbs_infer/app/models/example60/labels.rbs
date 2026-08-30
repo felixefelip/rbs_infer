@@ -1,0 +1,15 @@
+class Example60
+  module Labels
+    extend ActiveSupport::Concern
+
+    def human_name: (String index) -> String
+  end
+end
+
+class Example60
+  module Labels
+    module ClassMethods
+      def human_name: (String index) -> String
+    end
+  end
+end
