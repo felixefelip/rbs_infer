@@ -469,29 +469,6 @@ app/models/example58/defaults.rb:
     in: "::Example58::Defaults"
     implements: "::Example58::Defaults::ClassMethods"
     self: singleton(::Example58) & ::Example58::Defaults::ClassMethods
-app/models/included_hook/home_made.rb:
-  modules:
-  - anchor: HomeMade
-    annotations:
-    - "# @type instance: singleton(IncludedHook::Homespun)"
-app/models/included_hook/shared.rb:
-  modules:
-  - anchor: Shared
-    annotations:
-    - "# @type instance: (IncludedHookFirst & IncludedHook::Shared) | (IncludedHookSecond
-      & IncludedHook::Shared)"
-  blocks:
-  - call: class_eval
-    in: "::IncludedHook::Shared"
-    implements:
-    - "::IncludedHookFirst"
-    - "::IncludedHookSecond"
-    method: included
-app/models/included_hook/slots.rb:
-  modules:
-  - anchor: Slots
-    annotations:
-    - "# @type instance: IncludedHook & IncludedHook::Slots"
 app/models/included_hook.rb:
   modules:
   - anchor: Homespun
@@ -517,6 +494,29 @@ app/models/included_hook.rb:
   - call: included
     in: "::IncludedHook::Homespun"
     implements: "::IncludedHook"
+app/models/included_hook/home_made.rb:
+  modules:
+  - anchor: HomeMade
+    annotations:
+    - "# @type instance: singleton(IncludedHook::Homespun)"
+app/models/included_hook/shared.rb:
+  modules:
+  - anchor: Shared
+    annotations:
+    - "# @type instance: (IncludedHookFirst & IncludedHook::Shared) | (IncludedHookSecond
+      & IncludedHook::Shared)"
+  blocks:
+  - call: class_eval
+    in: "::IncludedHook::Shared"
+    implements:
+    - "::IncludedHookFirst"
+    - "::IncludedHookSecond"
+    method: included
+app/models/included_hook/slots.rb:
+  modules:
+  - anchor: Slots
+    annotations:
+    - "# @type instance: IncludedHook & IncludedHook::Slots"
 app/models/post/notifiable.rb:
   modules:
   - anchor: Notifiable
@@ -534,13 +534,13 @@ app/models/post/taggable.rb:
     - "# @type self: singleton(Post) & singleton(Post::Taggable)"
     - "# @type instance: Post & Post::Taggable"
   blocks:
+  - call: included
+    in: "::Post::Taggable"
+    implements: "::Post"
   - call: class_methods
     in: "::Post::Taggable"
     implements: "::Post::Taggable::ClassMethods"
     self: singleton(::Post) & ::Post::Taggable::ClassMethods
-  - call: included
-    in: "::Post::Taggable"
-    implements: "::Post"
 app/models/user/displayable.rb:
   modules:
   - anchor: Displayable

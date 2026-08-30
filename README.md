@@ -69,6 +69,8 @@ bundle exec rbs_infer app/models --output-dir sig/rbs_infer
 bundle exec rbs_infer app/ --output --max-passes 15
 ```
 
+The arguments say *what to generate RBS for*. What a run *resolves against* — call sites and the declarations the expansion passes read — is the project's **Steepfile**: every `check` pattern, `ignore`d paths included (an `ignore` says "report no diagnostics here", not "this file is not part of the program"), plus the paths given on the command line. So the corpus never drifts from what `steep check` sees, and a project that keeps code outside `app/`/`lib/` needs no flag. With no usable Steepfile the run resolves against its arguments alone and says so on stderr.
+
 When `--output` is enabled the analyzer runs in dependency order (topological sort over `RbsInfer::DependencySorter`) and then re-runs files whose RBS still changes — that's the *stabilization pass loop* controlled by `--max-passes`.
 
 ## Ruby API

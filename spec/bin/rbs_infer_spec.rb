@@ -302,6 +302,224 @@ RSpec.describe "bin/rbs_infer" do
     end
   end
 
+  # ─── O corpus vem do Steepfile ───────────────────────────────────
+  #
+  # `check` é onde o projeto diz que o Ruby dele mora, e é a MESMA lista que o
+  # `steep check` lê — o corpus não pode divergir do que o checker enxerga.
+  # Adivinhar o layout Rails errava nos dois sentidos: perdia um projeto que
+  # guarda código em outro lugar, e perdia os sidecars sob `sig/`.
+  describe "corpus vindo do Steepfile" do
+    def write_steepfile(*checks)
+      write_file("Steepfile", <<~RUBY)
+        target :app do
+        #{checks.map { |c| "  check #{c.inspect}" }.join("\n")}
+          signature "sig"
+        end
+      RUBY
+    end
+
+    def write_widget(dir)
+      write_file("#{dir}/widget.rb", <<~RUBY)
+        class Widget
+          attr_reader :name
+
+          def initialize(name:)
+            self.name = name
+          end
+
+          private
+
+          attr_writer :name
+        end
+      RUBY
+    end
+
+    it "resolve um caller num diretório que o layout padrão nunca globaria" do
+      write_steepfile("packages")
+      write_widget("packages/billing")
+      # O ÚNICO caller, e não é input do run — só o Steepfile o coloca no corpus.
+      write_file("packages/billing/factory.rb", <<~RUBY)
+        class Factory
+          def build
+            Widget.new(name: "hi")
+          end
+        end
+      RUBY
+
+      stdout, _stderr, status = run_rbs_infer("packages/billing/widget.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stdout).to include("def initialize: (name: String) -> void")
+    end
+
+    # A substituição tem um preço, e ele fica pinado aqui: o que o Steepfile não
+    # declara não entra no corpus, nem que esteja em `app/`. Um projeto em
+    # adoção gradual (`check "app/models"` e mais nada) resolve menos do que
+    # resolvia com os globs fixos. É a consequência de o Steepfile ser a fonte
+    # da verdade — para trazer o arquivo de volta, declare-o lá (ou passe-o como
+    # input, que continua entrando no corpus).
+    it "não lê o que o Steepfile não declara" do
+      write_steepfile("packages")
+      write_widget("packages/billing")
+      write_file("app/services/factory.rb", <<~RUBY)
+        class Factory
+          def build
+            Widget.new(name: "hi")
+          end
+        end
+      RUBY
+
+      stdout, _stderr, status = run_rbs_infer("packages/billing/widget.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stdout).to include("name: untyped")
+    end
+
+    # O input é do run, não do Steepfile: mandar analisar um arquivo é dizer que
+    # ele conta, e o caller que vive junto dele tem que continuar visível
+    # (felixefelip/rbs_infer#76).
+    it "mantém os inputs no corpus mesmo fora do que o Steepfile declara" do
+      write_steepfile("app")
+      write_widget("pseudo")
+      write_file("pseudo/factory.rb", <<~RUBY)
+        class Factory
+          def build
+            Widget.new(name: "hi")
+          end
+        end
+      RUBY
+
+      stdout, _stderr, status = run_rbs_infer("pseudo", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stdout).to include("def initialize: (name: String) -> void")
+    end
+
+    # Sem Steepfile utilizável não há segunda resposta, mais silenciosa, para
+    # onde cair: o run resolve contra o que lhe apontaram e DIZ isso. Um layout
+    # adivinhado seria pior — degradaria tipo sem deixar rastro do motivo.
+    it "avisa e resolve só os inputs quando o Steepfile não pode ser lido" do
+      write_file("Steepfile", "target :app do\n  check\n")
+      setup_project
+
+      stdout, stderr, status = run_rbs_infer("app/models/user.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stderr).to include("could not be read")
+      expect(stderr).to include("resolving call sites only against the paths given")
+      expect(stdout).to include("class User")
+    end
+
+    it "avisa quando o projeto não tem Steepfile nenhum" do
+      setup_project
+
+      _stdout, stderr, status = run_rbs_infer("app/models/user.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stderr).to include("no usable Steepfile")
+    end
+
+    # O input continua sendo corpus, então apontar para o diretório inteiro
+    # resolve o que vive dentro dele mesmo sem Steepfile.
+    it "resolve dentro dos inputs mesmo sem Steepfile" do
+      setup_project
+
+      stdout, _stderr, status = run_rbs_infer("app", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stdout).to include("def initialize: (name: String, age: Integer) -> void")
+    end
+  end
+
+  # ─── Pseudo-código sob sig/ entra no corpus (sem ser input) ──────
+  #
+  # Os sidecars de runtime não são só CALL-SITES, são DECLARAÇÕES que os passes
+  # leem. `ActiveSupport::Concern` é transcrito sob
+  # `sig/generated/steep_ar_runtime/` e é a única fonte do projeto que diz que
+  # `class_methods do` guarda um bloco depois `module_eval`ado num
+  # `ClassMethods`. Fora do corpus, o `StoredBlockReplayExpander` não desugara
+  # nada e o `module ClassMethods` some do RBS — com `--output`, apagado por
+  # cima do bom. O run completo escapava só porque a invocação usual passa
+  # `sig/` como INPUT (`rbs_infer app/ lib/ sig/`).
+  describe "com declarações sob sig/ (pseudo-código no corpus)" do
+    def setup_concern_project
+      # `check "sig/**/*.rb"` é o que o app que reportou o bug já dizia: o
+      # pseudo-código é Ruby que o projeto manda o Steep checar.
+      write_file("Steepfile", <<~RUBY)
+        target :app do
+          check "app"
+          check "sig/**/*.rb"
+          signature "sig"
+        end
+      RUBY
+
+      # A transcrição que o gerador de AR-runtime emite, reduzida ao que este
+      # caso lê: `class_methods` guardando o bloco num `ClassMethods`.
+      write_file("sig/generated/steep_ar_runtime/active_support/concern.rb", <<~RUBY)
+        module ActiveSupport
+          module Concern
+            def self.extended(base)
+              base.instance_variable_set(:@_dependencies, Array.new)
+            end
+
+            def class_methods(&class_methods_module_definition)
+              mod = const_defined?(:ClassMethods) ? const_get(:ClassMethods) : const_set(:ClassMethods, Module.new)
+
+              mod.module_eval(&class_methods_module_definition)
+            end
+          end
+        end
+      RUBY
+
+      write_file("app/models/greeter.rb", <<~RUBY)
+        module Greeter
+          extend ActiveSupport::Concern
+
+          class_methods do
+            def greeting
+              "hello"
+            end
+          end
+        end
+      RUBY
+    end
+
+    it "desugara `class_methods do` num run de arquivo único" do
+      setup_concern_project
+      stdout, _stderr, status = run_rbs_infer("app/models/greeter.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stdout).to include("module ClassMethods")
+      expect(stdout).to include("def greeting: () -> String")
+    end
+
+    # O `**` do `Dir.glob` não desce em diretório oculto, e é disso que depende
+    # a view expandida sob `sig/generated/.expanded/` — cópia literal das fontes
+    # do app — não entrar no corpus: com ela dentro, cada constante ganharia um
+    # segundo arquivo declarando-a.
+    it "não puxa a view expandida de volta para o corpus" do
+      write_file("Steepfile", <<~RUBY)
+        target :app do
+          check "app"
+          check "sig/**/*.rb"
+          signature "sig"
+        end
+      RUBY
+      setup_project
+      run_rbs_infer("--output", "app/models/user.rb", dir: @tmpdir)
+      expect(File.exist?(File.join(@tmpdir, "sig/generated/.expanded/app/models/user.rb"))).to be false
+
+      # Escrita à mão: o expander pode não ter emitido nada acima, e o que se
+      # pina aqui é o glob, não quem escreve o arquivo.
+      write_file("sig/generated/.expanded/app/models/user.rb", File.read(File.join(@tmpdir, "app/models/user.rb")))
+
+      stdout, _stderr, status = run_rbs_infer("app/models/user.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stdout.scan(/class User\b/).size).to eq(1)
+    end
+  end
+
   # ─── O sidecar de postconditions não é do rbs_infer sozinho ───────
   #
   # Steep escreve os postconditions que ele mesmo infere em
