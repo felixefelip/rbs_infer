@@ -1,0 +1,3 @@
+class Example61Caller
+  def normalize_name: () -> String
+end
