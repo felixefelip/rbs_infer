@@ -6,6 +6,8 @@ module RbsInfer::Signatures
   # Extraído de MethodTypeResolver para manter responsabilidades separadas.
 
   class RbsDefinitionResolver
+    KERNEL_TYPE_NAME = RBS::TypeName.parse("::Kernel")
+
     def initialize
       @rbs_builder = nil
       @rbs_builder_loaded = false
@@ -57,6 +59,10 @@ module RbsInfer::Signatures
 
       method = defn&.methods&.[](method_name.to_sym)
       return nil unless method
+
+      if kind == :instance && method_name.to_s == "class" && kernel_class?(method)
+        return kernel_class_return(type_name)
+      end
 
       best = nil
       # One overload that the arguments single out answers the call; anything
@@ -268,6 +274,33 @@ module RbsInfer::Signatures
       # answer, and the run has no other place this shows up.
       warn "[rbs_infer] could not read #{kind} parameters of #{class_name}##{method_name}: #{e.class}: #{e.message}"
       []
+    end
+
+    # RBS declares `Kernel#class` as `() -> Class`, which drops the one thing the
+    # call states: WHICH class. Ruby's answer is the receiver's own singleton,
+    # and so is the checker's — Steep rewrites this exact method per receiver
+    # type when it builds an object's shape (`Interface::Builder#object_shape`
+    # calls `replace_kernel_class`). Reading the declaration literally left
+    # `self.class.normalize(x)` with a receiver typed `Class`, which names no
+    # target, so the call site was invisible and `normalize`'s parameter was
+    # typed by the OTHER call sites alone — narrower than the source shows
+    # (felixefelip/rbs_infer#296).
+    #
+    # Only on the instance side: `Foo.class` is `Class`, exactly as declared,
+    # which is what Steep's `singleton_shape` keeps.
+    def kernel_class?(method)
+      method.defs.any? do |type_def|
+        member = type_def.member
+        member.is_a?(RBS::AST::Members::MethodDefinition) &&
+          member.name == :class &&
+          type_def.defined_in == KERNEL_TYPE_NAME
+      end
+    end
+
+    # `singleton(Foo)` for `Foo`. `type_name` is the name the lookup above
+    # already resolved against the env, so it is a class and nothing else.
+    def kernel_class_return(type_name)
+      "singleton(#{type_name.to_s.sub(/\A::/, "")})"
     end
 
     def format_rbs_return_type(rbs_type, context_class = nil)

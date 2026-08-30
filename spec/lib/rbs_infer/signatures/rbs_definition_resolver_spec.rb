@@ -63,4 +63,20 @@ RSpec.describe RbsInfer::Signatures::RbsDefinitionResolver do
       expect(result).not_to be_nil
     end
   end
+
+  # RBS declares `Kernel#class` as `() -> Class`, which loses the one thing the
+  # call states: WHICH class. Read literally, `self.class` typed a receiver
+  # `Class`, which names no target, and every `self.class.foo(x)` call site was
+  # dropped (felixefelip/rbs_infer#296).
+  describe "#resolve_via_rbs_builder for Kernel#class" do
+    it "answers the receiver's own singleton, not the declared `Class`" do
+      expect(resolver.resolve_via_rbs_builder(:instance, "String", :class, arg_types: nil))
+        .to eq("singleton(String)")
+    end
+
+    it "leaves the singleton side alone: `String.class` is `Class` as declared" do
+      expect(resolver.resolve_via_rbs_builder(:singleton, "String", :class, arg_types: nil))
+        .to eq("Class")
+    end
+  end
 end

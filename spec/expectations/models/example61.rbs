@@ -1,0 +1,5 @@
+class Example61
+  def self.normalize: ((Symbol | String) key) -> String
+
+  def normalized_key: () -> String
+end

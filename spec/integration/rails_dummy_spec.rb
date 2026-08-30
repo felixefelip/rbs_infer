@@ -290,6 +290,18 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example57", target_file: "app/models/example57.rb")
   end
 
+  # `self.class.normalize(:indexed_by)` is a call site like any other, and the only
+  # reason it was not read as one is that RBS declares `Kernel#class` as `() -> Class`
+  # — a receiver naming no class. `normalize`'s parameter was typed by the caller
+  # alone (felixefelip/rbs_infer#296).
+  it "example61 (a class method reached through self.class) matches expected RBS" do
+    assert_snapshot("models/example61", target_file: "app/models/example61.rb")
+  end
+
+  it "example61_caller (the other call site) matches expected RBS" do
+    assert_snapshot("models/example61_caller", target_file: "app/models/example61_caller.rb")
+  end
+
   it "example55/foo (the DSL in a file of its own) matches expected RBS" do
     assert_snapshot("models/example55/foo", target_file: "app/models/example55/foo.rb")
   end
