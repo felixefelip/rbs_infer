@@ -1,0 +1,7 @@
+class Post
+  module Exportable
+    extend ActiveSupport::Concern
+
+    def export_stamp: () -> String
+  end
+end

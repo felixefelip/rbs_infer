@@ -7,6 +7,7 @@ class Post < ApplicationRecord
   include Post::Taggable
   include Post::Commentable
   include Post::Notifiable
+  include Post::Exportable
   include Test::Filtrable
 
   extend Enumerize
