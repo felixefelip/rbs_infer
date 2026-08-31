@@ -141,6 +141,14 @@ methods:
         receiver:
           kind: self
         method: user
+  Post::Exportable#export_stamp:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: created_at
   Post::Notifiable#notification_payload:
     requires:
     - kind: not_nil

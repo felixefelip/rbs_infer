@@ -551,6 +551,12 @@ app/models/post/commentable.rb:
     annotations:
     - "# @type self: singleton(Post) & singleton(Post::Commentable)"
     - "# @type instance: Post & Post::Commentable"
+app/models/post/exportable.rb:
+  modules:
+  - anchor: Exportable
+    annotations:
+    - "# @type self: singleton(Post) & singleton(Post::Exportable)"
+    - "# @type instance: Post & Post::Exportable"
 app/models/post/notifiable.rb:
   modules:
   - anchor: Notifiable
@@ -620,9 +626,10 @@ sig/generated/steep_ar_runtime/active_support/concern.rb:
     - "# @type instance: (singleton(Commentable)) | (singleton(Eventable)) | (singleton(Example57::Fields))
       | (singleton(Example57Windowed)) | (singleton(Example58::Defaults)) | (singleton(Example59::Naming))
       | (singleton(Example60::Labels)) | (singleton(FilterConfiguration)) | (singleton(IncludedHook::Sugared))
-      | (singleton(Post::Commentable)) | (singleton(Post::Notifiable)) | (singleton(Post::Taggable))
-      | (singleton(Test::Filtrable)) | (singleton(User::Displayable)) | (singleton(User::Notifiable))
-      | (singleton(User::Recoverable)) | (singleton(Widget::Closeable)) | (singleton(Widget::Publishable))"
+      | (singleton(Post::Commentable)) | (singleton(Post::Exportable)) | (singleton(Post::Notifiable))
+      | (singleton(Post::Taggable)) | (singleton(Test::Filtrable)) | (singleton(User::Displayable))
+      | (singleton(User::Notifiable)) | (singleton(User::Recoverable)) | (singleton(Widget::Closeable))
+      | (singleton(Widget::Publishable))"
     defs:
       class_methods: singleton(Example58::Defaults) | singleton(Example59::Naming)
         | singleton(Example60::Labels) | singleton(Post::Taggable)

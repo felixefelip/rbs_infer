@@ -1,0 +1,3 @@
+class PostExporter
+  def call: () -> nil
+end
