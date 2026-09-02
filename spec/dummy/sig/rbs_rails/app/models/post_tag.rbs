@@ -267,13 +267,13 @@ class ::PostTag < ::ApplicationRecord
   end
 
   class ::PostTag::ActiveRecord_Relation < ::ActiveRecord::Relation
-    include ::Enumerable[::PostTag]
+    include ::Enumerable[::PostTag & ::PostTag::Validated]
     include ::PostTag::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::PostTag, ::Integer, ::PostTag::Validated]
   end
 
   class ::PostTag::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
-    include ::Enumerable[::PostTag]
+    include ::Enumerable[::PostTag & ::PostTag::Validated]
     include ::PostTag::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::PostTag, ::Integer, ::PostTag::Validated]
 

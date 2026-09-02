@@ -38,6 +38,36 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
     expect(visitor.inferred_param_types["publish"]["user"]).to eq("(User & User::Validated)")
   end
 
+  # felixefelip/rbs_infer#298. A receiverless call resolved through `@attr_types`
+  # alone, which only ever holds the class's own `attr_*`. An association reader
+  # — or any other `def` — was not in it, came back `untyped`, and the call site
+  # was dropped from the candidates. With one other call site typed, the
+  # parameter then took THAT site's type as if it were the only one: the union
+  # was not widened, it was never formed.
+  it "usa o tipo do checker para um argumento que é um self-send", :dummy_app do
+    source = <<~RUBY
+      class Post
+        def call
+          publish(user)
+        end
+
+        def publish(user)
+        end
+      end
+    RUBY
+
+    bridge = RbsInfer::Signatures::SteepBridge.new
+    result = Prism.parse(source)
+    visitor = described_class.new(
+      steep_bridge: bridge,
+      source_code: source,
+      method_positional_params: { "publish" => ["user"] }
+    )
+    result.value.accept(visitor)
+
+    expect(visitor.inferred_param_types["publish"]["user"]).to eq("User?")
+  end
+
   it "infere tipo de kwarg via local variable = Klass.new(...)" do
     source = <<~RUBY
       class Foo

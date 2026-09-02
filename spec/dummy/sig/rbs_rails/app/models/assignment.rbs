@@ -267,13 +267,13 @@ class ::Assignment < ::ApplicationRecord
   end
 
   class ::Assignment::ActiveRecord_Relation < ::ActiveRecord::Relation
-    include ::Enumerable[::Assignment]
+    include ::Enumerable[::Assignment & ::Assignment::Validated]
     include ::Assignment::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::Assignment, ::Integer, ::Assignment::Validated]
   end
 
   class ::Assignment::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
-    include ::Enumerable[::Assignment]
+    include ::Enumerable[::Assignment & ::Assignment::Validated]
     include ::Assignment::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::Assignment, ::Integer, ::Assignment::Validated]
 

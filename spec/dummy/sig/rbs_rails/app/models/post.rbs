@@ -531,13 +531,13 @@ class ::Post < ::ApplicationRecord
   end
 
   class ::Post::ActiveRecord_Relation < ::ActiveRecord::Relation
-    include ::Enumerable[::Post]
+    include ::Enumerable[::Post & ::Post::Validated]
     include ::Post::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::Post, ::Integer, ::Post::Validated]
   end
 
   class ::Post::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
-    include ::Enumerable[::Post]
+    include ::Enumerable[::Post & ::Post::Validated]
     include ::Post::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::Post, ::Integer, ::Post::Validated]
 
