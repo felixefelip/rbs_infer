@@ -12,7 +12,7 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
   # felixefelip/rbs_infer#142. The argument is narrowed at the point it is
   # passed, and the callee's parameter must not be typed as if it were not:
   # a nilable parameter makes every downstream fact about it unprovable.
-  it "usa o tipo NARROWED do local no call-site, não o da atribuição", :dummy_app do
+  it "uses the local's NARROWED type at the call site, not the assignment's", :dummy_app do
     source = <<~RUBY
       class Foo
         def call
@@ -44,7 +44,7 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
   # was dropped from the candidates. With one other call site typed, the
   # parameter then took THAT site's type as if it were the only one: the union
   # was not widened, it was never formed.
-  it "usa o tipo do checker para um argumento que é um self-send", :dummy_app do
+  it "uses the checker's type for an argument that is a self-send", :dummy_app do
     source = <<~RUBY
       class Post
         def call
@@ -68,21 +68,21 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
     expect(visitor.inferred_param_types["publish"]["user"]).to eq("User?")
   end
 
-  it "infere tipo de kwarg via local variable = Klass.new(...)" do
+  it "infers a kwarg's type through a local assigned from Klass.new(...)" do
     source = <<~RUBY
       class Foo
         def call
-          aluno = Entity.new(nome: "test")
-          publicar(aluno:)
+          student = Entity.new(name: "test")
+          enroll(student:)
         end
 
-        def publicar(aluno:)
+        def enroll(student:)
         end
       end
     RUBY
 
     visitor = analyze(source)
-    expect(visitor.inferred_param_types["publicar"]["aluno"]).to eq("Entity")
+    expect(visitor.inferred_param_types["enroll"]["student"]).to eq("Entity")
   end
 
   it "unions kwarg types from distinct call-sites (felixefelip/rbs_infer#64)" do
@@ -105,118 +105,118 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
     expect(visitor.inferred_param_types["track_event"]["action"]).to eq("(String | Symbol)")
   end
 
-  it "infere tipo via ImplicitNode (shorthand keyword: publicar(aluno:))" do
+  it "infers a type through an ImplicitNode (shorthand keyword: enroll(student:))" do
     source = <<~RUBY
       class Foo
         def call
-          aluno = ::MyApp::Entity.new(nome: "test")
-          publicar(aluno:)
+          student = ::MyApp::Entity.new(name: "test")
+          enroll(student:)
         end
       end
     RUBY
 
     visitor = analyze(source)
-    expect(visitor.inferred_param_types["publicar"]["aluno"]).to eq("::MyApp::Entity")
+    expect(visitor.inferred_param_types["enroll"]["student"]).to eq("::MyApp::Entity")
   end
 
-  it "ignora argumentos com tipo desconhecido" do
+  it "ignores arguments whose type is unknown" do
     source = <<~RUBY
       class Foo
         def call
-          publicar(aluno: alguma_coisa)
+          enroll(student: something_or_other)
         end
       end
     RUBY
 
     visitor = analyze(source)
-    expect(visitor.inferred_param_types["publicar"]).to be_empty
+    expect(visitor.inferred_param_types["enroll"]).to be_empty
   end
 
-  it "infere múltiplos kwargs na mesma chamada" do
+  it "infers several kwargs from the same call" do
     source = <<~RUBY
       class Foo
         def call
-          aluno = Entity.new
-          curso = Curso.new
-          matricular(aluno:, curso:)
+          student = Entity.new
+          course = Course.new
+          enroll(student:, course:)
         end
       end
     RUBY
 
     visitor = analyze(source)
-    expect(visitor.inferred_param_types["matricular"]["aluno"]).to eq("Entity")
-    expect(visitor.inferred_param_types["matricular"]["curso"]).to eq("Curso")
+    expect(visitor.inferred_param_types["enroll"]["student"]).to eq("Entity")
+    expect(visitor.inferred_param_types["enroll"]["course"]).to eq("Course")
   end
 
-  context "usage-side: infere tipos de params via Klass.new(param:) no corpo" do
+  context "usage-side: infers param types from a Klass.new(param:) in the body" do
     let(:resolver) do
       instance_double(RbsInfer::Signatures::MethodTypeResolver).tap do |r|
-        allow(r).to receive(:resolve_all).with("Telefone").and_return({
-          "ddd" => "String",
-          "numero" => "String"
+        allow(r).to receive(:resolve_all).with("Phone").and_return({
+          "area_code" => "String",
+          "number" => "String"
         })
       end
     end
 
-    it "infere tipo de param quando forwarded via shorthand para Klass.new(param:)" do
+    it "infers a param's type when it is forwarded by shorthand to Klass.new(param:)" do
       source = <<~RUBY
         class Foo
-          def adicionar_telefone(ddd:, numero:)
-            Telefone.new(ddd:, numero:)
+          def add_phone(area_code:, number:)
+            Phone.new(area_code:, number:)
           end
         end
       RUBY
 
       visitor = analyze(source, method_type_resolver: resolver)
-      expect(visitor.inferred_param_types["adicionar_telefone"]["ddd"]).to eq("String")
-      expect(visitor.inferred_param_types["adicionar_telefone"]["numero"]).to eq("String")
+      expect(visitor.inferred_param_types["add_phone"]["area_code"]).to eq("String")
+      expect(visitor.inferred_param_types["add_phone"]["number"]).to eq("String")
     end
 
-    it "infere tipo via param: param explícito em Klass.new" do
+    it "infers a type through an explicit `param: param` in Klass.new" do
       source = <<~RUBY
         class Foo
-          def adicionar(codigo:)
-            Telefone.new(ddd: codigo)
+          def add(code:)
+            Phone.new(area_code: code)
           end
         end
       RUBY
 
       resolver_local = instance_double(RbsInfer::Signatures::MethodTypeResolver)
-      allow(resolver_local).to receive(:resolve_all).with("Telefone").and_return({
-        "ddd" => "String",
-        "numero" => "String"
+      allow(resolver_local).to receive(:resolve_all).with("Phone").and_return({
+        "area_code" => "String",
+        "number" => "String"
       })
 
       visitor = analyze(source, method_type_resolver: resolver_local)
-      expect(visitor.inferred_param_types["adicionar"]["codigo"]).to eq("String")
+      expect(visitor.inferred_param_types["add"]["code"]).to eq("String")
     end
 
-    it "não infere quando o valor não é um parâmetro do método" do
+    it "does not infer when the value is not a parameter of the method" do
       source = <<~RUBY
         class Foo
-          def adicionar(ddd:)
+          def add(area_code:)
             local = "11"
-            Telefone.new(ddd:, numero: local)
+            Phone.new(area_code:, number: local)
           end
         end
       RUBY
 
       visitor = analyze(source, method_type_resolver: resolver)
-      expect(visitor.inferred_param_types["adicionar"]["ddd"]).to eq("String")
-      expect(visitor.inferred_param_types["adicionar"]).not_to have_key("numero")
+      expect(visitor.inferred_param_types["add"]["area_code"]).to eq("String")
+      expect(visitor.inferred_param_types["add"]).not_to have_key("number")
     end
 
-    it "não infere sem method_type_resolver" do
+    it "does not infer without a method_type_resolver" do
       source = <<~RUBY
         class Foo
-          def adicionar(ddd:)
-            Telefone.new(ddd:)
+          def add(area_code:)
+            Phone.new(area_code:)
           end
         end
       RUBY
 
       visitor = analyze(source)
-      expect(visitor.inferred_param_types["adicionar"]).to be_empty
+      expect(visitor.inferred_param_types["add"]).to be_empty
     end
   end
 end
