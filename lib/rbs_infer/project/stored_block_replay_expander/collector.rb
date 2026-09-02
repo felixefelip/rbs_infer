@@ -309,9 +309,27 @@ module RbsInfer::Project::StoredBlockReplayExpander
       name = RbsInfer::Analyzer.extract_constant_path(node)
       return nil unless name
 
-      name = name.sub(/\A::/, "")
+      # `::Mentions` names the top level and NOTHING ELSE, so it is answered
+      # here — before the prefix comes off, which is what the guard that used to
+      # sit below the strip could not do: nothing starts with `::` by then, so
+      # it never fired and an absolute name fell through to the nesting walk.
+      # Written inside `Card::Mentions`, `include ::Mentions` resolved to the
+      # enclosing `Card::Mentions` itself. The module was then recorded as a
+      # host of its own `included do`, and Steep — which checks a block once per
+      # `@implements` name — checked the body a second time against a `self`
+      # that has none of the host's methods (felixefelip/rbs_infer#299).
+      #
+      # Still gated on `@declarations`, like every other answer here. A non-nil
+      # return means "this file declares it", which `external_lookups` reads as
+      # "nothing to absorb"; answering unconditionally told it that about
+      # `include ::Storage::Tracked` in `board.rb`, the concern's file was never
+      # opened, and `Board` dropped out of the very list this is fixing.
+      if name.start_with?("::")
+        top_level = name.delete_prefix("::")
+        return @declarations.include?(top_level) ? top_level : nil
+      end
+
       return name if name.include?("::") && @declarations.include?(name)
-      return name if name.start_with?("::")
 
       prefixes = context.to_s.split("::")
       prefixes.length.downto(1) do |length|

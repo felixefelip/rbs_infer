@@ -142,19 +142,26 @@ module RbsInfer::Project
       # The block's SOURCE is part of its identity, not only its offsets: two
       # blocks in two files are routinely at the same offset, and a location
       # carries no file to tell them apart.
-      keys = replays.map { |replay| [replay.source, replay.block.body.location, replay.target, replay.singleton] }
+      # Resolved BEFORE the uniqueness check, so two replays that differ only in
+      # a waypoint they both resolve through are one reopening, not a reason to
+      # decline the file.
+      placed = replays.flat_map do |replay|
+        replay_targets(replay, mixin_index).map { |target, kind| [replay, target, kind] }
+      end
+
+      keys = placed.map { |replay, target, _| [replay.source, replay.block.body.location, target, replay.singleton] }
       # The file's `extend`s survive an ambiguity among its BLOCKS. Which block
       # a name reaches and which module a hook extends with are answered by
       # different evidence, so a file that fails to decide the first has said
       # nothing about the second. With no extends this reads exactly as the
       # `return nil` it replaces — an empty reopening list declines below.
-      replays = [] unless keys.uniq.size == replays.size
+      placed = [] unless keys.uniq.size == placed.size
 
       # Sliced from the file the block was WRITTEN in, which is what makes
       # relocating a foreign block possible at all — reading these offsets
       # against the file being expanded cuts unrelated text.
-      virtual_reopens = replays.filter_map do |replay|
-        BlockReopen.appended(source: replay.source, block: replay.block, kind: replay.kind, target: replay.target,
+      virtual_reopens = placed.filter_map do |replay, target, kind|
+        BlockReopen.appended(source: replay.source, block: replay.block, kind: kind, target: target,
                              singleton: replay.singleton, annotations: annotations_for(replay, mixin_index))
       end
       virtual_reopens += extensions.map { |extension| extension_reopen(extension) }
@@ -183,6 +190,42 @@ module RbsInfer::Project
       return [] if parts.empty?
 
       ["# @type instance: #{union(parts)}"]
+    end
+
+    # The classes a replayed `included do` block's body really lands on, as
+    # `[[target, kind], ...]` (felixefelip/rbs_infer#299).
+    #
+    # A concern that includes another concern is a WAYPOINT, not a destination.
+    # `ActiveSupport::Concern` does not run the inner `included do` when
+    # `Post::Commentable` includes `Commentable` — it holds the block and
+    # replays it when a real class includes `Post::Commentable`. So
+    # `Commentable`'s `has_many :comments` lands on `Post`, and
+    # `Post::Commentable` never receives it.
+    #
+    # `MixinIndex#hosts_of` already resolves that chain, and for the same stated
+    # reason it does for self types: a module that includes the target is not an
+    # answer, it is another mixin, and the real one is whoever includes IT.
+    #
+    # ONE derivation with two consumers — the reopening emitted here and the
+    # `blocks:` sidecar `StoredBlockReplayImplements` writes. They must not
+    # disagree about which class gets the method, so neither reads `replay.target`
+    # directly.
+    #
+    # Only for `included`, and only when the graph names a host. `class_eval`
+    # onto a module puts the methods on THAT module however many classes include
+    # it, so redirecting there would move a body that never moves. The one shape
+    # this reads wrongly is plain Ruby's own `def self.included` — no deferral
+    # there, the base is the including module itself — which is why a project
+    # writing that against a module some class also includes gets the Concern
+    # reading. Nothing in the corpus does; a `resolves_through:` flag on the
+    # replay is the fix if something ever does.
+    def replay_targets(replay, mixin_index)
+      return [[replay.target, replay.kind]] unless replay.call == "included" && !replay.singleton
+
+      hosts = mixin_index.hosts_of(replay.target)
+      return [[replay.target, replay.kind]] if hosts.empty?
+
+      hosts.map { |host| [host, mixin_index.module?(host) ? "module" : "class"] }
     end
 
     # The selves a handed-out module's methods run with — `singleton(<host>) & <module>`,

@@ -22,6 +22,10 @@ app/models/concerns/commentable.rb:
     annotations:
     - "# @type self: singleton(Post) & singleton(Commentable)"
     - "# @type instance: Post & Commentable"
+  blocks:
+  - call: included
+    in: "::Commentable"
+    implements: "::Post"
 app/models/concerns/test/filtrable.rb:
   modules:
   - anchor: Filtrable
