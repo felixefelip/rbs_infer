@@ -1799,4 +1799,88 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(expand(outward(receiver: "Wrap::Other."))).to be_nil
     end
   end
+
+  # felixefelip/rbs_infer#299. `replay_targets` is one derivation with two
+  # consumers — the reopening emitted here and the `blocks:` sidecar — so these
+  # pin it directly rather than through either of them.
+  describe ".replay_targets" do
+    def replay(call:, target:, kind: "module", singleton: false)
+      RbsInfer::Project::StoredBlockReplayExpander::Replay.new(
+        target: target, block: nil, kind: kind, call: call, scope: "Src",
+        in_method: nil, source: "", singleton: singleton, extended: false
+      )
+    end
+
+    def graph(hosts, modules: [])
+      index = Object.new
+      index.define_singleton_method(:hosts_of) { |name| hosts.fetch(name, []) }
+      index.define_singleton_method(:module?) { |name| modules.include?(name) }
+      index
+    end
+
+    it "sends a concern's `included do` past the concern that re-exports it" do
+      # `ActiveSupport::Concern` holds the block when a CONCERN includes it and
+      # replays it when a class does, so `Post::Commentable` is a waypoint and
+      # `Post` is where the body lands.
+      targets = described_class.replay_targets(
+        replay(call: "included", target: "Post::Commentable"),
+        graph({ "Post::Commentable" => ["Post"] })
+      )
+
+      expect(targets).to eq([["Post", "class"]])
+    end
+
+    # THE reason `replay_targets` asks which call moved the block. `class_eval`
+    # runs the body THERE AND THEN, so a module target keeps it however many
+    # classes include the module — resolving through would relocate a body that
+    # never moves, and check it against a `self` it never has. Same graph as the
+    # example above, opposite answer.
+    it "leaves an eval'd block on the module it names, hosts or no hosts" do
+      targets = described_class.replay_targets(
+        replay(call: "keep", target: "Shared"),
+        graph({ "Shared" => ["Target"] })
+      )
+
+      expect(targets).to eq([["Shared", "module"]])
+    end
+
+    it "leaves a block alone when the graph names no host" do
+      targets = described_class.replay_targets(
+        replay(call: "included", target: "Post", kind: "class"),
+        graph({})
+      )
+
+      expect(targets).to eq([["Post", "class"]])
+    end
+
+    # A singleton replay names the target's class object; its includers hold
+    # nothing of it.
+    it "leaves a singleton replay on its own target" do
+      targets = described_class.replay_targets(
+        replay(call: "included", target: "Post::Commentable", singleton: true),
+        graph({ "Post::Commentable" => ["Post"] })
+      )
+
+      expect(targets).to eq([["Post::Commentable", "module"]])
+    end
+
+    it "keeps the `module` keyword when the host is itself a module" do
+      targets = described_class.replay_targets(
+        replay(call: "included", target: "Inner"),
+        graph({ "Inner" => ["Outer"] }, modules: ["Outer"])
+      )
+
+      expect(targets).to eq([["Outer", "module"]])
+    end
+
+    it "names every host a block is replayed onto" do
+      targets = described_class.replay_targets(
+        replay(call: "included", target: "Mentions"),
+        graph({ "Mentions" => ["Card", "Comment"] })
+      )
+
+      expect(targets).to eq([["Card", "class"], ["Comment", "class"]])
+    end
+  end
+
 end
