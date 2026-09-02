@@ -414,13 +414,13 @@ class ::Account < ::ApplicationRecord
   end
 
   class ::Account::ActiveRecord_Relation < ::ActiveRecord::Relation
-    include ::Enumerable[::Account]
+    include ::Enumerable[::Account & ::Account::Validated]
     include ::Account::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::Account, ::Integer, ::Account::Validated]
   end
 
   class ::Account::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
-    include ::Enumerable[::Account]
+    include ::Enumerable[::Account & ::Account::Validated]
     include ::Account::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::Account, ::Integer, ::Account::Validated]
 

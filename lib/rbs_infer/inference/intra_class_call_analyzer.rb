@@ -20,6 +20,12 @@ module RbsInfer::Inference
       # Per-READ types, which carry Steep's narrowing; `@steep_local_var_types`
       # is per-method and cannot (felixefelip/rbs_infer#142).
       @steep_lvar_read_types = steep_bridge && source_code ? steep_bridge.local_var_read_types(source_code) : {}
+      # Every typed expression in this file, keyed by range. `@attr_types` can
+      # only answer for the class's own `attr_*`; an association reader, a
+      # delegated method, a plain `def` — anything else the body calls on itself
+      # — was not in it and resolved to `untyped`, which drops the call site
+      # from the candidates entirely (felixefelip/rbs_infer#298).
+      @steep_expression_types = steep_bridge && source_code ? steep_bridge.all_expression_types(source_code) : {}
       # Constant args resolve to their value type (#46); intra-class
       # constants are in this same source, covered by the same-file tier.
       @constant_arg_resolver = ConstantArgTypeResolver.new(
@@ -215,6 +221,18 @@ module RbsInfer::Inference
       @steep_lvar_read_types[[node.location.start_line, node.location.start_character_column]]
     end
 
+    # Steep's type for an arbitrary expression, or nil. Keyed by the node's whole
+    # RANGE, so a receiver cannot answer for the call that wraps it — the same
+    # key `NewCallCollector#expression_type` builds.
+    def expression_type(node)
+      type = @steep_expression_types[RbsInfer::Signatures::SteepBridge.prism_expression_key(node.location)]
+
+      # `self` is a real RBS type meaning "the receiver of THIS method", so
+      # carrying it into another method's parameter says the argument is
+      # whatever that method was called on. Unusable here.
+      type unless type == "self"
+    end
+
     def resolve_value_type(node)
       literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: @constant_arg_resolver)
       return literal if literal
@@ -231,7 +249,11 @@ module RbsInfer::Inference
         if node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver) || "untyped"
         elsif node.receiver.nil?
-          @attr_types[node.name.to_s] || "untyped"
+          # The checker first, `@attr_types` as the fallback where it has no
+          # answer — the same order `lvar_read_type` uses above, and for the same
+          # reason: this is the type the argument HAS at the point it is passed,
+          # narrowing included.
+          expression_type(node) || @attr_types[node.name.to_s] || "untyped"
         elsif (node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)) && @method_type_resolver
           class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
           if class_name

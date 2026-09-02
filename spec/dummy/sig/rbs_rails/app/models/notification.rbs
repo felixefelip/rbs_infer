@@ -304,13 +304,13 @@ class ::Notification < ::ApplicationRecord
   end
 
   class ::Notification::ActiveRecord_Relation < ::ActiveRecord::Relation
-    include ::Enumerable[::Notification]
+    include ::Enumerable[::Notification & ::Notification::Validated]
     include ::Notification::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::Notification, ::Integer, ::Notification::Validated]
   end
 
   class ::Notification::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
-    include ::Enumerable[::Notification]
+    include ::Enumerable[::Notification & ::Notification::Validated]
     include ::Notification::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::Notification, ::Integer, ::Notification::Validated]
 

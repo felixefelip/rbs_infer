@@ -149,6 +149,8 @@ methods:
         receiver:
           kind: self
         method: created_at
+    - kind: self_type
+      type: "(::Post & ::Post::Validated)"
   Post::Notifiable#notification_payload:
     requires:
     - kind: not_nil

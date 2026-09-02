@@ -432,13 +432,13 @@ class ::User < ::ApplicationRecord
   end
 
   class ::User::ActiveRecord_Relation < ::ActiveRecord::Relation
-    include ::Enumerable[::User]
+    include ::Enumerable[::User & ::User::Validated]
     include ::User::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::User, ::Integer, ::User::Validated]
   end
 
   class ::User::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
-    include ::Enumerable[::User]
+    include ::Enumerable[::User & ::User::Validated]
     include ::User::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::User, ::Integer, ::User::Validated]
 

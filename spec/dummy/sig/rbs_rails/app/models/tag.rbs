@@ -220,13 +220,13 @@ class ::Tag < ::ApplicationRecord
   end
 
   class ::Tag::ActiveRecord_Relation < ::ActiveRecord::Relation
-    include ::Enumerable[::Tag]
+    include ::Enumerable[::Tag & ::Tag::Validated]
     include ::Tag::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::Tag, ::Integer, ::Tag::Validated]
   end
 
   class ::Tag::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
-    include ::Enumerable[::Tag]
+    include ::Enumerable[::Tag & ::Tag::Validated]
     include ::Tag::GeneratedRelationMethods
     include ::ActiveRecord::Relation::Methods[::Tag, ::Integer, ::Tag::Validated]
 
