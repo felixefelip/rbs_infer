@@ -501,6 +501,26 @@ app/models/example60/labels.rb:
     in: "::Example60::Labels"
     implements: "::Example60::Labels::ClassMethods"
     self: singleton(::Example60) & ::Example60::Labels::ClassMethods
+app/models/example62.rb:
+  modules:
+  - anchor: Deferring
+    annotations:
+    - "# @type instance: (singleton(Example62::Middle)) | (singleton(Example62::Shared))"
+    defs:
+      keep: singleton(Example62::Shared)
+  - anchor: Middle
+    annotations:
+    - "# @type instance: Example62 & Example62::Middle"
+  - anchor: Shared
+    annotations:
+    - "# @type instance: Example62 & Example62::Shared"
+  - anchor: Slots
+    annotations:
+    - "# @type instance: Example62 & Example62::Slots"
+  blocks:
+  - call: keep
+    in: "::Example62::Shared"
+    implements: "::Example62::Middle"
 app/models/included_hook.rb:
   modules:
   - anchor: Homespun

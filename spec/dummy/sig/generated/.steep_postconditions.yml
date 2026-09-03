@@ -1126,6 +1126,11 @@ postconditions:
   unconditional:
     consts:
       Example6::Foo.name: "::String"
+- class: Example62::Deferring
+  method: keep
+  effects:
+    may_write:
+    - "@kept"
 - class: Example6::Foo
   method: name
   effects:

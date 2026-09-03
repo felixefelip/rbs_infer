@@ -1,0 +1,34 @@
+class Example62
+  module Slots
+    def label: () -> nil
+  end
+
+  module Deferring
+    @kept: (^(*untyped) [self: Module] -> Symbol)?
+
+    def self.extended: (untyped base) -> untyped
+
+    def keep: () ?{ (*untyped) [self: Module] -> Symbol } -> (^(*untyped) [self: Module] -> Symbol)?
+    def append_features: (Module base) -> Symbol?
+  end
+
+  module Shared
+    extend Deferring
+  end
+
+  include Slots
+  include Middle
+end
+
+class Example62Caller
+  def read_label: () -> nil
+end
+
+class Example62
+  module Middle
+    extend Deferring
+    include Shared
+
+    def label: () -> nil
+  end
+end

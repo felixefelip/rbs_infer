@@ -16,7 +16,7 @@ class TagDestroy
   def iterate_tag_posts: () -> Tag_Post::ActiveRecord_Associations_CollectionProxy
   def iterate_tag_posts_with_transaction: () -> Tag_Post::ActiveRecord_Associations_CollectionProxy
   def call_process_tag: () -> void
-  def process_tag: (Tag & Tag::Validated tag) -> void
+  def process_tag: ((Tag & Tag::Validated) tag) -> void
   def test_nokogiri: () -> Nokogiri::XML::Document
   def parse_xml: () -> Array[Nokogiri::XML::Node]
   def parse_xml_as_hash: () -> Array[{ date: Nokogiri::XML::Node?, order: Nokogiri::XML::Node }]

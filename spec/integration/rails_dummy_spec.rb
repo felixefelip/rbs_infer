@@ -302,6 +302,19 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example61_caller", target_file: "app/models/example61_caller.rb")
   end
 
+  # felixefelip/rbs_infer#300. A DSL that DEFERS: `append_features` registers the
+  # module on the target when the target is one of its own, so `Middle` is a
+  # waypoint and `label` lands on `Example62`. `super` is the criterion — it
+  # resolves only from the host, whose ancestors carry `Slots` — so the landing
+  # is visible in this snapshot rather than only in a diagnostic: `label` under
+  # `Example62`, and `read_label` returning `String`.
+  #
+  # Today it reads as if nothing were deferred, because the registration is
+  # spelled `push(self)` and the pass looks for `<< self`.
+  it "example62 (a DSL that defers its stored block) matches expected RBS" do
+    assert_snapshot("models/example62", target_file: "app/models/example62.rb")
+  end
+
   it "example55/foo (the DSL in a file of its own) matches expected RBS" do
     assert_snapshot("models/example55/foo", target_file: "app/models/example55/foo.rb")
   end
