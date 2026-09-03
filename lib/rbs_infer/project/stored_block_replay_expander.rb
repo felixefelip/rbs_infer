@@ -87,7 +87,11 @@ module RbsInfer::Project
     # where the block's `def`s go — that is `target` — and everything about the
     # `self` they run with, which is then the host's class object rather than an
     # instance of the module (felixefelip/rbs_infer#268).
-    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method, :source, :singleton, :extended)
+    # `defers` says the DSL's own source registers the module on the target
+    # instead of replaying, on a branch this call may have taken — so the target
+    # is a waypoint rather than the destination. See
+    # `Collector#defers_onto_target?`.
+    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method, :source, :singleton, :extended, :defers)
 
     module_function
 
@@ -192,35 +196,30 @@ module RbsInfer::Project
       ["# @type instance: #{union(parts)}"]
     end
 
-    # The classes a replayed `included do` block's body really lands on, as
-    # `[[target, kind], ...]` (felixefelip/rbs_infer#299).
+    # The classes a replayed block's body really lands on, as `[[target, kind], ...]`
+    # (felixefelip/rbs_infer#299).
     #
-    # A concern that includes another concern is a WAYPOINT, not a destination.
-    # `ActiveSupport::Concern` does not run the inner `included do` when
-    # `Post::Commentable` includes `Commentable` — it holds the block and
-    # replays it when a real class includes `Post::Commentable`. So
-    # `Commentable`'s `has_many :comments` lands on `Post`, and
-    # `Post::Commentable` never receives it.
+    # `replay.target` is where the block was HANDED, which is the destination
+    # unless the DSL registers itself there and replays later. Then the target is
+    # a waypoint: `Commentable`'s `has_many` handed to `Post::Commentable` runs
+    # on `Post`, because that is when the deferred module is finally included.
+    # `Collector#defers_onto_target?` reads that off the DSL's own source, so
+    # nothing here keys on `ActiveSupport::Concern` — the dummy's hand-rolled
+    # `IncludedHook::HomeMade` writes `included do` with no deferral, and keeps
+    # its target, as running it confirms.
     #
-    # `MixinIndex#hosts_of` already resolves that chain, and for the same stated
-    # reason it does for self types: a module that includes the target is not an
-    # answer, it is another mixin, and the real one is whoever includes IT.
+    # `MixinIndex#hosts_of` supplies the rest, and for the reason it states for
+    # self types: a module that includes the target is not an answer, it is
+    # another mixin, and the real one is whoever includes IT. `module?` supplies
+    # the reopening keyword — `module Post` over a `class Post` is not a worse
+    # type but a broken environment.
     #
     # ONE derivation with two consumers — the reopening emitted here and the
     # `blocks:` sidecar `StoredBlockReplayImplements` writes. They must not
-    # disagree about which class gets the method, so neither reads `replay.target`
-    # directly.
-    #
-    # Only for `included`, and only when the graph names a host. `class_eval`
-    # onto a module puts the methods on THAT module however many classes include
-    # it, so redirecting there would move a body that never moves. The one shape
-    # this reads wrongly is plain Ruby's own `def self.included` — no deferral
-    # there, the base is the including module itself — which is why a project
-    # writing that against a module some class also includes gets the Concern
-    # reading. Nothing in the corpus does; a `resolves_through:` flag on the
-    # replay is the fix if something ever does.
+    # disagree about which class gets the method, so neither reads
+    # `replay.target` directly.
     def replay_targets(replay, mixin_index)
-      return [[replay.target, replay.kind]] unless replay.call == "included" && !replay.singleton
+      return [[replay.target, replay.kind]] unless replay.defers && !replay.singleton
 
       hosts = mixin_index.hosts_of(replay.target)
       return [[replay.target, replay.kind]] if hosts.empty?
