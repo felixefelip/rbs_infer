@@ -150,6 +150,10 @@ class Post
 end
 
 class Post
+  has_many :comments, dependent: :destroy
+end
+
+class Post
   delegate :updated_at, to: :user, prefix: true
 end
 

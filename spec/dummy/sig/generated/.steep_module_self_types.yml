@@ -514,13 +514,15 @@ app/models/example62.rb:
   - anchor: Shared
     annotations:
     - "# @type instance: Example62 & Example62::Shared"
-  - anchor: Slots
-    annotations:
-    - "# @type instance: Example62 & Example62::Slots"
   blocks:
   - call: keep
     in: "::Example62::Shared"
-    implements: "::Example62::Middle"
+    implements: "::Example62"
+app/models/example62/slots.rb:
+  modules:
+  - anchor: Slots
+    annotations:
+    - "# @type instance: Example62 & Example62::Slots"
 app/models/included_hook.rb:
   modules:
   - anchor: Homespun

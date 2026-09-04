@@ -304,15 +304,20 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   # felixefelip/rbs_infer#300. A DSL that DEFERS: `append_features` registers the
   # module on the target when the target is one of its own, so `Middle` is a
-  # waypoint and `label` lands on `Example62`. `super` is the criterion — it
-  # resolves only from the host, whose ancestors carry `Slots` — so the landing
-  # is visible in this snapshot rather than only in a diagnostic: `label` under
-  # `Example62`, and `read_label` returning `String`.
-  #
-  # Today it reads as if nothing were deferred, because the registration is
-  # spelled `push(self)` and the pass looks for `<< self`.
+  # waypoint and `hallmark` lands on `Example62`. `super` is the criterion — it
+  # resolves only from the host, whose ancestors carry `Example62::Slots` — so
+  # the landing is visible in this snapshot rather than only in a diagnostic:
+  # `hallmark` under `Example62`, and `read_hallmark` returning `String`.
   it "example62 (a DSL that defers its stored block) matches expected RBS" do
     assert_snapshot("models/example62", target_file: "app/models/example62.rb")
+  end
+
+  # The slot the block's `super` reaches, in a file of its own like
+  # `included_hook/slots.rb`. `String?` here and `String` on the host is the
+  # whole assertion: the `|| "shared"` that removes the nil is in the def that
+  # landed on `Example62`.
+  it "example62/slots (the slot the replayed `super` reaches) matches expected RBS" do
+    assert_snapshot("models/example62/slots", target_file: "app/models/example62/slots.rb")
   end
 
   it "example55/foo (the DSL in a file of its own) matches expected RBS" do

@@ -1,8 +1,4 @@
 class Example62
-  module Slots
-    def label: () -> nil
-  end
-
   module Deferring
     @kept: (^(*untyped) [self: Module] -> Symbol)?
 
@@ -16,19 +12,18 @@ class Example62
     extend Deferring
   end
 
+  module Middle
+    include Shared
+    extend Deferring
+  end
+
   include Slots
   include Middle
+
+  def hallmark: () -> String
 end
 
 class Example62Caller
-  def read_label: () -> nil
-end
-
-class Example62
-  module Middle
-    extend Deferring
-    include Shared
-
-    def label: () -> nil
-  end
+  def fill: () -> String
+  def read_hallmark: () -> String
 end
