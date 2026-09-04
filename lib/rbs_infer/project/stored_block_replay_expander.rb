@@ -87,7 +87,11 @@ module RbsInfer::Project
     # where the block's `def`s go — that is `target` — and everything about the
     # `self` they run with, which is then the host's class object rather than an
     # instance of the module (felixefelip/rbs_infer#268).
-    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method, :source, :singleton, :extended)
+    # `defers` says the DSL's own source registers the module on the target
+    # instead of replaying, on a branch this call may have taken — so the target
+    # is a waypoint rather than the destination. See
+    # `Collector#defers_onto_target?`.
+    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method, :source, :singleton, :extended, :defers)
 
     module_function
 
@@ -142,19 +146,26 @@ module RbsInfer::Project
       # The block's SOURCE is part of its identity, not only its offsets: two
       # blocks in two files are routinely at the same offset, and a location
       # carries no file to tell them apart.
-      keys = replays.map { |replay| [replay.source, replay.block.body.location, replay.target, replay.singleton] }
+      # Resolved BEFORE the uniqueness check, so two replays that differ only in
+      # a waypoint they both resolve through are one reopening, not a reason to
+      # decline the file.
+      placed = replays.flat_map do |replay|
+        replay_targets(replay, mixin_index).map { |target, kind| [replay, target, kind] }
+      end
+
+      keys = placed.map { |replay, target, _| [replay.source, replay.block.body.location, target, replay.singleton] }
       # The file's `extend`s survive an ambiguity among its BLOCKS. Which block
       # a name reaches and which module a hook extends with are answered by
       # different evidence, so a file that fails to decide the first has said
       # nothing about the second. With no extends this reads exactly as the
       # `return nil` it replaces — an empty reopening list declines below.
-      replays = [] unless keys.uniq.size == replays.size
+      placed = [] unless keys.uniq.size == placed.size
 
       # Sliced from the file the block was WRITTEN in, which is what makes
       # relocating a foreign block possible at all — reading these offsets
       # against the file being expanded cuts unrelated text.
-      virtual_reopens = replays.filter_map do |replay|
-        BlockReopen.appended(source: replay.source, block: replay.block, kind: replay.kind, target: replay.target,
+      virtual_reopens = placed.filter_map do |replay, target, kind|
+        BlockReopen.appended(source: replay.source, block: replay.block, kind: kind, target: target,
                              singleton: replay.singleton, annotations: annotations_for(replay, mixin_index))
       end
       virtual_reopens += extensions.map { |extension| extension_reopen(extension) }
@@ -183,6 +194,37 @@ module RbsInfer::Project
       return [] if parts.empty?
 
       ["# @type instance: #{union(parts)}"]
+    end
+
+    # The classes a replayed block's body really lands on, as `[[target, kind], ...]`
+    # (felixefelip/rbs_infer#299).
+    #
+    # `replay.target` is where the block was HANDED, which is the destination
+    # unless the DSL registers itself there and replays later. Then the target is
+    # a waypoint: `Commentable`'s `has_many` handed to `Post::Commentable` runs
+    # on `Post`, because that is when the deferred module is finally included.
+    # `Collector#defers_onto_target?` reads that off the DSL's own source, so
+    # nothing here keys on `ActiveSupport::Concern` — the dummy's hand-rolled
+    # `IncludedHook::HomeMade` writes `included do` with no deferral, and keeps
+    # its target, as running it confirms.
+    #
+    # `MixinIndex#hosts_of` supplies the rest, and for the reason it states for
+    # self types: a module that includes the target is not an answer, it is
+    # another mixin, and the real one is whoever includes IT. `module?` supplies
+    # the reopening keyword — `module Post` over a `class Post` is not a worse
+    # type but a broken environment.
+    #
+    # ONE derivation with two consumers — the reopening emitted here and the
+    # `blocks:` sidecar `StoredBlockReplayImplements` writes. They must not
+    # disagree about which class gets the method, so neither reads
+    # `replay.target` directly.
+    def replay_targets(replay, mixin_index)
+      return [[replay.target, replay.kind]] unless replay.defers && !replay.singleton
+
+      hosts = mixin_index.hosts_of(replay.target)
+      return [[replay.target, replay.kind]] if hosts.empty?
+
+      hosts.map { |host| [host, mixin_index.module?(host) ? "module" : "class"] }
     end
 
     # The selves a handed-out module's methods run with — `singleton(<host>) & <module>`,

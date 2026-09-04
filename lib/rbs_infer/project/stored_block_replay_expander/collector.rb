@@ -86,7 +86,9 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # the replaying method is already inside the object that owns it. So the ivar
     # is named here where `ReplayMethod` names a reader — the slot is the join
     # either way, and `attr_reader` was only ever one spelling of reaching it.
-    InwardReplay = Data.define(:owner, :method, :parameter, :ivar, :singleton)
+    # `defers` says the replay may not have happened on the target at all — see
+    # `defers_onto_target?`.
+    InwardReplay = Data.define(:owner, :method, :parameter, :ivar, :singleton, :defers)
 
     # The same replay again, with the block written where it is run instead of
     # kept for later: `def self.included(base) = base.class_eval do … end`, which
@@ -309,9 +311,27 @@ module RbsInfer::Project::StoredBlockReplayExpander
       name = RbsInfer::Analyzer.extract_constant_path(node)
       return nil unless name
 
-      name = name.sub(/\A::/, "")
+      # `::Mentions` names the top level and NOTHING ELSE, so it is answered
+      # here — before the prefix comes off, which is what the guard that used to
+      # sit below the strip could not do: nothing starts with `::` by then, so
+      # it never fired and an absolute name fell through to the nesting walk.
+      # Written inside `Card::Mentions`, `include ::Mentions` resolved to the
+      # enclosing `Card::Mentions` itself. The module was then recorded as a
+      # host of its own `included do`, and Steep — which checks a block once per
+      # `@implements` name — checked the body a second time against a `self`
+      # that has none of the host's methods (felixefelip/rbs_infer#299).
+      #
+      # Still gated on `@declarations`, like every other answer here. A non-nil
+      # return means "this file declares it", which `external_lookups` reads as
+      # "nothing to absorb"; answering unconditionally told it that about
+      # `include ::Storage::Tracked` in `board.rb`, the concern's file was never
+      # opened, and `Board` dropped out of the very list this is fixing.
+      if name.start_with?("::")
+        top_level = name.delete_prefix("::")
+        return @declarations.include?(top_level) ? top_level : nil
+      end
+
       return name if name.include?("::") && @declarations.include?(name)
-      return name if name.start_with?("::")
 
       prefixes = context.to_s.split("::")
       prefixes.length.downto(1) do |length|
@@ -344,7 +364,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
       if (inward = inward_replay_shape(node.body, parameters))
         parameter, ivar, singleton = inward
         @inward_replays << InwardReplay.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar,
-                                            singleton: singleton)
+                                            singleton: singleton,
+                                            defers: defers_onto_target?(node.body, parameter))
       end
 
       if (own = own_block_replay_shape(node.body, block_name))
@@ -579,6 +600,58 @@ module RbsInfer::Project::StoredBlockReplayExpander
       return IMPLICIT_RECEIVER if receiver.nil? || receiver.is_a?(Prism::SelfNode)
 
       receiver
+    end
+
+    # Whether the replaying method REGISTERS ITSELF on the target instead of
+    # replaying, on some branch (felixefelip/rbs_infer#299).
+    #
+    # `inward_replay_shape` reads the body flat, and says so: an `if` guard is
+    # irrelevant to the SHAPE. It is not irrelevant to the TARGET. A DSL can
+    # write both outcomes in one method and pick between them at run time —
+    # `ActiveSupport::Concern#append_features` does, and its own transcribed
+    # source is what says so:
+    #
+    #     if base.instance_variable_defined?(:@_dependencies)
+    #       base.instance_variable_get(:@_dependencies) << self   # <- this
+    #       false
+    #     else
+    #       base.class_eval(&@_included_block)                    # <- or this
+    #     end
+    #
+    # `<target> … << self` is the whole criterion, and it is a statement about
+    # the code rather than about Rails: on that branch the module hands ITSELF
+    # to the target to be replayed later, so the block did not land here and
+    # this target is a waypoint. Whoever eventually replays it is the real one.
+    #
+    # A guard that does not do this leaves the target final. The dummy's
+    # hand-rolled `IncludedHook::HomeMade` is the case that matters — same
+    # `included do` spelling, same `if`/`else`, but its other branch keeps the
+    # BLOCK on `self` rather than putting `self` on the target, so its
+    # `class_eval` is the end of the line and its defs really do belong to the
+    # module that included it. Running both confirms it: HomeMade's method has
+    # the intermediate module for an owner where Concern's has the host.
+    def defers_onto_target?(body, parameter)
+      return false unless parameter
+
+      nodes(body).any? do |node|
+        next false unless node.is_a?(Prism::CallNode) && node.name == :<<
+        next false unless node.arguments&.arguments&.first.is_a?(Prism::SelfNode)
+
+        rooted_at_parameter?(node.receiver, parameter)
+      end
+    end
+
+    # Whether a receiver chain bottoms out at `parameter` — `base`,
+    # `base.instance_variable_get(:@x)`, `base.foo.bar` alike. The hops between
+    # do not matter: what is being asked is whose state the push lands in.
+    def rooted_at_parameter?(node, parameter)
+      while node.is_a?(Prism::CallNode)
+        return true if node.receiver.nil? && node.name.to_s == parameter
+
+        node = node.receiver
+      end
+
+      node.is_a?(Prism::LocalVariableReadNode) && node.name.to_s == parameter
     end
 
     # `<parameter>.class_eval(&@ivar)` — the target is the parameter and the
@@ -1143,7 +1216,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       Replay.new(target: target, block: stored.block, kind: kind, call: stored.method,
                  scope: stored.subject, in_method: nil, source: stored.source, singleton: own.singleton,
-                 extended: handed_to_hosts?(target, stored.subject, providers))
+                 extended: handed_to_hosts?(target, stored.subject, providers), defers: false)
     end
 
     # Whether a hook in `subject`'s provider chain hands this very module to
@@ -1381,10 +1454,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
       if (literal = literals.first)
         return Replay.new(target: apply.subject, block: literal.block, kind: kind,
                           call: literal.call, scope: literal.scope, in_method: literal.method,
-                          source: literal.source, singleton: literal.singleton, extended: false)
+                          source: literal.source, singleton: literal.singleton, extended: false,
+                          defers: false)
       end
 
-      storage_owner, ivar, singleton = slots.first
+      storage_owner, ivar, singleton, defers = slots.first
       # The SOURCE's provider, not the applier's: the name being looked up
       # is the one the source wrote in its own body.
       storage_method = storage_method_for(source_provider, storage_owner, ivar)
@@ -1395,7 +1469,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       Replay.new(target: apply.subject, block: blocks.first.block, kind: kind,
                  call: storage_method, scope: blocks.first.subject, in_method: nil,
-                 source: blocks.first.source, singleton: singleton, extended: false)
+                 source: blocks.first.source, singleton: singleton, extended: false,
+                 defers: defers || false)
     end
 
     # Which classes/modules can call each owner's DSL, as `owner => subjects`.
@@ -1510,7 +1585,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
         next unless keeper_owner
 
         replays = @inward_replays.select { |replay| replay.owner == keeper_owner && replay.method == keeper_method }
-        [keeper_owner, replays.first.ivar, replays.first.singleton] if replays.size == 1
+        [keeper_owner, replays.first.ivar, replays.first.singleton, replays.first.defers] if replays.size == 1
       end.uniq
 
       slots.first if slots.size == 1

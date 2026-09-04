@@ -1799,4 +1799,180 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(expand(outward(receiver: "Wrap::Other."))).to be_nil
     end
   end
+
+  # felixefelip/rbs_infer#299. `replay_targets` is one derivation with two
+  # consumers — the reopening emitted here and the `blocks:` sidecar — so these
+  # pin it directly rather than through either of them.
+  describe ".replay_targets" do
+    def replay(target:, defers:, kind: "module", singleton: false)
+      RbsInfer::Project::StoredBlockReplayExpander::Replay.new(
+        target: target, block: nil, kind: kind, call: "included", scope: "Src",
+        in_method: nil, source: "", singleton: singleton, extended: false, defers: defers
+      )
+    end
+
+    def graph(hosts, modules: [])
+      index = Object.new
+      index.define_singleton_method(:hosts_of) { |name| hosts.fetch(name, []) }
+      index.define_singleton_method(:module?) { |name| modules.include?(name) }
+      index
+    end
+
+    it "sends a concern's `included do` past the concern that re-exports it" do
+      # `ActiveSupport::Concern` holds the block when a CONCERN includes it and
+      # replays it when a class does, so `Post::Commentable` is a waypoint and
+      # `Post` is where the body lands.
+      targets = described_class.replay_targets(
+        replay(target: "Post::Commentable", defers: true),
+        graph({ "Post::Commentable" => ["Post"] })
+      )
+
+      expect(targets).to eq([["Post", "class"]])
+    end
+
+    # THE reason `replay_targets` asks which call moved the block. `class_eval`
+    # runs the body THERE AND THEN, so a module target keeps it however many
+    # classes include the module — resolving through would relocate a body that
+    # never moves, and check it against a `self` it never has. Same graph as the
+    # example above, opposite answer.
+    it "leaves a NON-deferring replay on the module it names, hosts or no hosts" do
+      targets = described_class.replay_targets(
+        replay(target: "Shared", defers: false),
+        graph({ "Shared" => ["Target"] })
+      )
+
+      expect(targets).to eq([["Shared", "module"]])
+    end
+
+    it "leaves a block alone when the graph names no host" do
+      targets = described_class.replay_targets(
+        replay(target: "Post", defers: true, kind: "class"),
+        graph({})
+      )
+
+      expect(targets).to eq([["Post", "class"]])
+    end
+
+    # A singleton replay names the target's class object; its includers hold
+    # nothing of it.
+    it "leaves a singleton replay on its own target" do
+      targets = described_class.replay_targets(
+        replay(target: "Post::Commentable", defers: true, singleton: true),
+        graph({ "Post::Commentable" => ["Post"] })
+      )
+
+      expect(targets).to eq([["Post::Commentable", "module"]])
+    end
+
+    it "keeps the `module` keyword when the host is itself a module" do
+      targets = described_class.replay_targets(
+        replay(target: "Inner", defers: true),
+        graph({ "Inner" => ["Outer"] }, modules: ["Outer"])
+      )
+
+      expect(targets).to eq([["Outer", "module"]])
+    end
+
+    it "names every host a block is replayed onto" do
+      targets = described_class.replay_targets(
+        replay(target: "Mentions", defers: true),
+        graph({ "Mentions" => ["Card", "Comment"] })
+      )
+
+      expect(targets).to eq([["Card", "class"], ["Comment", "class"]])
+    end
+  end
+
+
+  # felixefelip/rbs_infer#299. The two DSLs the dummy keeps side by side, told
+  # apart end to end — from the source that spells the deferral, through the
+  # `defers` flag, to the class the reopening names. `IncludedHook::HomeMade`
+  # exists so a fix cannot gate on ActiveSupport, and these are what stop this
+  # one from gating on the CALL NAME instead: both spell the replay identically
+  # and only one is a waypoint.
+  describe "a DSL that defers onto its target" do
+    def graph(hosts, modules: [])
+      index = Object.new
+      index.define_singleton_method(:hosts_of) { |name| hosts.fetch(name, []) }
+      index.define_singleton_method(:module?) { |name| modules.include?(name) }
+      index
+    end
+
+    # The inward shape needs `include` to reach the hook, which is what the Ruby
+    # runtime sidecar transcribes for a real project. Spelled out here so the
+    # example stands on its own.
+    def chain(dsl)
+      <<~RUBY
+        class Module
+          def include(*modules)
+            modules.reverse_each { |mod| mod.send(:apply, self) }
+            self
+          end
+        end
+
+        #{dsl}
+
+        module Src
+          extend DSL
+          keep do
+            def greet; end
+          end
+        end
+
+        module Mid
+          extend DSL
+          include Src
+        end
+      RUBY
+    end
+
+    # `base … << self` on the branch that does NOT replay: the module hands
+    # ITSELF to the target to be replayed later, so `Mid` never receives the
+    # block and `Host` does. This is `ActiveSupport::Concern#append_features`,
+    # in the shape its own transcribed source has.
+    DEFERRING = <<~RUBY
+      module DSL
+        def keep(&block) = @body = block
+        def apply(base)
+          if base.instance_variable_defined?(:@deps)
+            base.instance_variable_get(:@deps) << self
+          else
+            base.class_eval(&@body)
+          end
+        end
+      end
+    RUBY
+
+    # The same `if`/`else`, the same `class_eval`, and no deferral: the other
+    # branch keeps the BLOCK on `self` rather than putting `self` on the target.
+    # `IncludedHook::HomeMade` is this, and its methods really do belong to the
+    # module that included it.
+    PLAIN = <<~RUBY
+      module DSL
+        def keep(&block) = @body = block
+        def apply(base)
+          if base.nil?
+            @body = nil
+          else
+            base.class_eval(&@body)
+          end
+        end
+      end
+    RUBY
+
+    it "sends the body past the waypoint, to the class that includes it" do
+      expanded = expand(chain(DEFERRING), mixin_index: graph({ "Mid" => ["Host"] }))
+
+      expect(expanded).to include("class Host")
+      expect(expanded).not_to include("module Mid\n  def greet")
+    end
+
+    it "leaves the body on the target when the DSL does not defer" do
+      expanded = expand(chain(PLAIN), mixin_index: graph({ "Mid" => ["Host"] }))
+
+      expect(expanded).to include("module Mid")
+      expect(expanded).not_to include("class Host")
+    end
+  end
+
 end

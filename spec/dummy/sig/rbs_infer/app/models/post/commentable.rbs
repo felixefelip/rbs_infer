@@ -6,3 +6,6 @@ class Post
     def commentable?: () -> bool
   end
 end
+
+class Post
+end
