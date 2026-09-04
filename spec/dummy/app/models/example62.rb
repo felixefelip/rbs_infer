@@ -8,26 +8,21 @@
 # to that module. This one is the opposite — `append_features` registers the
 # module on the target when the target is itself one of ours, and the block runs
 # only when a real class arrives. `Middle` is a WAYPOINT, and `Example62` is
-# where `label` lands. `ActiveSupport::Concern` is exactly this shape; the point
-# of writing it out is that nothing here is Rails.
+# where `hallmark` lands. `ActiveSupport::Concern` is exactly this shape; the
+# point of writing it out is that nothing here is Rails.
 #
 # The criterion is `super`, as it is in `included_hook.rb`: it resolves only if
-# the def belongs to `Example62`, whose ancestors carry `Slots`. Attributed to
-# `Middle` instead, there is no `label` behind it and the read below errors —
-# which is what the Steep baseline records today.
+# the def belongs to `Example62`, whose ancestors carry `Example62::Slots`.
+# Attributed to `Middle` instead there is no `hallmark` behind it, and
+# `read_hallmark` comes out `String?` rather than `String`.
 #
-# The registration is spelled `push(self)`. `<<` would say the same thing and is
-# what activesupport happens to write; the two are one operation, and a pass that
-# reads only the second is matching a spelling rather than the meaning. That is
-# the gap #300 closes: `Collector#defers_onto_target?` searches for `<< self`, so
-# this file resolves as if nothing were deferred.
+# The registration is spelled `push(self)`, deliberately. `<<` would say the same
+# thing and is what activesupport happens to write; the two are one operation,
+# and a pass reading only the second is matching a spelling rather than the
+# meaning. That is what `Collector#deferral_shape` replaced: it reads the
+# register/replay pair on opposite branches and the drain that rejoins them, so
+# what the push is CALLED decides nothing (felixefelip/rbs_infer#300).
 class Example62
-  module Slots
-    def label
-      nil
-    end
-  end
-
   # The DSL. `append_features` is Ruby's own hook, so `include` reaches it
   # through the runtime sidecar without anything naming this module.
   module Deferring
@@ -61,7 +56,7 @@ class Example62
     extend Deferring
 
     keep do
-      def label
+      def hallmark
         super || "shared"
       end
     end
@@ -80,10 +75,18 @@ class Example62
 end
 
 # The read that makes the landing visible: `String` when the def belongs to
-# `Example62` (its `super` reaches `Slots#label`), and an error when it is
-# attributed to `Middle`.
+# `Example62`, because its `super` then reaches `Slots#hallmark` and the
+# `|| "shared"` removes the nil. `String?` when it is attributed to `Middle`.
 class Example62Caller
-  def read_label
-    Example62.new.label
+  # The write is what gives `super` a type to return, and it is kept apart from
+  # the read for the reason `IncludedHookCaller` keeps them apart: measured
+  # together, the read would narrow to the value just written and say nothing
+  # about the ancestor chain.
+  def fill
+    Example62.new.hallmark = "value"
+  end
+
+  def read_hallmark
+    Example62.new.hallmark
   end
 end

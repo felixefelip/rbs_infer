@@ -102,17 +102,6 @@ module RbsInfer::Project
       @extenders_of_cache[unqualified(module_name)] ||= resolve_extenders(module_name, Set.new)
     end
 
-    # Whether the sources declare `name` with `module` rather than `class`.
-    #
-    # A caller relocating a body needs the keyword the reopening must use, and
-    # getting it wrong is not a worse type but a broken environment: `module
-    # Post` over a `class Post` is a `RBS::…MismatchError` that poisons the run.
-    # False for a name the corpus never declares — a gem's, a framework's —
-    # which is the same "nothing to add here" every other lookup here answers.
-    def module?(name)
-      @module_declarations.include?(unqualified(name))
-    end
-
     private
 
     EMPTY = Set.new.freeze

@@ -1800,108 +1800,45 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     end
   end
 
-  # felixefelip/rbs_infer#299. `replay_targets` is one derivation with two
-  # consumers — the reopening emitted here and the `blocks:` sidecar — so these
-  # pin it directly rather than through either of them.
-  describe ".replay_targets" do
-    def replay(target:, defers:, kind: "module", singleton: false)
-      RbsInfer::Project::StoredBlockReplayExpander::Replay.new(
-        target: target, block: nil, kind: kind, call: "included", scope: "Src",
-        in_method: nil, source: "", singleton: singleton, extended: false, defers: defers
-      )
-    end
-
-    def graph(hosts, modules: [])
-      index = Object.new
-      index.define_singleton_method(:hosts_of) { |name| hosts.fetch(name, []) }
-      index.define_singleton_method(:module?) { |name| modules.include?(name) }
-      index
-    end
-
-    it "sends a concern's `included do` past the concern that re-exports it" do
-      # `ActiveSupport::Concern` holds the block when a CONCERN includes it and
-      # replays it when a class does, so `Post::Commentable` is a waypoint and
-      # `Post` is where the body lands.
-      targets = described_class.replay_targets(
-        replay(target: "Post::Commentable", defers: true),
-        graph({ "Post::Commentable" => ["Post"] })
-      )
-
-      expect(targets).to eq([["Post", "class"]])
-    end
-
-    # THE reason `replay_targets` asks which call moved the block. `class_eval`
-    # runs the body THERE AND THEN, so a module target keeps it however many
-    # classes include the module — resolving through would relocate a body that
-    # never moves, and check it against a `self` it never has. Same graph as the
-    # example above, opposite answer.
-    it "leaves a NON-deferring replay on the module it names, hosts or no hosts" do
-      targets = described_class.replay_targets(
-        replay(target: "Shared", defers: false),
-        graph({ "Shared" => ["Target"] })
-      )
-
-      expect(targets).to eq([["Shared", "module"]])
-    end
-
-    it "leaves a block alone when the graph names no host" do
-      targets = described_class.replay_targets(
-        replay(target: "Post", defers: true, kind: "class"),
-        graph({})
-      )
-
-      expect(targets).to eq([["Post", "class"]])
-    end
-
-    # A singleton replay names the target's class object; its includers hold
-    # nothing of it.
-    it "leaves a singleton replay on its own target" do
-      targets = described_class.replay_targets(
-        replay(target: "Post::Commentable", defers: true, singleton: true),
-        graph({ "Post::Commentable" => ["Post"] })
-      )
-
-      expect(targets).to eq([["Post::Commentable", "module"]])
-    end
-
-    it "keeps the `module` keyword when the host is itself a module" do
-      targets = described_class.replay_targets(
-        replay(target: "Inner", defers: true),
-        graph({ "Inner" => ["Outer"] }, modules: ["Outer"])
-      )
-
-      expect(targets).to eq([["Outer", "module"]])
-    end
-
-    it "names every host a block is replayed onto" do
-      targets = described_class.replay_targets(
-        replay(target: "Mentions", defers: true),
-        graph({ "Mentions" => ["Card", "Comment"] })
-      )
-
-      expect(targets).to eq([["Card", "class"], ["Comment", "class"]])
-    end
-  end
-
-
-  # felixefelip/rbs_infer#299. The two DSLs the dummy keeps side by side, told
-  # apart end to end — from the source that spells the deferral, through the
-  # `defers` flag, to the class the reopening names. `IncludedHook::HomeMade`
-  # exists so a fix cannot gate on ActiveSupport, and these are what stop this
-  # one from gating on the CALL NAME instead: both spell the replay identically
-  # and only one is a waypoint.
+  # felixefelip/rbs_infer#300. The two DSLs the dummy keeps side by side, told
+  # apart end to end — from the source that spells the deferral to the class the
+  # reopening names. `IncludedHook::HomeMade` exists so a fix cannot gate on
+  # ActiveSupport, and these are what stop this one from gating on a spelling
+  # instead: every DSL below writes the same `included do`, the same `if`/`else`
+  # and the same `class_eval`, and only some of them are waypoints.
   describe "a DSL that defers onto its target" do
-    def graph(hosts, modules: [])
-      index = Object.new
-      index.define_singleton_method(:hosts_of) { |name| hosts.fetch(name, []) }
-      index.define_singleton_method(:module?) { |name| modules.include?(name) }
-      index
+    # `ActiveSupport::Concern#append_features`, in the shape its own transcribed
+    # source has and with nothing of Rails in it: `extended` puts the slot on
+    # whoever extends the DSL, `apply` registers ITSELF there when the target
+    # holds one, and drains what it is holding before replaying when it does
+    # not.
+    def dsl(register: "base.instance_variable_get(:@deps) << self",
+            drain: "@deps.each { |dep| base.include(dep) }",
+            replay: "base.class_eval(&@body)")
+      <<~RUBY
+        module DSL
+          def self.extended(base)
+            base.instance_variable_set(:@deps, Array.new)
+          end
+
+          def keep(&block) = @body = block
+
+          def apply(base)
+            if base.instance_variable_defined?(:@deps)
+              #{register}
+            else
+              #{drain}
+              #{replay}
+            end
+          end
+        end
+      RUBY
     end
 
     # The inward shape needs `include` to reach the hook, which is what the Ruby
     # runtime sidecar transcribes for a real project. Spelled out here so the
     # example stands on its own.
-    def chain(dsl)
+    def chain(dsl, waypoint: true)
       <<~RUBY
         class Module
           def include(*modules)
@@ -1920,59 +1857,133 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
         end
 
         module Mid
-          extend DSL
+          #{"extend DSL" if waypoint}
           include Src
+        end
+
+        class Host
+          include Mid
         end
       RUBY
     end
 
-    # `base … << self` on the branch that does NOT replay: the module hands
-    # ITSELF to the target to be replayed later, so `Mid` never receives the
-    # block and `Host` does. This is `ActiveSupport::Concern#append_features`,
-    # in the shape its own transcribed source has.
-    DEFERRING = <<~RUBY
-      module DSL
-        def keep(&block) = @body = block
-        def apply(base)
-          if base.instance_variable_defined?(:@deps)
-            base.instance_variable_get(:@deps) << self
-          else
-            base.class_eval(&@body)
-          end
-        end
-      end
-    RUBY
-
-    # The same `if`/`else`, the same `class_eval`, and no deferral: the other
-    # branch keeps the BLOCK on `self` rather than putting `self` on the target.
-    # `IncludedHook::HomeMade` is this, and its methods really do belong to the
-    # module that included it.
-    PLAIN = <<~RUBY
-      module DSL
-        def keep(&block) = @body = block
-        def apply(base)
-          if base.nil?
-            @body = nil
-          else
-            base.class_eval(&@body)
-          end
-        end
-      end
-    RUBY
-
     it "sends the body past the waypoint, to the class that includes it" do
-      expanded = expand(chain(DEFERRING), mixin_index: graph({ "Mid" => ["Host"] }))
+      expanded = expand(chain(dsl))
 
-      expect(expanded).to include("class Host")
+      expect(expanded).to include("class Host\n  def greet")
       expect(expanded).not_to include("module Mid\n  def greet")
     end
 
-    it "leaves the body on the target when the DSL does not defer" do
-      expanded = expand(chain(PLAIN), mixin_index: graph({ "Mid" => ["Host"] }))
+    # The other half of the same file: `Mid` extends the DSL, so it holds the
+    # slot the branch asks about and the block never runs there. Drop the
+    # `extend` and `Mid` is an ordinary includer — the block lands on it, and
+    # `Host` gets nothing, because a `class_eval` runs where it stands.
+    it "lands on the target that does not hold the slot" do
+      expanded = expand(chain(dsl, waypoint: false))
 
-      expect(expanded).to include("module Mid")
-      expect(expanded).not_to include("class Host")
+      expect(expanded).to include("module Mid\n  def greet")
+      expect(expanded).not_to include("class Host\n  def greet")
+    end
+
+    # THE spelling `Collector#defers_onto_target?` missed. `push` and `<<` are
+    # one operation, and activesupport happening to write the second says
+    # nothing about the first (felixefelip/rbs_infer#300).
+    it "reads a registration however it is spelled" do
+      expanded = expand(chain(dsl(register: "base.instance_variable_get(:@deps).push(self)")))
+
+      expect(expanded).to include("class Host\n  def greet")
+    end
+
+    # And through a reader, and through a local: the question is which slot the
+    # value lands in, not how many hops the source takes to name it.
+    it "reads a registration through a reader" do
+      reader = dsl(register: "base.deps << self").sub("module DSL\n", "module DSL\n  attr_reader :deps\n")
+      expanded = expand(chain(reader))
+
+      expect(expanded).to include("class Host\n  def greet")
+    end
+
+    it "reads a registration parked in a local first" do
+      register = "held = base.instance_variable_get(:@deps)\n      held << self"
+      expanded = expand(chain(dsl(register: register)))
+
+      expect(expanded).to include("class Host\n  def greet")
+    end
+
+    # The same `if`/`else`, the same `class_eval`, and no registration: the
+    # other branch keeps the BLOCK on `self` rather than putting `self` on the
+    # target. `IncludedHook::HomeMade` is this, and its methods really do belong
+    # to the module that included it.
+    it "leaves the body on the target when the DSL does not defer" do
+      plain = <<~RUBY
+        module DSL
+          def keep(&block) = @body = block
+          def apply(base)
+            if base.nil?
+              @body = nil
+            else
+              base.class_eval(&@body)
+            end
+          end
+        end
+      RUBY
+
+      expect(expand(chain(plain))).to include("module Mid\n  def greet")
+    end
+
+    # A registration the DSL never reads back is a dead end, not a hop: nothing
+    # re-applies `Src`, so no class downstream ever runs the block. Emitting it
+    # on `Host` would invent a call the source does not make, and emitting it on
+    # `Mid` would contradict the branch — so the honest answer is `Mid`'s own
+    # `class_eval`, which is the only replay the file writes.
+    it "declines a registration nothing drains" do
+      expanded = expand(chain(dsl(drain: "")))
+
+      expect(expanded).not_to include("class Host\n  def greet")
+    end
+
+    # The check `defers_onto_target?` could not make. A method that registers
+    # AND replays on ONE branch has not deferred anything — the block ran here —
+    # and reading the body flat could not tell that from the pair above.
+    it "declines a registration on the branch that also replays" do
+      both = <<~RUBY
+        module DSL
+          def self.extended(base)
+            base.instance_variable_set(:@deps, Array.new)
+          end
+
+          def keep(&block) = @body = block
+
+          def apply(base)
+            if base.instance_variable_defined?(:@deps)
+              base.instance_variable_get(:@deps) << self
+              @deps.each { |dep| base.include(dep) }
+              base.class_eval(&@body)
+            end
+          end
+        end
+      RUBY
+
+      expect(expand(chain(both))).to include("module Mid\n  def greet")
+    end
+
+    # The ordinary Rails shape: the waypoint is written in its own file, so the
+    # registration and the class that closes the hop are never read together.
+    # `Post::Commentable` includes the shared concern in `post/commentable.rb`
+    # and `Post` includes `Post::Commentable` in `post.rb` — only the second
+    # file emits, and it has to know what the first one registered.
+    it "follows a registration made in another file" do
+      elsewhere = project(
+        "DSL" => dsl,
+        "Src" => "module Src\n  extend DSL\n  keep do\n    def greet; end\n  end\nend\n",
+        "Mid" => "module Mid\n  extend DSL\n  include Src\nend\n",
+        "Module" => "class Module\n  def include(*modules)\n" \
+                    "    modules.reverse_each { |mod| mod.send(:apply, self) }\n    self\n  end\nend\n"
+      )
+
+      expanded = expand("class Host\n  include Mid\nend\n", sources: elsewhere)
+
+      expect(expanded).to include("class Host\n  def greet")
     end
   end
-
 end

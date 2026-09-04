@@ -86,9 +86,49 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # the replaying method is already inside the object that owns it. So the ivar
     # is named here where `ReplayMethod` names a reader — the slot is the join
     # either way, and `attr_reader` was only ever one spelling of reaching it.
-    # `defers` says the replay may not have happened on the target at all — see
-    # `defers_onto_target?`.
-    InwardReplay = Data.define(:owner, :method, :parameter, :ivar, :singleton, :defers)
+    InwardReplay = Data.define(:owner, :method, :parameter, :ivar, :singleton)
+
+    # A DSL that hands ITSELF to the target instead of replaying on it, read off
+    # the one conditional that writes both outcomes (felixefelip/rbs_infer#300).
+    #
+    # `ActiveSupport::Concern#append_features` is the shape, and its transcribed
+    # source is the whole evidence:
+    #
+    #     if base.instance_variable_defined?(:@_dependencies)
+    #       base.instance_variable_get(:@_dependencies) << self   # registers
+    #       false
+    #     else
+    #       @_dependencies.each { |dep| base.include(dep) }       # drains
+    #       base.class_eval(&@_included_block)                    # replays
+    #     end
+    #
+    # Three nodes on two mutually exclusive branches, and this reads all three.
+    # `slot` is what joins them: `self` goes INTO the target's `@slot` on one
+    # branch, and on the other the module's OWN `@slot` is emptied back onto the
+    # target. So a module registered on a waypoint is not lost — it is
+    # re-applied to whatever class finally arrives, which is why the block lands
+    # on the host and never on the waypoint. `recall` is the message the drain
+    # re-sends (`include`), and the re-application is resolved AS that call
+    # site, through the same chain any other one takes.
+    #
+    # Deliberately NOT a match on `<< self`: that was the shortcut this replaces
+    # (felixefelip/rbs_infer#299), which read `push(self)` as no deferral at all
+    # and would have read a DSL that registered AND replayed on one branch as
+    # one. What decides here is the register/replay pair being on OPPOSITE
+    # branches with the drain rejoining them — a statement about the code's
+    # structure rather than about one gem's spelling.
+    Deferral = Data.define(:owner, :method, :parameter, :slot, :recall)
+
+    # `<parameter>.instance_variable_set(:@x, …)` — a method that puts a slot on
+    # the object it is handed.
+    #
+    # It is what makes the branch above DECIDABLE per call site. The predicate
+    # asks whether the target holds the slot, and the answer is not in the
+    # predicate: it is here, in the method that puts it there. Whoever the DSL
+    # was handed to holds it, and `dsl_providers` already says who that is — so
+    # `Post::Commentable`, which extends the concern DSL, holds `@_dependencies`
+    # and `Post`, which only includes a concern, does not.
+    SlotInit = Data.define(:owner, :method, :parameter, :ivar)
 
     # The same replay again, with the block written where it is run instead of
     # kept for later: `def self.included(base) = base.class_eval do … end`, which
@@ -176,6 +216,16 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @readers = []
       @replay_methods = []
       @inward_replays = []
+      # Raw like `@delegations`: reading a deferral needs the `attr_reader`s,
+      # which are collected in a second lexical walk once every declaration is
+      # known, so the method bodies are kept and read then.
+      @deferral_shapes = []
+      @deferrals = []
+      @slot_inits = []
+      # Which modules each waypoint is holding for later — filled once every
+      # apply call is known, since the registration and the drain are routinely
+      # written in two different files.
+      @deferred_registry = Hash.new { |hash, key| hash[key] = [] }
       # Raw like `@delegations`, and resolved the same way: a constant written
       # in a hook's body may name a module declared later in the file.
       @inward_extends = []
@@ -215,6 +265,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @resolved_delegations = []
       @stored_calls = []
       @apply_calls = []
+      # The apply calls of the files this one absorbs. Kept apart from
+      # `@apply_calls` because they are read for ONE question — which modules a
+      # waypoint is holding — and never emitted: the rewrite moves a block into
+      # this source, and a call site in another file names a target this file
+      # cannot reopen.
+      @foreign_applies = []
       super()
     end
 
@@ -231,6 +287,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def collect_shapes(root)
       root.accept(self)
       collect_readers_from_source
+      @deferrals.concat(resolve_deferrals)
       @resolved_delegations = resolve_delegations
       @resolved_inward_extends = resolve_inward_extends
       @resolved_own_replays = resolve_own_replays
@@ -251,7 +308,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     attr_reader :storages, :readers, :replay_methods, :inward_replays, :forwards, :resolved_delegations,
                 :literal_replays, :stored_calls, :resolved_inward_extends, :declaration_kinds,
-                :resolved_own_replays, :providers
+                :resolved_own_replays, :providers, :deferrals, :slot_inits, :apply_calls
 
     public
 
@@ -364,8 +421,15 @@ module RbsInfer::Project::StoredBlockReplayExpander
       if (inward = inward_replay_shape(node.body, parameters))
         parameter, ivar, singleton = inward
         @inward_replays << InwardReplay.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar,
-                                            singleton: singleton,
-                                            defers: defers_onto_target?(node.body, parameter))
+                                            singleton: singleton)
+      end
+
+      # Kept rather than read: the slot a deferral registers into may be reached
+      # through an `attr_reader`, and no reader is known until the second walk.
+      @deferral_shapes << [owner, method_name, node.body, parameters]
+
+      slot_init_shapes(node.body, parameters).each do |parameter, ivar|
+        @slot_inits << SlotInit.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar)
       end
 
       if (own = own_block_replay_shape(node.body, block_name))
@@ -602,58 +666,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
       receiver
     end
 
-    # Whether the replaying method REGISTERS ITSELF on the target instead of
-    # replaying, on some branch (felixefelip/rbs_infer#299).
-    #
-    # `inward_replay_shape` reads the body flat, and says so: an `if` guard is
-    # irrelevant to the SHAPE. It is not irrelevant to the TARGET. A DSL can
-    # write both outcomes in one method and pick between them at run time —
-    # `ActiveSupport::Concern#append_features` does, and its own transcribed
-    # source is what says so:
-    #
-    #     if base.instance_variable_defined?(:@_dependencies)
-    #       base.instance_variable_get(:@_dependencies) << self   # <- this
-    #       false
-    #     else
-    #       base.class_eval(&@_included_block)                    # <- or this
-    #     end
-    #
-    # `<target> … << self` is the whole criterion, and it is a statement about
-    # the code rather than about Rails: on that branch the module hands ITSELF
-    # to the target to be replayed later, so the block did not land here and
-    # this target is a waypoint. Whoever eventually replays it is the real one.
-    #
-    # A guard that does not do this leaves the target final. The dummy's
-    # hand-rolled `IncludedHook::HomeMade` is the case that matters — same
-    # `included do` spelling, same `if`/`else`, but its other branch keeps the
-    # BLOCK on `self` rather than putting `self` on the target, so its
-    # `class_eval` is the end of the line and its defs really do belong to the
-    # module that included it. Running both confirms it: HomeMade's method has
-    # the intermediate module for an owner where Concern's has the host.
-    def defers_onto_target?(body, parameter)
-      return false unless parameter
-
-      nodes(body).any? do |node|
-        next false unless node.is_a?(Prism::CallNode) && node.name == :<<
-        next false unless node.arguments&.arguments&.first.is_a?(Prism::SelfNode)
-
-        rooted_at_parameter?(node.receiver, parameter)
-      end
-    end
-
-    # Whether a receiver chain bottoms out at `parameter` — `base`,
-    # `base.instance_variable_get(:@x)`, `base.foo.bar` alike. The hops between
-    # do not matter: what is being asked is whose state the push lands in.
-    def rooted_at_parameter?(node, parameter)
-      while node.is_a?(Prism::CallNode)
-        return true if node.receiver.nil? && node.name.to_s == parameter
-
-        node = node.receiver
-      end
-
-      node.is_a?(Prism::LocalVariableReadNode) && node.name.to_s == parameter
-    end
-
     # `<parameter>.class_eval(&@ivar)` — the target is the parameter and the
     # block is the method's own state. Same conservatism as `replay_shape` and
     # for the same reason, only about the other half: there the RECEIVER is
@@ -662,21 +674,290 @@ module RbsInfer::Project::StoredBlockReplayExpander
     #
     # `if @ivar` guards and `unless base.nil?` branches are irrelevant to the
     # shape — the whole body is scanned, exactly as `replay_shape` scans it.
+    # They are NOT irrelevant to where the block lands, and that is a separate
+    # question with a separate reader: see `deferral_shape`.
     def inward_replay_shape(body, parameters)
-      shapes = nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::CallNode)
-        call = dispatched(node)
-        next unless REPLAY_METHODS.include?(call.name)
-        target, singleton = replayed_on(call.receiver, parameters)
-        next unless target
-        pass = call.block
-        next unless pass.is_a?(Prism::BlockArgumentNode)
-        ivar = pass.expression
-        next unless ivar.is_a?(Prism::InstanceVariableReadNode)
-
-        [target, ivar.name.to_s, singleton]
-      end.uniq
+      shapes = nodes(body).filter_map { |node| inward_replay_at(node, parameters) }.uniq
       shapes.first if shapes.size == 1
+    end
+
+    # The one node above, read on its own so the branch-aware pass can ask the
+    # same question of a node whose PATH it is holding.
+    def inward_replay_at(node, parameters)
+      return nil unless node.is_a?(Prism::CallNode)
+
+      call = dispatched(node)
+      return nil unless REPLAY_METHODS.include?(call.name)
+
+      target, singleton = replayed_on(call.receiver, parameters)
+      return nil unless target
+
+      pass = call.block
+      return nil unless pass.is_a?(Prism::BlockArgumentNode)
+
+      ivar = pass.expression
+      return nil unless ivar.is_a?(Prism::InstanceVariableReadNode)
+
+      [target, ivar.name.to_s, singleton]
+    end
+
+    # The deferral this method writes, as `[parameter, slot, recall]`, or nil
+    # when it always replays where it stands (felixefelip/rbs_infer#300).
+    #
+    # Three nodes, and the branches they sit on:
+    #
+    #   * a REGISTRATION — `self` handed into the target's `@slot`;
+    #   * a REPLAY — `class_eval` on the target — on the branch the
+    #     registration excludes, because a method that does both did neither
+    #     conditionally and its target is final;
+    #   * a DRAIN — the module's own `@slot` emptied back onto the target — on
+    #     the replay's side, since it is what makes the registration a hop
+    #     rather than a dead end.
+    #
+    # The slot joins the first and the third: `self` goes into the target's copy
+    # and comes back out of ours, which is one collection seen from its two
+    # ends. Without the drain a registered module would simply never run, and
+    # the honest answer would be to emit nothing rather than to move the block
+    # to a host.
+    #
+    # One answer or none. Two deferrals in one method is a method this pass
+    # cannot say which way it went, and it declines rather than pick.
+    def deferral_shape(body, parameters)
+      return nil unless body
+
+      branched = branched_nodes(body)
+      aliases = local_aliases(body)
+      replays = branched.filter_map do |node, path|
+        target = inward_replay_at(node, parameters)&.first
+        [target, path] if target
+      end
+      drains = branched.filter_map do |node, path|
+        drain = drain_shape(node, parameters)
+        [drain, path] if drain
+      end
+
+      found = branched.filter_map do |node, path|
+        registered = registration_slot(node, parameters, aliases)
+        next unless registered
+
+        deferral_through(registered, path, replays, drains)
+      end.uniq
+
+      found.first if found.size == 1
+    end
+
+    # The `[parameter, slot, recall]` one registration stands for, or nil when
+    # no replay and drain answer it.
+    def deferral_through(registered, path, replays, drains)
+      parameter, slot = registered
+      replayed = replays.select { |target, replay_path| target == parameter && exclusive?(path, replay_path) }
+      return nil if replayed.empty?
+
+      recalls = drains.filter_map do |(drain_parameter, drain_slot, recall), drain_path|
+        next unless drain_parameter == parameter && drain_slot == slot
+        next unless exclusive?(path, drain_path)
+        next unless replayed.any? { |_, replay_path| !exclusive?(drain_path, replay_path) }
+
+        recall
+      end.uniq
+      return nil unless recalls.size == 1
+
+      [parameter, slot, recalls.first]
+    end
+
+    # `<target's slot> << self` / `.push(self)` / `<target>.instance_variable_set(:@x, … self …)`
+    # — `self` coming to rest in state the TARGET owns, as `[parameter, slot]`.
+    #
+    # The message is not read, and that is the point: `<<`, `push` and `add`
+    # are one operation spelled three ways, and a pass that names one of them is
+    # matching activesupport rather than reading Ruby (felixefelip/rbs_infer#300).
+    # What is read is where the value lands — an ivar of the object we were
+    # handed — because that is what makes the target able to replay it later.
+    def registration_slot(node, parameters, aliases)
+      return nil unless node.is_a?(Prism::CallNode)
+
+      call = dispatched(node)
+      arguments = call.arguments&.arguments || []
+      return nil unless arguments.any? { |argument| mentions_self?(argument) }
+
+      if call.name == :instance_variable_set
+        parameter = parameter_name(call.receiver, parameters)
+        ivar = symbol_name(arguments.first)
+        return [parameter, ivar] if parameter && ivar
+
+        return nil
+      end
+
+      target_slot(call.receiver, parameters, aliases)
+    end
+
+    # The slot a receiver names on the target, as `[parameter, ivar]`.
+    #
+    # `base.instance_variable_get(:@x)` names it outright; `base.deps` names it
+    # through an `attr_reader`, which is the same slot reached the way a module
+    # would let anyone else at it. One local hop is followed, so a DSL that
+    # parks the collection in a variable before pushing to it says the same
+    # thing as one that does not.
+    def target_slot(node, parameters, aliases)
+      node = aliases[node.name.to_s] if node.is_a?(Prism::LocalVariableReadNode) && aliases.key?(node.name.to_s)
+      return nil unless node.is_a?(Prism::CallNode)
+
+      call = dispatched(node)
+      parameter = parameter_name(call.receiver, parameters)
+      return nil unless parameter
+
+      ivar = if call.name == :instance_variable_get
+               symbol_name((call.arguments&.arguments || []).first)
+             else
+               reader_ivar(call.name.to_s)
+             end
+      [parameter, ivar] if ivar
+    end
+
+    # `@slot.each { |dep| <target>.include(dep) }` — the registrations coming
+    # back out, as `[parameter, slot, recall]`.
+    #
+    # Neither the iteration nor the message is named. Which method walks the
+    # collection is the collection's business, and what the DSL re-sends is the
+    # DSL's — `recall` is carried rather than assumed precisely so the
+    # re-application is resolved as the call site the source writes. What is
+    # required is the shape that makes it a hop: each element of OUR slot handed
+    # to the target.
+    def drain_shape(node, parameters)
+      return nil unless node.is_a?(Prism::CallNode)
+
+      block = node.block
+      return nil unless block.is_a?(Prism::BlockNode)
+
+      slot = own_slot(node.receiver)
+      return nil unless slot
+
+      bound = block.parameters
+      return nil unless bound.is_a?(Prism::BlockParametersNode)
+
+      element = parameter_names(bound.parameters).to_a
+      return nil unless element.size == 1
+
+      recalls = nodes(block.body).filter_map { |inner| recall_at(inner, parameters, element.first) }.uniq
+      return nil unless recalls.size == 1
+
+      parameter, recall = recalls.first
+      [parameter, slot, recall]
+    end
+
+    # `<target>.include(dep)` inside a drain — the target it re-applies to and
+    # the message it re-applies with.
+    def recall_at(node, parameters, element)
+      return nil unless node.is_a?(Prism::CallNode)
+
+      call = dispatched(node)
+      parameter = parameter_name(call.receiver, parameters)
+      return nil unless parameter
+
+      arguments = call.arguments&.arguments || []
+      return nil unless arguments.any? { |argument| local_read?(argument, element) }
+
+      [parameter, call.name.to_s]
+    end
+
+    # The ivar a receiver names on the DSL's OWN self — written as the ivar, or
+    # reached through a reader, which are the same slot.
+    def own_slot(node)
+      return nil unless node
+      return node.name.to_s if node.is_a?(Prism::InstanceVariableReadNode)
+      return nil unless node.is_a?(Prism::CallNode)
+
+      call = dispatched(node)
+      return nil unless call.receiver.nil? || call.receiver.is_a?(Prism::SelfNode)
+      return nil unless (call.arguments&.arguments || []).empty?
+
+      reader_ivar(call.name.to_s)
+    end
+
+    # `<parameter>.instance_variable_set(:@x, …)`, as `[parameter, ivar]` — what
+    # a DSL runs on the objects it is handed, and so what says which objects
+    # hold `@x`.
+    def slot_init_shapes(body, parameters)
+      nodes(body).filter_map do |node|
+        next unless node.is_a?(Prism::CallNode)
+
+        call = dispatched(node)
+        next unless call.name == :instance_variable_set
+
+        parameter = parameter_name(call.receiver, parameters)
+        next unless parameter
+
+        ivar = symbol_name((call.arguments&.arguments || []).first)
+        [parameter, ivar] if ivar
+      end.uniq
+    end
+
+    # Every node in `root`, paired with the branch path it sits on — one
+    # `[predicate, taken]` per conditional enclosing it.
+    #
+    # The predicate NODE is the key, not what it says: nothing here evaluates a
+    # condition, and it does not have to. Two nodes under the same `if` with
+    # opposite answers cannot both run, whatever the condition is — which is the
+    # whole question a deferral asks.
+    def branched_nodes(root, path = [])
+      return [] unless root
+
+      case root
+      when Prism::IfNode
+        branched_nodes(root.predicate, path) +
+          branched_nodes(root.statements, path + [[root.predicate, true]]) +
+          branched_nodes(root.subsequent, path + [[root.predicate, false]])
+      when Prism::UnlessNode
+        branched_nodes(root.predicate, path) +
+          branched_nodes(root.statements, path + [[root.predicate, false]]) +
+          branched_nodes(root.else_clause, path + [[root.predicate, true]])
+      else
+        [[root, path]] + root.compact_child_nodes.flat_map { |child| branched_nodes(child, path) }
+      end
+    end
+
+    # Whether two paths cannot both be taken — one conditional answered both
+    # ways is enough, and is what an `if`/`else` pair is.
+    def exclusive?(one, other)
+      one.any? do |predicate, taken|
+        other.any? { |other_predicate, other_taken| other_predicate.equal?(predicate) && other_taken != taken }
+      end
+    end
+
+    # The single assignment behind each local in `body`, so a slot parked in a
+    # variable reads as the slot. Only single ones: a name written twice names
+    # two values, and which one a later read sees is not a question a source
+    # walk answers.
+    def local_aliases(body)
+      writes = nodes(body).select { |node| node.is_a?(Prism::LocalVariableWriteNode) }
+      writes.group_by { |node| node.name.to_s }.filter_map do |name, group|
+        [name, group.first.value] if group.size == 1
+      end.to_h
+    end
+
+    # The ivar an `attr_reader` of that name reaches, when exactly one does.
+    def reader_ivar(name)
+      ivars = @readers.select { |_, reader_name, _| reader_name == name }.map(&:last).uniq
+      ivars.first if ivars.size == 1
+    end
+
+    def parameter_name(node, parameters)
+      node.name.to_s if node.is_a?(Prism::LocalVariableReadNode) && parameters.include?(node.name.to_s)
+    end
+
+    def local_read?(node, name)
+      node.is_a?(Prism::LocalVariableReadNode) && node.name.to_s == name
+    end
+
+    def symbol_name(node)
+      node.unescaped.to_s if node.is_a?(Prism::SymbolNode)
+    end
+
+    # Whether `self` is anywhere in the value being handed over. `base.deps <<
+    # self` and `base.instance_variable_set(:@x, base.deps + [self])` register
+    # the same module, and only one of them writes `self` at the top.
+    def mentions_self?(node)
+      nodes(node).any? { |inner| inner.is_a?(Prism::SelfNode) }
     end
 
     # `<parameter>.class_eval do … end` — the inward replay with the block
@@ -1114,6 +1395,17 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @readers.concat(shapes.readers)
       @replay_methods.concat(shapes.replay_methods)
       @inward_replays.concat(shapes.inward_replays)
+      @deferrals.concat(shapes.deferrals)
+      @slot_inits.concat(shapes.slot_inits)
+      # The other file's CALL SITES, for one question only: which modules it
+      # registered on a waypoint. `Post::Commentable` includes the shared
+      # concern in its own file and `Post` includes `Post::Commentable` in
+      # another, so the hop and the class that closes it are never written
+      # together — and reading only this file's, the host saw a waypoint holding
+      # nothing (felixefelip/rbs_infer#300). They are kept out of `@apply_calls`
+      # because nothing may EMIT from them: this pass rewrites one source, and a
+      # call site elsewhere names a target it cannot reopen.
+      @foreign_applies.concat(shapes.apply_calls)
       @forwards.concat(shapes.forwards)
       @resolved_delegations.concat(shapes.resolved_delegations)
       @resolved_inward_extends.concat(shapes.resolved_inward_extends)
@@ -1138,10 +1430,18 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # declarations are known, so a relative `extend Builder` can resolve.
       collect_readers_from_source
 
+      @deferrals.concat(resolve_deferrals)
+
       providers = dsl_providers
       @resolved_delegations.concat(resolve_delegations)
       @resolved_inward_extends.concat(resolve_inward_extends)
       @resolved_own_replays.concat(resolve_own_replays)
+
+      # BEFORE anything is emitted, and over every call site the project wrote
+      # rather than only this file's: a waypoint's registrations decide whether
+      # the applications below land here or pass through, and the two are
+      # routinely in different files.
+      register_deferrals(providers)
 
       # The own-block replays FIRST: one may create the very module the `extend`
       # below asks about, and a concern writes both halves — `class_methods do`
@@ -1157,7 +1457,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       @extensions = @apply_calls.flat_map { |apply| resolve_extensions(apply, providers) }.uniq
 
-      resolved += @apply_calls.filter_map { |apply| resolve_apply(apply, providers) }
+      resolved += @apply_calls.flat_map { |apply| resolve_apply(apply, providers) }
 
       # Two apply calls naming the same source in the same class body are one
       # replay written twice, not two — the block relocates to that class once.
@@ -1216,7 +1516,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       Replay.new(target: target, block: stored.block, kind: kind, call: stored.method,
                  scope: stored.subject, in_method: nil, source: stored.source, singleton: own.singleton,
-                 extended: handed_to_hosts?(target, stored.subject, providers), defers: false)
+                 extended: handed_to_hosts?(target, stored.subject, providers))
     end
 
     # Whether a hook in `subject`'s provider chain hands this very module to
@@ -1237,7 +1537,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       end
     end
 
-    # The one block `apply` relocates, or nil when the file does not decide it.
+    # What one written `apply` relocates.
     #
     # Per CALL SITE, which is the unit the question is actually asked about: an
     # `apply(Baz)` written in one class body relocates one block onto that one
@@ -1253,20 +1553,117 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # it does at runtime (felixefelip/rbs_infer#263).
     def resolve_apply(apply, providers)
       source_subject = resolve_constant(apply.argument, apply.subject)
-      return nil unless source_subject
+      return [] unless source_subject
 
-      # Two provider questions, not one. The applier is dispatched on the
-      # SUBJECT (`banana` arrives in `Bar`'s body) and the callee it forwards
-      # to on the ARGUMENT (`mod.send(:bananed, self)` runs on `Baz`), so the
-      # two are answered by whatever supplies each — which need not be the
-      # same module. Requiring one provider for both is what `ActiveSupport`'s
-      # own shape breaks: `Module#include` reaches for `append_features`, a
-      # method of the concern (felixefelip/rbs_infer#256).
-      appliers = providers.select { |_, subjects| subjects.include?(apply.subject) }.keys
+      resolve_application(apply.subject, apply.method, source_subject, providers, Set.new)
+    end
+
+    # One application of a module to a class, as the replays it lands there —
+    # none, one, or one per module the applied one was HOLDING
+    # (felixefelip/rbs_infer#300).
+    #
+    # The DSL's own source is what decides between those. A deferring DSL asks
+    # whether the target already holds its slot; when it does, this application
+    # registers and lands nothing, and `register_deferrals` has recorded it.
+    # When it does not, the registrations come back out — `recall`, on each
+    # module held — and each is resolved AS a call site written here, which is
+    # what it is: `base.include(dep)` is an `include` in the host's body that
+    # the DSL wrote instead of the programmer.
+    #
+    # So a waypoint is never a target. `Post::Commentable`'s file registers the
+    # shared concern and emits nothing; `Post`'s file drains it and the
+    # `has_many` lands on `Post`, which is where it runs.
+    #
+    # `seen` guards the recursion rather than a depth limit: two concerns can
+    # register each other, and a pair that does must not hang the pass.
+    def resolve_application(subject, method, source_subject, providers, seen)
+      return [] unless seen.add?([subject, source_subject])
+
+      deferral = deferral_for(subject, method, source_subject, providers)
+      return [] if deferral && holds_slot?(subject, source_subject, deferral.slot, providers)
+
+      replays = [direct_replay(subject, method, source_subject, providers)].compact
+      return replays unless deferral
+
+      replays + @deferred_registry[source_subject].flat_map do |held|
+        resolve_application(subject, deferral.recall, held, providers, seen)
+      end
+    end
+
+    # Which modules each waypoint is holding, read off every call site the
+    # project writes.
+    #
+    # A registration is a fact about the module that made it, not about the file
+    # asking — so this walks the absorbed call sites too, and the entries it
+    # writes are read back by `resolve_application` in whatever file finally
+    # closes the hop.
+    def register_deferrals(providers)
+      (@apply_calls + @foreign_applies).each do |apply|
+        source_subject = resolve_constant(apply.argument, apply.subject)
+        next unless source_subject
+
+        deferral = deferral_for(apply.subject, apply.method, source_subject, providers)
+        next unless deferral && holds_slot?(apply.subject, source_subject, deferral.slot, providers)
+
+        registered = @deferred_registry[apply.subject]
+        registered << source_subject unless registered.include?(source_subject)
+      end
+    end
+
+    # The deferral the DSL behind one application writes, or nil when it always
+    # replays where it stands. Same two-sided walk `direct_replay` makes — the
+    # applier answers for the subject, the keeper for the module — because the
+    # method that defers is the one the module's own provider supplies.
+    def deferral_for(subject, method, source_subject, providers)
+      appliers = providers.select { |_, subjects| subjects.include?(subject) }.keys
+      sources = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
+
+      found = appliers.product(sources).flat_map do |applier, source_provider|
+        keepers_for(applier, method, source_provider).flat_map do |keeper_owner, keeper_method|
+          @deferrals.select { |deferral| deferral.owner == keeper_owner && deferral.method == keeper_method }
+        end
+      end.uniq
+
+      found.first if found.size == 1
+    end
+
+    # Whether `subject` holds the slot the DSL branches on — which is the branch
+    # taken, evaluated per call site.
+    #
+    # Not by reading the predicate. What the predicate asks (`does base have
+    # @_dependencies`) is answered by the method that PUTS it there: a `SlotInit`
+    # in the DSL's own chain says the objects handed to that DSL hold the slot,
+    # and `dsl_providers` says which those are. So `Post::Commentable`, which
+    # extends the concern DSL, holds it and defers; `Post`, which extends
+    # nothing, does not and replays. A DSL whose slot nothing in the corpus
+    # initialises holds for nobody, which is the same "nothing to say" every
+    # other lookup here answers with.
+    def holds_slot?(subject, source_subject, slot, providers)
+      providers.any? do |owner, subjects|
+        next false unless subjects.include?(source_subject) && subjects.include?(subject)
+
+        @slot_inits.any? do |init|
+          init.ivar == slot && [owner, singleton_owner(owner)].include?(init.owner)
+        end
+      end
+    end
+
+    # The one block an application relocates, or nil when the file does not
+    # decide it.
+    #
+    # Two provider questions, not one. The applier is dispatched on the
+    # SUBJECT (`banana` arrives in `Bar`'s body) and the callee it forwards
+    # to on the ARGUMENT (`mod.send(:bananed, self)` runs on `Baz`), so the
+    # two are answered by whatever supplies each — which need not be the
+    # same module. Requiring one provider for both is what `ActiveSupport`'s
+    # own shape breaks: `Module#include` reaches for `append_features`, a
+    # method of the concern (felixefelip/rbs_infer#256).
+    def direct_replay(subject, method, source_subject, providers)
+      appliers = providers.select { |_, subjects| subjects.include?(subject) }.keys
       sources = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
 
       candidates = appliers.product(sources).filter_map do |applier, source_provider|
-        replay_for(apply, applier, source_provider, source_subject)
+        replay_for(subject, method, applier, source_provider, source_subject)
       end
 
       # One block per call site. Two providers answering with two DIFFERENT
@@ -1299,19 +1696,45 @@ module RbsInfer::Project::StoredBlockReplayExpander
       source_subject = resolve_constant(apply.argument, apply.subject)
       return [] unless source_subject
 
-      kind = @declaration_kinds[apply.subject]
+      extensions_for(apply.subject, apply.method, source_subject, providers, Set.new)
+    end
+
+    # The `extend`s one application puts on its target, following the same
+    # deferral the replays follow.
+    #
+    # It is one hook doing both, so it goes where the hook goes: a deferred
+    # application ran neither the `class_eval` nor the `extend`, and the module
+    # the waypoint was holding is extended onto the class that finally arrives.
+    # Reading the two halves differently would say a concern's `class_methods`
+    # reach a module its `included do` does not.
+    def extensions_for(subject, method, source_subject, providers, seen)
+      return [] unless seen.add?([subject, source_subject])
+
+      deferral = deferral_for(subject, method, source_subject, providers)
+      return [] if deferral && holds_slot?(subject, source_subject, deferral.slot, providers)
+
+      direct = direct_extensions(subject, method, source_subject, providers)
+      return direct unless deferral
+
+      direct + @deferred_registry[source_subject].flat_map do |held|
+        extensions_for(subject, deferral.recall, held, providers, seen)
+      end
+    end
+
+    def direct_extensions(subject, method, source_subject, providers)
+      kind = @declaration_kinds[subject]
       return [] unless kind
 
-      appliers = providers.select { |_, subjects| subjects.include?(apply.subject) }.keys
+      appliers = providers.select { |_, subjects| subjects.include?(subject) }.keys
       sources = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
 
       answers = appliers.product(sources).filter_map do |applier, source_provider|
-        names = extension_names(applier, apply.method, source_provider, source_subject)
+        names = extension_names(applier, method, source_provider, source_subject)
         names unless names.empty?
       end.uniq
       return [] unless answers.size == 1
 
-      answers.first.map { |name| Extension.new(target: apply.subject, kind: kind, name: name) }
+      answers.first.map { |name| Extension.new(target: subject, kind: kind, name: name) }
     end
 
     # The modules reached from `owner#method` that a hook extends its argument
@@ -1424,6 +1847,17 @@ module RbsInfer::Project::StoredBlockReplayExpander
       end
     end
 
+    # The collected method bodies read as deferrals, once the readers are in.
+    def resolve_deferrals
+      @deferral_shapes.filter_map do |owner, method, body, parameters|
+        shape = deferral_shape(body, parameters)
+        next unless shape
+
+        parameter, slot, recall = shape
+        Deferral.new(owner: owner, method: method, parameter: parameter, slot: slot, recall: recall)
+      end
+    end
+
     # The lexical scope a constant written in `owner`'s body resolves against.
     # `def self.included` is collected under `singleton(Foo)`, which names a
     # method table rather than a namespace: the constants a body there sees are
@@ -1432,7 +1866,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       owner.to_s.sub(/\Asingleton\((.*)\)\z/, "\\1")
     end
 
-    def replay_for(apply, applier, source_provider, source_subject)
+    def replay_for(subject, method, applier, source_provider, source_subject)
       # Both directions answer with the SLOT — and with the object that owns
       # it, which is not always the provider: a delegating DSL method keeps
       # the block on something it holds. From there the chain is one and the
@@ -1440,25 +1874,24 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # source wrote under that name holds the block. Asking both and
       # requiring a single answer is what keeps a file that somehow reads as
       # both from being resolved by declaration order.
-      slots = [outward_slot(applier, apply.method),
-               inward_slot(applier, apply.method, source_provider)].compact.uniq
+      slots = [outward_slot(applier, method),
+               inward_slot(applier, method, source_provider)].compact.uniq
       # And the third way to reach a block: not through a slot at all,
       # because the replaying method wrote it in place. Counted together
       # with the slots, so a file reading as both still declines.
-      literals = literal_replays_for(applier, apply.method, source_provider)
+      literals = literal_replays_for(applier, method, source_provider)
       return nil unless slots.size + literals.size == 1
 
-      kind = @declaration_kinds[apply.subject]
+      kind = @declaration_kinds[subject]
       return nil unless kind
 
       if (literal = literals.first)
-        return Replay.new(target: apply.subject, block: literal.block, kind: kind,
+        return Replay.new(target: subject, block: literal.block, kind: kind,
                           call: literal.call, scope: literal.scope, in_method: literal.method,
-                          source: literal.source, singleton: literal.singleton, extended: false,
-                          defers: false)
+                          source: literal.source, singleton: literal.singleton, extended: false)
       end
 
-      storage_owner, ivar, singleton, defers = slots.first
+      storage_owner, ivar, singleton = slots.first
       # The SOURCE's provider, not the applier's: the name being looked up
       # is the one the source wrote in its own body.
       storage_method = storage_method_for(source_provider, storage_owner, ivar)
@@ -1467,10 +1900,9 @@ module RbsInfer::Project::StoredBlockReplayExpander
       blocks = @stored_calls.select { |stored| stored.subject == source_subject && stored.method == storage_method }
       return nil unless blocks.size == 1
 
-      Replay.new(target: apply.subject, block: blocks.first.block, kind: kind,
+      Replay.new(target: subject, block: blocks.first.block, kind: kind,
                  call: storage_method, scope: blocks.first.subject, in_method: nil,
-                 source: blocks.first.source, singleton: singleton, extended: false,
-                 defers: defers || false)
+                 source: blocks.first.source, singleton: singleton, extended: false)
     end
 
     # Which classes/modules can call each owner's DSL, as `owner => subjects`.
@@ -1575,17 +2007,9 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # reach a REPLAY, not the number written — a DSL applier is free to send its
     # argument other messages on the way (felixefelip/rbs_infer#259).
     def inward_slot(owner, method, source_provider)
-      slots = @forwards.filter_map do |forward|
-        next unless forward.owner == owner && forward.method == method
-
-        # The callee runs on the ARGUMENT, so it is the argument's provider that
-        # has to supply it — reading it off the forward's own owner only works
-        # while one module happens to hold both halves of the DSL.
-        keeper_owner, keeper_method = keeper(source_provider, forward.callee)
-        next unless keeper_owner
-
+      slots = keepers_for(owner, method, source_provider).filter_map do |keeper_owner, keeper_method|
         replays = @inward_replays.select { |replay| replay.owner == keeper_owner && replay.method == keeper_method }
-        [keeper_owner, replays.first.ivar, replays.first.singleton, replays.first.defers] if replays.size == 1
+        [keeper_owner, replays.first.ivar, replays.first.singleton] if replays.size == 1
       end.uniq
 
       slots.first if slots.size == 1
@@ -1595,14 +2019,27 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # walk as `inward_slot` — every forward, resolved through the ARGUMENT's
     # provider — differing only in what the keeper turns out to hold.
     def literal_replays_for(owner, method, source_provider)
+      keepers_for(owner, method, source_provider).filter_map do |keeper_owner, keeper_method|
+        replays = @literal_replays.select { |replay| replay.owner == keeper_owner && replay.method == keeper_method }
+        replays.first if replays.size == 1
+      end.uniq
+    end
+
+    # The methods `owner#method` forwards its argument to, as
+    # `[[owner, method]]`.
+    #
+    # The callee runs on the ARGUMENT, so it is the argument's provider that has
+    # to supply it — reading it off the forward's own owner only works while one
+    # module happens to hold both halves of the DSL. Every forward is asked and
+    # the ones leading nowhere answer nothing: `include` hands the argument to
+    # `included` as well, and a DSL is free to send its argument other messages
+    # on the way (felixefelip/rbs_infer#259).
+    def keepers_for(owner, method, source_provider)
       @forwards.filter_map do |forward|
         next unless forward.owner == owner && forward.method == method
 
         keeper_owner, keeper_method = keeper(source_provider, forward.callee)
-        next unless keeper_owner
-
-        replays = @literal_replays.select { |replay| replay.owner == keeper_owner && replay.method == keeper_method }
-        replays.first if replays.size == 1
+        [keeper_owner, keeper_method] if keeper_owner
       end.uniq
     end
 

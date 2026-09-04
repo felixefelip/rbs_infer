@@ -1131,6 +1131,15 @@ postconditions:
   effects:
     may_write:
     - "@kept"
+- class: Example62::Slots
+  method: hallmark
+  effects:
+    returns_ivar: "@hallmark"
+- class: Example62::Slots
+  method: hallmark=
+  effects:
+    may_write:
+    - "@hallmark"
 - class: Example6::Foo
   method: name
   effects:
