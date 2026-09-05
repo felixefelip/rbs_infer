@@ -617,7 +617,7 @@ module RbsInfer
     marked.each do |member|
       owner = member.owner ? "#{@target_class}::#{member.owner}" : @target_class
       confirmed = rbs_definition_resolver.foreign_plain_declaration?(
-        owner, member.name, excluding_suffix: own_output_suffix
+        owner, member.name, singleton: member.kind == :class_method, excluding_suffix: own_output_suffix
       )
       member.overloading = false unless confirmed
     end

@@ -53,4 +53,32 @@ class Module
   def included(base)
     nil
   end
+
+  # What `extend` delegates the singleton splice to — `rb_mod_extend_object`
+  # in eval.c:
+  #
+  #   rb_extend_object(obj, mod);   /* rb_include_module(rb_singleton_class(obj), mod) */
+  #   return obj;
+  #
+  # Same shape as `append_features` and unstatable for the same reason — the
+  # splice is C — so the body says the one thing it can: the answer is the
+  # OBJECT, not the module. That asymmetry is the difference between the two,
+  # and a module that overrides this now has a `super` to resolve against.
+  # @rbs_infer |...
+  def extend_object(obj)
+    # rb_include_module(rb_singleton_class(obj), self): the SINGLETON of `obj`
+    # gains `self`, which is why `extend` reaches the object and `include`
+    # reaches its instances.
+    obj
+  end
+
+  # The notification, and on `Module` it does nothing at all: `rb_obj_dummy1`,
+  # one argument, returns nil — the same stub as `included`. A module that
+  # wants to know overrides it with `def self.extended(base)`, which shadows
+  # this and is PUBLIC in the process, which is why `extend` reaches this one
+  # with `send`.
+  # @rbs_infer |...
+  def extended(base)
+    nil
+  end
 end

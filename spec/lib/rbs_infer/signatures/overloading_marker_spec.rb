@@ -33,6 +33,44 @@ RSpec.describe "the `# @rbs_infer |...` overloading marker" do
     expect(rbs).to include("def include: (*untyped mods) -> self | ...")
   end
 
+  # A method the class does not declare but an ANCESTOR does. Core puts `extend` on
+  # `Kernel`, which `Object` only includes, so a plain `class Object; def extend` is
+  # legal RBS — and REPLACES `(*Module) -> self`, taking the fallback with it. Since the
+  # generated parameter is a closed union of the call sites we saw, an `extend` naming
+  # anything outside it would then have nothing to resolve against
+  # (felixefelip/rbs_infer#302).
+  it "confirms the marker against a method an ancestor declares" do
+    rbs = rbs_for("Object", <<~RUBY)
+      class Object
+        # @rbs_infer |...
+        def extend(*mods)
+          self
+        end
+      end
+    RUBY
+
+    expect(rbs).to include("| ...")
+  end
+
+  # …and only for an INSTANCE member. `frozen?` is `Kernel`'s, an instance method;
+  # a `def self.frozen?` confirmed against it would put `| ...` on the SINGLETON, where
+  # there is nothing to overload — `InvalidOverloadMethodError`, which poisons the whole
+  # environment rather than degrading. The ancestor chain read above is the instance one,
+  # so a singleton member keeps the same-type answer it has always had.
+  it "does not confirm a `def self.` against an ancestor's instance method" do
+    rbs = rbs_for("Object", <<~RUBY)
+      class Object
+        # @rbs_infer |...
+        def self.frozen?
+          true
+        end
+      end
+    RUBY
+
+    expect(rbs).to include("def self.frozen?")
+    expect(rbs).not_to include("| ...")
+  end
+
   # The marker states intent; claiming it where there is nothing to overload would be a
   # hard failure, so it degrades to the plain form instead.
   it "ignores the marker when nothing else declares the method" do

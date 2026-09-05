@@ -187,26 +187,47 @@ module RbsInfer::Signatures
     # method only we declare would gain `| ...` and then have nothing left to overload.
     # The suffix is `<source path>.rbs`, which is stable whatever `--output-dir` is.
     #
-    # Only the same class counts. An ancestor's declaration is inheritance, which RBS
-    # models as ordinary overriding and never rejects.
-    def foreign_plain_declaration?(class_name, method_name, excluding_suffix: nil)
+    # An ancestor's declaration counts too, and not because the plain form would be
+    # rejected — overriding a mixin's method is legal RBS and never is. It counts
+    # because the override DROPS what it overrides, and the generated signature is a
+    # closed union of the call sites we saw: a plain `class Object; def extend`
+    # replaces core's `(*Module) -> self` outright, so an `extend` whose argument is
+    # not one of the constants in that union has nothing left to resolve against. The
+    # overloading form puts ours ahead and keeps the inherited one behind it — measured
+    # against `DefinitionBuilder`, which answers our overload and then core's
+    # `(*::Module) -> self` (felixefelip/rbs_infer#302).
+    #
+    # `Module#include` has always had that fallback, for the accidental reason that core
+    # declares `include` on `Module` itself. `extend` lives on `Kernel`, which `Object`
+    # only includes. Two transcriptions of the same kind should not differ on where core
+    # happened to write the method.
+    #
+    # Not load-bearing for the dummy, and the mutation says so: with this rule removed
+    # the baseline stays clean, because every `extend` written there names a constant
+    # the union already holds. It guards the call site that does not.
+    def foreign_plain_declaration?(class_name, method_name, singleton:, excluding_suffix: nil)
       return false unless rbs_builder
 
       type_name = build_rbs_type_name(class_name)
       return false unless type_name
 
-      entry = rbs_builder.env.class_decls[type_name]
-      return false unless entry
+      # A name the environment does not know has no declarations and no ancestors —
+      # and asking `instance_ancestors` for one raises a bare `RuntimeError`, which is
+      # not an `RBS::BaseError` and would escape the rescue below.
+      return false unless rbs_builder.env.class_decls[type_name]
 
-      entry.each_decl.any? do |decl|
-        path = decl.location&.buffer&.name.to_s
-        next false if excluding_suffix && path.end_with?(excluding_suffix)
+      return true if plain_declaration?(type_name, method_name, excluding_suffix: excluding_suffix)
 
-        decl.members.any? do |member|
-          member.is_a?(RBS::AST::Members::MethodDefinition) &&
-            member.name.to_s == method_name.to_s &&
-            !member.overloading?
-        end
+      # Ancestors answer for INSTANCE members only. `singleton` is the member's own
+      # kind, and the chain walked below is the instance one: a `def self.frozen?`
+      # confirmed against `Kernel`'s INSTANCE `frozen?` would emit `| ...` on the
+      # singleton, where there is nothing to overload — `InvalidOverloadMethodError`,
+      # which poisons the whole environment rather than degrading. A singleton member
+      # keeps the same-type answer it has always had.
+      return false if singleton
+
+      ancestor_type_names(type_name).any? do |ancestor|
+        plain_declaration?(ancestor, method_name, excluding_suffix: excluding_suffix, instance_only: true)
       end
     rescue RBS::BaseError
       false
@@ -364,6 +385,37 @@ module RbsInfer::Signatures
     end
 
     private
+
+    # The plain-member scan of ONE type's own declarations — the question
+    # `foreign_plain_declaration?` asks, of the type and then of each ancestor.
+    #
+    # `instance_only` is for the ancestor pass alone, and pairs with the `singleton`
+    # gate above: that pass runs for instance members, so it must read instance
+    # declarations. The same-type scan ignores `kind` and always has — left as it is,
+    # because widening it is a separate question from this one.
+    def plain_declaration?(type_name, method_name, excluding_suffix:, instance_only: false)
+      entry = rbs_builder.env.class_decls[type_name]
+      return false unless entry
+
+      entry.each_decl.any? do |decl|
+        path = decl.location&.buffer&.name.to_s
+        next false if excluding_suffix && path.end_with?(excluding_suffix)
+
+        decl.members.any? do |member|
+          member.is_a?(RBS::AST::Members::MethodDefinition) &&
+            member.name.to_s == method_name.to_s &&
+            !member.overloading? &&
+            (!instance_only || member.kind == :instance)
+        end
+      end
+    end
+
+    # Superclasses and included modules, nearest first, without the type itself.
+    def ancestor_type_names(type_name)
+      rbs_builder.ancestor_builder.instance_ancestors(type_name).ancestors.filter_map do |ancestor|
+        ancestor.name if ancestor.is_a?(RBS::Definition::Ancestor::Instance) && ancestor.name != type_name
+      end
+    end
 
     def rbs_builder
       return @rbs_builder if @rbs_builder_loaded

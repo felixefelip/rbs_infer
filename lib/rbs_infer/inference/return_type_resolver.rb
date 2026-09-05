@@ -170,12 +170,38 @@ module RbsInfer::Inference
             m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> #{steep_type}")
           end
 
-          # The general case the three loops above each cover a slice of: the
+          # A fourth slice, and the one the others cannot reach: the declaration
+          # is not vague and not contradicted — it is the TARGET CLASS where the
+          # body says `self`. Steep already answers `"self"` here; the general
+          # case below leaves it because `Object` genuinely accepts `self`, and
+          # the first loop never sees it because the method is already typed.
+          #
+          # `self` is strictly more precise, and on a base class the difference
+          # is the whole answer: `Object#extend` written as `-> Object` throws
+          # away what `(*Module) -> self` says, so `base.extend(Foo)` inside a
+          # module stops being a `Module` (felixefelip/rbs_infer#302).
+          #
+          # `self_types` rather than the target class alone, and `self_return?`
+          # rather than a bare comparison, so a setter and a class method are
+          # excluded for the reasons stated there.
+          members.each do |m|
+            next unless method_member?(m)
+            next if m.name == "initialize"
+
+            current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
+            next unless self_return?(m, current_type, self_types)
+            next unless steep_returns_for(m, steep_returns)[m.name] == "self"
+
+            m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> self")
+          end
+
+          # The general case the loops above each cover a slice of: the
           # declared return does not ACCEPT the type Steep gives the body, which
           # is the `Ruby::MethodBodyTypeMismatch` the checker reports on the
-          # generated RBS. Those three refine a declaration that is merely vague
+          # generated RBS. Those refine a declaration that is merely imprecise
           # (a block's `Array[untyped]`, a nilable Steep proves non-nil, a record
-          # with `untyped` values) — all of them types the body still satisfies.
+          # with `untyped` values, a class name where the body says `self`) — all
+          # of them types the body still satisfies.
           # Nothing revisited a declaration the body CONTRADICTS.
           #
           # Without this, a return type is a ratchet: the first pass only fills
