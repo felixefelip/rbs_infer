@@ -20,15 +20,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # syntax, not guessed types: resolving `Foo` in `extend Foo` and `Baz` in
   # `apply(Baz)` uses the declarations that are actually present in the file.
   class Collector < Prism::Visitor
-    # The structs this pass collects, and the two core-ancestor tables it reads
-    # them against. Declarations rather than behaviour, so they are declared
-    # somewhere else (felixefelip/rbs_infer#304).
     include Shapes
 
-    # `sources` is required, and `ConstantSources::NONE` is the way to say "no
-    # project here". A DSL whose methods are declared in another file resolves
-    # to nothing without it and reports nothing about why, which is the
-    # silent-wrong case (docs/engineering/required-threaded-deps.md).
+    # The `extend`s the apply calls in this file put on their targets. Populated
+    # by `collect`, alongside the replays it answers with: both are what a call
+    # site here does to a class here, read off the same resolution.
+    attr_reader :extensions
+
     def initialize(source, sources:)
       @source = source
       @sources = sources
@@ -107,24 +105,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
       self
     end
 
-    # The `extend`s the apply calls in this file put on their targets. Populated
-    # by `collect`, alongside the replays it answers with: both are what a call
-    # site here does to a class here, read off the same resolution.
-    attr_reader :extensions
-
-    protected
-
-    # What this file said, for the collector absorbing it.
-    attr_reader :shapes, :providers
-
-    # What an ABSORBING collector reads off this one, answered by the
-    # declarations rather than kept a second time.
-    def declaration_kinds
-      @names.kinds
-    end
-
-    public
-
     def visit_class_node(node)
       @names.enter(node) { super }
     end
@@ -144,6 +124,47 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def visit_call_node(node)
       collect_class_body_call(node) if @names.current_scope && @method_depth.zero?
       super
+    end
+
+    protected
+
+    # What this file said, for the collector absorbing it.
+    attr_reader :shapes, :providers
+
+    # What an ABSORBING collector reads off this one, answered by the
+    # declarations rather than kept a second time.
+    def declaration_kinds
+      @names.kinds
+    end
+
+     # Every constant this file names but does not declare, each as the ORDERED
+    # list of names Ruby would try for it — innermost enclosing scope first,
+    # top level last.
+    #
+    # A name is not a constant. `include Fields` inside `class Filter` reaches
+    # `Filter::Fields` in one project and a top-level `Fields` in another, and
+    # the difference is which one is declared — the same question
+    # `resolve_constant` already asks of this file's own declarations, asked of
+    # the project instead. Reading the name as written, a relatively-included
+    # concern named a constant nothing declares: `parsed_for` opened no file, so
+    # the concern's shapes were never absorbed and its `included do` stayed on
+    # the concern (felixefelip/rbs_infer#289).
+    #
+    # Candidates, not an answer, because only `parsed_for` can decide between
+    # them and this method is also read by a collector that HAS no project (see
+    # `absorb`). The core reopens carry a one-element list for the same reason
+    # they carry a name: `Module` means `Module`, wherever it is written.
+    def external_lookups
+      lookups = CORE_REOPENS.map { |name| [name] }
+
+      external_constants.each do |subject, raw_constant|
+        next if @names.resolve(raw_constant, subject)
+
+        name = RbsInfer::Analyzer.extract_constant_path(raw_constant)
+        lookups << Corpus.lookup_candidates(name, subject) if name
+      end
+
+      lookups.uniq
     end
 
     private
@@ -274,43 +295,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def external_constants
       @names.named_constants + @shapes.apply_calls.map { |apply| [apply.subject, apply.argument] }
     end
-
-    # Every constant this file names but does not declare, each as the ORDERED
-    # list of names Ruby would try for it — innermost enclosing scope first,
-    # top level last.
-    #
-    # A name is not a constant. `include Fields` inside `class Filter` reaches
-    # `Filter::Fields` in one project and a top-level `Fields` in another, and
-    # the difference is which one is declared — the same question
-    # `resolve_constant` already asks of this file's own declarations, asked of
-    # the project instead. Reading the name as written, a relatively-included
-    # concern named a constant nothing declares: `parsed_for` opened no file, so
-    # the concern's shapes were never absorbed and its `included do` stayed on
-    # the concern (felixefelip/rbs_infer#289).
-    #
-    # Candidates, not an answer, because only `parsed_for` can decide between
-    # them and this method is also read by a collector that HAS no project (see
-    # `absorb`). The core reopens carry a one-element list for the same reason
-    # they carry a name: `Module` means `Module`, wherever it is written.
-    def external_lookups
-      lookups = CORE_REOPENS.map { |name| [name] }
-
-      external_constants.each do |subject, raw_constant|
-        next if @names.resolve(raw_constant, subject)
-
-        name = RbsInfer::Analyzer.extract_constant_path(raw_constant)
-        lookups << Corpus.lookup_candidates(name, subject) if name
-      end
-
-      lookups.uniq
-    end
-
-    # Read by the collector ABSORBING this one, to follow the chain past it: a
-    # concern names the module holding its DSL, and that module's file is one
-    # the host never mentions. Protected rather than listed with the readers
-    # above, because the method is written below among the private ones and a
-    # reader there would only be shadowed by it.
-    protected :external_lookups
 
     def absorb(shapes)
       @shapes.merge(shapes.shapes)
