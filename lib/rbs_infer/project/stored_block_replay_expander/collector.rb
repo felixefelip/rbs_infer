@@ -137,7 +137,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @names.kinds
     end
 
-     # Every constant this file names but does not declare, each as the ORDERED
+    # Every constant this file names but does not declare, each as the ORDERED
     # list of names Ruby would try for it — innermost enclosing scope first,
     # top level last.
     #
