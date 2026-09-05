@@ -5,6 +5,9 @@ require "set"
 require_relative "../../ast/constant_reference"
 require_relative "../../inference/send_call"
 require_relative "../constant_sources"
+require_relative "shapes"
+require_relative "corpus"
+require_relative "dsl_graph"
 require_relative "node_reading"
 require_relative "shape_reader"
 require_relative "deferral_reader"
@@ -14,188 +17,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # syntax, not guessed types: resolving `Foo` in `extend Foo` and `Baz` in
   # `apply(Baz)` uses the declarations that are actually present in the file.
   class Collector < Prism::Visitor
-    # What a class body and a module body can call with no receiver, beyond
-    # anything this file says: `self` there is an instance of `Class` or of
-    # `Module`, so the callable methods are those two chains' instance methods.
-    #
-    # Read off Ruby rather than listed. `%w[Module Class]` was the same claim
-    # asserted, and it was both arbitrary and short: `class Object; def banana`
-    # makes `banana` callable in every class body just as surely, and the pair
-    # missed it.
-    #
-    # The SUPERCLASS chain, not `ancestors`. Both derive, but `ancestors` reads
-    # the live process rather than the language: measured, `Class.ancestors`
-    # answers `PP::ObjectMixin` and `JSON::GeneratorMethods` here, because `pp`
-    # and `json` inject into `Object` and rbs_infer loads them. Which gems the
-    # ANALYZER happens to require is no fact about the analyzed project, and it
-    # would make this list differ between environments. A superclass chain
-    # cannot be injected into, so it says the same thing everywhere.
-    #
-    # That leaves out `Kernel`, and knowingly: it is a module, so nothing at
-    # runtime distinguishes it from the two above. A `module Kernel` reopening
-    # holding a DSL applier is not a shape worth reading the live process for.
-    #
-    # Deliberately NOT the ancestors RBS knows, either. That query answers
-    # (measured: `singleton(::Example39::Bar)` + `banana` -> `::Module`), but
-    # only once `sig/` already holds a signature for the reopening — which
-    # rbs_infer generated. A pre-parse source rewrite reading its own previous
-    # output is the circularity of felixefelip/rbs_infer#156: on a cold
-    # checkout the same query answers `nil` and nothing expands. This pass
-    # keeps syntax, not generated types.
-    def self.self_chain(klass)
-      chain = []
-      while klass
-        chain << klass.name
-        klass = klass.superclass
-      end
-      chain.freeze
-    end
-
-    CORE_SELF_CHAINS = { "class" => self_chain(Class), "module" => self_chain(Module) }.freeze
-
-    CORE_REOPENS = CORE_SELF_CHAINS.values.flatten.uniq.freeze
-
-    Storage = Data.define(:owner, :method, :ivar)
-
-    # `singleton` — carried by all three replay shapes below — is WHICH method
-    # table the block's `def`s land in. `target.class_eval` puts them in the
-    # target's own, reached by its instances; `target.singleton_class.class_eval`
-    # puts them in the target's singleton, reached by the class object itself.
-    # That is the one difference between a DSL spelling `included do` and one
-    # spelling `class_methods do`, and it is a difference in the emitted RBS
-    # (`def age` against `def self.age`), so it has to travel with the replay
-    # rather than be re-derived from the call at rewrite time
-    # (felixefelip/rbs_infer#267).
-    ReplayMethod = Data.define(:owner, :method, :parameter, :reader, :singleton)
-    # `source` is the file the block was written in, and it travels with the
-    # block because a `Prism::Location` is only offsets — meaningless without
-    # the string they index. The rewrite slices it to move the body, and the
-    # block may come from another file (see `absorb`).
-    StoredCall = Data.define(:owner, :subject, :method, :block, :source)
-    ApplyCall = Data.define(:owner, :subject, :method, :argument)
-
-    # The same replay written from the other end — `base.class_eval(&@block)`,
-    # where `self` is the module that KEPT the block and the target arrives as a
-    # parameter. `ReplayMethod` is the mirror: there `self` is the target and the
-    # source arrives as the parameter (felixefelip/rbs_infer#247).
-    #
-    # It reads the ivar directly because there is nothing to read it through:
-    # a reader exists to let ANOTHER object at the slot, and in this direction
-    # the replaying method is already inside the object that owns it. So the ivar
-    # is named here where `ReplayMethod` names a reader — the slot is the join
-    # either way, and `attr_reader` was only ever one spelling of reaching it.
-    InwardReplay = Data.define(:owner, :method, :parameter, :ivar, :singleton)
-
-    # A DSL that hands ITSELF to the target instead of replaying on it, read off
-    # the one conditional that writes both outcomes (felixefelip/rbs_infer#300).
-    #
-    # `ActiveSupport::Concern#append_features` is the shape, and its transcribed
-    # source is the whole evidence:
-    #
-    #     if base.instance_variable_defined?(:@_dependencies)
-    #       base.instance_variable_get(:@_dependencies) << self   # registers
-    #       false
-    #     else
-    #       @_dependencies.each { |dep| base.include(dep) }       # drains
-    #       base.class_eval(&@_included_block)                    # replays
-    #     end
-    #
-    # Three nodes on two mutually exclusive branches, and this reads all three.
-    # `slot` is what joins them: `self` goes INTO the target's `@slot` on one
-    # branch, and on the other the module's OWN `@slot` is emptied back onto the
-    # target. So a module registered on a waypoint is not lost — it is
-    # re-applied to whatever class finally arrives, which is why the block lands
-    # on the host and never on the waypoint. `recall` is the message the drain
-    # re-sends (`include`), and the re-application is resolved AS that call
-    # site, through the same chain any other one takes.
-    #
-    # Deliberately NOT a match on `<< self`: that was the shortcut this replaces
-    # (felixefelip/rbs_infer#299), which read `push(self)` as no deferral at all
-    # and would have read a DSL that registered AND replayed on one branch as
-    # one. What decides here is the register/replay pair being on OPPOSITE
-    # branches with the drain rejoining them — a statement about the code's
-    # structure rather than about one gem's spelling.
-    Deferral = Data.define(:owner, :method, :parameter, :slot, :recall)
-
-    # `<parameter>.instance_variable_set(:@x, …)` — a method that puts a slot on
-    # the object it is handed.
-    #
-    # It is what makes the branch above DECIDABLE per call site. The predicate
-    # asks whether the target holds the slot, and the answer is not in the
-    # predicate: it is here, in the method that puts it there. Whoever the DSL
-    # was handed to holds it, and `dsl_providers` already says who that is — so
-    # `Post::Commentable`, which extends the concern DSL, holds `@_dependencies`
-    # and `Post`, which only includes a concern, does not.
-    SlotInit = Data.define(:owner, :method, :parameter, :ivar)
-
-    # The same replay again, with the block written where it is run instead of
-    # kept for later: `def self.included(base) = base.class_eval do … end`, which
-    # is what Ruby's own `included` hook looks like when nobody has wrapped it in
-    # a DSL (felixefelip/rbs_infer#260).
-    #
-    # No storage, so nothing to look up — the block is right there in the
-    # replaying method, and only the target is unknown. `call` and `scope` name
-    # the call the block belongs to (`class_eval`, in the module holding the
-    # hook) rather than the storage call and the module that wrote it, since
-    # there is no storage call here; both feed the `blocks:` sidecar the same way.
-    # `source` for the same reason `StoredCall` carries one.
-    LiteralReplay = Data.define(:owner, :method, :scope, :call, :block, :source, :singleton)
-
-    # `def keep(&block) = <target>.module_eval(&block)` — the DSL that runs the
-    # block it was just handed, with no slot in between. Both other outward
-    # shapes reach their block through storage (`keep` fills an ivar, `apply`
-    # reads it back through a reader), so a DSL that evaluates immediately had
-    # no shape at all — not even the plainest one, `class_eval(&block)`
-    # (felixefelip/rbs_infer#268).
-    #
-    # `name` is what it runs ON, and nil is an answer: the DSL's own `self`,
-    # which is the subject that called it. A CONSTANT is the other answer, and
-    # it carries the same syntax/data distinction every constant does — written,
-    # it means what it means where the DSL is written; fetched with `const_get`,
-    # it is looked up under the caller's `self`, which is the subject.
-    #
-    # `singleton` is the same bit it is on every other replay: `class_eval` puts
-    # the block's `def`s in the subject's own table, `singleton_class.class_eval`
-    # in the class object's.
-    OwnBlockReplay = Data.define(:owner, :method, :name, :dynamic, :creates, :singleton)
-
-    # `base.extend(<module>)` — the other thing a hook does to the object it is
-    # handed, and the one that carries no block at all: the target's SINGLETON
-    # gains a module that already exists, rather than a block's `def`s being
-    # moved onto it. It is the half of `ActiveSupport::Concern` that turns
-    # `class_methods do` into the host's class methods, and the transcription of
-    # `append_features` has been writing it since felixefelip/rbs_infer#262 with
-    # nothing reading it (felixefelip/rbs_infer#268).
-    #
-    # `name` is the module, and `dynamic` says which question is left to answer
-    # about it. A constant written as SYNTAX is resolved where it was written —
-    # its lexical scope is the file's, and nothing about the target changes it.
-    # A name fetched as DATA (`const_get(:ClassMethods)`) is resolved against
-    # whatever `self` is when the hook runs, which is the module being included
-    # and so is only known at the call site.
-    InwardExtend = Data.define(:owner, :method, :parameter, :name, :dynamic, :creates)
-
-    # One `extend` an apply call site puts on its target, resolved: the class or
-    # module to reopen, and the module its singleton gains.
-    Extension = Data.define(:target, :kind, :name)
-
-    # `def bazinga(mod) = mod.bazingado(self)` — the hop from the method a target
-    # NAMES to the method that replays. The inward direction needs it: the replay
-    # runs on the source with the target passed in, so the target's own body
-    # cannot be the one calling it.
-    ForwardMethod = Data.define(:owner, :method, :parameter, :callee)
-
-    # `def bazingado(base = nil, &block)` whose body is
-    # `(@holder ||= Holder.new).bazingado(base, &block)` — a method that keeps
-    # nothing itself and hands the whole call, block included, to an object it
-    # holds. The block then lives in `Holder`, which nothing extends, so without
-    # this hop the storage and the replay sit in an owner no subject can reach
-    # (felixefelip/rbs_infer#257).
-    #
-    # `target` is the class the holder is built from, resolved in
-    # `resolve_replays` like `extend`'s and a superclass's: a constructor written
-    # relatively may name a class the walk has not reached yet.
-    Delegation = Data.define(:owner, :method, :target, :callee)
+    # The structs this pass collects, and the two core-ancestor tables it reads
+    # them against. Declarations rather than behaviour, so they are declared
+    # somewhere else (felixefelip/rbs_infer#304).
+    include Shapes
 
     # `sources` is required, and `ConstantSources::NONE` is the way to say "no
     # project here". A DSL whose methods are declared in another file resolves
@@ -516,60 +341,21 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # is how `ActiveSupport::Concern` writes the applier, and no file that USES
     # a concern declares it (felixefelip/rbs_infer#256).
     #
-    # Asked about `Module` and `Class` always, and about any `extend`/superclass
-    # or APPLY ARGUMENT this file names but does not declare. A name the project
-    # has nothing for simply yields no roots, which is the same as today's
-    # answer.
-    # Transitively, because a DSL chain is written across as many files as it
-    # takes. A host includes a concern, the concern extends the module holding
-    # the DSL, and the DSL is declared in a third file the host never names —
-    # `Post` / `Post::Taggable` / `ActiveSupport::Concern`, which is the ordinary
-    # shape rather than an exotic one. Reading one hop, the host saw the
-    # concern's shapes and nothing about the DSL that gives the concern its
-    # methods (felixefelip/rbs_infer#268).
-    #
-    # A worklist rather than a recursion, `seen`-guarded because two concerns
-    # can name each other. It terminates because a project has finitely many
-    # constants and each is asked about once; in practice the chain is two or
-    # three files, and every parse and walk along it is memoized by file.
+    # `Corpus` decides which files those are and in what order; what to do with
+    # what it finds is this method, and it is two things — keep the shapes, and
+    # record the names as declared, since a name the chain reached is one this
+    # file can now answer for.
     def absorb_external_shapes
-      queue = external_lookups.to_a
-      seen = Set.new
-
-      until queue.empty?
-        # A lexical lookup, not a name: `include Fields` written in `class Filter`
-        # means `Filter::Fields` if the project has one and top-level `Fields` if
-        # it does not, and only the project can say which. Reading the name as
-        # written asked for a `Fields` nobody declares, so the concern's file was
-        # never opened and its `included do` never moved
-        # (felixefelip/rbs_infer#289).
-        name = resolve_lookup(queue.shift)
-        next unless seen.add?(name)
-
-        @sources.parsed_for(name).each do |entry|
-          # Memoized per FILE, not per asking file: what a file says about its
-          # own DSL is the same answer however many hosts ask, and a concern
-          # used across an app is asked about by every one of them.
-          shapes = @sources.derived(entry) do
-            self.class.new(entry.source, sources: RbsInfer::Project::ConstantSources::NONE)
-                .collect_shapes(entry.result.value)
-          end
-          absorb(shapes)
-          # What THAT file reaches for, which is how the chain continues.
-          queue.concat(shapes.external_lookups.to_a)
-        end
-        @declarations << name
+      reached = Corpus.new(@sources).reach(external_lookups) do |entry|
+        shapes = self.class.new(entry.source, sources: RbsInfer::Project::ConstantSources::NONE)
+                     .collect_shapes(entry.result.value)
+        # Read HERE, where one collector may read another's: the walk is handed
+        # what to queue next rather than reaching for a protected reader.
+        [shapes, shapes.external_lookups]
       end
-    end
 
-    # The name a lookup lands on: the first candidate the project actually
-    # declares, or — when it declares none of them — the name as written, which
-    # is what this pass answered before it asked at all. Falling back rather
-    # than dropping the lookup matters for the names a project never declares
-    # in its own sources (`ApplicationRecord`, a gem's constant): they resolve
-    # to themselves today and the chains reading them keep working.
-    def resolve_lookup(candidates)
-      candidates.find { |candidate| @sources.parsed_for(candidate).any? } || candidates.last
+      reached.shapes.each { |shapes| absorb(shapes) }
+      @declarations.merge(reached.names)
     end
 
     # Every constant this file NAMES but may not declare, as
@@ -611,23 +397,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
         next if resolve_constant(raw_constant, subject)
 
         name = RbsInfer::Analyzer.extract_constant_path(raw_constant)
-        lookups << lookup_candidates(name, subject) if name
+        lookups << Corpus.lookup_candidates(name, subject) if name
       end
 
       lookups.uniq
-    end
-
-    # The names Ruby tries for `name` written in `subject`, in order. Mirrors
-    # `resolve_constant`'s walk exactly — every enclosing prefix, longest first,
-    # then the name alone — so a lookup answered here resolves there.
-    #
-    # An explicitly absolute `::Foo` names the top level and nothing else, which
-    # is the one-element list.
-    def lookup_candidates(name, subject)
-      return [name.sub(/\A::/, "")] if name.start_with?("::")
-
-      prefixes = subject.to_s.split("::")
-      prefixes.length.downto(1).map { |length| "#{prefixes.take(length).join("::")}::#{name}" } + [name]
     end
 
     # Read by the collector ABSORBING this one, to follow the chain past it: a
@@ -678,6 +451,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
       collect_readers_from_source
 
       @deferrals.concat(resolve_deferrals)
+      # Built once the delegations below are resolved, since `keeper` reads them.
+      @graph = DslGraph.new(replay_methods: @replay_methods, readers: @readers,
+                            inward_replays: @inward_replays, literal_replays: @literal_replays,
+                            forwards: @forwards, delegations: @resolved_delegations,
+                            storages: @storages)
 
       providers = dsl_providers
       @resolved_delegations.concat(resolve_delegations)
@@ -866,7 +644,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       sources = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
 
       found = appliers.product(sources).flat_map do |applier, source_provider|
-        keepers_for(applier, method, source_provider).flat_map do |keeper_owner, keeper_method|
+        @graph.keepers_for(applier, method, source_provider).flat_map do |keeper_owner, keeper_method|
           @deferrals.select { |deferral| deferral.owner == keeper_owner && deferral.method == keeper_method }
         end
       end.uniq
@@ -992,7 +770,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @forwards.flat_map do |forward|
         next [] unless forward.owner == owner && forward.method == method
 
-        keeper_owner, keeper_method = keeper(source_provider, forward.callee)
+        keeper_owner, keeper_method = @graph.keeper(source_provider, forward.callee)
         next [] unless keeper_owner
 
         # `self` inside the keeper is the object the call was dispatched on,
@@ -1123,12 +901,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # source wrote under that name holds the block. Asking both and
       # requiring a single answer is what keeps a file that somehow reads as
       # both from being resolved by declaration order.
-      slots = [outward_slot(applier, method),
-               inward_slot(applier, method, source_provider)].compact.uniq
+      slots = [@graph.outward_slot(applier, method),
+               @graph.inward_slot(applier, method, source_provider)].compact.uniq
       # And the third way to reach a block: not through a slot at all,
       # because the replaying method wrote it in place. Counted together
       # with the slots, so a file reading as both still declines.
-      literals = literal_replays_for(applier, method, source_provider)
+      literals = @graph.literal_replays_for(applier, method, source_provider)
       return nil unless slots.size + literals.size == 1
 
       kind = @declaration_kinds[subject]
@@ -1143,7 +921,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       storage_owner, ivar, singleton = slots.first
       # The SOURCE's provider, not the applier's: the name being looked up
       # is the one the source wrote in its own body.
-      storage_method = storage_method_for(source_provider, storage_owner, ivar)
+      storage_method = @graph.storage_method_for(source_provider, storage_owner, ivar)
       return nil unless storage_method
 
       blocks = @stored_calls.select { |stored| stored.subject == source_subject && stored.method == storage_method }
@@ -1230,116 +1008,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
         current = parents[current]
       end
       chain
-    end
-
-    # The slot behind `class_eval(&param.reader)`, when `method` is itself the
-    # replay: the reader names it, and an `attr_reader` in the same owner says
-    # which ivar the reader reaches. Recognising the reader explicitly is what
-    # keeps an arbitrary method named `body` from being read as an accessor.
-    def outward_slot(owner, method)
-      replays = @replay_methods.select { |replay| replay.owner == owner && replay.method == method }
-      return nil unless replays.size == 1
-
-      ivars = @readers.select { |reader_owner, name, _| reader_owner == owner && name == replays.first.reader }
-      ivars = ivars.map(&:last).uniq
-      [owner, ivars.first, replays.first.singleton] if ivars.size == 1
-    end
-
-    # The slot behind `param.class_eval(&@ivar)`, when `method` only FORWARDS to
-    # the replay. One hop, not a chain: each additional link is another place a
-    # runtime value could be substituted for the constant we resolved, and this
-    # pass has no way to tell that it wasn't.
-    # Every forward the method writes is asked, and the ones leading nowhere
-    # simply answer nothing: `include` hands the argument to `append_features`
-    # as well, and that method keeps no block, so it contributes no slot. The
-    # count that decides ambiguity is therefore the number of forwards that
-    # reach a REPLAY, not the number written — a DSL applier is free to send its
-    # argument other messages on the way (felixefelip/rbs_infer#259).
-    def inward_slot(owner, method, source_provider)
-      slots = keepers_for(owner, method, source_provider).filter_map do |keeper_owner, keeper_method|
-        replays = @inward_replays.select { |replay| replay.owner == keeper_owner && replay.method == keeper_method }
-        [keeper_owner, replays.first.ivar, replays.first.singleton] if replays.size == 1
-      end.uniq
-
-      slots.first if slots.size == 1
-    end
-
-    # The replays reached from `owner#method` that carry their own block. Same
-    # walk as `inward_slot` — every forward, resolved through the ARGUMENT's
-    # provider — differing only in what the keeper turns out to hold.
-    def literal_replays_for(owner, method, source_provider)
-      keepers_for(owner, method, source_provider).filter_map do |keeper_owner, keeper_method|
-        replays = @literal_replays.select { |replay| replay.owner == keeper_owner && replay.method == keeper_method }
-        replays.first if replays.size == 1
-      end.uniq
-    end
-
-    # The methods `owner#method` forwards its argument to, as
-    # `[[owner, method]]`.
-    #
-    # The callee runs on the ARGUMENT, so it is the argument's provider that has
-    # to supply it — reading it off the forward's own owner only works while one
-    # module happens to hold both halves of the DSL. Every forward is asked and
-    # the ones leading nowhere answer nothing: `include` hands the argument to
-    # `included` as well, and a DSL is free to send its argument other messages
-    # on the way (felixefelip/rbs_infer#259).
-    def keepers_for(owner, method, source_provider)
-      @forwards.filter_map do |forward|
-        next unless forward.owner == owner && forward.method == method
-
-        keeper_owner, keeper_method = keeper(source_provider, forward.callee)
-        [keeper_owner, keeper_method] if keeper_owner
-      end.uniq
-    end
-
-    # Where `owner#method` actually keeps things. Usually `owner` itself; one
-    # owner further along when the method delegates, because then it holds
-    # nothing and the block ends up on the object it hands the call to.
-    #
-    # One hop, for the same reason `inward_slot` takes one: each further link is
-    # another place a runtime value could stand in for the constant we resolved.
-    # Two delegations under one name answer nothing decidable.
-    def keeper(owner, method)
-      delegations = @resolved_delegations.select { |it| it.owner == owner && it.method == method }
-      return [owner, method] if delegations.empty?
-      return [nil, nil] unless delegations.size == 1
-
-      [delegations.first.target, delegations.first.callee]
-    end
-
-    # The one method in `storage_owner` that fills `ivar`, reported under the
-    # name a subject of `provider` writes to reach it — the other half of the
-    # join, since that name is what the source's block was written under.
-    # Exactly one, and it must fill exactly that one slot: a method storing into
-    # two ivars cannot say which block a later replay is asking for.
-    def storage_method_for(provider, storage_owner, ivar)
-      entries = @storages.group_by { |storage| [storage.owner, storage.method] }.select do |(owner, _), storages|
-        owner == storage_owner && storages.size == 1 && storages.first.ivar == ivar
-      end
-      return nil unless entries.size == 1
-
-      names = written_names(provider, storage_owner, entries.keys.first.last)
-      names.first if names.size == 1
-    end
-
-    # What a subject extending `provider` writes to reach `storage_owner#method`.
-    # The keeper's own name when the provider IS the keeper; the delegating
-    # method's name when it is not. Reading the keeper's name in both cases only
-    # works while the two happen to be spelled alike — rename the held object's
-    # method and nothing about the program changes, so nothing about the answer
-    # may either.
-    def written_names(provider, storage_owner, storage_method)
-      names = []
-      names << storage_method if provider == storage_owner
-
-      @resolved_delegations.each do |delegation|
-        next unless delegation.owner == provider
-        next unless delegation.target == storage_owner && delegation.callee == storage_method
-
-        names << delegation.method
-      end
-
-      names.uniq
     end
 
     def resolve_delegations
