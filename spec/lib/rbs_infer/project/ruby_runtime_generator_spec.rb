@@ -9,11 +9,13 @@ require "fileutils"
 RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
   def build_in(dir) = described_class.new(app_dir: dir).build
 
+  def source_of(dir, filename) = build_in(dir).find { |f| f.filename == filename }.source
+
   it "emits `Module#include`, with the calls it makes inside it" do
     Dir.mktmpdir do |dir|
       files = build_in(dir)
 
-      expect(files.map(&:filename)).to eq(["module.rb"])
+      expect(files.map(&:filename)).to eq(["module.rb", "object.rb"])
       expect(files.first.source).to include(
         "class Module\n",
         "  def include(*modules)\n",
@@ -66,6 +68,112 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
 
         expect(source).to match(/# @rbs_infer \|\.\.\.\n\s+def append_features\(/)
         expect(source).to match(/# @rbs_infer \|\.\.\.\n\s+def included\(/)
+      end
+    end
+  end
+
+  # The pair `extend` reaches, and they are on `Module` for the same reason the
+  # `include` pair is — measured: `Module.instance_method(:extended).owner` is
+  # `Module`, and both are private there.
+  describe "the methods `extend` calls" do
+    it "emits both, under the same `private`" do
+      Dir.mktmpdir do |dir|
+        source = source_of(dir, "module.rb")
+
+        expect(source).to include("  def extend_object(obj)\n", "  def extended(base)\n")
+        expect(source.index("  private\n")).to be < source.index("  def extend_object(obj)\n")
+      end
+    end
+
+    # `rb_mod_extend_object` returns the OBJECT; `rb_mod_append_features` returns the
+    # MODULE. Writing the same answer in both would erase the one difference the two
+    # splices have that is expressible here.
+    it "answers with the object, where append_features answers with the module" do
+      Dir.mktmpdir do |dir|
+        source = source_of(dir, "module.rb")
+
+        expect(source).to match(/def extend_object\(obj\)(?:\n\s*#.*)*\n\s+obj\n\s+end/)
+      end
+    end
+
+    # `rb_obj_dummy1` again: one argument, returns nil.
+    it "leaves extended the no-op it is on Module" do
+      Dir.mktmpdir do |dir|
+        expect(source_of(dir, "module.rb")).to match(/def extended\(base\)\n\s+nil\n\s+end/)
+      end
+    end
+
+    it "marks both as overloading" do
+      Dir.mktmpdir do |dir|
+        source = source_of(dir, "module.rb")
+
+        expect(source).to match(/# @rbs_infer \|\.\.\.\n\s+def extend_object\(/)
+        expect(source).to match(/# @rbs_infer \|\.\.\.\n\s+def extended\(/)
+      end
+    end
+  end
+
+  # `rb_obj_extend` in object.c, and the file it lands in is the decision this makes.
+  describe "`extend`, in object.rb" do
+    # `extend` is `Kernel#extend` (measured: `Object.instance_method(:extend).owner`).
+    # It is written on `Object` because what reads this file walks the SUPERCLASS chain,
+    # which no module is on — a `module Kernel` reopening would be a provider nothing
+    # can reach.
+    it "reopens Object rather than Kernel" do
+      Dir.mktmpdir do |dir|
+        source = source_of(dir, "object.rb")
+
+        expect(source).to include("class Object\n")
+        expect(source).not_to include("module Kernel")
+      end
+    end
+
+    # `while (argc--)` again, and the two calls it makes are what this whole file is
+    # for: `extend Deferring` is the only thing that says `Deferring.extended(self)` ran.
+    it "runs extend_object then extended, backwards, through send" do
+      Dir.mktmpdir do |dir|
+        source = source_of(dir, "object.rb")
+
+        expect(source).to include(
+          "    modules.reverse_each do |mod|\n" \
+          "      mod.send(:extend_object, self)\n" \
+          "      mod.send(:extended, self)\n" \
+          "    end\n"
+        )
+        expect(source).not_to include("mod.extended(self)")
+      end
+    end
+
+    # `for (i = 0; i < argc; i++) Check_Type(argv[i], T_MODULE)` runs over EVERY argument
+    # before the hook loop starts. `include` has no such pass — its check lives inside
+    # `append_features`, so `include Foo, 1` can already have notified `Foo`. Writing the
+    # check inside the backwards loop would describe `include`, not `extend`.
+    it "type-checks every argument before any hook runs" do
+      Dir.mktmpdir do |dir|
+        source = source_of(dir, "object.rb")
+
+        expect(source).to include("raise TypeError")
+        expect(source.index("modules.each")).to be < source.index("modules.reverse_each")
+      end
+    end
+
+    # `rb_check_arity(argc, 1, UNLIMITED_ARGUMENTS)`, and `return obj` — `extend` answers
+    # with the receiver, which is what makes `obj.extend(M).foo` resolve.
+    it "requires an argument and answers with the receiver" do
+      Dir.mktmpdir do |dir|
+        source = source_of(dir, "object.rb")
+
+        expect(source).to include("raise ArgumentError")
+        expect(source).to match(/    self\n  end\nend\n\z/)
+      end
+    end
+
+    # Core declares `extend` on `Kernel`, and `Object` includes it — so a plain `def`
+    # here would REPLACE that declaration for every object in the program rather than
+    # add to it. The marker (#200) is what makes it an overload.
+    it "marks the def as overloading" do
+      Dir.mktmpdir do |dir|
+        expect(source_of(dir, "object.rb")).to match(/# @rbs_infer \|\.\.\.\n\s+def extend\(/)
       end
     end
   end
@@ -137,7 +245,7 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
 
         described_class.new(app_dir: dir).generate
 
-        expect(Dir.children(sidecar)).to eq(["module.rb"])
+        expect(Dir.children(sidecar).sort).to eq(["module.rb", "object.rb"])
       end
     end
   end
