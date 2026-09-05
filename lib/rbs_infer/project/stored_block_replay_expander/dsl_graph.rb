@@ -15,9 +15,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # settles, so two candidates answer nothing rather than pick. Every `size == 1`
   # below is that rule.
   #
-  # Built from the shapes rather than reaching for them, and built LATE — once
-  # the delegations are resolved, since `keeper` reads them and a raw delegation
-  # names a constant that may not have resolved yet.
+  # Built from the shapes rather than reaching for them, and built once the
+  # delegations are RESOLVED: `keeper` reads them, and a raw delegation names a
+  # constant that may not have resolved yet. `Collector#resolve_shapes` is what
+  # guarantees that ordering — it is the last step of collecting, and the
+  # resolution this graph belongs to does not start until it has run.
   #
   # `dsl_providers` deliberately did NOT come along, though it is the other half
   # of "which DSL answers this call": it reads the file's declarations, extends
