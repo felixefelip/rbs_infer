@@ -19,7 +19,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   class Collector < Prism::Visitor
     # The structs this pass collects, and the two core-ancestor tables it reads
     # them against. Declarations rather than behaviour, so they are declared
-    # somewhere else (felixefelip/rbs_infer#305).
+    # somewhere else (felixefelip/rbs_infer#304).
     include Shapes
 
     # `sources` is required, and `ConstantSources::NONE` is the way to say "no

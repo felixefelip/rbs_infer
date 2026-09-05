@@ -20,7 +20,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # Split from `Collector` along the line between FINDING and KEEPING: which
   # file to open next, in what order, and once each, is this class; where the
   # shapes it hands back are stored is the collector's own business and stays
-  # there (felixefelip/rbs_infer#305). The derivation is a block for the same
+  # there (felixefelip/rbs_infer#304). The derivation is a block for the same
   # reason — the walk never learns what a shape collector is, so nothing here
   # knows how a file is read.
   class Corpus

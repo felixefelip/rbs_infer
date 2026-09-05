@@ -8,7 +8,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # finally reaches either holds a block in a slot or runs one where it stands.
   # Following that is a graph walk over the collected shapes — forwards to
   # keepers, keepers to slots, slots to the storage method that fills them —
-  # and it is the whole content of this class (felixefelip/rbs_infer#305).
+  # and it is the whole content of this class (felixefelip/rbs_infer#304).
   #
   # Declining is how it answers an ambiguity, everywhere and for one reason:
   # which method a runtime dispatch reaches is not a question the source
