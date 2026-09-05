@@ -33,7 +33,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @method_depth = 0
       # Everything this file declares and what follows from it: the scope walk,
       # the kinds, the extends, the superclasses, and the provider table they
-      # add up to (felixefelip/rbs_infer#306).
+      # add up to (felixefelip/rbs_infer#305).
       @names = Declarations.new
       @storages = []
       @readers = []

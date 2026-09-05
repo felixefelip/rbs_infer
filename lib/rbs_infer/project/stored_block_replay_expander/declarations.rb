@@ -10,7 +10,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   #
   # It is written by the lexical walk and read by every later phase, which is why
   # it was eight instance variables spread across a class that also collects
-  # shapes and resolves replays (felixefelip/rbs_infer#306). Gathered here they
+  # shapes and resolves replays (felixefelip/rbs_infer#305). Gathered here they
   # answer one question each, under names that say what is being asked:
   # `resolve` is a constant lookup, `kind_of` is "class or module", `providers`
   # is the mixin relation.
