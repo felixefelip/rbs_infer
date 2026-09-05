@@ -38,7 +38,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # add up to (felixefelip/rbs_infer#305).
       @names = Declarations.new
       # What this file was read as writing, and what another file's reading is
-      # merged into (felixefelip/rbs_infer#307).
+      # merged into (felixefelip/rbs_infer#306).
       @shapes = ShapeSet.new
       # Raw like `@delegations`: reading a deferral needs the `attr_reader`s,
       # which are collected in a second lexical walk once every declaration is
@@ -78,7 +78,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # The last step of COLLECTING rather than the first of resolving, which is
     # why it sits here and not in `Resolution`: `collect_shapes` does the same
     # four for a file read on another's behalf, where no resolution ever runs
-    # (felixefelip/rbs_infer#307).
+    # (felixefelip/rbs_infer#306).
     def resolve_shapes
       collect_readers_from_source
 
@@ -115,7 +115,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     protected
 
     # One reader where there were fourteen: what this file said, for the
-    # collector absorbing it (felixefelip/rbs_infer#307).
+    # collector absorbing it (felixefelip/rbs_infer#306).
     attr_reader :shapes, :providers
 
     # What an ABSORBING collector reads off this one, answered by the

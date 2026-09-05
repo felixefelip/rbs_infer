@@ -8,7 +8,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # into them, and the resolution reads them. That boundary already existed —
   # it was a `protected attr_reader` listing them one by one and an `absorb`
   # concatenating them one by one — and this is the same interface with a name
-  # (felixefelip/rbs_infer#307).
+  # (felixefelip/rbs_infer#306).
   #
   # Two of them carry a BLOCK — `literal_replays` and `stored_calls` — and they
   # can cross a file boundary only because each entry carries the source it was

@@ -12,7 +12,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # reader and an `absorb`. This is that boundary made into an object: a
   # `ShapeSet` and a `Declarations` in, replays and extensions out, and no way
   # to reach back into the walk that produced them
-  # (felixefelip/rbs_infer#307).
+  # (felixefelip/rbs_infer#306).
   #
   # It answers TWO things from one traversal, and they are separate on purpose:
   # a block relocated onto a target, and an `extend` put on that same target.
