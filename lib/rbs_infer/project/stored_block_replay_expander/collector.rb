@@ -5,6 +5,9 @@ require "set"
 require_relative "../../ast/constant_reference"
 require_relative "../../inference/send_call"
 require_relative "../constant_sources"
+require_relative "node_reading"
+require_relative "shape_reader"
+require_relative "deferral_reader"
 
 module RbsInfer::Project::StoredBlockReplayExpander
   # Collects declarations and class-body calls in one lexical pass. It keeps
@@ -51,11 +54,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
     CORE_SELF_CHAINS = { "class" => self_chain(Class), "module" => self_chain(Module) }.freeze
 
     CORE_REOPENS = CORE_SELF_CHAINS.values.flatten.uniq.freeze
-
-    # What `singleton_class_of` answers for a call written on no receiver at
-    # all. A `Symbol` rather than a fabricated node: nothing reads it back as
-    # syntax, only compares it.
-    IMPLICIT_RECEIVER = :self
 
     Storage = Data.define(:owner, :method, :ivar)
 
@@ -406,19 +404,19 @@ module RbsInfer::Project::StoredBlockReplayExpander
       block_name = params&.block&.name&.to_s
       method_name = node.name.to_s
 
-      if block_name && (ivar = stored_block_ivar(node.body, block_name))
+      if block_name && (ivar = ShapeReader.stored_block_ivar(node.body, block_name))
         @storages << Storage.new(owner: owner, method: method_name, ivar: ivar)
       end
 
-      if (replay = replay_shape(node.body))
+      if (replay = ShapeReader.replay_shape(node.body))
         parameter, reader, singleton = replay
         @replay_methods << ReplayMethod.new(owner: owner, method: method_name, parameter: parameter, reader: reader,
                                             singleton: singleton)
       end
 
-      parameters = handed_names(node.body, parameter_names(params))
+      parameters = NodeReading.handed_names(node.body, NodeReading.parameter_names(params))
 
-      if (inward = inward_replay_shape(node.body, parameters))
+      if (inward = ShapeReader.inward_replay_shape(node.body, parameters))
         parameter, ivar, singleton = inward
         @inward_replays << InwardReplay.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar,
                                             singleton: singleton)
@@ -428,31 +426,31 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # through an `attr_reader`, and no reader is known until the second walk.
       @deferral_shapes << [owner, method_name, node.body, parameters]
 
-      slot_init_shapes(node.body, parameters).each do |parameter, ivar|
+      ShapeReader.slot_init_shapes(node.body, parameters).each do |parameter, ivar|
         @slot_inits << SlotInit.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar)
       end
 
-      if (own = own_block_replay_shape(node.body, block_name))
+      if (own = ShapeReader.own_block_replay_shape(node.body, block_name))
         name, dynamic, creates, singleton = own
         @own_replays << [owner, method_name, name, dynamic, creates, singleton]
       end
 
-      inward_extend_shapes(node.body, parameters).each do |parameter, name, dynamic, creates|
+      ShapeReader.inward_extend_shapes(node.body, parameters).each do |parameter, name, dynamic, creates|
         @inward_extends << [owner, method_name, parameter, name, dynamic, creates]
       end
 
-      if (literal = literal_replay_shape(node.body, parameters))
+      if (literal = ShapeReader.literal_replay_shape(node.body, parameters))
         call, block, singleton = literal
         @literal_replays << LiteralReplay.new(owner: owner, method: method_name, scope: current_scope,
                                               call: call, block: block, source: @source, singleton: singleton)
       end
 
-      if (delegation = delegation_shape(node))
+      if (delegation = ShapeReader.delegation_shape(node))
         target, callee = delegation
         @delegations << [owner, method_name, target, callee]
       end
 
-      forward_shapes(node.body, parameters).each do |parameter, callee|
+      ShapeReader.forward_shapes(node.body, parameters).each do |parameter, callee|
         @forwards << ForwardMethod.new(owner: owner, method: method_name, parameter: parameter, callee: callee)
       end
     end
@@ -482,763 +480,16 @@ module RbsInfer::Project::StoredBlockReplayExpander
       "singleton(#{name})"
     end
 
-    # The names a `def` or a block binds its arguments to. One reader for both:
-    # `BlockParametersNode#parameters` IS a `ParametersNode`, so "what does this
-    # bind" has one answer regardless of which construct asked.
-    #
-    # A destructuring target (`|(a, b)|`) is a `MultiTargetNode` and carries no
-    # `name`, so it is skipped — the same way a method's would be.
-    def parameter_names(params)
-      return Set.new unless params.is_a?(Prism::ParametersNode)
-
-      names = params.requireds + params.optionals + params.posts + params.keywords
-      names = names.filter_map { |param| param.name.to_s if param.respond_to?(:name) && param.name }
-      names << params.rest.name.to_s if params.rest.respond_to?(:name) && params.rest&.name
-      Set.new(names)
-    end
-
-    # Every name the method can be HANDED an object under. A replay against
-    # arbitrary state is what this pass declines to guess about, so the shapes
-    # below require their receiver to be one of these rather than any local that
-    # happens to be in scope.
-    #
-    # That is the method's parameters, and also the parameters of a block passed
-    # to a call ON one of those names. The question the restriction asks is
-    # about PROVENANCE — "did this object reach us from the caller, or did we
-    # fetch it from somewhere else in the program" — and a value yielded by a
-    # method of a handed object answers it the same way the parameter does.
-    # `mod` in `modules.reverse_each { |mod| mod.apply(self) }` is as much
-    # something we were handed as `modules` is; restricting the receiver to a
-    # parameter NAME missed that, so a DSL forwarding to each of several modules
-    # resolved nothing (felixefelip/rbs_infer#253).
-    #
-    # Deliberately NOT a list of iteration methods. Which of the yielded values
-    # is "the element" is a question about the receiver's type, which this
-    # source-only pass cannot answer and — since the forward's parameter name is
-    # never read again, only its callee — does not need to: `Enumerable#inject`
-    # yields the memo first and `each_with_index` an index second, so any
-    # first-parameter rule would be wrong for one of them while the provenance
-    # claim holds for both.
-    #
-    # Iterated to a fixed point because the relation is transitive — a nested
-    # iteration still yields values that came from the caller — terminating
-    # because a body binds finitely many names and the set only grows.
-    def handed_names(body, parameters)
-      names = parameters.dup
-
-      loop do
-        grown = false
-        nodes(body).each do |node|
-          next unless node.is_a?(Prism::CallNode)
-          receiver = node.receiver
-          next unless receiver.is_a?(Prism::LocalVariableReadNode) && names.include?(receiver.name.to_s)
-          next unless node.block.is_a?(Prism::BlockNode)
-
-          bound = node.block.parameters
-          next unless bound.is_a?(Prism::BlockParametersNode)
-
-          parameter_names(bound.parameters).each { |name| grown = true if names.add?(name) }
-        end
-        break unless grown
-      end
-
-      names
-    end
-
-    # The call a node stands for, reading `x.send(:foo, a)` as the `x.foo(a)`
-    # it is. `Inference::SendCall` is the one place that knows that spelling
-    # (felixefelip/rbs_infer#205) and it answers with a real `Prism::CallNode`,
-    # so every matcher below reads `name`, `arguments`, `receiver` and `block`
-    # off it exactly as it read them off the original.
-    #
-    # Reading `node.name` directly answered `send` and left the real callee
-    # sitting in the argument list, so every shape below missed the spelling —
-    # which is the spelling a caller reaches for when the method is private,
-    # and the one the generated `Module#include` pseudo-code writes
-    # (`mod.send(:included, self)`), for exactly that reason
-    # (felixefelip/rbs_infer#255).
-    #
-    # `desugar` answers nil for a COMPUTED name, and falling back to the node
-    # itself is what declines it: the matchers then see `send` with the name
-    # still in the argument list and no shape fits. Which method a computed
-    # dispatch runs is a runtime answer, and this pass does not guess.
-    def dispatched(node)
-      RbsInfer::Inference::SendCall.desugar(node) || node
-    end
-
-    def stored_block_ivar(body, block_name)
-      nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::InstanceVariableWriteNode)
-        next unless node.value.is_a?(Prism::LocalVariableReadNode)
-        next unless node.value.name.to_s == block_name
-
-        node.name.to_s
-      end.uniq.then { |ivars| ivars.first if ivars.size == 1 }
-    end
-
-    # `class_eval(&parameter.reader)` / `module_eval(&parameter.reader)`.
-    # The receiver is deliberately limited to the method parameter: a replay
-    # against arbitrary state needs a type/data-flow answer this source-only
-    # pass does not have and must decline rather than guess.
-    def replay_shape(body)
-      shapes = nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::CallNode)
-        call = dispatched(node)
-        next unless REPLAY_METHODS.include?(call.name)
-        pass = call.block
-        next unless pass.is_a?(Prism::BlockArgumentNode)
-        next unless pass.expression.is_a?(Prism::CallNode)
-        reader = dispatched(pass.expression)
-        next unless (reader.arguments&.arguments || []).empty?
-        next unless reader.receiver.is_a?(Prism::LocalVariableReadNode)
-
-        next unless (own = own_receiver(call.receiver))
-
-        [reader.receiver.name.to_s, reader.name.to_s, own == :singleton]
-      end.uniq
-      shapes.first if shapes.size == 1
-    end
-
-    # Which object a replay runs ON, as `[parameter name, singleton?]`, or nil
-    # when the receiver is not one this pass will move a block onto.
-    #
-    # `base.class_eval` and `base.singleton_class.class_eval` are the same
-    # relocation asked about two different method tables — `base`'s own, and
-    # `base`'s singleton — which is exactly the difference between a DSL
-    # spelling `included do` and one spelling `class_methods do`. Reading only
-    # the bare parameter made the second one no shape at all, so a `def` a human
-    # can see landing on the class object was left in the module that wrote it
-    # (felixefelip/rbs_infer#267).
-    #
-    # The parameter restriction is unchanged and is the whole conservatism here:
-    # `singleton_class` is a hop to a DIFFERENT OBJECT, and taking it is only
-    # safe because that object is decided by the one we were handed. An
-    # arbitrary receiver still declines, singleton or not.
-    def replayed_on(receiver, parameters)
-      return nil unless receiver
-
-      if (inner = singleton_class_of(receiver))
-        return nil unless inner.is_a?(Prism::LocalVariableReadNode) && parameters.include?(inner.name.to_s)
-
-        return [inner.name.to_s, true]
-      end
-
-      return nil unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
-
-      [receiver.name.to_s, false]
-    end
-
-    # The same question for the outward direction, where the replay runs on the
-    # DSL's own `self` rather than on something handed to it — `:instance` for
-    # `class_eval`, `:singleton` for `singleton_class.class_eval`, nil for a
-    # receiver that is neither.
-    #
-    # The receiver used to go unread here, which happened to be harmless while
-    # every shape it could take meant the same thing. It no longer does: the
-    # rewrite emits a reopening of the SUBJECT — the class whose body wrote the
-    # apply call — so a replay written on anything else (`Other.class_eval`) is
-    # a block running on a class this pass never resolved, and naming the
-    # subject would be an answer about the wrong one.
-    def own_receiver(receiver)
-      return :instance if receiver.nil? || receiver.is_a?(Prism::SelfNode)
-      return :singleton if singleton_class_of(receiver) == IMPLICIT_RECEIVER
-
-      nil
-    end
-
-    # The receiver of a `singleton_class` call — the node it is written on,
-    # `IMPLICIT_RECEIVER` when it is written on none, or nil when the node is
-    # not a `singleton_class` call at all. Three answers rather than two,
-    # because "no receiver" is a receiver here: it names the DSL's own `self`.
-    #
-    # No arguments, because `singleton_class` takes none: a same-named method
-    # that does is somebody else's, and it says nothing about a method table.
-    def singleton_class_of(node)
-      return nil unless node.is_a?(Prism::CallNode)
-
-      call = dispatched(node)
-      return nil unless call.name == :singleton_class
-      return nil unless (call.arguments&.arguments || []).empty?
-
-      receiver = call.receiver
-      return IMPLICIT_RECEIVER if receiver.nil? || receiver.is_a?(Prism::SelfNode)
-
-      receiver
-    end
-
-    # `<parameter>.class_eval(&@ivar)` — the target is the parameter and the
-    # block is the method's own state. Same conservatism as `replay_shape` and
-    # for the same reason, only about the other half: there the RECEIVER is
-    # `self` and the parameter must be the one carrying the block; here the
-    # parameter is the receiver and the block must come off `self`.
-    #
-    # `if @ivar` guards and `unless base.nil?` branches are irrelevant to the
-    # shape — the whole body is scanned, exactly as `replay_shape` scans it.
-    # They are NOT irrelevant to where the block lands, and that is a separate
-    # question with a separate reader: see `deferral_shape`.
-    def inward_replay_shape(body, parameters)
-      shapes = nodes(body).filter_map { |node| inward_replay_at(node, parameters) }.uniq
-      shapes.first if shapes.size == 1
-    end
-
-    # The one node above, read on its own so the branch-aware pass can ask the
-    # same question of a node whose PATH it is holding.
-    def inward_replay_at(node, parameters)
-      return nil unless node.is_a?(Prism::CallNode)
-
-      call = dispatched(node)
-      return nil unless REPLAY_METHODS.include?(call.name)
-
-      target, singleton = replayed_on(call.receiver, parameters)
-      return nil unless target
-
-      pass = call.block
-      return nil unless pass.is_a?(Prism::BlockArgumentNode)
-
-      ivar = pass.expression
-      return nil unless ivar.is_a?(Prism::InstanceVariableReadNode)
-
-      [target, ivar.name.to_s, singleton]
-    end
-
-    # The deferral this method writes, as `[parameter, slot, recall]`, or nil
-    # when it always replays where it stands (felixefelip/rbs_infer#300).
-    #
-    # Three nodes, and the branches they sit on:
-    #
-    #   * a REGISTRATION — `self` handed into the target's `@slot`;
-    #   * a REPLAY — `class_eval` on the target — on the branch the
-    #     registration excludes, because a method that does both did neither
-    #     conditionally and its target is final;
-    #   * a DRAIN — the module's own `@slot` emptied back onto the target — on
-    #     the replay's side, since it is what makes the registration a hop
-    #     rather than a dead end.
-    #
-    # The slot joins the first and the third: `self` goes into the target's copy
-    # and comes back out of ours, which is one collection seen from its two
-    # ends. Without the drain a registered module would simply never run, and
-    # the honest answer would be to emit nothing rather than to move the block
-    # to a host.
-    #
-    # One answer or none. Two deferrals in one method is a method this pass
-    # cannot say which way it went, and it declines rather than pick.
-    def deferral_shape(body, parameters)
-      return nil unless body
-
-      branched = branched_nodes(body)
-      aliases = local_aliases(body)
-      replays = branched.filter_map do |node, path|
-        target = inward_replay_at(node, parameters)&.first
-        [target, path] if target
-      end
-      drains = branched.filter_map do |node, path|
-        drain = drain_shape(node, parameters)
-        [drain, path] if drain
-      end
-
-      found = branched.filter_map do |node, path|
-        registered = registration_slot(node, parameters, aliases)
-        next unless registered
-
-        deferral_through(registered, path, replays, drains)
-      end.uniq
-
-      found.first if found.size == 1
-    end
-
-    # The `[parameter, slot, recall]` one registration stands for, or nil when
-    # no replay and drain answer it.
-    def deferral_through(registered, path, replays, drains)
-      parameter, slot = registered
-      replayed = replays.select { |target, replay_path| target == parameter && exclusive?(path, replay_path) }
-      return nil if replayed.empty?
-
-      recalls = drains.filter_map do |(drain_parameter, drain_slot, recall), drain_path|
-        next unless drain_parameter == parameter && drain_slot == slot
-        next unless exclusive?(path, drain_path)
-        next unless replayed.any? { |_, replay_path| !exclusive?(drain_path, replay_path) }
-
-        recall
-      end.uniq
-      return nil unless recalls.size == 1
-
-      [parameter, slot, recalls.first]
-    end
-
-    # `<target's slot> << self` / `.push(self)` / `<target>.instance_variable_set(:@x, … self …)`
-    # — `self` coming to rest in state the TARGET owns, as `[parameter, slot]`.
-    #
-    # The message is not read, and that is the point: `<<`, `push` and `add`
-    # are one operation spelled three ways, and a pass that names one of them is
-    # matching activesupport rather than reading Ruby (felixefelip/rbs_infer#300).
-    # What is read is where the value lands — an ivar of the object we were
-    # handed — because that is what makes the target able to replay it later.
-    def registration_slot(node, parameters, aliases)
-      return nil unless node.is_a?(Prism::CallNode)
-
-      call = dispatched(node)
-      arguments = call.arguments&.arguments || []
-      return nil unless arguments.any? { |argument| mentions_self?(argument) }
-
-      if call.name == :instance_variable_set
-        parameter = parameter_name(call.receiver, parameters)
-        ivar = symbol_name(arguments.first)
-        return [parameter, ivar] if parameter && ivar
-
-        return nil
-      end
-
-      target_slot(call.receiver, parameters, aliases)
-    end
-
-    # The slot a receiver names on the target, as `[parameter, ivar]`.
-    #
-    # `base.instance_variable_get(:@x)` names it outright; `base.deps` names it
-    # through an `attr_reader`, which is the same slot reached the way a module
-    # would let anyone else at it. One local hop is followed, so a DSL that
-    # parks the collection in a variable before pushing to it says the same
-    # thing as one that does not.
-    def target_slot(node, parameters, aliases)
-      node = aliases[node.name.to_s] if node.is_a?(Prism::LocalVariableReadNode) && aliases.key?(node.name.to_s)
-      return nil unless node.is_a?(Prism::CallNode)
-
-      call = dispatched(node)
-      parameter = parameter_name(call.receiver, parameters)
-      return nil unless parameter
-
-      ivar = if call.name == :instance_variable_get
-               symbol_name((call.arguments&.arguments || []).first)
-             else
-               reader_ivar(call.name.to_s)
-             end
-      [parameter, ivar] if ivar
-    end
-
-    # `@slot.each { |dep| <target>.include(dep) }` — the registrations coming
-    # back out, as `[parameter, slot, recall]`.
-    #
-    # Neither the iteration nor the message is named. Which method walks the
-    # collection is the collection's business, and what the DSL re-sends is the
-    # DSL's — `recall` is carried rather than assumed precisely so the
-    # re-application is resolved as the call site the source writes. What is
-    # required is the shape that makes it a hop: each element of OUR slot handed
-    # to the target.
-    def drain_shape(node, parameters)
-      return nil unless node.is_a?(Prism::CallNode)
-
-      block = node.block
-      return nil unless block.is_a?(Prism::BlockNode)
-
-      slot = own_slot(node.receiver)
-      return nil unless slot
-
-      bound = block.parameters
-      return nil unless bound.is_a?(Prism::BlockParametersNode)
-
-      element = parameter_names(bound.parameters).to_a
-      return nil unless element.size == 1
-
-      recalls = nodes(block.body).filter_map { |inner| recall_at(inner, parameters, element.first) }.uniq
-      return nil unless recalls.size == 1
-
-      parameter, recall = recalls.first
-      [parameter, slot, recall]
-    end
-
-    # `<target>.include(dep)` inside a drain — the target it re-applies to and
-    # the message it re-applies with.
-    def recall_at(node, parameters, element)
-      return nil unless node.is_a?(Prism::CallNode)
-
-      call = dispatched(node)
-      parameter = parameter_name(call.receiver, parameters)
-      return nil unless parameter
-
-      arguments = call.arguments&.arguments || []
-      return nil unless arguments.any? { |argument| local_read?(argument, element) }
-
-      [parameter, call.name.to_s]
-    end
-
-    # The ivar a receiver names on the DSL's OWN self — written as the ivar, or
-    # reached through a reader, which are the same slot.
-    def own_slot(node)
-      return nil unless node
-      return node.name.to_s if node.is_a?(Prism::InstanceVariableReadNode)
-      return nil unless node.is_a?(Prism::CallNode)
-
-      call = dispatched(node)
-      return nil unless call.receiver.nil? || call.receiver.is_a?(Prism::SelfNode)
-      return nil unless (call.arguments&.arguments || []).empty?
-
-      reader_ivar(call.name.to_s)
-    end
-
-    # `<parameter>.instance_variable_set(:@x, …)`, as `[parameter, ivar]` — what
-    # a DSL runs on the objects it is handed, and so what says which objects
-    # hold `@x`.
-    def slot_init_shapes(body, parameters)
-      nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::CallNode)
-
-        call = dispatched(node)
-        next unless call.name == :instance_variable_set
-
-        parameter = parameter_name(call.receiver, parameters)
-        next unless parameter
-
-        ivar = symbol_name((call.arguments&.arguments || []).first)
-        [parameter, ivar] if ivar
-      end.uniq
-    end
-
-    # Every node in `root`, paired with the branch path it sits on — one
-    # `[predicate, taken]` per conditional enclosing it.
-    #
-    # The predicate NODE is the key, not what it says: nothing here evaluates a
-    # condition, and it does not have to. Two nodes under the same `if` with
-    # opposite answers cannot both run, whatever the condition is — which is the
-    # whole question a deferral asks.
-    def branched_nodes(root, path = [])
-      return [] unless root
-
-      case root
-      when Prism::IfNode
-        branched_nodes(root.predicate, path) +
-          branched_nodes(root.statements, path + [[root.predicate, true]]) +
-          branched_nodes(root.subsequent, path + [[root.predicate, false]])
-      when Prism::UnlessNode
-        branched_nodes(root.predicate, path) +
-          branched_nodes(root.statements, path + [[root.predicate, false]]) +
-          branched_nodes(root.else_clause, path + [[root.predicate, true]])
-      else
-        [[root, path]] + root.compact_child_nodes.flat_map { |child| branched_nodes(child, path) }
-      end
-    end
-
-    # Whether two paths cannot both be taken — one conditional answered both
-    # ways is enough, and is what an `if`/`else` pair is.
-    def exclusive?(one, other)
-      one.any? do |predicate, taken|
-        other.any? { |other_predicate, other_taken| other_predicate.equal?(predicate) && other_taken != taken }
-      end
-    end
-
-    # The single assignment behind each local in `body`, so a slot parked in a
-    # variable reads as the slot. Only single ones: a name written twice names
-    # two values, and which one a later read sees is not a question a source
-    # walk answers.
-    def local_aliases(body)
-      writes = nodes(body).select { |node| node.is_a?(Prism::LocalVariableWriteNode) }
-      writes.group_by { |node| node.name.to_s }.filter_map do |name, group|
-        [name, group.first.value] if group.size == 1
-      end.to_h
-    end
-
-    # The ivar an `attr_reader` of that name reaches, when exactly one does.
-    def reader_ivar(name)
-      ivars = @readers.select { |_, reader_name, _| reader_name == name }.map(&:last).uniq
-      ivars.first if ivars.size == 1
-    end
-
-    def parameter_name(node, parameters)
-      node.name.to_s if node.is_a?(Prism::LocalVariableReadNode) && parameters.include?(node.name.to_s)
-    end
-
-    def local_read?(node, name)
-      node.is_a?(Prism::LocalVariableReadNode) && node.name.to_s == name
-    end
-
-    def symbol_name(node)
-      node.unescaped.to_s if node.is_a?(Prism::SymbolNode)
-    end
-
-    # Whether `self` is anywhere in the value being handed over. `base.deps <<
-    # self` and `base.instance_variable_set(:@x, base.deps + [self])` register
-    # the same module, and only one of them writes `self` at the top.
-    def mentions_self?(node)
-      nodes(node).any? { |inner| inner.is_a?(Prism::SelfNode) }
-    end
-
-    # `<parameter>.class_eval do … end` — the inward replay with the block
-    # written in place rather than fetched from a slot. Same receiver rule as
-    # `inward_replay_shape` and for the same reason; what differs is only where
-    # the block comes from, so what it answers is the block itself.
-    def literal_replay_shape(body, parameters)
-      shapes = nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::CallNode)
-        call = dispatched(node)
-        next unless REPLAY_METHODS.include?(call.name)
-        target, singleton = replayed_on(call.receiver, parameters)
-        next unless target
-        block = call.block
-        next unless block.is_a?(Prism::BlockNode)
-
-        [call.name.to_s, block, singleton]
-      end
-      shapes.first if shapes.size == 1
-    end
-
-    # `<target>.class_eval(&block)` where `block` is the METHOD'S OWN parameter,
-    # as `[name, dynamic?, singleton?]`.
-    #
-    # The mirror of `replay_shape`: there the receiver is the DSL's own `self`
-    # and the block is fetched from the source object, here the block is the one
-    # we were handed and the receiver is what may be somewhere else. So the
-    # conservatism moves with it — what has to be decidable is the TARGET, and
-    # `own_receiver` answers for the two spellings that name our own `self`
-    # while `ConstantReference` answers for the two that name a constant.
-    #
-    # Anything else declines: a receiver that is a local, an ivar, or a method
-    # call is an object this pass cannot name, and a block relocated onto the
-    # wrong class is worse than one left where it was written.
-    #
-    # One shape per method, like the other replay readers. Two `class_eval`s of
-    # one block onto two different targets is not something the source decides
-    # for a caller — which of them a runtime dispatch reaches is the question
-    # this pass declines rather than guesses at.
-    def own_block_replay_shape(body, block_name)
-      return nil unless block_name
-
-      shapes = nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::CallNode)
-        call = dispatched(node)
-        next unless REPLAY_METHODS.include?(call.name)
-        pass = call.block
-        next unless pass.is_a?(Prism::BlockArgumentNode)
-        next unless pass.expression.is_a?(Prism::LocalVariableReadNode)
-        next unless pass.expression.name.to_s == block_name
-
-        replayed_onto(call.receiver, body)
-      end.uniq
-
-      shapes.first if shapes.size == 1
-    end
-
-    # What such a replay runs ON, as `[name, dynamic?, singleton?]`, or nil for a
-    # receiver this pass will not name. A nil NAME is an answer rather than a
-    # refusal: it is the DSL's own `self`, whoever that turns out to be at the
-    # call site.
-    #
-    # A LOCAL is read through to what the body puts in it. `ActiveSupport` writes
-    # the module to a local before evaluating into it, and so does anyone who
-    # needs the name twice — a local is where you put a value you are about to
-    # use, not an object this pass cannot name (felixefelip/rbs_infer#268).
-    def replayed_onto(receiver, body)
-      case own_receiver(receiver)
-      when :instance then [nil, false, nil, false]
-      when :singleton then [nil, false, nil, true]
-      else
-        return nil unless receiver
-
-        named = if receiver.is_a?(Prism::LocalVariableReadNode)
-                  local_constant(receiver.name.to_s, body)
-                else
-                  RbsInfer::AST::ConstantReference.named(receiver)
-                end
-        [*named, false] if named
-      end
-    end
-
-    # The constant a local holds, when the body says so plainly: EVERY way it is
-    # filled names the same one.
-    #
-    # Every way, because the two spellings of filling it conditionally are the
-    # same claim — `mod = c ? A : B` is one assignment holding a conditional and
-    # `if c then mod = A else mod = B end` is two assignments — and reading one
-    # without the other would decide by syntax what Ruby decides by value. Arms
-    # that disagree are the undecidable case and answer nothing, which is also
-    # what an unassigned local answers: a parameter's value comes from the call
-    # site, and that is a different shape entirely.
-    def local_constant(name, body)
-      writes = nodes(body).filter_map do |node|
-        node.value if node.is_a?(Prism::LocalVariableWriteNode) && node.name.to_s == name
-      end
-      return nil if writes.empty?
-
-      named = writes.flat_map { |value| constant_alternatives(value) }
-      return nil if named.empty? || named.any?(&:nil?)
-
-      answers = named.uniq { |constant, dynamic, _| [constant_key(constant), dynamic] }
-      return nil unless answers.size == 1
-
-      # Created by ANY of them. `const_defined?(:X) ? const_get(:X) : const_set(:X, …)`
-      # is one claim written as two paths — the module is there afterwards either
-      # way, and which path ran is exactly what the source does not say.
-      constant, dynamic, = answers.first
-      [constant, dynamic, named.filter_map { |_, _, creates| creates }.uniq.first]
-    end
-
-    # The constants an expression may evaluate to, as `named` answers them, with
-    # a conditional read as its branches. Anything else is one expression and so
-    # one alternative.
-    #
-    # `nil` is NO alternative rather than an unnamed one, and a missing branch is
-    # that same nil: on such a path the local holds nothing, so `mod.module_eval`
-    # raises and no block lands anywhere. Reading past it names the only module
-    # the code can reach, which is what the rest of this pass does with a guard
-    # (`if @block` changes nothing about which object is meant). Declining it
-    # would also make `mod = A if c` and `mod = (if c then A end)` — the same
-    # Ruby, written twice — answer differently.
-    #
-    # An alternative that is some OTHER expression is a different matter and
-    # still declines: it may well be a module, and one this pass failed to name.
-    def constant_alternatives(value)
-      return [] if value.is_a?(Prism::NilNode)
-      return [RbsInfer::AST::ConstantReference.named(value)] unless value.is_a?(Prism::IfNode)
-
-      [value.statements, value.subsequent].compact.flat_map do |branch|
-        statements = branch.respond_to?(:statements) ? branch.statements : branch
-        (statements&.body || []).flat_map { |node| constant_alternatives(node) }
-      end
-    end
-
-    # Two `named` answers are the same constant when they name the same thing:
-    # a written one by its path, a fetched one by the name itself. Prism nodes
-    # compare by identity, so the path is what has to be compared.
-    def constant_key(constant)
-      constant.is_a?(String) ? constant : RbsInfer::Analyzer.extract_constant_path(constant)
-    end
-
-    # `<parameter>.extend(<module>)` — every one the body writes, as
-    # `[parameter, name, dynamic?]`.
-    #
-    # ALL of them rather than one, and no count to decline on. Two `class_eval`s
-    # behind one name are an ambiguity — only one block can be the one meant —
-    # but a hook that extends two modules has simply extended two modules, and
-    # at runtime both happen. Same reason `forward_shapes` reports every forward.
-    #
-    # The receiver must be the parameter itself, with no `singleton_class` hop:
-    # unlike a replay, where the hop names the other method table the same `def`s
-    # could land in, `base.singleton_class.extend(M)` puts M in a third place
-    # again — the singleton's own singleton — and nothing downstream can say that.
-    #
-    # The `if const_defined?(:ClassMethods)` guard `ActiveSupport::Concern`
-    # writes around this is deliberately not read. What it asks is whether the
-    # module is there, and `extension_name` answers that with the declarations
-    # the pass has actually seen — the same question, decided by the project
-    # rather than by re-implementing the condition.
-    def inward_extend_shapes(body, parameters)
-      nodes(body).flat_map do |node|
-        next [] unless node.is_a?(Prism::CallNode)
-        call = dispatched(node)
-        next [] unless call.name == :extend
-        receiver = call.receiver
-        next [] unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
-
-        (call.arguments&.arguments || []).filter_map do |argument|
-          # Both spellings of naming a module, and the pair says which is which:
-          # a constant is syntax and resolves in the file it was WRITTEN in, a
-          # `const_get` is data and resolves against the `self` the hook runs on.
-          named = RbsInfer::AST::ConstantReference.named(argument)
-          [receiver.name.to_s, *named] if named
-        end
-      end
-    end
-
-    # `<parameter>.<callee>(self)` — handing ourselves to the object that holds
-    # the block, which is the only way a target can start an inward replay.
-    #
-    # Exactly one argument, and it must be `self`: that is what makes the call a
-    # request to act ON US, as against any other message this method might send
-    # the parameter on the way.
-    #
-    # ALL of them, unlike the shapes above. A body sending the argument two such
-    # messages is forwarding twice — that is what `include` does, and both halves
-    # are real:
-    #
-    #   modules.reverse_each do |mod|
-    #     mod.send(:append_features, self)
-    #     mod.send(:included, self)
-    #   end
-    #
-    # Reporting one shape and declining when there were two read that as an
-    # ambiguity, and it is not one: which of the two leads to a stored block is
-    # decided downstream, by whether the callee's keeper actually replays, and
-    # `inward_slot` declines there if more than one does. The other shapes have
-    # no such downstream evidence — two different ivars behind one `class_eval`
-    # is undecidable wherever you ask — so they still decline on the count.
-    def forward_shapes(body, parameters)
-      nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::CallNode)
-        call = dispatched(node)
-        receiver = call.receiver
-        next unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
-        arguments = call.arguments&.arguments || []
-        next unless arguments.size == 1 && arguments.first.is_a?(Prism::SelfNode)
-
-        [receiver.name.to_s, call.name.to_s]
-      end.uniq
-    end
-
-    # `@holder ||= Holder.new` plus `@holder.<callee>(…, &block)` in one body.
-    #
-    # Forwarding the block is the whole claim. What separates a pass-through from
-    # any other message the method happens to send its holder is that the block
-    # the CALLER wrote arrives at the callee — and it is the only thing that
-    # matters here, since the block is the object being relocated. A call that
-    # drops it reaches a storage that would keep nothing.
-    #
-    # The constructor has to sit in this body too. An ivar filled somewhere else
-    # is a data-flow question, and this pass answers only what one body shows —
-    # the same line `inward_replay_shape` draws when it insists the block come
-    # off `self` rather than from wherever a value might have been put.
-    def delegation_shape(node)
-      block_name = node.parameters&.block&.name&.to_s
-      return nil unless block_name
-
-      holders = held_constructions(node.body)
-      return nil unless holders.size == 1
-
-      ivar, constant = holders.first
-
-      callees = nodes(node.body).filter_map do |child|
-        next unless child.is_a?(Prism::CallNode)
-        call = dispatched(child)
-        receiver = call.receiver
-        next unless receiver.is_a?(Prism::InstanceVariableReadNode) && receiver.name.to_s == ivar
-        pass = call.block
-        next unless pass.is_a?(Prism::BlockArgumentNode)
-        next unless pass.expression.is_a?(Prism::LocalVariableReadNode)
-        next unless pass.expression.name.to_s == block_name
-
-        call.name.to_s
-      end.uniq
-
-      [constant, callees.first] if callees.size == 1
-    end
-
-    # Every ivar this body fills with a `Constant.new`, as `[ivar, constant]`.
-    # `@x ||= K.new` and `@x = K.new` say the same thing about what the slot
-    # holds. An ivar built from two different constants says nothing decidable
-    # and is dropped rather than resolved by write order.
-    def held_constructions(body)
-      writes = nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::InstanceVariableWriteNode) || node.is_a?(Prism::InstanceVariableOrWriteNode)
-
-        value = node.value
-        next unless value.is_a?(Prism::CallNode) && value.name == :new && value.receiver
-
-        [node.name.to_s, value.receiver]
-      end
-
-      writes.group_by(&:first).filter_map do |ivar, entries|
-        constants = entries.map(&:last)
-        names = constants.filter_map { |constant| RbsInfer::Analyzer.extract_constant_path(constant) }.uniq
-        [ivar, constants.first] if names.size == 1
-      end
-    end
-
     def collect_class_body_call(node)
       case node.name
       when :extend
-        return unless bare_or_self?(node) && node.arguments
+        return unless NodeReading.bare_or_self?(node) && node.arguments
 
         node.arguments.arguments.each do |argument|
           @extends << [current_scope, argument]
         end
       else
-        return unless bare_or_self?(node)
+        return unless NodeReading.bare_or_self?(node)
 
         if node.block.is_a?(Prism::BlockNode)
           @stored_calls << StoredCall.new(owner: nil, subject: current_scope, method: node.name.to_s,
@@ -1254,10 +505,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
           end
         end
       end
-    end
-
-    def bare_or_self?(node)
-      node.receiver.nil? || node.receiver.is_a?(Prism::SelfNode)
     end
 
     # Method shapes declared OUTSIDE this file.
@@ -1849,8 +1096,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     # The collected method bodies read as deferrals, once the readers are in.
     def resolve_deferrals
+      reader = DeferralReader.new(@readers)
+
       @deferral_shapes.filter_map do |owner, method, body, parameters|
-        shape = deferral_shape(body, parameters)
+        shape = reader.shape(body, parameters)
         next unless shape
 
         parameter, slot, recall = shape
@@ -2110,12 +1359,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
       reader_collector = ReaderCollector.new
       parsed.value.accept(reader_collector)
       @readers.concat(reader_collector.readers)
-    end
-
-    def nodes(root)
-      return [] unless root
-
-      RbsInfer::Analyzer.find_all_nodes(root) { true }
     end
   end
 end
