@@ -72,6 +72,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
       resolved.uniq { |replay| [replay.target, replay.singleton, replay.source, replay.block.location.start_offset] }
     end
 
+    private
+
+    # Everything below is one step of `run`. They were public only because the
+    # split that moved them here carried the methods and not the `private` that
+    # stood over them in `Collector` (felixefelip/rbs_infer#308).
+
     # The block a DSL call runs where it stands, or nil when the file does not
     # decide it.
     #

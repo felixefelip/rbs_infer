@@ -128,6 +128,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
       names.first if names.size == 1
     end
 
+    private
+
     # What a subject extending `provider` writes to reach `storage_owner#method`.
     # The keeper's own name when the provider IS the keeper; the delegating
     # method's name when it is not. Reading the keeper's name in both cases only
