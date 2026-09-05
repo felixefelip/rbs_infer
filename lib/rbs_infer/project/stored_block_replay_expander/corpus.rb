@@ -66,6 +66,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
       Reach.new(names: seen, shapes: found)
     end
 
+    private
+
     # The name a lookup lands on: the first candidate the project actually
     # declares, or — when it declares none of them — the name as written, which
     # is what this pass answered before it asked at all. Falling back rather

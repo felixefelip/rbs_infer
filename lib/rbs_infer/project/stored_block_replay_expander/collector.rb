@@ -114,8 +114,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     protected
 
-    # One reader where there were fourteen: what this file said, for the
-    # collector absorbing it (felixefelip/rbs_infer#306).
+    # What this file said, for the collector absorbing it.
     attr_reader :shapes, :providers
 
     # What an ABSORBING collector reads off this one, answered by the

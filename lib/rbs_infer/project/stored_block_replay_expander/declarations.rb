@@ -220,6 +220,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
       owner.to_s.sub(/\Asingleton\((.*)\)\z/, "\\1")
     end
 
+    private
+
     # The name an `extend` writes, for a module this file does not declare.
     #
     # `resolve` answers nil for those, and rightly: it is picking a NAMESPACE,
@@ -230,8 +232,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def self.written_constant(node)
       RbsInfer::Analyzer.extract_constant_path(node)&.sub(/\A::/, "")
     end
-
-    private
 
     def qualify(name)
       name = name.to_s.sub(/\A::/, "")

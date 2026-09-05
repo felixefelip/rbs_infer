@@ -72,6 +72,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
       resolved.uniq { |replay| [replay.target, replay.singleton, replay.source, replay.block.location.start_offset] }
     end
 
+    private
+
     # The block a DSL call runs where it stands, or nil when the file does not
     # decide it.
     #
