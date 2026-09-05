@@ -15,7 +15,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # `Collector`'s question, and needs the declarations, the providers and the
   # absorbed corpus that only `Collector` has. Keeping the two apart is what
   # lets the readings be checked against a source string with nothing else set
-  # up.
+  # up (felixefelip/rbs_infer#303).
   #
   # Declining is a first-class answer here, and the shapes say so the same way
   # throughout: more than one candidate is an ambiguity this pass does not

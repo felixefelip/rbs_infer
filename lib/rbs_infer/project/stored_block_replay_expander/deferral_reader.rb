@@ -12,7 +12,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # full on `deferral_shape`. It is the one shape whose answer is a BRANCH
   # rather than a node, so it reads the body through `branched_nodes` where
   # every other shape scans it flat, and that is why it is a module of its own
-  # rather than more of `ShapeReader`.
+  # rather than more of `ShapeReader` (felixefelip/rbs_infer#303).
   #
   # `readers` is threaded rather than reached for: a slot can be named through
   # an `attr_reader`, and the readers are the one thing these readings need

@@ -12,7 +12,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # both run. None of them reads a declaration, a provider or an absorbed
   # shape, which is why they are here rather than in `Collector` — that class
   # carries thirty-odd instance variables and these answers depend on none of
-  # them.
+  # them (felixefelip/rbs_infer#303).
   #
   # `extend self` rather than `module_function`, and for a reason: the modules
   # that build on this one `include` it, and only `extend self` carries the

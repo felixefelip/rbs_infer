@@ -15,7 +15,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # The readings this class is built out of, and the reason it is no longer
     # two thousand lines: every shape a method body can be written in is a
     # function of that body, and none of them needs a declaration, a provider
-    # or an absorbed shape to answer. What is left
+    # or an absorbed shape to answer (felixefelip/rbs_infer#303). What is left
     # here is what genuinely needs the file — accumulating the shapes, absorbing
     # the corpus, and resolving which class a block lands on.
     #
