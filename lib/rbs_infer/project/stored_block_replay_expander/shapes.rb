@@ -11,9 +11,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # that decided which file a block's offsets index).
   #
   # Held apart from the collector for the plainest of reasons: they are
-  # declarations, not behaviour. Two hundred lines of them sat between the class
-  # comment and `initialize`, so the first thing a reader met was thirteen
-  # structs rather than the pass they belong to (felixefelip/rbs_infer#304).
+  # declarations, not behaviour.
   #
   # Included rather than referenced, so `Storage` keeps meaning `Storage` in
   # every method that builds one: a constant reached through an ancestor
