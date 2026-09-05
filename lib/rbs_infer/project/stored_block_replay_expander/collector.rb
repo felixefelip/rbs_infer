@@ -68,43 +68,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
       replays
     end
 
-    # The shapes this file wrote, resolved against the declarations now that all
-    # of them are known — a constant written in a hook's body may name a module
-    # declared further down, and a relative `extend Builder` needs the file's own
-    # namespaces before it can be read at all.
-    #
-    # The last step of COLLECTING rather than the first of resolving, which is
-    # why it sits here and not in `Resolution`: `collect_shapes` does the same
-    # four for a file read on another's behalf, where no resolution ever runs
-    # (felixefelip/rbs_infer#306).
-    def resolve_shapes
-      collect_readers_from_source
-
-      @shapes.deferrals.concat(resolve_deferrals)
-      @shapes.resolved_delegations.concat(resolve_delegations)
-      @shapes.resolved_inward_extends.concat(resolve_inward_extends)
-      @shapes.resolved_own_replays.concat(resolve_own_replays)
-    end
-
-    # Everything this file says about method shapes, for a collector reading it
-    # on another file's behalf. Its delegations are resolved here, against the
-    # declarations of the file they were written in — which is the only place
-    # the constant they name can be looked up.
-    def collect_shapes(root)
-      root.accept(self)
-      collect_readers_from_source
-      @shapes.deferrals.concat(resolve_deferrals)
-      @shapes.replace(:resolved_delegations, resolve_delegations)
-      @shapes.replace(:resolved_inward_extends, resolve_inward_extends)
-      @shapes.replace(:resolved_own_replays, resolve_own_replays)
-      # Who can call whose DSL, as THIS file writes it. A shape is only half of
-      # what another file needs: `extend ActiveSupport::Concern` is written in
-      # the concern, and without it a host holding the concern's shapes still
-      # cannot say which owner supplies them.
-      @providers = @names.providers
-      self
-    end
-
     def visit_class_node(node)
       @names.enter(node) { super }
     end
@@ -127,6 +90,25 @@ module RbsInfer::Project::StoredBlockReplayExpander
     end
 
     protected
+
+    # Everything this file says about method shapes, for a collector reading it
+    # on another file's behalf. Its delegations are resolved here, against the
+    # declarations of the file they were written in — which is the only place
+    # the constant they name can be looked up.
+    def collect_shapes(root)
+      root.accept(self)
+      collect_readers_from_source
+      @shapes.deferrals.concat(resolve_deferrals)
+      @shapes.replace(:resolved_delegations, resolve_delegations)
+      @shapes.replace(:resolved_inward_extends, resolve_inward_extends)
+      @shapes.replace(:resolved_own_replays, resolve_own_replays)
+      # Who can call whose DSL, as THIS file writes it. A shape is only half of
+      # what another file needs: `extend ActiveSupport::Concern` is written in
+      # the concern, and without it a host holding the concern's shapes still
+      # cannot say which owner supplies them.
+      @providers = @names.providers
+      self
+    end
 
     # What this file said, for the collector absorbing it.
     attr_reader :shapes, :providers
@@ -168,6 +150,24 @@ module RbsInfer::Project::StoredBlockReplayExpander
     end
 
     private
+
+    # The shapes this file wrote, resolved against the declarations now that all
+    # of them are known — a constant written in a hook's body may name a module
+    # declared further down, and a relative `extend Builder` needs the file's own
+    # namespaces before it can be read at all.
+    #
+    # The last step of COLLECTING rather than the first of resolving, which is
+    # why it sits here and not in `Resolution`: `collect_shapes` does the same
+    # four for a file read on another's behalf, where no resolution ever runs
+    # (felixefelip/rbs_infer#306).
+    def resolve_shapes
+      collect_readers_from_source
+
+      @shapes.deferrals.concat(resolve_deferrals)
+      @shapes.resolved_delegations.concat(resolve_delegations)
+      @shapes.resolved_inward_extends.concat(resolve_inward_extends)
+      @shapes.resolved_own_replays.concat(resolve_own_replays)
+    end
 
     def collect_method_shape(node)
       owner = @names.owner_for(node)
