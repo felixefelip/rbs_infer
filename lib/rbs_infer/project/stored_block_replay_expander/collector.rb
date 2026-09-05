@@ -5,6 +5,8 @@ require "set"
 require_relative "../../ast/constant_reference"
 require_relative "../../inference/send_call"
 require_relative "../constant_sources"
+require_relative "node_reading"
+require_relative "shape_reader"
 require_relative "deferral_reader"
 
 module RbsInfer::Project::StoredBlockReplayExpander
@@ -12,20 +14,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # syntax, not guessed types: resolving `Foo` in `extend Foo` and `Baz` in
   # `apply(Baz)` uses the declarations that are actually present in the file.
   class Collector < Prism::Visitor
-    # The readings this class is built out of, and the reason it is no longer
-    # two thousand lines: every shape a method body can be written in is a
-    # function of that body, and none of them needs a declaration, a provider
-    # or an absorbed shape to answer (felixefelip/rbs_infer#303). What is left
-    # here is what genuinely needs the file — accumulating the shapes, absorbing
-    # the corpus, and resolving which class a block lands on.
-    #
-    # `DeferralReader` carries `ShapeReader`, which carries `NodeReading`, so
-    # one include brings all three. Private on the way in: they are the module's
-    # public surface, meant to be called and tested on their own, but a
-    # `Collector` is not the object to ask them through.
-    include DeferralReader
-    private(*DeferralReader.instance_methods)
-
     # What a class body and a module body can call with no receiver, beyond
     # anything this file says: `self` there is an instance of `Class` or of
     # `Module`, so the callable methods are those two chains' instance methods.
@@ -416,19 +404,19 @@ module RbsInfer::Project::StoredBlockReplayExpander
       block_name = params&.block&.name&.to_s
       method_name = node.name.to_s
 
-      if block_name && (ivar = stored_block_ivar(node.body, block_name))
+      if block_name && (ivar = ShapeReader.stored_block_ivar(node.body, block_name))
         @storages << Storage.new(owner: owner, method: method_name, ivar: ivar)
       end
 
-      if (replay = replay_shape(node.body))
+      if (replay = ShapeReader.replay_shape(node.body))
         parameter, reader, singleton = replay
         @replay_methods << ReplayMethod.new(owner: owner, method: method_name, parameter: parameter, reader: reader,
                                             singleton: singleton)
       end
 
-      parameters = handed_names(node.body, parameter_names(params))
+      parameters = NodeReading.handed_names(node.body, NodeReading.parameter_names(params))
 
-      if (inward = inward_replay_shape(node.body, parameters))
+      if (inward = ShapeReader.inward_replay_shape(node.body, parameters))
         parameter, ivar, singleton = inward
         @inward_replays << InwardReplay.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar,
                                             singleton: singleton)
@@ -438,31 +426,31 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # through an `attr_reader`, and no reader is known until the second walk.
       @deferral_shapes << [owner, method_name, node.body, parameters]
 
-      slot_init_shapes(node.body, parameters).each do |parameter, ivar|
+      ShapeReader.slot_init_shapes(node.body, parameters).each do |parameter, ivar|
         @slot_inits << SlotInit.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar)
       end
 
-      if (own = own_block_replay_shape(node.body, block_name))
+      if (own = ShapeReader.own_block_replay_shape(node.body, block_name))
         name, dynamic, creates, singleton = own
         @own_replays << [owner, method_name, name, dynamic, creates, singleton]
       end
 
-      inward_extend_shapes(node.body, parameters).each do |parameter, name, dynamic, creates|
+      ShapeReader.inward_extend_shapes(node.body, parameters).each do |parameter, name, dynamic, creates|
         @inward_extends << [owner, method_name, parameter, name, dynamic, creates]
       end
 
-      if (literal = literal_replay_shape(node.body, parameters))
+      if (literal = ShapeReader.literal_replay_shape(node.body, parameters))
         call, block, singleton = literal
         @literal_replays << LiteralReplay.new(owner: owner, method: method_name, scope: current_scope,
                                               call: call, block: block, source: @source, singleton: singleton)
       end
 
-      if (delegation = delegation_shape(node))
+      if (delegation = ShapeReader.delegation_shape(node))
         target, callee = delegation
         @delegations << [owner, method_name, target, callee]
       end
 
-      forward_shapes(node.body, parameters).each do |parameter, callee|
+      ShapeReader.forward_shapes(node.body, parameters).each do |parameter, callee|
         @forwards << ForwardMethod.new(owner: owner, method: method_name, parameter: parameter, callee: callee)
       end
     end
@@ -495,13 +483,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def collect_class_body_call(node)
       case node.name
       when :extend
-        return unless bare_or_self?(node) && node.arguments
+        return unless NodeReading.bare_or_self?(node) && node.arguments
 
         node.arguments.arguments.each do |argument|
           @extends << [current_scope, argument]
         end
       else
-        return unless bare_or_self?(node)
+        return unless NodeReading.bare_or_self?(node)
 
         if node.block.is_a?(Prism::BlockNode)
           @stored_calls << StoredCall.new(owner: nil, subject: current_scope, method: node.name.to_s,
@@ -1108,8 +1096,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     # The collected method bodies read as deferrals, once the readers are in.
     def resolve_deferrals
+      reader = DeferralReader.new(@readers)
+
       @deferral_shapes.filter_map do |owner, method, body, parameters|
-        shape = deferral_shape(body, parameters, @readers)
+        shape = reader.shape(body, parameters)
         next unless shape
 
         parameter, slot, recall = shape

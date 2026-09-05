@@ -92,6 +92,30 @@ module RbsInfer::Project::StoredBlockReplayExpander
       [target, ivar.name.to_s, singleton]
     end
 
+    # `<parameter>.instance_variable_set(:@x, …)`, as `[parameter, ivar]` — what
+    # a DSL runs on the objects it is handed, and so what says which objects
+    # hold `@x`.
+    #
+    # `DeferralReader` is what asks: the deferral says the DSL defers, and
+    # this says WHOSE branch is taken, because the objects holding the slot
+    # are the ones this method ran for. It is read here rather than there
+    # because it needs no readers and runs during collection, before the
+    # second lexical walk that finds them.
+    def slot_init_shapes(body, parameters)
+      nodes(body).filter_map do |node|
+        next unless node.is_a?(Prism::CallNode)
+
+        call = dispatched(node)
+        next unless call.name == :instance_variable_set
+
+        parameter = parameter_name(call.receiver, parameters)
+        next unless parameter
+
+        ivar = symbol_name((call.arguments&.arguments || []).first)
+        [parameter, ivar] if ivar
+      end.uniq
+    end
+
     # `<parameter>.class_eval do … end` — the inward replay with the block
     # written in place rather than fetched from a slot. Same receiver rule as
     # `inward_replay_shape` and for the same reason; what differs is only where

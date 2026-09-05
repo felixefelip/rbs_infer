@@ -14,14 +14,22 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # every other shape scans it flat, and that is why it is a module of its own
   # rather than more of `ShapeReader` (felixefelip/rbs_infer#303).
   #
-  # `readers` is threaded rather than reached for: a slot can be named through
-  # an `attr_reader`, and the readers are the one thing these readings need
-  # that a body does not contain. Passing them keeps every method here a
-  # function of its arguments, which is the property that makes the whole
-  # module checkable on a source string.
-  module DeferralReader
+  # A CLASS, where the two readers it builds on are modules, and for the reason
+  # that tells them apart: this one has a dependency. A slot can be named
+  # through an `attr_reader`, so reading one takes the file's readers — the one
+  # thing these readings need that a body does not contain. Threaded as an
+  # argument it reached six of the nine methods here; held on the object it
+  # reaches them all and appears in none of their signatures.
+  #
+  # `ShapeReader` and `NodeReading` stay modules because they have nothing to
+  # hold: a class with no constructor and no state is a module with `.new` in
+  # front of it.
+  class DeferralReader
     include ShapeReader
-    extend self
+
+    def initialize(readers)
+      @readers = readers
+    end
 
     # The deferral this method writes, as `[parameter, slot, recall]`, or nil
     # when it always replays where it stands (felixefelip/rbs_infer#300).
@@ -44,7 +52,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     #
     # One answer or none. Two deferrals in one method is a method this pass
     # cannot say which way it went, and it declines rather than pick.
-    def deferral_shape(body, parameters, readers)
+    def shape(body, parameters)
       return nil unless body
 
       branched = branched_nodes(body)
@@ -54,12 +62,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
         [target, path] if target
       end
       drains = branched.filter_map do |node, path|
-        drain = drain_shape(node, parameters, readers)
+        drain = drain_shape(node, parameters)
         [drain, path] if drain
       end
 
       found = branched.filter_map do |node, path|
-        registered = registration_slot(node, parameters, aliases, readers)
+        registered = registration_slot(node, parameters, aliases)
         next unless registered
 
         deferral_through(registered, path, replays, drains)
@@ -67,6 +75,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       found.first if found.size == 1
     end
+
+    private
 
     # The `[parameter, slot, recall]` one registration stands for, or nil when
     # no replay and drain answer it.
@@ -95,7 +105,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # matching activesupport rather than reading Ruby (felixefelip/rbs_infer#300).
     # What is read is where the value lands — an ivar of the object we were
     # handed — because that is what makes the target able to replay it later.
-    def registration_slot(node, parameters, aliases, readers)
+    def registration_slot(node, parameters, aliases)
       return nil unless node.is_a?(Prism::CallNode)
 
       call = dispatched(node)
@@ -110,7 +120,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
         return nil
       end
 
-      target_slot(call.receiver, parameters, aliases, readers)
+      target_slot(call.receiver, parameters, aliases)
     end
 
     # The slot a receiver names on the target, as `[parameter, ivar]`.
@@ -120,7 +130,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # would let anyone else at it. One local hop is followed, so a DSL that
     # parks the collection in a variable before pushing to it says the same
     # thing as one that does not.
-    def target_slot(node, parameters, aliases, readers)
+    def target_slot(node, parameters, aliases)
       node = aliases[node.name.to_s] if node.is_a?(Prism::LocalVariableReadNode) && aliases.key?(node.name.to_s)
       return nil unless node.is_a?(Prism::CallNode)
 
@@ -131,7 +141,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       ivar = if call.name == :instance_variable_get
                symbol_name((call.arguments&.arguments || []).first)
              else
-               reader_ivar(call.name.to_s, readers)
+               reader_ivar(call.name.to_s)
              end
       [parameter, ivar] if ivar
     end
@@ -145,13 +155,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # re-application is resolved as the call site the source writes. What is
     # required is the shape that makes it a hop: each element of OUR slot handed
     # to the target.
-    def drain_shape(node, parameters, readers)
+    def drain_shape(node, parameters)
       return nil unless node.is_a?(Prism::CallNode)
 
       block = node.block
       return nil unless block.is_a?(Prism::BlockNode)
 
-      slot = own_slot(node.receiver, readers)
+      slot = own_slot(node.receiver)
       return nil unless slot
 
       bound = block.parameters
@@ -184,7 +194,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     # The ivar a receiver names on the DSL's OWN self — written as the ivar, or
     # reached through a reader, which are the same slot.
-    def own_slot(node, readers)
+    def own_slot(node)
       return nil unless node
       return node.name.to_s if node.is_a?(Prism::InstanceVariableReadNode)
       return nil unless node.is_a?(Prism::CallNode)
@@ -193,34 +203,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
       return nil unless call.receiver.nil? || call.receiver.is_a?(Prism::SelfNode)
       return nil unless (call.arguments&.arguments || []).empty?
 
-      reader_ivar(call.name.to_s, readers)
-    end
-
-    # `<parameter>.instance_variable_set(:@x, …)`, as `[parameter, ivar]` — what
-    # a DSL runs on the objects it is handed, and so what says which objects
-    # hold `@x`.
-    #
-    # It is the other half of `deferral_shape`: the shape above says the DSL
-    # defers, and this one says WHOSE branch is taken, because the objects
-    # holding the slot are the ones this method ran for.
-    def slot_init_shapes(body, parameters)
-      nodes(body).filter_map do |node|
-        next unless node.is_a?(Prism::CallNode)
-
-        call = dispatched(node)
-        next unless call.name == :instance_variable_set
-
-        parameter = parameter_name(call.receiver, parameters)
-        next unless parameter
-
-        ivar = symbol_name((call.arguments&.arguments || []).first)
-        [parameter, ivar] if ivar
-      end.uniq
+      reader_ivar(call.name.to_s)
     end
 
     # The ivar an `attr_reader` of that name reaches, when exactly one does.
-    def reader_ivar(name, readers)
-      ivars = readers.select { |_, reader_name, _| reader_name == name }.map(&:last).uniq
+    def reader_ivar(name)
+      ivars = @readers.select { |_, reader_name, _| reader_name == name }.map(&:last).uniq
       ivars.first if ivars.size == 1
     end
   end
