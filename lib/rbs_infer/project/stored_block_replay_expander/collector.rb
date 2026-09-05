@@ -6,6 +6,7 @@ require_relative "../../ast/constant_reference"
 require_relative "../../inference/send_call"
 require_relative "../constant_sources"
 require_relative "shapes"
+require_relative "declarations"
 require_relative "corpus"
 require_relative "dsl_graph"
 require_relative "node_reading"
@@ -29,12 +30,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def initialize(source, sources:)
       @source = source
       @sources = sources
-      @scope = []
       @method_depth = 0
-      @declarations = Set.new
-      @declaration_kinds = {}
-      @extends = []
-      @superclasses = []
+      # Everything this file declares and what follows from it: the scope walk,
+      # the kinds, the extends, the superclasses, and the provider table they
+      # add up to (felixefelip/rbs_infer#305).
+      @names = Declarations.new
       @storages = []
       @readers = []
       @replay_methods = []
@@ -57,24 +57,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # constant a DSL names may be declared further down its own file.
       @own_replays = []
       @resolved_own_replays = []
-      # What the files this one absorbs shapes from DECLARE. Read for one
-      # question only — is the module a `const_get` names actually there — which
-      # is why it is kept apart from `@declaration_kinds` rather than merged
-      # into it: every other reader of that hash is asking about a declaration
-      # THIS file makes, and widening it would answer them about somebody
-      # else's.
-      @absorbed_kinds = {}
-      # Who can call whose DSL, as the files this one absorbs write it. Kept
-      # apart from the table this file builds for the same reason
-      # `@absorbed_kinds` is: one is a fact about this source, the other about
-      # somebody else's, and only the merge answers "who supplies this method".
-      @absorbed_providers = Hash.new { |hash, key| hash[key] = Set.new }
-      # Namespaces this file's own DSL calls BRING INTO EXISTENCE —
-      # `const_set(:X, Module.new)` under the subject that called it. Filled
-      # while the replays resolve and read back by everything that asks whether
-      # a name is declared: the module is not in any file's text, and the
-      # reopening this pass emits for it is what declares it.
-      @created_kinds = {}
       @extensions = []
       # Absorbed from another file like the shapes above, but only because each
       # one carries the source it was sliced from. Without that they could not
@@ -118,7 +100,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # what another file needs: `extend ActiveSupport::Concern` is written in
       # the concern, and without it a host holding the concern's shapes still
       # cannot say which owner supplies them.
-      @providers = dsl_providers
+      @providers = @names.providers
       self
     end
 
@@ -130,21 +112,27 @@ module RbsInfer::Project::StoredBlockReplayExpander
     protected
 
     attr_reader :storages, :readers, :replay_methods, :inward_replays, :forwards, :resolved_delegations,
-                :literal_replays, :stored_calls, :resolved_inward_extends, :declaration_kinds,
+                :literal_replays, :stored_calls, :resolved_inward_extends,
                 :resolved_own_replays, :providers, :deferrals, :slot_inits, :apply_calls
+
+    # What an ABSORBING collector reads off this one, answered by the
+    # declarations rather than kept a second time.
+    def declaration_kinds
+      @names.kinds
+    end
 
     public
 
     def visit_class_node(node)
-      with_scope(node) { super }
+      @names.enter(node) { super }
     end
 
     def visit_module_node(node)
-      with_scope(node) { super }
+      @names.enter(node) { super }
     end
 
     def visit_def_node(node)
-      collect_method_shape(node) if current_scope
+      collect_method_shape(node) if @names.current_scope
       @method_depth += 1
       super
     ensure
@@ -152,77 +140,14 @@ module RbsInfer::Project::StoredBlockReplayExpander
     end
 
     def visit_call_node(node)
-      collect_class_body_call(node) if current_scope && @method_depth.zero?
+      collect_class_body_call(node) if @names.current_scope && @method_depth.zero?
       super
     end
 
     private
 
-    def with_scope(node)
-      name = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
-      return yield unless name
-
-      qualified = qualify(name)
-      @declarations << qualified
-      @declaration_kinds[qualified] = node.is_a?(Prism::ModuleNode) ? "module" : "class"
-      # Kept raw and resolved in `resolve_replays`, exactly like `extend`: a
-      # superclass written relatively may name a class the walk has not reached
-      # yet, and only the finished declaration set can say which one it is.
-      @superclasses << [qualified, node.superclass] if node.is_a?(Prism::ClassNode) && node.superclass
-      @scope << qualified
-      yield
-    ensure
-      @scope.pop if @scope.last == qualified
-    end
-
-    def current_scope
-      @scope.last
-    end
-
-    def qualify(name)
-      name = name.to_s.sub(/\A::/, "")
-      return name if name.include?("::")
-
-      parent = @scope.last
-      parent ? "#{parent}::#{name}" : name
-    end
-
-    def resolve_constant(node, context)
-      name = RbsInfer::Analyzer.extract_constant_path(node)
-      return nil unless name
-
-      # `::Mentions` names the top level and NOTHING ELSE, so it is answered
-      # here — before the prefix comes off, which is what the guard that used to
-      # sit below the strip could not do: nothing starts with `::` by then, so
-      # it never fired and an absolute name fell through to the nesting walk.
-      # Written inside `Card::Mentions`, `include ::Mentions` resolved to the
-      # enclosing `Card::Mentions` itself. The module was then recorded as a
-      # host of its own `included do`, and Steep — which checks a block once per
-      # `@implements` name — checked the body a second time against a `self`
-      # that has none of the host's methods (felixefelip/rbs_infer#299).
-      #
-      # Still gated on `@declarations`, like every other answer here. A non-nil
-      # return means "this file declares it", which `external_lookups` reads as
-      # "nothing to absorb"; answering unconditionally told it that about
-      # `include ::Storage::Tracked` in `board.rb`, the concern's file was never
-      # opened, and `Board` dropped out of the very list this is fixing.
-      if name.start_with?("::")
-        top_level = name.delete_prefix("::")
-        return @declarations.include?(top_level) ? top_level : nil
-      end
-
-      return name if name.include?("::") && @declarations.include?(name)
-
-      prefixes = context.to_s.split("::")
-      prefixes.length.downto(1) do |length|
-        candidate = "#{prefixes.take(length).join("::")}::#{name}"
-        return candidate if @declarations.include?(candidate)
-      end
-      @declarations.include?(name) ? name : nil
-    end
-
     def collect_method_shape(node)
-      owner = shape_owner(node)
+      owner = @names.owner_for(node)
       return unless owner
 
       params = node.parameters
@@ -266,7 +191,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       if (literal = ShapeReader.literal_replay_shape(node.body, parameters))
         call, block, singleton = literal
-        @literal_replays << LiteralReplay.new(owner: owner, method: method_name, scope: current_scope,
+        @literal_replays << LiteralReplay.new(owner: owner, method: method_name, scope: @names.current_scope,
                                               call: call, block: block, source: @source, singleton: singleton)
       end
 
@@ -280,44 +205,19 @@ module RbsInfer::Project::StoredBlockReplayExpander
       end
     end
 
-    # Which method table a `def` puts the method in, in the terms
-    # `dsl_providers` keys on. `def keep` goes in the module's own, reached by
-    # whoever `extend`s it; `def self.keep` goes in the SINGLETON's, reached by
-    # the subject in its own body and by its subclasses. Both used to be
-    # recorded under the lexical scope, which happened to work only because no
-    # shape yet needed telling the two apart — `IncludedHook::Hookable` does,
-    # since its `def self.included` is reached by nothing but Hookable itself
-    # (felixefelip/rbs_infer#260).
-    #
-    # `def SomeOther.foo` and `def obj.foo` answer nothing: which object that
-    # names is not a question this pass asks, so the method is not collected at
-    # all rather than filed under the wrong owner.
-    def shape_owner(node)
-      return current_scope unless node.receiver
-      return singleton_owner(current_scope) if node.receiver.is_a?(Prism::SelfNode)
-
-      nil
-    end
-
-    # No file can declare a constant by this name, so a singleton owner cannot
-    # collide with a real one.
-    def singleton_owner(name)
-      "singleton(#{name})"
-    end
-
     def collect_class_body_call(node)
       case node.name
       when :extend
         return unless NodeReading.bare_or_self?(node) && node.arguments
 
         node.arguments.arguments.each do |argument|
-          @extends << [current_scope, argument]
+          @names.record_extend(@names.current_scope, argument)
         end
       else
         return unless NodeReading.bare_or_self?(node)
 
         if node.block.is_a?(Prism::BlockNode)
-          @stored_calls << StoredCall.new(owner: nil, subject: current_scope, method: node.name.to_s,
+          @stored_calls << StoredCall.new(owner: nil, subject: @names.current_scope, method: node.name.to_s,
                                           block: node.block, source: @source)
         elsif node.arguments
           # One apply per argument. `apply(A, B)` asks for A's block AND B's,
@@ -326,7 +226,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
           # Only single-argument calls used to be read at all, so the plural
           # form resolved nothing (felixefelip/rbs_infer#253).
           node.arguments.arguments.each do |argument|
-            @apply_calls << ApplyCall.new(owner: nil, subject: current_scope, method: node.name.to_s, argument: argument)
+            @apply_calls << ApplyCall.new(owner: nil, subject: @names.current_scope, method: node.name.to_s, argument: argument)
           end
         end
       end
@@ -355,7 +255,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       end
 
       reached.shapes.each { |shapes| absorb(shapes) }
-      @declarations.merge(reached.names)
+      @names.declare_all(reached.names)
     end
 
     # Every constant this file NAMES but may not declare, as
@@ -370,7 +270,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # ordinary shape of a concern — declared in its own file, used from
     # another — rather than an exotic one (felixefelip/rbs_infer#265).
     def external_constants
-      @extends + @superclasses + @apply_calls.map { |apply| [apply.subject, apply.argument] }
+      @names.named_constants + @apply_calls.map { |apply| [apply.subject, apply.argument] }
     end
 
     # Every constant this file names but does not declare, each as the ORDERED
@@ -394,7 +294,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       lookups = CORE_REOPENS.map { |name| [name] }
 
       external_constants.each do |subject, raw_constant|
-        next if resolve_constant(raw_constant, subject)
+        next if @names.resolve(raw_constant, subject)
 
         name = RbsInfer::Analyzer.extract_constant_path(raw_constant)
         lookups << Corpus.lookup_candidates(name, subject) if name
@@ -433,8 +333,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # And what that file DECLARES, which no other shape needs: a `const_get`
       # is resolved under the module being included, and whether that module
       # holds the constant is a fact about the concern's own file.
-      @absorbed_kinds.merge!(shapes.declaration_kinds)
-      shapes.providers.each { |owner, subjects| @absorbed_providers[owner].merge(subjects) }
+      @names.absorb(kinds: shapes.declaration_kinds, providers: shapes.providers)
       # The two that carry a BLOCK. A DSL is routinely written in one file and
       # used from another — a concern in `app/models/concerns` and the class
       # that includes it — so the block and the `include` naming its target are
@@ -457,7 +356,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
                             forwards: @forwards, delegations: @resolved_delegations,
                             storages: @storages)
 
-      providers = dsl_providers
+      providers = @names.providers
       @resolved_delegations.concat(resolve_delegations)
       @resolved_inward_extends.concat(resolve_inward_extends)
       @resolved_own_replays.concat(resolve_own_replays)
@@ -535,8 +434,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # A created namespace says its own keyword — `Module.new` is a module —
       # and is recorded, because nothing else in the project can answer for it
       # and the `extend` half of a concern asks.
-      @created_kinds[target] = own.creates if own.name && own.creates
-      kind = declared_kind(target)
+      @names.record_created(target, own.creates) if own.name && own.creates
+      kind = @names.kind_of(target)
       return nil unless kind
 
       Replay.new(target: target, block: stored.block, kind: kind, call: stored.method,
@@ -577,7 +476,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # each call site names its own target, and the block simply runs twice, as
     # it does at runtime (felixefelip/rbs_infer#263).
     def resolve_apply(apply, providers)
-      source_subject = resolve_constant(apply.argument, apply.subject)
+      source_subject = @names.resolve(apply.argument, apply.subject)
       return [] unless source_subject
 
       resolve_application(apply.subject, apply.method, source_subject, providers, Set.new)
@@ -624,7 +523,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # closes the hop.
     def register_deferrals(providers)
       (@apply_calls + @foreign_applies).each do |apply|
-        source_subject = resolve_constant(apply.argument, apply.subject)
+        source_subject = @names.resolve(apply.argument, apply.subject)
         next unless source_subject
 
         deferral = deferral_for(apply.subject, apply.method, source_subject, providers)
@@ -658,7 +557,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # Not by reading the predicate. What the predicate asks (`does base have
     # @_dependencies`) is answered by the method that PUTS it there: a `SlotInit`
     # in the DSL's own chain says the objects handed to that DSL hold the slot,
-    # and `dsl_providers` says which those are. So `Post::Commentable`, which
+    # and `@names.providers` says which those are. So `Post::Commentable`, which
     # extends the concern DSL, holds it and defers; `Post`, which extends
     # nothing, does not and replays. A DSL whose slot nothing in the corpus
     # initialises holds for nobody, which is the same "nothing to say" every
@@ -668,7 +567,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
         next false unless subjects.include?(source_subject) && subjects.include?(subject)
 
         @slot_inits.any? do |init|
-          init.ivar == slot && [owner, singleton_owner(owner)].include?(init.owner)
+          init.ivar == slot && [owner, Declarations.singleton_owner(owner)].include?(init.owner)
         end
       end
     end
@@ -718,7 +617,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # pass cannot pick a winner for, so it says nothing. Several `extend`s from
     # one provider are not that — see `inward_extend_shapes`.
     def resolve_extensions(apply, providers)
-      source_subject = resolve_constant(apply.argument, apply.subject)
+      source_subject = @names.resolve(apply.argument, apply.subject)
       return [] unless source_subject
 
       extensions_for(apply.subject, apply.method, source_subject, providers, Set.new)
@@ -747,7 +646,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     end
 
     def direct_extensions(subject, method, source_subject, providers)
-      kind = @declaration_kinds[subject]
+      kind = @names.own_kind(subject)
       return [] unless kind
 
       appliers = providers.select { |_, subjects| subjects.include?(subject) }.keys
@@ -798,7 +697,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # nothing declares.
     def extension_name(extension, under)
       name = named_constant(extension, under)
-      name if name && declared_module?(name)
+      name if name && @names.module?(name)
     end
 
     # The constant a shape names, resolved for one call site: a written one is
@@ -817,19 +716,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # around it says so.
       return name if shape.creates
 
-      declared_kind(name) ? name : nil
-    end
-
-    # What a name is declared AS — "module", "class", or nil — in this file or in
-    # one whose shapes were absorbed. Two callers want different halves of it: an
-    # `extend` takes a module, so a class of that name is not the thing being
-    # asked about; a replay takes either and needs the keyword to reopen it with.
-    def declared_kind(name)
-      @declaration_kinds[name] || @absorbed_kinds[name] || @created_kinds[name]
-    end
-
-    def declared_module?(name)
-      declared_kind(name) == "module"
+      @names.kind_of(name) ? name : nil
     end
 
     # The collected `extend`s with their written constants resolved, against the
@@ -843,8 +730,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
           InwardExtend.new(owner: owner, method: method, parameter: parameter, name: name, dynamic: true,
                            creates: creates)
         else
-          resolved = resolve_constant(name, lexical_context(owner))
-          next unless resolved && @declaration_kinds[resolved] == "module"
+          resolved = @names.resolve(name, Declarations.lexical_context(owner))
+          next unless resolved && @names.own_kind(resolved) == "module"
 
           InwardExtend.new(owner: owner, method: method, parameter: parameter, name: resolved, dynamic: false,
                            creates: creates)
@@ -863,7 +750,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
           OwnBlockReplay.new(owner: owner, method: method, name: name, dynamic: dynamic, creates: creates,
                              singleton: singleton)
         else
-          resolved = resolve_constant(name, lexical_context(owner))
+          resolved = @names.resolve(name, Declarations.lexical_context(owner))
           next unless resolved
 
           OwnBlockReplay.new(owner: owner, method: method, name: resolved, dynamic: false, creates: creates,
@@ -885,14 +772,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
       end
     end
 
-    # The lexical scope a constant written in `owner`'s body resolves against.
-    # `def self.included` is collected under `singleton(Foo)`, which names a
-    # method table rather than a namespace: the constants a body there sees are
-    # `Foo`'s.
-    def lexical_context(owner)
-      owner.to_s.sub(/\Asingleton\((.*)\)\z/, "\\1")
-    end
-
     def replay_for(subject, method, applier, source_provider, source_subject)
       # Both directions answer with the SLOT — and with the object that owns
       # it, which is not always the provider: a delegating DSL method keeps
@@ -909,7 +788,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       literals = @graph.literal_replays_for(applier, method, source_provider)
       return nil unless slots.size + literals.size == 1
 
-      kind = @declaration_kinds[subject]
+      kind = @names.own_kind(subject)
       return nil unless kind
 
       if (literal = literals.first)
@@ -932,87 +811,9 @@ module RbsInfer::Project::StoredBlockReplayExpander
                  source: blocks.first.source, singleton: singleton, extended: false)
     end
 
-    # Which classes/modules can call each owner's DSL, as `owner => subjects`.
-    #
-    # `extend Builder` is one way to be handed those methods; `class Sub < Base`
-    # is the other, and to a caller they are indistinguishable — `bazingado`
-    # arrives with no receiver in the class body either way. Reading only the
-    # first was the whole reason a file spelling the same replay through
-    # inheritance produced nothing (felixefelip/rbs_infer#251).
-    #
-    # Ancestry is transitive because Ruby's is: `Bar < Baz < Foo` puts Foo's
-    # singleton methods in Bar's body just as directly as `Bar < Foo` would.
-    def dsl_providers
-      providers = Hash.new { |hash, key| hash[key] = Set.new }
-      @absorbed_providers.each { |owner, subjects| providers[owner].merge(subjects) }
-
-      @extends.each do |subject, raw_module|
-        mod = resolve_constant(raw_module, subject) || written_constant(raw_module)
-        providers[mod] << subject if mod
-      end
-
-      parents = @superclasses.to_h do |subject, raw_superclass|
-        [subject, resolve_constant(raw_superclass, subject)]
-      end
-      parents.compact!
-
-      # Through the SINGLETON, both of them. `keep` in a class body is a call on
-      # the class object, so it is found in `singleton(Base)` — where
-      # `def self.keep` put it — and never in `Base`'s own method table, where
-      # `extend`'s half lives. Keyed alike, an `attr_reader :body` in a class
-      # body would answer for a `def self.apply` that could not call it.
-      @declarations.each do |subject|
-        providers[singleton_owner(subject)] << subject
-        superclasses(subject, parents).each { |ancestor| providers[singleton_owner(ancestor)] << subject }
-      end
-
-      # What the subject's own `self` makes callable: a class body reaches
-      # `Class`'s instance methods and everything behind them, a module body
-      # `Module`'s. To the caller this is indistinguishable from the two
-      # relations above — the method arrives with no receiver either way — but
-      # it is neither an `extend` nor an ancestor of the SUBJECT, so nothing
-      # above can express it, and a DSL whose applier is written as a core
-      # reopening had no provider at all (felixefelip/rbs_infer#256).
-      #
-      # Costless when nothing reopens them: an owner with no collected shapes
-      # answers no slot, so the join declines exactly where it declines today.
-      @declaration_kinds.each do |subject, kind|
-        CORE_SELF_CHAINS.fetch(kind, []).each { |ancestor| providers[ancestor] << subject }
-      end
-
-      providers
-    end
-
-    # The name an `extend` writes, for a module this file does not declare.
-    #
-    # `resolve_constant` answers nil for those, and rightly: it is picking a
-    # NAMESPACE, and only a declaration it can see settles which one. A provider
-    # key needs no such confirmation — it either matches the shapes some other
-    # file supplied or it matches nothing, and a name nobody supplies methods
-    # under changes no answer. Without the fallback, a concern extending a DSL
-    # declared in another file recorded no provider at all, so the host holding
-    # both halves could not join them (felixefelip/rbs_infer#268).
-    def written_constant(node)
-      RbsInfer::Analyzer.extract_constant_path(node)&.sub(/\A::/, "")
-    end
-
-    # `subject`'s superclass chain, nearest first, limited to classes declared
-    # in this file. A chain that revisits a class it already yielded stops
-    # there: `class A < B` reopened as `class B < A` is not something to reason
-    # about, but it must not hang the pass either.
-    def superclasses(subject, parents)
-      chain = []
-      current = parents[subject]
-      while current && !chain.include?(current)
-        chain << current
-        current = parents[current]
-      end
-      chain
-    end
-
     def resolve_delegations
       @delegations.filter_map do |owner, method, raw_target, callee|
-        target = resolve_constant(raw_target, owner)
+        target = @names.resolve(raw_target, owner)
         Delegation.new(owner: owner, method: method, target: target, callee: callee) if target
       end
     end
