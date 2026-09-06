@@ -38,7 +38,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # name is declared: the module is not in any file's text, and the reopening
       # this pass emits for it is what declares it.
       @created_kinds = {}
-      @extends = []
       @superclasses = []
       # Who can call whose DSL, as the files this one absorbs write it. Kept
       # apart from the table this file builds for the same reason
@@ -71,10 +70,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     def current_scope
       @scope.last
-    end
-
-    def record_extend(subject, argument)
-      @extends << [subject, argument]
     end
 
     # A name this file can now answer for, because the corpus walk reached it.
@@ -157,7 +152,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # from — an `extend` and a superclass. The module-call arguments are the collector's
     # to add, being call sites rather than declarations.
     def named_constants
-      @extends + @superclasses
+      @superclasses
     end
 
     # Which classes/modules can call each owner's DSL, as `owner => subjects`.
@@ -173,11 +168,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def providers
       table = Hash.new { |hash, key| hash[key] = Set.new }
       @absorbed_providers.each { |owner, subjects| table[owner].merge(subjects) }
-
-      @extends.each do |subject, raw_module|
-        mod = resolve(raw_module, subject) || self.class.written_constant(raw_module)
-        table[mod] << subject if mod
-      end
 
       parents = @superclasses.to_h { |subject, raw| [subject, resolve(raw, subject)] }
       parents.compact!

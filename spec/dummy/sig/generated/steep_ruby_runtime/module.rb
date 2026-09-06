@@ -40,9 +40,12 @@ class Module
   def append_features(mod)
     raise TypeError, "wrong argument type (expected Class or Module)" unless mod.is_a?(Module)
 
-    # rb_include_module(mod, self): the ancestors of `mod` gain `self`. Not expressible
-    # here, and not needed — RBS states ancestry, this file only models dispatch.
+    mod.send(:__rbs_infer__include_module, self)
     self
+  end
+
+  def __rbs_infer__include_module(mod)
+    nil
   end
 
   # The notification, and on `Module` it does nothing at all: `rb_obj_dummy1`, one

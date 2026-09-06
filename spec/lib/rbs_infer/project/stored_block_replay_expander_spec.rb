@@ -2,6 +2,7 @@
 
 require "spec_helper"
 require "rbs_infer"
+require "rbs_infer/project/ruby_runtime_generator"
 
 RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
   # The seam takes `sources:` with no default, so a caller cannot forget to
@@ -14,7 +15,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
   NO_HOSTS = Object.new
   def NO_HOSTS.hosts_of(_name) = []
 
-  def expand(source, sources: RbsInfer::Project::ConstantSources::NONE, mixin_index: NO_HOSTS)
+  def expand(source, sources: project, mixin_index: NO_HOSTS)
     described_class.expand(source, sources: sources, mixin_index: mixin_index)
   end
 
@@ -24,10 +25,16 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
   # `eval_anywhere?` is asked of the PROJECT, so the double answers from the
   # declarations it was built with — which is what the real `ConstantSources`
   # computes by scanning the corpus.
+  RUNTIME_ENTRIES = RbsInfer::Project::RubyRuntimeGenerator.new(app_dir: ".").build.to_h do |file|
+    name = file.filename == "object.rb" ? "Object" : "Module"
+    [name, [RbsInfer::Project::ParseCache::Entry.new(source: file.source, result: Prism.parse(file.source))]]
+  end
+
   def project(**declarations)
     table = declarations.to_h do |name, source|
       [name.to_s, [RbsInfer::Project::ParseCache::Entry.new(source: source, result: Prism.parse(source))]]
     end
+    RUNTIME_ENTRIES.each { |name, entries| table[name] = table.fetch(name, []) + entries }
     evals = declarations.each_value.any? { |source| source.match?(/class_eval|module_eval/) }
     extends = declarations.each_value.any? { |source| source.include?(".extend") }
 
@@ -1885,6 +1892,25 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
 
     it "sends the body past the waypoint, to the class that includes it" do
       expanded = expand(chain(dsl))
+
+      expect(expanded).to include("class Host\n  def greet")
+      expect(expanded).not_to include("module Mid\n  def greet")
+    end
+
+    it "reads a mixer spelled anything, because nothing reads the spelling" do
+      mixer = <<~RUBY + chain(dsl).gsub("extend DSL", "bananate DSL")
+        class Object
+          def bananate(*modules)
+            modules.reverse_each do |mod|
+              mod.send(:extend_object, self)
+              mod.send(:extended, self)
+            end
+            self
+          end
+        end
+      RUBY
+
+      expanded = expand(mixer)
 
       expect(expanded).to include("class Host\n  def greet")
       expect(expanded).not_to include("module Mid\n  def greet")

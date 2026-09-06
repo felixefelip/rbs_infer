@@ -232,22 +232,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def collect_class_body_call(node)
       return unless NodeReading.bare_or_self?(node)
 
-      # `extend Foo` is read here AND below, and the two readings answer
-      # different questions. This one is the declaration: it says this scope may
-      # now call `Foo`'s DSL, which is what `providers` is built from — true
-      # whether or not anything resolves, so no call site can answer it. The one
-      # below is the call site: it is the only thing that says
-      # `Foo.extended(this_scope)` happened, which no declaration can answer.
-      #
-      # Which is why this must not `return`. It used to, and `Object#extend` was
-      # then reached by nothing — while `include Foo` went down the ordinary path
-      # and reached `append_features` through the transcribed `Module#include`.
-      # Same shape of call, and the difference was an accident of this method
-      # (felixefelip/rbs_infer#302).
-      if node.name == :extend && node.arguments
-        node.arguments.arguments.each { |argument| @names.record_extend(@names.current_scope, argument) }
-      end
-
       if node.block.is_a?(Prism::BlockNode)
         @shapes.stored_calls << StoredCall.new(owner: nil, subject: @names.current_scope, method: node.name.to_s,
                                         block: node.block, source: @source)

@@ -2,10 +2,9 @@
 
 require "spec_helper"
 require "rbs_infer"
+require "rbs_infer/project/ruby_runtime_generator"
 
 RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
-  NO_SOURCES = RbsInfer::Project::ConstantSources::NONE
-
   # The mixin graph is the other half of the `self` answer, and these examples
   # describe one file with no project around it — so they say "nobody mixes
   # anything in" explicitly rather than leaving the seam unthreaded.
@@ -14,10 +13,16 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
 
   # A project of exactly the constants named, as `ConstantSources` answers for
   # them — the same double the expander's own spec uses.
+  RUNTIME_ENTRIES = RbsInfer::Project::RubyRuntimeGenerator.new(app_dir: ".").build.to_h do |file|
+    name = file.filename == "object.rb" ? "Object" : "Module"
+    [name, [RbsInfer::Project::ParseCache::Entry.new(source: file.source, result: Prism.parse(file.source))]]
+  end
+
   def project(**declarations)
     table = declarations.to_h do |name, source|
       [name.to_s, [RbsInfer::Project::ParseCache::Entry.new(source: source, result: Prism.parse(source))]]
     end
+    RUNTIME_ENTRIES.each { |name, entries| table[name] = table.fetch(name, []) + entries }
     evals = declarations.each_value.any? { |source| source.match?(/class_eval|module_eval/) }
 
     Class.new do
@@ -62,7 +67,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS))
+    expect(described_class.blocks_for(source: source, sources: project, mixin_index: NO_HOSTS))
       .to eq([{ "call" => "keep", "in" => "::Src", "implements" => "::Target" }])
   end
 
@@ -92,7 +97,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS)).to eq(
+    expect(described_class.blocks_for(source: source, sources: project, mixin_index: NO_HOSTS)).to eq(
       [{ "call" => "keep", "in" => "::SrcA", "implements" => "::First" },
        { "call" => "keep", "in" => "::SrcB", "implements" => "::Second" }]
     )
@@ -117,7 +122,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    entries = described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS)
+    entries = described_class.blocks_for(source: source, sources: project, mixin_index: NO_HOSTS)
 
     expect(entries).to eq([{ "call" => "keep", "in" => "::Src", "implements" => "::Target" }])
     expect(entries.map { |entry| entry["line"] }).not_to include(17)
@@ -146,7 +151,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS))
+    expect(described_class.blocks_for(source: source, sources: project, mixin_index: NO_HOSTS))
       .to eq([{ "call" => "keep", "in" => "::Src", "implements" => ["::First", "::Second"] }])
   end
 
@@ -180,20 +185,20 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS))
+    expect(described_class.blocks_for(source: source, sources: project, mixin_index: NO_HOSTS))
       .to eq([{ "call" => "keep", "in" => "::Shared", "implements" => ["::First", "::Second"] },
               { "call" => "keep", "in" => "::Lone", "implements" => "::Third" }])
   end
 
   it "returns nothing for a file with no replay" do
-    expect(described_class.blocks_for(source: "class Foo\n  def bar = 1\nend\n", sources: NO_SOURCES, mixin_index: NO_HOSTS)).to eq([])
+    expect(described_class.blocks_for(source: "class Foo\n  def bar = 1\nend\n", sources: project, mixin_index: NO_HOSTS)).to eq([])
   end
 
   # The substring gate: no `class_eval`/`module_eval` anywhere means no parse.
   it "does not parse a file that cannot contain a replay" do
     expect(Prism).not_to receive(:parse)
 
-    expect(described_class.blocks_for(source: "class Foo; end\n", sources: NO_SOURCES, mixin_index: NO_HOSTS)).to eq([])
+    expect(described_class.blocks_for(source: "class Foo; end\n", sources: project, mixin_index: NO_HOSTS)).to eq([])
   end
 
   # A block replayed onto the target's SINGLETON defines `Target.age`, so the
@@ -221,7 +226,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
       end
     RUBY
 
-    expect(described_class.blocks_for(source: source, sources: NO_SOURCES, mixin_index: NO_HOSTS))
+    expect(described_class.blocks_for(source: source, sources: project, mixin_index: NO_HOSTS))
       .to eq([{ "call" => "keep", "in" => "::Src", "implements" => "singleton(::Target)" }])
   end
   # The gate is the expander's, asked of the PROJECT. A concern writes
@@ -297,7 +302,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
     end
 
     it "names the host's singleton intersected with the module" do
-      entries = described_class.blocks_for(source: concern, sources: NO_SOURCES,
+      entries = described_class.blocks_for(source: concern, sources: project,
                                            mixin_index: hosts("Wrap::Source" => ["Wrap::Host"]))
 
       expect(entries).to eq(
@@ -307,7 +312,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
     end
 
     it "unions the hosts when the module is mixed into several" do
-      entries = described_class.blocks_for(source: concern, sources: NO_SOURCES,
+      entries = described_class.blocks_for(source: concern, sources: project,
                                            mixin_index: hosts("Wrap::Source" => ["Wrap::One", "Wrap::Two"]))
 
       expect(entries.first["self"])
@@ -317,7 +322,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
     # An unmixed module's methods run with a self this pass cannot state, and
     # naming the module alone would be the wrong answer rather than a partial one.
     it "says nothing when the graph names no host" do
-      entries = described_class.blocks_for(source: concern, sources: NO_SOURCES, mixin_index: NO_HOSTS)
+      entries = described_class.blocks_for(source: concern, sources: project, mixin_index: NO_HOSTS)
 
       expect(entries.first).not_to have_key("self")
       expect(entries.first["implements"]).to eq("::Wrap::Source::Methods")
@@ -328,7 +333,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
     it "leaves a replay nobody hands out without a self" do
       source = concern.sub("base.extend(const_get(:Methods))", "base.class_eval { }")
 
-      entries = described_class.blocks_for(source: source, sources: NO_SOURCES,
+      entries = described_class.blocks_for(source: source, sources: project,
                                            mixin_index: hosts("Wrap::Source" => ["Wrap::Host"]))
 
       expect(entries.first).not_to have_key("self")

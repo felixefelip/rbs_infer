@@ -1,5 +1,6 @@
 require "spec_helper"
 require "rbs_infer"
+require "rbs_infer/project/ruby_runtime_generator"
 require "rbs_infer/extensions/rails/module_self_type_generator"
 require "rbs_infer/extensions/rails/active_record/runtime_generator"
 require "tmpdir"
@@ -24,10 +25,15 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
   # as a real one would not.
   CONCERN = RbsInfer::Extensions::Rails::ActiveRecord::Runtime::ConcernPseudoCode::SOURCE
 
+  RUNTIME = RbsInfer::Project::RubyRuntimeGenerator.new(app_dir: ".").build.to_h do |file|
+    ["sig/generated/steep_ruby_runtime/#{file.filename}", file.source]
+  end
+
   def in_app(files)
     Dir.mktmpdir do |dir|
       files = { "Steepfile" => STEEPFILE,
-                "sig/generated/steep_ar_runtime/active_support/concern.rb" => CONCERN }.merge(files)
+                "sig/generated/steep_ar_runtime/active_support/concern.rb" => CONCERN }
+              .merge(RUNTIME).merge(files)
       files.each do |rel, content|
         path = File.join(dir, rel)
         FileUtils.mkdir_p(File.dirname(path))
