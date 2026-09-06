@@ -176,7 +176,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # A name fetched as DATA (`const_get(:ClassMethods)`) is resolved against
     # whatever `self` is when the hook runs, which is the module being included
     # and so is only known at the call site.
-    InwardExtend = Data.define(:owner, :method, :parameter, :name, :dynamic, :creates)
+    InwardExtend = Data.define(:owner, :method, :parameter, :callee, :hop, :name, :dynamic, :creates)
 
     # One `extend` a module call puts on its target, resolved: the class or
     # module to reopen, and the module its singleton gains.

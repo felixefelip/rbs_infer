@@ -208,8 +208,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
         @own_replays << [owner, method_name, name, dynamic, creates, singleton]
       end
 
-      ShapeReader.inward_extend_shapes(node.body, parameters).each do |parameter, name, dynamic, creates|
-        @inward_extends << [owner, method_name, parameter, name, dynamic, creates]
+      ShapeReader.inward_module_calls(node.body, parameters).each do |parameter, callee, hop, name, dynamic, creates|
+        @inward_extends << [owner, method_name, parameter, callee, hop, name, dynamic, creates]
       end
 
       if (literal = ShapeReader.literal_replay_shape(node.body, parameters))
@@ -299,16 +299,16 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # here and again in `collect_shapes`. A dynamic name has nothing to resolve
     # yet and passes through; it is decided per call site, in `extension_name`.
     def resolve_inward_extends
-      @inward_extends.filter_map do |owner, method, parameter, name, dynamic, creates|
+      @inward_extends.filter_map do |owner, method, parameter, callee, hop, name, dynamic, creates|
         if dynamic
-          InwardExtend.new(owner: owner, method: method, parameter: parameter, name: name, dynamic: true,
-                           creates: creates)
+          InwardExtend.new(owner: owner, method: method, parameter: parameter, callee: callee, hop: hop,
+                           name: name, dynamic: true, creates: creates)
         else
           resolved = @names.resolve(name, Declarations.lexical_context(owner))
           next unless resolved && @names.own_kind(resolved) == "module"
 
-          InwardExtend.new(owner: owner, method: method, parameter: parameter, name: resolved, dynamic: false,
-                           creates: creates)
+          InwardExtend.new(owner: owner, method: method, parameter: parameter, callee: callee, hop: hop,
+                           name: resolved, dynamic: false, creates: creates)
         end
       end
     end

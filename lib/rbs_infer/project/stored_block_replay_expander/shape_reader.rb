@@ -274,20 +274,20 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # module is there, and `extension_name` answers that with the declarations
     # the pass has actually seen — the same question, decided by the project
     # rather than by re-implementing the condition.
-    def inward_extend_shapes(body, parameters)
+    def inward_module_calls(body, parameters)
       nodes(body).flat_map do |node|
         next [] unless node.is_a?(Prism::CallNode)
         call = dispatched(node)
-        next [] unless call.name == :extend
-        receiver = call.receiver
-        next [] unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
+        handed = handed_receiver(call.receiver, parameters)
+        next [] unless handed
 
+        receiver_name, hop = handed
         (call.arguments&.arguments || []).filter_map do |argument|
           # Both spellings of naming a module, and the pair says which is which:
           # a constant is syntax and resolves in the file it was WRITTEN in, a
           # `const_get` is data and resolves against the `self` the hook runs on.
           named = RbsInfer::AST::ConstantReference.named(argument)
-          [receiver.name.to_s, *named] if named
+          [receiver_name, call.name.to_s, hop, *named] if named
         end
       end
     end
