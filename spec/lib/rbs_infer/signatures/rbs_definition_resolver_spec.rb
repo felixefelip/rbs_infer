@@ -5,7 +5,7 @@ RSpec.describe RbsInfer::Signatures::RbsDefinitionResolver do
 
   describe "#type_param_string" do
     it "renders the exact params of a generic core class" do
-      expect(resolver.type_param_string("Array")).to eq("[unchecked out Elem]")
+      expect(resolver.type_param_string("Array")).to eq("[unchecked out E]")
       expect(resolver.type_param_string("Hash")).to eq("[unchecked out K, unchecked out V]")
     end
 

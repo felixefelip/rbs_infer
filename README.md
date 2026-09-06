@@ -105,6 +105,7 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 
 | Task | Source generator | Output dir |
 |---|---|---|
+| `rake rbs_infer:ruby_runtime:all` | `RbsInfer::Project::RubyRuntimeGenerator` | `sig/generated/steep_ruby_runtime/` |
 | `rake rbs_infer:enumerize:all` | `RbsInfer::Extensions::Enumerize::Generator` | `sig/rbs_enumerize/` |
 | `rake rbs_infer:devise:all` | `RbsInfer::Extensions::Devise::Generator` | `sig/generated/steep_devise_runtime/` |
 | `rake rbs_infer:rails_custom:all` | `RbsInfer::Extensions::Rails::CustomGenerator` | `sig/rbs_rails_custom/` |
