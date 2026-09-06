@@ -45,7 +45,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # The replays this file emits, and — as a side effect read back through
     # `extensions` — the `extend`s its call sites put on their targets.
     def run
-      providers = @names.providers
+      providers = ancestry(@names.providers)
       register_deferrals(providers)
 
       # The own-block replays FIRST: one may create the very module the `extend`
@@ -73,6 +73,102 @@ module RbsInfer::Project::StoredBlockReplayExpander
     end
 
     private
+
+    # The method Ruby splices an ancestor in, as the transcription names it.
+    # Ours, not Ruby's: `rb_include_module` has no name at the Ruby level and
+    # `append_features` is a hook an application overrides
+    # (felixefelip/rbs_infer#311).
+    SPLICE = "__rbs_infer__include_module"
+
+    # `providers` grown by the module calls that splice a module into a
+    # subject's SINGLETON — which is what `extend Foo` is, read rather than
+    # recognised by its spelling.
+    #
+    # A fixpoint, because the table is both the question and the answer: finding
+    # which method a call reaches needs the table, and reaching the splice grows
+    # it. The seed needs no call at all — `Object#extend` is reachable from the
+    # core chains, which come from the subject's kind — and the table only ever
+    # gains entries, so its size bounds the loop.
+    def ancestry(providers)
+      loop do
+        grown = false
+
+        @shapes.module_calls.each { |call| splice(call, providers, local: true) { grown = true } }
+        @shapes.foreign_module_calls.each { |call| splice(call, providers, local: false) { grown = true } }
+
+        return providers unless grown
+      end
+    end
+
+    # One module call's contribution to the table, yielding when it added
+    # something.
+    #
+    # A LOCAL call is resolved against this file's declarations, which is the
+    # scope its name was written in. A FOREIGN one is not: its name belongs to
+    # the scope of the file that wrote it, and the corpus this file absorbed is
+    # a wider world than that file could see. Reading `extend DSL` in a concern
+    # that declares nothing, and picking the `Elsewhere::DSL` some third file
+    # happens to declare, is choosing a namespace on evidence the writer never
+    # had. So the written name is the key, and it matches whatever supplies
+    # methods under exactly that name — or nothing, which changes no answer
+    # (felixefelip/rbs_infer#268).
+    def splice(call, providers, local:)
+      argument = (local && @names.resolve(call.argument, call.subject)) ||
+                 Declarations.written_constant(call.argument)
+      return unless argument
+
+      spliced_subjects(call.subject, call.method, argument, providers).each do |subject|
+        yield if providers[argument].add?(subject)
+      end
+    end
+
+    # The subjects whose singleton gains `argument`, following the call from
+    # where it was written to the splice.
+    #
+    # Two objects travel together and SWAP at every hop, because a forward hands
+    # the callee `self`: what was the receiver becomes the argument. For
+    # `X.extend(M)` the transcription walks
+    #
+    #   X.extend(M)              receiver X            argument M
+    #   M.extend_object(X)       receiver M            argument X
+    #   X.singleton.include(M)   receiver singleton(X) argument M
+    #   M.append_features(…)     receiver M            argument singleton(X)
+    #   splice                   receiver singleton(X) argument M
+    #
+    # and the receiver it arrives with is the object that gained the module. A
+    # plain `include Foo` walks the same chain and arrives at `Bar`, not
+    # `singleton(Bar)`, which is why it says nothing about who can call what.
+    #
+    # Every forward is followed, not one: `include` hands its argument to
+    # `included` as well, and that branch simply reaches no splice.
+    def spliced_subjects(receiver, method, argument, providers, seen = Set.new)
+      return [] unless seen.add?([receiver, method, argument])
+      return [singleton_subject(receiver)].compact if method == SPLICE
+
+      forwards_from(receiver, method, providers).flat_map do |forward|
+        onward = forward.singleton ? Declarations.singleton_owner(argument) : argument
+        spliced_subjects(onward, forward.callee, receiver, providers, seen)
+      end.uniq
+    end
+
+    # The forwards of `method` as `receiver` would dispatch it — over the owners
+    # that supply `receiver`, which for a singleton object is the class chain
+    # every class object answers from.
+    def forwards_from(receiver, method, providers)
+      owners = if singleton_subject(receiver)
+                 CORE_SELF_CHAINS.fetch("class", [])
+               else
+                 providers.select { |_, subjects| subjects.include?(receiver) }.keys
+               end
+
+      @shapes.forwards.select { |forward| owners.include?(forward.owner) && forward.method == method }
+    end
+
+    # The subject behind `singleton(Foo)`, or nil for anything else — including
+    # a plain name, which is the whole distinction this pass turns on.
+    def singleton_subject(name)
+      name[/\Asingleton\((.+)\)\z/, 1]
+    end
 
     # The block a DSL call runs where it stands, or nil when the file does not
     # decide it.

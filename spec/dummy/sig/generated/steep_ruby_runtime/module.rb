@@ -40,9 +40,30 @@ class Module
   def append_features(mod)
     raise TypeError, "wrong argument type (expected Class or Module)" unless mod.is_a?(Module)
 
-    # rb_include_module(mod, self): the ancestors of `mod` gain `self`. Not expressible
-    # here, and not needed — RBS states ancestry, this file only models dispatch.
+    mod.send(:__rbs_infer__include_module, self)
     self
+  end
+
+  # `rb_include_module` in class.c, which has no name in Ruby: `include`,
+  # `prepend` and `extend` are the only ways to reach it, and each of them
+  # is written above. So this method is OURS — the `__rbs_infer__` prefix
+  # the controller and view sidecars already use for a name the runtime
+  # does not have.
+  #
+  # The body is empty because Ruby cannot write the splice: `ancestors` is
+  # computed from the chain of `super` pointers and has no writer
+  # (measured: no `ancestors=`, no `superclass=`), and a refinement — the
+  # one other thing that changes method lookup — does not appear in
+  # `ancestors` at all. So the chain of calls bottoms out here whatever we
+  # call it, and what is left to decide is only who names the bottom.
+  #
+  # Not `append_features`, which is where the chain used to be read as
+  # ending: that one is a HOOK and `ActiveSupport::Concern` overrides it,
+  # so arriving there says nothing about whether anything was spliced.
+  # Arriving HERE does — an override reaches it only through `super`
+  # (rbs_infer#311).
+  def __rbs_infer__include_module(mod)
+    nil
   end
 
   # The notification, and on `Module` it does nothing at all: `rb_obj_dummy1`, one
