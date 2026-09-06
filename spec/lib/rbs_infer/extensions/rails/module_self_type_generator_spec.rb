@@ -25,11 +25,6 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
   # as a real one would not.
   CONCERN = RbsInfer::Extensions::Rails::ActiveRecord::Runtime::ConcernPseudoCode::SOURCE
 
-  # And the language's own, for the same reason one line up: `include` and
-  # `extend` are methods with bodies now, walked to the splice rather than
-  # recognised by their spelling, so an app whose corpus lacks the transcription
-  # resolves nothing — exactly as a real one would not
-  # (felixefelip/rbs_infer#311).
   RUNTIME = RbsInfer::Project::RubyRuntimeGenerator.new(app_dir: ".").build.to_h do |file|
     ["sig/generated/steep_ruby_runtime/#{file.filename}", file.source]
   end

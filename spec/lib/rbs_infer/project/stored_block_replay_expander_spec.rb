@@ -25,14 +25,6 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
   # `eval_anywhere?` is asked of the PROJECT, so the double answers from the
   # declarations it was built with — which is what the real `ConstantSources`
   # computes by scanning the corpus.
-  # The same transcription as the CORPUS rather than as text to expand, which is
-  # where a real project keeps it: emitted into `sig/`, absorbed by the walk, and
-  # never the file being rewritten. A fixture that declares no `Module`/`Object`
-  # of its own gets it, so `extend Foo` can be followed to the splice the way it
-  # is followed in the dummy.
-  # Built once, at load: an example that asserts nothing is parsed is asserting
-  # about the pass, and a fixture parsing its own corpus inside the example
-  # would answer for it.
   RUNTIME_ENTRIES = RbsInfer::Project::RubyRuntimeGenerator.new(app_dir: ".").build.to_h do |file|
     name = file.filename == "object.rb" ? "Object" : "Module"
     [name, [RbsInfer::Project::ParseCache::Entry.new(source: file.source, result: Prism.parse(file.source))]]
@@ -42,9 +34,6 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     table = declarations.to_h do |name, source|
       [name.to_s, [RbsInfer::Project::ParseCache::Entry.new(source: source, result: Prism.parse(source))]]
     end
-    # Concatenated, not substituted: `parsed_for` answers with a LIST because a
-    # constant is reopened across files, and a fixture that writes its own
-    # `class Module` is adding an applier beside the language's, not replacing it.
     RUNTIME_ENTRIES.each { |name, entries| table[name] = table.fetch(name, []) + entries }
     evals = declarations.each_value.any? { |source| source.match?(/class_eval|module_eval/) }
     extends = declarations.each_value.any? { |source| source.include?(".extend") }
@@ -1908,16 +1897,6 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(expanded).not_to include("module Mid\n  def greet")
     end
 
-    # felixefelip/rbs_infer#311. Nothing matches on the word `extend` any more:
-    # who supplies what is DERIVED, by following a call to the splice the
-    # transcription names. So a mixer spelled anything works, as long as its
-    # chain gets there — `bananate` here reaches `extend_object` and `extended`
-    # exactly as `Object#extend` does, and is otherwise a word nothing knows.
-    #
-    # The same file as the example above, with one word changed. Under the old
-    # reading it expanded to nothing: `bananate DSL` was not spelled `extend`,
-    # so neither `Src` nor `Mid` was recorded as holding the DSL and their bare
-    # `keep do` resolved to no owner at all.
     it "reads a mixer spelled anything, because nothing reads the spelling" do
       mixer = <<~RUBY + chain(dsl).gsub("extend DSL", "bananate DSL")
         class Object
