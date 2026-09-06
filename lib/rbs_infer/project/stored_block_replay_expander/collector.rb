@@ -229,29 +229,46 @@ module RbsInfer::Project::StoredBlockReplayExpander
     end
 
     def collect_class_body_call(node)
-      case node.name
-      when :extend
-        return unless NodeReading.bare_or_self?(node) && node.arguments
+      return unless NodeReading.bare_or_self?(node)
 
+      record_extend(node)
+
+      if node.block.is_a?(Prism::BlockNode)
+        @shapes.stored_calls << StoredCall.new(owner: nil, subject: @names.current_scope, method: node.name.to_s,
+                                        block: node.block, source: @source)
+      elsif node.arguments
+        # One apply per argument. `apply(A, B)` asks for A's block AND B's,
+        # which is what a `*modules` forward means at runtime — each gets its
+        # own candidate, and each resolves (or declines) on its own evidence.
+        # Only single-argument calls used to be read at all, so the plural
+        # form resolved nothing (felixefelip/rbs_infer#253).
         node.arguments.arguments.each do |argument|
-          @names.record_extend(@names.current_scope, argument)
+          @shapes.apply_calls << ApplyCall.new(owner: nil, subject: @names.current_scope, method: node.name.to_s, argument: argument)
         end
-      else
-        return unless NodeReading.bare_or_self?(node)
+      end
+    end
 
-        if node.block.is_a?(Prism::BlockNode)
-          @shapes.stored_calls << StoredCall.new(owner: nil, subject: @names.current_scope, method: node.name.to_s,
-                                          block: node.block, source: @source)
-        elsif node.arguments
-          # One apply per argument. `apply(A, B)` asks for A's block AND B's,
-          # which is what a `*modules` forward means at runtime — each gets its
-          # own candidate, and each resolves (or declines) on its own evidence.
-          # Only single-argument calls used to be read at all, so the plural
-          # form resolved nothing (felixefelip/rbs_infer#253).
-          node.arguments.arguments.each do |argument|
-            @shapes.apply_calls << ApplyCall.new(owner: nil, subject: @names.current_scope, method: node.name.to_s, argument: argument)
-          end
-        end
+    # `extend Foo` written in a class body, as a DECLARATION: it says this scope
+    # may now call `Foo`'s DSL, which is what `providers` is built from.
+    #
+    # A note, not a branch. It used to be one — `when :extend` recorded this and
+    # returned, so the call never became an `ApplyCall` and `Object#extend` was
+    # reached by nothing. `include Foo` was never treated that way: it goes down
+    # the ordinary path, becomes an apply, and arrives at `append_features`
+    # through the transcribed `Module#include`. The two are the same shape of
+    # call and the difference was an accident of this method
+    # (felixefelip/rbs_infer#302).
+    #
+    # Both readings are needed and neither replaces the other. The declaration
+    # answers "who may call whose DSL", which a call site cannot: `Foo`'s methods
+    # become callable here whether or not anything resolves. The call site
+    # answers "what ran on what", which the declaration cannot: it is the only
+    # thing that says `Foo.extended(this_scope)` happened.
+    def record_extend(node)
+      return unless node.name == :extend && node.arguments
+
+      node.arguments.arguments.each do |argument|
+        @names.record_extend(@names.current_scope, argument)
       end
     end
 
