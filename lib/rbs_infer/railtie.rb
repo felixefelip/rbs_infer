@@ -5,6 +5,7 @@ require "rails/railtie"
 module RbsInfer
   class Railtie < Rails::Railtie
     rake_tasks do
+      load File.expand_path("tasks/rbs_infer_ruby_runtime.rake", __dir__)
       load File.expand_path("extensions/enumerize/tasks/rbs_infer_enumerize.rake", __dir__)
       load File.expand_path("extensions/carrierwave/tasks/rbs_infer_carrierwave.rake", __dir__)
       load File.expand_path("extensions/devise/tasks/rbs_infer_devise.rake", __dir__)
