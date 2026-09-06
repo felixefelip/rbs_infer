@@ -19,6 +19,10 @@ app/models/example4.rb:27:23: [error] Type `(::String | nil)` does not have meth
 app/models/example4.rb:40:23: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example56.rb:29:6: [error] The method cannot return a value of type `nil` because declared as type `::String`
 app/models/example56.rb:36:6: [error] The method cannot return a value of type `nil` because declared as type `::String`
+app/models/example63.rb:17:10: [error] Type `::Example63::Foo` does not have method `greet`
+app/models/example63.rb:22:10: [error] Type `::Example63::Foo` does not have method `greet`
+app/models/example63.rb:4:21: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^(singleton(::Example63::Foo)) [self: singleton(::Example63::Foo)] -> U(_)`
+app/models/example63.rb:9:8: [warning] Method `::Example63::Foo#greet` is not declared in RBS
 app/models/example7.rb:31:28: [error] Type `(::Integer | nil)` does not have method `abs`
 app/models/example7.rb:34:27: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/included_hook.rb:110:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS
