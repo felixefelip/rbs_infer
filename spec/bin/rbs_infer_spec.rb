@@ -454,8 +454,6 @@ RSpec.describe "bin/rbs_infer" do
         end
       RUBY
 
-      # A transcrição da linguagem, que todo projeto tem em disco: sem ela o
-      # `extend` não chega na emenda e o bloco não sai do lugar (#311).
       RbsInfer::Project::RubyRuntimeGenerator.new(app_dir: @tmpdir).generate
 
       # A transcrição que o gerador de AR-runtime emite, reduzida ao que este
