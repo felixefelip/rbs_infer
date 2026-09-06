@@ -80,7 +80,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       call = dispatched(node)
       return nil unless REPLAY_METHODS.include?(call.name)
 
-      target, singleton = replayed_on(call.receiver, parameters)
+      target, singleton = handed_receiver(call.receiver, parameters)
       return nil unless target
 
       pass = call.block
@@ -125,7 +125,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
         next unless node.is_a?(Prism::CallNode)
         call = dispatched(node)
         next unless REPLAY_METHODS.include?(call.name)
-        target, singleton = replayed_on(call.receiver, parameters)
+        target, singleton = handed_receiver(call.receiver, parameters)
         next unless target
         block = call.block
         next unless block.is_a?(Prism::BlockNode)
@@ -318,12 +318,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
       nodes(body).filter_map do |node|
         next unless node.is_a?(Prism::CallNode)
         call = dispatched(node)
-        receiver = call.receiver
-        next unless receiver.is_a?(Prism::LocalVariableReadNode) && parameters.include?(receiver.name.to_s)
+        handed = handed_receiver(call.receiver, parameters)
+        next unless handed
         arguments = call.arguments&.arguments || []
         next unless arguments.size == 1 && arguments.first.is_a?(Prism::SelfNode)
 
-        [receiver.name.to_s, call.name.to_s]
+        parameter, singleton = handed
+        [parameter, call.name.to_s, singleton]
       end.uniq
     end
 

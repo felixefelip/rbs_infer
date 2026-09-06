@@ -100,7 +100,9 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @forwards.filter_map do |forward|
         next unless forward.owner == owner && forward.method == method
 
-        keeper_owner, keeper_method = keeper(source_provider, forward.callee)
+        provider = forward.singleton ? Declarations.singleton_owner(source_provider) : source_provider
+
+        keeper_owner, keeper_method = keeper(provider, forward.callee)
         [keeper_owner, keeper_method] if keeper_owner
       end.uniq
     end

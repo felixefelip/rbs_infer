@@ -111,9 +111,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
       RbsInfer::Inference::SendCall.desugar(node) || node
     end
 
-    # Which object a replay runs ON, as `[parameter name, singleton?]`, or nil
-    # when the receiver is not one this pass will move a block onto.
-    #
     # `base.class_eval` and `base.singleton_class.class_eval` are the same
     # relocation asked about two different method tables — `base`'s own, and
     # `base`'s singleton — which is exactly the difference between a DSL
@@ -126,7 +123,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # `singleton_class` is a hop to a DIFFERENT OBJECT, and taking it is only
     # safe because that object is decided by the one we were handed. An
     # arbitrary receiver still declines, singleton or not.
-    def replayed_on(receiver, parameters)
+    def handed_receiver(receiver, parameters)
       return nil unless receiver
 
       if (inner = singleton_class_of(receiver))

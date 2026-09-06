@@ -66,9 +66,7 @@ class Module
   # and a module that overrides this now has a `super` to resolve against.
   # @rbs_infer |...
   def extend_object(obj)
-    # rb_include_module(rb_singleton_class(obj), self): the SINGLETON of `obj`
-    # gains `self`, which is why `extend` reaches the object and `include`
-    # reaches its instances.
+    obj.singleton_class.include(self)
     obj
   end
 

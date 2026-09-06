@@ -92,7 +92,16 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
       Dir.mktmpdir do |dir|
         source = source_of(dir, "module.rb")
 
-        expect(source).to match(/def extend_object\(obj\)(?:\n\s*#.*)*\n\s+obj\n\s+end/)
+        expect(source).to match(/def extend_object\(obj\).*\n    obj\n  end/m)
+      end
+    end
+
+    it "splices into the singleton in Ruby, so `extend` is `include` on another table" do
+      Dir.mktmpdir do |dir|
+        source = source_of(dir, "module.rb")
+
+        expect(source).to include("    obj.singleton_class.include(self)\n")
+        expect(source.scan(/^\s+mod\.include\(self\)$/)).to be_empty
       end
     end
 
