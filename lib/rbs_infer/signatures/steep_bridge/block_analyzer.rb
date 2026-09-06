@@ -217,7 +217,7 @@ class RbsInfer::Signatures::SteepBridge
       receiver = receiver_type(typing, send_node)
       shapes = decls.map { |decl| callee_block_params(decl.method_type.block, receiver) }.uniq
       shapes.size == 1 ? shapes.first : :unknown
-    rescue StandardError
+    rescue Steep::Typing::UnknownNodeError
       nil
     end
 
@@ -227,7 +227,7 @@ class RbsInfer::Signatures::SteepBridge
       return nil unless node.is_a?(Parser::AST::Node)
 
       RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(typing.type_of(node: node))
-    rescue StandardError
+    rescue Steep::Typing::UnknownNodeError
       nil
     end
 
