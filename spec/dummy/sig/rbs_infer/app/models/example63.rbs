@@ -1,0 +1,11 @@
+module Example63
+  def self.run_without_block: () -> untyped
+  def self.run_with_block: () -> untyped
+end
+
+module Example63
+  class Foo
+    def build_my_block: () -> untyped
+    def my_block: () -> Proc
+  end
+end

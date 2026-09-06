@@ -2,7 +2,7 @@ class Example62
   module Deferring
     @kept: (^(*untyped) [self: Module] -> Symbol)?
 
-    def self.extended: (untyped base) -> untyped
+    def self.extended: (Object base) -> Array[untyped]
 
     def keep: () ?{ (*untyped) [self: Module] -> Symbol } -> (^(*untyped) [self: Module] -> Symbol)?
     def append_features: (Module base) -> Symbol?
