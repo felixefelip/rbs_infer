@@ -36,7 +36,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     #
     # That leaves out `Kernel`, and knowingly: it is a module, so nothing at
     # runtime distinguishes it from the two above. A `module Kernel` reopening
-    # holding a DSL applier is not a shape worth reading the live process for.
+    # holding a supplying module is not a shape worth reading the live process for.
     #
     # Deliberately NOT the ancestors RBS knows, either. That query answers
     # (measured: `singleton(::Example39::Bar)` + `banana` -> `::Module`), but
@@ -75,7 +75,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # the string they index. The rewrite slices it to move the body, and the
     # block may come from another file (see `absorb`).
     StoredCall = Data.define(:owner, :subject, :method, :block, :source)
-    ApplyCall = Data.define(:owner, :subject, :method, :argument)
+    ModuleCall = Data.define(:owner, :subject, :method, :argument)
 
     # The same replay written from the other end — `base.class_eval(&@block)`,
     # where `self` is the module that KEPT the block and the target arrives as a
@@ -178,7 +178,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # and so is only known at the call site.
     InwardExtend = Data.define(:owner, :method, :parameter, :name, :dynamic, :creates)
 
-    # One `extend` an apply call site puts on its target, resolved: the class or
+    # One `extend` a module call puts on its target, resolved: the class or
     # module to reopen, and the module its singleton gains.
     Extension = Data.define(:target, :kind, :name)
 

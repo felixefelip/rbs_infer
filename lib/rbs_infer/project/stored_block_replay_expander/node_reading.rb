@@ -148,7 +148,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # The receiver used to go unread here, which happened to be harmless while
     # every shape it could take meant the same thing. It no longer does: the
     # rewrite emits a reopening of the SUBJECT — the class whose body wrote the
-    # apply call — so a replay written on anything else (`Other.class_eval`) is
+    # module call — so a replay written on anything else (`Other.class_eval`) is
     # a block running on a class this pass never resolved, and naming the
     # subject would be an answer about the wrong one.
     def own_receiver(receiver)
