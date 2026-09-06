@@ -214,22 +214,39 @@ class RbsInfer::Signatures::SteepBridge
       return nil if decls.empty?
       return nil unless decls.all? { |decl| decl.method_type.block&.required }
 
-      shapes = decls.map { |decl| callee_block_params(decl.method_type.block) }.uniq
+      receiver = receiver_type(typing, send_node)
+      shapes = decls.map { |decl| callee_block_params(decl.method_type.block, receiver) }.uniq
       shapes.size == 1 ? shapes.first : :unknown
-    rescue StandardError
+    rescue Steep::Typing::UnknownNodeError
+      nil
+    end
+
+    def receiver_type(typing, send_node)
+      node = send_node.children[0]
+      return "self" if node.nil?
+      return nil unless node.is_a?(Parser::AST::Node)
+
+      RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(typing.type_of(node: node))
+    rescue Steep::Typing::UnknownNodeError
       nil
     end
 
     # Only a plain list of required positionals is transcribable — an optional
     # or rest parameter in the callee's block has no place in the caller's
     # `(untyped, untyped)` shape, so it widens instead of guessing.
-    def callee_block_params(block)
+    def callee_block_params(block, receiver)
       function = block.type
       return :unknown unless function.respond_to?(:required_positionals)
       return :unknown unless function.optional_positionals.empty? && function.rest_positionals.nil? &&
                              function.trailing_positionals.empty? && function.required_keywords.empty?
 
-      function.required_positionals.map { |param| RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(param.type) }
+      function.required_positionals.map do |param|
+        formatted = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(param.type)
+        next formatted unless formatted.match?(/\bself\b/)
+        return :unknown unless formatted == "self" && receiver
+
+        receiver
+      end
     end
   end
 end
