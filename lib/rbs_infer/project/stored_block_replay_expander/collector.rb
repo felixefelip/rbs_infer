@@ -223,8 +223,9 @@ module RbsInfer::Project::StoredBlockReplayExpander
         @delegations << [owner, method_name, target, callee]
       end
 
-      ShapeReader.forward_shapes(node.body, parameters).each do |parameter, callee|
-        @shapes.forwards << ForwardMethod.new(owner: owner, method: method_name, parameter: parameter, callee: callee)
+      ShapeReader.forward_shapes(node.body, parameters).each do |parameter, callee, singleton|
+        @shapes.forwards << ForwardMethod.new(owner: owner, method: method_name, parameter: parameter,
+                                              callee: callee, singleton: singleton)
       end
     end
 

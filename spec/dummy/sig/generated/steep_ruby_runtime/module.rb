@@ -66,9 +66,19 @@ class Module
   # and a module that overrides this now has a `super` to resolve against.
   # @rbs_infer |...
   def extend_object(obj)
-    # rb_include_module(rb_singleton_class(obj), self): the SINGLETON of `obj`
-    # gains `self`, which is why `extend` reaches the object and `include`
-    # reaches its instances.
+    # `rb_include_module(rb_singleton_class(obj), self)` — and this line IS
+    # that call, rather than a comment about it. The SINGLETON of `obj`
+    # gains `self`, which is why `extend` reaches the object where
+    # `include` reaches its instances.
+    #
+    # Written out because it makes `extend` DERIVED: everything it does is
+    # now `include` on another method table, so a reader that understands
+    # `include` understands `extend` for free. `append_features` gets no
+    # equivalent line — `mod.include(self)` there is circular, since
+    # `include` is what calls it — which is exactly why the ancestor splice
+    # of `include` is the one irreducible thing this file states
+    # (rbs_infer#311).
+    obj.singleton_class.include(self)
     obj
   end
 

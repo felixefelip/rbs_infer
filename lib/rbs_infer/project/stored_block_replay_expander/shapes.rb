@@ -186,7 +186,14 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # NAMES to the method that replays. The inward direction needs it: the replay
     # runs on the source with the target passed in, so the target's own body
     # cannot be the one calling it.
-    ForwardMethod = Data.define(:owner, :method, :parameter, :callee)
+    #
+    # `singleton` is WHICH method table the callee is found in, and it travels
+    # with the forward for the same reason it travels with the three replay
+    # shapes: `mod.bazingado(self)` and `mod.singleton_class.bazingado(self)` are
+    # two different methods, and re-deriving which one from the call site is not
+    # possible once the shape has been collected. `Module#extend_object` is the
+    # second form (felixefelip/rbs_infer#311).
+    ForwardMethod = Data.define(:owner, :method, :parameter, :callee, :singleton)
 
     # `def bazingado(base = nil, &block)` whose body is
     # `(@holder ||= Holder.new).bazingado(base, &block)` — a method that keeps
