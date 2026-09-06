@@ -100,11 +100,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @forwards.filter_map do |forward|
         next unless forward.owner == owner && forward.method == method
 
-        # A forward through `singleton_class` looks the callee up in the
-        # argument's SINGLETON table, which is a different owner and so a
-        # different set of methods. Same distinction `Declarations#providers`
-        # draws for a bare call in a class body, asked of a forward
-        # (felixefelip/rbs_infer#311).
         provider = forward.singleton ? Declarations.singleton_owner(source_provider) : source_provider
 
         keeper_owner, keeper_method = keeper(provider, forward.callee)

@@ -111,14 +111,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
       RbsInfer::Inference::SendCall.desugar(node) || node
     end
 
-    # Which handed object a receiver names, as `[parameter name, singleton?]`, or
-    # nil when it names none.
-    #
-    # Neutral about what is then DONE to that object: a block replayed onto it, a
-    # call forwarded to it, a module spliced into it. All three ask the same
-    # question of the receiver, and only the caller knows which one it is asking
-    # for (felixefelip/rbs_infer#311).
-    #
     # `base.class_eval` and `base.singleton_class.class_eval` are the same
     # relocation asked about two different method tables — `base`'s own, and
     # `base`'s singleton — which is exactly the difference between a DSL

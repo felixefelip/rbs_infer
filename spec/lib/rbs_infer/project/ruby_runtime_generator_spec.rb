@@ -96,19 +96,11 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
       end
     end
 
-    # `rb_include_module(rb_singleton_class(obj), self)` written OUT, not
-    # described. It is the one ancestry statement of the two that can be: written
-    # in `append_features` the same line would be circular, since `include` is
-    # what calls it. So `extend` is derived from `include` and the core has one
-    # irreducible splice to state instead of two (felixefelip/rbs_infer#311).
     it "splices into the singleton in Ruby, so `extend` is `include` on another table" do
       Dir.mktmpdir do |dir|
         source = source_of(dir, "module.rb")
 
         expect(source).to include("    obj.singleton_class.include(self)\n")
-        # As CODE, anchored: the comment above it names the circular line in
-        # order to say why it is not written, and a bare substring would read
-        # the explanation as the thing explained.
         expect(source.scan(/^\s+mod\.include\(self\)$/)).to be_empty
       end
     end

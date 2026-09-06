@@ -318,12 +318,6 @@ module RbsInfer::Project::StoredBlockReplayExpander
       nodes(body).filter_map do |node|
         next unless node.is_a?(Prism::CallNode)
         call = dispatched(node)
-        # Through `singleton_class` as well as bare, which is the same hop
-        # `inward_replay_shape` takes for a block (felixefelip/rbs_infer#267) and
-        # says the same thing: WHICH method table the callee is found in.
-        # `Module#extend_object` is written `obj.singleton_class.include(self)`,
-        # and read bare that line is no shape at all — which is how `extend`
-        # could not be derived from `include` (felixefelip/rbs_infer#311).
         handed = handed_receiver(call.receiver, parameters)
         next unless handed
         arguments = call.arguments&.arguments || []
