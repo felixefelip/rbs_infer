@@ -1838,11 +1838,27 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     # The inward shape needs `include` to reach the hook, which is what the Ruby
     # runtime sidecar transcribes for a real project. Spelled out here so the
     # example stands on its own.
+    #
+    # `extend` is transcribed for the same reason and is load-bearing in the same
+    # way: it is what says `DSL.extended(Mid)` RAN, and therefore that `Mid` holds
+    # the slot the DSL branches on. Without it the waypoint holds nothing and the
+    # block lands there instead of on `Host` — which is the point of reading the
+    # link rather than assuming it (felixefelip/rbs_infer#302). The real
+    # transcription forwards to `extend_object` as well; that link reaches no
+    # method here and so contributes nothing, exactly as `append_features` does
+    # not for this DSL.
     def chain(dsl, waypoint: true)
       <<~RUBY
         class Module
           def include(*modules)
             modules.reverse_each { |mod| mod.send(:apply, self) }
+            self
+          end
+        end
+
+        class Object
+          def extend(*modules)
+            modules.reverse_each { |mod| mod.send(:extended, self) }
             self
           end
         end
@@ -1880,6 +1896,27 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     # `Host` gets nothing, because a `class_eval` runs where it stands.
     it "lands on the target that does not hold the slot" do
       expanded = expand(chain(dsl, waypoint: false))
+
+      expect(expanded).to include("module Mid\n  def greet")
+      expect(expanded).not_to include("class Host\n  def greet")
+    end
+
+    # The whole difference between asking and asserting, and the reason the
+    # transcription of `extend` exists (felixefelip/rbs_infer#302).
+    #
+    # Rename the hook and nothing else: `setup` writes the very same slot onto
+    # the very same parameter, and `extend DSL` no longer runs it, because
+    # `Object#extend` calls `extended`. So nobody holds `@deps`, `Mid` is an
+    # ordinary includer, and the block lands there.
+    #
+    # Reading only "some method of a DSL both are subjects of writes the slot",
+    # as this used to, every extender of `DSL` still holds it and the block still
+    # goes to `Host` — the same answer, from evidence that says nothing. That is
+    # the assertion this example exists to fail.
+    it "declines a slot-writing method nothing calls" do
+      nobody_calls_it = dsl.sub("def self.extended(base)", "def self.setup(base)")
+
+      expanded = expand(chain(nobody_calls_it))
 
       expect(expanded).to include("module Mid\n  def greet")
       expect(expanded).not_to include("class Host\n  def greet")
@@ -1978,7 +2015,12 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
         "Src" => "module Src\n  extend DSL\n  keep do\n    def greet; end\n  end\nend\n",
         "Mid" => "module Mid\n  extend DSL\n  include Src\nend\n",
         "Module" => "class Module\n  def include(*modules)\n" \
-                    "    modules.reverse_each { |mod| mod.send(:apply, self) }\n    self\n  end\nend\n"
+                    "    modules.reverse_each { |mod| mod.send(:apply, self) }\n    self\n  end\nend\n",
+        # The half that says `DSL.extended(Mid)` ran, so `Mid` holds the slot and
+        # registers rather than replaying. Absorbed from another file here, which
+        # is where a real project reads it from too — the runtime sidecar.
+        "Object" => "class Object\n  def extend(*modules)\n" \
+                    "    modules.reverse_each { |mod| mod.send(:extended, self) }\n    self\n  end\nend\n"
       )
 
       expanded = expand("class Host\n  include Mid\nend\n", sources: elsewhere)

@@ -187,7 +187,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       return [] unless seen.add?([subject, source_subject])
 
       deferral = deferral_for(subject, method, source_subject, providers)
-      return [] if deferral && holds_slot?(subject, source_subject, deferral.slot, providers)
+      return [] if deferral && holds_slot?(subject, deferral.slot, providers)
 
       replays = [direct_replay(subject, method, source_subject, providers)].compact
       return replays unless deferral
@@ -210,7 +210,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
         next unless source_subject
 
         deferral = deferral_for(apply.subject, apply.method, source_subject, providers)
-        next unless deferral && holds_slot?(apply.subject, source_subject, deferral.slot, providers)
+        next unless deferral && holds_slot?(apply.subject, deferral.slot, providers)
 
         registered = @deferred_registry[apply.subject]
         registered << source_subject unless registered.include?(source_subject)
@@ -238,19 +238,51 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # taken, evaluated per call site.
     #
     # Not by reading the predicate. What the predicate asks (`does base have
-    # @_dependencies`) is answered by the method that PUTS it there: a `SlotInit`
-    # in the DSL's own chain says the objects handed to that DSL hold the slot,
-    # and `@names.providers` says which those are. So `Post::Commentable`, which
-    # extends the concern DSL, holds it and defers; `Post`, which extends
-    # nothing, does not and replays. A DSL whose slot nothing in the corpus
-    # initialises holds for nobody, which is the same "nothing to say" every
-    # other lookup here answers with.
-    def holds_slot?(subject, source_subject, slot, providers)
-      providers.any? do |owner, subjects|
-        next false unless subjects.include?(source_subject) && subjects.include?(subject)
+    # @_dependencies`) is answered by the method that PUTS it there — and by the
+    # call site that RUNS that method. Both halves are needed, and the second is
+    # the one this used to be missing: it asked only whether some DSL both
+    # subjects extend had a method writing the slot onto a parameter, so a
+    # `def self.setup(base)` nothing ever calls reported every extender of that
+    # DSL as holding the slot. The answers were right for the DSLs we have, and
+    # right by luck — the pass could not tell a hook from a method nobody calls
+    # (felixefelip/rbs_infer#302).
+    #
+    # Read forwards instead, from the call site out: `extend Deferring` written
+    # in `Example62::Middle` is an apply call; the applier is `Object#extend`,
+    # transcribed from `rb_obj_extend`, which forwards its argument to
+    # `extend_object` and then `extended`; and `Deferring.extended` writes
+    # `@deferred` onto its parameter. Every link is read off source — nothing
+    # here spells `extend` or `extended`, and `keepers_for` is the same walk
+    # `deferral_for` already makes for the block.
+    #
+    # A property of the SUBJECT alone, which is why the source subject the
+    # callers used to pass is gone. The predicate is about the object the DSL was
+    # handed; which module was being handed to it when the question came up
+    # decides nothing.
+    def holds_slot?(subject, slot, providers)
+      appliers = providers.select { |_, subjects| subjects.include?(subject) }.keys
 
+      (@shapes.apply_calls + @shapes.foreign_applies).any? do |apply|
+        next false unless apply.subject == subject
+
+        argument = @names.resolve(apply.argument, apply.subject)
+        next false unless argument
+
+        sources = providers.select { |_, subjects| subjects.include?(argument) }.keys
+
+        appliers.product(sources).any? do |applier, source_provider|
+          writes_slot?(@graph.keepers_for(applier, apply.method, source_provider), slot)
+        end
+      end
+    end
+
+    # Whether any of the methods a call reaches initialises `slot` on what it was
+    # handed. The hooks arrive as `[owner, method]` pairs, which is what a
+    # `SlotInit` is keyed by.
+    def writes_slot?(hooks, slot)
+      hooks.any? do |hook_owner, hook_method|
         @shapes.slot_inits.any? do |init|
-          init.ivar == slot && [owner, Declarations.singleton_owner(owner)].include?(init.owner)
+          init.ivar == slot && init.owner == hook_owner && init.method == hook_method
         end
       end
     end
@@ -318,7 +350,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       return [] unless seen.add?([subject, source_subject])
 
       deferral = deferral_for(subject, method, source_subject, providers)
-      return [] if deferral && holds_slot?(subject, source_subject, deferral.slot, providers)
+      return [] if deferral && holds_slot?(subject, deferral.slot, providers)
 
       direct = direct_extensions(subject, method, source_subject, providers)
       return direct unless deferral
