@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "shapes"
-require_relative "dsl_graph"
+require_relative "call_graph"
 
 module RbsInfer::Project::StoredBlockReplayExpander
   # The last phase: which class each collected block actually lands on.
@@ -31,13 +31,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @source = source
       @deferred_registry = Hash.new { |hash, key| hash[key] = [] }
       @extensions = []
-      @graph = DslGraph.new(replay_methods: shapes.replay_methods, readers: shapes.readers,
+      @graph = CallGraph.new(replay_methods: shapes.replay_methods, readers: shapes.readers,
                             inward_replays: shapes.inward_replays, literal_replays: shapes.literal_replays,
                             forwards: shapes.forwards, delegations: shapes.resolved_delegations,
                             storages: shapes.storages)
     end
 
-    # The `extend`s the apply calls put on their targets. Populated by `run`
+    # The `extend`s the module calls put on their targets. Populated by `run`
     # alongside the replays it answers with: both are what a call site here does
     # to a class here, read off the same resolution.
     attr_reader :extensions
@@ -60,11 +60,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
       resolved = @shapes.stored_calls.filter_map { |stored| resolve_own_block(stored, providers) }
                               .select { |replay| replay.source.equal?(@source) }
 
-      @extensions = @shapes.apply_calls.flat_map { |apply| resolve_extensions(apply, providers) }.uniq
+      @extensions = @shapes.module_calls.flat_map { |module_call| resolve_extensions(module_call, providers) }.uniq
 
-      resolved += @shapes.apply_calls.flat_map { |apply| resolve_apply(apply, providers) }
+      resolved += @shapes.module_calls.flat_map { |module_call| resolve_module_call(module_call, providers) }
 
-      # Two apply calls naming the same source in the same class body are one
+      # Two module calls naming the same source in the same class body are one
       # replay written twice, not two — the block relocates to that class once.
       # Keyed on the block's own SOURCE as well as its offset, since two files
       # hold blocks at the same offset all the time and a location says nothing
@@ -77,8 +77,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # The block a DSL call runs where it stands, or nil when the file does not
     # decide it.
     #
-    # The same call `resolve_apply`'s chain treats as STORAGE, asked the other
-    # question: not "which earlier block does this apply", but "does the method
+    # The same call `resolve_module_call`'s chain treats as STORAGE, asked the other
+    # question: not "which earlier block does this call apply", but "does the method
     # this call reaches run the block right here". A DSL may do either, and one
     # that does both is not a contradiction — the block runs now AND is kept for
     # later — so this is resolved on its own evidence rather than counted
@@ -100,7 +100,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       # Two providers answering one call with two different targets is one
       # runtime dispatch this pass cannot pick a winner for — the same count
-      # `resolve_apply` declines on.
+      # `resolve_module_call` declines on.
       candidates.first if candidates.size == 1
     end
 
@@ -158,11 +158,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # the common case rather than an exotic one. Nothing is ambiguous there:
     # each call site names its own target, and the block simply runs twice, as
     # it does at runtime (felixefelip/rbs_infer#263).
-    def resolve_apply(apply, providers)
-      source_subject = @names.resolve(apply.argument, apply.subject)
+    def resolve_module_call(module_call, providers)
+      source_subject = @names.resolve(module_call.argument, module_call.subject)
       return [] unless source_subject
 
-      resolve_application(apply.subject, apply.method, source_subject, providers, Set.new)
+      replays_landed(module_call.subject, module_call.method, source_subject, providers, Set.new)
     end
 
     # One application of a module to a class, as the replays it lands there —
@@ -183,7 +183,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     #
     # `seen` guards the recursion rather than a depth limit: two concerns can
     # register each other, and a pair that does must not hang the pass.
-    def resolve_application(subject, method, source_subject, providers, seen)
+    def replays_landed(subject, method, source_subject, providers, seen)
       return [] unless seen.add?([subject, source_subject])
 
       deferral = deferral_for(subject, method, source_subject, providers)
@@ -193,7 +193,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       return replays unless deferral
 
       replays + @deferred_registry[source_subject].flat_map do |held|
-        resolve_application(subject, deferral.recall, held, providers, seen)
+        replays_landed(subject, deferral.recall, held, providers, seen)
       end
     end
 
@@ -202,31 +202,31 @@ module RbsInfer::Project::StoredBlockReplayExpander
     #
     # A registration is a fact about the module that made it, not about the file
     # asking — so this walks the absorbed call sites too, and the entries it
-    # writes are read back by `resolve_application` in whatever file finally
+    # writes are read back by `replays_landed` in whatever file finally
     # closes the hop.
     def register_deferrals(providers)
-      (@shapes.apply_calls + @shapes.foreign_applies).each do |apply|
-        source_subject = @names.resolve(apply.argument, apply.subject)
+      (@shapes.module_calls + @shapes.foreign_module_calls).each do |module_call|
+        source_subject = @names.resolve(module_call.argument, module_call.subject)
         next unless source_subject
 
-        deferral = deferral_for(apply.subject, apply.method, source_subject, providers)
-        next unless deferral && holds_slot?(apply.subject, deferral.slot, providers)
+        deferral = deferral_for(module_call.subject, module_call.method, source_subject, providers)
+        next unless deferral && holds_slot?(module_call.subject, deferral.slot, providers)
 
-        registered = @deferred_registry[apply.subject]
+        registered = @deferred_registry[module_call.subject]
         registered << source_subject unless registered.include?(source_subject)
       end
     end
 
     # The deferral the DSL behind one application writes, or nil when it always
     # replays where it stands. Same two-sided walk `direct_replay` makes — the
-    # applier answers for the subject, the keeper for the module — because the
+    # one provider answers for the subject, the keeper for the module — because the
     # method that defers is the one the module's own provider supplies.
     def deferral_for(subject, method, source_subject, providers)
-      appliers = providers.select { |_, subjects| subjects.include?(subject) }.keys
-      sources = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
+      subject_providers = providers.select { |_, subjects| subjects.include?(subject) }.keys
+      source_providers = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
 
-      found = appliers.product(sources).flat_map do |applier, source_provider|
-        @graph.keepers_for(applier, method, source_provider).flat_map do |keeper_owner, keeper_method|
+      found = subject_providers.product(source_providers).flat_map do |subject_provider, source_provider|
+        @graph.keepers_for(subject_provider, method, source_provider).flat_map do |keeper_owner, keeper_method|
           @shapes.deferrals.select { |deferral| deferral.owner == keeper_owner && deferral.method == keeper_method }
         end
       end.uniq
@@ -248,7 +248,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # (felixefelip/rbs_infer#302).
     #
     # Read forwards instead, from the call site out: `extend Deferring` written
-    # in `Example62::Middle` is an apply call; the applier is `Object#extend`,
+    # in `Example62::Middle` is a module call; the supplying module is `Object#extend`,
     # transcribed from `rb_obj_extend`, which forwards its argument to
     # `extend_object` and then `extended`; and `Deferring.extended` writes
     # `@deferred` onto its parameter. Every link is read off source — nothing
@@ -260,18 +260,18 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # handed; which module was being handed to it when the question came up
     # decides nothing.
     def holds_slot?(subject, slot, providers)
-      appliers = providers.select { |_, subjects| subjects.include?(subject) }.keys
+      subject_providers = providers.select { |_, subjects| subjects.include?(subject) }.keys
 
-      (@shapes.apply_calls + @shapes.foreign_applies).any? do |apply|
-        next false unless apply.subject == subject
+      (@shapes.module_calls + @shapes.foreign_module_calls).any? do |module_call|
+        next false unless module_call.subject == subject
 
-        argument = @names.resolve(apply.argument, apply.subject)
+        argument = @names.resolve(module_call.argument, module_call.subject)
         next false unless argument
 
-        sources = providers.select { |_, subjects| subjects.include?(argument) }.keys
+        source_providers = providers.select { |_, subjects| subjects.include?(argument) }.keys
 
-        appliers.product(sources).any? do |applier, source_provider|
-          writes_slot?(@graph.keepers_for(applier, apply.method, source_provider), slot)
+        subject_providers.product(source_providers).any? do |subject_provider, source_provider|
+          writes_slot?(@graph.keepers_for(subject_provider, module_call.method, source_provider), slot)
         end
       end
     end
@@ -290,7 +290,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # The one block an application relocates, or nil when the file does not
     # decide it.
     #
-    # Two provider questions, not one. The applier is dispatched on the
+    # Two provider questions, not one. The supplying module is dispatched on the
     # SUBJECT (`banana` arrives in `Bar`'s body) and the callee it forwards
     # to on the ARGUMENT (`mod.send(:bananed, self)` runs on `Baz`), so the
     # two are answered by whatever supplies each — which need not be the
@@ -298,11 +298,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # own shape breaks: `Module#include` reaches for `append_features`, a
     # method of the concern (felixefelip/rbs_infer#256).
     def direct_replay(subject, method, source_subject, providers)
-      appliers = providers.select { |_, subjects| subjects.include?(subject) }.keys
-      sources = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
+      subject_providers = providers.select { |_, subjects| subjects.include?(subject) }.keys
+      source_providers = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
 
-      candidates = appliers.product(sources).filter_map do |applier, source_provider|
-        replay_for(subject, method, applier, source_provider, source_subject)
+      candidates = subject_providers.product(source_providers).filter_map do |subject_provider, source_provider|
+        replay_for(subject, method, subject_provider, source_provider, source_subject)
       end
 
       # One block per call site. Two providers answering with two DIFFERENT
@@ -318,9 +318,9 @@ module RbsInfer::Project::StoredBlockReplayExpander
       candidates.first
     end
 
-    # The `extend`s one apply call site puts on its target.
+    # The `extend`s one module call puts on its target.
     #
-    # The same walk `resolve_apply` makes, over the same providers, and separate
+    # The same walk `resolve_module_call` makes, over the same providers, and separate
     # from it on purpose: an `extend` and a block replay are two effects of one
     # hook — `ActiveSupport::Concern#append_features` does both — so neither may
     # count as evidence against the other. A concern with a `ClassMethods` and
@@ -331,11 +331,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # answering `included` for one subject is one runtime dispatch that this
     # pass cannot pick a winner for, so it says nothing. Several `extend`s from
     # one provider are not that — see `inward_extend_shapes`.
-    def resolve_extensions(apply, providers)
-      source_subject = @names.resolve(apply.argument, apply.subject)
+    def resolve_extensions(module_call, providers)
+      source_subject = @names.resolve(module_call.argument, module_call.subject)
       return [] unless source_subject
 
-      extensions_for(apply.subject, apply.method, source_subject, providers, Set.new)
+      extensions_for(module_call.subject, module_call.method, source_subject, providers, Set.new)
     end
 
     # The `extend`s one application puts on its target, following the same
@@ -364,11 +364,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
       kind = @names.own_kind(subject)
       return [] unless kind
 
-      appliers = providers.select { |_, subjects| subjects.include?(subject) }.keys
-      sources = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
+      subject_providers = providers.select { |_, subjects| subjects.include?(subject) }.keys
+      source_providers = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
 
-      answers = appliers.product(sources).filter_map do |applier, source_provider|
-        names = extension_names(applier, method, source_provider, source_subject)
+      answers = subject_providers.product(source_providers).filter_map do |subject_provider, source_provider|
+        names = extension_names(subject_provider, method, source_provider, source_subject)
         names unless names.empty?
       end.uniq
       return [] unless answers.size == 1
@@ -434,7 +434,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @names.kind_of(name) ? name : nil
     end
 
-    def replay_for(subject, method, applier, source_provider, source_subject)
+    def replay_for(subject, method, subject_provider, source_provider, source_subject)
       # Both directions answer with the SLOT — and with the object that owns
       # it, which is not always the provider: a delegating DSL method keeps
       # the block on something it holds. From there the chain is one and the
@@ -442,12 +442,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # source wrote under that name holds the block. Asking both and
       # requiring a single answer is what keeps a file that somehow reads as
       # both from being resolved by declaration order.
-      slots = [@graph.outward_slot(applier, method),
-               @graph.inward_slot(applier, method, source_provider)].compact.uniq
+      slots = [@graph.outward_slot(subject_provider, method),
+               @graph.inward_slot(subject_provider, method, source_provider)].compact.uniq
       # And the third way to reach a block: not through a slot at all,
       # because the replaying method wrote it in place. Counted together
       # with the slots, so a file reading as both still declines.
-      literals = @graph.literal_replays_for(applier, method, source_provider)
+      literals = @graph.literal_replays_for(subject_provider, method, source_provider)
       return nil unless slots.size + literals.size == 1
 
       kind = @names.own_kind(subject)
@@ -460,7 +460,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       end
 
       storage_owner, ivar, singleton = slots.first
-      # The SOURCE's provider, not the applier's: the name being looked up
+      # The SOURCE's provider, not the supplying module's: the name being looked up
       # is the one the source wrote in its own body.
       storage_method = @graph.storage_method_for(source_provider, storage_owner, ivar)
       return nil unless storage_method

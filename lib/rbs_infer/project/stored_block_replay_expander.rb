@@ -139,7 +139,7 @@ module RbsInfer::Project
 
       # One reopening per (block, target) PAIR, not per block. A block replayed
       # onto two classes is two reopenings and both are real — `Collector`
-      # resolves each apply call site on its own, and two of them naming the
+      # resolves each module call on its own, and two of them naming the
       # same source is what a module reused by two classes looks like. Keyed on
       # the block alone this declined the whole file for exactly that shape
       # (felixefelip/rbs_infer#263).

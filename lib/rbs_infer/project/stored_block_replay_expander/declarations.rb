@@ -154,7 +154,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     end
 
     # Every constant this file NAMES in a position that says where methods come
-    # from — an `extend` and a superclass. The apply arguments are the collector's
+    # from — an `extend` and a superclass. The module-call arguments are the collector's
     # to add, being call sites rather than declarations.
     def named_constants
       @extends + @superclasses
@@ -197,7 +197,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # `Module`'s. To the caller this is indistinguishable from the two
       # relations above — the method arrives with no receiver either way — but it
       # is neither an `extend` nor an ancestor of the SUBJECT, so nothing above
-      # can express it, and a DSL whose applier is written as a core reopening
+      # can express it, and a DSL whose supplying module is written as a core reopening
       # had no provider at all (felixefelip/rbs_infer#256).
       @kinds.each do |subject, kind|
         CORE_SELF_CHAINS.fetch(kind, []).each { |ancestor| table[ancestor] << subject }

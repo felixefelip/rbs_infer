@@ -10,7 +10,7 @@ require_relative "declarations"
 require_relative "shape_set"
 require_relative "resolution"
 require_relative "corpus"
-require_relative "dsl_graph"
+require_relative "call_graph"
 require_relative "node_reading"
 require_relative "shape_reader"
 require_relative "deferral_reader"
@@ -22,7 +22,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   class Collector < Prism::Visitor
     include Shapes
 
-    # The `extend`s the apply calls in this file put on their targets. Populated
+    # The `extend`s the module calls in this file put on their targets. Populated
     # by `collect`, alongside the replays it answers with: both are what a call
     # site here does to a class here, read off the same resolution.
     attr_reader :extensions
@@ -251,13 +251,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
         @shapes.stored_calls << StoredCall.new(owner: nil, subject: @names.current_scope, method: node.name.to_s,
                                         block: node.block, source: @source)
       elsif node.arguments
-        # One apply per argument. `apply(A, B)` asks for A's block AND B's,
+        # One module call per argument. `apply(A, B)` asks for A's block AND B's,
         # which is what a `*modules` forward means at runtime — each gets its
         # own candidate, and each resolves (or declines) on its own evidence.
         # Only single-argument calls used to be read at all, so the plural
         # form resolved nothing (felixefelip/rbs_infer#253).
         node.arguments.arguments.each do |argument|
-          @shapes.apply_calls << ApplyCall.new(owner: nil, subject: @names.current_scope, method: node.name.to_s, argument: argument)
+          @shapes.module_calls << ModuleCall.new(owner: nil, subject: @names.current_scope, method: node.name.to_s, argument: argument)
         end
       end
     end
@@ -268,7 +268,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # nothing else, so an `apply` written elsewhere would name a target this
     # rewrite cannot reach — but the DSL those calls arrive at may be declared
     # anywhere. For a reopening of a core class it always is: `Module#include`
-    # is how `ActiveSupport::Concern` writes the applier, and no file that USES
+    # is how `ActiveSupport::Concern` writes the module that supplies it, and no file that USES
     # a concern declares it (felixefelip/rbs_infer#256).
     #
     # `Corpus` decides which files those are and in what order; what to do with
@@ -291,7 +291,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # Every constant this file NAMES but may not declare, as
     # `[naming scope, node]`.
     #
-    # `extend`'s and a superclass's, which say where the applier's own methods
+    # `extend`'s and a superclass's, which say where the supplying module's own methods
     # come from — and the APPLY ARGUMENT, which says where the block does.
     # `include IncludedHook::Shared` names the module holding the block, and it
     # is the only mention of it in the file: without asking about it the module
@@ -300,7 +300,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # ordinary shape of a concern — declared in its own file, used from
     # another — rather than an exotic one (felixefelip/rbs_infer#265).
     def external_constants
-      @names.named_constants + @shapes.apply_calls.map { |apply| [apply.subject, apply.argument] }
+      @names.named_constants + @shapes.module_calls.map { |module_call| [module_call.subject, module_call.argument] }
     end
 
     def absorb(shapes)

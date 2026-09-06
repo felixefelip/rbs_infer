@@ -1,9 +1,15 @@
 # frozen_string_literal: true
 
 module RbsInfer::Project::StoredBlockReplayExpander
-  # Where a DSL call ENDS UP, walked over the shapes a file was read as writing.
+  # Where a call ENDS UP, walked over the shapes a file was read as writing.
   #
-  # One question, asked from an apply call site: the applier forwards the
+  # Nothing about it is a DSL, which is what the old name (`DslGraph`) claimed:
+  # `Module#include` walks this graph too, and so does `Object#extend`. It is a
+  # graph of calls — forwards and delegations — and the DSLs that motivated it
+  # are read by exactly the same walk as the language's own methods
+  # (felixefelip/rbs_infer#311).
+  #
+  # One question, asked from a module call: the supplying module forwards the
   # argument somewhere, that somewhere may delegate again, and whatever it
   # finally reaches either holds a block in a slot or runs one where it stands.
   # Following that is a graph walk over the collected shapes — forwards to
@@ -21,12 +27,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # guarantees that ordering — it is the last step of collecting, and the
   # resolution this graph belongs to does not start until it has run.
   #
-  # `dsl_providers` deliberately did NOT come along, though it is the other half
-  # of "which DSL answers this call": it reads the file's declarations, extends
-  # and superclasses — the state the VISITOR writes — where everything here
-  # reads the method shapes. Two disjoint sets of state in one object would be a
-  # worse seam than the one it removes; it belongs with the lexical scope.
-  class DslGraph
+  # `Declarations#providers` deliberately did NOT come along, though it is the
+  # other half of "which module supplies this call": it reads the file's
+  # declarations, extends and superclasses — the state the VISITOR writes —
+  # where everything here reads the method shapes. Two disjoint sets of state in
+  # one object would be a worse seam than the one it removes; it belongs with
+  # the lexical scope.
+  class CallGraph
     def initialize(replay_methods:, readers:, inward_replays:, literal_replays:,
                    forwards:, delegations:, storages:)
       @replay_methods = replay_methods
@@ -59,7 +66,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # simply answer nothing: `include` hands the argument to `append_features`
     # as well, and that method keeps no block, so it contributes no slot. The
     # count that decides ambiguity is therefore the number of forwards that
-    # reach a REPLAY, not the number written — a DSL applier is free to send its
+    # reach a REPLAY, not the number written — a supplying module is free to send its
     # argument other messages on the way (felixefelip/rbs_infer#259).
     def inward_slot(owner, method, source_provider)
       slots = keepers_for(owner, method, source_provider).filter_map do |keeper_owner, keeper_method|

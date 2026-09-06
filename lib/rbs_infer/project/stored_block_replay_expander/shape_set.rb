@@ -18,7 +18,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   #
   # Held rather than copied: the arrays are handed out and mutated in place, so
   # a reader taken early keeps seeing what is appended later. That was
-  # load-bearing until the phases were split — `DslGraph` used to be built
+  # load-bearing until the phases were split — `CallGraph` used to be built
   # before the last delegations were concatenated onto the very array it had
   # been handed, and only worked because it was the same object. It no longer
   # relies on it: `resolve_shapes` finishes before any resolution starts. The
@@ -26,7 +26,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
   # in another, but nothing now depends on a write landing after a read.
   class ShapeSet
     COLLECTIONS = %i[storages readers replay_methods inward_replays literal_replays forwards
-                     stored_calls apply_calls foreign_applies deferrals slot_inits
+                     stored_calls module_calls foreign_module_calls deferrals slot_inits
                      resolved_delegations resolved_inward_extends resolved_own_replays].freeze
 
     COLLECTIONS.each { |name| attr_reader(name) }
@@ -37,18 +37,18 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     # Takes on everything another file said.
     #
-    # Every collection but one is a straight concatenation. `apply_calls` is the
+    # Every collection but one is a straight concatenation. `module_calls` is the
     # exception and the asymmetry is the point: another file's call sites are
     # read for ONE question — which modules it registered on a waypoint — and
     # never emitted from, because this pass rewrites one source and a call site
     # elsewhere names a target it cannot reopen. So they land in
-    # `foreign_applies`, where nothing that emits will look
+    # `foreign_module_calls`, where nothing that emits will look
     # (felixefelip/rbs_infer#300).
     def merge(other)
-      (COLLECTIONS - %i[apply_calls foreign_applies]).each do |name|
+      (COLLECTIONS - %i[module_calls foreign_module_calls]).each do |name|
         public_send(name).concat(other.public_send(name))
       end
-      @foreign_applies.concat(other.apply_calls)
+      @foreign_module_calls.concat(other.module_calls)
       self
     end
 
