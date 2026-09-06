@@ -76,6 +76,15 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     SPLICE = "__rbs_infer__include_module"
 
+    HANDED_OBJECT = "handed(object)"
+    HANDED_MODULE = "handed(module)"
+
+    def onto_singleton?(extension, providers)
+      receiver = extension.hop ? Declarations.singleton_owner(HANDED_OBJECT) : HANDED_OBJECT
+
+      spliced_subjects(receiver, extension.callee, HANDED_MODULE, providers).include?(HANDED_OBJECT)
+    end
+
     def ancestry(providers)
       loop do
         grown = false
@@ -113,6 +122,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
                else
                  providers.select { |_, subjects| subjects.include?(receiver) }.keys
                end
+      owners = CORE_REOPENS if owners.empty?
 
       @shapes.forwards.select { |forward| owners.include?(forward.owner) && forward.method == method }
     end
@@ -415,7 +425,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       source_providers = providers.select { |_, subjects| subjects.include?(source_subject) }.keys
 
       answers = subject_providers.product(source_providers).filter_map do |subject_provider, source_provider|
-        names = extension_names(subject_provider, method, source_provider, source_subject)
+        names = extension_names(subject_provider, method, source_provider, source_subject, providers)
         names unless names.empty?
       end.uniq
       return [] unless answers.size == 1
@@ -427,7 +437,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # with. Same walk as `inward_slot` — every forward, resolved through the
     # ARGUMENT's provider — differing only in what the keeper turns out to do
     # with what it was handed.
-    def extension_names(owner, method, source_provider, source_subject)
+    def extension_names(owner, method, source_provider, source_subject, providers)
       @shapes.forwards.flat_map do |forward|
         next [] unless forward.owner == owner && forward.method == method
 
@@ -443,6 +453,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
         under = keeper_owner == source_provider ? source_subject : nil
         @shapes.resolved_inward_extends.filter_map do |extension|
           next unless extension.owner == keeper_owner && extension.method == keeper_method
+          next unless onto_singleton?(extension, providers)
 
           extension_name(extension, under)
         end

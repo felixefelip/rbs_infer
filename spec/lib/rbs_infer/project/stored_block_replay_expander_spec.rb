@@ -1313,10 +1313,37 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
   # `ActiveSupport::Concern#append_features` has been writing exactly this line
   # since felixefelip/rbs_infer#262 with nothing reading it
   # (felixefelip/rbs_infer#268).
+  it "reads a DSL applied by `prepend`" do
+    source = <<~RUBY
+      module DSL
+        def keep(&block) = @body = block
+
+        def prepend_features(base)
+          base.class_eval(&@body)
+        end
+      end
+
+      module Src
+        extend DSL
+
+        keep do
+          def greet; end
+        end
+      end
+
+      class Host
+        prepend Src
+      end
+    RUBY
+
+    expect(expand(source)).to include("class Host\n  def greet")
+  end
+
   context "an `extend` the hook puts on the target" do
     def hook(extended: "const_get(:BananaMethods)",
              declares: "module BananaMethods; def age; 31; end; end",
-             applied: "include(Host::Hookable)")
+             applied: "include(Host::Hookable)",
+             mixer: "extend")
       <<~RUBY
         class Module
           def include(*modules)
@@ -1331,7 +1358,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
         class Host
           module Applier
             def included(base)
-              base.extend(#{extended})
+              base.#{mixer}(#{extended})
             end
           end
 
@@ -1346,6 +1373,53 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
           end
         end
       RUBY
+    end
+
+    # felixefelip/rbs_infer#315. Nothing reads the word `extend` here either: the
+    # reopening is emitted because the call, followed to the splice, lands in the
+    # target's SINGLETON. `bananate` does what `extend` does and is otherwise a
+    # word nothing knows.
+    it "reads a hook that hands the module over under any name" do
+      source = <<~RUBY + hook(mixer: "bananate")
+        class Object
+          def bananate(*modules)
+            modules.reverse_each { |mod| mod.send(:extend_object, self) }
+            self
+          end
+        end
+      RUBY
+
+      # A project that writes a block eval SOMEWHERE, which `possible?` is what
+      # asks and which every Rails app answers yes to through the transcribed
+      # `ActiveSupport::Concern`. That cheap gate still scans for `.extend`, so
+      # it is the one place a spelling still decides anything — it decides
+      # whether the file is looked at, not what the file says.
+      elsewhere = project(Elsewhere: "class Elsewhere\n  def go = class_eval { }\nend\n")
+
+      expect(expand(source, sources: elsewhere))
+        .to include("class Host::Target\n  extend Host::Hookable::BananaMethods\nend")
+    end
+
+    # And the same reading is what tells an `extend` from an `include`. A hook
+    # that INCLUDES the module puts it in the target's instance ancestors, which
+    # is not an `extend` and must not be emitted as one. The old reader answered
+    # this by the spelling; this one answers it by where the module lands.
+    it "emits nothing for a hook that includes the module instead" do
+      # Through the same open gate as the example above, or this would answer
+      # `nil` for having skipped the file rather than for having read it.
+      elsewhere = project(Elsewhere: "class Elsewhere\n  def go = class_eval { }\nend\n")
+
+      expect(expand(hook(mixer: "include"), sources: elsewhere)).to be_nil
+    end
+
+    # `base.singleton_class.extend(M)` puts M in a THIRD place — the singleton's
+    # own singleton — and nothing downstream can name that. The reader used to
+    # refuse the hop itself; now it reads it and the walk arrives somewhere no
+    # answer covers, which declines on its own.
+    it "declines a hop the reader no longer has to forbid" do
+      source = hook.sub("base.extend(", "base.singleton_class.extend(")
+
+      expect(expand(source)).to be_nil
     end
 
     # `self` inside the hook is the module being included — that is the object

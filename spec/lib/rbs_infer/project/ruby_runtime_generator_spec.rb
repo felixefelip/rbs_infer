@@ -122,6 +122,45 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     end
   end
 
+  describe "the methods `prepend` calls" do
+    it "emits the pair, under the same `private`" do
+      Dir.mktmpdir do |dir|
+        source = source_of(dir, "module.rb")
+
+        expect(source).to include("  def prepend_features(mod)\n", "  def prepended(base)\n")
+        expect(source.index("  private\n")).to be < source.index("  def prepend_features(mod)\n")
+      end
+    end
+
+    it "reaches the same splice `append_features` reaches" do
+      Dir.mktmpdir do |dir|
+        expect(source_of(dir, "module.rb"))
+          .to match(/def prepend_features\(mod\)\n.*\n\n    mod\.send\(:__rbs_infer__include_module, self\)/)
+      end
+    end
+
+    it "walks the arguments backwards, through send, as `include` does" do
+      Dir.mktmpdir do |dir|
+        expect(source_of(dir, "module.rb")).to include(
+          "    modules.reverse_each do |mod|\n" \
+          "      mod.send(:prepend_features, self)\n" \
+          "      mod.send(:prepended, self)\n" \
+          "    end\n"
+        )
+      end
+    end
+
+    it "marks all three as overloading" do
+      Dir.mktmpdir do |dir|
+        source = source_of(dir, "module.rb")
+
+        expect(source).to match(/# @rbs_infer \|\.\.\.\n\s+def prepend\(/)
+        expect(source).to match(/# @rbs_infer \|\.\.\.\n\s+def prepend_features\(/)
+        expect(source).to match(/# @rbs_infer \|\.\.\.\n\s+def prepended\(/)
+      end
+    end
+  end
+
   # `rb_obj_extend` in object.c, and the file it lands in is the decision this makes.
   describe "`extend`, in object.rb" do
     # `extend` is `Kernel#extend` (measured: `Object.instance_method(:extend).owner`).

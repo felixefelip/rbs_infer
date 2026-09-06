@@ -86,6 +86,18 @@ module RbsInfer::Project
           self
         end
 
+        # @rbs_infer |...
+        def prepend(*modules)
+          raise ArgumentError, "wrong number of arguments (given 0, expected 1+)" if modules.empty?
+
+          modules.reverse_each do |mod|
+            mod.send(:prepend_features, self)
+            mod.send(:prepended, self)
+          end
+
+          self
+        end
+
         private
 
         # What `include` delegates the actual work to — `rb_mod_append_features` in eval.c:
@@ -107,6 +119,19 @@ module RbsInfer::Project
         end
 
         def __rbs_infer__include_module(mod)
+          nil
+        end
+
+        # @rbs_infer |...
+        def prepend_features(mod)
+          raise TypeError, "wrong argument type (expected Class or Module)" unless mod.is_a?(Module)
+
+          mod.send(:__rbs_infer__include_module, self)
+          self
+        end
+
+        # @rbs_infer |...
+        def prepended(base)
           nil
         end
 
