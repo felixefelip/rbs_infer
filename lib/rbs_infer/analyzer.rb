@@ -98,17 +98,12 @@ module RbsInfer
     # `class_eval`/`module_eval` on another. The contextual expander moves its
     # body to that statically resolved receiver before the ordinary collector
     # attributes the `def`s to the lexical source object (rbs_infer#238).
-    # Read from the source the replay resolution itself runs on — before the
-    # rewrite, whose appended reopenings hold no blocks and are not this file's
-    # call sites (felixefelip/rbs_infer#321).
-    @stored_block_bodies = RbsInfer::Project::StoredBlockReplayExpander.stored_block_bodies(
-      source, sources: @corpus.constant_sources
-    )
-    replay_expanded = RbsInfer::Project::StoredBlockReplayExpander.expand(source, sources: @corpus.constant_sources,
-                                                                          mixin_index: mixin_index)
-    if replay_expanded
-      @expanded_source = replay_expanded
-      source = replay_expanded
+    expansion = RbsInfer::Project::StoredBlockReplayExpander.expansion(source, sources: @corpus.constant_sources,
+                                                                       mixin_index: mixin_index)
+    @stored_block_bodies = expansion.bodies
+    if expansion.source
+      @expanded_source = expansion.source
+      source = expansion.source
     end
 
     # Inject `@type self:`/`@type instance:` for concerns/modules (and the

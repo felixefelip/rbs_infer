@@ -180,7 +180,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       Replay.new(target: target, block: stored.block, kind: kind, call: stored.method,
                  scope: stored.subject, in_method: nil, source: stored.source, singleton: own.singleton,
-                 extended: handed_to_hosts?(target, stored.subject, providers))
+                 extended: handed_to_hosts?(target, stored.subject, providers), slot: nil)
     end
 
     # Whether a hook in `subject`'s provider chain hands this very module to
@@ -514,7 +514,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       if (literal = literals.first)
         return Replay.new(target: subject, block: literal.block, kind: kind,
                           call: literal.call, scope: literal.scope, in_method: literal.method,
-                          source: literal.source, singleton: literal.singleton, extended: false)
+                          source: literal.source, singleton: literal.singleton, extended: false, slot: nil)
       end
 
       storage_owner, ivar, singleton = slots.first
@@ -528,7 +528,8 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       Replay.new(target: subject, block: blocks.first.block, kind: kind,
                  call: storage_method, scope: blocks.first.subject, in_method: nil,
-                 source: blocks.first.source, singleton: singleton, extended: false)
+                 source: blocks.first.source, singleton: singleton, extended: false,
+                 slot: [storage_owner, ivar])
     end
   end
 end
