@@ -1,6 +1,6 @@
 class Example34
   module Foo
-    @_bazingado_block: (^(*untyped) [self: singleton(Example34::Bar) | singleton(Example34::Baz) | Module] -> Symbol)?
+    @_bazingado_block: (^(*untyped) [self: singleton(Example34::Bar) | singleton(Example34::Baz) | Module] -> Symbol & ::RbsInfer::Body["def age\n        31\n      end"])?
 
     def include: (*singleton(::Example34::Baz) modules) -> Array[singleton(Example34::Baz)]
     def included: (?(singleton(Example34::Bar) | singleton(Example34::Baz) | Module)? base) ?{ (*untyped) [self: (singleton(Example34::Bar) | singleton(Example34::Baz) | Module)] -> Symbol } -> (^(*untyped) [self: (singleton(Example34::Bar) | singleton(Example34::Baz) | Module)] -> Symbol | nil | Symbol)

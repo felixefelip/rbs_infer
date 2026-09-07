@@ -1,6 +1,6 @@
 module Example39
   module Foo
-    @_bananed_block: (^(*untyped) [self: Module] -> Symbol)?
+    @_bananed_block: (^(*untyped) [self: Module] -> Symbol & ::RbsInfer::Body["def age\n        31\n      end"])?
 
     private
 

@@ -1,6 +1,6 @@
 class Example44
   module Foo
-    @_bazingado_block: (^(*untyped) [self: Module] -> Symbol)?
+    @_bazingado_block: (^(*untyped) [self: Module] -> Symbol & ::RbsInfer::Body["def age\n        31\n      end"])?
 
     def included: (?Module? base) ?{ (*untyped) [self: Module] -> Symbol } -> (^(*untyped) [self: Module] -> Symbol | nil | Symbol)
   end

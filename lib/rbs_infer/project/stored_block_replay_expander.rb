@@ -122,6 +122,56 @@ module RbsInfer::Project
       apply_replays(source, replays, extensions, mixin_index)
     end
 
+    # The block literals this file's storage slots hold, as
+    # `{ owner => { ivar => [body source, …] } }` (felixefelip/rbs_infer#321).
+    #
+    # Read off the SAME replays the rewrite is built from, never re-derived: a
+    # block the resolution declined does not reach a slot here either, so the
+    # payload that lands in `sig/` and the relocation cannot disagree about
+    # which block is which.
+    #
+    # Its own collection rather than another return value on `expand`, whose
+    # contract stays one source in, one source out — this caller wants the map
+    # and no rewrite. The corpus walk it repeats is memoized per file.
+    def stored_block_bodies(source, sources:)
+      return {} unless possible?(source, sources)
+
+      parsed = Prism.parse(source)
+      return {} unless parsed.success?
+
+      collector = Collector.new(source, sources: sources)
+      bodies_by_slot(collector.storages, collector.collect(parsed.value))
+    end
+
+    # Joins each slot to the blocks that pass through it.
+    #
+    # `Storage` names `(owner, method, ivar)` and a `Replay`'s `call` is that
+    # same storage method — the name written on the block being moved — so the
+    # method is the join and the replay is the evidence.
+    #
+    # Sliced against `replay.source` and not the file being expanded, for the
+    # reason `Replay#source` exists at all: a location is a pair of offsets, and
+    # a concern's block is written in the concern's file while the `include`
+    # that resolves it is written in the host's.
+    def bodies_by_slot(storages, replays)
+      storages.each_with_object({}) do |storage, out|
+        bodies = replays.select { |replay| replay.call == storage.method }
+                        .filter_map { |replay| body_source(replay) }
+                        .uniq
+        next if bodies.empty?
+
+        (out[storage.owner] ||= {})[storage.ivar] = bodies
+      end
+    end
+
+    def body_source(replay)
+      body = replay.block.body
+      return nil unless body
+
+      location = body.location
+      replay.source.byteslice(location.start_offset, location.end_offset - location.start_offset)
+    end
+
     # Whether a replay can be in this file at all — asked of the PROJECT, since
     # the DSL that relocates a block is routinely declared somewhere else.
     # Shared with `StoredBlockReplayImplements`, which reads the same replays and
