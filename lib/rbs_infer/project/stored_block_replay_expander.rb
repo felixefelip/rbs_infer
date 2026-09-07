@@ -92,7 +92,17 @@ module RbsInfer::Project
     # and replays it on whoever includes THAT, so the collector follows the hop
     # and answers with the class the block runs on
     # (felixefelip/rbs_infer#300).
-    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method, :source, :singleton, :extended)
+    # `slot` is the `[owner, ivar]` the block was kept in, or nil when it never
+    # was one — a block written in place, or the DSL's own `&block` parameter.
+    # The resolution already computes it to find the block at all, so recording
+    # it here is what lets a consumer ask which slot holds which block instead
+    # of matching a method NAME, which two owners can share
+    # (felixefelip/rbs_infer#321).
+    # What one expansion answers: the rewritten source (nil when nothing
+    # applies) and `{ owner => { ivar => [block source, …] } }`.
+    Expansion = Data.define(:source, :bodies)
+
+    Replay = Data.define(:target, :block, :kind, :call, :scope, :in_method, :source, :singleton, :extended, :slot)
 
     module_function
 
@@ -101,7 +111,16 @@ module RbsInfer::Project
     # `ConstantSources::NONE` as the explicit way to say "no project": defaulted,
     # a caller that forgot it would quietly resolve less
     # (docs/engineering/required-threaded-deps.md).
+    # The rewritten source, or nil when nothing applies.
     def expand(source, sources:, mixin_index:)
+      expansion(source, sources: sources, mixin_index: mixin_index).source
+    end
+
+    # Both answers off ONE collection: the rewritten source, and the block
+    # sources its slots hold. Asked separately they cost two full walks — the
+    # lexical pass, the corpus walk over the files this one names, and the
+    # resolution — for the same replays (felixefelip/rbs_infer#321).
+    def expansion(source, sources:, mixin_index:)
       # This file's own text is no longer the whole question. A concern writes
       # `base.class_eval do … end` in its own file and the `include` naming the
       # target is written in the host, which mentions no eval — so gating on the
@@ -109,37 +128,30 @@ module RbsInfer::Project
       # (felixefelip/rbs_infer#265). The project-wide answer keeps what the gate
       # was for: a project that writes neither an eval nor an inward `extend`
       # anywhere still pays nothing.
-      return nil unless possible?(source, sources)
+      return Expansion.new(source: nil, bodies: {}) unless possible?(source, sources)
 
       parsed = Prism.parse(source)
-      return nil unless parsed.success?
+      return Expansion.new(source: nil, bodies: {}) unless parsed.success?
 
       collector = Collector.new(source, sources: sources)
       replays = collector.collect(parsed.value)
       extensions = collector.extensions
-      return nil if replays.empty? && extensions.empty?
+      return Expansion.new(source: nil, bodies: {}) if replays.empty? && extensions.empty?
 
-      apply_replays(source, replays, extensions, mixin_index)
+      Expansion.new(source: apply_replays(source, replays, extensions, mixin_index),
+                    bodies: bodies_by_slot(replays))
     end
 
-    def stored_block_bodies(source, sources:)
-      return {} unless possible?(source, sources)
+    def bodies_by_slot(replays)
+      replays.each_with_object({}) do |replay, out|
+        owner, ivar = replay.slot
+        next unless owner
 
-      parsed = Prism.parse(source)
-      return {} unless parsed.success?
+        body = body_source(replay)
+        next unless body
 
-      collector = Collector.new(source, sources: sources)
-      bodies_by_slot(collector.storages, collector.collect(parsed.value))
-    end
-
-    def bodies_by_slot(storages, replays)
-      storages.each_with_object({}) do |storage, out|
-        bodies = replays.select { |replay| replay.call == storage.method }
-                        .filter_map { |replay| body_source(replay) }
-                        .uniq
-        next if bodies.empty?
-
-        (out[storage.owner] ||= {})[storage.ivar] = bodies
+        slot = (out[owner] ||= {})
+        slot[ivar] = ((slot[ivar] || []) + [body]).uniq
       end
     end
 
