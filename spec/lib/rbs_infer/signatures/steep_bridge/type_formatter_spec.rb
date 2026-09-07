@@ -35,5 +35,21 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::TypeFormatter, :dummy_app do
 
       expect(described_class.format_type(union)).to eq("(^() -> Symbol)?")
     end
+
+    it "erases an inference variable Steep never solved" do
+      variable = Steep::AST::Types::Var.fresh(:T)
+
+      expect(variable.to_s).to match(/\AT\(\d+\)\z/)
+      expect(described_class.format_type(variable)).to eq("untyped")
+      expect(
+        described_class.format_type(
+          Steep::AST::Types::Union.build(types: [Steep::AST::Builtin::Object.instance_type, variable])
+        )
+      ).to eq("untyped")
+    end
+
+    it "leaves an RBS type alone, which carries variables it cannot substitute" do
+      expect(described_class.format_type(RBS::Parser.parse_type("::Array[Elem]"))).to eq("Array[Elem]")
+    end
   end
 end
