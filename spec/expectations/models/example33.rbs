@@ -1,6 +1,6 @@
 class Example33
   module Foo
-    @_bazingado_block: (^(*untyped) [self: singleton(Example33::Bar) | singleton(Example33::BarOther)] -> Symbol)?
+    @_bazingado_block: ((^(*untyped) [self: singleton(Example33::Bar) | singleton(Example33::BarOther)] -> Symbol & ::RbsInfer::Body["def age\n        31\n      end"]) | (^(*untyped) [self: singleton(Example33::Bar) | singleton(Example33::BarOther)] -> Symbol & ::RbsInfer::Body["def name_upcase\n        name.upcase\n      end"]))?
 
     def bazinga: ((singleton(::Example33::Baz) | singleton(::Example33::BazOther)) module_included) -> (^(*untyped) [self: (singleton(Example33::Bar) | singleton(Example33::BarOther))] -> Symbol | nil | Symbol)
     def bazingado: (?(singleton(Example33::Bar) | singleton(Example33::BarOther))? base) ?{ (*untyped) [self: (singleton(Example33::Bar) | singleton(Example33::BarOther))] -> Symbol } -> (^(*untyped) [self: (singleton(Example33::Bar) | singleton(Example33::BarOther))] -> Symbol | nil | Symbol)

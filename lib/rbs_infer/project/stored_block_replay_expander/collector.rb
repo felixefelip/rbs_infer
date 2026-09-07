@@ -27,6 +27,12 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # site here does to a class here, read off the same resolution.
     attr_reader :extensions
 
+    # The slots this file's methods keep a block in. Public where `shapes` is
+    # protected, and deliberately just the one collection: the payload map of
+    # felixefelip/rbs_infer#321 needs to know which ivar a storage method fills
+    # and nothing else about the walk.
+    def storages = @shapes.storages
+
     def initialize(source, sources:)
       @source = source
       @sources = sources

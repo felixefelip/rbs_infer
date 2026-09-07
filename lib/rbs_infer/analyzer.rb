@@ -98,6 +98,12 @@ module RbsInfer
     # `class_eval`/`module_eval` on another. The contextual expander moves its
     # body to that statically resolved receiver before the ordinary collector
     # attributes the `def`s to the lexical source object (rbs_infer#238).
+    # Read from the source the replay resolution itself runs on — before the
+    # rewrite, whose appended reopenings hold no blocks and are not this file's
+    # call sites (felixefelip/rbs_infer#321).
+    @stored_block_bodies = RbsInfer::Project::StoredBlockReplayExpander.stored_block_bodies(
+      source, sources: @corpus.constant_sources
+    )
     replay_expanded = RbsInfer::Project::StoredBlockReplayExpander.expand(source, sources: @corpus.constant_sources,
                                                                           mixin_index: mixin_index)
     if replay_expanded
@@ -314,10 +320,68 @@ module RbsInfer
     # `unconditional.self` no sidecar.
     markers = synthesize_markers(target_members, attr_types, ivar_types)
 
+    decorate_stored_block_ivars(ivar_types, module_ivar_types)
+
     namespace_classes = resolve_namespace_classes
     rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class), class_methods_index: class_methods_index)
     rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types, markers: markers, nested_modules: @nested_modules)
   end
+
+  # Intersects `& ::RbsInfer::Body["…"]` onto every ivar that holds a stored
+  # block, so the slot's type carries the block's own source
+  # (felixefelip/rbs_infer#321).
+  #
+  # Both maps, because a slot's owner decides which one it lands in: a storage
+  # method written in the target class fills `ivar_types`, one written in a
+  # nested module fills that module's entry in `module_ivar_types` — and the
+  # DSL shape this exists for puts it in a module (`Example43::Foo`).
+  #
+  # The payload CARRIES the block; it does not attribute it. The declaration is
+  # one line per module while the attribution is per call site, and `Example43`
+  # is where the two come apart: `Baz` stores `def age` and `BazOther` stores
+  # `def name` in the same `@_bazingado_block`, so the slot's type can only be a
+  # union of both — while the relocation correctly gives `Bar` just `age` and
+  # `BarOther2` both. The union is wrong at each end: it says "one of these" to
+  # a class that got exactly one, and "one of these" to a class that got both.
+  #
+  # So nothing may read `Body[…]` off this declaration and conclude which block
+  # a given host received — that answer comes from `Resolution`, per call site,
+  # and RBS has no declaration site for a call. What this emission is good for
+  # is the block's SOURCE travelling with the slot; the attribution stays where
+  # it is (felixefelip/rbs_infer#321).
+  def decorate_stored_block_ivars(ivar_types, module_ivar_types)
+    bodies_by_owner = stored_block_bodies
+    return if bodies_by_owner.empty?
+
+    module_ivar_types.each do |owner, ivars|
+      decorate_ivar_group(ivars, bodies_for(bodies_by_owner, owner))
+    end
+    decorate_ivar_group(ivar_types, bodies_for(bodies_by_owner, @target_class))
+  end
+
+  # The builder's ivar keys carry no `@`; a `Storage`'s do, since Prism's
+  # `InstanceVariableWriteNode#name` is `:@x`.
+  def decorate_ivar_group(ivars, bodies_by_ivar)
+    return if bodies_by_ivar.nil? || bodies_by_ivar.empty?
+
+    ivars.each_key do |name|
+      bodies = bodies_by_ivar["@#{name}"]
+      ivars[name] = RbsInfer::Project::BlockBodyType.decorate(ivars[name], bodies) if bodies
+    end
+  end
+
+  # An owner written relatively in one map and fully qualified in the other is
+  # the same owner: the builder keys a nested module by the name it declares
+  # (`Foo`), while the collector's scope walk answers with the path
+  # (`Example43::Foo`).
+  def bodies_for(bodies_by_owner, owner)
+    return nil if owner.nil?
+
+    key = bodies_by_owner.keys.find { |candidate| candidate == owner || candidate.end_with?("::#{owner}") }
+    key && bodies_by_owner[key]
+  end
+
+  def stored_block_bodies = @stored_block_bodies || {}
 
   # Builds the marker class list to inject into the generated RBS.
   # The "declared" type for each ivar is the type the GENERATED RBS
@@ -1039,6 +1103,7 @@ require_relative "project/self_class_eval_expander"
 # constant they fill is a declaration whatever gem is or is not present.
 require_relative "project/constant_declaration_expander"
 require_relative "project/self_class_eval_marker"
+require_relative "project/block_body_type"
 require_relative "project/stored_block_replay_expander"
 require_relative "project/stored_block_replay_expander/reader_collector"
 require_relative "project/stored_block_replay_expander/collector"
