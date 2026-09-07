@@ -1,0 +1,13 @@
+module Vault
+  module Totaled
+    extend ActiveSupport::Concern
+  end
+end
+
+module Vault
+  module Totaled
+    module ClassMethods
+      def vault_key: () -> String
+    end
+  end
+end

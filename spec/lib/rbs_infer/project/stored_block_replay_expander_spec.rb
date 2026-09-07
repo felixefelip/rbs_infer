@@ -1397,7 +1397,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       elsewhere = project(Elsewhere: "class Elsewhere\n  def go = class_eval { }\nend\n")
 
       expect(expand(source, sources: elsewhere))
-        .to include("class Host::Target\n  extend Host::Hookable::BananaMethods\nend")
+        .to include("class Host::Target\n  extend ::Host::Hookable::BananaMethods\nend")
     end
 
     # And the same reading is what tells an `extend` from an `include`. A hook
@@ -1428,7 +1428,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     it "extends the target with the module the hook fetches by name" do
       expanded = expand(hook)
 
-      expect(expanded).to include("class Host::Target\n  extend Host::Hookable::BananaMethods\nend")
+      expect(expanded).to include("class Host::Target\n  extend ::Host::Hookable::BananaMethods\nend")
       expect(Prism.parse(expanded).success?).to be(true)
     end
 
@@ -1439,14 +1439,14 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
         "def included(base)", "module Written; def age; 31; end; end\n\n    def included(base)"
       )
 
-      expect(expand(source)).to include("class Host::Target\n  extend Host::Applier::Written\nend")
+      expect(expand(source)).to include("class Host::Target\n  extend ::Host::Applier::Written\nend")
     end
 
     it "extends every class that includes the hook" do
       expanded = expand(hook.sub("class Target", "class Other\n    include(Host::Hookable)\n  end\n\n  class Target"))
 
-      expect(expanded).to include("class Host::Other\n  extend Host::Hookable::BananaMethods\nend")
-      expect(expanded).to include("class Host::Target\n  extend Host::Hookable::BananaMethods\nend")
+      expect(expanded).to include("class Host::Other\n  extend ::Host::Hookable::BananaMethods\nend")
+      expect(expanded).to include("class Host::Target\n  extend ::Host::Hookable::BananaMethods\nend")
     end
 
     it "reads every module one hook extends the target with" do
@@ -1457,8 +1457,56 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
                "base.extend(const_get(:BananaMethods))\n      base.extend(const_get(:OtherMethods))")
       )
 
-      expect(expanded).to include("extend Host::Hookable::BananaMethods")
-      expect(expanded).to include("extend Host::Hookable::OtherMethods")
+      expect(expanded).to include("extend ::Host::Hookable::BananaMethods")
+      expect(expanded).to include("extend ::Host::Hookable::OtherMethods")
+    end
+
+    # The name is an ANSWER, and the reopening it is written into is a lexical
+    # scope — so it goes in rooted, or the scope resolves it a second time and
+    # can reach something else. Here the target has a module of its own named
+    # `Vault`, which is also the ROOT of the concern's namespace: written
+    # relative, `extend Vault::Totaled::BananaMethods` names
+    # `Host::Vault::Totaled::BananaMethods`, which nothing declares.
+    #
+    # What that costs is not the mixin but the class: RBS cannot build a
+    # singleton with a mixin it cannot find, so `Host`'s singleton fails
+    # wholesale and every call through it comes out untyped
+    # (felixefelip/rbs_infer#325, measured on a real app's `Account` — which
+    # includes a concern that includes `Storage::Totaled` and has an
+    # `Account::Storage`).
+    it "roots the name against a target that shadows its namespace" do
+      source = <<~RUBY
+        class Module
+          def include(*modules)
+            modules.reverse_each do |mod|
+              mod.send(:append_features, self)
+              mod.send(:included, self)
+            end
+            self
+          end
+        end
+
+        module Applier
+          def included(base)
+            base.extend(const_get(:BananaMethods))
+          end
+        end
+
+        module Vault::Totaled
+          extend Applier
+
+          module BananaMethods; def age; 31; end; end
+        end
+
+        class Host
+          module Vault
+          end
+
+          include(::Vault::Totaled)
+        end
+      RUBY
+
+      expect(expand(source)).to include("class Host\n  extend ::Vault::Totaled::BananaMethods\nend")
     end
 
     # What `if const_defined?(:ClassMethods)` says, answered by the project
@@ -1576,7 +1624,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     # because the concern names it.
     it "reaches a DSL the host never names, through the concern that does" do
       expect(expand(host, sources: chain))
-        .to include("class Wrap::Target\n  extend Elsewhere::Source::Methods")
+        .to include("class Wrap::Target\n  extend ::Elsewhere::Source::Methods")
     end
 
     # The relation, not just the shapes. `extend Elsewhere::DSL` is written in
@@ -1627,7 +1675,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       RUBY
 
       expect(expand(host, sources: chain("Elsewhere::DSL": mutual)))
-        .to include("class Wrap::Target\n  extend Elsewhere::Source::Methods")
+        .to include("class Wrap::Target\n  extend ::Elsewhere::Source::Methods")
     end
   end
 

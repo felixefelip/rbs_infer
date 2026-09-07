@@ -166,5 +166,5 @@ class Post
 end
 
 class Post
-  extend Post::Taggable::ClassMethods
+  extend ::Post::Taggable::ClassMethods
 end

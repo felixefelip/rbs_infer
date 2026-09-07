@@ -18,5 +18,5 @@ class Example60
 end
 
 class Example60
-  extend Example60::Labels::ClassMethods
+  extend ::Example60::Labels::ClassMethods
 end

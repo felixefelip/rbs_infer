@@ -633,6 +633,17 @@ app/models/user/recoverable.rb:
   - call: included
     in: "::User::Recoverable"
     implements: "::User"
+app/models/vault/totaled.rb:
+  modules:
+  - anchor: Totaled
+    annotations:
+    - "# @type self: singleton(Example64) & singleton(Vault::Totaled)"
+    - "# @type instance: Example64 & Vault::Totaled"
+  blocks:
+  - call: class_methods
+    in: "::Vault::Totaled"
+    implements: "::Vault::Totaled::ClassMethods"
+    self: singleton(::Example64) & ::Vault::Totaled::ClassMethods
 app/models/widget/closeable.rb:
   modules:
   - anchor: Closeable
@@ -654,11 +665,11 @@ sig/generated/steep_ar_runtime/active_support/concern.rb:
       | (singleton(Example60::Labels)) | (singleton(FilterConfiguration)) | (singleton(IncludedHook::Sugared))
       | (singleton(Post::Commentable)) | (singleton(Post::Exportable)) | (singleton(Post::Notifiable))
       | (singleton(Post::Taggable)) | (singleton(Test::Filtrable)) | (singleton(User::Displayable))
-      | (singleton(User::Notifiable)) | (singleton(User::Recoverable)) | (singleton(Widget::Closeable))
-      | (singleton(Widget::Publishable))"
+      | (singleton(User::Notifiable)) | (singleton(User::Recoverable)) | (singleton(Vault::Totaled))
+      | (singleton(Widget::Closeable)) | (singleton(Widget::Publishable))"
     defs:
       class_methods: singleton(Example58::Defaults) | singleton(Example59::Naming)
-        | singleton(Example60::Labels) | singleton(Post::Taggable)
+        | singleton(Example60::Labels) | singleton(Post::Taggable) | singleton(Vault::Totaled)
 sig/generated/steep_ar_runtime/notification/generated_store_accessors.rb:
   modules:
   - anchor: GeneratedStoreAccessors
