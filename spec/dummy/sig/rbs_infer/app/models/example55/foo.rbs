@@ -1,6 +1,6 @@
 class Example55
   module Foo
-    def banana_class_method: () ?{ (*untyped) -> Symbol } -> untyped
+    def banana_class_method: () { (Module) -> Symbol } -> Symbol
     def included: (Module base) -> Module?
   end
 end

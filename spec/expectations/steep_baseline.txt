@@ -17,6 +17,11 @@ app/models/example4.rb:14:25: [error] Type `(::String | nil)` does not have meth
 app/models/example4.rb:22:25: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:27:23: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/example4.rb:40:23: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example51.rb:4:56: [warning] Cannot pass a value of type `(^(*untyped) -> ::Symbol | nil)` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
+app/models/example52.rb:5:22: [warning] Cannot pass a value of type `(^(*untyped) -> ::Symbol | nil)` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
+app/models/example53.rb:5:22: [warning] Cannot pass a value of type `(^(*untyped) -> ::Symbol | nil)` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
+app/models/example54/baz.rb:6:22: [warning] Cannot pass a value of type `(^(*untyped) -> ::Symbol | nil)` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
+app/models/example55/foo.rb:5:20: [warning] Cannot pass a value of type `^(::Module) -> ::Symbol` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
 app/models/example56.rb:29:6: [error] The method cannot return a value of type `nil` because declared as type `::String`
 app/models/example56.rb:36:6: [error] The method cannot return a value of type `nil` because declared as type `::String`
 app/models/example63.rb:17:10: [error] Type `::Example63::Foo` does not have method `greet`
@@ -39,3 +44,5 @@ app/services/profile_formatter.rb:31:4: [error] `format_nickname` requires `self
 app/services/profile_formatter.rb:37:13: [error] Type `(::String | nil)` does not have method `upcase`
 app/services/tag_destroy.rb:110:6: [error] Cannot allow method body have type `(void | ::String)` because declared as type `(::String | nil)`
 app/services/tag_destroy.rb:98:7: [error] Type `::TagDestroy` does not have method `untyped`
+sig/generated/steep_ar_runtime/active_support/concern.rb:53:22: [warning] Cannot pass a value of type `^(?(::Module | nil)) -> untyped` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
+sig/generated/steep_ruby_runtime/module.rb:97:8: [error] Type `(::Object | T(_))` does not have method `singleton_class`

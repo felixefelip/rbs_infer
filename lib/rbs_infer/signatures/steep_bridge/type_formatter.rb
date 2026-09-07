@@ -11,7 +11,7 @@ class RbsInfer::Signatures::SteepBridge
         # return.
         return "bool" if steep_type.is_a?(Steep::AST::Types::Logic::Base)
 
-        str = steep_type.to_s
+        str = erase_type_variables(steep_type).to_s
 
         # Remove leading :: from all type names
         str = str.gsub(/(^|[\[\(, |])::/) { $1 }
@@ -59,6 +59,22 @@ class RbsInfer::Signatures::SteepBridge
 
       def nilablize(type_str)
         RbsInfer::Signatures::RbsParserUtil.nilablize(type_str)
+      end
+
+      def erase_type_variables(steep_type)
+        return steep_type unless steep_type.respond_to?(:subst)
+
+        variables = steep_type.free_variables
+        return steep_type if variables.empty?
+
+        steep_type.subst(
+          Steep::Interface::Substitution.new(
+            dictionary: variables.to_h { |variable| [variable, Steep::AST::Types::Any.instance] },
+            instance_type: Steep::AST::Types::Instance.instance,
+            module_type: Steep::AST::Types::Class.instance,
+            self_type: Steep::AST::Types::Self.instance
+          )
+        )
       end
 
       def intrinsic_type_of(node, typing)
