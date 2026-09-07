@@ -1,6 +1,6 @@
 class Example43
   module Foo
-    @_bazingado_block: (^(*untyped) [self: singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2)] -> Symbol)?
+    @_bazingado_block: ((^(*untyped) [self: singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2)] -> Symbol & ::RbsInfer::Body["def age\n        31\n      end"]) | (^(*untyped) [self: singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2)] -> Symbol & ::RbsInfer::Body["def name\n        \"John Doe\"\n      end"]))?
 
     def bazinga: (*(singleton(::Example43::Baz) | singleton(::Example43::BazOther)) modules) -> Array[(singleton(Example43::Baz) | singleton(Example43::BazOther))]
 

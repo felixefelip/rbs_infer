@@ -1,6 +1,6 @@
 class Example32
   module Foo
-    @_bazingado_block: (^(*untyped) [self: singleton(Example32::Bar)] -> Symbol)?
+    @_bazingado_block: (^(*untyped) [self: singleton(Example32::Bar)] -> Symbol & ::RbsInfer::Body["def age\n        31\n      end"])?
 
     def bazinga: (singleton(::Example32::Baz) module_included) -> (^(*untyped) [self: singleton(Example32::Bar)] -> Symbol | nil | Symbol)
     def bazingado: (?singleton(Example32::Bar)? base) ?{ (*untyped) [self: singleton(Example32::Bar)] -> Symbol } -> (^(*untyped) [self: singleton(Example32::Bar)] -> Symbol | nil | Symbol)

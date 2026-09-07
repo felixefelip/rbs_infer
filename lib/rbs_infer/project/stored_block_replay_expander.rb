@@ -122,6 +122,35 @@ module RbsInfer::Project
       apply_replays(source, replays, extensions, mixin_index)
     end
 
+    def stored_block_bodies(source, sources:)
+      return {} unless possible?(source, sources)
+
+      parsed = Prism.parse(source)
+      return {} unless parsed.success?
+
+      collector = Collector.new(source, sources: sources)
+      bodies_by_slot(collector.storages, collector.collect(parsed.value))
+    end
+
+    def bodies_by_slot(storages, replays)
+      storages.each_with_object({}) do |storage, out|
+        bodies = replays.select { |replay| replay.call == storage.method }
+                        .filter_map { |replay| body_source(replay) }
+                        .uniq
+        next if bodies.empty?
+
+        (out[storage.owner] ||= {})[storage.ivar] = bodies
+      end
+    end
+
+    def body_source(replay)
+      body = replay.block.body
+      return nil unless body
+
+      location = body.location
+      replay.source.byteslice(location.start_offset, location.end_offset - location.start_offset)
+    end
+
     # Whether a replay can be in this file at all — asked of the PROJECT, since
     # the DSL that relocates a block is routinely declared somewhere else.
     # Shared with `StoredBlockReplayImplements`, which reads the same replays and

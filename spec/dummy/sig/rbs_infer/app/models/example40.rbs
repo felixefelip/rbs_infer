@@ -12,7 +12,7 @@ end
 
 class Example40
   class Bazinga
-    @_bazingado_block: (^(*untyped) -> Symbol)?
+    @_bazingado_block: ((^(*untyped) -> Symbol & ::RbsInfer::Body["def age\n        31\n      end"]) | (^(*untyped) -> Symbol & ::RbsInfer::Body["def name\n        \"John Doe\"\n      end"]))?
 
     def bazingado: (?untyped base) ?{ (*untyped) -> Symbol } -> (^(*untyped) -> Symbol)?
   end

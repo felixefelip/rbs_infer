@@ -1,6 +1,6 @@
 class Example62
   module Deferring
-    @kept: (^(*untyped) [self: Module] -> Symbol)?
+    @kept: (^(*untyped) [self: Module] -> Symbol & ::RbsInfer::Body["def hallmark\n        super || \"shared\"\n      end"])?
 
     def self.extended: (Object base) -> Array[untyped]
 

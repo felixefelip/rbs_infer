@@ -284,3 +284,30 @@ if output
     puts sidecar
   end
 end
+
+# The declaration for the `& ::RbsInfer::Body["…"]` payload a stored block's
+# slot carries (felixefelip/rbs_infer#321). Emitted only when something actually
+# carries one, and removed when nothing does — a project with no stored-block
+# DSL gets no file, and one that loses its last DSL does not keep a dangling
+# declaration.
+#
+# Swept over the OUTPUT at the end for the same reason the sidecar above is: the
+# payload is written per file, across dependency levels and stabilization
+# passes, and the declaration is one fact about the whole run.
+if output
+  declaration = File.join(output_dir, "rbs_infer_body.rbs")
+  carried = Dir.glob(File.join(output_dir, "**", "*.rbs")).any? do |path|
+    next false if path == declaration
+
+    File.read(path).include?(RbsInfer::Project::BlockBodyType::REFERENCE)
+  rescue StandardError
+    false
+  end
+
+  if carried
+    File.write(declaration, RbsInfer::Project::BlockBodyType::DECLARATION)
+    puts declaration
+  else
+    FileUtils.rm_f(declaration)
+  end
+end

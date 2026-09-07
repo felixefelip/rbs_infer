@@ -98,6 +98,12 @@ module RbsInfer
     # `class_eval`/`module_eval` on another. The contextual expander moves its
     # body to that statically resolved receiver before the ordinary collector
     # attributes the `def`s to the lexical source object (rbs_infer#238).
+    # Read from the source the replay resolution itself runs on — before the
+    # rewrite, whose appended reopenings hold no blocks and are not this file's
+    # call sites (felixefelip/rbs_infer#321).
+    @stored_block_bodies = RbsInfer::Project::StoredBlockReplayExpander.stored_block_bodies(
+      source, sources: @corpus.constant_sources
+    )
     replay_expanded = RbsInfer::Project::StoredBlockReplayExpander.expand(source, sources: @corpus.constant_sources,
                                                                           mixin_index: mixin_index)
     if replay_expanded
@@ -313,6 +319,10 @@ module RbsInfer
     # intersecta o receiver com ela após a chamada via
     # `unconditional.self` no sidecar.
     markers = synthesize_markers(target_members, attr_types, ivar_types)
+
+    RbsInfer::Project::StoredBlockIvarDecorator.new(@stored_block_bodies || {}).apply(
+      ivar_types: ivar_types, module_ivar_types: module_ivar_types, target_class: @target_class
+    )
 
     namespace_classes = resolve_namespace_classes
     rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class), class_methods_index: class_methods_index)
@@ -1039,6 +1049,8 @@ require_relative "project/self_class_eval_expander"
 # constant they fill is a declaration whatever gem is or is not present.
 require_relative "project/constant_declaration_expander"
 require_relative "project/self_class_eval_marker"
+require_relative "project/block_body_type"
+require_relative "project/stored_block_ivar_decorator"
 require_relative "project/stored_block_replay_expander"
 require_relative "project/stored_block_replay_expander/reader_collector"
 require_relative "project/stored_block_replay_expander/collector"

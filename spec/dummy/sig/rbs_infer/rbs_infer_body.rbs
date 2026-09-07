@@ -1,0 +1,4 @@
+module RbsInfer
+  class Body[B] < ::Proc
+  end
+end
