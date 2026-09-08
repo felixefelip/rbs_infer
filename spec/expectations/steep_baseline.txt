@@ -44,5 +44,6 @@ app/services/profile_formatter.rb:31:4: [error] `format_nickname` requires `self
 app/services/profile_formatter.rb:37:13: [error] Type `(::String | nil)` does not have method `upcase`
 app/services/tag_destroy.rb:110:6: [error] Cannot allow method body have type `(void | ::String)` because declared as type `(::String | nil)`
 app/services/tag_destroy.rb:98:7: [error] Type `::TagDestroy` does not have method `untyped`
+sig/generated/steep_activejob_runtime/active_job_base.rb:13:16: [error] Unexpected positional argument
 sig/generated/steep_ar_runtime/active_support/concern.rb:53:22: [warning] Cannot pass a value of type `^(?(::Module | nil)) -> untyped` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
 sig/generated/steep_ruby_runtime/module.rb:97:8: [error] Type `(::Object | T(_))` does not have method `singleton_class`

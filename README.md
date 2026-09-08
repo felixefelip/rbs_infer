@@ -112,6 +112,7 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 | `rake rbs_infer:module_self_types:all` | `RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator` | `sig/generated/.steep_module_self_types.yml` |
 | `rake rbs_infer:controller_runtime:all` | `RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator` | `sig/generated/steep_controller_runtime/` |
 | `rake rbs_infer:current_runtime:all` | `RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator` | `sig/generated/steep_current_runtime/` |
+| `rake rbs_infer:job_runtime:all` | `RbsInfer::Extensions::Rails::Jobs::RuntimeGenerator` | `sig/generated/steep_activejob_runtime/` |
 | `rake rbs_infer:actionview_runtime:all` | `RbsInfer::Extensions::Rails::Views::RuntimeGenerator` | `sig/generated/steep_actionview_runtime/` |
 
 **Enumerize generator** — walks `app/models/**/*.rb`, captures `enumerize :attr, in: [...]`, and emits per-attribute `Value` / `Attribute` classes plus instance/class accessors, predicate methods, and scope methods (shallow/deep).
@@ -123,6 +124,20 @@ Nothing in the emitted file states a type. `current_<scope>` is written as the f
 **Rails custom generator** — emits `application_controller.rbs` and `action_view_context.rbs` with framework-level mix-ins (`ApplicationHelper`, `ActionView::Helpers`, optionally `Kaminari::Helpers`, `_RbsRailsPathHelpers`) so controllers/views resolve helper methods.
 
 **Controller runtime generator** — emits *pseudo-code* (plain `.rb` Steep type-checks, same Forma-2 idea as the AR runtime sidecar) modelling what Rails does at request time, so the checker can *infer* what an action may assume on entry instead of being handed pre-derived facts. Per controller it reopens the class with a private `__rbs_infer__run_<action>` holding that action's effective `before_action` chain inlined — ancestors first, concerns' `included do` spliced at the include site, `only:`/`except:`/`skip_before_action` applied, `if:`/`unless:` emitted as literal Ruby conditions — each link followed by a halt check, and the action call last. A framework reopen gives `redirect_to`/`render`/`head` a body that records the halt. Consuming these bodies as proof (so `@post` set by `set_post`, or `Current.user` past a halting guard, narrow inside the action) needs felixefelip/steep#68; see felixefelip/rbs_infer#81.
+
+**Job runtime generator** — emits *pseudo-code* for the round trip ActiveJob makes between
+`perform_later` and `perform`. A job's `perform` is never called by the app;
+`MyJob.perform_later(user)` is, and the gem RBS types that as `(*untyped) -> untyped`, so every
+`perform` parameter infers `untyped` however unambiguous the call site. One reopen of
+`ActiveJob::Base` writes what the framework does as plain Ruby — `def self.perform_later(*args,
+**kwargs); new.perform(*args, **kwargs); new; end` — the trailing `new` being the enqueued job
+`perform_later` really returns.
+
+*Known limitation:* this does not type any `perform` yet. Written once on the base class, the
+reopen is shared by every job, so call-site evidence lands on **that** class's `*args` — two jobs
+feed the same parameter and `new.perform` has no way back to the job that was called. Closing it
+needs the call site's receiver to reach the forward: either instantiating this body per subclass,
+or teaching `InvokerSelfTypes` to resolve a call made *on* a receiver (it declines those today).
 
 **View runtime generator** — emits *pseudo-code* (one plain `.rb` per
 `app/views/**/*.{html,turbo_stream}.erb`) modelling what ActionView does at render time, so
