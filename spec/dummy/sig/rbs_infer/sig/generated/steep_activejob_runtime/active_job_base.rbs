@@ -1,0 +1,5 @@
+module ActiveJob
+  class Base
+    def self.perform_later: (*untyped args, **untyped) -> ActiveJob::Base
+  end
+end
