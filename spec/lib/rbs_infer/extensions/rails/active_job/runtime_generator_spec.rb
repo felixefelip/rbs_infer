@@ -2,11 +2,11 @@
 
 require "spec_helper"
 require "rbs_infer"
-require "rbs_infer/extensions/rails/jobs/runtime_generator"
+require "rbs_infer/extensions/rails/active_job/runtime_generator"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe RbsInfer::Extensions::Rails::Jobs::RuntimeGenerator do
+RSpec.describe RbsInfer::Extensions::Rails::ActiveJob::RuntimeGenerator do
   def in_app(files)
     Dir.mktmpdir do |dir|
       files.each do |rel, content|
@@ -32,14 +32,18 @@ RSpec.describe RbsInfer::Extensions::Rails::Jobs::RuntimeGenerator do
 
     expect(source).to include("class ActiveJob::Base\n")
     expect(source).to include("def self.perform_later(*args, **kwargs)")
-    expect(source).to include("new.perform(*args, **kwargs)")
+    expect(source).to include("job.perform(*args, **kwargs)")
   end
 
-  it "ends the forward on `new`, the job `perform_later` actually returns" do
+  # `perform_later` instantiates ONCE (`job = job_or_instantiate(...)`) and
+  # returns that same job. A second `new` would hand back an instance that never
+  # received the arguments.
+  it "instantiates once and returns the job that received the arguments" do
     source = build("app/jobs/application_job.rb" => APPLICATION_JOB).first[:source]
-
     body = source[/def self\.perform_later.*?\n  end/m]
-    expect(body.lines.last(2).first.strip).to eq("new")
+
+    expect(body.scan("new").size).to eq(1)
+    expect(body.lines.map(&:strip)).to end_with(["job = new", "job.perform(*args, **kwargs)", "job", "end"])
   end
 
   it "emits one file, named for the class it reopens" do

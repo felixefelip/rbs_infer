@@ -112,7 +112,7 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 | `rake rbs_infer:module_self_types:all` | `RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator` | `sig/generated/.steep_module_self_types.yml` |
 | `rake rbs_infer:controller_runtime:all` | `RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator` | `sig/generated/steep_controller_runtime/` |
 | `rake rbs_infer:current_runtime:all` | `RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator` | `sig/generated/steep_current_runtime/` |
-| `rake rbs_infer:job_runtime:all` | `RbsInfer::Extensions::Rails::Jobs::RuntimeGenerator` | `sig/generated/steep_activejob_runtime/` |
+| `rake rbs_infer:job_runtime:all` | `RbsInfer::Extensions::Rails::ActiveJob::RuntimeGenerator` | `sig/generated/steep_activejob_runtime/` |
 | `rake rbs_infer:actionview_runtime:all` | `RbsInfer::Extensions::Rails::Views::RuntimeGenerator` | `sig/generated/steep_actionview_runtime/` |
 
 **Enumerize generator** — walks `app/models/**/*.rb`, captures `enumerize :attr, in: [...]`, and emits per-attribute `Value` / `Attribute` classes plus instance/class accessors, predicate methods, and scope methods (shallow/deep).
@@ -130,8 +130,10 @@ Nothing in the emitted file states a type. `current_<scope>` is written as the f
 `MyJob.perform_later(user)` is, and the gem RBS types that as `(*untyped) -> untyped`, so every
 `perform` parameter infers `untyped` however unambiguous the call site. One reopen of
 `ActiveJob::Base` writes what the framework does as plain Ruby — `def self.perform_later(*args,
-**kwargs); new.perform(*args, **kwargs); new; end` — the trailing `new` being the enqueued job
-`perform_later` really returns.
+**kwargs); job = new; job.perform(*args, **kwargs); job; end` — following the real `perform_later`
+line for line (`job = job_or_instantiate(...)`, `job.enqueue`, `enqueue_result`) with the queue
+between the two ends collapsed. One instantiation, and the job returned is the job that received
+the arguments.
 
 *Known limitation:* this does not type any `perform` yet. Written once on the base class, the
 reopen is shared by every job, so call-site evidence lands on **that** class's `*args` — two jobs
