@@ -5,3 +5,8 @@ callbacks:
   applies_self: Comment & Comment::Validated
   runs_before:
   - notify_post_author
+- class: Post::Notifiable
+  applies_self: Post & Post::Validated
+  runs_before:
+  - notify_author_followers
+  - author_digest_subject
