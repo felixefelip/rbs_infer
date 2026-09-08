@@ -41,5 +41,5 @@ module Example53::Baz::BananaMethods
 end
 
 class Example53::Bar
-  extend Example53::Baz::BananaMethods
+  extend ::Example53::Baz::BananaMethods
 end

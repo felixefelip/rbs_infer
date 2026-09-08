@@ -6,5 +6,5 @@ class Example59
 end
 
 class Example59
-  extend Example59::Naming::ClassMethods
+  extend ::Example59::Naming::ClassMethods
 end

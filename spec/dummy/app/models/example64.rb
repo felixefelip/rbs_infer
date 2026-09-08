@@ -1,0 +1,30 @@
+# frozen_string_literal: true
+
+# An `extend <Concern>::ClassMethods` written back into a reopening of the host,
+# where the host has a nested module sharing the concern namespace's first
+# segment.
+#
+# `include ::Vault::Totaled` makes `ActiveSupport::Concern` extend the host with
+# `Vault::Totaled::ClassMethods`, and the replay expander says so by reopening
+# the host with that one line. Written relative, the line is not the answer the
+# expander computed: inside `class Example64` the constant `Vault` is
+# `Example64::Vault`, so it names `Example64::Vault::Totaled::ClassMethods`,
+# which nothing declares. RBS then fails to build `Example64`'s singleton at all
+# — not just the mixin — and `self.class.vault_key` below has nothing to resolve
+# against.
+#
+# Measured in a real app (felixefelip/rbs_infer#325): `Account` includes a
+# concern that includes `Storage::Totaled`, and `Account::Storage` exists, so
+# every `Current.account.…` in the app came out untyped and the ivars written
+# from one lost their declarations.
+#
+# The reopening is rooted, so the name written is the name resolved.
+class Example64
+  include ::Vault::Totaled
+
+  # `String`, not `untyped`: the host's singleton carries the concern's class
+  # methods, which is exactly what fails when the extend names nothing.
+  def key
+    self.class.vault_key.upcase
+  end
+end

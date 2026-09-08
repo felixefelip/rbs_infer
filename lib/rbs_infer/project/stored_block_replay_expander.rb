@@ -258,7 +258,7 @@ module RbsInfer::Project
     # runs — but it goes in the same place, for the same reason, and is dropped
     # on a second pass by the same `missing_from`.
     def extension_reopen(extension)
-      "#{extension.kind} #{extension.target}\n#{BlockReopen::INDENT}extend #{extension.name}\nend\n"
+      "#{extension.kind} #{extension.target}\n#{BlockReopen::INDENT}extend ::#{extension.name}\nend\n"
     end
   end
 end

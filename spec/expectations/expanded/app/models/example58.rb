@@ -26,5 +26,5 @@ class Example58
 end
 
 class Example58
-  extend Example58::Defaults::ClassMethods
+  extend ::Example58::Defaults::ClassMethods
 end

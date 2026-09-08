@@ -25,5 +25,5 @@ class Example48
 end
 
 class Example48::Bar
-  extend Example48::Baz::BananaMethods
+  extend ::Example48::Baz::BananaMethods
 end
