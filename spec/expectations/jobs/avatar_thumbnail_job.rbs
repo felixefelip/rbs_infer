@@ -1,0 +1,3 @@
+class AvatarThumbnailJob < ApplicationJob
+  def perform: (untyped user, sizes: untyped) -> Array[Hash[Symbol, untyped]]
+end

@@ -46,6 +46,7 @@ class PostsController < ApplicationController
     build_filtering_for_current_user
     publisher = PostPublisher.new(@post)
     if publisher.call
+      AuthorDigestJob.perform_later(@post, recipient: @post.user.email)
       redirect_to @post, notice: "Post published."
     else
       redirect_to @post, alert: "Post could not be published."
