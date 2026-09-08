@@ -9,4 +9,15 @@ class Example65Caller
   def add
     Example65Adder.dispatch(1, step: 2)
   end
+
+  # Through a subclass that adds nothing: still `Example65Reporter#handle`.
+  def report
+    Example65CsvReporter.dispatch("/tmp/x.csv")
+  end
+
+  # A different hierarchy that spells its dispatcher the same way. Its arguments
+  # belong to ITS handler and to no other.
+  def impersonate
+    Example65Impostor.dispatch(true, mode: :fast)
+  end
 end

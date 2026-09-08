@@ -1,0 +1,3 @@
+class Example65Impostor < Example65::Rival
+  def handle: (bool flag, mode: Symbol) -> Symbol?
+end

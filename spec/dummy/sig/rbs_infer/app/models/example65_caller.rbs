@@ -1,4 +1,6 @@
 class Example65Caller
   def greet: () -> Object
   def add: () -> Object
+  def report: () -> Object
+  def impersonate: () -> Object
 end

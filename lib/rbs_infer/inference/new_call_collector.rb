@@ -281,14 +281,15 @@ module RbsInfer::Inference
       # ancestry match that already accepts this call site keys it on the bare
       # method name, so every subclass's arguments merge into the base's
       # parameter. Here the receiver has to BE the target.
-      if !@inherited_forwards.empty? && node.receiver && node.arguments
-        forwarded_to = @inherited_forwards[node.name.to_s]
-        if forwarded_to && @target_methods.key?(forwarded_to)
+      if !@inherited_forwards.empty? && singleton_receiver_spelling?(node.receiver) && node.arguments
+        Array(@inherited_forwards[node.name.to_s]).each do |forwarded_to|
+          next unless @target_methods.key?(forwarded_to)
+
           receiver_type = resolve_receiver_type(node.receiver)
-          if receiver_type && match_class?(receiver_type)
-            args = extract_cross_class_args(node, @target_methods[forwarded_to])
-            @method_call_usages[forwarded_to] << args unless args.empty?
-          end
+          next unless receiver_type && reaches_target_method?(receiver_type, forwarded_to)
+
+          args = extract_cross_class_args(node, @target_methods[forwarded_to])
+          @method_call_usages[forwarded_to] << args unless args.empty?
         end
       end
 
@@ -474,6 +475,44 @@ module RbsInfer::Inference
     # on its own. Only the owner and ancestry matches know the call reaches
     # something other than the target's own method, so only they qualify the key
     # they file under.
+    # A dispatcher is inherited onto the CLASS, so only a call made on the class
+    # object can be one. Without this, an instance method that happens to share
+    # the forward's name — `run`, `call`, `process` are all plausible — would
+    # have its arguments filed against the handler: `x.run(config)` with
+    # `x : Greeter` is a legitimate, unrelated call.
+    def singleton_receiver_spelling?(receiver)
+      case receiver
+      when Prism::ConstantReadNode, Prism::ConstantPathNode, Prism::SelfNode then true
+      when nil then false
+      else resolve_receiver_type(receiver).to_s.start_with?("singleton(")
+      end
+    end
+
+    # Does the handler this receiver would reach belong to the target?
+    #
+    # NOT "is the receiver the target": a subclass that adds nothing
+    # (`class CsvImportJob < BaseImportJob; end`) still runs the target's
+    # handler, and `CsvImportJob.perform_later(path)` is the only call site
+    # `BaseImportJob#perform` has. Matching on identity discarded it and left the
+    # parameter `untyped` — narrower than the truth, under a whole-program
+    # assumption where a missed call site is a missed type.
+    #
+    # It is also what the ordinary path already does: `ancestry_match_key`
+    # accepts a direct call when the OWNER is the target. This asks the same
+    # question of the same resolver, so the two paths agree.
+    def reaches_target_method?(receiver_type, forwarded_to)
+      receiver_components(receiver_type).any? do |component|
+        owner = rbs_definition_resolver.method_owner(instance_spelling(component), forwarded_to)
+        owner && owner.sub(/\A::/, "") == @target_class.sub(/\A::/, "")
+      end
+    end
+
+    # The forward is reached on the class; the HANDLER is an instance method, so
+    # ownership is asked of the instance side of whatever the receiver names.
+    def instance_spelling(component)
+      component[/\Asingleton\((.+)\)\z/, 1] || component
+    end
+
     def keys_by_branch(receiver_type, method_name)
       return {} if receiver_type.nil?
 

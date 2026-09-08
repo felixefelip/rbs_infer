@@ -327,6 +327,27 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example65_caller", target_file: "app/models/example65_caller.rb")
   end
 
+  # The dispatch site names a SUBCLASS that adds nothing, and it is the only
+  # evidence this handler has. Matching the site on "the receiver is the target"
+  # discarded it; matching on "the handler this receiver reaches belongs to the
+  # target" keeps it — the same question `ancestry_match_key` asks of a direct
+  # call, so the two paths agree.
+  it "example65_reporter is typed through a subclass that adds nothing" do
+    assert_snapshot("models/example65_reporter", target_file: "app/models/example65_reporter.rb")
+  end
+
+  it "example65_csv_reporter (the empty subclass) matches expected RBS" do
+    assert_snapshot("models/example65_csv_reporter", target_file: "app/models/example65_csv_reporter.rb")
+  end
+
+  # A second hierarchy spelling its dispatcher exactly like the first one. Each
+  # feeds only its own handler: this is the negative that would move every
+  # example65 snapshot if the receiver ever stopped deciding which class is
+  # reached.
+  it "example65_impostor takes its own arguments and none of the Greeter's" do
+    assert_snapshot("models/example65_impostor", target_file: "app/models/example65_impostor.rb")
+  end
+
   # felixefelip/rbs_infer#300. A DSL that DEFERS: `append_features` registers the
   # module on the target when the target is one of its own, so `Middle` is a
   # waypoint and `hallmark` lands on `Example62`. `super` is the criterion — it
