@@ -31,7 +31,7 @@ app/models/example63.rb:9:8: [warning] Method `::Example63::Foo#greet` is not de
 app/models/example7.rb:31:28: [error] Type `(::Integer | nil)` does not have method `abs`
 app/models/example7.rb:34:27: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/included_hook.rb:110:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS
-app/models/post/notifiable.rb:28:24: [error] Type `(::User | nil)` does not have method `full_name`
+app/models/post/notifiable.rb:42:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/send_dispatch.rb:107:33: [error] `public_send` cannot call `stamp` on `::SendDispatch`, which declares it private
 app/models/send_dispatch.rb:114:26: [error] `send` names `no_such_method_anywhere`, which type `::SendDispatch` does not have
 app/models/send_dispatch.rb:119:39: [error] Unexpected positional argument
