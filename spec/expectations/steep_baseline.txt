@@ -1,4 +1,4 @@
-app/controllers/posts_controller.rb:76:4: [error] The method cannot return a value of type `nil` because declared as type `::PostFiltering`
+app/controllers/posts_controller.rb:77:4: [error] The method cannot return a value of type `nil` because declared as type `::PostFiltering`
 app/models/concerns/test/filtrable.rb:16:13: [error] Type `(::Post & ::Test::Filtrable)` does not have method `adddd`
 app/models/concerns/test/filtrable.rb:16:4: [error] Type `(::Post & ::Test::Filtrable)` does not have method `asdasd`
 app/models/eval_reopen.rb:61:6: [warning] Method `::Object#by_instance_eval` is not declared in RBS

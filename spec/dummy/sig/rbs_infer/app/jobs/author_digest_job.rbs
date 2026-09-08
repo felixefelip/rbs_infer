@@ -1,0 +1,3 @@
+class AuthorDigestJob < ApplicationJob
+  def perform: (untyped post, recipient: untyped) -> { to: untyped, subject: untyped, excerpt: untyped }
+end
