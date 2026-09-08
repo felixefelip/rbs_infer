@@ -28,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types:, invoker_self_types:, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types:, invoker_self_types:, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {}, inherited_forwards:)
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -58,6 +58,15 @@ module RbsInfer::Inference
       @constant_arg_resolver = constant_arg_resolver
       @init_positional_params = init_positional_params
       @target_methods = target_methods
+      # `{ "dispatch" => "handle" }` — a dispatcher the target INHERITS, and the
+      # target method it hands its arguments to (felixefelip/rbs_infer#331).
+      # `Greeter.dispatch("ada")` is a call site of `Greeter#handle`, and the
+      # only thing saying WHICH handler is the receiver, matched below exactly as
+      # a direct call's is. Required, not defaulted: a caller that forgets it
+      # gets the pre-#331 behaviour — every subclass's arguments merging into the
+      # base's parameter — which reads as an answer rather than failing
+      # (docs/engineering/required-threaded-deps.md).
+      @inherited_forwards = inherited_forwards
       @match_bare_calls = match_bare_calls
       # `{ "method_name" => "Self & Self::Validated" }` — refined `self`
       # types per method, from after-validation callback sidecars (see
@@ -256,6 +265,29 @@ module RbsInfer::Inference
           keys_by_branch(receiver_type, method_name).each do |key, branches|
             args = extract_cross_class_args_for(node, method_name, branches)
             @method_call_usages[key] << args unless args.empty?
+          end
+        end
+      end
+
+      # The call site of an INHERITED dispatcher (felixefelip/rbs_infer#331):
+      # `Greeter.dispatch("ada", greeting: "hi")` runs `Greeter#handle`, because
+      # `new` inside the base's singleton method is the receiver of the call. The
+      # arguments are mapped onto the handler's parameters exactly as a direct
+      # `greeter.handle("ada", greeting: "hi")` would be — the forward is only
+      # recognized when it splats its rest and keyrest and nothing else, which is
+      # what makes the positions line up.
+      #
+      # `match_class?` is the receiver filter, and it is the whole point: the
+      # ancestry match that already accepts this call site keys it on the bare
+      # method name, so every subclass's arguments merge into the base's
+      # parameter. Here the receiver has to BE the target.
+      if !@inherited_forwards.empty? && node.receiver && node.arguments
+        forwarded_to = @inherited_forwards[node.name.to_s]
+        if forwarded_to && @target_methods.key?(forwarded_to)
+          receiver_type = resolve_receiver_type(node.receiver)
+          if receiver_type && match_class?(receiver_type)
+            args = extract_cross_class_args(node, @target_methods[forwarded_to])
+            @method_call_usages[forwarded_to] << args unless args.empty?
           end
         end
       end

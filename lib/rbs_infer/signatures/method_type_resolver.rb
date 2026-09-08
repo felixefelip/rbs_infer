@@ -324,7 +324,12 @@ module RbsInfer::Signatures
           constant_arg_resolver: @constant_resolver,
           defined_class_names: defined_names,
           module_self_types: module_self_types_for(file, entry, defined_names),
-          invoker_self_types: @invoker_self_types
+          invoker_self_types: @invoker_self_types,
+          # These two walks read `.new` call sites only — they pass no
+          # `target_methods`, so no method call is collected here and no
+          # inherited dispatcher could be recognized. Empty is the answer, not a
+          # missing wire (felixefelip/rbs_infer#331).
+          inherited_forwards: {}
         )
         entry.result.value.accept(visitor)
         all_usages.concat(visitor.usages)
@@ -541,7 +546,12 @@ module RbsInfer::Signatures
           constant_arg_resolver: @constant_resolver,
           defined_class_names: defined_names,
           module_self_types: module_self_types_for(file, entry, defined_names),
-          invoker_self_types: @invoker_self_types
+          invoker_self_types: @invoker_self_types,
+          # These two walks read `.new` call sites only — they pass no
+          # `target_methods`, so no method call is collected here and no
+          # inherited dispatcher could be recognized. Empty is the answer, not a
+          # missing wire (felixefelip/rbs_infer#331).
+          inherited_forwards: {}
         )
         entry.result.value.accept(visitor)
 

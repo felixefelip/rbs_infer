@@ -163,6 +163,10 @@ module RbsInfer::Inference
         target_class: @target_class,
         target_file: @target_file,
         method_type_resolver: @method_type_resolver,
+        # felixefelip/rbs_infer#331: the dispatchers the target INHERITS, so a
+        # call site that only ever names the dispatcher (`Greeter.dispatch(...)`)
+        # is read as the call site of the handler it runs.
+        inherited_forwards: inherited_forwards_for(target_methods),
         init_positional_params: init_positional_params(parsed_target),
         target_methods: target_methods,
         steep_bridge: @steep_bridge,
@@ -188,6 +192,18 @@ module RbsInfer::Inference
         result[method_name] = merged unless merged.empty?
       end
       result
+    end
+
+    # `{ "dispatch" => "handle" }` for this target, or empty when it inherits no
+    # dispatcher that forwards into one of its own methods. Built per call rather
+    # than per instance: `target_methods` is settled by the target's parse, which
+    # happens after this object exists.
+    def inherited_forwards_for(target_methods)
+      InheritedForwards.new(
+        target_class: @target_class,
+        source_index: @source_index,
+        parse_cache: @parse_cache
+      ).for_methods(target_methods.keys)
     end
 
     # Who may be calling the target, by four routes no single index covers. Yields
@@ -238,7 +254,11 @@ module RbsInfer::Inference
         target_methods: target_method_params(parsed_target),
         steep_bridge: @steep_bridge,
         mixin_index: @mixin_index,
-        invoker_self_types: @invoker_self_types
+        invoker_self_types: @invoker_self_types,
+        # This walk keeps the `.new` usages and discards the method-call ones,
+        # so an inherited dispatcher has nothing to contribute here and looking
+        # for one would only cost a sweep (felixefelip/rbs_infer#331).
+        inherited_forwards: {}
       )
       @source_index.files_referencing(@target_class).flat_map { |file| analyzer.analyze(file) }
     end

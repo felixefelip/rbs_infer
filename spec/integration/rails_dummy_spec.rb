@@ -302,17 +302,16 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example61_caller", target_file: "app/models/example61_caller.rb")
   end
 
-  # felixefelip/rbs_infer#331. The template method: a handler each subclass
-  # implements, reached only through a dispatcher the BASE defines. The call
-  # sites in `Example65Caller` state every argument, and `Greeter.dispatch(...)`
-  # IS read as a call site — by ancestry, which keys the evidence on the bare
-  # method name and drops the concrete receiver. So both subclasses' arguments
-  # merge into the base's `*args` and neither `handle` gets any.
+  # felixefelip/rbs_infer#331, now closed. The template method: a handler each
+  # subclass implements, reached only through a dispatcher the BASE defines.
+  # `Example65Greeter.dispatch("ada", greeting: "hello")` is read as a call site
+  # of `Example65Greeter#handle`, because `new` inside an inherited singleton
+  # method is the receiver of the call.
   #
-  # These four snapshots exist to be updated by the fix: `Greeter#handle` should
-  # read `(String name, greeting: String)`, `Adder#handle` `(Integer count,
-  # step: Integer)`, and neither may take the other's.
-  it "example65 (a dispatcher on the base class) does not yet reach the handlers" do
+  # The two handlers taking unrelated types is the assertion that matters: each
+  # takes only its own dispatch site's arguments. They used to merge into the
+  # base's `*args` and leave both `handle` methods `untyped`.
+  it "example65 (a dispatcher on the base class) hands its arguments to the handlers" do
     assert_snapshot("models/example65", target_file: "app/models/example65.rb")
   end
 
@@ -1399,21 +1398,19 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("jobs/profile_formatter_job", target_class: "ProfileFormatterJob", target_file: "app/jobs/profile_formatter_job.rb")
   end
 
-  # The `perform_later` gap, pinned. `PostsController#publish` enqueues this job
-  # with a `Post` and a `String`, and the ActiveJob sidecar's forward carries
-  # both — but only as far as `ActiveJob::Base.perform_later`'s `*args`, which
-  # every job in the app shares. So `perform` stays `untyped` here. Whichever
-  # change routes the enqueue site's receiver into the forward is the one that
-  # updates this expectation.
-  it "AuthorDigestJob does not yet infer the arguments its perform_later site states" do
+  # `PostsController#publish` enqueues this job with a `Post` and a `String`, and
+  # the ActiveJob sidecar's forward now carries both all the way to `perform` —
+  # the receiver of `AuthorDigestJob.perform_later(...)` says which job's
+  # handler the arguments belong to (felixefelip/rbs_infer#331).
+  it "AuthorDigestJob infers the arguments its perform_later site states" do
     assert_snapshot("jobs/author_digest_job", target_class: "AuthorDigestJob", target_file: "app/jobs/author_digest_job.rb")
   end
 
   # The second enqueue site, from another controller, with arguments sharing
-  # nothing with the first job's. Both land on `ActiveJob::Base.perform_later`'s
-  # `*args`, so that parameter is now the union of two unrelated signatures —
-  # which is the limitation itself, written in RBS.
-  it "AvatarThumbnailJob does not yet infer them either, and widens the shared forward" do
+  # nothing with the first job's. The base's `*args` still shows the union of
+  # both — it genuinely receives both — but each job now takes only its own,
+  # which is what a receiver filter too loose would break.
+  it "AvatarThumbnailJob infers its own, without taking the other job's" do
     assert_snapshot("jobs/avatar_thumbnail_job", target_class: "AvatarThumbnailJob", target_file: "app/jobs/avatar_thumbnail_job.rb")
   end
 
