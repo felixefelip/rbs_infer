@@ -257,18 +257,6 @@ module RbsInfer::Project
     # no block to slice and nothing to re-indent, only the one line the hook
     # runs — but it goes in the same place, for the same reason, and is dropped
     # on a second pass by the same `missing_from`.
-    #
-    # Rooted, because the name is an ANSWER and the reopening is a lexical
-    # scope. `Declarations#resolve` already decided which declaration the hook
-    # hands over, absolutely; written back relative, that answer is looked up
-    # again — this time under the target — and a class with a nested module of
-    # the same first segment silently gets a different one. `Account` including
-    # a concern that includes `Storage::Totaled` has an `Account::Storage`, so
-    # `extend Storage::Totaled::ClassMethods` resolved to
-    # `Account::Storage::Totaled::ClassMethods`, which nothing declares:
-    # `Account`'s whole singleton then failed to build, and every
-    # `Current.account.…` in the app came out untyped
-    # (felixefelip/rbs_infer#325).
     def extension_reopen(extension)
       "#{extension.kind} #{extension.target}\n#{BlockReopen::INDENT}extend ::#{extension.name}\nend\n"
     end
