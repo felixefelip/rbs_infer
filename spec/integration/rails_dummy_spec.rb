@@ -1383,6 +1383,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("jobs/author_digest_job", target_class: "AuthorDigestJob", target_file: "app/jobs/author_digest_job.rb")
   end
 
+  # The second enqueue site, from another controller, with arguments sharing
+  # nothing with the first job's. Both land on `ActiveJob::Base.perform_later`'s
+  # `*args`, so that parameter is now the union of two unrelated signatures —
+  # which is the limitation itself, written in RBS.
+  it "AvatarThumbnailJob does not yet infer them either, and widens the shared forward" do
+    assert_snapshot("jobs/avatar_thumbnail_job", target_class: "AvatarThumbnailJob", target_file: "app/jobs/avatar_thumbnail_job.rb")
+  end
+
   it "EmailNotifier service matches expected RBS" do
     assert_snapshot("services/email_notifier", target_class: "EmailNotifier", target_file: "app/services/email_notifier.rb")
   end

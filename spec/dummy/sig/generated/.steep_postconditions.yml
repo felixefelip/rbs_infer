@@ -1775,7 +1775,6 @@ method_entry_facts:
   method: perform_later
   consts:
     Current.author_name: "::String"
-    Current.user: "((::User & ::User::Validated) | ::User)"
     Current.viewer_name: "::String"
 - class: ApplicationController
   method: log_user_author_name

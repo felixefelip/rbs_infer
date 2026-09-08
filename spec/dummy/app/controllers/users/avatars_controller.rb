@@ -7,6 +7,7 @@ class Users::AvatarsController < ApplicationController
 
   def update
     if @user.update(avatar_params)
+      AvatarThumbnailJob.perform_later(@user, sizes: [64, 128])
       redirect_to @user, notice: "Avatar updated."
     else
       render :edit, status: :unprocessable_entity
