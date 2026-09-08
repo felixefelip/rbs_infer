@@ -40,4 +40,21 @@ class Example65
       raise NotImplementedError
     end
   end
+
+  # A SECOND dispatcher, in no way related to the one above and spelling its
+  # forward identically. `Example65Impostor` below is its subclass, and the two
+  # hierarchies must not feed each other: if the receiver filter ever matched on
+  # the method name alone, this one's `bool`/`Symbol` arguments would land on
+  # `Example65Greeter#handle`, whose snapshot is the assertion.
+  class Rival
+    def self.dispatch(*args, **kwargs)
+      handler = new
+      handler.handle(*args, **kwargs)
+      handler
+    end
+
+    def handle(*)
+      raise NotImplementedError
+    end
+  end
 end

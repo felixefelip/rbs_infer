@@ -5,3 +5,11 @@ class Example65
     def handle: (*untyped) -> untyped
   end
 end
+
+class Example65
+  class Rival
+    def self.dispatch: (*(bool | { mode: Symbol }) args, **untyped) -> Object
+
+    def handle: (*untyped) -> untyped
+  end
+end

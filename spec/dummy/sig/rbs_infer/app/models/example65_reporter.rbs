@@ -1,0 +1,3 @@
+class Example65Reporter < Example65::Dispatcher
+  def handle: (String path) -> String
+end

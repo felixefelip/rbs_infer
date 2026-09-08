@@ -16,7 +16,8 @@ RSpec.describe RbsInfer::Inference::CallerFileAnalyzer do
       invoker_self_types: RbsInfer::Inference::InvokerSelfTypes.new(
         source_index: RbsInfer::Project::SourceIndex.new([]),
         parse_cache: RbsInfer::Project::ParseCache.new
-      )
+      ),
+      inherited_forwards: {}
     )
   end
 
