@@ -1,0 +1,7 @@
+class Example65
+  class Dispatcher
+    def self.dispatch: (*(String | { greeting: String } | Integer | { step: Integer }) args, **untyped) -> Object
+
+    def handle: (*untyped) -> untyped
+  end
+end

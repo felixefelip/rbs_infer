@@ -1,0 +1,3 @@
+class Example65Adder < Example65::Dispatcher
+  def handle: (untyped count, step: untyped) -> untyped
+end
