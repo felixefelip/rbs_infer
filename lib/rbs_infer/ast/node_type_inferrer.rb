@@ -67,10 +67,40 @@ module RbsInfer::AST
       when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
       when Prism::TrueNode, Prism::FalseNode then "bool"
       when Prism::NilNode then "nil"
-      when Prism::ArrayNode then "Array[untyped]"
+      when Prism::ArrayNode then infer_array_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
       when Prism::HashNode then infer_hash_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
       when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
       end
+    end
+
+    # The element type of an array literal, read off the elements — `[64, 128]`
+    # is an `Array[Integer]`. It used to answer `Array[untyped]` for every
+    # literal, however plainly the elements typed themselves, while the `HashNode`
+    # case right below has always read its values.
+    #
+    # EVERY element has to type for the answer to hold, because the elements
+    # COEXIST: one `untyped` among them and the element type is unknown, not the
+    # union of the rest. That is the opposite of `TypeMerger.union_types`, which
+    # prefers a resolved type over `untyped` — right when the members are
+    # competing observations of ONE value, wrong when they are different values
+    # all present at once. Hence the guard BEFORE the union rather than a
+    # different union: past it there is no `untyped` left for that preference to
+    # act on, and the merger's canonical de-duplication and subsumption still
+    # apply (`[true, false]` is an `Array[bool]`).
+    def self.infer_array_type(node, constant_resolver:, known_types: {}, context_class: nil)
+      elements = node.elements
+      return "Array[untyped]" if elements.empty?
+
+      # `[*rest, 1]` — the splat stands for elements this walk cannot see, so the
+      # ones it can see do not span the array.
+      return "Array[untyped]" if elements.any? { |e| e.is_a?(Prism::SplatNode) }
+
+      types = elements.map do |element|
+        infer_value_type(element, constant_resolver: constant_resolver, known_types: known_types, context_class: context_class)
+      end
+      return "Array[untyped]" if types.any? { |type| type == "untyped" }
+
+      "Array[#{RbsInfer::Inference::TypeMerger.union_types(types)}]"
     end
 
     def self.infer_hash_type(node, constant_resolver:, known_types: {}, context_class: nil)
