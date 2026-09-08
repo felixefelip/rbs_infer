@@ -17,6 +17,49 @@ RSpec.describe RbsInfer::AST::NodeTypeInferrer do
     nil
   end
 
+  describe ".infer_array_type" do
+    def infer_array(source, known_types: {}, context_class: nil, constant_resolver: fake_constant_resolver)
+      node = Prism.parse(source).value.statements.body.first
+      described_class.infer_array_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
+    end
+
+    it "reads the element type off the elements" do
+      expect(infer_array("[64, 128]")).to eq("Array[Integer]")
+      expect(infer_array('["a", "b"]')).to eq("Array[String]")
+      expect(infer_array("[:a, :b]")).to eq("Array[Symbol]")
+    end
+
+    # De-duplication and subsumption come from the merger, so `bool` stays one
+    # type rather than becoming `(bool | bool)`.
+    it "unions genuinely mixed elements, collapsing what repeats" do
+      expect(infer_array('[1, "a"]')).to eq("Array[(Integer | String)]")
+      expect(infer_array("[true, false]")).to eq("Array[bool]")
+      expect(infer_array("[1, 2.0, 3]")).to eq("Array[(Integer | Float)]")
+    end
+
+    it "types elements that are not literals" do
+      expect(infer_array("[User.new]")).to eq("Array[User]")
+      expect(infer_array("[[1, 2], [3]]")).to eq("Array[Array[Integer]]")
+      expect(infer_array("[size]", known_types: { "size" => "Integer" })).to eq("Array[Integer]")
+    end
+
+    # The elements COEXIST, so one unknown among them makes the element type
+    # unknown — never the union of the ones that did resolve. This is where the
+    # merger's own preference for a resolved type over `untyped` would be wrong.
+    it "declines when any element does not type" do
+      expect(infer_array("[1, whatever]")).to eq("Array[untyped]")
+      expect(infer_array("[whatever]")).to eq("Array[untyped]")
+    end
+
+    it "declines on a splat, which stands for elements it cannot see" do
+      expect(infer_array("[*rest, 1]")).to eq("Array[untyped]")
+    end
+
+    it "declines on an empty literal, which states nothing" do
+      expect(infer_array("[]")).to eq("Array[untyped]")
+    end
+  end
+
   describe ".infer_literal_node_type" do
     def infer_literal(source, constant_resolver: fake_constant_resolver)
       node = Prism.parse(source).value.statements.body.first
@@ -36,7 +79,7 @@ RSpec.describe RbsInfer::AST::NodeTypeInferrer do
       expect(infer_literal("true")).to eq("bool")
       expect(infer_literal("false")).to eq("bool")
       expect(infer_literal("nil")).to eq("nil")
-      expect(infer_literal("[1, 2]")).to eq("Array[untyped]")
+      expect(infer_literal("[1, 2]")).to eq("Array[Integer]")
       expect(infer_literal("{ a: 1 }")).to eq("{ a: Integer }")
       expect(infer_literal("/abc/")).to eq("Regexp")
       expect(infer_literal('/a#{b}/')).to eq("Regexp")           # InterpolatedRegexp
@@ -105,7 +148,7 @@ RSpec.describe RbsInfer::AST::NodeTypeInferrer do
     end
 
     it "handles array values" do
-      expect(infer_hash("{ items: [1, 2, 3] }")).to eq("{ items: Array[untyped] }")
+      expect(infer_hash("{ items: [1, 2, 3] }")).to eq("{ items: Array[Integer] }")
     end
 
     context "with known_types context" do
