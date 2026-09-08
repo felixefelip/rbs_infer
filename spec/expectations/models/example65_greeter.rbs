@@ -1,0 +1,3 @@
+class Example65Greeter < Example65::Dispatcher
+  def handle: (untyped name, greeting: untyped) -> String
+end

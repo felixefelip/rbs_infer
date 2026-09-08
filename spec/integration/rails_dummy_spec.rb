@@ -302,6 +302,32 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example61_caller", target_file: "app/models/example61_caller.rb")
   end
 
+  # felixefelip/rbs_infer#331. The template method: a handler each subclass
+  # implements, reached only through a dispatcher the BASE defines. The call
+  # sites in `Example65Caller` state every argument, and `Greeter.dispatch(...)`
+  # IS read as a call site — by ancestry, which keys the evidence on the bare
+  # method name and drops the concrete receiver. So both subclasses' arguments
+  # merge into the base's `*args` and neither `handle` gets any.
+  #
+  # These four snapshots exist to be updated by the fix: `Greeter#handle` should
+  # read `(String name, greeting: String)`, `Adder#handle` `(Integer count,
+  # step: Integer)`, and neither may take the other's.
+  it "example65 (a dispatcher on the base class) does not yet reach the handlers" do
+    assert_snapshot("models/example65", target_file: "app/models/example65.rb")
+  end
+
+  it "example65_greeter (one handler) matches expected RBS" do
+    assert_snapshot("models/example65_greeter", target_file: "app/models/example65_greeter.rb")
+  end
+
+  it "example65_adder (the other handler, unrelated types) matches expected RBS" do
+    assert_snapshot("models/example65_adder", target_file: "app/models/example65_adder.rb")
+  end
+
+  it "example65_caller (the two dispatch sites) matches expected RBS" do
+    assert_snapshot("models/example65_caller", target_file: "app/models/example65_caller.rb")
+  end
+
   # felixefelip/rbs_infer#300. A DSL that DEFERS: `append_features` registers the
   # module on the target when the target is one of its own, so `Middle` is a
   # waypoint and `hallmark` lands on `Example62`. `super` is the criterion — it
