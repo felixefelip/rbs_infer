@@ -1,0 +1,7 @@
+class Example67Source
+  def enabled?: () -> bool
+  def window_size: () -> Integer
+  def window: () -> Example67Window?
+  def windowed?: () -> bool
+  def detect_spikes: () -> bool
+end

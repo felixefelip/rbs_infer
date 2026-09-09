@@ -393,6 +393,39 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example66_trackable", target_file: "app/models/example66_trackable.rb")
   end
 
+  # A predicate that proves a SIBLING METHOD non-nil narrows nothing, so a guard
+  # in one method cannot pay for a dereference in another:
+  #
+  #   def spiking?     = source.windowed? && wide_enough?
+  #   def wide_enough? = source.window.size > 10
+  #
+  # The precondition half already works — `steep_contracts.yml` carries
+  # `requires not_nil self.source.window` on `wide_enough?`, propagated up to
+  # `spiking?` and `detect`, and every one `enforced: false` because the call
+  # site behind `source.windowed?` satisfies nothing. `steep_baseline.txt`
+  # records the four `PreconditionUnsatisfied` and the `NoMethod` that follow.
+  #
+  # The missing half is the marker: `PredicateMarkerSynthesizer` emits an
+  # `After<Pred>` class from `when_true.ivars`, and
+  # `Postconditions::Inferrer#collect_when_true_nonnil_refinements` only ever
+  # fills that from `env.instance_variable_types` — a method slot is dropped, and
+  # for a class with no ivar at all `build_env_for_class` bails before looking.
+  # So `Example67Source` gets no `AfterWindowed`, and this snapshot has none.
+  #
+  # Read off fizzy: `Card::ActivitySpike::Detector#has_activity_spike?` guards
+  # with `card.entropic?` and `#recent_period` writes
+  # `card.entropy.auto_clean_period`.
+  it "example67 (a guard proving a sibling method non-nil) matches expected RBS" do
+    assert_snapshot("models/example67", target_file: "app/models/example67.rb")
+  end
+
+  # The guarded half — where the `AfterWindowed` marker would land. `window:
+  # () -> Example67Window?` is the slot and `windowed?: () -> bool` is the
+  # predicate that decides it; nothing in the snapshot ties the two together.
+  it "example67_source (the nilable slot and its predicate) matches expected RBS" do
+    assert_snapshot("models/example67_source", target_file: "app/models/example67_source.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
