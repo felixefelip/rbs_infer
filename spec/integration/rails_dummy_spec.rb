@@ -422,19 +422,16 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   end
 
   # A `==` against a non-nil value proves its receiver non-nil, and a `&.` chain
-  # carries that to the root — neither of which Steep reads today. Five writings
-  # of one guard separate two independent gaps: `==` is a wall even for a local
-  # (`matched_via_local?`), and a `&.` narrows its receiver only when that
-  # receiver is a local, because `:csend` synthesis joins the env back and
-  # `TypeEnv#join` keeps only the pure calls present in both sides
-  # (`labelled_and_stamped?` fails where `labelled_via_local?` passes).
+  # carries that to the root. Five writings of one guard separated two independent
+  # gaps — `refine_node_type` having no `:csend` branch to put the comparison's
+  # answer in, and the `:csend` env join dropping the receiver's own pure-call
+  # registration — and the baseline now records none of them.
   #
-  # What the snapshot pins is the ONE thing that already works, and it is easy to
-  # mistake for the fix: `AfterLabelledAndStamped`. The postconditions inferrer
-  # seeds its synthetic env with the body's pure calls, so it proves — correctly —
-  # that a truthy `labelled_and_stamped?` means `latest` is there. That is a fact
-  # for the method's callers; the body itself still cannot read `latest.stamp`,
-  # and `steep_baseline.txt` records the three errors that follow.
+  # What the snapshot pins is the pair of markers, which is the same reading aimed
+  # the other way: a truthy `labelled_and_stamped?` or `matched_and_stamped?` tells
+  # this method's CALLERS that `latest` is there. Both are present, and that they
+  # agree is the check that matters: they are the same fact reached through a `&&`
+  # and through a `==`.
   #
   # Read off fizzy: `Card::ActivitySpike::Detector#card_was_just?`.
   it "example68 (an equality that should prove its csend chain) matches expected RBS" do

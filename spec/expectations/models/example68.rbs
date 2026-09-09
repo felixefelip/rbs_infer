@@ -10,4 +10,8 @@ class Example68
   class AfterLabelledAndStamped
     def latest: () -> ::Example68Entry
   end
+
+  class AfterMatchedAndStamped
+    def latest: () -> ::Example68Entry
+  end
 end
