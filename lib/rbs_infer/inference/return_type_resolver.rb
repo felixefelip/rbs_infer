@@ -47,7 +47,40 @@ module RbsInfer::Inference
       # felixefelip/rbs_infer#33.
       class_return_types = build_class_method_return_types(members, method_type_resolver: method_type_resolver, target_class: @target_class)
 
+      # Kind-split so a `def self.x` reads Steep's singleton-method type, not a
+      # homonymous `def x`'s (felixefelip/rbs_infer#33). Read HERE, before the
+      # declarations are applied, because the loop below has to know whether the
+      # body disagrees with the declaration it is about to write.
+      steep_returns = if @steep_bridge && parsed_target.source
+        @steep_bridge.method_return_types_by_kind(parsed_target.source)
+      end
+
       # Aplicar tipos já resolvidos pelo resolver (ex: chamadas a métodos herdados)
+      #
+      # `known_return_types` is keyed by NAME alone, and for a method THIS FILE
+      # defines the name resolves to a DECLARATION — the module's, the
+      # superclass's, or this class's own from the previous run. A declaration is
+      # not evidence about a body, and an override is exactly where the two part
+      # ways: `Example66#relevant?` overrides a template method declared
+      # `() -> bool` with a body that reads a nilable accessor, so the honest
+      # answer is `bool?`. Applying the declaration here also SETTLES it — the
+      # member stops being `untyped`, so the Steep pass below, which reads the
+      # body and says `bool?`, is never asked — and the wrong answer is then a
+      # fixed point, because the next run reads it back off this class's own RBS
+      # (`MethodTypeResolver#build_class_types` step 6). Fizzy's
+      # `Card#should_check_mentions?` sat there: emitted `() -> bool` against a
+      # body Steep types `(bool | nil)`, through every `--max-passes`.
+      #
+      # So where the file writes the body and Steep says the declaration does not
+      # ACCEPT what that body returns, the declaration is deferred: the member
+      # stays `untyped` into the pass below and is typed from the body, with every
+      # refinement that pass applies. Everything else — a member with no def here,
+      # a body Steep could not type, a body the declaration does accept — takes the
+      # declaration exactly as before, which is what keeps a declaration's own
+      # spelling (`::Post`, `T?` over `(T | nil)`) from churning across a whole
+      # `sig/` for a type that did not change.
+      deferred_to_body = []
+
       untyped_methods.each do |m|
         next if m.name == "initialize"
         # Skipped for the map, not for being a setter: `known_return_types` is
@@ -59,17 +92,19 @@ module RbsInfer::Inference
         # (felixefelip/rbs_infer#287).
         next if setter_name?(m.name)
         resolved = return_types_for(m, known_return_types, class_return_types)[m.name]
-        if resolved && resolved != "untyped"
-          m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(resolved)}")
+        next unless resolved && resolved != "untyped"
+
+        if defines_own_body?(m, parsed_target) && body_contradicts?(m, resolved, steep_returns)
+          deferred_to_body << [m, resolved]
+          next
         end
+
+        apply_return_type(m, resolved)
       end
 
       # Use Steep for any remaining untyped methods and to correct wrong block generic types
-      if @steep_bridge && parsed_target.source
+      if steep_returns
         still_untyped = members.select { |m| method_member?(m) && m.name != "initialize" && m.signature =~ /->\s*untyped$/ }
-        # Kind-split so a `def self.x` reads Steep's singleton-method type,
-        # not a homonymous `def x`'s (felixefelip/rbs_infer#33).
-        steep_returns = @steep_bridge.method_return_types_by_kind(parsed_target.source)
 
         unless steep_returns[:instance].empty? && steep_returns[:singleton].empty?
           def_map = def_map(parsed_target)
@@ -256,6 +291,80 @@ module RbsInfer::Inference
           end
         end
       end
+
+      # A deferred declaration is applied after all if the pass above declined the
+      # body anyway (a `nil` from a conditional tail is the one shape it refuses
+      # to take). Deferring can then cost nothing: the member ends where it would
+      # have started.
+      deferred_to_body.each do |m, resolved|
+        next unless m.signature =~ /->\s*untyped$/
+        apply_return_type(m, resolved)
+      end
+    end
+
+    # Whether the file being analyzed writes this method's body itself — the
+    # question that decides whether a same-named DECLARATION describes it or
+    # merely precedes it. `def_map` is the expanded target's own defs, so a body
+    # spliced in from an `included do` counts as this class's, which is where
+    # fizzy's `Card#should_check_mentions?` is written.
+    def defines_own_body?(member, parsed_target)
+      return false unless parsed_target
+
+      return false unless def_map(parsed_target).key?(member.name)
+
+      # …and the file writes exactly ONE body under that name and kind. Steep's
+      # map is keyed by name (kind-split, never owner-split), so two classes
+      # declared in one file with a same-named method share one entry and the
+      # answer belongs to whichever the typing recorded last — which is how
+      # `Example65::Dispatcher.dispatch` reads `Example65::Rival`, the defect
+      # example65's own comment records. Where the map cannot say WHOSE body it
+      # typed, the declaration is still the better answer.
+      file_def_counts(parsed_target)[[member.name, member.kind == :class_method]] == 1
+    end
+
+    # Whether Steep's type for this body is one the declaration cannot accept —
+    # the `Ruby::MethodBodyTypeMismatch` the checker would report on the emitted
+    # RBS, asked before emitting it. Only a decided `false` counts: `accepts?`
+    # answers `nil` where it cannot compare, and "we don't know" is not a reason
+    # to drop a declaration.
+    #
+    # Nilability is deliberately IN scope here, unlike the correction pass at the
+    # end of this method (felixefelip/rbs_infer#191), which widens the declared
+    # type by nil before comparing. That pass revisits a type THIS run already
+    # decided, where a lone `T?` from Steep is more likely our own postconditions
+    # not being in the store yet than the declaration being wrong. Here nothing
+    # has been decided: the choice is between a foreign declaration and the body,
+    # and the body is the one this class actually has.
+    def body_contradicts?(member, declared, steep_returns)
+      return false unless steep_returns
+
+      steep_type = steep_returns_for(member, steep_returns)[member.name]
+      return false unless steep_type && steep_type != "untyped" && steep_type != "bot"
+      # `nil` says nothing: a conditional tail whose value branch is `untyped`
+      # collapses to it, which is why the pass below distrusts it too.
+      return false if steep_type == "nil"
+
+      @steep_bridge.accepts?(declared, steep_type) == false
+    end
+
+    # name+singleton? => how many defs the WHOLE file writes under it. Flat on
+    # purpose (no `target_class`): the collision that matters is the one in
+    # Steep's map, which is built from the whole source.
+    def file_def_counts(parsed_target)
+      @file_def_counts ||= begin
+        collector = RbsInfer::AST::DefCollector.new
+        parsed_target.tree.accept(collector)
+        collector.defs.each_with_object(Hash.new(0)) do |d, counts|
+          next unless d.is_a?(Prism::DefNode)
+          counts[[d.name.to_s, collector.class_method?(d)]] += 1
+        end
+      end
+    end
+
+    def apply_return_type(member, type)
+      member.signature = member.signature.sub(
+        /-> untyped$/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(type)}"
+      )
     end
 
     # A bare `return` (or `return nil`) yields nil, so nil belongs in the return union
