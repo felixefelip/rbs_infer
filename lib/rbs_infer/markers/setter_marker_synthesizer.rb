@@ -31,7 +31,18 @@ module RbsInfer::Markers
     #   method_name  : "set_default_name"        (no `self.` prefix; singletons already filtered)
     #   marker_name  : "AfterSetDefaultName"     (short form — used as a nested class inside parent)
     #   overrides    : { "name" => "String" }    (ivar name without leading `@` → narrowed type str)
-    MarkerClass = Struct.new(:method_name, :marker_name, :overrides, keyword_init: true)
+    #   method_overrides : { "window" => "Window" } (method name → narrowed RETURN type str)
+    #
+    # `overrides` restates an ivar's reader, `method_overrides` restates a plain
+    # method — the same refinement over the two things a class can expose. A
+    # marker carries whichever the predicate proved; usually one, sometimes both.
+    MarkerClass = Struct.new(:method_name, :marker_name, :overrides, :method_overrides, keyword_init: true) do
+      # Assigns back rather than returning a fresh hash: `merge_markers` mutates
+      # what it reads, and a throwaway would swallow the union silently.
+      def method_overrides
+        self[:method_overrides] ||= {}
+      end
+    end
 
     # @param members [Array<RbsInfer::Inference::Member>] members of the target class
     # @param ivar_write_types_per_method [Hash{String=>Hash{String=>String}}]

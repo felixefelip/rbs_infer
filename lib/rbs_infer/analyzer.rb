@@ -394,6 +394,7 @@ module RbsInfer
       existing = by_name[marker.marker_name]
       if existing
         existing.overrides.merge!(marker.overrides) { |_key, old, _new| old }
+        existing.method_overrides.merge!(marker.method_overrides) { |_key, old, _new| old }
       else
         by_name[marker.marker_name] = marker
       end

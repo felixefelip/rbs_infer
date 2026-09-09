@@ -15,7 +15,7 @@ RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
     Member.new(kind: kind, name: name, signature: "#{name}: untyped", visibility: :public)
   end
 
-  def entry(class_name:, method_name:, when_true_ivars: {}, when_true_self_type_string: nil, ivars: {}, self_type_string: nil, singleton: false)
+  def entry(class_name:, method_name:, when_true_ivars: {}, when_true_methods: {}, when_true_self_type_string: nil, ivars: {}, self_type_string: nil, singleton: false)
     InferredEntry.new(
       class_name: class_name,
       method_name: method_name,
@@ -23,6 +23,7 @@ RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
       ivars: ivars,
       self_type_string: self_type_string,
       when_true_ivars: when_true_ivars,
+      when_true_methods: when_true_methods,
       when_true_self_type_string: when_true_self_type_string
     )
   end
@@ -48,6 +49,71 @@ RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
     expect(markers.size).to eq(1)
     expect(markers.first.marker_name).to eq("AfterConfirmed")
     expect(markers.first.overrides).to eq({ "name" => "::String" })
+  end
+
+  it "emits a marker for a predicate whose when_true narrows a sibling method" do
+    # The concern shape: `def entropic?; entropy.present?; end`. There is no
+    # ivar and no reader — the subject is a method, and the marker restates it
+    # as a `def`, not as an `attr_reader` (which would also declare an `@window`
+    # this class does not have).
+    markers = described_class.synthesize(
+      inferred_entries: [
+        entry(
+          class_name: "Source",
+          method_name: :windowed?,
+          when_true_methods: { window: string_type },
+          when_true_self_type_string: "::Source & ::Source::AfterWindowed"
+        )
+      ],
+      target_class: "Source",
+      members: []
+    )
+
+    expect(markers.size).to eq(1)
+    expect(markers.first.marker_name).to eq("AfterWindowed")
+    expect(markers.first.overrides).to eq({})
+    expect(markers.first.method_overrides).to eq({ "window" => "::String" })
+  end
+
+  it "carries both readings when a predicate narrows an ivar and a method at once" do
+    markers = described_class.synthesize(
+      inferred_entries: [
+        entry(
+          class_name: "Source",
+          method_name: :both?,
+          when_true_ivars: { :"@cache" => string_type },
+          when_true_methods: { window: string_type },
+          when_true_self_type_string: "::Source & ::Source::AfterBoth"
+        )
+      ],
+      target_class: "Source",
+      members: [member(kind: :attr_reader, name: "cache")]
+    )
+
+    expect(markers.size).to eq(1)
+    expect(markers.first.overrides).to eq({ "cache" => "::String" })
+    expect(markers.first.method_overrides).to eq({ "window" => "::String" })
+  end
+
+  # No `members` filter for the method half: the inferrer read the type off the
+  # BUILT definition, so a Rails column reader (`read_at`, from rbs_rails) is a
+  # real method of the program even though it appears nowhere in the source file
+  # this class is generated from.
+  it "keeps a method slot the target file does not declare" do
+    markers = described_class.synthesize(
+      inferred_entries: [
+        entry(
+          class_name: "Notification",
+          method_name: :read?,
+          when_true_methods: { read_at: string_type },
+          when_true_self_type_string: "::Notification & ::Notification::AfterRead"
+        )
+      ],
+      target_class: "Notification",
+      members: []
+    )
+
+    expect(markers.first.method_overrides).to eq({ "read_at" => "::String" })
   end
 
   it "skips ivars without a corresponding attr_reader/attr_accessor" do

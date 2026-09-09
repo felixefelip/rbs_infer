@@ -9,10 +9,20 @@ module RbsInfer::Markers
   #
   # Symmetric to `SetterMarkerSynthesizer` (which handles
   # `unconditional.ivars` narrowings — setters that assign literals
-  # to ivars). This one handles `when_true.ivars` — predicates whose
-  # truthy branch narrows ivars to a non-nil residual. Both produce
+  # to ivars). This one handles `when_true.ivars` AND
+  # `when_true.methods` — predicates whose truthy branch narrows an
+  # ivar, or a sibling method, to a non-nil residual. Both produce
   # `MarkerClass` structs with the same shape, and the analyzer
   # merges their outputs into a single set of nested classes.
+  #
+  # The method half is what a concern-shaped predicate needs:
+  #
+  #     def entropy;   Card::Entropy.for(self); end   # () -> Card::Entropy?
+  #     def entropic?; entropy.present?;        end
+  #
+  # There is no ivar anywhere, so the ivar reading has nothing to say; what
+  # `card.entropic?` proves is about `card.entropy`, and the marker restates it
+  # as `def entropy: () -> Card::Entropy`.
   class PredicateMarkerSynthesizer
     # Reuses `SetterMarkerSynthesizer::MarkerClass` so the analyzer
     # and `RbsBuilder` consume one shape regardless of origin.
@@ -45,10 +55,9 @@ module RbsInfer::Markers
       @inferred_entries.each do |entry|
         next unless normalize_class_name(entry.class_name) == @target_class
         next if entry.singleton
-        next if entry.when_true_ivars.nil? || entry.when_true_ivars.empty?
-
-        overrides = filter_observable_overrides(entry.when_true_ivars, reader_ivars)
-        next if overrides.empty?
+        overrides = filter_observable_overrides(entry.when_true_ivars || {}, reader_ivars)
+        method_overrides = format_method_overrides(entry.when_true_methods || {})
+        next if overrides.empty? && method_overrides.empty?
 
         marker_name = marker_short_name_for(entry.method_name)
         next unless marker_name
@@ -56,7 +65,8 @@ module RbsInfer::Markers
         markers << MarkerClass.new(
           method_name: entry.method_name.to_s,
           marker_name: marker_name,
-          overrides: overrides
+          overrides: overrides,
+          method_overrides: method_overrides
         )
       end
       markers.sort_by(&:marker_name)
@@ -84,6 +94,21 @@ module RbsInfer::Markers
         overrides[ivar_name] = format_type(refined_type)
       end
       overrides
+    end
+
+    # No observability filter, unlike the ivar path above. That one exists
+    # because a narrowed ivar with no reader cannot be seen from outside; a
+    # method has already answered the same question by existing. And the
+    # inferrer read the type off the built definition, so what it names is a
+    # method of the whole program — `read_at` on a Rails model comes from
+    # rbs_rails, not from the source file this class is generated from, and a
+    # second check against THAT file's members would drop exactly those.
+    def format_method_overrides(when_true_methods)
+      when_true_methods.each_with_object({}) do |(method_sym, refined_type), overrides|
+        name = method_sym.to_s
+        next if name.empty?
+        overrides[name] = format_type(refined_type)
+      end
     end
 
     # The `InferredEntry` carries `Steep::AST::Types::t` instances; we
