@@ -523,6 +523,21 @@ app/models/example62/slots.rb:
   - anchor: Slots
     annotations:
     - "# @type instance: Example62 & Example62::Slots"
+app/models/example66_override.rb:
+  modules:
+  - anchor: Example66Override
+    annotations:
+    - "# @type self: singleton(Example66) & singleton(Example66Override)"
+    - "# @type instance: Example66 & Example66Override"
+  blocks:
+  - call: included
+    in: "::Example66Override"
+    implements: "::Example66"
+app/models/example66_trackable.rb:
+  modules:
+  - anchor: Example66Trackable
+    annotations:
+    - "# @type instance: Example66 & Example66Trackable"
 app/models/included_hook.rb:
   modules:
   - anchor: Homespun
@@ -662,11 +677,11 @@ sig/generated/steep_ar_runtime/active_support/concern.rb:
     annotations:
     - "# @type instance: (singleton(Commentable)) | (singleton(Eventable)) | (singleton(Example57::Fields))
       | (singleton(Example57Windowed)) | (singleton(Example58::Defaults)) | (singleton(Example59::Naming))
-      | (singleton(Example60::Labels)) | (singleton(FilterConfiguration)) | (singleton(IncludedHook::Sugared))
-      | (singleton(Post::Commentable)) | (singleton(Post::Exportable)) | (singleton(Post::Notifiable))
-      | (singleton(Post::Taggable)) | (singleton(Test::Filtrable)) | (singleton(User::Displayable))
-      | (singleton(User::Notifiable)) | (singleton(User::Recoverable)) | (singleton(Vault::Totaled))
-      | (singleton(Widget::Closeable)) | (singleton(Widget::Publishable))"
+      | (singleton(Example60::Labels)) | (singleton(Example66Override)) | (singleton(FilterConfiguration))
+      | (singleton(IncludedHook::Sugared)) | (singleton(Post::Commentable)) | (singleton(Post::Exportable))
+      | (singleton(Post::Notifiable)) | (singleton(Post::Taggable)) | (singleton(Test::Filtrable))
+      | (singleton(User::Displayable)) | (singleton(User::Notifiable)) | (singleton(User::Recoverable))
+      | (singleton(Vault::Totaled)) | (singleton(Widget::Closeable)) | (singleton(Widget::Publishable))"
     defs:
       class_methods: singleton(Example58::Defaults) | singleton(Example59::Naming)
         | singleton(Example60::Labels) | singleton(Post::Taggable) | singleton(Vault::Totaled)

@@ -1,0 +1,12 @@
+module Example66Trackable
+  alias flagged? flag
+
+  attr_accessor flag: bool?
+
+  def mark!: () -> bool
+  def relevant?: () -> bool
+
+  class AfterMark
+    attr_reader flag: true
+  end
+end

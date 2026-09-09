@@ -370,6 +370,29 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example55/foo", target_file: "app/models/example55/foo.rb")
   end
 
+  # An OVERRIDE takes its type from a DECLARATION instead of from its body.
+  # `Example66Override`'s `included do` replaces `Example66Trackable#relevant?`
+  # with a body reading a nilable accessor, so `bool?` is the honest answer and
+  # Steep says so; the snapshot records `bool`, which is the contract the module
+  # declared. `improve_method_return_types` fills the still-`untyped` member from
+  # `known_return_types` — keyed by NAME, so a declaration answers — and the
+  # member stops being `untyped` before the Steep pass is ever asked.
+  #
+  # Once written the answer is a FIXED POINT: the next run reads it back off this
+  # class's own RBS (`build_class_types` step 6), so no number of `--max-passes`
+  # converges out of it. Read off fizzy's `Card#should_check_mentions?`, where
+  # this emits `() -> bool` and `steep check` answers `Cannot allow method body
+  # have type (bool | nil) because declared as type bool`.
+  it "example66 (an override typed from the module's declaration) matches expected RBS" do
+    assert_snapshot("models/example66", target_file: "app/models/example66.rb")
+  end
+
+  # The contract half: `relevant?: () -> bool` is what the override inherits, and
+  # `flag: bool?` is why the override's own body cannot honour it.
+  it "example66_trackable (the template method and the nilable accessor) matches expected RBS" do
+    assert_snapshot("models/example66_trackable", target_file: "app/models/example66_trackable.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that

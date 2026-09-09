@@ -1,0 +1,6 @@
+class Example66
+  include Example66Trackable
+  include Example66Override
+
+  def relevant?: () -> bool
+end
