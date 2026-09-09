@@ -393,24 +393,18 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example66_trackable", target_file: "app/models/example66_trackable.rb")
   end
 
-  # A predicate that proves a SIBLING METHOD non-nil narrows nothing, so a guard
-  # in one method cannot pay for a dereference in another:
+  # A predicate that proves a SIBLING METHOD non-nil, so a guard in one method
+  # pays for a dereference in another:
   #
   #   def spiking?     = source.windowed? && wide_enough?
   #   def wide_enough? = source.window.size > 10
   #
-  # The precondition half already works — `steep_contracts.yml` carries
-  # `requires not_nil self.source.window` on `wide_enough?`, propagated up to
-  # `spiking?` and `detect`, and every one `enforced: false` because the call
-  # site behind `source.windowed?` satisfies nothing. `steep_baseline.txt`
-  # records the four `PreconditionUnsatisfied` and the `NoMethod` that follow.
-  #
-  # The missing half is the marker: `PredicateMarkerSynthesizer` emits an
-  # `After<Pred>` class from `when_true.ivars`, and
-  # `Postconditions::Inferrer#collect_when_true_nonnil_refinements` only ever
-  # fills that from `env.instance_variable_types` — a method slot is dropped, and
-  # for a class with no ivar at all `build_env_for_class` bails before looking.
-  # So `Example67Source` gets no `AfterWindowed`, and this snapshot has none.
+  # This snapshot pins the CONSUMER end: nothing about `Example67` itself
+  # changes, which is the point — the whole fix lands on `Example67Source`, and
+  # what this file gets is `steep_contracts.yml` losing the `spiking?` and
+  # `detect` entries entirely and `wide_enough?` losing its `enforced: false`.
+  # `steep_baseline.txt` lost the four `PreconditionUnsatisfied` and the
+  # `NoMethod` along with them.
   #
   # Read off fizzy: `Card::ActivitySpike::Detector#has_activity_spike?` guards
   # with `card.entropic?` and `#recent_period` writes
@@ -419,9 +413,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example67", target_file: "app/models/example67.rb")
   end
 
-  # The guarded half — where the `AfterWindowed` marker would land. `window:
-  # () -> Example67Window?` is the slot and `windowed?: () -> bool` is the
-  # predicate that decides it; nothing in the snapshot ties the two together.
+  # The guarded half, and where the marker lands. `window: () -> Example67Window?`
+  # is the slot, `windowed?: () -> bool` is the predicate that decides it, and
+  # `class AfterWindowed` is what ties them: a `def`, not an `attr_reader`, since
+  # the subject is a method's answer and this class has no ivar to declare.
   it "example67_source (the nilable slot and its predicate) matches expected RBS" do
     assert_snapshot("models/example67_source", target_file: "app/models/example67_source.rb")
   end

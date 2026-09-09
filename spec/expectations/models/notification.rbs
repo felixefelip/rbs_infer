@@ -3,4 +3,8 @@ class Notification < ApplicationRecord
   def mute!: () -> String
   def read?: () -> bool
   def headline: () -> String
+
+  class AfterRead
+    def read_at: () -> ::ActiveSupport::TimeWithZone
+  end
 end

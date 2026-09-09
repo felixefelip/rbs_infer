@@ -4,4 +4,8 @@ class Example67Source
   def window: () -> Example67Window?
   def windowed?: () -> bool
   def detect_spikes: () -> bool
+
+  class AfterWindowed
+    def window: () -> ::Example67Window
+  end
 end

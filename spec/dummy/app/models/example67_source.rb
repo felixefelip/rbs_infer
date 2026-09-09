@@ -1,12 +1,13 @@
 # The guarded half. `window` is nilable and `windowed?` is the predicate that
-# decides it — the pair a human reads as "past `windowed?`, `window` is there".
+# decides it — the pair a human reads as "past `windowed?`, `window` is there",
+# and the pair the `AfterWindowed` marker in this file's RBS now states.
 #
-# Neither is an ivar, and this class declares no ivar at all. Both facts matter
-# to `Steep::Postconditions::Inferrer`: `build_env_for_class` returns nil when a
-# class has no declared ivar, so the predicate path never starts; and
-# `collect_when_true_nonnil_refinements` reads only
-# `truthy_result.env.instance_variable_types`, so a method slot would be dropped
-# even if it did.
+# Neither is an ivar, and this class declares no ivar at all. Both facts used to
+# stop `Steep::Postconditions::Inferrer` cold: `build_env_for_class` turned away
+# a class with no declared ivar before the interpreter was asked, and
+# `collect_when_true_nonnil_refinements` read only
+# `truthy_result.env.instance_variable_types`, so a method slot was dropped even
+# when the env existed.
 #
 # Read off fizzy: `Card::Entropic#entropy` / `#entropic?`.
 class Example67Source
@@ -27,8 +28,8 @@ class Example67Source
   end
 
   # The static call site the contract enforcement needs: a method with no
-  # visible caller is never enforced, so without this the chain below could not
-  # be quitted even once the predicate does prove something.
+  # visible caller is never enforced, so without this the chain in `example67.rb`
+  # could not be quitted however well the predicate proves its half.
   def detect_spikes
     Example67.new(self).detect
   end

@@ -393,6 +393,12 @@ module RbsInfer::Signatures
       marker.overrides.sort_by { |name, _| name }.each do |ivar_name, type_str|
         out << "#{override_indent}attr_reader #{ivar_name}: #{type_str}"
       end
+      # A method slot is restated as a plain `def`, not as an `attr_reader`:
+      # `attr_reader x: T` in RBS also declares `@x`, and the class has no such
+      # ivar — the predicate proved something about a method's ANSWER.
+      marker.method_overrides.sort_by { |name, _| name }.each do |method_name, type_str|
+        out << "#{override_indent}def #{method_name}: () -> #{type_str}"
+      end
       out << "#{member_indent}end"
       out
     end

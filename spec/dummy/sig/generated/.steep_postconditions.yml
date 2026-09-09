@@ -68,6 +68,12 @@ postconditions:
     Current.viewer_name:
       gate_ivar: "@__rbs_infer__performed"
       type: "::String"
+- class: Assignment
+  method: assigned?
+  when_true:
+    methods:
+      post: "::Post"
+    self: "::Assignment & ::Assignment::AfterAssigned"
 - class: Board
   method: initialize
   effects:
@@ -1145,6 +1151,12 @@ postconditions:
   effects:
     may_write:
     - "@source"
+- class: Example67Source
+  method: windowed?
+  when_true:
+    methods:
+      window: "::Example67Window"
+    self: "::Example67Source & ::Example67Source::AfterWindowed"
 - class: Example67Window
   method: initialize
   effects:
@@ -1295,6 +1307,12 @@ postconditions:
   effects:
     may_write:
     - "@__store_settings_channel"
+- class: Notification
+  method: read?
+  when_true:
+    methods:
+      read_at: "::ActiveSupport::TimeWithZone"
+    self: "::Notification & ::Notification::AfterRead"
 - class: Notification::GeneratedStoreAccessors
   method: channel
   effects:

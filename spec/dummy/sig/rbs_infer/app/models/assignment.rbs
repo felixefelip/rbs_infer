@@ -4,4 +4,8 @@ class Assignment < ApplicationRecord
   private
 
   def log_post_user_name: () -> untyped
+
+  class AfterAssigned
+    def post: () -> ::Post
+  end
 end
