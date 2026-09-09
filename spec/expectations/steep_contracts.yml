@@ -133,6 +133,66 @@ methods:
           kind: self
         method: ticket
     enforced: false
+  Example67#detect:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: source
+        chain:
+        - window
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: source
+        chain:
+        - window
+        - size
+    enforced: false
+  Example67#spiking?:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: source
+        chain:
+        - window
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: source
+        chain:
+        - window
+        - size
+    enforced: false
+  Example67#wide_enough?:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: source
+        chain:
+        - window
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: source
+        chain:
+        - window
+        - size
+    enforced: false
   Post#author_name:
     requires:
     - kind: not_nil

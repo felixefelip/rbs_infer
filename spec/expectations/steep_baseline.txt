@@ -28,6 +28,13 @@ app/models/example63.rb:17:10: [error] Type `::Example63::Foo` does not have met
 app/models/example63.rb:22:10: [error] Type `::Example63::Foo` does not have method `greet`
 app/models/example63.rb:4:21: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^(singleton(::Example63::Foo)) [self: singleton(::Example63::Foo)] -> U(_)`
 app/models/example63.rb:9:8: [warning] Method `::Example63::Foo#greet` is not declared in RBS
+app/models/example67.rb:39:7: [error] `spiking?` requires `self.source.window.size` to be non-nil here
+app/models/example67.rb:39:7: [error] `spiking?` requires `self.source.window` to be non-nil here
+app/models/example67.rb:48:26: [error] `wide_enough?` requires `self.source.window.size` to be non-nil here
+app/models/example67.rb:48:26: [error] `wide_enough?` requires `self.source.window` to be non-nil here
+app/models/example67.rb:52:20: [error] Type `(::Example67Window | nil)` does not have method `size`
+app/models/example67_source.rb:33:4: [error] `detect` requires `self.source.window.size` to be non-nil here
+app/models/example67_source.rb:33:4: [error] `detect` requires `self.source.window` to be non-nil here
 app/models/example7.rb:31:28: [error] Type `(::Integer | nil)` does not have method `abs`
 app/models/example7.rb:34:27: [error] Type `(::String | nil)` does not have method `upcase`
 app/models/included_hook.rb:110:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS

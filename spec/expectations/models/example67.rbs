@@ -1,0 +1,11 @@
+class Example67
+  attr_reader source: Example67Source
+
+  def initialize: (Example67Source source) -> void
+  def detect: () -> bool
+
+  private
+
+  def spiking?: () -> bool
+  def wide_enough?: () -> bool
+end

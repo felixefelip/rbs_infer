@@ -1140,6 +1140,16 @@ postconditions:
   effects:
     may_write:
     - "@hallmark"
+- class: Example67
+  method: initialize
+  effects:
+    may_write:
+    - "@source"
+- class: Example67Window
+  method: initialize
+  effects:
+    may_write:
+    - "@size"
 - class: Example6::Foo
   method: name
   effects:
