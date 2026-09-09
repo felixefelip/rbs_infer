@@ -1162,6 +1162,18 @@ postconditions:
   effects:
     may_write:
     - "@size"
+- class: Example68
+  method: labelled_and_stamped?
+  when_true:
+    methods:
+      latest: "::Example68Entry"
+    self: "::Example68 & ::Example68::AfterLabelledAndStamped"
+- class: Example68Entry
+  method: initialize
+  effects:
+    may_write:
+    - "@label"
+    - "@stamp"
 - class: Example6::Foo
   method: name
   effects:

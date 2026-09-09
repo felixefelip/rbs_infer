@@ -421,6 +421,26 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example67_source", target_file: "app/models/example67_source.rb")
   end
 
+  # A `==` against a non-nil value proves its receiver non-nil, and a `&.` chain
+  # carries that to the root — neither of which Steep reads today. Five writings
+  # of one guard separate two independent gaps: `==` is a wall even for a local
+  # (`matched_via_local?`), and a `&.` narrows its receiver only when that
+  # receiver is a local, because `:csend` synthesis joins the env back and
+  # `TypeEnv#join` keeps only the pure calls present in both sides
+  # (`labelled_and_stamped?` fails where `labelled_via_local?` passes).
+  #
+  # What the snapshot pins is the ONE thing that already works, and it is easy to
+  # mistake for the fix: `AfterLabelledAndStamped`. The postconditions inferrer
+  # seeds its synthetic env with the body's pure calls, so it proves — correctly —
+  # that a truthy `labelled_and_stamped?` means `latest` is there. That is a fact
+  # for the method's callers; the body itself still cannot read `latest.stamp`,
+  # and `steep_baseline.txt` records the three errors that follow.
+  #
+  # Read off fizzy: `Card::ActivitySpike::Detector#card_was_just?`.
+  it "example68 (an equality that should prove its csend chain) matches expected RBS" do
+    assert_snapshot("models/example68", target_file: "app/models/example68.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that

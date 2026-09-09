@@ -152,6 +152,40 @@ methods:
         chain:
         - window
         - size
+  Example68#labelled_and_stamped?:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: latest
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: latest
+        chain:
+        - stamp
+    enforced: false
+  Example68#matched_and_stamped?:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: latest
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: latest
+        chain:
+        - stamp
+    enforced: false
   Post#author_name:
     requires:
     - kind: not_nil
