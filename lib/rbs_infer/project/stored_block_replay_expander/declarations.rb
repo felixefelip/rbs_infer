@@ -38,6 +38,16 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # name is declared: the module is not in any file's text, and the reopening
       # this pass emits for it is what declares it.
       @created_kinds = {}
+      # Subjects this file names ONLY as the receiver of an application —
+      # `ActiveRecord::Relation.include(Mod)`, which is how a reopening of a
+      # class the project does not declare has to spell it. There is no
+      # `class`/`module` keyword to read, so this records the one the pipeline
+      # already commits to for this very shape: `Analyzer#build_include_reopen`
+      # synthesizes the mixin reopen with `is_module: false`, and a replay that
+      # lands on the same subject has to agree with it or the file would emit
+      # two reopens of one name under two keywords
+      # (felixefelip/rbs_infer#340).
+      @reopened_kinds = {}
       @superclasses = []
       # Who can call whose DSL, as the files this one absorbs write it. Kept
       # apart from the table this file builds for the same reason
@@ -114,6 +124,20 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @names.include?(name) ? name : nil
     end
 
+    # The subject a call written on a constant receiver is made ON, or nil when
+    # the receiver names no constant.
+    #
+    # Resolved against this file's declarations when it declares one, and taken
+    # as written when it does not — the same two-step `splice` makes of an
+    # argument, and for the same reason: a subject is matched against the
+    # shapes some other file supplied, and a name nobody supplies methods under
+    # changes no answer. It is the undeclared case that matters here, since a
+    # `Klass.include(Mod)` reopening exists precisely because the project does
+    # not declare `Klass` (felixefelip/rbs_infer#340).
+    def receiver_subject(node)
+      resolve(node, current_scope) || self.class.written_constant(node)
+    end
+
     # Whether a name is declared anywhere this file can see, and with what
     # keyword — its own text, a file it absorbed, or a namespace a DSL call
     # brought into existence.
@@ -128,8 +152,21 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # The keyword THIS file declared a name with, and nothing wider. A reopening
     # is emitted only for a class this source names, so an absorbed or created
     # kind is not an answer to that question.
+    #
+    # A subject reopened by an application is one this source names — that is
+    # what `Klass.include(Mod)` is — so it answers here, where an absorbed kind
+    # (a fact about another file) does not.
     def own_kind(name)
-      @kinds[name]
+      @kinds[name] || @reopened_kinds[name]
+    end
+
+    # A subject named as the receiver of an application, which this file may
+    # reopen even though it declares nothing by that name. A real declaration
+    # still wins wherever it is written, since `own_kind` reads it first — the
+    # `class Foo` a file writes below a `Foo.include(Bar)` has not been walked
+    # yet when this records.
+    def record_reopened(name)
+      @reopened_kinds[name] = "class"
     end
 
     # Which method table a `def` puts the method in, in the terms `providers`
@@ -189,7 +226,14 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # is neither an `extend` nor an ancestor of the SUBJECT, so nothing above
       # can express it, and a DSL whose supplying module is written as a core reopening
       # had no provider at all (felixefelip/rbs_infer#256).
-      @kinds.each do |subject, kind|
+      # A subject this file REOPENS is one of those too, and it is the case that
+      # has no body to read the keyword off: `ActiveRecord::Relation.include(M)`
+      # says `Module#include` is callable on it just as plainly as writing the
+      # `include` inside a `class ActiveRecord::Relation` would, and without this
+      # nothing supplies `include` to a host the project does not declare — so
+      # the concern's `included do` landed nowhere
+      # (felixefelip/rbs_infer#340).
+      @kinds.merge(@reopened_kinds) { |_name, declared, _reopened| declared }.each do |subject, kind|
         CORE_SELF_CHAINS.fetch(kind, []).each { |ancestor| table[ancestor] << subject }
       end
 

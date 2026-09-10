@@ -1304,6 +1304,35 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     end
   end
 
+  # `Receiver.include` and an `included do` that defines a method, crossed
+  # (felixefelip/rbs_infer#340). The dummy had each half on its own — the
+  # replay reads a class-body `include`, the reopen reads a constant receiver —
+  # and their crossing resolved nothing: the two reopens carried the `include`
+  # and the concern came out empty, so `prepend_order` was declared nowhere.
+  #
+  # Both hosts, because the fizzy file this copies applies the concern twice and
+  # a fix that reads only the first call site would still pass with one.
+  it "a concern applied by `Receiver.include` carries its `included do` methods" do
+    name = "lib/rails_ext/relation_prepend_order"
+    rbs = RbsInfer::Analyzer.new(
+      target_file: "#{name}.rb",
+      source_files: source_files
+    ).generate_rbs
+
+    if ENV["UPDATE_EXPECTATIONS"]
+      path = expectations_dir.join("#{name}.rbs")
+      path.dirname.mkpath
+      path.write(rbs)
+    end
+
+    expect(rbs.chomp).to eq(expected_rbs(name).chomp)
+    # Once per host, and with the body still attached: a replay that lands the
+    # method but loses what it returns would keep the first count and drop the
+    # second.
+    expect(rbs.scan(/def prepend_order:/).size).to eq(2)
+    expect(rbs.scan(/def prepend_order_marker: \(\) -> String/).size).to eq(2)
+  end
+
   it "PostsController matches expected RBS" do
     assert_snapshot("controllers/posts_controller", target_class: "PostsController", target_file: "app/controllers/posts_controller.rb")
   end

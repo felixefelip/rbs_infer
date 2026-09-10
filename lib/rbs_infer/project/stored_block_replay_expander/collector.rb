@@ -86,6 +86,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
     def visit_call_node(node)
       collect_class_body_call(node) if @names.current_scope && @method_depth.zero?
+      collect_receiver_call(node) if @method_depth.zero?
       super
     end
 
@@ -242,9 +243,43 @@ module RbsInfer::Project::StoredBlockReplayExpander
         # Only single-argument calls used to be read at all, so the plural
         # form resolved nothing (felixefelip/rbs_infer#253).
         node.arguments.arguments.each do |argument|
-          @shapes.module_calls << ModuleCall.new(owner: nil, subject: @names.current_scope, method: node.name.to_s, argument: argument)
+          module_call(node, subject: @names.current_scope, argument: argument)
         end
       end
+    end
+
+    # The same application, written on a CONSTANT instead of in a class body.
+    #
+    # `include Mod` needs a body to be written in, so a reopening of a class
+    # this project does not declare has to spell it `Klass.include(Mod)` — which
+    # is how every `lib/rails_ext/` extension applies a concern to
+    # `ActiveRecord::Relation` and friends. The receiver names its subject
+    # outright, so no enclosing scope is needed and the call is read at top
+    # level too. `AST::TargetDiscovery` already reads this shape — it is what
+    # emits the `include` into those reopens — and reading it here is what makes
+    # the concern's `included do` land on the same hosts, instead of the two
+    # halves of one `include` disagreeing (felixefelip/rbs_infer#340).
+    #
+    # Applications only, deliberately: a block written on a constant receiver
+    # (`Klass.keep do … end`) would also need `Replay#scope` — the namespace the
+    # block is written in, which `StoredBlockReplayImplements` points Steep at —
+    # to stop being the subject, and nothing writes that shape here.
+    def collect_receiver_call(node)
+      return if NodeReading.bare_or_self?(node) || node.block || node.arguments.nil?
+
+      subject = @names.receiver_subject(node.receiver)
+      return unless subject
+
+      @names.record_reopened(subject)
+
+      node.arguments.arguments.each do |argument|
+        module_call(node, subject: subject, argument: argument)
+      end
+    end
+
+    def module_call(node, subject:, argument:)
+      @shapes.module_calls << ModuleCall.new(context: @names.current_scope, subject: subject,
+                                             method: node.name.to_s, argument: argument)
     end
 
     # Method shapes declared OUTSIDE this file.

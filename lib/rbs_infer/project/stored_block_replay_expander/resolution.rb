@@ -97,7 +97,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     end
 
     def splice(call, providers, local:)
-      argument = (local && @names.resolve(call.argument, call.subject)) ||
+      argument = (local && @names.resolve(call.argument, call.context)) ||
                  Declarations.written_constant(call.argument)
       return unless argument
 
@@ -216,7 +216,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # each call site names its own target, and the block simply runs twice, as
     # it does at runtime (felixefelip/rbs_infer#263).
     def resolve_module_call(module_call, providers)
-      source_subject = @names.resolve(module_call.argument, module_call.subject)
+      source_subject = @names.resolve(module_call.argument, module_call.context)
       return [] unless source_subject
 
       replays_landed(module_call.subject, module_call.method, source_subject, providers, Set.new)
@@ -263,7 +263,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # closes the hop.
     def register_deferrals(providers)
       (@shapes.module_calls + @shapes.foreign_module_calls).each do |module_call|
-        source_subject = @names.resolve(module_call.argument, module_call.subject)
+        source_subject = @names.resolve(module_call.argument, module_call.context)
         next unless source_subject
 
         deferral = deferral_for(module_call.subject, module_call.method, source_subject, providers)
@@ -322,7 +322,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       (@shapes.module_calls + @shapes.foreign_module_calls).any? do |module_call|
         next false unless module_call.subject == subject
 
-        argument = @names.resolve(module_call.argument, module_call.subject)
+        argument = @names.resolve(module_call.argument, module_call.context)
         next false unless argument
 
         source_providers = providers.select { |_, subjects| subjects.include?(argument) }.keys
@@ -389,7 +389,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # pass cannot pick a winner for, so it says nothing. Several `extend`s from
     # one provider are not that — see `inward_extend_shapes`.
     def resolve_extensions(module_call, providers)
-      source_subject = @names.resolve(module_call.argument, module_call.subject)
+      source_subject = @names.resolve(module_call.argument, module_call.context)
       return [] unless source_subject
 
       extensions_for(module_call.subject, module_call.method, source_subject, providers, Set.new)
