@@ -1,6 +1,12 @@
 ---
 version: 1
 postconditions:
+- class: Account
+  method: matches?
+  when_true:
+    methods:
+      display_name: "::String"
+    self: "::Account & ::Account::AfterMatches"
 - class: ActionController::Base
   method: head
   unconditional:
@@ -1174,6 +1180,24 @@ postconditions:
     methods:
       latest: "::Example68Entry"
     self: "::Example68 & ::Example68::AfterMatchedAndStamped"
+- class: Example68
+  method: matched_interpolated?
+  when_true:
+    methods:
+      latest: "::Example68Entry"
+    self: "::Example68 & ::Example68::AfterMatchedInterpolated"
+- class: Example68
+  method: matched_on_a_record?
+  when_true:
+    methods:
+      last_post: "(::Post & ::Post::Validated)"
+    self: "::Example68 & ::Example68::AfterMatchedOnARecord"
+- class: Example68
+  method: matched_untyped_link?
+  when_true:
+    methods:
+      latest: "::Example68Entry"
+    self: "::Example68 & ::Example68::AfterMatchedUntypedLink"
 - class: Example68Entry
   method: initialize
   effects:

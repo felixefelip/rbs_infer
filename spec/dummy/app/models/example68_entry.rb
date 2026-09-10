@@ -9,4 +9,12 @@ class Example68Entry
     @label = label
     @stamp = stamp
   end
+
+  # An `untyped` link, with no diagnostic of its own — `Object#public_send` is
+  # declared `-> untyped`. fizzy gets one the same way without meaning to:
+  # `Event#action` is `def action; super.inquiry; end`, `inquiry` resolves
+  # nowhere, and rbs_infer writes `() -> untyped`.
+  def marker
+    method(:label).call
+  end
 end
