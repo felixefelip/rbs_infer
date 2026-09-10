@@ -1,9 +1,9 @@
 # resolve-type-names: false
 
-class ::Notification < ::ApplicationRecord
-  extend ::ActiveRecord::Base::ClassMethods[::Notification, ::Notification::ActiveRecord_Relation, ::Integer, ::Notification::Validated]
+class ::Article < ::ApplicationRecord
+  extend ::ActiveRecord::Base::ClassMethods[::Article, ::Article::ActiveRecord_Relation, ::Integer, ::Article::Validated]
 
-  module ::Notification::GeneratedAttributeMethods
+  module ::Article::GeneratedAttributeMethods
     def id: () -> ::Integer?
 
     def id=: (::Integer?) -> ::Integer?
@@ -44,46 +44,6 @@ class ::Notification < ::ApplicationRecord
 
     def id_for_database: () -> ::Integer?
 
-    def user_id: () -> ::Integer?
-
-    def user_id=: (::Integer?) -> ::Integer?
-
-    def user_id?: () -> bool
-
-    def user_id_changed?: (?from: ::Integer?, ?to: ::Integer?) -> bool
-
-    def user_id_change: () -> [ ::Integer?, ::Integer? ]
-
-    def user_id_will_change!: () -> void
-
-    def user_id_was: () -> ::Integer?
-
-    def user_id_previously_changed?: (?from: ::Integer?, ?to: ::Integer?) -> bool
-
-    def user_id_previous_change: () -> ::Array[::Integer?]?
-
-    def user_id_previously_was: () -> ::Integer?
-
-    def user_id_before_last_save: () -> ::Integer?
-
-    def user_id_change_to_be_saved: () -> ::Array[::Integer?]?
-
-    def user_id_in_database: () -> ::Integer?
-
-    def saved_change_to_user_id: () -> ::Array[::Integer?]?
-
-    def saved_change_to_user_id?: () -> bool
-
-    def will_save_change_to_user_id?: () -> bool
-
-    def restore_user_id!: () -> void
-
-    def clear_user_id_change: () -> void
-
-    def user_id_before_type_cast: () -> ::Integer?
-
-    def user_id_for_database: () -> ::Integer?
-
     def title: () -> ::String?
 
     def title=: (::String?) -> ::String?
@@ -123,46 +83,6 @@ class ::Notification < ::ApplicationRecord
     def title_before_type_cast: () -> ::String?
 
     def title_for_database: () -> ::String?
-
-    def read_at: () -> ::ActiveSupport::TimeWithZone?
-
-    def read_at=: (::ActiveSupport::TimeWithZone?) -> ::ActiveSupport::TimeWithZone?
-
-    def read_at?: () -> bool
-
-    def read_at_changed?: (?from: ::ActiveSupport::TimeWithZone?, ?to: ::ActiveSupport::TimeWithZone?) -> bool
-
-    def read_at_change: () -> [ ::ActiveSupport::TimeWithZone?, ::ActiveSupport::TimeWithZone? ]
-
-    def read_at_will_change!: () -> void
-
-    def read_at_was: () -> ::ActiveSupport::TimeWithZone?
-
-    def read_at_previously_changed?: (?from: ::ActiveSupport::TimeWithZone?, ?to: ::ActiveSupport::TimeWithZone?) -> bool
-
-    def read_at_previous_change: () -> ::Array[::ActiveSupport::TimeWithZone?]?
-
-    def read_at_previously_was: () -> ::ActiveSupport::TimeWithZone?
-
-    def read_at_before_last_save: () -> ::ActiveSupport::TimeWithZone?
-
-    def read_at_change_to_be_saved: () -> ::Array[::ActiveSupport::TimeWithZone?]?
-
-    def read_at_in_database: () -> ::ActiveSupport::TimeWithZone?
-
-    def saved_change_to_read_at: () -> ::Array[::ActiveSupport::TimeWithZone?]?
-
-    def saved_change_to_read_at?: () -> bool
-
-    def will_save_change_to_read_at?: () -> bool
-
-    def restore_read_at!: () -> void
-
-    def clear_read_at_change: () -> void
-
-    def read_at_before_type_cast: () -> ::Time?
-
-    def read_at_for_database: () -> ::Time?
 
     def created_at: () -> ::ActiveSupport::TimeWithZone?
 
@@ -244,9 +164,9 @@ class ::Notification < ::ApplicationRecord
 
     def updated_at_for_database: () -> ::Time?
   end
-  include ::Notification::GeneratedAttributeMethods
-  module ::Notification::GeneratedAliasAttributeMethods
-    include ::Notification::GeneratedAttributeMethods
+  include ::Article::GeneratedAttributeMethods
+  module ::Article::GeneratedAliasAttributeMethods
+    include ::Article::GeneratedAttributeMethods
 
     alias id_value id
 
@@ -288,54 +208,68 @@ class ::Notification < ::ApplicationRecord
 
     alias id_value_for_database id_for_database
   end
-  include ::Notification::GeneratedAliasAttributeMethods
+  include ::Article::GeneratedAliasAttributeMethods
 
-  def user: () -> ::User?
-  def user=: (::User?) -> ::User?
-  def reload_user: () -> ::User?
-  def build_user: (untyped) -> ::User
-  def create_user: (untyped) -> ::User
-  def create_user!: (untyped) -> ::User
-  module ::Notification::GeneratedAssociationMethods
+  def rich_text_content: () -> ::ActionText::RichText?
+  def rich_text_content=: (::ActionText::RichText?) -> ::ActionText::RichText?
+  def build_rich_text_content: (?untyped) -> ::ActionText::RichText
+  def create_rich_text_content: (?untyped) -> ::ActionText::RichText
+  def create_rich_text_content!: (?untyped) -> ::ActionText::RichText
+  def reload_rich_text_content: () -> ::ActionText::RichText?
+  def rich_text_summary: () -> ::ActionText::RichText?
+  def rich_text_summary=: (::ActionText::RichText?) -> ::ActionText::RichText?
+  def build_rich_text_summary: (?untyped) -> ::ActionText::RichText
+  def create_rich_text_summary: (?untyped) -> ::ActionText::RichText
+  def create_rich_text_summary!: (?untyped) -> ::ActionText::RichText
+  def reload_rich_text_summary: () -> ::ActionText::RichText?
+
+  module ::Article::GeneratedAssociationMethods
   end
-  include ::Notification::GeneratedAssociationMethods
+  include ::Article::GeneratedAssociationMethods
 
-  def self.unread: () -> ::Notification::ActiveRecord_Relation
+  def self.with_rich_text_content: () -> ::Article::ActiveRecord_Relation
+  def self.with_rich_text_content_and_embeds: () -> ::Article::ActiveRecord_Relation
+  def self.with_rich_text_summary: () -> ::Article::ActiveRecord_Relation
+  def self.with_rich_text_summary_and_embeds: () -> ::Article::ActiveRecord_Relation
 
-  module ::Notification::GeneratedRelationMethods
-    def unread: () -> ::Notification::ActiveRecord_Relation
-  end
+  module ::Article::GeneratedRelationMethods
+    def with_rich_text_content: () -> ::Article::ActiveRecord_Relation
 
-  class ::Notification::ActiveRecord_Relation < ::ActiveRecord::Relation
-    include ::Enumerable[::Notification & ::Notification::Validated]
-    include ::Notification::GeneratedRelationMethods
-    include ::ActiveRecord::Relation::Methods[::Notification, ::Integer, ::Notification::Validated]
-  end
+    def with_rich_text_content_and_embeds: () -> ::Article::ActiveRecord_Relation
 
-  class ::Notification::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
-    include ::Enumerable[::Notification & ::Notification::Validated]
-    include ::Notification::GeneratedRelationMethods
-    include ::ActiveRecord::Relation::Methods[::Notification, ::Integer, ::Notification::Validated]
+    def with_rich_text_summary: () -> ::Article::ActiveRecord_Relation
 
-    def build: (?::ActiveRecord::Associations::CollectionProxy::_EachPair attributes) ?{ () -> untyped } -> ::Notification
-             | (::Array[::ActiveRecord::Associations::CollectionProxy::_EachPair] attributes) ?{ () -> untyped } -> ::Array[::Notification]
-    def create: (?::ActiveRecord::Associations::CollectionProxy::_EachPair attributes) ?{ () -> untyped } -> ::Notification
-              | (::Array[::ActiveRecord::Associations::CollectionProxy::_EachPair] attributes) ?{ () -> untyped } -> ::Array[::Notification]
-    def create!: (?::ActiveRecord::Associations::CollectionProxy::_EachPair attributes) ?{ () -> untyped } -> ::Notification
-               | (::Array[::ActiveRecord::Associations::CollectionProxy::_EachPair] attributes) ?{ () -> untyped } -> ::Array[::Notification]
-    def reload: () -> ::Array[::Notification]
-
-    def replace: (::Array[::Notification]) -> void
-    def delete: (*::Notification | ::Integer) -> ::Array[::Notification]
-    def destroy: (*::Notification | ::Integer) -> ::Array[::Notification]
-    def <<: (*::Notification | ::Array[::Notification]) -> self
-    def prepend: (*::Notification | ::Array[::Notification]) -> self
+    def with_rich_text_summary_and_embeds: () -> ::Article::ActiveRecord_Relation
   end
 
-  class ::Notification::Validated
+  class ::Article::ActiveRecord_Relation < ::ActiveRecord::Relation
+    include ::Enumerable[::Article & ::Article::Validated]
+    include ::Article::GeneratedRelationMethods
+    include ::ActiveRecord::Relation::Methods[::Article, ::Integer, ::Article::Validated]
+  end
+
+  class ::Article::ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
+    include ::Enumerable[::Article & ::Article::Validated]
+    include ::Article::GeneratedRelationMethods
+    include ::ActiveRecord::Relation::Methods[::Article, ::Integer, ::Article::Validated]
+
+    def build: (?::ActiveRecord::Associations::CollectionProxy::_EachPair attributes) ?{ () -> untyped } -> ::Article
+             | (::Array[::ActiveRecord::Associations::CollectionProxy::_EachPair] attributes) ?{ () -> untyped } -> ::Array[::Article]
+    def create: (?::ActiveRecord::Associations::CollectionProxy::_EachPair attributes) ?{ () -> untyped } -> ::Article
+              | (::Array[::ActiveRecord::Associations::CollectionProxy::_EachPair] attributes) ?{ () -> untyped } -> ::Array[::Article]
+    def create!: (?::ActiveRecord::Associations::CollectionProxy::_EachPair attributes) ?{ () -> untyped } -> ::Article
+               | (::Array[::ActiveRecord::Associations::CollectionProxy::_EachPair] attributes) ?{ () -> untyped } -> ::Array[::Article]
+    def reload: () -> ::Array[::Article]
+
+    def replace: (::Array[::Article]) -> void
+    def delete: (*::Article | ::Integer) -> ::Array[::Article]
+    def destroy: (*::Article | ::Integer) -> ::Array[::Article]
+    def <<: (*::Article | ::Array[::Article]) -> self
+    def prepend: (*::Article | ::Array[::Article]) -> self
+  end
+
+  class ::Article::Validated
     def id: () -> ::Integer
-    def user: () -> (::User & ::User::Validated)
-    def title: () -> ::String
     def created_at: () -> ::ActiveSupport::TimeWithZone
     def updated_at: () -> ::ActiveSupport::TimeWithZone
   end
@@ -343,5 +277,9 @@ end
 
 class ::ApplicationRecord < ::ActiveRecord::Base
 end
-class ::User < ::ApplicationRecord
+class ::ActionText::RichText < ::ActionText::Record
+end
+class ::ActionText::Record < ::ActiveRecord::Base
+end
+module ::ActionText
 end

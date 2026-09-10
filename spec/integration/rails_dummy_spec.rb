@@ -95,6 +95,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/post_tag", target_class: "PostTag", target_file: "app/models/post_tag.rb")
   end
 
+  # `has_rich_text` contributes nothing to the model's OWN RBS — the accessors it
+  # defines live in the ActionText-runtime pseudo-code, and the `has_one` it
+  # declares is rbs_rails'. This snapshot is what says so: if the core ever grew
+  # knowledge of the macro, it would show up here.
+  it "Article model matches expected RBS" do
+    assert_snapshot("models/article", target_class: "Article", target_file: "app/models/article.rb")
+  end
+
   # `assigned?` is the nilable-receiver predicate: `post` is `::Post?`, and the
   # nil branch of `present?` is what the resolver used to drop.
   it "Assignment model matches expected RBS" do
@@ -1200,6 +1208,16 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
     it "ActiveRecord runtime" do
       assert_runtime_rbs("steep_ar_runtime")
+    end
+
+    # The payoff of the ActionText generator, stated as a signature: `content` is
+    # `ActionText::RichText` because `rich_text_content || build_rich_text_content`
+    # is, and `content?` is `bool` because `.present?` is. Neither type is written
+    # anywhere — the pseudo-code is plain Ruby, and this is what the pipeline makes
+    # of it. `summary` is the same through the `store_if_blank: false` writer, which
+    # the generator picks by reading the macro's own branch.
+    it "ActionText runtime" do
+      assert_runtime_rbs("steep_actiontext_runtime")
     end
 
     # The Devise helpers' RBS is now INFERRED from their pseudo-code — this snapshot is

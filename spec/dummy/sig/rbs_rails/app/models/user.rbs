@@ -324,11 +324,8 @@ class ::User < ::ApplicationRecord
 
     def updated_at_for_database: () -> ::Time?
 
-    def avatar: () -> ::String?
 
-    def avatar=: (::String?) -> ::String?
 
-    def avatar?: () -> bool
 
     def avatar_changed?: (?from: ::String?, ?to: ::String?) -> bool
 
@@ -418,6 +415,10 @@ class ::User < ::ApplicationRecord
   def comments=: (::Comment::ActiveRecord_Associations_CollectionProxy | ::Array[::Comment]) -> (::Comment::ActiveRecord_Associations_CollectionProxy | ::Array[::Comment])
   def comment_ids: () -> ::Array[::Integer]
   def comment_ids=: (::Array[::Integer]) -> ::Array[::Integer]
+
+  module ::User::GeneratedAssociationMethods
+  end
+  include ::User::GeneratedAssociationMethods
 
   def self.inactive: () -> ::User::ActiveRecord_Relation
   def self.active: () -> ::User::ActiveRecord_Relation
