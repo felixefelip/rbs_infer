@@ -1110,6 +1110,127 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     end
   end
 
+  # The same `include`, written on a CONSTANT rather than in a class body.
+  #
+  # A reopening of a class the project does not declare has no body to write
+  # `include Mod` in, so it spells it `Klass.include(Mod)` — which is what every
+  # `lib/rails_ext/` extension does to `ActiveRecord::Relation` and friends.
+  # `AST::TargetDiscovery` already reads that shape and is what emits the
+  # `include` into the reopen; the replay declined it, so the concern's RBS came
+  # out holding the `include` and none of the methods the `included do` defines
+  # (felixefelip/rbs_infer#340).
+  context "an `include` written on a constant receiver" do
+    def applied(host: "Host", declares: "class Host\nend\n")
+      <<~RUBY
+        class Module
+          def include(*modules)
+            modules.reverse_each do |mod|
+              mod.send(:append_features, self)
+              mod.send(:included, self)
+            end
+            self
+          end
+        end
+
+        module Hookable
+          def self.included(base)
+            base.class_eval do
+              def from_hook
+                "hook"
+              end
+            end
+          end
+        end
+
+        #{declares}
+        #{host}.include(Hookable)
+      RUBY
+    end
+
+    it "moves the block onto the class the call names" do
+      expanded = expand(applied)
+
+      expect(expanded).to include("class Host\n  def from_hook")
+      expect(Prism.parse(expanded).success?).to be(true)
+    end
+
+    # The case that motivates the shape at all: nothing in the project declares
+    # `ActiveRecord::Relation`, which is exactly why the `include` had to be
+    # written on the constant. A subject with no `class` keyword to read still
+    # gets one — the same one `Analyzer#build_include_reopen` already commits to
+    # for this shape, so the two halves of one `include` cannot disagree.
+    it "reopens a host the file declares nothing for" do
+      expanded = expand(applied(host: "ActiveRecord::Relation", declares: ""))
+
+      expect(expanded).to include("class ActiveRecord::Relation\n  def from_hook")
+      expect(Prism.parse(expanded).success?).to be(true)
+    end
+
+    it "reopens every host the file applies it to" do
+      source = applied(host: "ActiveRecord::Relation", declares: "") +
+               "ActiveRecord::AssociationRelation.include(Hookable)\n"
+      expanded = expand(source)
+
+      expect(expanded).to include("class ActiveRecord::Relation\n  def from_hook")
+      expect(expanded).to include("class ActiveRecord::AssociationRelation\n  def from_hook")
+    end
+
+    it "adds nothing on a second pass over its own output" do
+      expect(expand(expand(applied))).to be_nil
+    end
+
+    # The argument resolves where the call is WRITTEN, not under the receiver.
+    # `Host.include(Hookable)` at top level applies `::Hookable`, and a
+    # `Host::Hookable` that keeps a different block is a different module —
+    # reading the name under the receiver would have applied that one instead.
+    it "resolves the applied module against the call's own scope" do
+      source = applied.sub("class Host\nend", <<~SHADOW.chomp)
+        class Host
+          module Hookable
+            def self.included(base)
+              base.class_eval do
+                def from_shadow
+                  "shadow"
+                end
+              end
+            end
+          end
+        end
+      SHADOW
+      expanded = expand(source)
+
+      expect(expanded).to include("class Host\n  def from_hook")
+      expect(expanded).not_to include("class Host\n  def from_shadow")
+    end
+
+    it "declines a receiver that names no constant" do
+      expect(expand(applied(host: "host", declares: "host = Host\n"))).to be_nil
+    end
+
+    # The same guard the class-body reading has always had: a call inside a
+    # `def` runs when that method is called, if ever, and a source rewrite
+    # cannot say when. `class` is not even legal in a method body, so the
+    # reopening this would emit has nowhere to go.
+    it "declines an application written inside a method body" do
+      source = applied(declares: "class Host\nend\n")
+               .sub("Host.include(Hookable)", "def apply_it\n  Host.include(Hookable)\nend")
+
+      expect(expand(source)).to be_nil
+    end
+
+    # A block written ON a constant is a different question — `Replay#scope`,
+    # which `StoredBlockReplayImplements` points Steep at, is the namespace the
+    # block is written in and would stop being the subject. Nothing writes that
+    # shape, so it stays declined rather than guessed at.
+    it "declines a block handed to a constant receiver" do
+      source = applied(declares: "class Host\nend\n").sub(
+        "Host.include(Hookable)", "Host.class_evaled do\n  def from_block; end\nend"
+      )
+
+      expect(expand(source)).to be_nil
+    end
+  end
+
 
   # The DSL that runs the block it was just handed, with nothing stored: both
   # other outward shapes fetch their block from a slot, so an immediate

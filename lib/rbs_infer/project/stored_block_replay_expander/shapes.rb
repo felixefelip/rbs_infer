@@ -75,7 +75,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
     # the string they index. The rewrite slices it to move the body, and the
     # block may come from another file (see `absorb`).
     StoredCall = Data.define(:owner, :subject, :method, :block, :source)
-    ModuleCall = Data.define(:owner, :subject, :method, :argument)
+    # `subject` is what the call is written ON — the class body's own `self` for
+    # `include Mod`, and the receiver for `Klass.include(Mod)`. `context` is where
+    # it is WRITTEN, which is the lexical scope `argument` resolves against and is
+    # not the same question: `Foo.include(Bar)` at top level applies `::Bar`, not
+    # the `Foo::Bar` the receiver's namespace might also declare
+    # (felixefelip/rbs_infer#340).
+    ModuleCall = Data.define(:context, :subject, :method, :argument)
 
     # The same replay written from the other end — `base.class_eval(&@block)`,
     # where `self` is the module that KEPT the block and the target arrives as a

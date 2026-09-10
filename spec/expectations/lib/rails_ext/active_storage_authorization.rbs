@@ -28,6 +28,34 @@ end
 module ActiveStorage
   module Blobs
     class RedirectController
+    end
+  end
+end
+
+module ActiveStorage
+  module Blobs
+    class ProxyController
+    end
+  end
+end
+
+module ActiveStorage
+  module Representations
+    class RedirectController
+    end
+  end
+end
+
+module ActiveStorage
+  module Representations
+    class ProxyController
+    end
+  end
+end
+
+module ActiveStorage
+  module Blobs
+    class RedirectController
       include ::ActiveStorage::Authorize
     end
   end

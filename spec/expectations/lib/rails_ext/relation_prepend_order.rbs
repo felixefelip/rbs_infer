@@ -1,0 +1,29 @@
+module RelationPrependOrder
+  extend ActiveSupport::Concern
+end
+
+module ActiveRecord
+  class Relation
+    def prepend_order: (*untyped args) -> untyped
+    def prepend_order_marker: () -> String
+  end
+end
+
+module ActiveRecord
+  class AssociationRelation
+    def prepend_order: (*untyped args) -> untyped
+    def prepend_order_marker: () -> String
+  end
+end
+
+module ActiveRecord
+  class Relation
+    include RelationPrependOrder
+  end
+end
+
+module ActiveRecord
+  class AssociationRelation
+    include RelationPrependOrder
+  end
+end
