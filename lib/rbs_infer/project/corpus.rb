@@ -4,6 +4,7 @@ require_relative "file_index"
 require_relative "caller_file_cache"
 require_relative "constant_sources"
 require_relative "mixin_index"
+require_relative "string_eval_macro_index"
 require_relative "../inference/invoker_self_types"
 
 module RbsInfer::Project
@@ -69,6 +70,13 @@ module RbsInfer::Project
       @constant_sources ||= ConstantSources.new(
         source_index: @source_index, file_index: @file_index, parse_cache: @parse_cache
       )
+    end
+
+    # Lazy like the mixin index, and gated harder: the build reads only files
+    # whose own text writes `class_eval`/`module_eval`, so a project without
+    # the idiom pays one substring test per file and nothing else.
+    def string_eval_macros
+      @string_eval_macros ||= StringEvalMacroIndex.new(@source_files, parse_cache: @parse_cache)
     end
 
     # Lazy, unlike the four above: an analysis that never asks about a mixin
