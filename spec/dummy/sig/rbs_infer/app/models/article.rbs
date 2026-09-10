@@ -1,2 +1,8 @@
 class Article < ApplicationRecord
+  def content: () -> ActionText::RichText
+  def content?: () -> bool
+  def content=: (untyped body) -> untyped
+  def summary: () -> ActionText::RichText
+  def summary?: () -> bool
+  def summary=: (untyped body) -> untyped
 end

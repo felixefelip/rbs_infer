@@ -142,24 +142,35 @@ feed the same parameter and `new.perform` has no way back to the job that was ca
 needs the call site's receiver to reach the forward: either instantiating this body per subclass,
 or teaching `InvokerSelfTypes` to resolve a call made *on* a receiver (it declines those today).
 
-**ActionText runtime generator** — emits *pseudo-code* for what `has_rich_text` does at
-class-definition time. `has_rich_text :content` is three ordinary methods plus one
-`has_one`; the `has_one` is a reflection, so rbs_rails types it, but the three methods are
-written by `class_eval` on a heredoc **string**, and no static reader sees inside one
-(`ClassEvalExpander` desugars the *block* form; felixefelip/steep#135 declines the string
-form for the same reason). So `post.content` is not `untyped` today — it is a
-`NoMethodError`: the method does not exist for the checker at all. Per model that declares
-the macro, this reopens the class with the reader, the predicate and the writer as plain
-Ruby.
+**ActionText runtime generator** — writes one file: ActionText's own
+`has_rich_text`, sliced from the installed gem. `has_rich_text :content` defines three
+ordinary methods plus one `has_one`; the `has_one` is a reflection, so rbs_rails types it,
+but the three methods are written by `class_eval` on a heredoc **string**, and no static
+reader sees inside one (`ClassEvalExpander` desugars the *block* form; felixefelip/steep#135
+declines the string form for the same reason). So `post.content` is not `untyped` today — it
+is a `NoMethodError`: the method does not exist for the checker at all.
 
-Nothing in the emitted file states a type. `content` is `ActionText::RichText` because
-`rich_text_content || build_rich_text_content` is — the union of rbs_rails' nilable reader
-and its non-nilable builder — and `content?` is `bool` because `.present?` is. The bodies
-are not written by the generator either: they are sliced out of the installed gem's own
-`has_rich_text`, so a Rails version that rewrites them lands here on its own. That is what
-makes the Rails 8.1 `store_if_blank:` writer work without the generator knowing the option
-exists — the branch is read off the macro's own `if`. Runs after rbs_rails, which supplies
-`rich_text_content`/`build_rich_text_content`.
+Nothing was missing but the source, and the source ships in a gem — the same thing the AR
+runtime's Concern transcription found for `included do … end`. Rendering the macro at each
+call site is `RbsInfer::Project::StringEvalMacroExpander`'s job, and that is core, not a
+Rails feature: `class_eval` of an interpolated string is a plain-Ruby idiom, so an app that
+writes the same shape in its own concern gets the same treatment with no generator at all.
+The per-model accessors are therefore **inferred**, not generated, and land on the model's own
+RBS:
+
+```rbs
+class Article < ApplicationRecord
+  def content: () -> ActionText::RichText
+  def content?: () -> bool
+end
+```
+
+`content` because `rich_text_content || build_rich_text_content` is the union of rbs_rails'
+nilable reader and its non-nilable builder; `content?` because `.present?` is. Neither the
+generator nor the emitted file states a type — the one annotation in it is
+`# @rbs_infer |...`, which is precedence, not a signature: gem_rbs_collection already declares
+`has_rich_text`, and a second plain declaration would be a `DuplicatedMethodDefinitionError`.
+Runs after rbs_rails, which supplies the reader and the builder.
 
 *Scope:* the app-side accessors. `ActionText::RichText`'s own methods (`to_plain_text`,
 `to_trix_html`, the `delegate`s to `body`) are equally plain Ruby and equally
@@ -190,6 +201,7 @@ lib/rbs_infer/
   rbs_builder.rb, type_merger.rb             # RBS assembly
   rbs_type_lookup.rb, method_type_resolver.rb,
   rbs_definition_resolver.rb, steep_bridge.rb # cross-call resolution via RBS/Steep
+  string_eval_macro*.rb                      # `class_eval "def #{name}"`, rendered per call site
   parse_cache.rb, file_index.rb,
   source_index.rb, caller_file_cache.rb      # caches that drive perf
   railtie.rb                                 # auto-registers rake tasks
@@ -200,7 +212,7 @@ lib/rbs_infer/
       erb_caller_resolver.rb                 # helpers ↔ ERB call-sites
       views/                                 # view-runtime pseudo-code
       controllers/                           # controller-runtime pseudo-code
-      action_text/                           # has_rich_text accessor pseudo-code
+      action_text/                           # has_rich_text, sliced from the gem
 spec/
   dummy/                                     # Rails 8 dummy app used by integration suite
   integration/rails_dummy_spec.rb            # snapshot tests vs spec/expectations/

@@ -74,18 +74,6 @@ postconditions:
     Current.viewer_name:
       gate_ivar: "@__rbs_infer__performed"
       type: "::String"
-- class: Article
-  method: content?
-  when_true:
-    methods:
-      rich_text_content: "::ActionText::RichText"
-    self: "::Article & ::Article::AfterContent"
-- class: Article
-  method: summary?
-  when_true:
-    methods:
-      rich_text_summary: "::ActionText::RichText"
-    self: "::Article & ::Article::AfterSummary"
 - class: Assignment
   method: assigned?
   when_true:

@@ -95,10 +95,13 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/post_tag", target_class: "PostTag", target_file: "app/models/post_tag.rb")
   end
 
-  # `has_rich_text` contributes nothing to the model's OWN RBS — the accessors it
-  # defines live in the ActionText-runtime pseudo-code, and the `has_one` it
-  # declares is rbs_rails'. This snapshot is what says so: if the core ever grew
-  # knowledge of the macro, it would show up here.
+  # The payoff of the ActionText generator, and the proof that the work is the
+  # CORE's: `has_rich_text :content` writes nothing here, and `content` still
+  # lands on the model — `StringEvalMacroExpander` rendered the macro's
+  # `class_eval` string at this call site. The types come from the bodies
+  # (`rich_text_content || build_rich_text_content`, `.present?`), never from
+  # the generator, and `summary` comes through the `store_if_blank: false`
+  # writer, which the expander picks by reading the macro's own branch.
   it "Article model matches expected RBS" do
     assert_snapshot("models/article", target_class: "Article", target_file: "app/models/article.rb")
   end
@@ -1210,12 +1213,9 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       assert_runtime_rbs("steep_ar_runtime")
     end
 
-    # The payoff of the ActionText generator, stated as a signature: `content` is
-    # `ActionText::RichText` because `rich_text_content || build_rich_text_content`
-    # is, and `content?` is `bool` because `.present?` is. Neither type is written
-    # anywhere — the pseudo-code is plain Ruby, and this is what the pipeline makes
-    # of it. `summary` is the same through the `store_if_blank: false` writer, which
-    # the generator picks by reading the macro's own branch.
+    # The transcription itself. It declares one method and states no type; the
+    # `| ...` is the overloading marker, which is what keeps this from colliding
+    # with the signature gem_rbs_collection already writes for the same macro.
     it "ActionText runtime" do
       assert_runtime_rbs("steep_actiontext_runtime")
     end

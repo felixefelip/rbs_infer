@@ -2,275 +2,100 @@
 
 require "spec_helper"
 require "rbs_infer"
-# The accessor bodies are sliced from the installed gem, so the gem has to be
-# loaded for there to be anything to slice.
+# The macro is sliced from the installed gem, so the gem has to be loaded for
+# there to be anything to slice.
 require "action_text"
 require "rbs_infer/extensions/rails/action_text/runtime_generator"
 require "tmpdir"
-require "fileutils"
 
 RSpec.describe RbsInfer::Extensions::Rails::ActionText::RuntimeGenerator do
-  def in_app(files)
-    Dir.mktmpdir do |dir|
-      files.each do |rel, content|
-        path = File.join(dir, rel)
-        FileUtils.mkdir_p(File.dirname(path))
-        File.write(path, content)
-      end
-      yield dir
+  def files
+    described_class.new(app_dir: ".").build
+  end
+
+  def source
+    files.first[:source]
+  end
+
+  # The whole extension: put the gem's macro where the pipeline can read it.
+  # Rendering it per call site belongs to `Project::StringEvalMacroExpander`,
+  # which is covered by its own spec and knows no framework.
+  describe "the file it writes" do
+    it "emits one file, holding the macro's own source" do
+      expect(files.map { |file| file[:filename] }).to eq(["attribute.rb"])
+      expect(source).to include("def has_rich_text(name")
+      expect(source).to include("class_eval")
+    end
+
+    it "nests the macro in the module it was written in" do
+      expect(source).to include("module ActionText\n  module Attribute\n    module ClassMethods\n")
+    end
+
+    # Verbatim, so a Rails that rewrites the macro lands here on its own. The
+    # interpolations in particular have to survive — they are what the expander
+    # binds to a call site's arguments.
+    it "keeps the interpolations rather than resolving them" do
+      expect(source).to include('def #{name}')
+      expect(source).to include('rich_text_#{name} || build_rich_text_#{name}')
+    end
+
+    # `store_if_blank:` selects a different writer. The generator does not know
+    # that; it transcribes the branch and the expander reads it.
+    it "keeps the branch instead of choosing one" do
+      expect(source).to include("if store_if_blank")
+      expect(source).to include("mark_for_destruction")
+    end
+
+    it "keeps the has_one and the scopes the macro also declares" do
+      expect(source).to include("has_one :\"rich_text_\#{name}\"")
+      expect(source).to include("scope :\"with_rich_text_\#{name}\"")
     end
   end
 
-  def build(files)
-    in_app(files) { |dir| described_class.new(app_dir: dir).build }
-  end
-
-  def source_for(files, filename)
-    build(files).find { |entry| entry.filename == filename }&.source
-  end
-
-  # The reopen without the header, for assertions about what the pseudo-code
-  # DOES NOT say — the header explains the omissions and names them.
-  def reopen_in(files, filename)
-    source_for(files, filename)[/^class .*/m]
-  end
-
-  # A method, not a constant: a constant assigned inside `RSpec.describe` lands
-  # on Object, and the AR-runtime generator's spec already has one by this name
-  # there — whichever file loaded last won, and this one silently tested that
-  # one's fixture.
-  def post_model
-    <<~RUBY
-      class Post < ApplicationRecord
-        has_rich_text :content
-      end
-    RUBY
-  end
-
-  describe "the accessors the macro defines" do
-    it "emits the reader, the predicate and the writer" do
-      source = source_for({ "app/models/post.rb" => post_model }, "post.rb")
-
-      expect(source).to include("class Post\n")
-      expect(source).to include("  def content\n    rich_text_content || build_rich_text_content\n  end\n")
-      expect(source).to include("  def content?\n    rich_text_content.present?\n  end\n")
-      expect(source).to include("  def content=(body)\n    self.content.body = body\n  end\n")
-    end
-
-    # The whole point of the pseudo-code: `content` gets its type from
-    # `rich_text_content || build_rich_text_content`, which rbs_rails types.
-    # A generator that wrote `::ActionText::RichText` here would be a
-    # hand-written sidecar with extra steps.
+  describe "what it does not say" do
+    # The rule the Devise, AR-runtime and Concern transcriptions all follow.
+    # On the annotation SYNTAX, not on tokens: `-> { where(name: name) }` is a
+    # lambda the macro really writes, and the `"ActionText::RichText"` further
+    # down is the `class_name:` string it passes to `has_one` — the gem's own
+    # code, not a signature.
     it "states no type" do
-      reopen = reopen_in({ "app/models/post.rb" => post_model }, "post.rb")
-
-      expect(reopen).not_to match(/^\s*#:/)
-      expect(reopen).not_to include("@rbs")
-      expect(reopen).not_to include("ActionText::RichText")
+      expect(source).not_to match(/^\s*#:/)
+      expect(source).not_to include("@type")
+      expect(source).not_to match(/@rbs (?!_infer)/)
     end
 
-    # `has_one :rich_text_content` and the two scopes are REFLECTIONS, which
-    # rbs_rails reflects at runtime and declares. Emitting them here would be a
-    # second declaration of the same methods.
-    it "leaves the has_one and the scopes to rbs_rails" do
-      reopen = reopen_in({ "app/models/post.rb" => post_model }, "post.rb")
-
-      expect(reopen).not_to include("has_one")
-      expect(reopen).not_to include("with_rich_text_content")
-      expect(reopen).not_to include("def rich_text_content")
-    end
-  end
-
-  # The bodies are not written by this generator — they are read out of the
-  # heredoc `has_rich_text` itself `class_eval`s. This is what makes the
-  # `store_if_blank:` writer work without the generator knowing the option
-  # exists, and what makes a future Rails rewrite land here on its own.
-  describe "slicing the bodies from the installed gem" do
-    it "matches the gem's own source for the attribute" do
-      source = source_for({ "app/models/post.rb" => post_model }, "post.rb")
-      gem_source = File.read(
-        ActionText::Attribute::ClassMethods.instance_method(:has_rich_text).source_location.first
-      )
-
-      # Not a substring check on the heredoc (it interpolates); the shape the
-      # gem writes, with the name filled in.
-      expect(gem_source).to include("rich_text_#{'#{name}'} || build_rich_text_#{'#{name}'}")
-      expect(source).to include("rich_text_content || build_rich_text_content")
-    end
-
-    # Rails 8.1 added `store_if_blank:` and a SECOND writer body behind it. The
-    # generator picks the branch by reading the macro's own `if`, so nothing
-    # here had to be taught what the option means.
-    it "follows the macro's own branch for `store_if_blank: false`" do
-      source = source_for({
-        "app/models/post.rb" => <<~RUBY
-          class Post < ApplicationRecord
-            has_rich_text :content, store_if_blank: false
-          end
-        RUBY
-      }, "post.rb")
-
-      # Only meaningful on a Rails that has the option; on one that does not,
-      # the unconditional writer is still correct.
-      if ActionText::Attribute::ClassMethods.instance_method(:has_rich_text).parameters.include?(%i[key store_if_blank])
-        expect(source).to include("if body.present?")
-        expect(source).to include("mark_for_destruction")
-      else
-        expect(source).to include("self.content.body = body")
-      end
-    end
-
-    it "takes the unconditional writer by default" do
-      source = source_for({ "app/models/post.rb" => post_model }, "post.rb")
-
-      expect(source).to include("  def content=(body)\n    self.content.body = body\n  end\n")
-      expect(source).not_to include("mark_for_destruction")
-    end
-  end
-
-  describe "where the macro is written" do
-    it "accepts a string name as Rails does" do
-      source = source_for({
-        "app/models/post.rb" => "class Post < ApplicationRecord\n  has_rich_text \"content\"\nend\n"
-      }, "post.rb")
-
-      expect(source).to include("def content\n")
-    end
-
-    it "reopens the qualified name of a nested class" do
-      source = source_for({
-        "app/models/blog/entry.rb" => <<~RUBY
-          module Blog
-            class Entry < ApplicationRecord
-              has_rich_text :summary
-            end
-          end
-        RUBY
-      }, "blog_entry.rb")
-
-      expect(source).to include("class Blog::Entry\n")
-      expect(source).to include("def summary\n")
-    end
-
-    # `Post.rich_text_association_names` includes an attribute a concern
-    # declared; reading `post.rb` alone sees no macro at all.
-    it "splices a concern's `included do` into the includer" do
-      source = source_for({
-        "app/models/post.rb" => "class Post < ApplicationRecord\n  include Describable\nend\n",
-        "app/models/concerns/describable.rb" => <<~RUBY
-          module Describable
-            extend ActiveSupport::Concern
-
-            included do
-              has_rich_text :description
-            end
-          end
-        RUBY
-      }, "post.rb")
-
-      expect(source).to include("class Post\n")
-      expect(source).to include("def description\n    rich_text_description || build_rich_text_description")
-    end
-
-    it "emits nothing for the concern itself" do
-      files = build(
-        "app/models/post.rb" => "class Post < ApplicationRecord\n  include Describable\nend\n",
-        "app/models/concerns/describable.rb" => <<~RUBY
-          module Describable
-            extend ActiveSupport::Concern
-
-            included do
-              has_rich_text :description
-            end
-          end
-        RUBY
-      )
-
-      expect(files.map(&:filename)).to eq(["post.rb"])
-    end
-
-    # Rails redefines the methods, so the later declaration replaces the
-    # earlier one. Two accessor sets under one name would be a duplicate
-    # definition in the reopen.
-    it "emits one accessor set when the class redeclares a concern's attribute" do
-      source = source_for({
-        "app/models/post.rb" => <<~RUBY,
-          class Post < ApplicationRecord
-            include Describable
-            has_rich_text :description
-          end
-        RUBY
-        "app/models/concerns/describable.rb" => <<~RUBY
-          module Describable
-            extend ActiveSupport::Concern
-
-            included do
-              has_rich_text :description, store_if_blank: false
-            end
-          end
-        RUBY
-      }, "post.rb")
-
-      expect(source.scan("def description\n").size).to eq(1)
-      expect(source).not_to include("mark_for_destruction")
-    end
-
-    it "merges reopens of the same class across files" do
-      source = source_for({
-        "app/models/post.rb" => post_model,
-        "app/models/post_extra.rb" => "class Post\n  has_rich_text :summary\nend\n"
-      }, "post.rb")
-
-      expect(source).to include("def content\n")
-      expect(source).to include("def summary\n")
-    end
-
-    it "contributes nothing for an include it cannot see" do
-      files = build("app/models/post.rb" => "class Post < ApplicationRecord\n  include Elsewhere::Thing\nend\n")
-
-      expect(files).to be_empty
-    end
-  end
-
-  describe "emitting nothing" do
-    it "is empty when no model declares the macro" do
-      expect(build("app/models/post.rb" => "class Post < ApplicationRecord\nend\n")).to be_empty
-    end
-
-    it "does not fire on a mere mention of the macro" do
-      expect(build("app/models/post.rb" => "# has_rich_text is not used here\nclass Post; end\n")).to be_empty
-    end
-
-    # A removed `has_rich_text` must not leave a reopen behind defining a
-    # method the model no longer has.
-    it "drops a stale sidecar directory" do
-      in_app("app/models/post.rb" => "class Post < ApplicationRecord\nend\n") do |app_dir|
-        dir = File.join(app_dir, described_class::SIDECAR_DIR)
-        FileUtils.mkdir_p(dir)
-        File.write(File.join(dir, "post.rb"), "class Post\n  def content; end\nend\n")
-
-        described_class.new(app_dir: app_dir).generate
-
-        expect(Dir.exist?(dir)).to be(false)
-      end
+    # `# @rbs_infer |...` is precedence, not a signature: gem_rbs_collection
+    # already declares `has_rich_text`, and a second PLAIN declaration is a
+    # DuplicatedMethodDefinitionError that poisons the whole environment.
+    it "marks the def for the overloading form" do
+      expect(source).to include("# @rbs_infer |...\n      def has_rich_text")
     end
   end
 
   describe "#generate" do
-    it "writes one file per model into the sidecar dir" do
-      in_app("app/models/post.rb" => post_model) do |app_dir|
-        dir = described_class.new(app_dir: app_dir).generate
+    it "writes the file into the sidecar dir" do
+      Dir.mktmpdir do |dir|
+        path = described_class.new(app_dir: dir).generate
 
-        expect(dir).to eq(File.join(app_dir, described_class::SIDECAR_DIR))
-        expect(File.read(File.join(dir, "post.rb"))).to include("def content\n")
+        expect(path).to eq(File.join(dir, described_class::SIDECAR_DIR))
+        expect(File.read(File.join(path, "attribute.rb"))).to include("def has_rich_text(name")
       end
     end
 
-    # `sig/**/*.rb` is how the analyzer and the Steep fork pick these up, and
+    # `sig/**/*.rb` is how the analyzer and the Steep fork pick this up, and
     # `**` skips hidden directories — a dot-prefixed dir would be invisible.
     it "writes to a directory Steep's source glob can see" do
       expect(described_class::SIDECAR_DIR).to eq("sig/generated/steep_actiontext_runtime")
       expect(described_class::SIDECAR_DIR).not_to include("/.")
+    end
+
+    # It describes the FRAMEWORK, not the app, so it does not wait for a model
+    # to declare the macro — the first model to write one would otherwise be the
+    # thing that made ActionText appear.
+    it "writes it for an app with no model at all" do
+      Dir.mktmpdir do |dir|
+        expect(described_class.new(app_dir: dir).build).not_to be_empty
+      end
     end
   end
 end

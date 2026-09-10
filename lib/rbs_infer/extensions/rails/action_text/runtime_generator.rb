@@ -1,79 +1,97 @@
 # frozen_string_literal: true
 
 require "fileutils"
-require_relative "runtime/attribute_scanner"
-require_relative "runtime/pseudo_code_builder"
+require_relative "runtime/attribute_transcriber"
 
 module RbsInfer
   module Extensions
     module Rails
       module ActionText
-        # Emits *pseudo-code* for what `has_rich_text` does at class-definition
-        # time, so `post.content` is a method the checker can see.
+        # Puts ActionText's `has_rich_text` where the pipeline can read it.
         #
-        # `has_rich_text :content` is three ordinary methods and one `has_one`.
-        # The `has_one` is a reflection, so rbs_rails types it; the three methods
-        # are written by `class_eval` on a HEREDOC STRING, and nothing static
-        # reads inside one — `ClassEvalExpander` desugars the BLOCK form and
-        # felixefelip/steep#135 declines the string form for the same reason. So
-        # `post.content` is not `untyped` today, it is a `NoMethodError`: the
-        # method does not exist for the checker at all.
+        # `has_rich_text :content` defines three ordinary methods plus one
+        # `has_one`. The `has_one` is a reflection, so rbs_rails types it; the
+        # three methods are written by `class_eval` on a heredoc STRING, and a
+        # string is where every static reader stops — `ClassEvalExpander`
+        # desugars the BLOCK form, and felixefelip/steep#135 declines the string
+        # form for the same reason. So `post.content` is not `untyped` today: it
+        # is a `NoMethodError`, because the method does not exist for the checker
+        # at all.
         #
-        # What the framework does is plain Ruby, and this writes it:
+        # Nothing was missing but the SOURCE, and the source ships in a gem —
+        # the same thing `ConcernPseudoCode` found for `included do … end`. So
+        # this generator writes one file, holding the macro as ActionText wrote
+        # it, and does no more:
         #
-        #     class Post
-        #       def content
-        #         rich_text_content || build_rich_text_content
-        #       end
-        #
-        #       def content?
-        #         rich_text_content.present?
-        #       end
-        #
-        #       def content=(body)
-        #         self.content.body = body
+        #     module ActionText::Attribute::ClassMethods
+        #       def has_rich_text(name, encrypted: false, …)
+        #         class_eval <<-CODE
+        #           def #{name}
+        #             rich_text_#{name} || build_rich_text_#{name}
+        #           end
+        #         CODE
+        #         …
         #       end
         #     end
+        #
+        # Rendering that at each `has_rich_text :content` is
+        # `Project::StringEvalMacroExpander`'s job, and it is not a Rails
+        # feature: `class_eval` of an interpolated string is a plain-Ruby idiom,
+        # and the expander names no gem. The per-model methods are therefore
+        # inferred, not generated — which is why this file can be one file, and
+        # why an app that writes the same idiom in its own concern gets the same
+        # treatment without a generator at all.
         #
         # Nothing here states a type. `content` is `::ActionText::RichText`
         # because `rich_text_content || build_rich_text_content` is — the union
         # of rbs_rails' nilable reader and its non-nilable builder — and
-        # `content?` is `bool` because `.present?` is. The bodies are not written
-        # by this generator either: they are sliced from the installed gem
-        # (`Runtime::AccessorTranscriber`), so they track the Rails version
-        # instead of drifting from it.
+        # `content?` is `bool` because `.present?` is.
         #
-        # Runs after rbs_rails, which is what supplies `rich_text_content` and
-        # `build_rich_text_content` — the same ordering the Devise generator has.
+        # Runs after rbs_rails, which supplies those two.
         #
-        # SCOPE: the app-side accessors. `ActionText::RichText`'s own methods
-        # (`to_plain_text`, `to_trix_html`, and the `delegate`s to `body`) are
-        # equally plain Ruby and equally transcribable, but they all read `body`,
-        # which rbs_rails currently types `::String?` — its column type — rather
-        # than `::ActionText::Content`, because its serializer handling special-
-        # cases only JSON/Array/Hash coders. Transcribing them before that is
-        # fixed would emit bodies that report an error instead of a type, so that
-        # half waits on the rbs_rails coder fix.
+        # KNOWN GAP — four diagnostics in the emitted file, recorded in the
+        # dummy's steep baseline. The macro's tail calls `has_one`, `scope`,
+        # `where`, `includes` and `strict_loading_by_default`, and the `self` the
+        # transcription can state is `singleton(ActiveRecord::Base)` (the module
+        # is extended into the base class, which is the fact the engine
+        # establishes). Four of those methods are not declared THERE: rbs_rails'
+        # design puts `where`/`includes` in the generic
+        # `ActiveRecord::Relation::ClassMethods[Model, Relation, …]` that each
+        # concrete model extends, because the base class has no concrete
+        # `Relation` to return. At runtime the macro only ever runs with a
+        # concrete model as `self`, so the fact is true and the type is not
+        # expressible yet — closing it needs the per-invoker self type
+        # (`InvokerSelfTypes`) to reach a module method the extend was found for.
+        #
+        # The tail is transcribed anyway: the alternative is an edited copy of
+        # the method, and an edited copy is what "a paraphrase describes some
+        # other method" warns about. The four calls are also the ones the
+        # pipeline reads nothing from — they are reflections, and rbs_rails
+        # already types what they declare.
         class RuntimeGenerator
           # NOT dot-prefixed: `.rb` SOURCE the analyzer and the Steep fork read
-          # via a `sig/**/*.rb` glob, and `**` skips hidden (dot) directories.
+          # through a `sig/**/*.rb` glob, and `**` skips hidden (dot) dirs.
           SIDECAR_DIR = "sig/generated/steep_actiontext_runtime"
-          MODEL_ROOTS = %w[app/models].freeze
 
           def initialize(app_dir:)
             @app_dir = app_dir
           end
 
-          # => [Runtime::PseudoCodeBuilder::FileEntry]. Public so the CLI and the
-          # specs can read the pseudo-code without touching disk.
+          # => [{ filename:, source: }] — empty when ActionText is not installed
+          # or the macro could not be read.
+          #
+          # It does not depend on the app: the file describes the FRAMEWORK, and
+          # is written whether or not a model declares the macro — the same rule
+          # the AR-runtime generator's Concern transcription follows, and for the
+          # same reason. The first model to write `has_rich_text` would otherwise
+          # be the thing that made the framework appear.
           def build
-            Runtime::PseudoCodeBuilder.build(Runtime::AttributeScanner.resolve(scan_models))
+            entry = Runtime::AttributeTranscriber.file_entry
+            entry ? [entry] : []
           end
 
-          # Writes the sidecar dir, dropping whatever a previous run left behind
-          # — including the whole directory when the app no longer declares the
-          # macro, so a removed `has_rich_text` cannot leave a reopen defining a
-          # method that no longer exists.
+          # Writes the sidecar dir, dropping a stale one when nothing qualifies.
+          # Returns the sidecar dir path.
           def generate
             files = build
             dir = File.join(@app_dir, SIDECAR_DIR)
@@ -81,31 +99,10 @@ module RbsInfer
             FileUtils.rm_rf(dir)
             unless files.empty?
               FileUtils.mkdir_p(dir)
-              files.each { |file| File.write(File.join(dir, file.filename), file.source) }
+              files.each { |file| File.write(File.join(dir, file[:filename]), file[:source]) }
             end
 
             dir
-          end
-
-          private
-
-          # Every class AND module under the model roots — a concern's
-          # `included do` is as likely a home for the macro as a model body, and
-          # only a scan that keeps both can splice one into the other.
-          def scan_models
-            MODEL_ROOTS.flat_map do |root|
-              Dir.glob(File.join(@app_dir, root, "**/*.rb")).sort.flat_map do |abs|
-                Runtime::AttributeScanner.scan(path: relative(abs), source: File.read(abs))
-              rescue StandardError => e
-                warn "[rbs_infer actiontext_runtime] skipped #{relative(abs)}: #{e.class}: #{e.message}"
-                []
-              end
-            end
-          end
-
-          def relative(abs)
-            prefix = "#{@app_dir.chomp('/')}/"
-            abs.start_with?(prefix) ? abs[prefix.length..] : abs
           end
         end
       end
