@@ -3,4 +3,5 @@ class Example68Entry
   attr_reader stamp: Integer
 
   def initialize: ((String | nil) label, Integer stamp) -> void
+  def marker: () -> untyped
 end

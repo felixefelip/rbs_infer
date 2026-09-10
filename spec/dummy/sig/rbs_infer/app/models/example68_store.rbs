@@ -1,0 +1,4 @@
+class Example68Store
+  def entries: () -> Array[Example68Entry]
+  def newest: () -> Example68Entry?
+end

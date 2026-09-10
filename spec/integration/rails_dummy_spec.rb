@@ -422,10 +422,13 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   end
 
   # A `==` against a non-nil value proves its receiver non-nil, and a `&.` chain
-  # carries that to the root. Five writings of one guard separated two independent
-  # gaps — `refine_node_type` having no `:csend` branch to put the comparison's
-  # answer in, and the `:csend` env join dropping the receiver's own pure-call
-  # registration — and the baseline now records none of them.
+  # carries that to the root. Seven writings of one guard separated three gaps —
+  # `refine_node_type` having no `:csend` branch to put a literal comparison's
+  # answer in; the `:csend` env join dropping the receiver's own pure-call
+  # registration; and neither of those firing at all on the shape fizzy writes,
+  # where an interpolated right-hand side and an `untyped` link leave the
+  # comparison with no logic type to dispatch on. The baseline records none of
+  # them.
   #
   # What the snapshot pins is the pair of markers, which is the same reading aimed
   # the other way: a truthy `labelled_and_stamped?` or `matched_and_stamped?` tells

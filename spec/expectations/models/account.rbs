@@ -1,4 +1,8 @@
 class Account < ApplicationRecord
   def label: () -> String
   def matches?: ((Post & Post::Validated) post) -> bool
+
+  class AfterMatches
+    def display_name: () -> ::String
+  end
 end
