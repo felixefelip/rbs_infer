@@ -1,0 +1,17 @@
+class Example68
+  def entries: () -> Array[Example68Entry]
+  def latest: () -> Example68Entry?
+  def present_and_stamped?: () -> bool?
+  def labelled_and_stamped?: () -> bool
+  def labelled_via_local?: () -> bool
+  def matched_and_stamped?: () -> bool
+  def matched_via_local?: () -> bool
+
+  class AfterLabelledAndStamped
+    def latest: () -> ::Example68Entry
+  end
+
+  class AfterMatchedAndStamped
+    def latest: () -> ::Example68Entry
+  end
+end

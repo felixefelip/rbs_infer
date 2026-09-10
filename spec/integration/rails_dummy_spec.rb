@@ -421,6 +421,23 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example67_source", target_file: "app/models/example67_source.rb")
   end
 
+  # A `==` against a non-nil value proves its receiver non-nil, and a `&.` chain
+  # carries that to the root. Five writings of one guard separated two independent
+  # gaps — `refine_node_type` having no `:csend` branch to put the comparison's
+  # answer in, and the `:csend` env join dropping the receiver's own pure-call
+  # registration — and the baseline now records none of them.
+  #
+  # What the snapshot pins is the pair of markers, which is the same reading aimed
+  # the other way: a truthy `labelled_and_stamped?` or `matched_and_stamped?` tells
+  # this method's CALLERS that `latest` is there. Both are present, and that they
+  # agree is the check that matters: they are the same fact reached through a `&&`
+  # and through a `==`.
+  #
+  # Read off fizzy: `Card::ActivitySpike::Detector#card_was_just?`.
+  it "example68 (an equality that should prove its csend chain) matches expected RBS" do
+    assert_snapshot("models/example68", target_file: "app/models/example68.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that

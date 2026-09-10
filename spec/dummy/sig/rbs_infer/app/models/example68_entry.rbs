@@ -1,0 +1,6 @@
+class Example68Entry
+  attr_reader label: (String | nil)
+  attr_reader stamp: Integer
+
+  def initialize: ((String | nil) label, Integer stamp) -> void
+end
