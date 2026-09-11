@@ -9,7 +9,6 @@ class PostFiltering
   def author_name: () -> String?
 
   class AfterInitialize
-    attr_reader expanded: bool
     attr_reader user: (User & User::Validated) | User
   end
 end

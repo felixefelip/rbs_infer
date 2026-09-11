@@ -218,6 +218,26 @@ module RbsInfer::Signatures
     # in method-type position is an overload separator, so it has to go. This
     # one is about what the `?` BINDS to. A bare proc return type reads fine,
     # so wrapping it there would be noise for no one.
+    # The class a literal TYPE belongs to, or nil for anything else. A resolver
+    # handed `"abc"` has nothing to look `upcase` up on; the call is a `String`
+    # call, and the literal is a `String`.
+    LITERAL_TYPE_CLASSES = { String => "String", Symbol => "Symbol", Integer => "Integer" }.freeze
+    LITERAL_TYPE_START = /\A(?:"|:|-?\d|true\z|false\z)/
+
+    def widen_literal_type(type_str)
+      return nil unless type_str&.match?(LITERAL_TYPE_START)
+
+      parsed = RBS::Parser.parse_type(type_str)
+      return nil unless parsed.is_a?(RBS::Types::Literal)
+
+      value = parsed.literal
+      return "bool" if value == true || value == false
+
+      LITERAL_TYPE_CLASSES[LITERAL_TYPE_CLASSES.keys.find { |k| value.is_a?(k) }]
+    rescue RBS::ParsingError, RBS::BaseError
+      nil
+    end
+
     def parenthesize_before_optional(type_str)
       return "(#{type_str})" if bare_symbol_literal?(type_str)
 

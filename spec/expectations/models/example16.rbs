@@ -9,7 +9,7 @@ class Example16
   def authenticate: () -> (Example16::User | bool)
   def resume: () -> Example16::User?
   def from_token: () -> (Example16::User | bool)
-  def deny: () -> bool
+  def deny: () -> true
   def halt: () -> true
   def cookie?: () -> bool
   def token?: () -> bool
@@ -20,10 +20,6 @@ class Example16
     attr_reader name: ("cookie" | "token")
 
     def initialize: (name: ("cookie" | "token")) -> void
-
-    class AfterInitialize
-      attr_reader name: String
-    end
   end
 end
 

@@ -4,10 +4,10 @@ end
 
 class Example56
   class Reader
-    def name: () -> String
+    def name: () -> "farm"
     def maybe_name: () -> String?
     def label: () -> String
     def shout: () -> String
-    def maybe_label: () -> String?
+    def maybe_label: () -> "loud"?
   end
 end

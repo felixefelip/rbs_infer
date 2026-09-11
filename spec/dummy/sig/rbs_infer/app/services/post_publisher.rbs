@@ -1,9 +1,9 @@
 class PostPublisher
-  def self.publish: (untyped post) -> true
+  def self.publish: (untyped post) -> bool
 
   attr_reader post: Post
   attr_reader notifier: EmailNotifier
 
   def initialize: (Post post, ?notifier: EmailNotifier) -> void
-  def call: () -> true
+  def call: () -> bool
 end

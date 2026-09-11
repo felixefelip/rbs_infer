@@ -16,7 +16,7 @@ class Example44
     include ::Example44::Baz
 
     def call_age: () -> Integer
-    def age: () -> Integer
+    def age: () -> 31
   end
 end
 
@@ -26,6 +26,6 @@ class Example44
     include ::Example44::Baz
 
     def call_age: () -> Integer
-    def age: () -> Integer
+    def age: () -> 31
   end
 end

@@ -5,19 +5,19 @@ end
 
 class Example9
   class Foo
-    self.@name: String?
+    self.@name: "John Doe"?
 
     def self.name: () -> String?
-    def self.name=: ("John Doe" value) -> String
+    def self.name=: ("John Doe" value) -> "John Doe"
   end
 end
 
 class Example9
   class Age
-    self.@value: Integer?
+    self.@value: 42?
 
     def self.value: () -> Integer?
-    def self.value=: (42 value) -> Integer
+    def self.value=: (42 value) -> 42
   end
 end
 

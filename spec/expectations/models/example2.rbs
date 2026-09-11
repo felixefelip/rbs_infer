@@ -7,23 +7,19 @@ class Example2
     attr_reader name: "John Doe"
 
     def initialize: (name: "John Doe") -> void
-
-    class AfterInitialize
-      attr_reader name: String
-    end
   end
 end
 
 class Example2
   class Foo
     attr_reader user: untyped
-    attr_reader name: String?
-    attr_writer name: String?
+    attr_reader name: "John Doe"?
+    attr_writer name: "John Doe"?
 
-    def user=: (Example2::User value) -> String
+    def user=: (Example2::User value) -> "John Doe"
 
     class AfterUser
-      attr_reader name: String
+      attr_reader name: "John Doe"
       attr_reader user: Example2::User
     end
   end

@@ -1,14 +1,14 @@
 class Example17
-  def with_token: () { (String) -> String } -> String
-  def with_optional: () ?{ (String) -> untyped } -> untyped
-  def with_yield: () { (String) -> untyped } -> untyped
+  def with_token: () { ("token") -> String } -> String
+  def with_optional: () ?{ ("token") -> untyped } -> untyped
+  def with_yield: () { ("token") -> untyped } -> untyped
   def with_pair: () { (String, Integer) -> untyped } -> untyped
-  def with_either: (untyped flag) { (String | Integer) -> untyped } -> untyped
-  def forward_required: () { (String) -> untyped } -> String
+  def with_either: (untyped flag) { ("text" | 42) -> untyped } -> untyped
+  def forward_required: () { ("token") -> untyped } -> String
   def forward_optional: () ?{ (*untyped) -> untyped } -> untyped
   def forward_guarded: () ?{ (*untyped) -> untyped } -> String?
-  def forward_anonymous: () { (String) -> untyped } -> String
+  def forward_anonymous: () { ("token") -> untyped } -> String
   def forward_anonymous_guarded: () ?{ (*untyped) -> untyped } -> String?
-  def name: () -> String
+  def name: () -> "example"
   def run: () -> String
 end

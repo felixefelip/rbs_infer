@@ -1,18 +1,14 @@
 class Column
   attr_accessor board: Board?
   attr_accessor column_name: "To Do"
-  attr_accessor user_name: String?
+  attr_accessor user_name: "John Doe"?
 
   def initialize: (column_name: "To Do") -> void
-  def set_default_user_name: () -> String
+  def set_default_user_name: () -> "John Doe"
   def save: () -> true
 
-  class AfterInitialize
-    attr_reader column_name: String
-  end
-
   class AfterSetDefaultUserName
-    attr_reader user_name: String
+    attr_reader user_name: "John Doe"
   end
 end
 
@@ -20,10 +16,6 @@ class Board
   attr_reader user_name: "John Doe"
 
   def initialize: (user_name: "John Doe") -> void
-
-  class AfterInitialize
-    attr_reader user_name: String
-  end
 end
 
 class Example

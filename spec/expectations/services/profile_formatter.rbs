@@ -8,8 +8,4 @@ class ProfileFormatter
   private
 
   def format_nickname: () -> untyped
-
-  class AfterInitialize
-    attr_reader nickname: String?
-  end
 end

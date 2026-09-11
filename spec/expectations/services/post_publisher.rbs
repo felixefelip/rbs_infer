@@ -5,5 +5,5 @@ class PostPublisher
   attr_reader notifier: EmailNotifier
 
   def initialize: (Post post, ?notifier: EmailNotifier) -> void
-  def call: () -> true
+  def call: () -> bool
 end

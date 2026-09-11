@@ -1,15 +1,15 @@
 class Example19
   @halted: true?
-  @message: String?
+  @message: "denied"?
 
   module Responder
-    def self.deny: (Example19 host, "denied" message) -> bool
+    def self.deny: (Example19 host, "denied" message) -> true
   end
 
   def show: () -> String
   def call: () -> String?
   def halt: () -> true
-  def record: (String? message) -> String?
+  def record: ("denied"? message) -> String?
 
   private
 
@@ -17,7 +17,7 @@ class Example19
   def from_token: () -> (Example19::User | bool)
   def with_token: () { (String) -> Example19::User? } -> (Example19::User | bool)
   def fetch_token: () { (String) -> Example19::User? } -> Example19::User?
-  def refuse: () -> bool
+  def refuse: () -> true
   def lookup: (String token) -> Example19::User?
   def token_value: () -> String
 end
@@ -27,10 +27,6 @@ class Example19
     attr_reader name: "token"
 
     def initialize: (name: "token") -> void
-
-    class AfterInitialize
-      attr_reader name: String
-    end
   end
 end
 

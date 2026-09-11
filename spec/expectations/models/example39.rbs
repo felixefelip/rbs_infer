@@ -16,6 +16,6 @@ module Example39
   class Bar
     extend ::Example39::Foo
 
-    def call_age: () -> BigDecimal
+    def call_age: () -> Integer
   end
 end

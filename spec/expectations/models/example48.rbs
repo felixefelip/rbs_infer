@@ -8,7 +8,7 @@ class Example48
   end
 
   module Baz::BananaMethods
-    def age: () -> Integer
+    def age: () -> 31
   end
 end
 

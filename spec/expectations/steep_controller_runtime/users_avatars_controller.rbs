@@ -2,7 +2,7 @@ module Users
   class AvatarsController
     @__rbs_infer__performed: true?
 
-    def render: (?:edit? target, *{ status: :unprocessable_entity } rest) -> true
+    def render: (?(:edit)? target, *{ status: :unprocessable_entity } rest) -> true
 
     private
 

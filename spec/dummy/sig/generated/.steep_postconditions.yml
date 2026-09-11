@@ -1,6 +1,12 @@
 ---
 version: 1
 postconditions:
+- class: Account
+  method: matches?
+  when_true:
+    methods:
+      display_name: "::String"
+    self: "::Account & ::Account::AfterMatches"
 - class: ActionController::Base
   method: head
   unconditional:

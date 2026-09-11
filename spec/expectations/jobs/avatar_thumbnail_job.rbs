@@ -1,3 +1,3 @@
 class AvatarThumbnailJob < ApplicationJob
-  def perform: (User & User::Validated user, sizes: Array[(64 | 128)]) -> Array[Hash[Symbol, (String | Integer)]]
+  def perform: (User & User::Validated user, sizes: Array[(64 | 128)]) -> Array[Hash[(:owner | :width), (String | 64 | 128)]]
 end

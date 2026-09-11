@@ -15,10 +15,6 @@ class Example15
     attr_reader name: "Joe"
 
     def initialize: (name: "Joe") -> void
-
-    class AfterInitialize
-      attr_reader name: String
-    end
   end
 end
 
