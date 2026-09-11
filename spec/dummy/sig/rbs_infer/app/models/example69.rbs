@@ -4,9 +4,11 @@ module Example69
     def action: () -> String
     def call_name_action: () -> String
     def call_action: () -> String
+    def call_dynamic: () -> String
+    def name_action_dynamic: (bool flag_name) -> String
 
     private
 
-    def call: (?name: bool) -> String
+    def call: (?flag_name: bool) -> String
   end
 end

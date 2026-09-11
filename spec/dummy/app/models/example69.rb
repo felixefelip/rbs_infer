@@ -11,19 +11,27 @@ module Example69
 
     # type should be literal `'name_delete'`
     def call_name_action
-      call(name: true)
+      call(flag_name: true)
     end
 
     # type should be literal `'delete'`
     def call_action
-      call(name: false)
+      call(flag_name: false)
+    end
+
+    def call_dynamic
+      name_action_dynamic(flag_name: true)
+    end
+
+    def name_action_dynamic(flag_name)
+      call(flag_name: flag_name)
     end
 
     private
 
-    def call(name: true) # type should be literal `'name_delete' | 'delete'`
-      if name
-        "#{self.name}_#{action}"
+    def call(flag_name: false) # type should be literal `'name_delete' | 'delete'`
+      if flag_name
+        "#{name}_#{action}"
       else
         action
       end
