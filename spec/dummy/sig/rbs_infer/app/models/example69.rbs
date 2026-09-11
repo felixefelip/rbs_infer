@@ -5,7 +5,7 @@ module Example69
     def call_name_action: () -> String
     def call_action: () -> String
     def call_dynamic: () -> String
-    def name_action_dynamic: (bool flag_name) -> String
+    def name_action_dynamic: (flag_name: bool) -> String
 
     private
 

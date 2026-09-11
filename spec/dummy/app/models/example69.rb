@@ -23,7 +23,7 @@ module Example69
       name_action_dynamic(flag_name: true)
     end
 
-    def name_action_dynamic(flag_name)
+    def name_action_dynamic(flag_name:)
       call(flag_name: flag_name)
     end
 
