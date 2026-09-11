@@ -114,6 +114,7 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 | `rake rbs_infer:current_runtime:all` | `RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator` | `sig/generated/steep_current_runtime/` |
 | `rake rbs_infer:job_runtime:all` | `RbsInfer::Extensions::Rails::ActiveJob::RuntimeGenerator` | `sig/generated/steep_activejob_runtime/` |
 | `rake rbs_infer:actionview_runtime:all` | `RbsInfer::Extensions::Rails::Views::RuntimeGenerator` | `sig/generated/steep_actionview_runtime/` |
+| `rake rbs_infer:actiontext_runtime:all` | `RbsInfer::Extensions::Rails::ActionText::RuntimeGenerator` | `sig/generated/steep_actiontext_runtime/` |
 
 **Enumerize generator** — walks `app/models/**/*.rb`, captures `enumerize :attr, in: [...]`, and emits per-attribute `Value` / `Attribute` classes plus instance/class accessors, predicate methods, and scope methods (shallow/deep).
 
@@ -141,6 +142,43 @@ feed the same parameter and `new.perform` has no way back to the job that was ca
 needs the call site's receiver to reach the forward: either instantiating this body per subclass,
 or teaching `InvokerSelfTypes` to resolve a call made *on* a receiver (it declines those today).
 
+**ActionText runtime generator** — writes one file: ActionText's own
+`has_rich_text`, sliced from the installed gem. `has_rich_text :content` defines three
+ordinary methods plus one `has_one`; the `has_one` is a reflection, so rbs_rails types it,
+but the three methods are written by `class_eval` on a heredoc **string**, and no static
+reader sees inside one (`ClassEvalExpander` desugars the *block* form; felixefelip/steep#135
+declines the string form for the same reason). So `post.content` is not `untyped` today — it
+is a `NoMethodError`: the method does not exist for the checker at all.
+
+Nothing was missing but the source, and the source ships in a gem — the same thing the AR
+runtime's Concern transcription found for `included do … end`. Rendering the macro at each
+call site is `RbsInfer::Project::StringEvalMacroExpander`'s job, and that is core, not a
+Rails feature: `class_eval` of an interpolated string is a plain-Ruby idiom, so an app that
+writes the same shape in its own concern gets the same treatment with no generator at all.
+The per-model accessors are therefore **inferred**, not generated, and land on the model's own
+RBS:
+
+```rbs
+class Article < ApplicationRecord
+  def content: () -> ActionText::RichText
+  def content?: () -> bool
+end
+```
+
+`content` because `rich_text_content || build_rich_text_content` is the union of rbs_rails'
+nilable reader and its non-nilable builder; `content?` because `.present?` is. Neither the
+generator nor the emitted file states a type — the one annotation in it is
+`# @rbs_infer |...`, which is precedence, not a signature: gem_rbs_collection already declares
+`has_rich_text`, and a second plain declaration would be a `DuplicatedMethodDefinitionError`.
+Runs after rbs_rails, which supplies the reader and the builder.
+
+*Scope:* the app-side accessors. `ActionText::RichText`'s own methods (`to_plain_text`,
+`to_trix_html`, the `delegate`s to `body`) are equally plain Ruby and equally
+transcribable, but they all read `body`, which rbs_rails types `::String?` — the column
+type — rather than `::ActionText::Content`, because its serializer handling special-cases
+only JSON/Array/Hash coders. Transcribing them before that is fixed would emit bodies that
+report an error instead of a type, so that half waits on the rbs_rails coder fix.
+
 **View runtime generator** — emits *pseudo-code* (one plain `.rb` per
 `app/views/**/*.{html,turbo_stream}.erb`) modelling what ActionView does at render time, so
 the analyzer derives each view's RBS the same way it derives any other class's. Per template
@@ -163,6 +201,7 @@ lib/rbs_infer/
   rbs_builder.rb, type_merger.rb             # RBS assembly
   rbs_type_lookup.rb, method_type_resolver.rb,
   rbs_definition_resolver.rb, steep_bridge.rb # cross-call resolution via RBS/Steep
+  string_eval_macro*.rb                      # `class_eval "def #{name}"`, rendered per call site
   parse_cache.rb, file_index.rb,
   source_index.rb, caller_file_cache.rb      # caches that drive perf
   railtie.rb                                 # auto-registers rake tasks
@@ -173,6 +212,7 @@ lib/rbs_infer/
       erb_caller_resolver.rb                 # helpers ↔ ERB call-sites
       views/                                 # view-runtime pseudo-code
       controllers/                           # controller-runtime pseudo-code
+      action_text/                           # has_rich_text, sliced from the gem
 spec/
   dummy/                                     # Rails 8 dummy app used by integration suite
   integration/rails_dummy_spec.rb            # snapshot tests vs spec/expectations/

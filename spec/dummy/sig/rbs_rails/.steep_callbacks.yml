@@ -1,6 +1,23 @@
 ---
 version: 1
 callbacks:
+- class: ActiveStorage::Attachment
+  applies_self: ActiveStorage::Attachment & ActiveStorage::Attachment::Validated
+  runs_before:
+  - mirror_blob_later
+  - analyze_blob_later
+  - transform_variants_later
+  - named_variants
+- class: ActiveStorage::Blob
+  applies_self: ActiveStorage::Blob & ActiveStorage::Blob::Validated
+  runs_before:
+  - touch_attachments
+  - update_service_metadata
+  - service_metadata
+  - service
+  - key
+  - filename
+  - custom_metadata
 - class: Comment
   applies_self: Comment & Comment::Validated
   runs_before:

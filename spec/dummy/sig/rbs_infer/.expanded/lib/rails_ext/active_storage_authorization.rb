@@ -61,3 +61,23 @@ Rails.application.config.to_prepare do
   ActiveStorage::Representations::RedirectController.include ActiveStorage::Authorize
   ActiveStorage::Representations::ProxyController.include ActiveStorage::Authorize
 end
+
+class ActiveStorage::Blobs::RedirectController
+  skip_before_action :require_authentication
+  before_action :require_authentication, :ensure_accessible, unless: :publicly_accessible_blob?
+end
+
+class ActiveStorage::Blobs::ProxyController
+  skip_before_action :require_authentication
+  before_action :require_authentication, :ensure_accessible, unless: :publicly_accessible_blob?
+end
+
+class ActiveStorage::Representations::RedirectController
+  skip_before_action :require_authentication
+  before_action :require_authentication, :ensure_accessible, unless: :publicly_accessible_blob?
+end
+
+class ActiveStorage::Representations::ProxyController
+  skip_before_action :require_authentication
+  before_action :require_authentication, :ensure_accessible, unless: :publicly_accessible_blob?
+end

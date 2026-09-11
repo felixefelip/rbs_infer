@@ -419,6 +419,10 @@ class ::User < ::ApplicationRecord
   def comment_ids: () -> ::Array[::Integer]
   def comment_ids=: (::Array[::Integer]) -> ::Array[::Integer]
 
+  module ::User::GeneratedAssociationMethods
+  end
+  include ::User::GeneratedAssociationMethods
+
   def self.inactive: () -> ::User::ActiveRecord_Relation
   def self.active: () -> ::User::ActiveRecord_Relation
   def self.by_name: (untyped name) -> ::User::ActiveRecord_Relation

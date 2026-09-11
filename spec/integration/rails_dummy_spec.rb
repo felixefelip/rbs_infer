@@ -95,6 +95,17 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/post_tag", target_class: "PostTag", target_file: "app/models/post_tag.rb")
   end
 
+  # The payoff of the ActionText generator, and the proof that the work is the
+  # CORE's: `has_rich_text :content` writes nothing here, and `content` still
+  # lands on the model — `StringEvalMacroExpander` rendered the macro's
+  # `class_eval` string at this call site. The types come from the bodies
+  # (`rich_text_content || build_rich_text_content`, `.present?`), never from
+  # the generator, and `summary` comes through the `store_if_blank: false`
+  # writer, which the expander picks by reading the macro's own branch.
+  it "Article model matches expected RBS" do
+    assert_snapshot("models/article", target_class: "Article", target_file: "app/models/article.rb")
+  end
+
   # `assigned?` is the nilable-receiver predicate: `post` is `::Post?`, and the
   # nil branch of `present?` is what the resolver used to drop.
   it "Assignment model matches expected RBS" do
@@ -1200,6 +1211,13 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
     it "ActiveRecord runtime" do
       assert_runtime_rbs("steep_ar_runtime")
+    end
+
+    # The transcription itself. It declares one method and states no type; the
+    # `| ...` is the overloading marker, which is what keeps this from colliding
+    # with the signature gem_rbs_collection already writes for the same macro.
+    it "ActionText runtime" do
+      assert_runtime_rbs("steep_actiontext_runtime")
     end
 
     # The Devise helpers' RBS is now INFERRED from their pseudo-code — this snapshot is

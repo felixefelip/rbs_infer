@@ -296,6 +296,9 @@ class ::Notification < ::ApplicationRecord
   def build_user: (untyped) -> ::User
   def create_user: (untyped) -> ::User
   def create_user!: (untyped) -> ::User
+  module ::Notification::GeneratedAssociationMethods
+  end
+  include ::Notification::GeneratedAssociationMethods
 
   def self.unread: () -> ::Notification::ActiveRecord_Relation
 

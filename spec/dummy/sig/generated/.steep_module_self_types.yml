@@ -671,6 +671,11 @@ app/models/widget/publishable.rb:
     annotations:
     - "# @type self: singleton(Widget) & singleton(Widget::Publishable)"
     - "# @type instance: Widget & Widget::Publishable"
+sig/generated/steep_actiontext_runtime/attribute.rb:
+  modules:
+  - anchor: ClassMethods
+    annotations:
+    - "# @type instance: singleton(ActiveRecord::Base)"
 sig/generated/steep_ar_runtime/active_support/concern.rb:
   modules:
   - anchor: Concern

@@ -410,6 +410,10 @@ class ::Account < ::ApplicationRecord
   end
   include ::Account::GeneratedAliasAttributeMethods
 
+  module ::Account::GeneratedAssociationMethods
+  end
+  include ::Account::GeneratedAssociationMethods
+
   module ::Account::GeneratedRelationMethods
   end
 

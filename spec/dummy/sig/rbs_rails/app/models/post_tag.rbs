@@ -262,6 +262,9 @@ class ::PostTag < ::ApplicationRecord
   def build_tag: (untyped) -> ::Tag
   def create_tag: (untyped) -> ::Tag
   def create_tag!: (untyped) -> ::Tag
+  module ::PostTag::GeneratedAssociationMethods
+  end
+  include ::PostTag::GeneratedAssociationMethods
 
   module ::PostTag::GeneratedRelationMethods
   end
