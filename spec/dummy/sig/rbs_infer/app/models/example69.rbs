@@ -1,0 +1,12 @@
+module Example69
+  class Foo
+    def name: () -> String
+    def action: () -> String
+    def call_name_action: () -> String
+    def call_action: () -> String
+
+    private
+
+    def call: (?name: bool) -> String
+  end
+end
