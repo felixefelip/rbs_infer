@@ -127,6 +127,84 @@ RSpec.describe RbsInfer::Project::StringEvalMacroExpander do
     end
   end
 
+  # The condition and the interpolation are one question, answered by one
+  # folder. These four shapes are what that bought: each used to be DECIDED by
+  # the reader that could not read it — an unknown predicate spelled `false`,
+  # which is not a refusal but a vote for the `else` branch.
+  describe "reading the condition" do
+    def negated_macro
+      <<~'RUBY'
+        module Slots
+          def slot(name, writable: true)
+            if !writable
+              class_eval "def #{name}_ro; end"
+            else
+              class_eval "def #{name}_rw; end"
+            end
+          end
+        end
+      RUBY
+    end
+
+    # Used to emit `size_rw` for BOTH call sites: `!writable` is not a bare
+    # parameter read, so the old reader scored it `false` and took the `else`.
+    it "reads a negated parameter" do
+      expect(expand(negated_macro, "class Widget\n  slot :size\nend\n")).to include("def size_rw")
+      expect(expand(negated_macro, "class Widget\n  slot :size, writable: false\nend\n"))
+        .to include("def size_ro")
+    end
+
+    def case_macro
+      <<~'RUBY'
+        module Slots
+          def slot(name, kind: :ro)
+            case kind
+            when :ro then class_eval "def #{name}; end"
+            when :rw then class_eval "def #{name}=(v); end"
+            else          class_eval "def #{name}_none; end"
+            end
+          end
+        end
+      RUBY
+    end
+
+    # A `case` used to be no condition at all — every branch was collected with
+    # the guards of the statement around it, so all three were emitted.
+    it "follows the branch a case selects" do
+      expanded = expand(case_macro, "class Widget\n  slot :size, kind: :rw\nend\n")
+
+      expect(expanded).to include("def size=(v)")
+      expect(expanded).not_to include("def size;")
+      expect(expanded).not_to include("def size_none")
+    end
+
+    it "takes a case's else when no when matches" do
+      expect(expand(case_macro, "class Widget\n  slot :size, kind: :other\nend\n"))
+        .to include("def size_none")
+    end
+
+    def short_circuit_macro
+      <<~'RUBY'
+        module Slots
+          def slot(name, writable: false)
+            class_eval "def #{name}; end"
+            writable && class_eval("def #{name}=(v); end")
+          end
+        end
+      RUBY
+    end
+
+    # `x && class_eval(…)` is a condition written without an `if`, and used to
+    # be read as no condition — the writer was emitted whatever `writable` said.
+    it "reads a short-circuit as the condition it is" do
+      off = expand(short_circuit_macro, "class Widget\n  slot :size\nend\n")
+      on = expand(short_circuit_macro, "class Widget\n  slot :size, writable: true\nend\n")
+
+      expect(off).not_to include("def size=")
+      expect(on).to include("def size=(v)")
+    end
+  end
+
   # Every uncertainty declines the WHOLE macro. Emitting the reader whose writer
   # was declined is not "less" — it is a class that silently has no `x=`.
   describe "declining" do
@@ -172,6 +250,59 @@ RSpec.describe RbsInfer::Project::StringEvalMacroExpander do
       expanded = expand(ACCESSOR_MACRO, "class Widget\n  slot :size, :colour\nend\n")
 
       expect(expanded).to be_nil
+    end
+
+    # The shape that used to pick a branch instead of refusing: `fancy_mode?`
+    # is not a parameter, so the old reader scored the predicate `false` and
+    # emitted `size_plain` — a method the macro defines only when the condition
+    # it could not read says so.
+    it "declines a predicate it cannot read" do
+      macro = <<~'RUBY'
+        module Slots
+          def slot(name)
+            if fancy_mode?
+              class_eval "def #{name}_fancy; end"
+            else
+              class_eval "def #{name}_plain; end"
+            end
+          end
+        end
+      RUBY
+
+      expect(expand(macro, "class Widget\n  slot :size\nend\n")).to be_nil
+    end
+
+    # A `class_eval` under a shape the walk does not read at all. The body runs
+    # twice here, and how many `def`s that makes is not the question — whether
+    # the walk may treat "I did not read this" as "this runs" is.
+    it "declines a class_eval reached through a block" do
+      macro = <<~'RUBY'
+        module Slots
+          def slot(name)
+            %w[a b].each do |suffix|
+              class_eval "def #{name}; end"
+            end
+          end
+        end
+      RUBY
+
+      expect(expand(macro, "class Widget\n  slot :size\nend\n")).to be_nil
+    end
+
+    # An unreadable chunk is collected under a barrier rather than skipped: it
+    # has to poison the macro, not vanish and leave the readable chunks to
+    # render a class with a reader and no writer.
+    it "declines the whole macro for one unreadable chunk" do
+      macro = <<~'RUBY'
+        module Slots
+          def slot(name)
+            class_eval "def #{name}; end"
+            [1].each { class_eval "def #{name}=(v); end" }
+          end
+        end
+      RUBY
+
+      expect(expand(macro, "class Widget\n  slot :size\nend\n")).to be_nil
     end
   end
 
