@@ -19,7 +19,7 @@ class Example33
   class Bar
     extend ::Example33::Foo
 
-    def age: () -> Integer
+    def age: () -> 31
   end
 end
 

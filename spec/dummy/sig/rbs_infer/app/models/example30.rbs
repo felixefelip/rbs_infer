@@ -9,7 +9,7 @@ end
 module Example30
   class Foo
     class AfterBuildAge
-      def age: () -> Integer
+      def age: () -> 25
     end
   end
 end

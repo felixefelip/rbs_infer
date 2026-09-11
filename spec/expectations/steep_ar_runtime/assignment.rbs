@@ -1,5 +1,5 @@
 class Assignment
-  def save: (**untyped) -> bool
+  def save: (**untyped) -> true
   def run_before_validation_callbacks: () -> User?
   def run_belongs_to_default_callbacks: () -> User?
   def run_belongs_to_default_owner: () -> User?

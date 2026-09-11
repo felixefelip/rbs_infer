@@ -10,16 +10,20 @@ class Example16
   def resume: () -> Example16::User?
   def from_token: () -> (Example16::User | bool)
   def deny: () -> bool
-  def halt: () -> bool
+  def halt: () -> true
   def cookie?: () -> bool
   def token?: () -> bool
 end
 
 class Example16
   class User
-    attr_reader name: String
+    attr_reader name: ("cookie" | "token")
 
-    def initialize: (name: String) -> void
+    def initialize: (name: ("cookie" | "token")) -> void
+
+    class AfterInitialize
+      attr_reader name: String
+    end
   end
 end
 

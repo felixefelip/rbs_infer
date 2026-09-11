@@ -3,12 +3,12 @@ class Example20
   @message: String?
 
   module Responder
-    def self.deny: (Example20 host, String message) -> bool
+    def self.deny: (Example20 host, "denied" message) -> bool
   end
 
   def show: () -> String
   def call: () -> String?
-  def halt: () -> bool
+  def halt: () -> true
   def record: (String? message) -> String?
 
   private
@@ -26,9 +26,13 @@ end
 
 class Example20
   class User
-    attr_reader name: String
+    attr_reader name: "token"
 
-    def initialize: (name: String) -> void
+    def initialize: (name: "token") -> void
+
+    class AfterInitialize
+      attr_reader name: String
+    end
   end
 end
 

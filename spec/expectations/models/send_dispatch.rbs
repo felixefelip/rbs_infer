@@ -3,6 +3,6 @@ class SendDispatch
 
   private
 
-  def stamp: (String value) -> String
-  def stamped?: (String value) -> bool
+  def stamp: (("post" | "a") value) -> String
+  def stamped?: ("stamped: post" value) -> bool
 end

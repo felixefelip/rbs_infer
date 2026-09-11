@@ -8,9 +8,13 @@ end
 
 class Example3
   class User
-    attr_reader name: String
+    attr_reader name: ("John Doe" | "x")
 
-    def initialize: (name: String) -> void
+    def initialize: (name: ("John Doe" | "x")) -> void
+
+    class AfterInitialize
+      attr_reader name: String
+    end
   end
 end
 

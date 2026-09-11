@@ -4,9 +4,13 @@ end
 
 class Example2
   class User
-    attr_reader name: String
+    attr_reader name: "John Doe"
 
-    def initialize: (name: String) -> void
+    def initialize: (name: "John Doe") -> void
+
+    class AfterInitialize
+      attr_reader name: String
+    end
   end
 end
 

@@ -1,6 +1,6 @@
 class Example11
   class Post
-    def title: () -> String
+    def title: () -> "Hello"
   end
 end
 

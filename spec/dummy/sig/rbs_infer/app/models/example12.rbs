@@ -6,5 +6,5 @@ class Example12
   def run_age: () -> (String | Integer | nil)
   def dispatch_name: () -> (String | Integer | nil)
   def dispatch_age: () -> (String | Integer | nil)
-  def show: (Symbol which) -> (String | Integer | nil)
+  def show: ((:name | :age) which) -> (String | Integer | nil)
 end

@@ -6,15 +6,19 @@ class Example14
 
   private
 
-  def halt: () -> bool
+  def halt: () -> true
   def verify: () -> Example14::User
   def set_user: () -> Example14::User
 end
 
 class Example14
   class User
-    attr_reader name: String
+    attr_reader name: "Joe"
 
-    def initialize: (name: String) -> void
+    def initialize: (name: "Joe") -> void
+
+    class AfterInitialize
+      attr_reader name: String
+    end
   end
 end

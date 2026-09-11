@@ -16,6 +16,6 @@ class Example34
     extend ::Example34::Foo
     include ::Example34::Baz
 
-    def age: () -> Integer
+    def age: () -> 31
   end
 end

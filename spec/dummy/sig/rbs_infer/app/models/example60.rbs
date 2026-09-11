@@ -4,5 +4,5 @@ class Example60
 
   def example60_printer: () -> Example60Printer
   def print_label: () -> String
-  def stamp: (String label, Integer times) -> String
+  def stamp: ("tag" label, 2 times) -> String
 end

@@ -24,13 +24,13 @@ end
 
 class Example13
   class Guarded
-    @name: String
+    @name: "John Doe"
     @halted: false | true
 
-    def initialize: (name: String) -> bool
+    def initialize: (name: "John Doe") -> false
     def current_user: () -> Example13Viewer?
-    def halt: () -> bool
-    def with_format: () ?{ (Symbol) -> bool } -> bool?
+    def halt: () -> true
+    def with_format: () ?{ (Symbol) -> true } -> bool?
     def guard_supported: () -> Example13Viewer?
     def run_supported: () -> String?
     def act_supported: () -> String
@@ -61,11 +61,11 @@ class Example13Viewer
   attr_reader name: String
 
   def initialize: (name: String) -> void
-  def active?: () -> bool
+  def active?: () -> true
 end
 
 class Example13Tenant
-  attr_reader label: String
+  attr_reader label: "acme"
 
-  def initialize: (label: String) -> void
+  def initialize: (label: "acme") -> void
 end

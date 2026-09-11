@@ -1,11 +1,15 @@
 class ProfileFormatter
-  attr_reader nickname: (String | nil)
+  attr_reader nickname: ("ada" | nil)
 
-  def initialize: (nickname: (String | nil)) -> void
+  def initialize: (nickname: ("ada" | nil)) -> void
   def call: () -> untyped
   def call_without_check: () -> untyped
 
   private
 
   def format_nickname: () -> untyped
+
+  class AfterInitialize
+    attr_reader nickname: String?
+  end
 end

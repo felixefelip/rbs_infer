@@ -59,13 +59,32 @@ module RbsInfer::AST
     # caller layers its own resolution on top — replacing the literal-typing
     # case table that used to be copy-pasted across the value typers
     # (felixefelip/rbs_infer#58).
+    # The class a literal node's value belongs to, or nil for a node that is not
+    # a scalar literal. For positions where the value is not evidence about what
+    # may appear there — see `ExtractParamsSignature#optional_param_type`.
+    LITERAL_CLASSES = {
+      Prism::StringNode => "String",
+      Prism::IntegerNode => "Integer",
+      Prism::SymbolNode => "Symbol",
+      Prism::TrueNode => "bool",
+      Prism::FalseNode => "bool"
+    }.freeze
+
+    def self.widen_literal_node(node)
+      LITERAL_CLASSES[node.class]
+    end
+
     def self.infer_literal_node_type(node, constant_resolver:, known_types: {}, context_class: nil)
       case node
-      when Prism::StringNode, Prism::InterpolatedStringNode then "String"
-      when Prism::IntegerNode then "Integer"
+      when Prism::StringNode then node.unescaped.inspect
+      when Prism::InterpolatedStringNode then "String"
+      when Prism::IntegerNode then node.value.inspect
+      # RBS has no float literal type.
       when Prism::FloatNode then "Float"
-      when Prism::SymbolNode, Prism::InterpolatedSymbolNode then "Symbol"
-      when Prism::TrueNode, Prism::FalseNode then "bool"
+      when Prism::SymbolNode then node.unescaped.to_sym.inspect
+      when Prism::InterpolatedSymbolNode then "Symbol"
+      when Prism::TrueNode then "true"
+      when Prism::FalseNode then "false"
       when Prism::NilNode then "nil"
       when Prism::ArrayNode then infer_array_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
       when Prism::HashNode then infer_hash_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)

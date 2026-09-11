@@ -3,6 +3,6 @@ class Example62
     @hallmark: String?
 
     def hallmark: () -> String?
-    def hallmark=: (String? value) -> String?
+    def hallmark=: ("value" value) -> String?
   end
 end

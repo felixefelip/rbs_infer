@@ -1,5 +1,5 @@
 class Example64
   module Vault
-    def self.label: () -> String
+    def self.label: () -> "nested"
   end
 end

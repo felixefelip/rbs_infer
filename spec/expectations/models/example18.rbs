@@ -11,16 +11,20 @@ class Example18
   def with_token: () { (String) -> Example18::User? } -> (Example18::User | bool)
   def fetch_token: () { (String) -> Example18::User? } -> Example18::User?
   def deny: () -> bool
-  def halt: () -> bool
+  def halt: () -> true
   def lookup: (String token) -> Example18::User?
   def token_value: () -> String
 end
 
 class Example18
   class User
-    attr_reader name: String
+    attr_reader name: "token"
 
-    def initialize: (name: String) -> void
+    def initialize: (name: "token") -> void
+
+    class AfterInitialize
+      attr_reader name: String
+    end
   end
 end
 

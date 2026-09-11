@@ -7,7 +7,7 @@ class Example10
     self.@name: String?
 
     def self.name: () -> String?
-    def self.name=: (String value) -> String
+    def self.name=: ("John Doe" value) -> String
   end
 end
 

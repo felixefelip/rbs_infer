@@ -2,8 +2,8 @@ class Widget
   module Closeable
     extend ActiveSupport::Concern
 
-    def close: () -> { action: (Symbol | String), particulars: untyped }
+    def close: () -> { action: (:published | "renamed" | :closed | :reopened), particulars: untyped }
     def reopen: () -> ({ action: Symbol | String, particulars: untyped } | nil)
-    def audit: () -> bool
+    def audit: () -> true
   end
 end

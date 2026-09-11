@@ -2,11 +2,11 @@ module Users
   class AvatarsController
     @__rbs_infer__performed: true?
 
-    def render: (?Symbol? target, *{ status: Symbol } rest) -> bool
+    def render: (?:edit? target, *{ status: :unprocessable_entity } rest) -> true
 
     private
 
-    def __rbs_infer__run_edit: () -> bool?
+    def __rbs_infer__run_edit: () -> true?
     def __rbs_infer__run_update: () -> void
   end
 end

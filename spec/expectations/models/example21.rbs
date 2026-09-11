@@ -10,9 +10,13 @@ end
 
 class Example21
   class Holder
-    attr_reader name: String
+    attr_reader name: "holder"
 
-    def initialize: (name: String) -> void
+    def initialize: (name: "holder") -> void
+
+    class AfterInitialize
+      attr_reader name: String
+    end
   end
 end
 

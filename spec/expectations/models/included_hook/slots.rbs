@@ -5,10 +5,10 @@ class IncludedHook
     @stamp: String?
 
     def slot: () -> String?
-    def slot=: (String? value) -> String?
+    def slot=: ("value" value) -> String?
     def badge: () -> String?
-    def badge=: (String? value) -> String?
+    def badge=: ("value" value) -> String?
     def stamp: () -> String?
-    def stamp=: (String? value) -> String?
+    def stamp=: ("value" value) -> String?
   end
 end
