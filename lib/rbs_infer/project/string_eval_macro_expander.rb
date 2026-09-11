@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "prism"
-require_relative "literal_fold"
 require_relative "string_eval_macro"
 require_relative "string_eval_macro_index"
 
@@ -156,34 +155,56 @@ module RbsInfer::Project
       bindings
     end
 
-    # true / false / :undecidable. Every condition has to resolve, and one that
-    # does not declines the macro rather than letting a branch be picked by the
-    # shape of the reader that failed to read it.
+    # true / false / :undecidable. A guard holds only when every condition
+    # resolves to a literal that says so; `:undecidable` declines the macro
+    # rather than picking a branch.
     def guards_hold?(guards, bindings)
-      guards.each do |guard|
-        held = StringEvalMacro.guard_holds?(guard, bindings)
-        return :undecidable if LiteralFold.unknown?(held)
-        return false unless held
+      guards.each do |predicate, polarity|
+        value = truthy?(bound(predicate, bindings))
+        return :undecidable if value == :undecidable
+        return false unless value == polarity
       end
 
       true
     end
 
-    # The chunk as source, or nil when something it interpolates has no text at
-    # this call site. The folder answers here exactly as it answers a condition,
-    # which is the property worth keeping: one unknown, and no way to read it as
-    # an answer.
+    # What a predicate that is nothing but a parameter read is bound to. A
+    # comparison, a negation or a call is an expression, and expressions are not
+    # decided here.
+    def bound(predicate, bindings)
+      name = StringEvalMacro.parameter_read(predicate) or return nil
+
+      bindings[name]
+    end
+
+    def truthy?(node)
+      case node
+      when Prism::TrueNode then true
+      when Prism::FalseNode, Prism::NilNode, nil then false
+      else :undecidable
+      end
+    end
+
+    # The chunk as source, or nil when a parameter it interpolates has no text
+    # at this call site.
     def render_parts(parts, bindings)
       rendered = parts.map do |kind, value|
         next value if kind == :str
 
-        text = LiteralFold.to_text(LiteralFold.fold(value, bindings))
-        return nil if LiteralFold.unknown?(text)
-
-        text
+        text_for(bindings[value]) or return nil
       end
 
       dedent(rendered.join)
+    end
+
+    # The text a value interpolates to. A symbol and a string interpolate the
+    # same way Ruby does — `:content` and `"content"` both write `content` —
+    # which is why a macro accepts either.
+    def text_for(node)
+      case node
+      when Prism::SymbolNode then node.unescaped
+      when Prism::StringNode then node.unescaped
+      end
     end
 
     # The heredoc carries the gem's own indentation and the reopen supplies its
