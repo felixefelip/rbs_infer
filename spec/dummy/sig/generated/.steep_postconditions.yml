@@ -1865,11 +1865,31 @@ method_entry_facts:
     Current.user: "(::User & ::User::Validated)"
     Current.viewer_name: "::String"
 - class: Current
+  method: account
+  consts:
+    Current.account: "(::Account & ::Account::Validated)"
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
+- class: Current
   method: author_name
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
     Current.viewer_name: "::String"
+- class: DashboardController
+  method: render
+  self_methods:
+    current_account: "(::Account & ::Account::Validated)"
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.account: "(::Account & ::Account::Validated)"
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
+  ivars:
+    "@account": "(::Account & ::Account::Validated)"
+    "@recent_posts": "::Post::ActiveRecord_Relation"
 - class: DashboardController
   method: set_current_account
   self_methods:
@@ -1912,6 +1932,13 @@ method_entry_facts:
   self_methods:
     current_user: "(::User & ::User::Validated)"
   consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
+- class: ERBDashboardShow
+  method: __rbs_infer__body
+  consts:
+    Current.account: "(::Account & ::Account::Validated)"
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
     Current.viewer_name: "::String"
@@ -1971,6 +1998,12 @@ method_entry_facts:
     Current.viewer_name: "::String"
 - class: ERBPostsShow
   method: render
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
+- class: ERBUsersAvatarsEdit
+  method: __rbs_infer__body
   consts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
@@ -2347,6 +2380,16 @@ method_entry_facts:
   ivars:
     "@user": "(::User & ::User::Validated)"
 - class: Users::AvatarsController
+  method: render
+  self_methods:
+    current_user: "(::User & ::User::Validated)"
+  consts:
+    Current.author_name: "::String"
+    Current.user: "(::User & ::User::Validated)"
+    Current.viewer_name: "::String"
+  ivars:
+    "@user": "(::User & ::User::Validated)"
+- class: Users::AvatarsController
   method: set_user
   self_methods:
     current_user: "(::User & ::User::Validated)"
@@ -2397,6 +2440,13 @@ method_entry_facts:
     Current.user: "(::User & ::User::Validated)"
     Current.viewer_name: "::String"
 argument_entry_facts:
+- class: DashboardController
+  method: render
+  param: target
+  pattern: ":show"
+  ivars:
+    "@account": "(::Account & ::Account::Validated)"
+    "@recent_posts": "::Post::ActiveRecord_Relation"
 - class: Example12
   method: show
   param: which
@@ -2471,6 +2521,12 @@ argument_entry_facts:
   ivars:
     "@comments": "::Comment::ActiveRecord_Relation"
     "@post": "(::Post & ::Post::Validated)"
+- class: Users::AvatarsController
+  method: render
+  param: target
+  pattern: ":edit"
+  ivars:
+    "@user": "(::User & ::User::Validated)"
 - class: UsersController
   method: render
   param: target

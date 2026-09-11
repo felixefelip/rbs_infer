@@ -219,7 +219,22 @@ module RbsInfer::Signatures
     # one is about what the `?` BINDS to. A bare proc return type reads fine,
     # so wrapping it there would be noise for no one.
     def parenthesize_before_optional(type_str)
+      return "(#{type_str})" if bare_symbol_literal?(type_str)
+
       wrap_top_level(type_str, /[|&^]/, [RBS::Types::Union, RBS::Types::Intersection, RBS::Types::Proc])
+    end
+
+    # `?` is a legal character in a symbol, so appending the nilable marker to
+    # `:edit` yields `:edit?` — which RBS reads as the symbol `:edit?`, not as
+    # `:edit` or nil. Parens keep the two apart. Only the bare symbol is
+    # affected: `"edit"?`, `1?`, `true?` and `:edit!?` all parse as intended.
+    def bare_symbol_literal?(type_str)
+      return false unless type_str&.start_with?(":")
+
+      parsed = RBS::Parser.parse_type(type_str)
+      parsed.is_a?(RBS::Types::Literal) && parsed.literal.is_a?(Symbol)
+    rescue RBS::ParsingError, RBS::BaseError
+      false
     end
 
     # Wraps `type_str` in parens when it parses to one of `kinds`. `trigger` is
