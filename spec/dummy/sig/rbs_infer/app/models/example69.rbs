@@ -8,6 +8,7 @@ module Example69
     def call_dynamic_with_name: () -> String
     def call_both: () -> Array[String]
     def name_action_dynamic: (flag_name: bool) -> String
+    def call_unknown: (flag_name: untyped) -> String
 
     private
 

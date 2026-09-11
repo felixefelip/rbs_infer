@@ -19,24 +19,30 @@ module Example69
       call(flag_name: false)
     end
 
-		# type should be literal `'name_delete'`
+    # type should be literal `'name_delete'`
     def call_dynamic
       name_action_dynamic(flag_name: true)
     end
 
-		# type should be literal `'delete'`
+    # type should be literal `'delete'`
     def call_dynamic_with_name
       name_action_dynamic(flag_name: false)
     end
 
-		# type should stay `'Array[name_delete' | 'delete']` — the two call sites disagree,
+    # type should stay `'Array[name_delete' | 'delete']` — the two call sites disagree,
     # so `flag_name` is `bool` here and neither branch can be dropped
     def call_both
       [name_action_dynamic(flag_name: true), name_action_dynamic(flag_name: false)]
     end
 
-		# type should be literal `'name_delete' | 'delete'` — the call site is a literal `true`
+    # type should be literal `'name_delete' | 'delete'` — the call site is a literal `true`
     def name_action_dynamic(flag_name:)
+      call(flag_name: flag_name)
+    end
+
+    # type should stay `'name_delete' | 'delete'` — nothing constrains `flag_name`,
+    # so neither branch can be dropped
+    def call_unknown(flag_name:)
       call(flag_name: flag_name)
     end
 
