@@ -35,7 +35,7 @@ module Example69
       [name_action_dynamic(flag_name: true), name_action_dynamic(flag_name: false)]
     end
 
-    # type should be literal `'name_delete' | 'delete'` — the call site is a literal `true`
+    # type should be literal `'name_delete' | 'delete'` — the call site is a literal `bool`
     def name_action_dynamic(flag_name:)
       call(flag_name: flag_name)
     end
