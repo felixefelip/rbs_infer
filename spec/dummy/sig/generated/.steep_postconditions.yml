@@ -1,12 +1,6 @@
 ---
 version: 1
 postconditions:
-- class: Account
-  method: matches?
-  when_true:
-    methods:
-      display_name: "::String"
-    self: "::Account & ::Account::AfterMatches"
 - class: ActionController::Base
   method: head
   unconditional:
@@ -1998,11 +1992,11 @@ method_entry_facts:
 - class: Example12
   method: dispatch_age
   ivars:
-    "@value": "::Integer"
+    "@value": '42'
 - class: Example12
   method: dispatch_name
   ivars:
-    "@name": "::String"
+    "@name": '"John Doe"'
 - class: Example13::Guarded
   method: act_block_halt
   self_methods:
@@ -2408,13 +2402,13 @@ argument_entry_facts:
   param: which
   pattern: ":age"
   ivars:
-    "@value": "::Integer"
+    "@value": '42'
 - class: Example12
   method: show
   param: which
   pattern: ":name"
   ivars:
-    "@name": "::String"
+    "@name": '"John Doe"'
 - class: Example7::Dispatcher
   method: show
   param: which
@@ -2432,13 +2426,13 @@ argument_entry_facts:
   param: which
   pattern: ":age"
   ivars:
-    "@value": "::Integer"
+    "@value": '42'
 - class: Example8
   method: show
   param: which
   pattern: ":name"
   ivars:
-    "@name": "::String"
+    "@name": '"John Doe"'
 - class: Example9::Dispatcher
   method: show
   param: which

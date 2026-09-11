@@ -1,6 +1,6 @@
 module Example30
   class Foo
-    def name: () -> String
+    def name: () -> "Foo"
     def build_age: () -> Symbol
     def call_age: () -> Integer
   end

@@ -20,11 +20,11 @@ class IncludedHook
   include Sugared
   include Homespun
 
-  def from_hook: () -> String
+  def from_hook: () -> "hook"
   def slot: () -> String
-  def from_sugar: () -> String
+  def from_sugar: () -> "sugar"
   def badge: () -> String
-  def from_homespun: () -> String
+  def from_homespun: () -> "homespun"
   def stamp: () -> String
 end
 

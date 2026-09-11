@@ -1,5 +1,5 @@
 class SendDispatch
-  def call: () -> String
+  def call: () -> "called"
 
   private
 
