@@ -29,7 +29,7 @@ module Example69
       name_action_dynamic(flag_name: false)
     end
 
-    # type should stay `'Array[name_delete' | 'delete']` — the two call sites disagree,
+    # type should stay `Array['name_delete' | 'delete']` — the two call sites disagree,
     # so `flag_name` is `bool` here and neither branch can be dropped
     def call_both
       [name_action_dynamic(flag_name: true), name_action_dynamic(flag_name: false)]
