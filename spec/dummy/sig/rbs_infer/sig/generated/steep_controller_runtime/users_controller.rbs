@@ -1,11 +1,11 @@
 class UsersController
   @__rbs_infer__performed: true?
 
-  def render: (?(Symbol | String)? target, *untyped rest) -> bool
+  def render: (?(:show | "posts/show")? target, *untyped rest) -> true
 
   private
 
   def __rbs_infer__run_index: () -> void
-  def __rbs_infer__run_show: () -> bool?
+  def __rbs_infer__run_show: () -> true?
   def __rbs_infer__run_featured_post: () -> void
 end

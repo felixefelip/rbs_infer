@@ -441,6 +441,24 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example68", target_file: "app/models/example68.rb")
   end
 
+  # The literal-type target, and the reason it is plain Ruby with no macro in it:
+  # `has_rich_text` is the APPLICATION of this, not the mechanism. Every expected
+  # answer is written beside the method it belongs to, and the snapshot below is
+  # today's — every `String` in it is a place a literal is known and dropped.
+  #
+  # Five distinct failure modes, one file: `call_name_action` catches an
+  # implementation that specializes nothing, `call_dynamic` one that specializes a
+  # single hop, `name_action_dynamic` one that over-specializes the DECLARATION
+  # from one call site, `call_unknown` one that picks a branch it cannot decide,
+  # and `call_both` one that loses the literal on the way into a collection.
+  #
+  # `name_action_dynamic` and `call_unknown` have the same body and differ only in
+  # having callers — which is the whole question, and which the parameter types
+  # already state (`bool` against `untyped`) without any of the new machinery.
+  it "example69 (literals that should survive a call site) matches expected RBS" do
+    assert_snapshot("models/example69", target_file: "app/models/example69.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
@@ -1330,7 +1348,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     # method but loses what it returns would keep the first count and drop the
     # second.
     expect(rbs.scan(/def prepend_order:/).size).to eq(2)
-    expect(rbs.scan(/def prepend_order_marker: \(\) -> String/).size).to eq(2)
+    expect(rbs.scan(/def prepend_order_marker: \(\) -> "prepend_order"/).size).to eq(2)
   end
 
   it "PostsController matches expected RBS" do

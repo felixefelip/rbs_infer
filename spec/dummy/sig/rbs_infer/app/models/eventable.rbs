@@ -1,5 +1,5 @@
 module Eventable
   extend ActiveSupport::Concern
 
-  def track_event: ((Symbol | String) action, **untyped) -> { action: (Symbol | String), particulars: untyped }
+  def track_event: ((:published | "renamed" | :closed | :reopened) action, **untyped) -> { action: (:published | "renamed" | :closed | :reopened), particulars: untyped }
 end

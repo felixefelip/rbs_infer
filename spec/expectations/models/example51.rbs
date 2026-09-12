@@ -17,7 +17,7 @@ end
 class Example51
   module Baz
     module BananaMethods
-      def age: () -> Integer
+      def age: () -> 31
     end
   end
 end

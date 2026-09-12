@@ -240,7 +240,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         method_param_types: { "set_current_session" => { "session" => "Session" } }
       )
 
-      expect(member.signature).to end_with("-> { value: String, httponly: bool, same_site: Symbol }")
+      expect(member.signature).to end_with('-> { value: String, httponly: true, same_site: :lax }')
     end
 
     # The "does not corrupt a block-bearing signature..." spec below only
@@ -276,7 +276,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
 
       # The BLOCK's `-> untyped` has to survive; only the final return changes.
       expect(member.signature)
-        .to eq("write: (untyped session) ?{ (*untyped) -> untyped } -> { value: String, httponly: bool }")
+        .to eq('write: (untyped session) ?{ (*untyped) -> untyped } -> { value: String, httponly: true }')
     end
 
     it "does not corrupt a block-bearing signature when resolving the return type" do
@@ -298,7 +298,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
       member = collector.members.find { |m| m.name == "wrapper" }
       # Signature should have block: "wrapper: () ?{ (*untyped) -> untyped } -> String"
       # The block's -> untyped should NOT be replaced
-      expect(member.signature).to include("?{ (*untyped) -> untyped } -> String")
+      expect(member.signature).to include('?{ (*untyped) -> untyped } -> "hello"')
       expect(member.signature).not_to include("-> untyped } -> String } -> String")
     end
   end

@@ -298,7 +298,7 @@ RSpec.describe "bin/rbs_infer" do
       expect(status).to be_success
       # Sem o input no source_files, o call-site em pseudo/factory.rb some e o
       # param cai para `untyped`. Com a correção, resolve para String.
-      expect(stdout).to include("def initialize: (name: String) -> void")
+      expect(stdout).to include('def initialize: (name: "hi") -> void')
       expect(stdout).not_to include("name: untyped")
     end
   end
@@ -350,7 +350,7 @@ RSpec.describe "bin/rbs_infer" do
       stdout, _stderr, status = run_rbs_infer("packages/billing/widget.rb", dir: @tmpdir)
 
       expect(status).to be_success
-      expect(stdout).to include("def initialize: (name: String) -> void")
+      expect(stdout).to include('def initialize: (name: "hi") -> void')
     end
 
     # A substituição tem um preço, e ele fica pinado aqui: o que o Steepfile não
@@ -393,7 +393,7 @@ RSpec.describe "bin/rbs_infer" do
       stdout, _stderr, status = run_rbs_infer("pseudo", dir: @tmpdir)
 
       expect(status).to be_success
-      expect(stdout).to include("def initialize: (name: String) -> void")
+      expect(stdout).to include('def initialize: (name: "hi") -> void')
     end
 
     # Sem Steepfile utilizável não há segunda resposta, mais silenciosa, para
@@ -428,7 +428,7 @@ RSpec.describe "bin/rbs_infer" do
       stdout, _stderr, status = run_rbs_infer("app", dir: @tmpdir)
 
       expect(status).to be_success
-      expect(stdout).to include("def initialize: (name: String, age: Integer) -> void")
+      expect(stdout).to include('def initialize: (name: "Felix", age: 30) -> void')
     end
   end
 
@@ -493,7 +493,7 @@ RSpec.describe "bin/rbs_infer" do
 
       expect(status).to be_success
       expect(stdout).to include("module ClassMethods")
-      expect(stdout).to include("def greeting: () -> String")
+      expect(stdout).to include('def greeting: () -> "hello"')
     end
 
     # O `**` do `Dir.glob` não desce em diretório oculto, e é disso que depende

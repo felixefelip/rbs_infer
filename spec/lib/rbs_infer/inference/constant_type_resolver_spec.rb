@@ -17,11 +17,11 @@ RSpec.describe RbsInfer::Inference::ConstantTypeResolver do
 
   describe "#resolve" do
     it "infere literais via NodeTypeInferrer (sem Steep)" do
-      expect(resolve(rhs("MAX = 8"))).to eq("Integer")
-      expect(resolve(rhs('NAME = "Blue"'))).to eq("String")
+      expect(resolve(rhs("MAX = 8"))).to eq("8")
+      expect(resolve(rhs('NAME = "Blue"'))).to eq('"Blue"')
       expect(resolve(rhs("PI = 3.14"))).to eq("Float")
-      expect(resolve(rhs("FLAG = true"))).to eq("bool")
-      expect(resolve(rhs("SYM = :blue"))).to eq("Symbol")
+      expect(resolve(rhs("FLAG = true"))).to eq("true")
+      expect(resolve(rhs("SYM = :blue"))).to eq(":blue")
     end
 
     it "resolve Klass.new para a classe (single-pass, sem RBS de Klass)" do
@@ -66,7 +66,7 @@ RSpec.describe RbsInfer::Inference::ConstantTypeResolver do
     end
 
     it "ignora um tipo do Steep não-utilizável (bot/void/nil) e cai para o leaf" do
-      expect(resolve(rhs("MAX = 8"), steep_type: "bot")).to eq("Integer")
+      expect(resolve(rhs("MAX = 8"), steep_type: "bot")).to eq("8")
     end
   end
 end

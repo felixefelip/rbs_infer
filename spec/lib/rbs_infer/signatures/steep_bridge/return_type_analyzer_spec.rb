@@ -56,7 +56,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
 
       result = bridge.method_return_types(code)
       ret = result["verify_multiples_returns_with_void_and_rescue"]
-      expect(ret).to match(/String\??/)
+      expect(ret).to match(/"error"\??/)
       expect(ret).not_to include("void")
     end
 

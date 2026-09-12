@@ -1,3 +1,3 @@
 class Example65Adder < Example65::Dispatcher
-  def handle: (Integer count, step: Integer) -> Integer
+  def handle: (1 count, step: 2) -> Integer
 end

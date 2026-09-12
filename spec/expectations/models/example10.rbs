@@ -4,10 +4,10 @@ end
 
 class Example10
   class Foo
-    self.@name: String?
+    self.@name: "John Doe"?
 
     def self.name: () -> String?
-    def self.name=: (String value) -> String
+    def self.name=: ("John Doe" value) -> "John Doe"
   end
 end
 

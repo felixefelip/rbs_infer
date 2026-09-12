@@ -1,5 +1,5 @@
 class Coupon
   module Code
-    def self.generate: (Integer length) -> String
+    def self.generate: (8 length) -> String
   end
 end

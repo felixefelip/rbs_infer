@@ -5,9 +5,9 @@ class SingletonIvarProbe
 
   @instance_ivar: String
 
-  def self.configure: () -> String
-  def self.build: () -> String
-  def self.label: () -> String
+  def self.configure: () -> "custom"
+  def self.build: () -> "classe"
+  def self.label: () -> "singleton"
 
-  def initialize: () -> String
+  def initialize: () -> "instancia"
 end

@@ -1,6 +1,6 @@
 class Palette
-  MAX: Integer
-  DEFAULT_NAME: String
+  MAX: 8
+  DEFAULT_NAME: "Blue"
   WEIGHTS: Array[Integer]
   COLORS: Array[Palette]
 

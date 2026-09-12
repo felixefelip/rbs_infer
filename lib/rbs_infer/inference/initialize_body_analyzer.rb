@@ -87,7 +87,11 @@ module RbsInfer::Inference
         if kw.value.is_a?(Prism::NilNode)
           @nil_default_params << param_name
         else
-          default_type = infer_type_from_node(kw.value)
+          # Widened for the reason the `nil` branch above exists: a default says
+          # what the method gets when nobody passes anything, not which values a
+          # caller may pass.
+          default_type = RbsInfer::AST::NodeTypeInferrer.widen_literal_node(kw.value) ||
+                         infer_type_from_node(kw.value)
           @keyword_defaults[param_name] = default_type if default_type
         end
       end

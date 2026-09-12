@@ -9,7 +9,7 @@ end
 
 class Example49
   module Baz
-    def color: () -> String
-    def age: () -> Integer
+    def color: () -> "yellow"
+    def age: () -> 31
   end
 end

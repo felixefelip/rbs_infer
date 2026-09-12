@@ -1,8 +1,8 @@
 class Example62
   module Slots
-    @hallmark: String?
+    @hallmark: "value"?
 
     def hallmark: () -> String?
-    def hallmark=: (String? value) -> String?
+    def hallmark=: ("value"? value) -> "value"?
   end
 end

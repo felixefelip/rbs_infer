@@ -17,7 +17,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::BlockAnalyzer, :dummy_app do
       RUBY
 
       expect(bridge.forwarded_block_requirements(code)["named"])
-        .to eq(required: true, params: ["String"])
+        .to eq(required: true, params: ['"token"'])
     end
 
     # felixefelip/rbs_infer#174. The anonymous forward is the same statement
@@ -35,7 +35,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::BlockAnalyzer, :dummy_app do
       RUBY
 
       expect(bridge.forwarded_block_requirements(code)["anonymous"])
-        .to eq(required: true, params: ["String"])
+        .to eq(required: true, params: ['"token"'])
     end
 
     # `&:symbol` builds a proc on the spot; it is not this method's block, so it

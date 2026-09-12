@@ -39,7 +39,7 @@ RSpec.describe "send as a call site" do
       "    Stamper.new.send(:stamp, \"post\")"
     )
 
-    expect(rbs).to include("def stamp: (String value) ->")
+    expect(rbs).to include('def stamp: ("post" value) ->')
   end
 
   # The reason a real app writes `send` at all, and the reason this was worth doing: reaching
@@ -50,7 +50,7 @@ RSpec.describe "send as a call site" do
       "    Stamper.new.send(:stamp, \"post\")"
     )
 
-    expect(rbs).to include("def stamp: (String value) ->")
+    expect(rbs).to include('def stamp: ("post" value) ->')
   end
 
   # One dispatch, three spellings. `__send__` is the one a defensive library uses precisely
@@ -68,7 +68,7 @@ RSpec.describe "send as a call site" do
         "    Stamper.new.#{spelling}"
       )
 
-      expect(rbs).to include("def stamp: (String value) ->")
+      expect(rbs).to include('def stamp: ("post" value) ->')
     end
   end
 
@@ -99,7 +99,7 @@ RSpec.describe "send as a call site" do
       "    Stamper.new.send(:stamp, \"post\")\n    Stamper.new.send(:stamp, 42)"
     )
 
-    expect(rbs).to match(/def stamp: \(\((String \| Integer|Integer \| String)\) value\) ->/)
+    expect(rbs).to match(/def stamp: \(\(("post" \| 42|42 \| "post")\) value\) ->/)
   end
 
   it "carries keyword arguments through" do
@@ -108,7 +108,7 @@ RSpec.describe "send as a call site" do
       "    Stamper.new.send(:stamp, value: \"post\")"
     )
 
-    expect(rbs).to include("def stamp: (value: String) ->")
+    expect(rbs).to include('def stamp: (value: "post") ->')
   end
 
   # The desugared node is an ordinary call, so the rest-param folding from #201 applies to it
@@ -119,7 +119,7 @@ RSpec.describe "send as a call site" do
       "    Stamper.new.send(:stamp, \"a\", \"b\")"
     )
 
-    expect(rbs).to include("def stamp: (*String values) ->")
+    expect(rbs).to include('def stamp: (*("a" | "b") values) ->')
   end
 
   # The boundary, and the reason it needs no send-specific handling: a splat argument does
@@ -145,7 +145,7 @@ RSpec.describe "send as a call site" do
       "caller.rb" => "class Caller\n  def run\n    Bus.new.send(:notify, \"payload\")\n  end\nend\n"
     )
 
-    expect(rbs).to include("def send: (Symbol channel, String payload) ->")
+    expect(rbs).to include('def send: (:notify channel, "payload" payload) ->')
     expect(rbs).to include("def notify: (untyped text) ->")
   end
 
@@ -170,6 +170,6 @@ RSpec.describe "send as a call site" do
       RUBY
     )
 
-    expect(rbs).to include("def stamp: (String value) ->")
+    expect(rbs).to include('def stamp: ("post" value) ->')
   end
 end

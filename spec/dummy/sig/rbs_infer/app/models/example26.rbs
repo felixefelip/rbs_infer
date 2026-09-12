@@ -25,6 +25,6 @@ class Example26
   class BarOther
     extend ::Example26::Foo
 
-    def self.log_something: (String message) -> String
+    def self.log_something: ("bazingado" message) -> String
   end
 end

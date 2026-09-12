@@ -23,11 +23,11 @@ class Example29
   class Bar
     extend ::Example29::Foo
 
-    def self.validade_age: () -> String
+    def self.validade_age: () -> "validating age"
 
-    def age: () -> Integer
-    def call_test: () -> String
-    def greet: () -> String
+    def age: () -> 42
+    def call_test: () -> "Hello, world!"
+    def greet: () -> "Hello, world!"
     def age_after_a_decade: () -> Integer
   end
 end
@@ -36,7 +36,7 @@ class Example29
   class BarOther
     extend ::Example29::Foo
 
-    def name: () -> String
+    def name: () -> "John Doe"
     def call_name_upcase: () -> String
     def name_upcase: () -> String
   end

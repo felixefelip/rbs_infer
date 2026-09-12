@@ -87,8 +87,8 @@ RSpec.describe RbsInfer::Analyzer do
         analyzer = described_class.new(target_file: entity, source_files: paths)
         rbs = analyzer.generate_rbs
 
-        expect(rbs).to include("nome: String")
-        expect(rbs).to include("def initialize: (nome: String) -> void")
+        expect(rbs).to include('nome: "Felipe"')
+        expect(rbs).to include('def initialize: (nome: "Felipe") -> void')
       end
     end
 
@@ -120,8 +120,8 @@ RSpec.describe RbsInfer::Analyzer do
         analyzer = described_class.new(target_file: entity, source_files: paths)
         rbs = analyzer.generate_rbs
 
-        expect(rbs).to include("nome: String")
-        expect(rbs).to include("?senha: String")
+        expect(rbs).to include('nome: "Felipe"')
+        expect(rbs).to include('?senha: "secret"?')
         expect(rbs).not_to include("?nome:")
       end
     end
@@ -181,7 +181,7 @@ RSpec.describe RbsInfer::Analyzer do
         expect(rbs).to include("module Academico")
         expect(rbs).to include("  module Aluno")
         expect(rbs).to include("    class Email")
-        expect(rbs).to include("      attr_accessor endereco: String")
+        expect(rbs).to include('      attr_accessor endereco: "test@email.com"')
       end
     end
 
@@ -344,9 +344,9 @@ RSpec.describe RbsInfer::Analyzer do
         # `self.run` resolves against the class method `build` (Integer) it
         # calls — NOT the homonymous instance `run` (String). Return types no
         # longer cross the instance/singleton boundary (felixefelip#33).
-        expect(rbs).to include("def self.run: () -> Integer")
-        expect(rbs).to include("def self.build: () -> Integer")
-        expect(rbs).to include("def run: () -> String")
+        expect(rbs).to include("def self.run: () -> 42")
+        expect(rbs).to include("def self.build: () -> 42")
+        expect(rbs).to include('def run: () -> "abc"')
       end
     end
 
@@ -408,7 +408,7 @@ RSpec.describe RbsInfer::Analyzer do
         rbs = analyzer.generate_rbs
 
         expect(rbs).to include("def self.run: () -> String")
-        expect(rbs).to include("def run: () -> String")
+        expect(rbs).to include('def run: () -> "abc"')
       end
     end
 
@@ -443,7 +443,7 @@ RSpec.describe RbsInfer::Analyzer do
         rbs = analyzer.generate_rbs
 
         expect(rbs).to include("def self.from_const: () -> String")
-        expect(rbs).to include("def self.from_self: () -> Integer")
+        expect(rbs).to include("def self.from_self: () -> 42")
       end
     end
 
@@ -479,8 +479,8 @@ RSpec.describe RbsInfer::Analyzer do
         expect(rbs.scan(/^\s*def consume:/).size).to eq(1)
         # Distinct scopes keep distinct signatures — the return types do not
         # bleed between the singleton and the instance method.
-        expect(rbs).to include("def self.consume: (untyped code) -> Integer")
-        expect(rbs).to include("def consume: () -> String")
+        expect(rbs).to include("def self.consume: (untyped code) -> 42")
+        expect(rbs).to include('def consume: () -> "done"')
       end
     end
 
@@ -552,12 +552,13 @@ RSpec.describe RbsInfer::Analyzer do
       with_temp_files(files) do |_dir, paths|
         rbs = described_class.new(target_file: paths.first, source_files: paths).generate_rbs
 
-        expect(rbs).to include("def tail_is_literal: () -> bool?")
-        expect(rbs).to include("def tail_is_call: () -> bool?")
+        expect(rbs).to include("def tail_is_literal: () -> true?")
+        expect(rbs).to include("def tail_is_call: () -> true?")
         # No early return → no widening.
-        expect(rbs).to include("def no_early_return: () -> bool")
-        # `return 1` is not a nil return.
-        expect(rbs).to include("def value_return_only: () -> Integer")
+        expect(rbs).to include("def no_early_return: () -> true")
+        # `return 1` is not a nil return — and it is a return PATH, so its type
+        # is in the union rather than only the tail's (felixefelip/rbs_infer#347).
+        expect(rbs).to include("def value_return_only: () -> (2 | 1)")
       end
     end
 
@@ -673,7 +674,7 @@ RSpec.describe RbsInfer::Analyzer do
         analyzer = described_class.new(target_file: email, source_files: paths)
         rbs = analyzer.generate_rbs
 
-        expect(rbs).to include("endereco: String")
+        expect(rbs).to include('endereco: "test@email.com"')
       end
     end
 
@@ -706,7 +707,7 @@ RSpec.describe RbsInfer::Analyzer do
         analyzer = described_class.new(target_file: email, source_files: paths)
         rbs = analyzer.generate_rbs
 
-        expect(rbs).to include("def to_s: () -> String")
+        expect(rbs).to include('def to_s: () -> "test@email.com"')
         expect(rbs).not_to include("def to_s: () -> untyped")
       end
     end
@@ -744,10 +745,10 @@ RSpec.describe RbsInfer::Analyzer do
 
         aggregate_failures do
           expect(rbs).to include("def to_s: () -> String")
-          expect(rbs).to include("def count: () -> Integer")
+          expect(rbs).to include("def count: () -> 42")
           expect(rbs).to include("def ratio: () -> Float")
-          expect(rbs).to include("def label: () -> Symbol")
-          expect(rbs).to include("def active?: () -> bool")
+          expect(rbs).to include("def label: () -> :foo")
+          expect(rbs).to include("def active?: () -> true")
         end
       end
     end
@@ -1033,8 +1034,8 @@ RSpec.describe RbsInfer::Analyzer do
         aggregate_failures do
           # Return types should be resolved correctly. Neither body ever calls
           # its block, so there is no arity to read — `*untyped`.
-          expect(rbs).to include("def wrapper: () ?{ (*untyped) -> untyped } -> String")
-          expect(rbs).to include("def count_items: (untyped items) ?{ (*untyped) -> untyped } -> Integer")
+          expect(rbs).to include('def wrapper: () ?{ (*untyped) -> untyped } -> "hello"')
+          expect(rbs).to include("def count_items: (untyped items) ?{ (*untyped) -> untyped } -> 42")
 
           # The -> untyped inside the block must not be replaced
           expect(rbs).not_to include("-> String }")
@@ -1340,7 +1341,7 @@ RSpec.describe RbsInfer::Analyzer do
         with_temp_files(files) do |_dir, paths|
           rbs = described_class.new(target_class: "Palette", target_file: paths.first, source_files: paths).generate_rbs
 
-          expect(rbs).to include("WEIGHTS: Array[Integer]")
+          expect(rbs).to include("WEIGHTS: Array[(1 | 2 | 3)]")
         end
       end
     end
@@ -1620,7 +1621,7 @@ RSpec.describe RbsInfer::Analyzer do
 
       rbs = described_class.new(target_class: "Reopened", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
 
-      expect(rbs).to include("def handle: (?Symbol? target")
+      expect(rbs).to include("def handle: (?(:edit)? target")
     end
 
     # The target's OWN file is already covered by IntraClassCallAnalyzer. Counting it

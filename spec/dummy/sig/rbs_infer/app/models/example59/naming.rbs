@@ -7,7 +7,7 @@ end
 class Example59
   module Naming
     module ClassMethods
-      def human_name: (String index) -> String
+      def human_name: (("all" | "closed") index) -> String
     end
   end
 end

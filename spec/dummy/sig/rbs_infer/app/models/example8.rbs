@@ -4,5 +4,5 @@ class Example8
 
   def run_name: () -> (String | Integer | nil)
   def run_age: () -> (String | Integer | nil)
-  def show: (Symbol which) -> (String | Integer | nil)
+  def show: ((:name | :age) which) -> (String | Integer | nil)
 end

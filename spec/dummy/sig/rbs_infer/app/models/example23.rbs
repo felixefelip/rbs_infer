@@ -15,7 +15,7 @@ class Example23
   class Bar
     extend ::Example23::Foo
 
-    def self.log_something: (String message) -> String
+    def self.log_something: ("bazingado" message) -> String
   end
 end
 
@@ -23,6 +23,6 @@ class Example23
   class BarOther
     extend ::Example23::Foo
 
-    def self.log_something: (String message) -> String
+    def self.log_something: ("bazingado" message) -> String
   end
 end

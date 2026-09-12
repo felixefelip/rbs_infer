@@ -124,7 +124,16 @@ module RbsInfer::Signatures
       return false unless function.required_positionals.size == arg_types.size
 
       function.required_positionals.zip(arg_types).all? do |param, arg|
-        normalize_type_name(param.type.to_s) == normalize_type_name(arg)
+        expected = normalize_type_name(param.type.to_s)
+        actual = normalize_type_name(arg)
+        next true if expected == actual
+
+        # A literal argument satisfies a parameter declared as its class, and the
+        # comparison here is by name: `10` never equalled `Integer`, so no
+        # overload of `Integer#+` matched and the whole list stayed a candidate —
+        # `31 + 10` came out `BigDecimal`, off an overload the stdlib adds.
+        widened = RbsInfer::Signatures::RbsParserUtil.widen_literal_type(actual)
+        !widened.nil? && normalize_type_name(widened) == expected
       end
     end
 

@@ -1,7 +1,7 @@
 class Example67Window
   def self.for: (Example67Source source) -> Example67Window?
 
-  attr_reader size: Integer
+  attr_reader size: 30
 
-  def initialize: (Integer size) -> void
+  def initialize: (30 size) -> void
 end

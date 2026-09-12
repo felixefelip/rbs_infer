@@ -1,9 +1,9 @@
 class Notification
   module GeneratedStoreAccessors
-    @__store_settings_channel: String?
+    @__store_settings_channel: "none"?
 
     def channel: () -> String?
-    def channel=: (String? value) -> String?
+    def channel=: ("none"? value) -> "none"?
     def theme: () -> untyped
     def theme=: (untyped value) -> untyped
     def settings_digest: () -> untyped

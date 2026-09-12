@@ -102,7 +102,7 @@ RSpec.describe "the `# @rbs_infer |...` overloading marker" do
       end
     RUBY
 
-    expect(rbs).to include("def self.pid: () -> Integer | ...")
+    expect(rbs).to include("def self.pid: () -> 0 | ...")
   end
 
   # Confirmed against the member's OWNER. A def in a nested module belongs to
@@ -121,7 +121,7 @@ RSpec.describe "the `# @rbs_infer |...` overloading marker" do
       end
     RUBY
 
-    expect(rbs).to include("def self.getuid: () -> Integer | ...")
+    expect(rbs).to include("def self.getuid: () -> 0 | ...")
   end
 
   it "leaves an unmarked method alone even when the environment declares it" do

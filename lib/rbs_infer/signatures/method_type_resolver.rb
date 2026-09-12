@@ -88,6 +88,12 @@ module RbsInfer::Signatures
       # `goldness.present?` on a nilable `has_one` — a body that plainly returns
       # false when the association is nil, which Steep then rejects with
       # "Cannot allow method body have type `(true | false)` … declared as `true`".
+      # A literal receiver resolves on its own class: `"abc".upcase` is a
+      # `String` call, and the literal carries none of `String`'s methods.
+      if (widened = RbsInfer::Signatures::RbsParserUtil.widen_literal_type(class_name))
+        return resolve(widened, method_name, arg_types: arg_types, block_body_type: block_body_type)
+      end
+
       if class_name.end_with?("?")
         return resolve_nilable(class_name.delete_suffix("?"), method_name, block_body_type: block_body_type,
                                arg_types: arg_types)

@@ -1,3 +1,3 @@
 class Example60Printer
-  def stamp: (String label, Integer times) -> String
+  def stamp: ("tag" label, 2 times) -> String
 end

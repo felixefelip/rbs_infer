@@ -138,7 +138,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
 
     with_temp_files("my_app/entity.rb" => entity_src, "my_app/service.rb" => service_src) do |dir, paths|
       resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
-      expect(resolve(resolver, "MyApp::Entity", "nome")).to eq("String")
+      expect(resolve(resolver, "MyApp::Entity", "nome")).to eq('"test"')
     end
   end
 
@@ -171,7 +171,7 @@ RSpec.describe RbsInfer::Signatures::MethodTypeResolver do
     with_temp_files("my_app/entity.rb" => entity_src, "my_app/caller.rb" => caller_src) do |dir, paths|
       resolver = build_resolver(paths, constant_resolver: fake_constant_resolver)
       expect(resolve(resolver, "MyApp::Entity", "email")).to eq("Wrapper")
-      expect(resolver.resolve_init_param_types("MyApp::Entity")["email"]).to eq("String")
+      expect(resolver.resolve_init_param_types("MyApp::Entity")["email"]).to eq('"test@email.com"')
     end
   end
 
