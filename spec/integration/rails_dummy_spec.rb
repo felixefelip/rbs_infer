@@ -1348,7 +1348,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     # method but loses what it returns would keep the first count and drop the
     # second.
     expect(rbs.scan(/def prepend_order:/).size).to eq(2)
-    expect(rbs.scan(/def prepend_order_marker: \(\) -> String/).size).to eq(2)
+    expect(rbs.scan(/def prepend_order_marker: \(\) -> "prepend_order"/).size).to eq(2)
   end
 
   it "PostsController matches expected RBS" do

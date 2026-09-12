@@ -33,7 +33,7 @@ RSpec.describe "a parameter defaulting to nil" do
       "    Notifier.new.notify(\"hi\")"
     )
 
-    expect(rbs).to include("def notify: (?String? message) ->")
+    expect(rbs).to include('def notify: (?"hi"? message) ->')
   end
 
   it "applies to a keyword default too" do
@@ -42,7 +42,7 @@ RSpec.describe "a parameter defaulting to nil" do
       "    Notifier.new.notify(message: \"hi\")"
     )
 
-    expect(rbs).to include("def notify: (?message: String?) ->")
+    expect(rbs).to include('def notify: (?message: "hi"?) ->')
   end
 
   # A default that is not nil says nothing about nil, and the parameter keeps exactly
@@ -130,7 +130,7 @@ RSpec.describe "a parameter defaulting to nil" do
 
       rbs = RbsInfer::Analyzer.new(target_class: "Wrap", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
 
-      expect(rbs).to include("def stamp: (?String? value, ?message: String?) ->")
+      expect(rbs).to include('def stamp: (?"hi"? value, ?message: "hi"?) ->')
     end
   end
 end

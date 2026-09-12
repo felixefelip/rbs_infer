@@ -169,7 +169,7 @@ RSpec.describe RbsInfer::Inference::InitializeBodyAnalyzer do
 
     visitor = analyze(source)
     expect(visitor.self_assignments["items"][:kind]).to eq(:literal)
-    expect(visitor.self_assignments["items"][:type]).to eq("Array[Integer]")
+    expect(visitor.self_assignments["items"][:type]).to eq("Array[1 | 2 | 3]")
   end
 
   it "detecta self.attr = { foo: 'bar', baz: 42 } como record type" do
@@ -183,7 +183,7 @@ RSpec.describe RbsInfer::Inference::InitializeBodyAnalyzer do
 
     visitor = analyze(source)
     expect(visitor.self_assignments["options"][:kind]).to eq(:literal)
-    expect(visitor.self_assignments["options"][:type]).to eq("{ foo: String, baz: Integer }")
+    expect(visitor.self_assignments["options"][:type]).to eq('{ foo: "bar", baz: 42 }')
   end
 
   it "detecta self.attr = ['a', 'b'] como Array[String]" do
@@ -197,7 +197,7 @@ RSpec.describe RbsInfer::Inference::InitializeBodyAnalyzer do
 
     visitor = analyze(source)
     expect(visitor.self_assignments["tags"][:kind]).to eq(:literal)
-    expect(visitor.self_assignments["tags"][:type]).to eq("Array[String]")
+    expect(visitor.self_assignments["tags"][:type]).to eq('Array["ruby" | "rails"]')
   end
 
   it "detecta self.attr = [1, 'a'] como Array[Integer | String]" do
@@ -211,7 +211,7 @@ RSpec.describe RbsInfer::Inference::InitializeBodyAnalyzer do
 
     visitor = analyze(source)
     expect(visitor.self_assignments["items"][:kind]).to eq(:literal)
-    expect(visitor.self_assignments["items"][:type]).to eq("Array[Integer | String]")
+    expect(visitor.self_assignments["items"][:type]).to eq('Array[1 | "a"]')
   end
 
   context "com atribuição múltipla (`@a, @b = a, b`)" do
@@ -241,7 +241,7 @@ RSpec.describe RbsInfer::Inference::InitializeBodyAnalyzer do
 
       visitor = analyze(source)
       expect(visitor.self_assignments["email"]).to eq({ kind: :constant, type: "Email" })
-      expect(visitor.self_assignments["tags"]).to eq({ kind: :literal, type: "Array[String]" })
+      expect(visitor.self_assignments["tags"]).to eq({ kind: :literal, type: 'Array["a"]' })
     end
 
     it "não adivinha quando o valor único é desestruturado em runtime" do

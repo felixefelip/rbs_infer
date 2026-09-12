@@ -86,23 +86,23 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
 
     expected_rbs = <<~RBS
       class Column
-        @name: String
+        @name: "To Do"
 
         attr_accessor board: Board?
-        attr_accessor user_name: String?
+        attr_accessor user_name: "Jo"?
 
-        def initialize: (name: String) -> void
-        def set_default_user_name: () -> String
+        def initialize: (name: "To Do") -> void
+        def set_default_user_name: () -> "Jo"
       end
 
       class Board
-        attr_reader user_name: String
+        attr_reader user_name: "Jo"
 
-        def initialize: (user_name: String) -> void
+        def initialize: (user_name: "Jo") -> void
       end
 
       class Runner
-        def self.run: () -> String
+        def self.run: () -> "Jo"
       end
     RBS
 
@@ -123,20 +123,20 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
 
     expected_rbs = <<~RBS
       class Column
-        @name: String
+        @name: "To Do"
 
         attr_accessor board: Board?
-        attr_accessor user_name: String?
+        attr_accessor user_name: "Jo"?
 
-        def initialize: (name: String) -> void
-        def set_default_user_name: () -> String
-        def save: () -> bool
+        def initialize: (name: "To Do") -> void
+        def set_default_user_name: () -> "Jo"
+        def save: () -> true
       end
 
       class Board
-        attr_reader user_name: String
+        attr_reader user_name: "Jo"
 
-        def initialize: (user_name: String) -> void
+        def initialize: (user_name: "Jo") -> void
       end
 
       class Runner
@@ -166,20 +166,20 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
 
     expected_rbs = <<~RBS
       class Column
-        @name: String
+        @name: "To Do"
 
         attr_accessor board: Board?
-        attr_accessor user_name: String?
+        attr_accessor user_name: "Jo"?
 
-        def initialize: (name: String) -> void
-        def set_default_user_name: () -> String
-        def save: () -> bool
+        def initialize: (name: "To Do") -> void
+        def set_default_user_name: () -> "Jo"
+        def save: () -> true
       end
 
       class Board
-        attr_reader user_name: String
+        attr_reader user_name: "Jo"
 
-        def initialize: (user_name: String) -> void
+        def initialize: (user_name: "Jo") -> void
       end
 
       class Runner
@@ -213,25 +213,25 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
 
     expected_rbs = <<~RBS
       class Column
-        @name: String
+        @name: "To Do"
 
         attr_accessor board: Board?
-        attr_accessor user_name: String?
+        attr_accessor user_name: "Jo"?
 
-        def initialize: (name: String) -> void
-        def set_default_user_name: () -> String
-        def save: () -> bool
+        def initialize: (name: "To Do") -> void
+        def set_default_user_name: () -> "Jo"
+        def save: () -> true
       end
 
       class Board
-        attr_reader user_name: String
+        attr_reader user_name: "Jo"
 
-        def initialize: (user_name: String) -> void
+        def initialize: (user_name: "Jo") -> void
       end
 
       class Factory
         def self.build: () -> Column
-        def self.run: () -> bool
+        def self.run: () -> true
       end
     RBS
 
@@ -280,9 +280,9 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     # `T?`; the inline snapshot pins that faithfully.
     expected_rbs = <<~RBS
       class Board
-        attr_reader user_name: String
+        attr_reader user_name: "Jo"
 
-        def initialize: (user_name: String) -> void
+        def initialize: (user_name: "Jo") -> void
       end
 
       class Column
@@ -292,7 +292,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
       end
 
       class Runner
-        def self.run: () -> String
+        def self.run: () -> "Jo"
         def self.setup: () -> Board
       end
     RBS
@@ -335,9 +335,9 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
 
       class Holder
         class User
-          attr_reader name: String
+          attr_reader name: "Jo"
 
-          def initialize: (name: String) -> void
+          def initialize: (name: "Jo") -> void
         end
       end
     RBS
@@ -412,7 +412,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
       end
     RBS
 
-    expect(result.generated_rbs).to include("def pick: (untyped flag) -> (String | Array[Integer])")
+    expect(result.generated_rbs).to include('def pick: (untyped flag) -> ("one" | Array[2])')
     expect(result.diagnostics).to be_empty
   end
 
@@ -456,9 +456,11 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
       end
     RUBY
 
-    # `String?` — the `unless` yields the assigned label or nil — and NOT
-    # `Person`, which is what the parameter says.
-    expect(result.generated_rbs).to include("def user=: (Person? value) -> String?")
+    # `"jo"?` — the `unless` yields the assigned label or nil — and NOT `Person`,
+    # which is what the parameter says. The label is `value.name`, and this
+    # fixture's `Person#name` returns a literal, so the literal is what comes
+    # through; the point is the BODY deciding, not the width of what it decides.
+    expect(result.generated_rbs).to include('def user=: (Person? value) -> "jo"?')
     expect(result.diagnostics).to be_empty
   end
 end

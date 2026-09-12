@@ -48,7 +48,7 @@ RSpec.describe "rest parameter inference" do
       "    Notifier.new.mixed(User.new, \"text\")\n    Notifier.new.mixed(42)"
     )
 
-    expect(rbs).to include("def mixed: (*(User | String | Integer) things) ->")
+    expect(rbs).to include('def mixed: (*(User | "text" | 42) things) ->')
   end
 
   it "types the parameters before the splat by position, as before" do
@@ -57,7 +57,7 @@ RSpec.describe "rest parameter inference" do
       "    Notifier.new.deliver(\"hi\", \"a\", \"b\")"
     )
 
-    expect(rbs).to include("def deliver: (String subject, *String bodies) ->")
+    expect(rbs).to include('def deliver: ("hi" subject, *("a" | "b") bodies) ->')
   end
 
   # `?String?`, not `?String`: the `= nil` default is a call site nobody writes, and it
@@ -68,7 +68,7 @@ RSpec.describe "rest parameter inference" do
       "    Notifier.new.only_optional(\"a\", 1, 2)"
     )
 
-    expect(rbs).to include("def only_optional: (?String? first, *Integer rest) ->")
+    expect(rbs).to include('def only_optional: (?"a"? first, *(1 | 2) rest) ->')
   end
 
   # Keywords are matched by name, and the splat does not eat them: `mode:` still lands on
@@ -79,7 +79,7 @@ RSpec.describe "rest parameter inference" do
       "    Notifier.new.with_keyword(User.new, User.new, mode: \"fast\")"
     )
 
-    expect(rbs).to include("def with_keyword: (*User items, mode: String) ->")
+    expect(rbs).to include('def with_keyword: (*User items, mode: "fast") ->')
   end
 
   # An anonymous `*` has no name for the substitution to key on, so it keeps the bare form
@@ -113,7 +113,7 @@ RSpec.describe "rest parameter inference" do
       "caller.rb" => "class Caller\n  def go\n    Notifier.new(\"hi\", 1, 2)\n  end\nend\n"
     )
 
-    expect(rbs).to include("def initialize: (String subject, *Integer bodies) ->")
+    expect(rbs).to include('def initialize: ("hi" subject, *(1 | 2) bodies) ->')
   end
 
   # The intra-class path (`IntraClassCallAnalyzer`) maps by index against its own
@@ -154,7 +154,7 @@ RSpec.describe "rest parameter inference" do
       RUBY
     )
 
-    expect(rbs).to include("def internal: (*(String | Integer) things) ->")
+    expect(rbs).to include('def internal: (*("a" | 1) things) ->')
   end
 
   it "stays untyped when no call site says anything" do
@@ -194,7 +194,7 @@ RSpec.describe "rest parameter inference" do
         "    rest = [User.new]\n    Notifier.new.notify(\"head\", *rest)"
       )
 
-      expect(rbs).to include("def notify: (String first, untyped second) ->")
+      expect(rbs).to include('def notify: ("head" first, untyped second) ->')
     end
 
     it "leaves an intra-class call alone the same way" do
