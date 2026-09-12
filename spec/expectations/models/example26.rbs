@@ -1,6 +1,6 @@
 class Example26
   module Foo
-    def bazinga: ((singleton(::Example26::Baz) | singleton(::Example26::BazOther)) module_included) -> String?
+    def bazinga: ((singleton(::Example26::Baz) | singleton(::Example26::BazOther)) module_included) -> "bazingado"?
     def bazingado: (singleton(Example26::Bar) base_foo) -> nil
   end
 
@@ -11,7 +11,7 @@ class Example26
   module BazOther
     extend ::Example26::Foo
 
-    def self.bazingado: (singleton(Example26::BarOther) base_foo) -> String
+    def self.bazingado: (singleton(Example26::BarOther) base_foo) -> "bazingado"
   end
 end
 
@@ -25,6 +25,6 @@ class Example26
   class BarOther
     extend ::Example26::Foo
 
-    def self.log_something: ("bazingado" message) -> String
+    def self.log_something: ("bazingado" message) -> "bazingado"
   end
 end

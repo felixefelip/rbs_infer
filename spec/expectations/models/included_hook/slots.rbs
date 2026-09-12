@@ -4,11 +4,11 @@ class IncludedHook
     @badge: "value"?
     @stamp: "value"?
 
-    def slot: () -> String?
+    def slot: () -> "value"?
     def slot=: ("value"? value) -> "value"?
-    def badge: () -> String?
+    def badge: () -> "value"?
     def badge=: ("value"? value) -> "value"?
-    def stamp: () -> String?
+    def stamp: () -> "value"?
     def stamp=: ("value"? value) -> "value"?
   end
 end

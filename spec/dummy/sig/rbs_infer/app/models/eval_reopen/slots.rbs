@@ -2,7 +2,7 @@ class EvalReopen
   module Slots
     @slot: "value"?
 
-    def slot: () -> String?
+    def slot: () -> "value"?
     def slot=: ("value"? value) -> "value"?
   end
 end

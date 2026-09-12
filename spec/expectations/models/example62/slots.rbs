@@ -2,7 +2,7 @@ class Example62
   module Slots
     @hallmark: "value"?
 
-    def hallmark: () -> String?
+    def hallmark: () -> "value"?
     def hallmark=: ("value"? value) -> "value"?
   end
 end

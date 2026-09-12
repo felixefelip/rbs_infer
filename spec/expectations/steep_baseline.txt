@@ -13,10 +13,10 @@ app/models/example3.rb:67:13: [error] Type `("John Doe" | "x" | nil)` does not h
 app/models/example30.rb:16:6: [error] Type `::Example30::Foo` does not have method `age`
 app/models/example30.rb:9:12: [warning] Method `::Example30::Foo#age` is not declared in RBS
 app/models/example31.rb:26:8: [error] Cannot allow method body have type `::Integer` because declared as type `::Float`
-app/models/example4.rb:14:25: [error] Type `(::String | nil)` does not have method `upcase`
-app/models/example4.rb:22:25: [error] Type `(::String | nil)` does not have method `upcase`
-app/models/example4.rb:27:23: [error] Type `(::String | nil)` does not have method `upcase`
-app/models/example4.rb:40:23: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example4.rb:14:25: [error] Type `("John Doe" | nil)` does not have method `upcase`
+app/models/example4.rb:22:25: [error] Type `("John Doe" | nil)` does not have method `upcase`
+app/models/example4.rb:27:23: [error] Type `("John Doe" | nil)` does not have method `upcase`
+app/models/example4.rb:40:23: [error] Type `("John Doe" | nil)` does not have method `upcase`
 app/models/example51.rb:4:56: [warning] Cannot pass a value of type `(^(*untyped) -> ::Symbol | nil)` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
 app/models/example52.rb:5:22: [warning] Cannot pass a value of type `(^(*untyped) -> ::Symbol | nil)` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
 app/models/example53.rb:5:22: [warning] Cannot pass a value of type `(^(*untyped) -> ::Symbol | nil)` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
@@ -28,8 +28,8 @@ app/models/example63.rb:17:10: [error] Type `::Example63::Foo` does not have met
 app/models/example63.rb:22:10: [error] Type `::Example63::Foo` does not have method `greet`
 app/models/example63.rb:4:21: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^(singleton(::Example63::Foo)) [self: singleton(::Example63::Foo)] -> U(_)`
 app/models/example63.rb:9:8: [warning] Method `::Example63::Foo#greet` is not declared in RBS
-app/models/example7.rb:31:28: [error] Type `(::Integer | nil)` does not have method `abs`
-app/models/example7.rb:34:27: [error] Type `(::String | nil)` does not have method `upcase`
+app/models/example7.rb:31:28: [error] Type `(42 | nil)` does not have method `abs`
+app/models/example7.rb:34:27: [error] Type `("John Doe" | nil)` does not have method `upcase`
 app/models/included_hook.rb:110:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS
 app/models/post/notifiable.rb:42:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/send_dispatch.rb:107:33: [error] `public_send` cannot call `stamp` on `::SendDispatch`, which declares it private
@@ -42,7 +42,7 @@ app/services/comment/create.rb:3:12: [error] Cannot find compatible overloading 
 app/services/email_notifier.rb:13:15: [error] Type `(::User | nil)` does not have method `email`
 app/services/profile_formatter.rb:31:4: [error] `format_nickname` requires `self.nickname` to be non-nil here
 app/services/profile_formatter.rb:37:13: [error] Type `("ada" | nil)` does not have method `upcase`
-app/services/tag_destroy.rb:110:6: [error] Cannot allow method body have type `(void | "error")` because declared as type `(::String | nil)`
+app/services/tag_destroy.rb:110:6: [error] Cannot allow method body have type `(void | "error")` because declared as type `("error" | nil)`
 app/services/tag_destroy.rb:98:7: [error] Type `::TagDestroy` does not have method `untyped`
 sig/generated/steep_activejob_runtime/active_job_base.rb:15:16: [error] Unexpected positional argument
 sig/generated/steep_ar_runtime/active_support/concern.rb:53:22: [warning] Cannot pass a value of type `^(?(::Module | nil)) -> untyped` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
