@@ -46,6 +46,14 @@ module RbsInfer
             # engine's `include` is what `extend`s its `ClassMethods` — and it is
             # `ClassMethods` the macro is written in, so the extend is the fact
             # this file needs.
+            #
+            # Stated rather than transcribed, which is the one paraphrase here and
+            # not by choice: the engine writes the `include` inside
+            # `ActiveSupport.on_load(:active_record)`, and `MixinIndex` reads raw
+            # sources, so that `include` reaches no host and the `class_methods`
+            # block gets no `self` — measured in felixefelip/rbs_infer#353. Once
+            # the index sees the expansion, this constant and `mixed_in?` go away
+            # and the transcription becomes the engine's own two lines.
             EXTENDER = "ActiveRecord::Base"
 
             # Read from the ENGINE'S SOURCE rather than from the loaded runtime,
