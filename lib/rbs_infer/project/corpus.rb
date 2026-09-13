@@ -87,5 +87,12 @@ module RbsInfer::Project
         source_index: @source_index, parse_cache: @parse_cache
       )
     end
+
+    # Project-wide implementation provenance for Steep's literal intrinsics.
+    # A Ruby reopen can replace a core method without changing its RBS owner,
+    # so this index must see the entire source corpus, not only the target file.
+    def literal_method_registry
+      @literal_method_registry ||= Steep::Project::LiteralMethodRegistry.from_paths(@source_files)
+    end
   end
 end

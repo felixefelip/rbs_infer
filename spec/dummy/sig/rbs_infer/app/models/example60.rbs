@@ -3,6 +3,6 @@ class Example60
   include Labels
 
   def example60_printer: () -> Example60Printer
-  def print_label: () -> String
-  def stamp: ("tag" label, 2 times) -> String
+  def print_label: () -> "tagtag"
+  def stamp: ("tag" label, 2 times) -> "tagtag"
 end

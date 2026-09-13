@@ -12,8 +12,8 @@ class Example50
   class Bar
     extend ::Example50::Baz::BananaMethods
 
-    def self.call_color: () -> String
-    def self.call_age: () -> Integer
+    def self.call_color: () -> "YELLOW"
+    def self.call_age: () -> 41
   end
 end
 

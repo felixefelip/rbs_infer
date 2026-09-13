@@ -6,8 +6,8 @@ class Example19
     def self.deny: (Example19 host, "denied" message) -> true
   end
 
-  def show: () -> String
-  def call: () -> String?
+  def show: () -> "Hi, TOKEN!"
+  def call: () -> "Hi, TOKEN!"?
   def halt: () -> true
   def record: ("denied"? message) -> "denied"?
 

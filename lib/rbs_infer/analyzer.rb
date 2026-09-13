@@ -907,7 +907,9 @@ module RbsInfer
   end
 
   def steep_bridge
-    @steep_bridge ||= RbsInfer::Signatures::SteepBridge.new
+    @steep_bridge ||= RbsInfer::Signatures::SteepBridge.new(
+      literal_method_registry: @corpus.literal_method_registry
+    )
   end
 
   def mixin_index

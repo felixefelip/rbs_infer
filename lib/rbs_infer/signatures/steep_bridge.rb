@@ -15,6 +15,14 @@ module RbsInfer::Signatures
   # - Attr inference via initialize
   # - RBS generation
   class SteepBridge
+    def initialize(literal_method_registry:)
+      # The corpus registry is a project-wide snapshot. Each bridge augments it
+      # with its expanded in-memory source, so it needs a private copy: a parse
+      # failure or generated reopen in one target must not taint every target
+      # analysed after it.
+      @literal_method_registry = literal_method_registry.dup
+    end
+
     # Returns { "var_name" => "Type" } for all local variable assignments
     # in all methods of the given source code.
     # Result is keyed by method name: { "method_name" => { "var" => "Type" } }
@@ -510,8 +518,15 @@ module RbsInfer::Signatures
     def type_check(source_code)
       context = SteepEnvironment.steep_context or return nil
 
+      # Standalone bridge users may not have supplied a project corpus. Scan
+      # the current source as a safe minimum; Analyzer supplies the complete
+      # corpus registry, which catches overrides living in another file too.
+      @literal_method_registry.ingest_source(source_code, path_name: "(rbs_infer)")
+      registry_key = @literal_method_registry.to_set.freeze
+
       cache = self.class.shared(context)[:type_checks]
-      cache.fetch(source_code) { cache[source_code] = type_check_uncached(source_code) }
+      key = [source_code, registry_key]
+      cache.fetch(key) { cache[key] = type_check_uncached(source_code) }
     end
 
     class << self
@@ -639,6 +654,7 @@ module RbsInfer::Signatures
         postconditions: postconditions_store,
         callbacks: callbacks_store,
         specializations: specializations_store,
+        literal_method_registry: @literal_method_registry,
         delegation_registry: delegation_registry_store,
         constructor_bindings: constructor_bindings_store,
         return_forwarding: return_forwarding_store,

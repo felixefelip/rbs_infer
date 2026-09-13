@@ -1,5 +1,5 @@
 class Example5
-  def run: () -> String
+  def run: () -> "JOHN DOE"
 end
 
 class Example5
@@ -13,7 +13,7 @@ end
 
 class Example5
   class Bar
-    def foo_name: () -> String
-    def deep_foo_name: () -> String
+    def foo_name: () -> "JOHN DOE"
+    def deep_foo_name: () -> "JOHN DOE"
   end
 end

@@ -313,8 +313,35 @@ RSpec.describe RbsInfer::Analyzer do
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
-        expect(rbs).to include("def self.greet: () -> String")
+        expect(rbs).to include('def self.greet: () -> "HELLO"')
         expect(rbs).not_to include("def self.greet: () -> untyped")
+      end
+    end
+
+    it "não avalia um método core redefinido em outro arquivo do projeto" do
+      files = {
+        "factory.rb" => <<~RUBY,
+          class GreetFactory
+            def self.greet
+              "hello".upcase
+            end
+          end
+        RUBY
+        "string_override.rb" => <<~RUBY
+          class String
+            def upcase
+              "project implementation"
+            end
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |_dir, paths|
+        analyzer = described_class.new(target_file: paths.first, source_files: paths)
+        rbs = analyzer.generate_rbs
+
+        expect(rbs).to include("def self.greet: () -> String")
+        expect(rbs).not_to include('def self.greet: () -> "HELLO"')
       end
     end
 
@@ -503,7 +530,7 @@ RSpec.describe RbsInfer::Analyzer do
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
-        expect(rbs).to include("def self.maybe_greet: (untyped empty) -> String?")
+        expect(rbs).to include('def self.maybe_greet: (untyped empty) -> "HI"?')
       end
     end
 

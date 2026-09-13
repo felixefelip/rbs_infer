@@ -9,14 +9,16 @@ methods:
     '(action: "created")': '{ :action => "created" }'
     "(action: :reported)": "{ :action => :reported }"
   Example12#show:
-    "(:age)": "::Integer"
-    "(:name)": "::String"
+    "(:age)": '42'
+    "(:name)": '"JOHN DOE"'
   Example19#record:
     ("denied"): '"denied"'
   Example20#record:
     ("denied"): '"denied"'
   Example4::Foo.name=:
     ("John Doe"): '"John Doe"'
+  Example61.normalize:
+    "(:indexed_by)": '"indexed_by"'
   Example69::Foo#call:
     "(flag_name: false)": '"delete"'
     "(flag_name: true)": '"name_delete"'
@@ -24,11 +26,11 @@ methods:
     "(flag_name: false)": '"delete"'
     "(flag_name: true)": '"name_delete"'
   Example7::Dispatcher#show:
-    "(:age)": "::Integer"
-    "(:name)": "::String"
+    "(:age)": '42'
+    "(:name)": '"JOHN DOE"'
   Example8#show:
-    "(:age)": "::Integer"
-    "(:name)": "::String"
+    "(:age)": '42'
+    "(:name)": '"JOHN DOE"'
   Example9::Dispatcher#show:
-    "(:age)": "::Integer"
-    "(:name)": "::String"
+    "(:age)": '42'
+    "(:name)": '"JOHN DOE"'

@@ -22,8 +22,8 @@ app/models/example52.rb:5:22: [warning] Cannot pass a value of type `(^(*untyped
 app/models/example53.rb:5:22: [warning] Cannot pass a value of type `(^(*untyped) -> ::Symbol | nil)` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
 app/models/example54/baz.rb:6:22: [warning] Cannot pass a value of type `(^(*untyped) -> ::Symbol | nil)` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
 app/models/example55/foo.rb:5:20: [warning] Cannot pass a value of type `^(::Module) -> ::Symbol` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
-app/models/example56.rb:29:6: [error] The method cannot return a value of type `nil` because declared as type `::String`
-app/models/example56.rb:36:6: [error] The method cannot return a value of type `nil` because declared as type `::String`
+app/models/example56.rb:29:6: [error] The method cannot return a value of type `nil` because declared as type `"FARM"`
+app/models/example56.rb:36:6: [error] The method cannot return a value of type `nil` because declared as type `"FARM"`
 app/models/example63.rb:17:10: [error] Type `::Example63::Foo` does not have method `greet`
 app/models/example63.rb:22:10: [error] Type `::Example63::Foo` does not have method `greet`
 app/models/example63.rb:4:21: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^(singleton(::Example63::Foo)) [self: singleton(::Example63::Foo)] -> U(_)`

@@ -2,7 +2,7 @@ module Example30
   class Foo
     def name: () -> "Foo"
     def build_age: () -> Symbol
-    def call_age: () -> Integer
+    def call_age: () -> 35
   end
 end
 

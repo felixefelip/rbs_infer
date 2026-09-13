@@ -6,8 +6,8 @@ class Example56
   class Reader
     def name: () -> "farm"
     def maybe_name: () -> String?
-    def label: () -> String
-    def shout: () -> String
+    def label: () -> "FARM"
+    def shout: () -> "FARM"
     def maybe_label: () -> "loud"?
   end
 end
