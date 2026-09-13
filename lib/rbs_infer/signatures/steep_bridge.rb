@@ -118,32 +118,14 @@ module RbsInfer::Signatures
       return nil unless declared_type && value_type
 
       subtype?(value_type, declared_type, subtyping)
-    rescue StandardError
-      nil
     end
 
-    # Whether `declared` and `value` are the same type UP TO LITERALS, with
-    # `value` the more precise of the two: `("name_delete" | "delete")` against
-    # `String`, `"name_delete"` against `("name_delete" | "delete")`,
-    # `Array["a"]` against `Array[String]`. That is the refinement a specialized
-    # call site produces (felixefelip/rbs_infer#345), and the axis on which
-    # Steep's type for a body beats a declaration the body still satisfies.
+    # Whether `declared` and `value` are the same type up to literals, with
+    # `value` the strictly more precise of the two: `("name_delete" | "delete")`
+    # against `String`, `"name_delete"` against `("name_delete" | "delete")`,
+    # `Array["a"]` against `Array[String]`.
     #
-    # Asked by widening the literals on BOTH sides and comparing the results for
-    # EQUIVALENCE, not as a subtype question. Each half earns its place:
-    #
-    # - widening both sides, because a declaration is itself often literal by
-    #   now — the previous run emitted it — so a body that fixes one value out
-    #   of a declared union has to compare too. Widening only `value` answers
-    #   that `"name_delete"` and `("name_delete" | "delete")` differ, and the
-    #   literal is then lost for good.
-    # - equivalence rather than subtyping, because `value <: declared` also
-    #   holds for a narrower class (`Integer` against `Numeric`) and for a
-    #   dropped `nil`, and neither of those is this refinement.
-    #
-    # Three-valued like `accepts?`: `nil` is "cannot decide". The literal check
-    # is syntactic and runs first, though, so a value carrying no literal is a
-    # decided `false` even where comparing it would have been undecidable.
+    # Three-valued like `accepts?`.
     def literal_refinement?(declared, value)
       subtyping = steep_subtyping
       return nil unless subtyping
@@ -153,17 +135,12 @@ module RbsInfer::Signatures
       return nil unless declared_type && value_type
       return false unless literal_bearing?(value_type)
       return false unless subtype?(value_type, declared_type, subtyping)
-      # …and STRICTLY more precise. Equivalent types differ only in spelling
-      # (`("a" | "b")?` against `("a" | "b" | nil)`), and rewriting a signature
-      # for that is churn across a whole `sig/` for a type that did not change.
       return false if subtype?(declared_type, value_type, subtyping)
 
       widened_declared = widen_literals(declared_type)
       widened_value = widen_literals(value_type)
       subtype?(widened_value, widened_declared, subtyping) &&
         subtype?(widened_declared, widened_value, subtyping)
-    rescue StandardError
-      nil
     end
 
     # Returns { "CONSTANT_NAME" => "Type" } for every `NAME = expr` /
@@ -575,14 +552,14 @@ module RbsInfer::Signatures
       parsed = RBS::Parser.parse_type(string)
       return nil if context_dependent?(parsed)
 
-      subtyping.factory.type(parsed.map_type_name { |name, _, _| name.absolute! })
+      absolute = parsed.map_type_name { |name, _, _| name.absolute! }
+      return nil unless known_type_names?(absolute)
+
+      subtyping.factory.type(absolute)
     rescue RBS::ParsingError, RBS::BaseError
       nil
     end
 
-    # One subtyping question, with the boilerplate every caller here repeats:
-    # no enclosing definition (`context_free_type` already refused the types
-    # that would need one) and no constraints to solve.
     def subtype?(sub_type, super_type, subtyping)
       subtyping.check(
         Steep::Subtyping::Relation.new(sub_type: sub_type, super_type: super_type),
@@ -591,16 +568,9 @@ module RbsInfer::Signatures
       ).success?
     end
 
-    # Whether a literal type appears anywhere in `type` — at the top or inside a
-    # union, a type argument, a record value, a tuple element. Written over
-    # `each_child`, which every Steep type answers (a leaf through
-    # `Helper::NoChild`), so the only type named here is the literal itself.
-    #
-    # `true` and `false` do not count. `bool` denotes exactly `(true | false)`,
-    # so writing the literals buys no precision — and costs: `bool` is what the
-    # predicate machinery reads (a `-> bool` is what makes `assigned?` prove its
-    # postcondition), and inside a union the pair is pure noise
-    # (`(User | bool | true)`).
+    # `true`/`false` do not count: `bool` denotes exactly `(true | false)`, so
+    # the literals buy no precision, and `-> bool` is what the predicate
+    # machinery reads.
     def literal_bearing?(type)
       if type.is_a?(Steep::AST::Types::Literal)
         return type.value != true && type.value != false
@@ -609,13 +579,23 @@ module RbsInfer::Signatures
       type.each_child.any? { |child| literal_bearing?(child) }
     end
 
-    # `type` with every literal replaced by the class it is an instance of, via
-    # `Literal#back_type` — Steep's own answer to that question. `map_type` is
-    # shallow, hence the recursion.
     def widen_literals(type)
       return type.back_type if type.is_a?(Steep::AST::Types::Literal)
 
       type.map_type { |child| widen_literals(child) }
+    end
+
+    # Whether the environment defines every name in `type`. A name it does not
+    # know has no definition to compare against, and an unknown ALIAS makes the
+    # subtyping check raise (`RBS::DefinitionBuilder#expand_alias2`), so this is
+    # asked up front instead of rescued after.
+    def known_type_names?(type)
+      env = SteepEnvironment.definition_builder&.env
+      return true unless env
+
+      names = [] #: Array[RBS::TypeName]
+      type.map_type_name { |name, _, _| names << name; name }
+      names.all? { |name| env.type_name?(name) }
     end
 
     # `self`, `instance` and `class` name whatever definition encloses them, and

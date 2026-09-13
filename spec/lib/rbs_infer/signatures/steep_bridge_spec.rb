@@ -589,9 +589,8 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
     end
   end
 
-  # felixefelip/rbs_infer#345, stage S4. The axis on which a body beats a
-  # declaration it still satisfies: same type, literal values in place of their
-  # classes. Every negative case below is a loop that already owns that question.
+  # felixefelip/rbs_infer#345. Same type up to literals, body strictly more
+  # precise.
   describe "#literal_refinement?" do
     it "answers true where the body fixes the value the declaration leaves open" do
       expect(bridge.literal_refinement?("String", '"name_delete"')).to be(true)
@@ -601,9 +600,6 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       expect(bridge.literal_refinement?("{ body: String }", '{ body: "a" }')).to be(true)
     end
 
-    # The declaration is usually literal by now — the previous run emitted it —
-    # so fixing one value out of a declared union has to count, or the first
-    # specialized call site is the last.
     it "answers true where the body fixes one value out of a declared union" do
       expect(bridge.literal_refinement?('("name_delete" | "delete")', '"name_delete"')).to be(true)
       expect(bridge.literal_refinement?('("a" | "b")?', '"a"?')).to be(true)
@@ -614,16 +610,12 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       expect(bridge.literal_refinement?('"a"', '"a"')).to be(false)
     end
 
-    # `bool` denotes exactly `(true | false)`, so the literals buy no precision
-    # — and `-> bool` is what the predicate machinery reads.
     it "answers false for a boolean, at the top or inside a union" do
       expect(bridge.literal_refinement?("bool", "true")).to be(false)
       expect(bridge.literal_refinement?("bool", "(true | false)")).to be(false)
       expect(bridge.literal_refinement?("(User | bool)", "(User | true)")).to be(false)
     end
 
-    # Each of these is a refinement, on an axis another loop owns: a narrower
-    # class, a dropped nil, a contradicted declaration.
     it "answers false for a refinement that is not about literals" do
       expect(bridge.literal_refinement?("Numeric", "Integer")).to be(false)
       expect(bridge.literal_refinement?("String?", "String")).to be(false)
@@ -631,17 +623,10 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       expect(bridge.literal_refinement?("Integer", '"a"')).to be(false)
     end
 
-    # "Is there a literal here" is a syntactic question, decided before any
-    # subtyping runs — so a value with no literal in it answers false even when
-    # the name would resolve to nothing (`accepts?` answers nil for the same
-    # input, because comparing is all it does).
-    it "answers false for a literal-free value it could not have compared" do
-      expect(bridge.literal_refinement?("String", "not a type[")).to be(false)
-    end
-
     it "answers nil for a type it cannot compare" do
       expect(bridge.literal_refinement?("self", '"a"')).to be_nil
       expect(bridge.literal_refinement?("not a type[", '"a"')).to be_nil
+      expect(bridge.literal_refinement?("String", "not a type[")).to be_nil
     end
   end
 

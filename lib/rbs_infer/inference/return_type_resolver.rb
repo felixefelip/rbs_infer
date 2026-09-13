@@ -230,24 +230,11 @@ module RbsInfer::Inference
             m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> self")
           end
 
-          # A fifth slice, on the axis none of the others can reach: the
-          # declaration is right and the body satisfies it, but the body fixes
-          # the VALUE — `call(flag_name: true)` returns `"name_delete"` where
-          # the declaration of `call` says `String` (felixefelip/rbs_infer#345,
-          # stage S4, where Steep specializes a body per argument tuple).
-          #
-          # Nothing else writes it: the first loop only fills `-> untyped`, and
-          # the general case below needs the declaration to REJECT the body,
-          # which a `String` never does for its own literals. So the literal
-          # would be lost on every run — and permanently, because the
-          # declaration it loses to is the one the previous run emitted.
-          #
-          # `literal_refinement?` holds it to that axis: the body type must be
-          # the declared type with literals in place of their classes, so a
-          # narrower class or a dropped nil still belongs to the loop that owns
-          # it. `defines_own_body?` for the reason the first loop states — a
-          # second body under this name makes Steep's name-keyed answer
-          # ambiguous.
+          # A fifth slice: the declaration is right and the body satisfies it,
+          # but the body fixes the VALUE — `call(flag_name: true)` returns
+          # `"name_delete"` where `call` is declared `-> String`
+          # (felixefelip/rbs_infer#345). The general case below cannot reach it,
+          # because a `String` never rejects its own literals.
           members.each do |m|
             next unless method_member?(m)
             next if m.name == "initialize"
