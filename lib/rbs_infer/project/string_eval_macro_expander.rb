@@ -65,43 +65,68 @@ module RbsInfer::Project
     # The class/module bodies, with their lexical nesting, so a call written in
     # `class Entry` inside `module Blog` reopens `Blog::Entry` — the class that
     # made the call, rather than a new top-level one.
-    def walk(node, namespace, path, sidecar, reopens)
+    def walk(node, namespace, file, sidecar, reopens)
       return unless node.is_a?(Prism::Node)
 
       unless node.is_a?(Prism::ClassNode) || node.is_a?(Prism::ModuleNode)
-        node.compact_child_nodes.each { |child| walk(child, namespace, path, sidecar, reopens) }
+        node.compact_child_nodes.each { |child| walk(child, namespace, file, sidecar, reopens) }
         return
       end
 
-      name = RbsInfer::Analyzer.extract_constant_path(node.constant_path)&.delete_prefix("::")
+      path = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
       # A constant path this cannot name (`class self::Thing`) stops the walk:
       # anything below it would be attributed to the wrong owner.
-      return unless name
+      return unless path
 
-      qualified = (namespace + [name]).join("::")
-      bodies = expansions_for(node, path, sidecar)
+      # `class ::Article` inside `module Outer` declares the TOP-LEVEL Article
+      # and says so; folding it into the lexical namespace would reopen an
+      # `Outer::Article` the program does not have.
+      absolute = path.start_with?("::")
+      name = path.delete_prefix("::")
+      qualified = absolute ? name : (namespace + [name]).join("::")
+      bodies = expansions_for(node, file, sidecar)
       reopens << reopen(qualified, bodies.join("\n"), node) unless bodies.empty?
 
-      walk(node.body, namespace + [name], path, sidecar, reopens)
+      walk(node.body, absolute ? [name] : namespace + [name], file, sidecar, reopens)
     end
 
-    # A call in the body, and only in the body: a macro call written inside a
-    # `def` runs when that method runs, on whatever `self` is then, which this
-    # cannot name. Nested class bodies are reached by the walk, under their own
-    # name.
-    def expansions_for(node, path, sidecar)
-      statements(node.body).filter_map do |stmt|
-        next unless stmt.is_a?(Prism::CallNode) && stmt.receiver.nil? && stmt.block.nil?
-
+    def expansions_for(node, file, sidecar)
+      macro_calls(node.body).filter_map do |call|
         sources = sidecar.sources_for(
-          path: path,
-          line: stmt.location.start_line,
-          column: stmt.location.start_column
+          path: file,
+          line: call.location.start_line,
+          column: call.location.start_column
         )
         next unless sources
 
         sources.map { |source| dedent(source) }.join("\n")
       end
+    end
+
+    # Where `self` stops being this class. A `def` body runs later, on whatever
+    # `self` is then; a nested class or module has its own body, which the walk
+    # reaches under its own name; a block runs on whoever calls it.
+    BOUNDARIES = [
+      Prism::DefNode, Prism::ClassNode, Prism::ModuleNode,
+      Prism::SingletonClassNode, Prism::BlockNode, Prism::LambdaNode
+    ].freeze
+
+    # The receiverless calls the class body makes, through whatever control flow
+    # they are written inside. A macro call under `if Rails.env.production?` runs
+    # on the same `self` as one written bare, and the sidecar has already said
+    # what it defines there — stopping at the first `if` would drop it silently.
+    #
+    # Deliberately wider than "a statement": a call in argument position is a
+    # call too, and reading one costs nothing, since only a site the sidecar
+    # recorded is ever placed.
+    def macro_calls(node, found = [])
+      return found unless node.is_a?(Prism::Node)
+      return found if BOUNDARIES.any? { |klass| node.is_a?(klass) }
+
+      found << node if node.is_a?(Prism::CallNode) && node.receiver.nil? && node.block.nil?
+      node.compact_child_nodes.each { |child| macro_calls(child, found) }
+
+      found
     end
 
     # The heredoc a macro is written with carries the gem's own indentation and
@@ -125,10 +150,6 @@ module RbsInfer::Project
       indented = body.rstrip.lines.map { |line| line.strip.empty? ? line : "  #{line}" }.join
 
       "#{keyword} #{name}\n#{indented}\nend\n"
-    end
-
-    def statements(body)
-      body.is_a?(Prism::StatementsNode) ? body.body : []
     end
   end
 end

@@ -175,6 +175,52 @@ RSpec.describe RbsInfer::Project::StringEvalMacroExpander do
       .to include("def content; end")
   end
 
+  # `class ::Article` declares the top-level Article and says so; folding it
+  # into the lexical namespace would reopen a class the program does not have.
+  it "keeps an absolute constant path out of the lexical namespace" do
+    source = <<~RUBY
+      module Outer
+        class ::Article
+          has_slot :content
+        end
+      end
+    RUBY
+
+    expect(reopens(source, { "app/models/article.rb:3:4" => ["def content; end"] }))
+      .to start_with("class Article\n")
+  end
+
+  # A macro call under a condition runs on the same `self` as one written bare,
+  # and the checker has already said what it defines there.
+  it "reads a call written inside the class body's control flow" do
+    source = <<~RUBY
+      class Article
+        if Rails.env.production?
+          has_slot :content
+        end
+      end
+    RUBY
+
+    expect(reopens(source, { "app/models/article.rb:3:4" => ["def content; end"] })).to eq(<<~RUBY)
+      class Article
+        def content; end
+      end
+    RUBY
+  end
+
+  # A block's body runs on whoever calls it, which this cannot name.
+  it "ignores a call written inside a block" do
+    source = <<~RUBY
+      class Article
+        with_options shallow: true do
+          has_slot :content
+        end
+      end
+    RUBY
+
+    expect(reopens(source, { "app/models/article.rb:3:4" => ["def content; end"] })).to be_nil
+  end
+
   it "returns nil for a file it cannot parse" do
     expect(reopens("class Article", { "app/models/article.rb:1:0" => ["def content; end"] })).to be_nil
   end
