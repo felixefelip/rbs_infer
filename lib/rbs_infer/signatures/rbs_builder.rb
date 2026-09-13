@@ -132,16 +132,26 @@ module RbsInfer::Signatures
     # followed by its `extend X::ClassMethods`.
     def mixin_lines(members, indent)
       out = []
-      members.select { |m| m.kind == :extend && m.owner.nil? }.each do |ext|
-        out << "#{indent}extend #{qualify(ext.name)}"
-      end
+      extends = members.select { |m| m.kind == :extend && m.owner.nil? }
+      written = extends.map { |ext| qualify(ext.name).delete_prefix("::") }
+
+      extends.each { |ext| out << "#{indent}extend #{qualify(ext.name)}" }
       members.select { |m| m.kind == :prepend && m.owner.nil? }.each do |pre|
         out << "#{indent}prepend #{qualify(pre.name)}"
       end
       members.select { |m| m.kind == :include && m.owner.nil? }.each do |inc|
         qualified = qualify(inc.name)
         out << "#{indent}include #{qualified}"
-        out << "#{indent}extend #{qualified}::ClassMethods" if has_class_methods_module?(inc.name)
+        next unless has_class_methods_module?(inc.name)
+        # Unless the class already extends it. `include X` implying
+        # `extend X::ClassMethods` is a DERIVATION, and the same fact can be
+        # written down instead — `ActiveSupport::Concern`'s pseudo-code performs
+        # `base.extend const_get(:ClassMethods)`, and the expansion puts that
+        # `extend` in the source this reads. Emitting both declares one mixin
+        # twice; the written one wins, since it is what the program says.
+        next if written.include?("#{qualified}::ClassMethods".delete_prefix("::"))
+
+        out << "#{indent}extend #{qualified}::ClassMethods"
       end
       out
     end
