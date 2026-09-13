@@ -2,5 +2,5 @@ class Example64
   extend ::Vault::Totaled::ClassMethods
   include ::Vault::Totaled
 
-  def key: () -> String
+  def key: () -> "VAULT"
 end

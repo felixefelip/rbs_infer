@@ -343,7 +343,7 @@ postconditions:
   unconditional:
     consts:
       Example10::Foo.name: '"John Doe"'
-      Example10::Sink.last: "::String"
+      Example10::Sink.last: '"JOHN DOE"'
 - class: Example10::Foo
   method: name
   effects:
@@ -366,9 +366,9 @@ postconditions:
   method: last=
   unconditional:
     ivars:
-      "@last": "::String"
+      "@last": '"JOHN DOE"'
     establishes_consts:
-      last: "::String"
+      last: '"JOHN DOE"'
   effects:
     may_write:
     - "@last"

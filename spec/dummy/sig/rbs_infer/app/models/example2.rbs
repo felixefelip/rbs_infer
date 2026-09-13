@@ -1,5 +1,5 @@
 class Example2
-  def self.run: () -> String
+  def self.run: () -> "JOHN DOE"
 end
 
 class Example2

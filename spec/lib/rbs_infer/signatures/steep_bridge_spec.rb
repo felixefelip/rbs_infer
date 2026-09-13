@@ -4,6 +4,17 @@ require "rbs_infer"
 RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
   subject(:bridge) { described_class.new }
 
+  describe "#initialize" do
+    it "does not taint a supplied project registry with another bridge's source" do
+      registry = Steep::Project::LiteralMethodRegistry.new
+      isolated_bridge = described_class.new(literal_method_registry: registry)
+
+      isolated_bridge.method_return_types("class Broken\n  def")
+
+      expect(registry).to be_empty
+    end
+  end
+
   describe "#local_var_read_types" do
     # felixefelip/rbs_infer#142. The per-method map holds one type per variable
     # and so cannot express narrowing; the per-read map is where Steep's

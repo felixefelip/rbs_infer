@@ -1,5 +1,5 @@
 class Example10
-  def run: () -> String
+  def run: () -> "JOHN DOE"
 end
 
 class Example10
@@ -13,15 +13,15 @@ end
 
 class Example10
   class Sink
-    self.@last: String?
+    self.@last: "JOHN DOE"?
 
-    def self.last: () -> String?
-    def self.last=: (String value) -> String
+    def self.last: () -> "JOHN DOE"?
+    def self.last=: ("JOHN DOE" value) -> "JOHN DOE"
   end
 end
 
 class Example10
   class Bar
-    def greet: () -> String
+    def greet: () -> "JOHN DOE"
   end
 end
