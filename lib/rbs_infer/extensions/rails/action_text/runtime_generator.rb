@@ -34,13 +34,19 @@ module RbsInfer
         #       end
         #     end
         #
-        # Rendering that at each `has_rich_text :content` is
-        # `Project::StringEvalMacroExpander`'s job, and it is not a Rails
-        # feature: `class_eval` of an interpolated string is a plain-Ruby idiom,
-        # and the expander names no gem. The per-model methods are therefore
-        # inferred, not generated — which is why this file can be one file, and
-        # why an app that writes the same idiom in its own concern gets the same
-        # treatment without a generator at all.
+        # What that writes at each `has_rich_text :content` is then a question
+        # about a VALUE, and the checker answers it: with the call site's
+        # `:content` reaching the body (felixefelip/rbs_infer#345) the heredoc
+        # folds to a literal, which IS the source, and `steep check` records it
+        # per call site (felixefelip/steep#169) for
+        # `Project::StringEvalMacroExpander` to place.
+        #
+        # None of that is a Rails feature: `class_eval` of an interpolated
+        # string is a plain-Ruby idiom and neither the checker nor the expander
+        # names a gem. The per-model methods are therefore inferred, not
+        # generated — which is why this file can be one file, and why an app
+        # that writes the same idiom in its own concern gets the same treatment
+        # without a generator at all.
         #
         # Nothing here states a type. `content` is `::ActionText::RichText`
         # because `rich_text_content || build_rich_text_content` is — the union

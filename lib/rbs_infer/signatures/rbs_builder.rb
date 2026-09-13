@@ -292,6 +292,10 @@ module RbsInfer::Signatures
     # nil for other kinds. Shared between the class body and nested-module
     # emission (felixefelip/rbs_infer#22).
     def render_value_member(member, indent, init_arg_types, attr_types, method_param_types, optional_params)
+      # `# @rbs_infer no-signature`: the body is here to be read, the signature
+      # is declared elsewhere. See `ClassMemberCollector#find_no_signature_marker`.
+      return nil if member.no_signature
+
       case member.kind
       when :method
         sig = member.signature

@@ -76,22 +76,29 @@ module RbsInfer
 
             # The one deviation from a verbatim body, and the same mechanical
             # kind as the controller transcriber's `__send__` rewrite:
-            # `# @rbs_infer |...` (#200) above the def, which makes the emitted
-            # signature RBS's OVERLOADING form.
+            # `# @rbs_infer no-signature` above the def, which gives the method a
+            # body here and leaves its declaration where it already is.
             #
-            # Not a type — the marker states precedence, not a signature. It is
+            # Not a type — the marker states that this file declares none. It is
             # here because gem_rbs_collection already declares `has_rich_text`,
             # and a second plain declaration is a `DuplicatedMethodDefinitionError`
-            # that poisons the whole environment rather than degrading. The
-            # Concern transcription carries it on all three of its defs for
-            # exactly this reason.
-            OVERLOADING_MARKER = "# @rbs_infer |..."
+            # that poisons the whole environment rather than degrading.
+            #
+            # The overloading form (`|...`) is what the other transcriptions use
+            # and is the wrong tool here: it puts OUR signature ahead of the gem's,
+            # and ours is inferred from a body whose parameters come from nowhere,
+            # so `name` lands as `untyped`. A literal argument against an `untyped`
+            # parameter stops being a literal — and the literal is the whole
+            # mechanism that reads this body, since `#{name}` folds to the source
+            # only while the call site's `:content` survives the call
+            # (felixefelip/steep#169).
+            NO_SIGNATURE_MARKER = "# @rbs_infer no-signature"
 
             # The macro's own source, dedented to column zero and marked.
             def macro_source
               node = macro_def_node or return nil
 
-              "#{OVERLOADING_MARKER}\n#{dedent(node.slice, node.location.start_column)}"
+              "#{NO_SIGNATURE_MARKER}\n#{dedent(node.slice, node.location.start_column)}"
             end
 
             def macro_def_node

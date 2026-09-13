@@ -97,11 +97,12 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   # The payoff of the ActionText generator, and the proof that the work is the
   # CORE's: `has_rich_text :content` writes nothing here, and `content` still
-  # lands on the model — `StringEvalMacroExpander` rendered the macro's
-  # `class_eval` string at this call site. The types come from the bodies
-  # (`rich_text_content || build_rich_text_content`, `.present?`), never from
-  # the generator, and `summary` comes through the `store_if_blank: false`
-  # writer, which the expander picks by reading the macro's own branch.
+  # lands on the model — the checker folded the macro's `class_eval` string at
+  # this call site and `StringEvalMacroExpander` placed it. The types come from
+  # the bodies (`rich_text_content || build_rich_text_content`, `.present?`),
+  # never from the generator, and `summary` comes through the
+  # `store_if_blank: false` writer — the branch narrowing picked, against the
+  # `content` above it, which takes the default the call leaves out.
   it "Article model matches expected RBS" do
     assert_snapshot("models/article", target_class: "Article", target_file: "app/models/article.rb")
   end
@@ -1231,9 +1232,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       assert_runtime_rbs("steep_ar_runtime")
     end
 
-    # The transcription itself. It declares one method and states no type; the
-    # `| ...` is the overloading marker, which is what keeps this from colliding
-    # with the signature gem_rbs_collection already writes for the same macro.
+    # The transcription itself, which declares NO method: gem_rbs_collection
+    # already writes the macro's signature, and it is that signature's `Symbol`
+    # that keeps a call site's `:content` a literal — the one thing the fold of
+    # the heredoc depends on. All this file contributes is the `extend`.
     it "ActionText runtime" do
       assert_runtime_rbs("steep_actiontext_runtime")
     end

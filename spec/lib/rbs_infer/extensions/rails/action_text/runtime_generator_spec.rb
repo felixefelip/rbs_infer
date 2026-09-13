@@ -64,11 +64,12 @@ RSpec.describe RbsInfer::Extensions::Rails::ActionText::RuntimeGenerator do
       expect(source).not_to match(/@rbs (?!_infer)/)
     end
 
-    # `# @rbs_infer |...` is precedence, not a signature: gem_rbs_collection
-    # already declares `has_rich_text`, and a second PLAIN declaration is a
-    # DuplicatedMethodDefinitionError that poisons the whole environment.
-    it "marks the def for the overloading form" do
-      expect(source).to include("# @rbs_infer |...\n      def has_rich_text")
+    # gem_rbs_collection already declares `has_rich_text`, accurately. A second
+    # declaration is a DuplicatedMethodDefinitionError, and one in the
+    # overloading form would put an `untyped name` ahead of the gem's `Symbol` —
+    # which loses the literal the body is read through.
+    it "marks the def as declaring no signature" do
+      expect(source).to include("# @rbs_infer no-signature\n      def has_rich_text")
     end
   end
 

@@ -95,15 +95,20 @@ module RbsInfer
     source = @expanded_source || original_source
 
     # A macro that writes its methods by `class_eval`ing an interpolated STRING
-    # defines them only once a call site supplies the interpolation, so the
-    # rewrite is per caller and needs the corpus the macro lives in
-    # (felixefelip/rbs_infer#344).
-    macro_expanded = RbsInfer::Project::StringEvalMacroExpander.expand(
-      source, macros: @corpus.string_eval_macros
+    # defines them only once a call site supplies the interpolation. What each
+    # call site interpolates is a value the checker folded, read back from the
+    # sidecar it wrote (felixefelip/rbs_infer#344).
+    #
+    # Located against the ORIGINAL source, not the expanded one: the sidecar
+    # points at a line and a column of the file `steep check` read, and an
+    # expander that ran above may have moved both. Only the reopens it produces
+    # are appended to the expanded source.
+    macro_reopens = RbsInfer::Project::StringEvalMacroExpander.reopens(
+      original_source, path: @target_file, sidecar: @corpus.string_evals
     )
-    if macro_expanded
-      @expanded_source = macro_expanded
-      source = macro_expanded
+    if macro_reopens
+      source = "#{source.chomp}\n\n#{macro_reopens}"
+      @expanded_source = source
     end
 
     # A block can be stored by one singleton receiver and later replayed via

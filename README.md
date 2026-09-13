@@ -151,12 +151,19 @@ declines the string form for the same reason). So `post.content` is not `untyped
 is a `NoMethodError`: the method does not exist for the checker at all.
 
 Nothing was missing but the source, and the source ships in a gem — the same thing the AR
-runtime's Concern transcription found for `included do … end`. Rendering the macro at each
-call site is `RbsInfer::Project::StringEvalMacroExpander`'s job, and that is core, not a
-Rails feature: `class_eval` of an interpolated string is a plain-Ruby idiom, so an app that
-writes the same shape in its own concern gets the same treatment with no generator at all.
-The per-model accessors are therefore **inferred**, not generated, and land on the model's own
-RBS:
+runtime's Concern transcription found for `included do … end`. What the macro writes at each
+call site is then a question about a VALUE, and this project answers those with the type
+machinery: with the string-literal work of #345 in place, a specialized body types `name` as
+`:content`, an interpolation over literals folds, and the folded literal *is* the source.
+`steep check` records it per call site in `sig/generated/.steep_string_evals.yml`
+(felixefelip/steep#169), and `RbsInfer::Project::StringEvalMacroExpander` places it in the
+class that made the call — so which branch of the macro runs, and what an omitted keyword
+defaults to, are decided by narrowing rather than by a second reader of the macro.
+
+That expander is core, not a Rails feature: `class_eval` of an interpolated string is a
+plain-Ruby idiom, so an app that writes the same shape in its own concern gets the same
+treatment with no generator at all. The per-model accessors are therefore **inferred**, not
+generated, and land on the model's own RBS:
 
 ```rbs
 class Article < ApplicationRecord
@@ -168,9 +175,11 @@ end
 `content` because `rich_text_content || build_rich_text_content` is the union of rbs_rails'
 nilable reader and its non-nilable builder; `content?` because `.present?` is. Neither the
 generator nor the emitted file states a type — the one annotation in it is
-`# @rbs_infer |...`, which is precedence, not a signature: gem_rbs_collection already declares
-`has_rich_text`, and a second plain declaration would be a `DuplicatedMethodDefinitionError`.
-Runs after rbs_rails, which supplies the reader and the builder.
+`# @rbs_infer no-signature`, which says this file declares none: gem_rbs_collection already
+declares `has_rich_text`, accurately, and it is that declaration's `Symbol` that keeps the
+call site's `:content` a literal all the way into the heredoc. Runs after rbs_rails, which
+supplies the reader and the builder, and one `steep check` ahead of the run that reads it —
+the same loop every other sidecar already lives in.
 
 *Scope:* the app-side accessors. `ActionText::RichText`'s own methods (`to_plain_text`,
 `to_trix_html`, the `delegate`s to `body`) are equally plain Ruby and equally
@@ -201,7 +210,8 @@ lib/rbs_infer/
   rbs_builder.rb, type_merger.rb             # RBS assembly
   rbs_type_lookup.rb, method_type_resolver.rb,
   rbs_definition_resolver.rb, steep_bridge.rb # cross-call resolution via RBS/Steep
-  string_eval_macro*.rb                      # `class_eval "def #{name}"`, rendered per call site
+  string_eval_macro_expander.rb,
+  string_eval_sidecar.rb                     # `class_eval "def #{name}"`, placed per call site
   parse_cache.rb, file_index.rb,
   source_index.rb, caller_file_cache.rb      # caches that drive perf
   railtie.rb                                 # auto-registers rake tasks
