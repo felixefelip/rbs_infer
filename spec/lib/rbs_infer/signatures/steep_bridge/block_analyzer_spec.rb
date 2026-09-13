@@ -2,7 +2,7 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Signatures::SteepBridge::BlockAnalyzer, :dummy_app do
-  subject(:bridge) { RbsInfer::Signatures::SteepBridge.new }
+  subject(:bridge) { RbsInfer::Signatures::SteepBridge.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new) }
 
   # A method that only hands its block to someone else says nothing about it on
   # its own, so the CALLEE's declaration is the evidence (felixefelip/rbs_infer#149).
@@ -17,7 +17,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::BlockAnalyzer, :dummy_app do
       RUBY
 
       expect(bridge.forwarded_block_requirements(code)["named"])
-        .to eq(required: true, params: ["String"])
+        .to eq(required: true, params: ['"token"'])
     end
 
     # felixefelip/rbs_infer#174. The anonymous forward is the same statement
@@ -35,7 +35,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::BlockAnalyzer, :dummy_app do
       RUBY
 
       expect(bridge.forwarded_block_requirements(code)["anonymous"])
-        .to eq(required: true, params: ["String"])
+        .to eq(required: true, params: ['"token"'])
     end
 
     # `&:symbol` builds a proc on the spot; it is not this method's block, so it

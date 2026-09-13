@@ -1,19 +1,19 @@
 class Example5
-  def run: () -> String
+  def run: () -> "JOHN DOE"
 end
 
 class Example5
   class Foo
-    self.@name: String?
+    self.@name: "John Doe"?
 
-    def self.name: () -> String?
-    def self.name=: (String value) -> String
+    def self.name: () -> "John Doe"?
+    def self.name=: ("John Doe" value) -> "John Doe"
   end
 end
 
 class Example5
   class Bar
-    def foo_name: () -> String
-    def deep_foo_name: () -> String
+    def foo_name: () -> "JOHN DOE"
+    def deep_foo_name: () -> "JOHN DOE"
   end
 end

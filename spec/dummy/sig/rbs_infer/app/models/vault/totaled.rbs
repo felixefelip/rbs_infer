@@ -7,7 +7,7 @@ end
 module Vault
   module Totaled
     module ClassMethods
-      def vault_key: () -> String
+      def vault_key: () -> "vault"
     end
   end
 end

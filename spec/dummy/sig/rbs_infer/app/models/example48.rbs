@@ -8,7 +8,7 @@ class Example48
   end
 
   module Baz::BananaMethods
-    def age: () -> Integer
+    def age: () -> 31
   end
 end
 
@@ -17,6 +17,6 @@ class Example48
     extend ::Example48::Baz::BananaMethods
     include ::Example48::Baz
 
-    def self.call_age: () -> Integer
+    def self.call_age: () -> 41
   end
 end

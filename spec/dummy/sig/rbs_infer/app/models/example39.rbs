@@ -17,6 +17,6 @@ module Example39
     extend ::Example39::Foo
 
     def call_age: () -> Integer
-    def age: () -> Integer
+    def age: () -> 31
   end
 end

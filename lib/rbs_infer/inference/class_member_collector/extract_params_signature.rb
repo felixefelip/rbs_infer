@@ -97,7 +97,11 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
         @nil_default_params << param.name.to_s
         "untyped"
       else
-        infer_node_type(value) || "untyped"
+        # The same reading as `nil` above, for every other literal. A default is
+        # what the method gets when nobody passes anything; it does not say which
+        # values a caller may pass. `def gravatar_url(size = 80)` typed `?80 size`
+        # rejects every other size.
+        RbsInfer::AST::NodeTypeInferrer.widen_literal_node(value) || infer_node_type(value) || "untyped"
       end
     end
 

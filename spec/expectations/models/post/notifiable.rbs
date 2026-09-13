@@ -9,7 +9,7 @@ class Post
 
     private
 
-    def deliver_notification: (untyped subscriber) -> { body: String, from: String, sent_at: ActiveSupport::TimeWithZone, to: String? }
+    def deliver_notification: (untyped subscriber) -> { body: "post_notification", from: String, sent_at: ActiveSupport::TimeWithZone, to: String? }
     def notify_author_followers: () -> String
     def author_digest_subject: () -> String
   end

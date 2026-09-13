@@ -14,7 +14,7 @@ class Example53
     extend ::Example53::Baz::BananaMethods
     include ::Example53::Baz
 
-    def self.origin: () -> String
+    def self.origin: () -> "farm"
     def self.call_age: () -> Integer
   end
 end

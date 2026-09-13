@@ -218,8 +218,43 @@ module RbsInfer::Signatures
     # in method-type position is an overload separator, so it has to go. This
     # one is about what the `?` BINDS to. A bare proc return type reads fine,
     # so wrapping it there would be noise for no one.
+    # The class a literal TYPE belongs to, or nil for anything else. A resolver
+    # handed `"abc"` has nothing to look `upcase` up on; the call is a `String`
+    # call, and the literal is a `String`.
+    LITERAL_TYPE_CLASSES = { String => "String", Symbol => "Symbol", Integer => "Integer" }.freeze
+    LITERAL_TYPE_START = /\A(?:"|:|-?\d|true\z|false\z)/
+
+    def widen_literal_type(type_str)
+      return nil unless type_str&.match?(LITERAL_TYPE_START)
+
+      parsed = RBS::Parser.parse_type(type_str)
+      return nil unless parsed.is_a?(RBS::Types::Literal)
+
+      value = parsed.literal
+      return "bool" if value == true || value == false
+
+      LITERAL_TYPE_CLASSES[LITERAL_TYPE_CLASSES.keys.find { |k| value.is_a?(k) }]
+    rescue RBS::ParsingError, RBS::BaseError
+      nil
+    end
+
     def parenthesize_before_optional(type_str)
+      return "(#{type_str})" if bare_symbol_literal?(type_str)
+
       wrap_top_level(type_str, /[|&^]/, [RBS::Types::Union, RBS::Types::Intersection, RBS::Types::Proc])
+    end
+
+    # `?` is a legal character in a symbol, so appending the nilable marker to
+    # `:edit` yields `:edit?` — which RBS reads as the symbol `:edit?`, not as
+    # `:edit` or nil. Parens keep the two apart. Only the bare symbol is
+    # affected: `"edit"?`, `1?`, `true?` and `:edit!?` all parse as intended.
+    def bare_symbol_literal?(type_str)
+      return false unless type_str&.start_with?(":")
+
+      parsed = RBS::Parser.parse_type(type_str)
+      parsed.is_a?(RBS::Types::Literal) && parsed.literal.is_a?(Symbol)
+    rescue RBS::ParsingError, RBS::BaseError
+      false
     end
 
     # Wraps `type_str` in parens when it parses to one of `kinds`. `trigger` is

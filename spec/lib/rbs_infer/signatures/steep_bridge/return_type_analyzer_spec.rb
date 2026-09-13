@@ -2,7 +2,7 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app do
-  subject(:bridge) { RbsInfer::Signatures::SteepBridge.new }
+  subject(:bridge) { RbsInfer::Signatures::SteepBridge.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new) }
 
   describe "#method_return_types" do
     it "resolves method return types from body expressions" do
@@ -56,7 +56,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
 
       result = bridge.method_return_types(code)
       ret = result["verify_multiples_returns_with_void_and_rescue"]
-      expect(ret).to match(/String\??/)
+      expect(ret).to match(/"error"\??/)
       expect(ret).not_to include("void")
     end
 

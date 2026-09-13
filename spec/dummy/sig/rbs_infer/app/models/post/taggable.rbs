@@ -14,7 +14,7 @@ end
 class Post
   module Taggable
     module ClassMethods
-      def default_tag_names: () -> Array[String]
+      def default_tag_names: () -> Array[("news" | "featured")]
       def known_tag?: (untyped name) -> bool
       def tags_ordered_by_tag_name: () -> Post::ActiveRecord_Relation
       def touch_recently_tagged: () -> nil

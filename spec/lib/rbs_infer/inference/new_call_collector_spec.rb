@@ -128,8 +128,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
     usages = collect_usages(source, target_class: "Foo")
     expect(usages.size).to eq(1)
-    expect(usages.first["nome"]).to eq("String")
-    expect(usages.first["idade"]).to eq("Integer")
+    expect(usages.first["nome"]).to eq('"teste"')
+    expect(usages.first["idade"]).to eq("42")
   end
 
   it "resolve variáveis locais atribuídas via method call" do
@@ -199,7 +199,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
     usages = collect_usages(source, target_class: "Academico::Aluno::Email")
     expect(usages.size).to eq(1)
-    expect(usages.first["endereco"]).to eq("String")
+    expect(usages.first["endereco"]).to eq('"test@email.com"')
   end
 
   it "não faz match parcial incorreto" do
@@ -955,7 +955,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         target_class: "View", target_methods: { "render" => ["target"] }
       )
 
-      expect(usages["render"].first["target"]).to eq("{ partial: String }")
+      expect(usages["render"].first["target"]).to eq('{ partial: "posts/form" }')
     end
 
     # A record keeps each key bound to its own value type. `Hash[Symbol, String | Post]`
@@ -966,7 +966,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         target_class: "View", target_methods: { "render" => ["target"] }
       )
 
-      expect(usages["render"].first["target"]).to eq("{ partial: String, count: Integer }")
+      expect(usages["render"].first["target"]).to eq('{ partial: "posts/form", count: 2 }')
     end
 
     it "builds a record for a nested hash too, so `locals:` keeps its own keys" do
@@ -976,7 +976,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       )
 
       expect(usages["render"].first["target"])
-        .to eq("{ partial: String, locals: { count: Integer } }")
+        .to eq('{ partial: "posts/form", locals: { count: 2 } }')
     end
 
     # A record type can only describe all-symbol keys; anything else keeps `Hash[K, V]`.
@@ -987,7 +987,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       )
 
       expect(usages["render"].first["target"])
-        .to eq("{ partial: String, locals: Hash[String, untyped] }")
+        .to eq('{ partial: "posts/form", locals: Hash[String, untyped] }')
     end
 
     it "keeps a real keyword argument as a keyword" do
@@ -997,7 +997,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         target_class: "View", target_methods: { "render" => ["partial"] }
       )
 
-      expect(usages["render"].first["partial"]).to eq("String")
+      expect(usages["render"].first["partial"]).to eq('"posts/form"')
       expect(usages["render"].first).not_to have_key("target")
     end
 
@@ -1007,7 +1007,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         target_class: "View", target_methods: { "render" => ["target"] }
       )
 
-      expect(usages["render"].first["target"]).to eq("String")
+      expect(usages["render"].first["target"]).to eq('"posts/summary"')
     end
   end
 

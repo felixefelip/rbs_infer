@@ -24,22 +24,22 @@ RSpec.describe RbsInfer::AST::NodeTypeInferrer do
     end
 
     it "reads the element type off the elements" do
-      expect(infer_array("[64, 128]")).to eq("Array[Integer]")
-      expect(infer_array('["a", "b"]')).to eq("Array[String]")
-      expect(infer_array("[:a, :b]")).to eq("Array[Symbol]")
+      expect(infer_array("[64, 128]")).to eq("Array[(64 | 128)]")
+      expect(infer_array('["a", "b"]')).to eq('Array[("a" | "b")]')
+      expect(infer_array("[:a, :b]")).to eq("Array[(:a | :b)]")
     end
 
     # De-duplication and subsumption come from the merger, so `bool` stays one
     # type rather than becoming `(bool | bool)`.
     it "unions genuinely mixed elements, collapsing what repeats" do
-      expect(infer_array('[1, "a"]')).to eq("Array[(Integer | String)]")
+      expect(infer_array('[1, "a"]')).to eq('Array[(1 | "a")]')
       expect(infer_array("[true, false]")).to eq("Array[bool]")
-      expect(infer_array("[1, 2.0, 3]")).to eq("Array[(Integer | Float)]")
+      expect(infer_array("[1, 2.0, 3]")).to eq("Array[(1 | Float | 3)]")
     end
 
     it "types elements that are not literals" do
       expect(infer_array("[User.new]")).to eq("Array[User]")
-      expect(infer_array("[[1, 2], [3]]")).to eq("Array[Array[Integer]]")
+      expect(infer_array("[[1, 2], [3]]")).to eq("Array[(Array[(1 | 2)] | Array[3])]")
       expect(infer_array("[size]", known_types: { "size" => "Integer" })).to eq("Array[Integer]")
     end
 
@@ -70,17 +70,17 @@ RSpec.describe RbsInfer::AST::NodeTypeInferrer do
     # kind must map identically regardless of caller — this is what the per-class
     # copies used to drift on (e.g. some missed Array/Hash/InterpolatedSymbol).
     it "maps every unambiguous literal node to its RBS type" do
-      expect(infer_literal('"x"')).to eq("String")
+      expect(infer_literal('"x"')).to eq('"x"')
       expect(infer_literal('"a#{b}c"')).to eq("String")          # InterpolatedString
-      expect(infer_literal("1")).to eq("Integer")
-      expect(infer_literal("1.5")).to eq("Float")
-      expect(infer_literal(":a")).to eq("Symbol")
+      expect(infer_literal("1")).to eq("1")
+      expect(infer_literal("1.5")).to eq("Float")                # RBS has no float literal
+      expect(infer_literal(":a")).to eq(":a")
       expect(infer_literal(':"a#{b}"')).to eq("Symbol")          # InterpolatedSymbol
-      expect(infer_literal("true")).to eq("bool")
-      expect(infer_literal("false")).to eq("bool")
+      expect(infer_literal("true")).to eq("true")
+      expect(infer_literal("false")).to eq("false")
       expect(infer_literal("nil")).to eq("nil")
-      expect(infer_literal("[1, 2]")).to eq("Array[Integer]")
-      expect(infer_literal("{ a: 1 }")).to eq("{ a: Integer }")
+      expect(infer_literal("[1, 2]")).to eq("Array[(1 | 2)]")
+      expect(infer_literal("{ a: 1 }")).to eq("{ a: 1 }")
       expect(infer_literal("/abc/")).to eq("Regexp")
       expect(infer_literal('/a#{b}/')).to eq("Regexp")           # InterpolatedRegexp
     end
@@ -95,18 +95,18 @@ RSpec.describe RbsInfer::AST::NodeTypeInferrer do
 
   describe ".infer_hash_type" do
     it "returns record type for all-Symbol keys" do
-      expect(infer_hash("{ foo: 'bar', baz: 42 }")).to eq("{ foo: String, baz: Integer }")
+      expect(infer_hash("{ foo: 'bar', baz: 42 }")).to eq('{ foo: "bar", baz: 42 }')
     end
 
     it "returns record type with various literal value types" do
       expect(infer_hash("{ s: 'x', i: 1, f: 1.5, sym: :a, b: true, n: nil }")).to eq(
-        "{ s: String, i: Integer, f: Float, sym: Symbol, b: bool, n: nil }"
+        '{ s: "x", i: 1, f: Float, sym: :a, b: true, n: nil }'
       )
     end
 
     it "returns nested record type for nested hashes" do
       expect(infer_hash("{ a: 1, nested: { b: 2, c: 3 } }")).to eq(
-        "{ a: Integer, nested: { b: Integer, c: Integer } }"
+        "{ a: 1, nested: { b: 2, c: 3 } }"
       )
     end
 
@@ -148,7 +148,7 @@ RSpec.describe RbsInfer::AST::NodeTypeInferrer do
     end
 
     it "handles array values" do
-      expect(infer_hash("{ items: [1, 2, 3] }")).to eq("{ items: Array[Integer] }")
+      expect(infer_hash("{ items: [1, 2, 3] }")).to eq("{ items: Array[(1 | 2 | 3)] }")
     end
 
     context "with known_types context" do
@@ -173,7 +173,7 @@ RSpec.describe RbsInfer::AST::NodeTypeInferrer do
       it "mixes literal and context-resolved types" do
         known = { "from_address" => "String" }
         expect(infer_hash("{ from: from_address, count: 42 }", known_types: known)).to eq(
-          "{ from: String, count: Integer }"
+          "{ from: String, count: 42 }"
         )
       end
     end

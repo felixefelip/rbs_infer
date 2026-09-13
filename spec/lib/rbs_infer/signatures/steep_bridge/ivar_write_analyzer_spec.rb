@@ -2,7 +2,7 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app do
-  let(:bridge) { RbsInfer::Signatures::SteepBridge.new }
+  let(:bridge) { RbsInfer::Signatures::SteepBridge.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new) }
 
   describe "#ivar_write_types" do
     # Cobertura da regra introduzida em felixefelip/rbs_infer#4:

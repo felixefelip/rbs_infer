@@ -19,7 +19,7 @@ class Example33
   class Bar
     extend ::Example33::Foo
 
-    def age: () -> Integer
+    def age: () -> 31
   end
 end
 
@@ -27,7 +27,7 @@ class Example33
   class BarOther
     extend ::Example33::Foo
 
-    def name: () -> String
+    def name: () -> "John Doe"
     def call_name_upcase: () -> String
     def name_upcase: () -> String
   end

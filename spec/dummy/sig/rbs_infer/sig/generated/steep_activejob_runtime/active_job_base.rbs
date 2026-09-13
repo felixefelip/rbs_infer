@@ -1,5 +1,5 @@
 module ActiveJob
   class Base
-    def self.perform_later: (*(Post | { recipient: String? } | User & User::Validated | { sizes: Array[Integer] }) args, **untyped) -> ActiveJob::Base
+    def self.perform_later: (*(Post | { recipient: String? } | User & User::Validated | { sizes: Array[64 | 128] }) args, **untyped) -> ActiveJob::Base
   end
 end

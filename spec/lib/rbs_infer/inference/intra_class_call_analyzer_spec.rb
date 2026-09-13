@@ -26,7 +26,7 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
       end
     RUBY
 
-    bridge = RbsInfer::Signatures::SteepBridge.new
+    bridge = RbsInfer::Signatures::SteepBridge.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new)
     result = Prism.parse(source)
     visitor = described_class.new(
       steep_bridge: bridge,
@@ -56,7 +56,7 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
       end
     RUBY
 
-    bridge = RbsInfer::Signatures::SteepBridge.new
+    bridge = RbsInfer::Signatures::SteepBridge.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new)
     result = Prism.parse(source)
     visitor = described_class.new(
       steep_bridge: bridge,
@@ -102,7 +102,7 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
     RUBY
 
     visitor = analyze(source)
-    expect(visitor.inferred_param_types["track_event"]["action"]).to eq("(String | Symbol)")
+    expect(visitor.inferred_param_types["track_event"]["action"]).to eq('("created" | :updated)')
   end
 
   it "infers a type through an ImplicitNode (shorthand keyword: enroll(student:))" do

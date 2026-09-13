@@ -1,15 +1,15 @@
 module Example30
   class Foo
-    def name: () -> String
+    def name: () -> "Foo"
     def build_age: () -> Symbol
-    def call_age: () -> Integer
+    def call_age: () -> 35
   end
 end
 
 module Example30
   class Foo
     class AfterBuildAge
-      def age: () -> Integer
+      def age: () -> 25
     end
   end
 end

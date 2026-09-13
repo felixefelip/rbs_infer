@@ -5,7 +5,7 @@ class Widget
     alias was_just_published? published?
     alias just_published? published?
 
-    def publish: () -> { action: Symbol | String, particulars: untyped }
-    def published?: () -> bool
+    def publish: () -> { action: :published | "renamed" | :closed | :reopened, particulars: untyped }
+    def published?: () -> true
   end
 end

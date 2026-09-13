@@ -56,7 +56,7 @@ RSpec.describe "a call site reaching the target through extend" do
 
     rbs = RbsInfer::Analyzer.new(target_class: "Mixin", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
 
-    expect(rbs).to include("def notify: (String target) ->")
+    expect(rbs).to include('def notify: ("hi" target) ->')
   end
 
   # The same reach, one level in: the module is NESTED under the target, so it is not a
@@ -100,7 +100,7 @@ RSpec.describe "a call site reaching the target through extend" do
 
     rbs = RbsInfer::Analyzer.new(target_class: "Wrap", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
 
-    expect(rbs).to include("def notify: (String value) ->")
+    expect(rbs).to include('def notify: ("hi" value) ->')
   end
 
   # And a `def self.` of the same name on the extender SHADOWS it, so the call site
@@ -147,7 +147,7 @@ RSpec.describe "a call site reaching the target through extend" do
 
     rbs = RbsInfer::Analyzer.new(target_class: "Wrap", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
 
-    expect(rbs).to include("def self.notify: (String value) ->")
+    expect(rbs).to include('def self.notify: ("hi" value) ->')
     expect(rbs).to include("def notify: (untyped value) ->")
   end
 
@@ -181,7 +181,7 @@ RSpec.describe "a call site reaching the target through extend" do
 
     rbs = RbsInfer::Analyzer.new(target_class: "Mixin", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
 
-    expect(rbs).to include("def notify: (String target) ->")
+    expect(rbs).to include('def notify: ("hi" target) ->')
   end
 
   # And the constant spelling earns no more than the typed one does: the singleton side is

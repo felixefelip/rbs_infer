@@ -123,8 +123,8 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
     RUBY
 
     collector = collect(source)
-    expect(collector.members.find { |m| m.name == "build_name" }.signature).to include("-> String")
-    expect(collector.members.find { |m| m.name == "build_count" }.signature).to include("-> Integer")
+    expect(collector.members.find { |m| m.name == "build_name" }.signature).to include('-> "hello"')
+    expect(collector.members.find { |m| m.name == "build_count" }.signature).to include("-> 42")
   end
 
   it "não atribui definições dentro de blocos à classe léxica" do

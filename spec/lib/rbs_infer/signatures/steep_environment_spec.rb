@@ -11,8 +11,9 @@ RSpec.describe RbsInfer::Signatures::SteepEnvironment, :dummy_app do
     it "is memoized — the same context object across instances and calls" do
       ctx = described_class.steep_context
       expect(ctx).to be(described_class.steep_context)
-      expect(RbsInfer::Signatures::SteepBridge.new.send(:steep_subtyping)).to be(ctx[:subtyping])
-      expect(RbsInfer::Signatures::SteepBridge.new.send(:steep_subtyping)).to be(RbsInfer::Signatures::SteepBridge.new.send(:steep_subtyping))
+      registry = Steep::Project::LiteralMethodRegistry.new
+      expect(RbsInfer::Signatures::SteepBridge.new(literal_method_registry: registry).send(:steep_subtyping)).to be(ctx[:subtyping])
+      expect(RbsInfer::Signatures::SteepBridge.new(literal_method_registry: registry).send(:steep_subtyping)).to be(RbsInfer::Signatures::SteepBridge.new(literal_method_registry: registry).send(:steep_subtyping))
     end
 
     it "is rebuilt after reset! (env may have changed between levels)" do

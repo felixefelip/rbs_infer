@@ -27,7 +27,7 @@ class Example43
     extend ::Example43::Foo
 
     def call_age: () -> Integer
-    def age: () -> Integer
+    def age: () -> 31
   end
 end
 
@@ -36,7 +36,7 @@ class Example43
     extend ::Example43::Foo
 
     def call_age: () -> Integer
-    def age: () -> Integer
+    def age: () -> 31
   end
 end
 
@@ -46,7 +46,7 @@ class Example43
 
     def call_age: () -> Integer
     def call_name: () -> String
-    def age: () -> Integer
-    def name: () -> String
+    def age: () -> 31
+    def name: () -> "John Doe"
   end
 end

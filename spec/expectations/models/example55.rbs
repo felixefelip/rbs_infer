@@ -3,6 +3,6 @@ class Example55
     extend ::Example55::Baz::BananaMethods
     include ::Example55::Baz
 
-    def self.call_age: () -> Integer
+    def self.call_age: () -> 41
   end
 end

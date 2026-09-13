@@ -1,5 +1,5 @@
 class Example59Labels
-  INDEXES: Array[String]
+  INDEXES: Array[("all" | "closed")]
 
   def labels: () -> Array[String]
 end

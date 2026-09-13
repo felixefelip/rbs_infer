@@ -1,6 +1,6 @@
 class Notification < ApplicationRecord
   def channel: () -> String
-  def mute!: () -> String
+  def mute!: () -> "none"
   def read?: () -> bool
   def headline: () -> String
 

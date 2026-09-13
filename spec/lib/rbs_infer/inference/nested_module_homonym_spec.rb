@@ -74,7 +74,7 @@ RSpec.describe "two nested modules declaring the same method name" do
 
     # `singleton(Wrap::Beta)` reaches `Beta.stamp` — the receiver names the owner and
     # the `singleton()` says which side of it.
-    expect(rbs).to include("def self.stamp: (String value)")
+    expect(rbs).to include('def self.stamp: ("hi" value)')
     # And says nothing about `Alpha#stamp`, which no call site mentions. Under the
     # name-keyed table this line read `(String value)` too.
     expect(rbs).to include("def stamp: (untyped value)")
@@ -97,6 +97,6 @@ RSpec.describe "two nested modules declaring the same method name" do
 
     rbs = RbsInfer::Analyzer.new(target_class: "Wrap", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
 
-    expect(rbs).to include("def self.stamp: (String value)")
+    expect(rbs).to include('def self.stamp: ("hi" value)')
   end
 end

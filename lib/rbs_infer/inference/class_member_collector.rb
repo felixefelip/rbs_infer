@@ -563,12 +563,55 @@ module RbsInfer::Inference
       type = infer_node_type(last_stmt)
       return nil unless type
 
+      early = early_return_types(defn)
+      return nil if early.nil?
+
+      type = RbsInfer::Inference::TypeMerger.union_types([type, *early]) unless early.empty?
+
       # Se há return nil no corpo, tornar nilable
       if has_nil_return?(defn)
         type = RbsInfer::Signatures::RbsParserUtil.nilablize(type)
       end
 
       type
+    end
+
+    # The types an early `return <value>` contributes. Only the tail used to
+    # reach the signature, so `return false if flag` above a `true` tail
+    # inferred `-> true` (felixefelip/rbs_infer#347).
+    #
+    # nil when any of them cannot be typed here: a union missing one arm is
+    # narrower than the truth, and narrower is what produces a declaration the
+    # body contradicts. Falling back leaves the Steep-backed pass to read the
+    # whole body, which is what it is for.
+    def early_return_types(defn)
+      returns_in(defn).each_with_object([]) do |node, types|
+        arguments = node.arguments&.arguments
+        # A bare `return` and `return nil` are nilability, not a type —
+        # `has_nil_return?` below reads them.
+        next if arguments.nil? || arguments.empty?
+        next if arguments.any? { |argument| argument.is_a?(Prism::NilNode) }
+        return nil unless arguments.size == 1
+
+        type = infer_node_type(arguments.first) or return nil
+        types << type
+      end
+    end
+
+    # Every `return` that returns from THIS method. A nested `def` has its own,
+    # and a lambda's `return` leaves the lambda — neither is a return path here.
+    # A block's is, which is why blocks are walked.
+    def returns_in(node, found = [])
+      return found unless node.is_a?(Prism::Node)
+
+      node.compact_child_nodes.each do |child|
+        next if child.is_a?(Prism::DefNode) || child.is_a?(Prism::LambdaNode)
+
+        found << child if child.is_a?(Prism::ReturnNode)
+        returns_in(child, found)
+      end
+
+      found
     end
 
     # Purely syntactic, unlike `ReturnTypeResolver`'s: this pass runs BEFORE any

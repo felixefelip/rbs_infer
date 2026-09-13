@@ -24,6 +24,6 @@ class Example62
 end
 
 class Example62Caller
-  def fill: () -> String
+  def fill: () -> "value"
   def read_hallmark: () -> String
 end

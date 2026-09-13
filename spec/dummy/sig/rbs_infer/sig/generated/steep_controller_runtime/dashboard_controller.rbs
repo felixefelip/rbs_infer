@@ -1,9 +1,9 @@
 class DashboardController
   @__rbs_infer__performed: true?
 
-  def render: (?Symbol? target, *untyped rest) -> bool
+  def render: (?(:show)? target, *untyped rest) -> true
 
   private
 
-  def __rbs_infer__run_show: () -> bool?
+  def __rbs_infer__run_show: () -> true?
 end

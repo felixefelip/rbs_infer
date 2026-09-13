@@ -1,21 +1,21 @@
 class Example4
   def run: () -> untyped
-  def run_foo_name: () -> String
+  def run_foo_name: () -> "JOHN DOE"
 end
 
 class Example4
   class Foo
-    self.@name: String?
+    self.@name: "John Doe"?
 
-    def self.name: () -> String?
-    def self.name=: ((String | nil) value) -> String?
+    def self.name: () -> "John Doe"?
+    def self.name=: (("John Doe" | nil) value) -> "John Doe"?
   end
 end
 
 class Example4
   class Bar
     def foo_name_before: () -> untyped
-    def foo_name: () -> String
+    def foo_name: () -> "JOHN DOE"
     def foo_name_after: () -> untyped
   end
 end

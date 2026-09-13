@@ -1,7 +1,7 @@
 class Example68Entry
-  attr_reader label: (String | nil)
-  attr_reader stamp: Integer
+  attr_reader label: ("opened" | nil)
+  attr_reader stamp: (1 | 0)
 
-  def initialize: ((String | nil) label, Integer stamp) -> void
+  def initialize: (("opened" | nil) label, (1 | 0) stamp) -> void
   def marker: () -> untyped
 end

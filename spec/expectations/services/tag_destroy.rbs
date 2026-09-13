@@ -25,7 +25,7 @@ class TagDestroy
   def test_array_with_array: () -> Array[Array[Nokogiri::XML::Node?]]
   def test_array_with_array_with_elements_untyped: () -> Array[Array[untyped]]
   def verify_multiples_returns_with_void: () -> void
-  def verify_multiples_returns_with_void_and_rescue: () -> String?
+  def verify_multiples_returns_with_void_and_rescue: () -> "error"?
   def save_post: () -> void
   def user_posts: () -> User_Post::ActiveRecord_Associations_CollectionProxy
 

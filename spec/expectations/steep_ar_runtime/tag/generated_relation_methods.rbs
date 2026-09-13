@@ -1,7 +1,7 @@
 class Tag
   module GeneratedRelationMethods
     def popular: (?Integer limit) -> untyped
-    def default_limit: () -> Integer
+    def default_limit: () -> 10
     def named: (String value) -> (Tag & Tag::Validated)?
   end
 end

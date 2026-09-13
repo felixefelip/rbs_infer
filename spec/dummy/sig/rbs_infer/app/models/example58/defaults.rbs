@@ -2,14 +2,14 @@ class Example58
   module Defaults
     extend ActiveSupport::Concern
 
-    def default_indexed_by: () -> String
+    def default_indexed_by: () -> "all"
   end
 end
 
 class Example58
   module Defaults
     module ClassMethods
-      def default_values: () -> { indexed_by: String, sorted_by: String }
+      def default_values: () -> { indexed_by: "all", sorted_by: "latest" }
     end
   end
 end

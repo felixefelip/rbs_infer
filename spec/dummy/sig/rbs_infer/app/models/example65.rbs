@@ -1,6 +1,6 @@
 class Example65
   class Dispatcher
-    def self.dispatch: (*(String | { greeting: String } | Integer | { step: Integer }) args, **untyped) -> Object
+    def self.dispatch: (*("ada" | { greeting: "hello" } | 1 | { step: 2 } | "/tmp/x.csv") args, **untyped) -> Object
 
     def handle: (*untyped) -> untyped
   end
@@ -8,7 +8,7 @@ end
 
 class Example65
   class Rival
-    def self.dispatch: (*(bool | { mode: Symbol }) args, **untyped) -> Object
+    def self.dispatch: (*(true | { mode: :fast }) args, **untyped) -> Object
 
     def handle: (*untyped) -> untyped
   end

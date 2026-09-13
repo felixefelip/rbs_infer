@@ -2,5 +2,5 @@ class Example58
   extend ::Example58::Defaults::ClassMethods
   include Defaults
 
-  def indexed_by: () -> String
+  def indexed_by: () -> "ALL"
 end

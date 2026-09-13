@@ -1,13 +1,13 @@
 class PostsController
   @__rbs_infer__performed: true?
 
-  def render: (?Symbol? target, *{ status: Symbol } rest) -> bool
+  def render: (?(:index | :show | :new | :edit)? target, *{ status: :unprocessable_entity } rest) -> true
 
   private
 
-  def __rbs_infer__run_index: () -> bool?
-  def __rbs_infer__run_show: () -> bool?
-  def __rbs_infer__run_new: () -> bool?
+  def __rbs_infer__run_index: () -> true?
+  def __rbs_infer__run_show: () -> true?
+  def __rbs_infer__run_new: () -> true?
   def __rbs_infer__run_create: () -> void
   def __rbs_infer__run_update: () -> void
   def __rbs_infer__run_destroy: () -> void

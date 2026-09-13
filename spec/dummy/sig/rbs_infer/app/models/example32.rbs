@@ -17,8 +17,8 @@ class Example32
 
     extend ::Example32::Foo
 
-    def test: () -> String
+    def test: () -> "test"
     def use_test: () -> String?
-    def age: () -> Integer
+    def age: () -> 31
   end
 end
