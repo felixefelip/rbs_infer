@@ -15,7 +15,7 @@ module RbsInfer::Signatures
   # - Attr inference via initialize
   # - RBS generation
   class SteepBridge
-    def initialize(literal_method_registry: Steep::Project::LiteralMethodRegistry.new)
+    def initialize(literal_method_registry:)
       # The corpus registry is a project-wide snapshot. Each bridge augments it
       # with its expanded in-memory source, so it needs a private copy: a parse
       # failure or generated reopen in one target must not taint every target

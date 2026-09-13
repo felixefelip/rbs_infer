@@ -2,7 +2,7 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
-  subject(:bridge) { described_class.new }
+  subject(:bridge) { described_class.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new) }
 
   describe "#initialize" do
     it "does not taint a supplied project registry with another bridge's source" do
@@ -250,7 +250,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       end
 
       it "returns an empty store without raising" do
-        fresh = described_class.new
+        fresh = described_class.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new)
         store = fresh.send(:contracts_store)
 
         expect(store).to be_a(Steep::Contracts::Store)
@@ -269,7 +269,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       end
 
       it "warns and falls back to an empty store" do
-        fresh = described_class.new
+        fresh = described_class.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new)
         # The Steep loader catches Psych::SyntaxError internally and returns
         # Store.empty, so our rescue isn't exercised — but the path is still
         # safe and produces an empty store rather than blowing up.
@@ -535,15 +535,15 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
   # which `SteepEnvironment.reset!` replaces.
   describe "sharing across bridges" do
     it "hands two bridges the same sidecar store" do
-      expect(described_class.new.send(:contracts_store))
-        .to equal(described_class.new.send(:contracts_store))
+      expect(described_class.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new).send(:contracts_store))
+        .to equal(described_class.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new).send(:contracts_store))
     end
 
     it "hands two bridges the same type-check result" do
       source = "class SharedProbe\n  def go = 1\nend\n"
 
-      expect(described_class.new.type_check(source))
-        .to equal(described_class.new.type_check(source))
+      expect(described_class.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new).type_check(source))
+        .to equal(described_class.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new).type_check(source))
     end
 
     it "buckets everything under one context, so one key invalidates all of it" do
