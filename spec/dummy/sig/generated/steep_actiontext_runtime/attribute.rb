@@ -13,7 +13,7 @@
 module ActionText
   module Attribute
     module ClassMethods
-      # @rbs_infer |...
+      # @rbs_infer no-signature
       def has_rich_text(name, encrypted: false, strict_loading: strict_loading_by_default, store_if_blank: true)
         class_eval <<-CODE, __FILE__, __LINE__ + 1
           def #{name}

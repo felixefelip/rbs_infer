@@ -3,7 +3,6 @@ module ActionText
   end
 
   module Attribute::ClassMethods
-    def has_rich_text: (untyped name, ?encrypted: untyped, ?strict_loading: untyped, ?store_if_blank: untyped) -> untyped | ...
   end
 end
 

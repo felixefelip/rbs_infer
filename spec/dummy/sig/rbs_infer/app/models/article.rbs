@@ -5,4 +5,12 @@ class Article < ApplicationRecord
   def summary: () -> ActionText::RichText
   def summary?: () -> bool
   def summary=: (untyped body) -> untyped
+
+  class AfterContent
+    def rich_text_content: () -> ::ActionText::RichText
+  end
+
+  class AfterSummary
+    def rich_text_summary: () -> ::ActionText::RichText
+  end
 end

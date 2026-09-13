@@ -5,9 +5,20 @@ methods:
     ((::User | nil), "post_notification"): '{ :body => "post_notification", :from
       => ::String, :sent_at => ::ActiveSupport::TimeWithZone, :to => (::String | nil)
       }'
+  EvalReopen::Slots#slot=:
+    ("value"): '"value"'
   EventTracker#track_event:
     '(action: "created")': '{ :action => "created" }'
     "(action: :reported)": "{ :action => :reported }"
+  Eventable#track_event:
+    ("renamed"): '{ :action => "renamed", :particulars => ::Hash[::Symbol, untyped]
+      }'
+    "(:closed)": "{ :action => :closed, :particulars => ::Hash[::Symbol, untyped]
+      }"
+    "(:published)": "{ :action => :published, :particulars => ::Hash[::Symbol, untyped]
+      }"
+    "(:reopened)": "{ :action => :reopened, :particulars => ::Hash[::Symbol, untyped]
+      }"
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -19,6 +30,8 @@ methods:
     ("John Doe"): '"John Doe"'
   Example61.normalize:
     "(:indexed_by)": '"indexed_by"'
+  Example62::Slots#hallmark=:
+    ("value"): '"value"'
   Example69::Foo#call:
     "(flag_name: false)": '"delete"'
     "(flag_name: true)": '"name_delete"'
@@ -34,3 +47,11 @@ methods:
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
+  IncludedHook::Slots#badge=:
+    ("value"): '"value"'
+  IncludedHook::Slots#slot=:
+    ("value"): '"value"'
+  IncludedHook::Slots#stamp=:
+    ("value"): '"value"'
+  Notification::GeneratedStoreAccessors#channel=:
+    ("none"): '"none"'
