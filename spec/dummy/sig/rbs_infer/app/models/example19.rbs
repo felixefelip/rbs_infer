@@ -9,7 +9,7 @@ class Example19
   def show: () -> String
   def call: () -> String?
   def halt: () -> true
-  def record: ("denied"? message) -> String?
+  def record: ("denied"? message) -> "denied"?
 
   private
 

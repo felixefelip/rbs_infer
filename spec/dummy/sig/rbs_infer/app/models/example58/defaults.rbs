@@ -2,7 +2,7 @@ class Example58
   module Defaults
     extend ActiveSupport::Concern
 
-    def default_indexed_by: () -> String
+    def default_indexed_by: () -> "all"
   end
 end
 

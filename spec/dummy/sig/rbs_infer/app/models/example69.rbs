@@ -2,16 +2,16 @@ module Example69
   class Foo
     def name: () -> "name"
     def action: () -> "delete"
-    def call_name_action: () -> String
-    def call_action: () -> String
-    def call_dynamic: () -> String
-    def call_dynamic_with_name: () -> String
-    def call_both: () -> Array[String]
-    def name_action_dynamic: (flag_name: bool) -> String
-    def call_unknown: (flag_name: untyped) -> String
+    def call_name_action: () -> "name_delete"
+    def call_action: () -> "delete"
+    def call_dynamic: () -> ("name_delete" | "delete")
+    def call_dynamic_with_name: () -> ("name_delete" | "delete")
+    def call_both: () -> Array[("name_delete" | "delete")]
+    def name_action_dynamic: (flag_name: bool) -> ("name_delete" | "delete")
+    def call_unknown: (flag_name: untyped) -> ("name_delete" | "delete")
 
     private
 
-    def call: (?flag_name: bool) -> String
+    def call: (?flag_name: bool) -> ("name_delete" | "delete")
   end
 end

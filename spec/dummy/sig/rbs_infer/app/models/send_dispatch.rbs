@@ -10,7 +10,7 @@ end
 class SendDispatchCaller
   def stamped: () -> String
   def stamped_predicate: () -> bool
-  def called: () -> String
+  def called: () -> "called"
   def dynamic: (untyped name) -> untyped
   def underscored: () -> String
   def string_named: () -> String

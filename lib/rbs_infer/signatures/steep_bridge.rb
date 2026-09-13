@@ -117,13 +117,30 @@ module RbsInfer::Signatures
       value_type = context_free_type(value, subtyping)
       return nil unless declared_type && value_type
 
-      subtyping.check(
-        Steep::Subtyping::Relation.new(sub_type: value_type, super_type: declared_type),
-        self_type: nil, instance_type: nil, class_type: nil,
-        constraints: Steep::Subtyping::Constraints.empty
-      ).success?
-    rescue StandardError
-      nil
+      subtype?(value_type, declared_type, subtyping)
+    end
+
+    # Whether `declared` and `value` are the same type up to literals, with
+    # `value` the strictly more precise of the two: `("name_delete" | "delete")`
+    # against `String`, `"name_delete"` against `("name_delete" | "delete")`,
+    # `Array["a"]` against `Array[String]`.
+    #
+    # Three-valued like `accepts?`.
+    def literal_refinement?(declared, value)
+      subtyping = steep_subtyping
+      return nil unless subtyping
+
+      declared_type = context_free_type(declared, subtyping)
+      value_type = context_free_type(value, subtyping)
+      return nil unless declared_type && value_type
+      return false unless literal_bearing?(value_type)
+      return false unless subtype?(value_type, declared_type, subtyping)
+      return false if subtype?(declared_type, value_type, subtyping)
+
+      widened_declared = widen_literals(declared_type)
+      widened_value = widen_literals(value_type)
+      subtype?(widened_value, widened_declared, subtyping) &&
+        subtype?(widened_declared, widened_value, subtyping)
     end
 
     # Returns { "CONSTANT_NAME" => "Type" } for every `NAME = expr` /
@@ -535,9 +552,50 @@ module RbsInfer::Signatures
       parsed = RBS::Parser.parse_type(string)
       return nil if context_dependent?(parsed)
 
-      subtyping.factory.type(parsed.map_type_name { |name, _, _| name.absolute! })
+      absolute = parsed.map_type_name { |name, _, _| name.absolute! }
+      return nil unless known_type_names?(absolute)
+
+      subtyping.factory.type(absolute)
     rescue RBS::ParsingError, RBS::BaseError
       nil
+    end
+
+    def subtype?(sub_type, super_type, subtyping)
+      subtyping.check(
+        Steep::Subtyping::Relation.new(sub_type: sub_type, super_type: super_type),
+        self_type: nil, instance_type: nil, class_type: nil,
+        constraints: Steep::Subtyping::Constraints.empty
+      ).success?
+    end
+
+    # `true`/`false` do not count: `bool` denotes exactly `(true | false)`, so
+    # the literals buy no precision, and `-> bool` is what the predicate
+    # machinery reads.
+    def literal_bearing?(type)
+      if type.is_a?(Steep::AST::Types::Literal)
+        return type.value != true && type.value != false
+      end
+
+      type.each_child.any? { |child| literal_bearing?(child) }
+    end
+
+    def widen_literals(type)
+      return type.back_type if type.is_a?(Steep::AST::Types::Literal)
+
+      type.map_type { |child| widen_literals(child) }
+    end
+
+    # Whether the environment defines every name in `type`. A name it does not
+    # know has no definition to compare against, and an unknown ALIAS makes the
+    # subtyping check raise (`RBS::DefinitionBuilder#expand_alias2`), so this is
+    # asked up front instead of rescued after.
+    def known_type_names?(type)
+      env = SteepEnvironment.definition_builder&.env
+      return true unless env
+
+      names = [] #: Array[RBS::TypeName]
+      type.map_type_name { |name, _, _| names << name; name }
+      names.all? { |name| env.type_name?(name) }
     end
 
     # `self`, `instance` and `class` name whatever definition encloses them, and
@@ -580,6 +638,7 @@ module RbsInfer::Signatures
         contracts: contracts_store,
         postconditions: postconditions_store,
         callbacks: callbacks_store,
+        specializations: specializations_store,
         delegation_registry: delegation_registry_store,
         constructor_bindings: constructor_bindings_store,
         return_forwarding: return_forwarding_store,
@@ -669,6 +728,19 @@ module RbsInfer::Signatures
       rescue StandardError => e
         warn "[rbs_infer] failed to load Steep callbacks from #{base}: #{e.class}: #{e.message}"
         Steep::Callbacks::Store.empty
+      end
+    end
+
+    # Loads the per-argument-tuple return types (felixefelip/rbs_infer#345, stage
+    # S4) from `sig/generated/.steep_specializations.yml`. `steep check` writes
+    # it, so a call site passing a literal reads the return its own arguments
+    # produce instead of the one the declaration states for every caller.
+    def specializations_store
+      sidecar(:specializations) do |base|
+        Steep::Specializations.load(base)
+      rescue StandardError => e
+        warn "[rbs_infer] failed to load Steep specializations from #{base}: #{e.class}: #{e.message}"
+        Steep::Specializations::Store.empty
       end
     end
 

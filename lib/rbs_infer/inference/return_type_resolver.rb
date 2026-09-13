@@ -230,6 +230,35 @@ module RbsInfer::Inference
             m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> self")
           end
 
+          # A fifth slice: the declaration is right and the body satisfies it,
+          # but the body fixes the VALUE — `call(flag_name: true)` returns
+          # `"name_delete"` where `call` is declared `-> String`
+          # (felixefelip/rbs_infer#345). The general case below cannot reach it,
+          # because a `String` never rejects its own literals.
+          members.each do |m|
+            next unless method_member?(m)
+            next if m.name == "initialize"
+            next unless defines_own_body?(m, parsed_target)
+
+            current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
+            next unless current_type && current_type != "untyped"
+
+            steep_type = steep_returns_for(m, steep_returns)[m.name]
+            next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
+            next if steep_type == current_type
+            next unless @steep_bridge.literal_refinement?(current_type, steep_type)
+
+            defn = def_map[m.name]
+            if defn && has_nil_return?(defn, dead_ranges: dead_ranges(parsed_target))
+              steep_type = RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type)
+            end
+
+            m.signature = m.signature.sub(
+              /-> #{Regexp.escape(current_type)}$/,
+              "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(steep_type)}"
+            )
+          end
+
           # The general case the loops above each cover a slice of: the
           # declared return does not ACCEPT the type Steep gives the body, which
           # is the `Ruby::MethodBodyTypeMismatch` the checker reports on the

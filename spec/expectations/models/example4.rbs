@@ -7,7 +7,7 @@ class Example4
   class Foo
     self.@name: "John Doe"?
 
-    def self.name: () -> String?
+    def self.name: () -> "John Doe"?
     def self.name=: (("John Doe" | nil) value) -> "John Doe"?
   end
 end

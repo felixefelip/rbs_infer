@@ -589,6 +589,47 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
     end
   end
 
+  # felixefelip/rbs_infer#345. Same type up to literals, body strictly more
+  # precise.
+  describe "#literal_refinement?" do
+    it "answers true where the body fixes the value the declaration leaves open" do
+      expect(bridge.literal_refinement?("String", '"name_delete"')).to be(true)
+      expect(bridge.literal_refinement?("String", '("name_delete" | "delete")')).to be(true)
+      expect(bridge.literal_refinement?("Integer", "42")).to be(true)
+      expect(bridge.literal_refinement?("Array[String]", 'Array["a"]')).to be(true)
+      expect(bridge.literal_refinement?("{ body: String }", '{ body: "a" }')).to be(true)
+    end
+
+    it "answers true where the body fixes one value out of a declared union" do
+      expect(bridge.literal_refinement?('("name_delete" | "delete")', '"name_delete"')).to be(true)
+      expect(bridge.literal_refinement?('("a" | "b")?', '"a"?')).to be(true)
+    end
+
+    it "answers false where the two types differ only in spelling" do
+      expect(bridge.literal_refinement?('("a" | "b")?', '("a" | "b" | nil)')).to be(false)
+      expect(bridge.literal_refinement?('"a"', '"a"')).to be(false)
+    end
+
+    it "answers false for a boolean, at the top or inside a union" do
+      expect(bridge.literal_refinement?("bool", "true")).to be(false)
+      expect(bridge.literal_refinement?("bool", "(true | false)")).to be(false)
+      expect(bridge.literal_refinement?("(User | bool)", "(User | true)")).to be(false)
+    end
+
+    it "answers false for a refinement that is not about literals" do
+      expect(bridge.literal_refinement?("Numeric", "Integer")).to be(false)
+      expect(bridge.literal_refinement?("String?", "String")).to be(false)
+      expect(bridge.literal_refinement?("String?", '"a"')).to be(false)
+      expect(bridge.literal_refinement?("Integer", '"a"')).to be(false)
+    end
+
+    it "answers nil for a type it cannot compare" do
+      expect(bridge.literal_refinement?("self", '"a"')).to be_nil
+      expect(bridge.literal_refinement?("not a type[", '"a"')).to be_nil
+      expect(bridge.literal_refinement?("String", "not a type[")).to be_nil
+    end
+  end
+
   # felixefelip/rbs_infer#286. Steep decides reachability while typing the `if`;
   # this reads that verdict back so the return-type widening can follow the
   # checker instead of the parser.
