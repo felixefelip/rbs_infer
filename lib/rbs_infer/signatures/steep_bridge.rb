@@ -1,5 +1,6 @@
 require "steep"
 require_relative "../inference/ivar_type_set"
+require_relative "../project/base_dir"
 
 module RbsInfer::Signatures
   # Bridge to Steep's TypeConstruction for resolving expression types.
@@ -761,11 +762,7 @@ module RbsInfer::Signatures
     end
 
     def contracts_base_dir
-      if defined?(::Rails) && ::Rails.respond_to?(:root) && ::Rails.root
-        ::Rails.root.to_s
-      else
-        Dir.pwd
-      end
+      RbsInfer::Project::BaseDir.current
     end
 
     # The method a top-level body stands for, from its `@type self_method:` annotation

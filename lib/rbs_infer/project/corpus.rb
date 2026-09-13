@@ -4,6 +4,8 @@ require_relative "file_index"
 require_relative "caller_file_cache"
 require_relative "constant_sources"
 require_relative "mixin_index"
+require_relative "base_dir"
+require_relative "string_eval_sidecar"
 require_relative "../inference/invoker_self_types"
 
 module RbsInfer::Project
@@ -69,6 +71,14 @@ module RbsInfer::Project
       @constant_sources ||= ConstantSources.new(
         source_index: @source_index, file_index: @file_index, parse_cache: @parse_cache
       )
+    end
+
+    # Read once per run from `sig/generated/.steep_string_evals.yml`, which
+    # `steep check` writes and nothing in this process does — so unlike the
+    # other generated RBS this one cannot go stale between dependency levels,
+    # and it belongs here with the rest of what a run shares.
+    def string_evals
+      @string_evals ||= StringEvalSidecar.load(BaseDir.current)
     end
 
     # Lazy, unlike the four above: an analysis that never asks about a mixin

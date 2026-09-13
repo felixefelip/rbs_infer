@@ -33,6 +33,116 @@ postconditions:
   when_false:
     drops:
     - Account::Validated
+- class: ActiveStorage::Attachment
+  method: save
+  when_true:
+    via_receiver:
+    - &1
+      through: ActiveStorage::Blob#preview_image_attachment
+      as: ActiveStorage::Blob & ActiveStorage::Blob::ValidatedViaPreviewImageAttachment
+    - &2
+      through: ActiveStorage::VariantRecord#image_attachment
+      as: ActiveStorage::VariantRecord & ActiveStorage::VariantRecord::ValidatedViaImageAttachment
+    self: ActiveStorage::Attachment & ActiveStorage::Attachment::Validated
+  when_false:
+    drops:
+    - ActiveStorage::Attachment::Validated
+- class: ActiveStorage::Attachment
+  method: save!
+  when_true:
+    via_receiver:
+    - *1
+    - *2
+    self: ActiveStorage::Attachment & ActiveStorage::Attachment::Validated
+- class: ActiveStorage::Attachment
+  method: update
+  when_true:
+    via_receiver:
+    - *1
+    - *2
+    self: ActiveStorage::Attachment & ActiveStorage::Attachment::Validated
+  when_false:
+    drops:
+    - ActiveStorage::Attachment::Validated
+- class: ActiveStorage::Attachment
+  method: update!
+  when_true:
+    via_receiver:
+    - *1
+    - *2
+    self: ActiveStorage::Attachment & ActiveStorage::Attachment::Validated
+- class: ActiveStorage::Attachment
+  method: valid?
+  when_true:
+    via_receiver:
+    - *1
+    - *2
+    self: ActiveStorage::Attachment & ActiveStorage::Attachment::Validated
+  when_false:
+    drops:
+    - ActiveStorage::Attachment::Validated
+- class: ActiveStorage::Blob
+  method: composed
+  when_false:
+    self: ActiveStorage::Blob & ActiveStorage::Blob::ValidatedUnlessComposed
+- class: ActiveStorage::Blob
+  method: save
+  when_true:
+    self: ActiveStorage::Blob & ActiveStorage::Blob::Validated
+  when_false:
+    drops:
+    - ActiveStorage::Blob::Validated
+- class: ActiveStorage::Blob
+  method: save!
+  when_true:
+    self: ActiveStorage::Blob & ActiveStorage::Blob::Validated
+- class: ActiveStorage::Blob
+  method: update
+  when_true:
+    self: ActiveStorage::Blob & ActiveStorage::Blob::Validated
+  when_false:
+    drops:
+    - ActiveStorage::Blob::Validated
+- class: ActiveStorage::Blob
+  method: update!
+  when_true:
+    self: ActiveStorage::Blob & ActiveStorage::Blob::Validated
+- class: ActiveStorage::Blob
+  method: valid?
+  when_true:
+    self: ActiveStorage::Blob & ActiveStorage::Blob::Validated
+  when_false:
+    drops:
+    - ActiveStorage::Blob::Validated
+- class: ActiveStorage::VariantRecord
+  method: save
+  when_true:
+    self: ActiveStorage::VariantRecord & ActiveStorage::VariantRecord::Validated
+  when_false:
+    drops:
+    - ActiveStorage::VariantRecord::Validated
+- class: ActiveStorage::VariantRecord
+  method: save!
+  when_true:
+    self: ActiveStorage::VariantRecord & ActiveStorage::VariantRecord::Validated
+- class: ActiveStorage::VariantRecord
+  method: update
+  when_true:
+    self: ActiveStorage::VariantRecord & ActiveStorage::VariantRecord::Validated
+  when_false:
+    drops:
+    - ActiveStorage::VariantRecord::Validated
+- class: ActiveStorage::VariantRecord
+  method: update!
+  when_true:
+    self: ActiveStorage::VariantRecord & ActiveStorage::VariantRecord::Validated
+- class: ActiveStorage::VariantRecord
+  method: valid?
+  when_true:
+    self: ActiveStorage::VariantRecord & ActiveStorage::VariantRecord::Validated
+  when_false:
+    drops:
+    - ActiveStorage::VariantRecord::Validated
 - class: Assignment
   method: save
   when_true:

@@ -29,7 +29,7 @@ module RbsInfer::Inference
   # `nil`. Enquanto o tipo é `untyped` não muda nada; quando os call-sites dão
   # um tipo de verdade ao param, é o que faz o `?` do nilable aparecer junto —
   # aplicado no Analyzer, onde o tipo inferido existe (#208).
-  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_nil_defaults, :block_stored_forward, keyword_init: true)
+  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_nil_defaults, :block_stored_forward, :no_signature, keyword_init: true)
 
   # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
   DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
@@ -166,6 +166,7 @@ module RbsInfer::Inference
       name = node.name.to_s
       sig = find_rbs_signature(@comments, @lines, node.location.start_line)
       overloading = find_overloading_marker(@comments, @lines, node.location.start_line)
+      no_signature = find_no_signature_marker(@comments, @lines, node.location.start_line)
 
       extractor = ExtractParamsSignature.new(node.parameters, body: node.body)
       params_sig = extractor.call
@@ -194,7 +195,8 @@ module RbsInfer::Inference
         block_arg_positions: sig ? nil : extractor.block_arg_positions,
         block_open_forward: sig ? nil : extractor.block_open_forward?,
         block_stored_forward: sig ? nil : extractor.block_stored_forward?,
-        overloading: overloading
+        overloading: overloading,
+        no_signature: no_signature
       )
       super
     end
@@ -525,6 +527,28 @@ module RbsInfer::Inference
     # the same class of hard failure it exists to avoid. The analyzer confirms against
     # the environment before emitting (see `Analyzer#confirm_overloading!`).
     def find_overloading_marker(comments, lines, def_line)
+      # `|...`, `| ...` and a trailing `...` alone all read as the same request.
+      marker?(comments, lines, def_line, /@rbs_infer\s+\|?\s*\.\.\./)
+    end
+
+    # `# @rbs_infer no-signature` on its own line above a `def`: give the method a
+    # BODY and no declaration.
+    #
+    # For pseudo-code transcribed so that something can read the body — the source
+    # a macro `class_eval`s is the case that needs it — where the method's real
+    # signature is already declared, accurately, by a gem's RBS. The overloading
+    # form is the wrong tool there: it puts ours AHEAD of the gem's, and ours is
+    # inferred from a body that takes its parameters from nowhere, so every call
+    # site trades a real type for `untyped`. Declaring nothing leaves the accurate
+    # one in place, which is the whole point of transcribing the body rather than
+    # restating the signature.
+    def find_no_signature_marker(comments, lines, def_line)
+      marker?(comments, lines, def_line, /@rbs_infer\s+no-signature/)
+    end
+
+    # A marker comment sits on its own line, within three lines above the `def`,
+    # with nothing but blanks and comments between.
+    def marker?(comments, lines, def_line, pattern)
       comments.any? do |comment|
         comment_line = comment.location.start_line
         next false unless comment_line.between?(def_line - 3, def_line - 1)
@@ -536,8 +560,7 @@ module RbsInfer::Inference
           next false unless code_before.empty?
         end
 
-        # `|...`, `| ...` and a trailing `...` alone all read as the same request.
-        comment.location.slice.match?(/@rbs_infer\s+\|?\s*\.\.\./)
+        comment.location.slice.match?(pattern)
       end
     end
 

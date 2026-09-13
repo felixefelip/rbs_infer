@@ -30,6 +30,17 @@ interface ::_RbsRailsPathHelpers
   def featured_post_user_path: (*untyped) -> ::String
   def users_path: (*untyped) -> ::String
   def user_path: (*untyped) -> ::String
+  def rails_service_blob_path: (*untyped) -> ::String
+  def rails_service_blob_proxy_path: (*untyped) -> ::String
+  def rails_blob_representation_path: (*untyped) -> ::String
+  def rails_blob_representation_proxy_path: (*untyped) -> ::String
+  def rails_disk_service_path: (*untyped) -> ::String
+  def update_rails_disk_service_path: (*untyped) -> ::String
+  def rails_direct_uploads_path: (*untyped) -> ::String
+  def rails_representation_path: (*untyped) -> ::String
+  def rails_blob_path: (*untyped) -> ::String
+  def rails_storage_proxy_path: (*untyped) -> ::String
+  def rails_storage_redirect_path: (*untyped) -> ::String
   def rails_info_properties_url: (*untyped) -> ::String
   def rails_info_routes_url: (*untyped) -> ::String
   def rails_info_notes_url: (*untyped) -> ::String
@@ -59,6 +70,17 @@ interface ::_RbsRailsPathHelpers
   def featured_post_user_url: (*untyped) -> ::String
   def users_url: (*untyped) -> ::String
   def user_url: (*untyped) -> ::String
+  def rails_service_blob_url: (*untyped) -> ::String
+  def rails_service_blob_proxy_url: (*untyped) -> ::String
+  def rails_blob_representation_url: (*untyped) -> ::String
+  def rails_blob_representation_proxy_url: (*untyped) -> ::String
+  def rails_disk_service_url: (*untyped) -> ::String
+  def update_rails_disk_service_url: (*untyped) -> ::String
+  def rails_direct_uploads_url: (*untyped) -> ::String
+  def rails_representation_url: (*untyped) -> ::String
+  def rails_blob_url: (*untyped) -> ::String
+  def rails_storage_proxy_url: (*untyped) -> ::String
+  def rails_storage_redirect_url: (*untyped) -> ::String
 end
 
 module ::ActionController

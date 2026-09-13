@@ -94,6 +94,23 @@ module RbsInfer
     @expanded_source = RbsInfer::Project::SourceExpanders.apply(original_source)
     source = @expanded_source || original_source
 
+    # A macro that writes its methods by `class_eval`ing an interpolated STRING
+    # defines them only once a call site supplies the interpolation. What each
+    # call site interpolates is a value the checker folded, read back from the
+    # sidecar it wrote (felixefelip/rbs_infer#344).
+    #
+    # Located against the ORIGINAL source, not the expanded one: the sidecar
+    # points at a line and a column of the file `steep check` read, and an
+    # expander that ran above may have moved both. Only the reopens it produces
+    # are appended to the expanded source.
+    macro_reopens = RbsInfer::Project::StringEvalMacroExpander.reopens(
+      original_source, path: @target_file, sidecar: @corpus.string_evals
+    )
+    if macro_reopens
+      source = "#{source.chomp}\n\n#{macro_reopens}"
+      @expanded_source = source
+    end
+
     # A block can be stored by one singleton receiver and later replayed via
     # `class_eval`/`module_eval` on another. The contextual expander moves its
     # body to that statically resolved receiver before the ordinary collector
@@ -1050,6 +1067,7 @@ require_relative "project/constant_declaration_expander"
 require_relative "project/self_class_eval_marker"
 require_relative "project/block_body_type"
 require_relative "project/stored_block_ivar_decorator"
+require_relative "project/string_eval_macro_expander"
 require_relative "project/stored_block_replay_expander"
 require_relative "project/stored_block_replay_expander/reader_collector"
 require_relative "project/stored_block_replay_expander/collector"

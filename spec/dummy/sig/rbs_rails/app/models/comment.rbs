@@ -302,6 +302,9 @@ class ::Comment < ::ApplicationRecord
   def build_post: (untyped) -> ::Post
   def create_post: (untyped) -> ::Post
   def create_post!: (untyped) -> ::Post
+  module ::Comment::GeneratedAssociationMethods
+  end
+  include ::Comment::GeneratedAssociationMethods
 
   def self.recent: () -> ::Comment::ActiveRecord_Relation
 

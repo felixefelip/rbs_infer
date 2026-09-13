@@ -1,0 +1,36 @@
+---
+version: 1
+call_sites:
+  app/models/article.rb:12:2:
+  - |2
+              def summary
+                rich_text_summary || build_rich_text_summary
+              end
+
+              def summary?
+                rich_text_summary.present?
+              end
+  - |2
+                def summary=(body)
+                  if body.present?
+                    self.summary.body = body
+                  else
+                    if summary?
+                      self.summary.body = body
+                      self.summary.mark_for_destruction
+                    end
+                  end
+                end
+  app/models/article.rb:7:2:
+  - |2
+              def content
+                rich_text_content || build_rich_text_content
+              end
+
+              def content?
+                rich_text_content.present?
+              end
+  - |2
+                def content=(body)
+                  self.content.body = body
+                end

@@ -508,6 +508,9 @@ class ::Post < ::ApplicationRecord
   def build_user: (untyped) -> ::User
   def create_user: (untyped) -> ::User
   def create_user!: (untyped) -> ::User
+  module ::Post::GeneratedAssociationMethods
+  end
+  include ::Post::GeneratedAssociationMethods
 
   def self.recently_tagged: () -> ::Post::ActiveRecord_Relation
   def self.pinned: () -> ::Post::ActiveRecord_Relation

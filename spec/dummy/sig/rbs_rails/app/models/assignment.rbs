@@ -262,6 +262,9 @@ class ::Assignment < ::ApplicationRecord
   def build_owner: (untyped) -> ::User
   def create_owner: (untyped) -> ::User
   def create_owner!: (untyped) -> ::User
+  module ::Assignment::GeneratedAssociationMethods
+  end
+  include ::Assignment::GeneratedAssociationMethods
 
   module ::Assignment::GeneratedRelationMethods
   end

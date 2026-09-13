@@ -216,6 +216,10 @@ class ::Tag < ::ApplicationRecord
   def post_ids: () -> ::Array[::Integer]
   def post_ids=: (::Array[::Integer]) -> ::Array[::Integer]
 
+  module ::Tag::GeneratedAssociationMethods
+  end
+  include ::Tag::GeneratedAssociationMethods
+
   module ::Tag::GeneratedRelationMethods
   end
 
