@@ -4,8 +4,8 @@ module Example69
     def action: () -> "delete"
     def call_name_action: () -> "name_delete"
     def call_action: () -> "delete"
-    def call_dynamic: () -> ("name_delete" | "delete")
-    def call_dynamic_with_name: () -> ("name_delete" | "delete")
+    def call_dynamic: () -> "name_delete"
+    def call_dynamic_with_name: () -> "delete"
     def call_both: () -> Array[("name_delete" | "delete")]
     def name_action_dynamic: (flag_name: bool) -> ("name_delete" | "delete")
     def call_unknown: (flag_name: untyped) -> ("name_delete" | "delete")

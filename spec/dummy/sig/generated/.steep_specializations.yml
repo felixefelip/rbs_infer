@@ -20,6 +20,9 @@ methods:
   Example69::Foo#call:
     "(flag_name: false)": '"delete"'
     "(flag_name: true)": '"name_delete"'
+  Example69::Foo#name_action_dynamic:
+    "(flag_name: false)": '"delete"'
+    "(flag_name: true)": '"name_delete"'
   Example7::Dispatcher#show:
     "(:age)": "::Integer"
     "(:name)": "::String"
