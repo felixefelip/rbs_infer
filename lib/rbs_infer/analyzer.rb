@@ -213,8 +213,7 @@ module RbsInfer
       superclass_name: nil,
       namespace_classes: resolve_namespace_classes(receiver),
       is_module: false,
-      type_params: method_type_resolver.type_param_string(receiver),
-      class_methods_index: class_methods_index
+      type_params: method_type_resolver.type_param_string(receiver)
     ).build(members, {}, {}, ivar_types: {}, singleton_ivar_types: {}, module_ivar_types: {}, markers: [],
             nested_modules: [])
   end
@@ -337,7 +336,7 @@ module RbsInfer
     )
 
     namespace_classes = resolve_namespace_classes
-    rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class), class_methods_index: class_methods_index)
+    rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name, namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class))
     rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types, ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types, markers: markers, nested_modules: @nested_modules)
   end
 
@@ -867,12 +866,6 @@ module RbsInfer
     @method_type_resolver ||= RbsInfer::Signatures::MethodTypeResolver.new(@source_files, source_index: @source_index, parse_cache: @parse_cache, file_index: @file_index, caller_file_cache: @caller_file_cache, constant_resolver: env_only_constant_resolver, mixin_index: mixin_index, invoker_self_types: invoker_self_types)
   end
 
-  # Shared by both `RbsBuilder` call-sites so a concern's file is read and
-  # expanded once per analysis, not once per includer.
-  def class_methods_index
-    @class_methods_index ||= RbsInfer::Project::ClassMethodsIndex.new(file_index: @file_index, parse_cache: @parse_cache)
-  end
-
   def type_merger
     @type_merger ||= RbsInfer::Inference::TypeMerger.new(target_file: @target_file, target_class: @target_class, instance_types: @instance_types || [], constant_resolver: constant_arg_resolver)
   end
@@ -1007,7 +1000,6 @@ end
 
 require_relative "project/parse_cache"
 require_relative "project/file_index"
-require_relative "project/class_methods_index"
 require_relative "project/caller_file_cache"
 require_relative "project/corpus"
 require_relative "project/steepfile_sources"

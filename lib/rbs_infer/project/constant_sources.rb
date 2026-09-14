@@ -10,9 +10,8 @@ module RbsInfer::Project
   # answers which files spell its name; neither answers "is the declaration
   # actually in there", and for a reopening of a core class the convention is
   # no guide at all — `class Module` can be written in any file. So both are
-  # asked for candidates and every candidate is PARSED before it counts, the
-  # same way `ClassMethodsIndex` walks `FileIndex#candidates` rather than
-  # trusting the first hit (felixefelip/rbs_infer#185).
+  # asked for candidates and every candidate is PARSED before it counts, rather
+  # than the first hit being trusted (felixefelip/rbs_infer#185).
   #
   # Verification is what makes an over-broad candidate list harmless: a file
   # that merely mentions `Module` in a comment fails the walk and drops out.
@@ -140,12 +139,10 @@ module RbsInfer::Project
     # lexical nesting so `module A::B` and `module A; module B` both answer to
     # `A::B`.
     #
-    # Either kind counts, unlike `ClassMethodsIndex::ModuleDeclarationFinder`
-    # next door: that one is answering "can this be `extend`ed", where a class
-    # would be the wrong answer. Here the question is only "does this file say
-    # anything about that constant", and `class Module` — a class body defining
-    # instance methods every class and module later calls — is precisely the
-    # case that has to be found.
+    # Either kind counts: the question here is only "does this file say anything
+    # about that constant", and `class Module` — a class body defining instance
+    # methods every class and module later calls — is precisely the case that
+    # has to be found.
     class DeclarationFinder < Prism::Visitor
       def initialize(name)
         @name = name
