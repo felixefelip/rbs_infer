@@ -5,18 +5,13 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
   # RbsBuilder's kwargs are all required (see its initialize). This helper
   # supplies test-only defaults so each example states only what it cares
   # about — keeping the production API strict while specs stay terse.
-  def make_builder(target_class:, superclass_name:, namespace_classes: Set.new, is_module: false, type_params: "",
-                   source_files: [])
+  def make_builder(target_class:, superclass_name:, namespace_classes: Set.new, is_module: false, type_params: "")
     described_class.new(
       target_class: target_class,
       superclass_name: superclass_name,
       namespace_classes: namespace_classes,
       is_module: is_module,
-      type_params: type_params,
-      class_methods_index: RbsInfer::Project::ClassMethodsIndex.new(
-        file_index: RbsInfer::Project::FileIndex.new(source_files),
-        parse_cache: RbsInfer::Project::ParseCache.new
-      )
+      type_params: type_params
     )
   end
 
@@ -27,31 +22,6 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
   # test-only empty defaults so examples state only what they exercise.
   def build_rbs(builder, members, init_arg_types = {}, attr_types = {}, *rest, ivar_types: {}, singleton_ivar_types: {}, module_ivar_types: {}, markers: [], nested_modules: [])
     builder.build(members, init_arg_types, attr_types, *rest, ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types, markers: markers, nested_modules: nested_modules)
-  end
-
-  describe "#has_class_methods_module?", :dummy_app do
-    let(:builder) do
-      make_builder(target_class: "Foo", superclass_name: nil)
-    end
-
-    it "retorna true para módulo que contém sub-módulo ClassMethods" do
-      # ActiveModel::AttributeRegistration tem ClassMethods no .gem_rbs_collection
-      result = builder.send(:has_class_methods_module?, "ActiveModel::AttributeRegistration")
-
-      expect(result).to eq(true)
-    end
-
-    it "retorna false para módulo que NÃO contém ClassMethods" do
-      result = builder.send(:has_class_methods_module?, "Comparable")
-
-      expect(result).to eq(false)
-    end
-
-    it "retorna false quando .gem_rbs_collection não tem o módulo" do
-      result = builder.send(:has_class_methods_module?, "TotallyFakeModule::DoesNotExist")
-
-      expect(result).to eq(false)
-    end
   end
 
   describe "#build com namespaces" do

@@ -63,21 +63,25 @@ Rails.application.config.to_prepare do
 end
 
 class ActiveStorage::Blobs::RedirectController
+  # Ensure require_authentication runs after set_blob.
   skip_before_action :require_authentication
   before_action :require_authentication, :ensure_accessible, unless: :publicly_accessible_blob?
 end
 
 class ActiveStorage::Blobs::ProxyController
+  # Ensure require_authentication runs after set_blob.
   skip_before_action :require_authentication
   before_action :require_authentication, :ensure_accessible, unless: :publicly_accessible_blob?
 end
 
 class ActiveStorage::Representations::RedirectController
+  # Ensure require_authentication runs after set_blob.
   skip_before_action :require_authentication
   before_action :require_authentication, :ensure_accessible, unless: :publicly_accessible_blob?
 end
 
 class ActiveStorage::Representations::ProxyController
+  # Ensure require_authentication runs after set_blob.
   skip_before_action :require_authentication
   before_action :require_authentication, :ensure_accessible, unless: :publicly_accessible_blob?
 end

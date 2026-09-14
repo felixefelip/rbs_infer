@@ -130,9 +130,36 @@ module RbsInfer::Project
       # Only when the body genuinely opens its own line. `class_eval do def x; end end`
       # on one line would otherwise pull in the space after `do`.
       start = scan if scan.zero? || source.byteslice(scan - 1, 1) == "\n"
+      start = with_leading_comments(source, start)
 
       text = source.byteslice(start, node.location.end_offset - start)
       realigned(text, literal_spans(node).map { |span| (span.begin - start)...(span.end - start) }, indent)
+    end
+
+    # The comment lines written immediately above the body, which belong to it.
+    #
+    # A slice that starts at the `def` moves the method and leaves its
+    # annotations behind — `#: (String) -> void`, `@rbs`, `@rbs_infer` — and each
+    # of those is read from the line above a def, so dropping them silently
+    # changes what the relocated method means. The walk stops at the first line
+    # that is not a comment, which is the block's own `do`.
+    def with_leading_comments(source, start)
+      # A BYTE view, because `start` is one: Prism reports byte offsets and
+      # `rindex` counts characters, so one `—` anywhere earlier in the file puts
+      # the search a byte off and the comment is silently left behind.
+      bytes = source.b
+      cursor = start
+
+      while cursor > 1
+        previous = bytes.rindex("\n", cursor - 2)
+        line_start = previous ? previous + 1 : 0
+        line = bytes[line_start...cursor].to_s
+        break unless line.lstrip.start_with?("#")
+
+        cursor = line_start
+      end
+
+      cursor
     end
 
     # `text` with the shallowest line brought to `indent` and every other line

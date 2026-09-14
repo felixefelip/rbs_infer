@@ -27,8 +27,23 @@ RSpec.describe RbsInfer::Extensions::Rails::ActionText::RuntimeGenerator do
       expect(source).to include("class_eval")
     end
 
-    it "nests the macro in the module it was written in" do
-      expect(source).to include("module ActionText\n  module Attribute\n    module ClassMethods\n")
+    # The shape ActionText writes it in, not the `module ClassMethods` that
+    # shape desugars to: the module self-type generator answers for the BLOCK,
+    # and a hand-written `ClassMethods` nothing includes or extends gets no
+    # `self` at all.
+    it "nests the macro in the concern shape it was written in" do
+      expect(source).to include(
+        "module ActionText\n  module Attribute\n    extend ActiveSupport::Concern\n\n    class_methods do\n"
+      )
+    end
+
+    # The engine's own line, moved out of the `on_load` it is written in and
+    # onto the class that hook names — an `include` left inside the hook reaches
+    # no host (#353). The `extend` of `ClassMethods` is not written: the Concern
+    # is what performs it, and the AR runtime pseudo-code derives it.
+    it "mixes the concern into Active Record the way the engine does" do
+      expect(source).to include("class ActiveRecord::Base\n  include ActionText::Attribute\nend")
+      expect(source).not_to include("extend ActionText::Attribute::ClassMethods")
     end
 
     # Verbatim, so a Rails that rewrites the macro lands here on its own. The

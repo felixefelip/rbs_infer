@@ -3,19 +3,14 @@ module RbsInfer::Signatures
     # All keyword args are required: both call-sites always supply them, and
     # omitting any would be silently wrong (a missing `type_params` reopens a
     # generic class without its params → GenericParameterMismatchError; a
-    # missing `is_module`/`namespace_classes` mis-renders the declaration; a
-    # missing `class_methods_index` drops every `extend X::ClassMethods`).
+    # missing `is_module`/`namespace_classes` mis-renders the declaration).
     # Per docs/engineering/required-threaded-deps.md, that's "required", not
     # "defaulted".
-    def initialize(target_class:, superclass_name:, namespace_classes:, is_module:, type_params:, class_methods_index:)
+    def initialize(target_class:, superclass_name:, namespace_classes:, is_module:, type_params:)
       @target_class = target_class
       @superclass_name = superclass_name
       @namespace_classes = namespace_classes
       @is_module = is_module
-      # Answers whether an included module carries a nested `ClassMethods`, over
-      # both the project's own source and the gem RBS collection
-      # (felixefelip/rbs_infer#188).
-      @class_methods_index = class_methods_index
       # Generic type-parameter list ("[unchecked out Elem]") for the leaf
       # declaration when reopening a generic class; "" for the common
       # non-generic case (felixefelip/rbs_infer#38).
@@ -128,10 +123,24 @@ module RbsInfer::Signatures
       lines.concat(group_lines)
     end
 
-    # `extend X` (standalone) then each `include X`, an include optionally
-    # followed by its `extend X::ClassMethods`.
+    # The mixins the class writes, as it writes them: `extend`, then `prepend`,
+    # then `include`.
+    #
+    # An `include X` used to also emit `extend X::ClassMethods` whenever `X`
+    # carried one. That was a guess from a NAME — plain Ruby gives a nested
+    # module called `ClassMethods` no meaning, and only `ActiveSupport::Concern`
+    # does — so it read a framework convention into the core and got the wrong
+    # answer for any module that happens to nest one without a hook.
+    #
+    # The fact it was guessing at is now read from the program: the Concern
+    # pseudo-code performs `base.extend const_get(:ClassMethods)`, the runtime
+    # model replays the `included` hook, and the expansion writes the `extend`
+    # into the source this reads. Measured on the dummy, every
+    # `extend X::ClassMethods` that reaches the RBS arrives that way and the
+    # guess fired for none of them.
     def mixin_lines(members, indent)
       out = []
+
       members.select { |m| m.kind == :extend && m.owner.nil? }.each do |ext|
         out << "#{indent}extend #{qualify(ext.name)}"
       end
@@ -139,9 +148,7 @@ module RbsInfer::Signatures
         out << "#{indent}prepend #{qualify(pre.name)}"
       end
       members.select { |m| m.kind == :include && m.owner.nil? }.each do |inc|
-        qualified = qualify(inc.name)
-        out << "#{indent}include #{qualified}"
-        out << "#{indent}extend #{qualified}::ClassMethods" if has_class_methods_module?(inc.name)
+        out << "#{indent}include #{qualify(inc.name)}"
       end
       out
     end
@@ -459,8 +466,5 @@ module RbsInfer::Signatures
     # The module name is written in the INCLUDER's lexical scope (`include
     # Params` inside `Filter` means `Filter::Params`), so the target class goes
     # along as the scope to resolve it against.
-    def has_class_methods_module?(module_name)
-      @class_methods_index.has?(module_name, enclosing: @target_class)
-    end
   end
 end

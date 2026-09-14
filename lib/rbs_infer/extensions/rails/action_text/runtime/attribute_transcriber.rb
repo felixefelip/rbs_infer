@@ -36,25 +36,26 @@ module RbsInfer
             RECEIVER = "ActionText::Attribute::ClassMethods"
             MACRO = :has_rich_text
 
-            # Who takes the transcribed module. A module is a MIXIN, and the
-            # `self` its body runs with is whoever includes it — which the module
-            # cannot say and the transcription therefore has to, or the
-            # `has_one`/`scope` the macro also calls resolve against nothing (the
-            # same fact `FrameworkSourceTranscriber` emits for its `include`s).
+            # Who takes the transcribed module, and the mixin that puts it
+            # there. A module is a MIXIN, and the `self` its body runs with is
+            # whoever takes it — which the module cannot say and the
+            # transcription therefore has to, or the `has_one`/`scope` the macro
+            # also calls resolve against nothing.
             #
-            # `ActionText::Attribute` is an `ActiveSupport::Concern`, so the
-            # engine's `include` is what `extend`s its `ClassMethods` — and it is
-            # `ClassMethods` the macro is written in, so the extend is the fact
-            # this file needs.
+            # The engine's own line, `include ActionText::Attribute`, moved out
+            # of the `ActiveSupport.on_load(:active_record)` it is written in and
+            # onto the class that hook names. That is the one liberty taken here
+            # and it is `OnLoadExpander`'s own table, not a guess — and it is
+            # forced: `MixinIndex` reads raw sources, so an `include` left inside
+            # the hook reaches no host and the `class_methods` block gets no
+            # `self` (felixefelip/rbs_infer#353).
             #
-            # Stated rather than transcribed, which is the one paraphrase here and
-            # not by choice: the engine writes the `include` inside
-            # `ActiveSupport.on_load(:active_record)`, and `MixinIndex` reads raw
-            # sources, so that `include` reaches no host and the `class_methods`
-            # block gets no `self` — measured in felixefelip/rbs_infer#353. Once
-            # the index sees the expansion, this constant and `mixed_in?` go away
-            # and the transcription becomes the engine's own two lines.
-            EXTENDER = "ActiveRecord::Base"
+            # The `extend` of `ClassMethods` is NOT written. `ActionText::Attribute`
+            # is an `ActiveSupport::Concern`, so the include is what performs it,
+            # and the AR runtime's Concern pseudo-code derives it —
+            # `base.extend const_get(:ClassMethods)`. Stating it as well would be
+            # restating a conclusion the tooling already reaches.
+            INCLUDER = "ActiveRecord::Base"
 
             # Read from the ENGINE'S SOURCE rather than from the loaded runtime,
             # unlike the controller transcriber's mixins: the engine states it
@@ -175,21 +176,31 @@ module RbsInfer
               end
             end
 
+            # The macro inside the shape ActionText writes it in: a Concern whose
+            # `class_methods do` block holds it. Reproduced rather than flattened
+            # into the `module ClassMethods` it desugars to, because the two are
+            # not interchangeable to the tooling — the module self-type generator
+            # answers for the BLOCK, and a hand-written `ClassMethods` that
+            # nothing includes or extends gets no `self` at all.
             def wrap(body)
-              nesting = RECEIVER.split("::")
+              nesting = MIXED_IN.split("::")
+              depth = nesting.size + 1
               indented = body.rstrip.lines
-                             .map { |line| line.strip.empty? ? "\n" : "#{'  ' * nesting.size}#{line}" }.join
+                             .map { |line| line.strip.empty? ? "\n" : "#{'  ' * depth}#{line}" }.join
 
               opens = nesting.each_with_index.map { |segment, i| "#{'  ' * i}module #{segment}" }
               closes = (0...nesting.size).to_a.reverse.map { |i| "#{'  ' * i}end" }
+              concern = ["#{'  ' * (nesting.size - 1)}  extend ActiveSupport::Concern", "",
+                         "#{'  ' * (nesting.size - 1)}  class_methods do"]
+              block_end = "#{'  ' * (nesting.size - 1)}  end"
 
-              "#{(opens + [indented] + closes).join("\n")}\n#{extend_source}"
+              "#{(opens + concern + [indented, block_end] + closes).join("\n")}\n#{include_source}"
             end
 
-            def extend_source
+            def include_source
               return "" unless mixed_in?
 
-              "\nclass #{EXTENDER}\n  extend #{RECEIVER}\nend\n"
+              "\nclass #{INCLUDER}\n  include #{MIXED_IN}\nend\n"
             end
 
             # `node.slice` starts AT the `def` keyword, so its first line carries
