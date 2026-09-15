@@ -34,5 +34,7 @@ end
 module Example71
   class Mixed
     extend Writes
+
+    def from_mixin: () -> :mixed
   end
 end

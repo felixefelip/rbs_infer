@@ -5,14 +5,14 @@ app/models/eval_reopen.rb:61:6: [warning] Method `::Object#by_instance_eval` is 
 app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
 app/models/example21.rb:96:29: [error] Type `(::Example21::Ticket | nil)` does not have method `holder`
-app/models/example3.rb:123:11: [error] Type `(::Example3::User | nil)` does not have method `name`
-app/models/example3.rb:64:13: [error] Type `(::Example3::User | nil)` does not have method `name`
-app/models/example3.rb:65:26: [error] Type `(::Example3::User | nil)` does not have method `name`
-app/models/example3.rb:66:26: [error] Type `("John Doe" | "x" | nil)` does not have method `upcase`
-app/models/example3.rb:67:13: [error] Type `("John Doe" | "x" | nil)` does not have method `upcase`
+app/models/example3.rb:122:11: [error] Type `(::Example3::User | nil)` does not have method `name`
+app/models/example3.rb:63:13: [error] Type `(::Example3::User | nil)` does not have method `name`
+app/models/example3.rb:64:26: [error] Type `(::Example3::User | nil)` does not have method `name`
+app/models/example3.rb:65:26: [error] Type `("John Doe" | "x" | nil)` does not have method `upcase`
+app/models/example3.rb:66:13: [error] Type `("John Doe" | "x" | nil)` does not have method `upcase`
 app/models/example30.rb:16:6: [error] Type `::Example30::Foo` does not have method `age`
 app/models/example30.rb:9:12: [warning] Method `::Example30::Foo#age` is not declared in RBS
-app/models/example31.rb:26:8: [error] Cannot allow method body have type `::Integer` because declared as type `::Float`
+app/models/example31.rb:25:8: [error] Cannot allow method body have type `::Integer` because declared as type `::Float`
 app/models/example4.rb:14:25: [error] Type `("John Doe" | nil)` does not have method `upcase`
 app/models/example4.rb:22:25: [error] Type `("John Doe" | nil)` does not have method `upcase`
 app/models/example4.rb:27:23: [error] Type `("John Doe" | nil)` does not have method `upcase`
@@ -30,7 +30,7 @@ app/models/example63.rb:4:21: [warning] Cannot pass a value of type `::Proc` as 
 app/models/example63.rb:9:8: [warning] Method `::Example63::Foo#greet` is not declared in RBS
 app/models/example7.rb:31:28: [error] Type `(42 | nil)` does not have method `abs`
 app/models/example7.rb:34:27: [error] Type `("John Doe" | nil)` does not have method `upcase`
-app/models/included_hook.rb:110:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS
+app/models/included_hook.rb:104:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS
 app/models/post/notifiable.rb:42:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/send_dispatch.rb:107:33: [error] `public_send` cannot call `stamp` on `::SendDispatch`, which declares it private
 app/models/send_dispatch.rb:114:26: [error] `send` names `no_such_method_anywhere`, which type `::SendDispatch` does not have
