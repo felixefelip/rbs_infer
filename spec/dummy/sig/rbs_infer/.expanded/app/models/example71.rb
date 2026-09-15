@@ -74,14 +74,18 @@ module Example71
   # wrong class, in the right tree — and `from_mixin` on `Writes`, which is not a
   # class at all and which nothing calling `from_mixin` would ever look at.
   #
-  # `from_mixin` is missing from the RBS below, and NOT for the reason the rest
-  # of this file is about. The checker folds it and records it; it is addressed
-  # to the wrong LINE. `STEEP_MODULE_CONVENTION` injects an annotation at the
-  # `Writes` anchor, the call below sits after it, and the position is written in
-  # the injected file's coordinates while the consumer reads this one
-  # (felixefelip/steep#176). The two calls above the anchor are recorded exactly,
-  # which is what makes that unambiguous — and what makes this fixture worth more
-  # than the gap it was written for.
+  # `from_mixin` lands, and for a while it did not — for a reason that had
+  # nothing to do with the rest of this file. The checker folded it and recorded
+  # it, addressed to the wrong LINE: `STEEP_MODULE_CONVENTION` injected its
+  # annotation as a new line at the `Writes` anchor, the call below sits after
+  # it, and the position was written in the injected file's coordinates while
+  # the consumer reads this one. The two calls above the anchor were recorded
+  # exactly, which is what made the cause unambiguous (felixefelip/steep#176,
+  # fixed by attaching the annotation to its node instead of writing it into the
+  # source).
+  #
+  # Left as it is, comments and all, because a file where a module precedes a
+  # macro call is the shape that found it.
   module Writes
     def writes_mixed(name)
       self.class_eval "def #{name}; :mixed; end"
@@ -101,4 +105,8 @@ end
 
 class Example71::Child
   def from_inherited; :inherited; end
+end
+
+class Example71::Mixed
+  def from_mixin; :mixed; end
 end
