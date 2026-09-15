@@ -5,15 +5,19 @@
 #
 # What the eval WRITES is not in question here. The checker reads the type of the
 # ARGUMENT and never the receiver, so every string below folds to a literal, and
-# a literal is its own source. What decides whether it is placed is WHERE it
-# lands, and the sidecar has no field for that: the consumer works it out from
-# the class whose body holds the macro call. So the only receivers read are the
-# ones that provably ARE that class — `self` (felixefelip/steep#173), and an
+# a literal is its own source. WHERE it lands is the receiver's business, and the
+# two answers below come from different places.
+#
+# A chunk that NAMES its class carries it: the receiver's type is a
+# `singleton(X)` for a concrete X, which is as true of a local holding the
+# constant as of the constant itself. Anything else is placed by the class whose
+# body lexically holds the macro call — `self` (felixefelip/steep#173), and an
 # argument a caller was seen to hand its own self to (felixefelip/steep#174).
 #
-# The two that are declined below are declined for a reason that is not
-# ignorance: each names its class in the source, and one of them names it more
-# exactly than `self` does.
+# The order matters and is the point of the second half of this file: `self` is
+# a type VARIABLE, so reading a target off it would place a macro's methods on
+# the class that DEFINES the macro rather than the one that called it. The
+# lexical rule is what gets that right, and it keeps those cases.
 module Example71
   class Target
   end
@@ -25,16 +29,18 @@ module Example71
       self.class_eval "def #{name}; :self; end"
     end
 
-    # Should land on `Target` and does not. The receiver is a constant — the
-    # target is written on the line, which is MORE determined than `self`, since
-    # `self` still depends on who called. The sidecar has nowhere to put it.
+    # Lands on `Target`, and says so: the receiver is a constant, so its type
+    # names the class exactly — MORE exactly than `self` does, since `self`
+    # still depends on who called. The chunk carries `::Example71::Target` and
+    # the RBS below puts the method there rather than on `Host`.
     def self.writes_on_constant(name)
       Target.class_eval "def #{name}; :constant; end"
     end
 
-    # Same, through a local. The question is the type of the receiver, not the
-    # shape of the expression that produced it, so this is the previous case
-    # with one assignment in front of it.
+    # Same, through a local, and the same answer: what decides is the TYPE of
+    # the receiver, not the shape of the expression that produced it. The local
+    # keeps `singleton(Example71::Target)`, so this is the previous case with an
+    # assignment in front of it.
     def self.writes_on_local(name)
       target = Target
       target.class_eval "def #{name}; :local; end"
@@ -45,7 +51,9 @@ module Example71
     writes_on_local :from_local
   end
 
-  # The half of #175 that is a REGRESSION GUARD rather than a gap.
+  # The half of #175 that is a REGRESSION GUARD rather than a gap — and the
+  # reason the rule above is the receiver's TYPE naming a class, rather than
+  # "place it wherever the receiver points".
   #
   # A macro normally lives on a base class and is called on a subclass, and the
   # receiver of the eval is then typed `self` — a type variable, not a class
@@ -101,6 +109,11 @@ end
 
 class Example71::Host
   def from_self; :self; end
+end
+
+class Example71::Target
+  def from_constant; :constant; end
+  def from_local; :local; end
 end
 
 class Example71::Child

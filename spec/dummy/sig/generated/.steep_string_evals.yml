@@ -1,5 +1,5 @@
 ---
-version: 1
+version: 2
 call_sites:
   app/models/article.rb:12:2:
   - |2
@@ -34,9 +34,15 @@ call_sites:
                 def content=(body)
                   self.content.body = body
                 end
-  app/models/example71.rb:40:4:
-  - def from_self; :self; end
-  app/models/example71.rb:63:4:
-  - def from_inherited; :inherited; end
-  app/models/example71.rb:95:4:
+  app/models/example71.rb:103:4:
   - def from_mixin; :mixed; end
+  app/models/example71.rb:46:4:
+  - def from_self; :self; end
+  app/models/example71.rb:47:4:
+  - source: def from_constant; :constant; end
+    target: "::Example71::Target"
+  app/models/example71.rb:48:4:
+  - source: def from_local; :local; end
+    target: "::Example71::Target"
+  app/models/example71.rb:71:4:
+  - def from_inherited; :inherited; end

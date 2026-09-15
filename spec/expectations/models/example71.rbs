@@ -6,6 +6,8 @@ end
 
 module Example71
   class Target
+    def from_constant: () -> :constant
+    def from_local: () -> :local
   end
 end
 

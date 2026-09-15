@@ -84,23 +84,47 @@ module RbsInfer::Project
       absolute = path.start_with?("::")
       name = path.delete_prefix("::")
       qualified = absolute ? name : (namespace + [name]).join("::")
-      bodies = expansions_for(node, file, sidecar)
-      reopens << reopen(qualified, bodies.join("\n"), node) unless bodies.empty?
+
+      expansions_for(node, file, sidecar, qualified).each do |target, bodies|
+        # A chunk that names its own class is reopened as a CLASS whatever this
+        # node is: the target is a class the eval named, not the one being
+        # walked, and nothing here knows how that one was declared. Only the
+        # lexical case can follow the node, and it does.
+        reopens << if target == qualified
+                     reopen(qualified, bodies.join("\n"), node)
+                   else
+                     reopen(target, bodies.join("\n"), nil)
+                   end
+      end
 
       walk(node.body, absolute ? [name] : namespace + [name], file, sidecar, reopens)
     end
 
-    def expansions_for(node, file, sidecar)
-      macro_calls(node.body).filter_map do |call|
-        sources = sidecar.sources_for(
+    # `{ class name => [body, …] }` for the macro calls in this body, in the
+    # order they are written.
+    #
+    # A chunk with no target lands on the class whose body holds the call, which
+    # is the only answer version 1 of the sidecar could give and the right one
+    # for an eval on the caller's own self. A chunk that NAMES its class lands
+    # there instead — `Target.class_eval "…"` knows something the lexical rule
+    # cannot (felixefelip/steep#175).
+    def expansions_for(node, file, sidecar, qualified)
+      grouped = {} #: Hash[String, Array[String]]
+
+      macro_calls(node.body).each do |call|
+        chunks = sidecar.sources_for(
           path: file,
           line: call.location.start_line,
           column: call.location.start_column
         )
-        next unless sources
+        next unless chunks
 
-        sources.map { |source| dedent(source) }.join("\n")
+        chunks.each do |chunk|
+          (grouped[chunk.target || qualified] ||= []) << dedent(chunk.source)
+        end
       end
+
+      grouped
     end
 
     # Where `self` stops being this class. A `def` body runs later, on whatever
@@ -146,7 +170,7 @@ module RbsInfer::Project
     # it reopens — a mismatch is a TypeError at load in Ruby, and a wrong owner
     # here.
     def reopen(name, body, node)
-      keyword = node.is_a?(Prism::ClassNode) ? "class" : "module"
+      keyword = node.nil? || node.is_a?(Prism::ClassNode) ? "class" : "module"
       indented = body.rstrip.lines.map { |line| line.strip.empty? ? line : "  #{line}" }.join
 
       "#{keyword} #{name}\n#{indented}\nend\n"
