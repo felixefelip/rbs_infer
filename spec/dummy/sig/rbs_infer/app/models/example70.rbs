@@ -1,11 +1,11 @@
 module Example70
   class Foo
     def name: () -> "content"
-    def joined: () -> String
+    def joined: () -> "def content;end"
     def first_chunk: () -> String
     def reserved_name: () -> bool
     def optional_params: () -> bool
-    def body: () -> String
+    def body: () -> "def content\n  rich_text_content || build_rich_text_content\nend\ndef content?\n  content.present?\nend"
     def joined_with_unknown: (untyped part) -> String
     def accumulated: () -> String
   end

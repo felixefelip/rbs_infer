@@ -2,11 +2,14 @@
 #
 # Every return below is decided by reading the file: the receivers are arrays
 # whose elements are literals written here, and the methods are pure core calls
-# on them. `LiteralIntrinsics` declines all of them for one reason — it accepts
-# a receiver that is an `AST::Types::Literal`, and an array is not one — so what
-# the checker answers today is the nominal `String` / `bool`.
+# on them.
 #
-# Two of the cases are here for shapes the fix has to get right, not for extra
+# S1 landed in felixefelip/steep#172 and `joined` and `body` now answer their
+# literals. The three that do not are each held up by something OTHER than the
+# fold, and the reason is written beside each one — a line still reading
+# `String` here is not the same gap it was.
+#
+# Two of the cases are here for shapes the fix had to get right, not for extra
 # coverage:
 #
 # - `joined` mixes an interpolation with a plain `"end"`. The interpolation
@@ -28,17 +31,28 @@ module Example70
       ["def #{name}", "end"].join(";")
     end
 
-    # type should be literal `'def content'`
+    # type should be literal `'def content'` — open on purpose. `::Array#first`
+    # folds as safely as the others and is held out of the table until the stage
+    # that uses it (`parameters.map(&:first)`, S2/S3), because sharpening
+    # `[1].first` to `1` makes the `return unless a` after it an unreachable
+    # branch, and eight of the checker's own tests are written that way.
     def first_chunk
       ["def #{name}", "end"].first
     end
 
-    # type should be literal `false` — `'content'` is none of them
+    # type should be literal `false` — `'content'` is none of them. Two things
+    # hold it, and the second would hold it even without the first.
+    # `::Array#include?` left the fold's table in review: it answers by
+    # dispatching `==`, and the table watches its own methods rather than the
+    # ones an entry leans on, so it returns with that tracking in S2/S3. And
+    # `literal_refinement?` asks that a literal's widening EQUAL the declared
+    # type, which `false` fails — it widens to `FalseClass`, not `bool` (#357).
     def reserved_name
       ["class", "def", "end"].include?(name)
     end
 
-    # type should be literal `true`
+    # type should be literal `true` — held by the same two as `reserved_name`
+    # (`intersect?` answers through `eql?`/`hash`).
     def optional_params
       [:req, :opt].intersect?([:opt, :rest, :keyreq])
     end
