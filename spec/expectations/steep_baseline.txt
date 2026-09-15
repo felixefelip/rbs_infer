@@ -30,6 +30,14 @@ app/models/example63.rb:4:21: [warning] Cannot pass a value of type `::Proc` as 
 app/models/example63.rb:9:8: [warning] Method `::Example63::Foo#greet` is not declared in RBS
 app/models/example7.rb:31:28: [error] Type `(42 | nil)` does not have method `abs`
 app/models/example7.rb:34:27: [error] Type `("John Doe" | nil)` does not have method `upcase`
+app/models/example72.rb:105:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:23:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:33:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:44:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:52:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:63:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:73:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:96:14: [warning] Empty array doesn't have type annotation
 app/models/included_hook.rb:104:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS
 app/models/post/notifiable.rb:42:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/send_dispatch.rb:107:33: [error] `public_send` cannot call `stamp` on `::SendDispatch`, which declares it private
