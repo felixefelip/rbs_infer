@@ -1,14 +1,14 @@
 module Example72
   class Foo
-    def straight: () -> String
+    def straight: () -> "a;b"
     def first_piece: () -> untyped
     def looped: () -> String
     def conditional: (untyped flag) -> String
     def aliased: () -> String
     def through_a_call: () -> String
     def fill: (Array[untyped] parts) -> Array[untyped]
-    def from_a_literal: () -> String
+    def from_a_literal: () -> "a;b"
     def with_unknown: (untyped extra) -> String
-    def read_midway: () -> String
+    def read_midway: () -> "a"
   end
 end

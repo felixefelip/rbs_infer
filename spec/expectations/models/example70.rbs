@@ -7,6 +7,6 @@ module Example70
     def optional_params: () -> bool
     def body: () -> "def content\n  rich_text_content || build_rich_text_content\nend\ndef content?\n  content.present?\nend"
     def joined_with_unknown: (untyped part) -> String
-    def accumulated: () -> String
+    def accumulated: () -> "def content;end;# content"
   end
 end
