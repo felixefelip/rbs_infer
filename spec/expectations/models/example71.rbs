@@ -1,0 +1,26 @@
+module Example71
+  class Target
+  end
+end
+
+module Example71
+  class Host
+    def self.writes_on_self: (:from_self name) -> untyped
+    def self.writes_on_constant: (:from_constant name) -> untyped
+    def self.writes_on_local: (:from_local name) -> untyped
+
+    def from_self: () -> :self
+  end
+end
+
+module Example71
+  class Base
+    def self.writes: (:from_inherited name) -> untyped
+  end
+end
+
+module Example71
+  class Child < Base
+    def from_inherited: () -> :inherited
+  end
+end
