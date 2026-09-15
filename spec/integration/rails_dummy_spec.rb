@@ -489,6 +489,15 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example71", target_file: "app/models/example71.rb")
   end
 
+  # Arrays built by `<<`, with no eval anywhere: giving `[]` + `<<` a tuple type
+  # is a property of ARRAYS, and reading a macro's source is one consumer of it.
+  # Two of the cases ask for more than precision — `aliased` and
+  # `through_a_call` mutate under another name, so an implementation that tracks
+  # the local without seeing the mutation answers WRONG rather than vaguely.
+  it "example72 (arrays built by `<<`) matches expected RBS" do
+    assert_snapshot("models/example72", target_file: "app/models/example72.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
