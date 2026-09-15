@@ -538,6 +538,11 @@ app/models/example66_trackable.rb:
   - anchor: Example66Trackable
     annotations:
     - "# @type instance: Example66 & Example66Trackable"
+app/models/example71.rb:
+  modules:
+  - anchor: Writes
+    annotations:
+    - "# @type instance: singleton(Example71::Mixed)"
 app/models/included_hook.rb:
   modules:
   - anchor: Homespun

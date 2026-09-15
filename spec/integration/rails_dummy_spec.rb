@@ -479,6 +479,16 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example70", target_file: "app/models/example70.rb")
   end
 
+  # Where a `class_eval` of a string lands (felixefelip/steep#175). What it writes
+  # is not in question — the checker reads the argument and never the receiver —
+  # so the two methods missing below are missing for want of a place to put them,
+  # not for want of a source. `from_inherited` landing on `Child` rather than on
+  # the `Base` that defines the macro is the other half: the case a target read
+  # off the receiver's TYPE would get wrong.
+  it "example71 (which receiver a string eval may be written on) matches expected RBS" do
+    assert_snapshot("models/example71", target_file: "app/models/example71.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
