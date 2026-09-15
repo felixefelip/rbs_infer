@@ -46,9 +46,14 @@ module Example71
       target.class_eval "def #{name}; :local; end"
     end
 
+    def self.writes_fix_string
+      Target.class_eval "def from_fix_string; 0; end"
+    end
+
     writes_on_self :from_self
     writes_on_constant :from_constant
     writes_on_local :from_local
+    writes_fix_string
   end
 
   # The half of #175 that is a REGRESSION GUARD rather than a gap — and the
@@ -114,6 +119,7 @@ end
 class Example71::Target
   def from_constant; :constant; end
   def from_local; :local; end
+  def from_fix_string; 0; end
 end
 
 class Example71::Child

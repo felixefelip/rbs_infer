@@ -34,15 +34,18 @@ call_sites:
                 def content=(body)
                   self.content.body = body
                 end
-  app/models/example71.rb:103:4:
+  app/models/example71.rb:108:4:
   - def from_mixin; :mixed; end
-  app/models/example71.rb:46:4:
+  app/models/example71.rb:50:4:
   - def from_self; :self; end
-  app/models/example71.rb:47:4:
+  app/models/example71.rb:51:4:
   - source: def from_constant; :constant; end
     target: "::Example71::Target"
-  app/models/example71.rb:48:4:
+  app/models/example71.rb:52:4:
   - source: def from_local; :local; end
     target: "::Example71::Target"
-  app/models/example71.rb:71:4:
+  app/models/example71.rb:53:4:
+  - source: def from_fix_string; 0; end
+    target: "::Example71::Target"
+  app/models/example71.rb:76:4:
   - def from_inherited; :inherited; end

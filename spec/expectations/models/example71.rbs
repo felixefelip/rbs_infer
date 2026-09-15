@@ -8,6 +8,7 @@ module Example71
   class Target
     def from_constant: () -> :constant
     def from_local: () -> :local
+    def from_fix_string: () -> 0
   end
 end
 
@@ -16,6 +17,7 @@ module Example71
     def self.writes_on_self: (:from_self name) -> untyped
     def self.writes_on_constant: (:from_constant name) -> untyped
     def self.writes_on_local: (:from_local name) -> untyped
+    def self.writes_fix_string: () -> untyped
 
     def from_self: () -> :self
   end
