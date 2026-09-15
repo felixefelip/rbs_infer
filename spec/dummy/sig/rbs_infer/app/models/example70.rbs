@@ -1,0 +1,12 @@
+module Example70
+  class Foo
+    def name: () -> "content"
+    def joined: () -> String
+    def first_chunk: () -> String
+    def reserved_name: () -> bool
+    def optional_params: () -> bool
+    def body: () -> String
+    def joined_with_unknown: (untyped part) -> String
+    def accumulated: () -> String
+  end
+end

@@ -471,6 +471,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example69", target_file: "app/models/example69.rb")
   end
 
+  # Array operations over literal elements (S1 of felixefelip/steep#171). The fold
+  # takes a scalar `AST::Types::Literal` as its receiver, so `join`/`first`/`include?`
+  # over an array of literals answers the nominal type — every line of the fixture
+  # says the literal a reader of the file computes.
+  it "example70 (core calls over an array of literals) matches expected RBS" do
+    assert_snapshot("models/example70", target_file: "app/models/example70.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
