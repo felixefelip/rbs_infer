@@ -40,15 +40,19 @@ module Example70
       ["def #{name}", "end"].first
     end
 
-    # type should be literal `false` — `'content'` is none of them. The fold
-    # answers `false`; rbs_infer drops it, because `literal_refinement?` asks
-    # that a literal's widening EQUAL the declared type and `false` widens to
-    # `FalseClass`, not `bool` (felixefelip/rbs_infer#357).
+    # type should be literal `false` — `'content'` is none of them. Two things
+    # hold it, and the second would hold it even without the first.
+    # `::Array#include?` left the fold's table in review: it answers by
+    # dispatching `==`, and the table watches its own methods rather than the
+    # ones an entry leans on, so it returns with that tracking in S2/S3. And
+    # `literal_refinement?` asks that a literal's widening EQUAL the declared
+    # type, which `false` fails — it widens to `FalseClass`, not `bool` (#357).
     def reserved_name
       ["class", "def", "end"].include?(name)
     end
 
-    # type should be literal `true` — dropped by the same gate as `reserved_name`.
+    # type should be literal `true` — held by the same two as `reserved_name`
+    # (`intersect?` answers through `eql?`/`hash`).
     def optional_params
       [:req, :opt].intersect?([:opt, :rest, :keyreq])
     end
