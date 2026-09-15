@@ -100,6 +100,11 @@ class Example71::Host
   def from_self; :self; end
 end
 
+class Example71::Target
+  def from_constant; :constant; end
+  def from_local; :local; end
+end
+
 class Example71::Child
   def from_inherited; :inherited; end
 end

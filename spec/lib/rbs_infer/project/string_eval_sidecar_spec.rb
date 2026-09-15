@@ -24,8 +24,10 @@ RSpec.describe RbsInfer::Project::StringEvalSidecar do
         app/models/article.rb:7:2:
         - "def content; end"
     YAML
-      expect(sidecar.sources_for(path: "app/models/article.rb", line: 7, column: 2))
-        .to eq(["def content; end"])
+      chunks = sidecar.sources_for(path: "app/models/article.rb", line: 7, column: 2)
+
+      expect(chunks.map(&:source)).to eq(["def content; end"])
+      expect(chunks.map(&:target)).to eq([nil])
     end
   end
 
@@ -46,7 +48,8 @@ RSpec.describe RbsInfer::Project::StringEvalSidecar do
     YAML
       absolute = File.join(dir, "app/models/article.rb")
 
-      expect(sidecar.sources_for(path: absolute, line: 7, column: 2)).to eq(["def content; end"])
+      expect(sidecar.sources_for(path: absolute, line: 7, column: 2).map(&:source))
+        .to eq(["def content; end"])
     end
   end
 
@@ -68,12 +71,46 @@ RSpec.describe RbsInfer::Project::StringEvalSidecar do
   it "ignores a sidecar written by a version it does not know" do
     with_sidecar(<<~YAML) do |sidecar|
       ---
-      version: 2
+      version: 99
       call_sites:
         app/models/article.rb:7:2:
         - "def content; end"
     YAML
       expect(sidecar).not_to be_any
+    end
+  end
+
+  # Version 2 lets a chunk name the class it lands on, which a receiver like
+  # `Target.class_eval "…"` knows and the lexical rule cannot (steep#175).
+  it "reads the class a chunk names" do
+    with_sidecar(<<~YAML) do |sidecar|
+      ---
+      version: 2
+      call_sites:
+        app/models/article.rb:7:2:
+        - source: "def own; end"
+        - source: "def elsewhere; end"
+          target: "::Outer::Target"
+    YAML
+      chunks = sidecar.sources_for(path: "app/models/article.rb", line: 7, column: 2)
+
+      expect(chunks.map(&:source)).to eq(["def own; end", "def elsewhere; end"])
+      # No target means the class whose body holds the call — what version 1
+      # meant by a bare string, and still what an eval on `self` writes.
+      expect(chunks.map(&:target)).to eq([nil, "Outer::Target"])
+    end
+  end
+
+  it "declines a chunk whose target it cannot read" do
+    with_sidecar(<<~YAML) do |sidecar|
+      ---
+      version: 2
+      call_sites:
+        app/models/article.rb:7:2:
+        - source: "def own; end"
+          target: "   "
+    YAML
+      expect(sidecar.sources_for(path: "app/models/article.rb", line: 7, column: 2)).to be_nil
     end
   end
 
