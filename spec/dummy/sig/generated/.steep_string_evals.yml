@@ -38,3 +38,5 @@ call_sites:
   - def from_self; :self; end
   app/models/example71.rb:63:4:
   - def from_inherited; :inherited; end
+  app/models/example71.rb:92:4:
+  - def from_mixin; :mixed; end

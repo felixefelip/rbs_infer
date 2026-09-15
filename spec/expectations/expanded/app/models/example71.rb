@@ -62,6 +62,34 @@ module Example71
   class Child < Base
     writes :from_inherited
   end
+
+  # The same guard for the shape Rails actually uses — a concern's `ClassMethods`
+  # is a MODULE, and `self` inside one of its methods is the class that extended
+  # it, so `from_mixin` belongs to `Mixed`. It is worth having beside the
+  # inherited case because the naive target is wrong in a DIFFERENT way here:
+  # read off the receiver's type, `from_inherited` would land on `Base` — the
+  # wrong class, in the right tree — and `from_mixin` on `Writes`, which is not a
+  # class at all and which nothing calling `from_mixin` would ever look at.
+  #
+  # `from_mixin` is missing from the RBS below, and NOT for the reason the rest
+  # of this file is about. The checker folds it and records it; it is addressed
+  # to the wrong LINE. `STEEP_MODULE_CONVENTION` injects an annotation at the
+  # `Writes` anchor, the call below sits after it, and the position is written in
+  # the injected file's coordinates while the consumer reads this one
+  # (felixefelip/steep#176). The two calls above the anchor are recorded exactly,
+  # which is what makes that unambiguous — and what makes this fixture worth more
+  # than the gap it was written for.
+  module Writes
+    def writes_mixed(name)
+      self.class_eval "def #{name}; :mixed; end"
+    end
+  end
+
+  class Mixed
+    extend Writes
+
+    writes_mixed :from_mixin
+  end
 end
 
 class Example71::Host

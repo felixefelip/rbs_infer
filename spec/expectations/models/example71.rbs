@@ -1,4 +1,10 @@
 module Example71
+  module Writes
+    def writes_mixed: (:from_mixin name) -> untyped
+  end
+end
+
+module Example71
   class Target
   end
 end
@@ -22,5 +28,11 @@ end
 module Example71
   class Child < Base
     def from_inherited: () -> :inherited
+  end
+end
+
+module Example71
+  class Mixed
+    extend Writes
   end
 end
