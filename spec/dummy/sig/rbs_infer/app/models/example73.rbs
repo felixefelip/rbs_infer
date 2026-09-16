@@ -1,0 +1,6 @@
+module Example73
+  class Foo
+    def array_fixed: () -> Array[("a" | "b" | "c")]
+    def array_dynamic: () -> Array[untyped]
+  end
+end
