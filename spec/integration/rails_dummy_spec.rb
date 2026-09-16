@@ -516,6 +516,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example74", target_file: "app/models/example74.rb")
   end
 
+  # A delegation macro written out in plain Ruby. `banana_delegate` is not a
+  # name the tooling knows — the methods it writes land because every step of
+  # its body is an ordinary question about values, and the snapshot is what
+  # keeps that true.
+  it "example75 (a macro whose methods land with their own types) matches expected RBS" do
+    assert_snapshot("models/example75", target_file: "app/models/example75.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that

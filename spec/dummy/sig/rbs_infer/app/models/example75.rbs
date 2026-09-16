@@ -1,0 +1,18 @@
+module Example75
+  class Skin
+    def email: () -> "user@example.com"
+  end
+end
+
+module Example75
+  class Peel
+    RESERVED: Array[("class" | "def" | "end")]
+
+    def self.human_name: () -> "Peel"
+    def self.banana_delegate: ((:email | :human_name) method, to: (:user | :class)) -> untyped
+
+    def user: () -> Skin
+    def email: () -> "user@example.com"
+    def human_name: () -> "Peel"
+  end
+end
