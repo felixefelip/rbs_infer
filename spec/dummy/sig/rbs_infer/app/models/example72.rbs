@@ -5,7 +5,7 @@ module Example72
     def looped: () -> String
     def conditional: (untyped flag) -> String
     def aliased: () -> String
-    def through_a_call: () -> String
+    def through_a_call: () -> "a"
     def fill: (Array[untyped] parts) -> Array[untyped]
     def from_a_literal: () -> "a;b"
     def with_unknown: (untyped extra) -> String

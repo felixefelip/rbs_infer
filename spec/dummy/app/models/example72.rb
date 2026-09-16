@@ -15,7 +15,9 @@
 # mutate the array under another name, so an implementation that tracks the
 # local without seeing the mutation does not answer imprecisely — it answers
 # WRONG, naming a content the program does not have. They are here first
-# because a tuple that lies is worse than no tuple at all.
+# because a tuple that lies is worse than no tuple at all. `through_a_call` is
+# answered by SEEING the mutation: `fill` is a body this file has. `aliased`
+# still is not, and still says `String` rather than a guess.
 module Example72
   class Foo
     # The straight case, and the one the whole thing exists for.
@@ -69,7 +71,8 @@ module Example72
     end
 
     # UNSOUND IF MISSED, and the shape a builder method takes. The mutation
-    # happens inside a call, where nothing about `parts` is written.
+    # happens inside a call, where nothing about `parts` is written — so the
+    # only way to answer is to read `fill`, which is written just below.
     # should be `'a'`, and must not be `''`
     def through_a_call
       parts = []
