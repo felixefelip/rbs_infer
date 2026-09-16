@@ -508,6 +508,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example73", target_file: "app/models/example73.rb")
   end
 
+  # A constant read for the value it was written with. The four that answer
+  # `bool` are the point: a constant is written once by convention and not by
+  # enforcement, so a name the file changes behind the reader's back has to
+  # come out vague rather than confidently wrong.
+  it "example74 (a constant read for the value it was written with) matches expected RBS" do
+    assert_snapshot("models/example74", target_file: "app/models/example74.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that

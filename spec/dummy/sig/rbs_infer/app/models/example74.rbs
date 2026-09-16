@@ -1,0 +1,23 @@
+module Example74
+  class Foo
+    RESERVED: Array[("class" | "def" | "end")]
+    FROZEN: Array[String]
+    TWICE: Array["b"]
+    MUTATED: Array["a"]
+    PASSED: Array["a"]
+
+    def name: () -> "content"
+    def reserved_name: () -> false
+    def spelled_out: () -> true
+    def frozen_list: () -> "class;self"
+    def guarded: ((:user | :class) to) -> String
+    def call_guarded: () -> "  (user).x(...)"
+    def call_guarded_reserved: () -> "  (self.class).x(...)"
+    def written_twice: () -> bool
+    def mutated_elsewhere: () -> bool
+    def mutate: () -> Array["a"]
+    def handed_over: () -> bool
+    def hand_over: () -> Integer
+    def sink: (Array["a"] list) -> Integer
+  end
+end
