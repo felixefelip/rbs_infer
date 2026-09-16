@@ -6,6 +6,9 @@ class RbsInfer::Signatures::SteepBridge
   # chain resolution, attr types and previously-generated RBS is the job of
   # `RbsInfer::Inference::ReturnTypeResolver`, which consumes this class.
   class ReturnTypeAnalyzer
+    # A body of its own: a `return` inside one leaves THAT method, not this one.
+    SCOPES = %i[def defs class module sclass].freeze
+
     BLOCK_GENERIC_METHODS = %w[map collect].freeze
 
     def initialize(steep_bridge:)
@@ -57,7 +60,7 @@ class RbsInfer::Signatures::SteepBridge
         body = plain_def ? node.children[2] : node.children[3]
         next unless body
 
-        body_type = typing.type_of(node: body)
+        body_type = returned_type(typing, body)
         type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(body_type)
 
         # When Steep can't resolve generic type params in block calls,
@@ -74,6 +77,47 @@ class RbsInfer::Signatures::SteepBridge
     end
 
     private
+
+    # What the method answers, which is the value the body ENDS on together with
+    # the value of every `return` written before it.
+    #
+    # The body node's own type is only the tail. A method reading
+    #
+    #     return false if published?
+    #     true
+    #
+    # has a body node typed `true`, and taking that for the return type declares
+    # something the body contradicts — `steep check` reports `bool` for the same
+    # method in the same run. It went unnoticed while every literal a `return`
+    # could carry widened anyway: the tail keeps its literal only when a
+    # declaration hints it, and the one declaration that hints a boolean is
+    # `bool`, whose literals the refinement gate used to refuse.
+    #
+    # A bare `return` is left out on purpose: `nil` is added once, over the
+    # finished signature, by `ReturnTypeResolver#apply_early_return_nilability`.
+    def returned_type(typing, body)
+      types = [typing.type_of(node: body)]
+
+      each_return(body) do |value|
+        types << typing.type_of(node: value) if value && typing.has_type?(value)
+      end
+
+      types.size == 1 ? types.first : Steep::AST::Types::Union.build(types: types)
+    end
+
+    # Every `return` that leaves THIS method: through a block, which returns
+    # from the method around it, but not into a body of its own.
+    def each_return(node, &block)
+      return unless node.is_a?(::Parser::AST::Node)
+      return if SCOPES.include?(node.type)
+
+      if node.type == :return
+        yield node.children[0]
+        return
+      end
+
+      node.children.each { |child| each_return(child, &block) }
+    end
 
     # Node ids of the `def`s written inside `class << self`.
     #

@@ -212,6 +212,49 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
     end
   end
 
+  describe "#method_return_types" do
+    # The body node's type is only the TAIL. A method that leaves early answers
+    # both, and reading the tail alone declares something the same `steep check`
+    # run contradicts.
+    it "unions what an early return answers with the value the body ends on" do
+      code = <<~RUBY
+        class EarlyExit
+          def flagged(flag)
+            return 1 if flag
+            "late"
+          end
+
+          def only_a_tail
+            "late"
+          end
+
+          def from_inside_a_block(items)
+            items.each { return 1 }
+            "late"
+          end
+
+          def from_another_body(flag)
+            Class.new do
+              def self.call
+                return 1
+              end
+            end
+            "late"
+          end
+        end
+      RUBY
+
+      types = bridge.method_return_types(code)
+
+      expect(types["flagged"]).to eq("(String | Integer)")
+      expect(types["only_a_tail"]).to eq("String")
+      # A `return` inside a block leaves the method around it.
+      expect(types["from_inside_a_block"]).to eq("(String | Integer)")
+      # One inside a body of its own does not.
+      expect(types["from_another_body"]).to eq("String")
+    end
+  end
+
   describe "#contracts_store" do
     # Regression: the bridge used to call Steep with `Steep::Contracts::Store.empty`,
     # so `Steep::TypeConstruction#contract_narrowed_type` never fired even when
@@ -636,10 +679,18 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       expect(bridge.literal_refinement?('"a"', '"a"')).to be(false)
     end
 
-    it "answers false for a boolean, at the top or inside a union" do
-      expect(bridge.literal_refinement?("bool", "true")).to be(false)
+    # `bool` IS `(true | false)`, so a boolean literal is that declaration said
+    # exactly — it only used to fail because a literal widens to its CLASS, and
+    # the class of `false` is one arm of the union rather than the union.
+    it "answers true where the body fixes which boolean it is" do
+      expect(bridge.literal_refinement?("bool", "true")).to be(true)
+      expect(bridge.literal_refinement?("bool", "false")).to be(true)
+      expect(bridge.literal_refinement?("(User | bool)", "(User | true)")).to be(true)
+    end
+
+    it "answers false for a boolean that fixes nothing" do
       expect(bridge.literal_refinement?("bool", "(true | false)")).to be(false)
-      expect(bridge.literal_refinement?("(User | bool)", "(User | true)")).to be(false)
+      expect(bridge.literal_refinement?("true", "true")).to be(false)
     end
 
     it "answers false for a refinement that is not about literals" do
