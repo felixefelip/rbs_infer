@@ -3,7 +3,7 @@ module Example73
     def array_fixed: () -> [ "a", "b", "c" ]
     def array_dynamic: () -> [ "a", "b", "c" ]
     def from_a_literal: () -> [ "a", "b" ]
-    def through_a_call: () -> Array[untyped]
+    def through_a_call: () -> [ "a" ]
     def fill: (Array[untyped] parts) -> Array[untyped]
   end
 end
