@@ -616,6 +616,21 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       expect(bridge.literal_refinement?('("a" | "b")?', '"a"?')).to be(true)
     end
 
+    it "answers true where the body fixes how many elements there are" do
+      expect(bridge.literal_refinement?("Array[String]", '[ "a", "b" ]')).to be(true)
+      expect(bridge.literal_refinement?('Array[("a" | "b" | "c")]', '[ "a", "b", "c" ]')).to be(true)
+      expect(bridge.literal_refinement?("Array[untyped]", '[ "a", "b" ]')).to be(true)
+      expect(bridge.literal_refinement?("[ String, Integer ]", '[ "a", 1 ]')).to be(true)
+    end
+
+    it "answers false where a tuple is not the array made exact" do
+      # Fewer elements than the declaration says, which is not more precise.
+      expect(bridge.literal_refinement?('[ "a", "b" ]', '[ "a" ]')).to be(false)
+      expect(bridge.literal_refinement?("Array[Integer]", '[ "a" ]')).to be(false)
+      # Nothing fixed: a tuple of classes says how many, not which values.
+      expect(bridge.literal_refinement?("Array[String]", "[ String, String ]")).to be(false)
+    end
+
     it "answers false where the two types differ only in spelling" do
       expect(bridge.literal_refinement?('("a" | "b")?', '("a" | "b" | nil)')).to be(false)
       expect(bridge.literal_refinement?('"a"', '"a"')).to be(false)

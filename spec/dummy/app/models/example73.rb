@@ -1,18 +1,16 @@
 # What a method hands back when the value is an array — a tuple, which says how
 # many elements there are and which is which, where `Array[union]` says neither.
 #
-# `array_dynamic` and `from_a_literal` are answered: an array the body BUILDS
-# carries its contents out. The three that are not are each blocked on something
-# different, and the RBS beside this file says which.
+# Three of these are answered: an array the body BUILDS carries its contents
+# out, and so does one it simply writes out. The two that are not are the same
+# gap seen twice, and the RBS beside this file says so.
 module Example73
   class Foo
-    # The one case that is NOT about the accumulator, and the one that has to be
-    # decided in the checker rather than here: Steep types an array literal as
-    # `Array[String]` — widening the elements — wherever nothing asks it for a
-    # tuple, because a tuple makes `<<` and every other mutation demand the
-    # first element's type. Emitting the tuple from the generator alone puts the
-    # two out of agreement, and the pass that corrects a declaration the body
-    # contradicts (rightly) removes it again.
+    # The one that is not about the accumulator: no local holds this array at
+    # all. Everywhere else Steep widens an array literal to `Array[Elem]`, and
+    # that buys the mutation a name makes possible — a tuple takes only what it
+    # already holds, so `parts << "d"` on one is an error. Where the body ENDS
+    # there is no name and no next statement, so there is nothing to buy.
     # type should be `["a", "b", "c"]`
     def array_fixed
       ["a", "b", "c"]

@@ -11,6 +11,14 @@ class RbsInfer::Signatures::SteepBridge
         # return.
         return "bool" if steep_type.is_a?(Steep::AST::Types::Logic::Base)
 
+        # Steep writes a tuple `["a", "b"]` and RBS writes it `[ "a", "b" ]`.
+        # The file being written is RBS, and the same type reaching it by two
+        # routes — Steep's answer here, an RBS type object elsewhere — must not
+        # come out spelled two ways in one signature.
+        if steep_type.is_a?(Steep::AST::Types::Tuple)
+          return "[ #{steep_type.types.map { |element| format_type(element) }.join(", ")} ]"
+        end
+
         str = erase_type_variables(steep_type).to_s
 
         # Remove leading :: from all type names
