@@ -7,8 +7,9 @@
 #
 # Every method returns something that exposes what the checker believes about
 # the array: `join` shows the text, `first` shows an element. The RBS beside
-# this file is what Steep answers TODAY — a nominal `String` almost everywhere,
-# which is the imprecision the work removes.
+# this file is what Steep answers TODAY; where it still says `String`, that is
+# either a case deferred on purpose (`looped`) or the honest answer to a body
+# that does not decide (`conditional`, `aliased`, `through_a_call`).
 #
 # Two of these ask for more than precision. `aliased` and `through_a_call`
 # mutate the array under another name, so an implementation that tracks the
@@ -27,7 +28,8 @@ module Example72
     end
 
     # The element rather than the text, so a wrong LENGTH shows up as well as
-    # wrong contents.
+    # wrong contents. `Array#first` is deliberately not in the fold's table —
+    # this is answered by the local being worth its tuple, not by a fold.
     # should be `'a'`
     def first_piece
       parts = []

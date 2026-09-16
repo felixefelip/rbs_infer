@@ -1,7 +1,7 @@
 module Example72
   class Foo
     def straight: () -> "a;b"
-    def first_piece: () -> untyped
+    def first_piece: () -> "a"
     def looped: () -> String
     def conditional: (untyped flag) -> String
     def aliased: () -> String
