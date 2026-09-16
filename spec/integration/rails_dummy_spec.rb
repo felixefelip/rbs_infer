@@ -498,6 +498,16 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example72", target_file: "app/models/example72.rb")
   end
 
+  # The same arrays as the RETURN type rather than as something read: a tuple
+  # says how many elements there are and which is which, where `Array[union]`
+  # says neither. The snapshot is what keeps the two routes to a tuple honest —
+  # one built by `<<` and one simply written out — and it records the half that
+  # is still open, `through_a_call` and `fill`, where the pushes happen in a
+  # body this one cannot see.
+  it "example73 (an array as what a method hands back) matches expected RBS" do
+    assert_snapshot("models/example73", target_file: "app/models/example73.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
