@@ -3,8 +3,8 @@ module Example70
     def name: () -> "content"
     def joined: () -> "def content;end"
     def first_chunk: () -> String
-    def reserved_name: () -> bool
-    def optional_params: () -> bool
+    def reserved_name: () -> false
+    def optional_params: () -> true
     def body: () -> "def content\n  rich_text_content || build_rich_text_content\nend\ndef content?\n  content.present?\nend"
     def joined_with_unknown: (untyped part) -> String
     def accumulated: () -> "def content;end;# content"

@@ -4,7 +4,7 @@ class PostFiltering
   attr_reader expanded: false
 
   def initialize: ((User & User::Validated | User) user, Post post, ?expanded: false) -> void
-  def expanded?: () -> bool
+  def expanded?: () -> false
   def title: () -> String?
   def author_name: () -> String?
 

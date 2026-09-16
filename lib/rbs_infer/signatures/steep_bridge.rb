@@ -133,7 +133,7 @@ module RbsInfer::Signatures
     # said, with `value` the strictly more precise of the two:
     # `("name_delete" | "delete")` against `String`, `"name_delete"` against
     # `("name_delete" | "delete")`, `Array["a"]` against `Array[String]`,
-    # `["a", "b"]` against `Array[String]`.
+    # `["a", "b"]` against `Array[String]`, `false` against `bool`.
     #
     # Three-valued like `accepts?`.
     def literal_refinement?(declared, value)
@@ -147,8 +147,8 @@ module RbsInfer::Signatures
       return false unless subtype?(value_type, declared_type, subtyping)
       return false if subtype?(declared_type, value_type, subtyping)
 
-      widened_declared = widen_shape(widen_literals(declared_type))
-      widened_value = widen_shape(widen_literals(value_type))
+      widened_declared = widen_shape(widen_booleans(widen_literals(declared_type)))
+      widened_value = widen_shape(widen_booleans(widen_literals(value_type)))
       subtype?(widened_value, widened_declared, subtyping) &&
         subtype?(widened_declared, widened_value, subtyping)
     end
@@ -585,13 +585,8 @@ module RbsInfer::Signatures
       ).success?
     end
 
-    # `true`/`false` do not count: `bool` denotes exactly `(true | false)`, so
-    # the literals buy no precision, and `-> bool` is what the predicate
-    # machinery reads.
     def literal_bearing?(type)
-      if type.is_a?(Steep::AST::Types::Literal)
-        return type.value != true && type.value != false
-      end
+      return true if type.is_a?(Steep::AST::Types::Literal)
 
       type.each_child.any? { |child| literal_bearing?(child) }
     end
@@ -610,6 +605,25 @@ module RbsInfer::Signatures
     # `Array[String]` failing that test in the one direction a tuple can never
     # satisfy, so a body strictly more exact than its declaration would be
     # declined as a different type rather than taken as the better answer.
+    # A boolean literal as `bool`. `widen_literals` answers with a literal's
+    # CLASS, and the class of `false` is `FalseClass` — one arm of `bool`, not
+    # `bool` — so the equality below fails in one direction for a pair that is
+    # the same type said two ways. `bool` IS `(true | false)` by definition, so
+    # widening a boolean to it is what widening means here.
+    #
+    # Only in `literal_refinement?`. `Specializations.widen_literals` is Steep's
+    # and keys specialization on the class, where the class is the answer.
+    def widen_booleans(type)
+      return Steep::AST::Types::Boolean.new if boolean_class?(type)
+
+      type.map_type { |child| widen_booleans(child) }
+    end
+
+    def boolean_class?(type)
+      type.is_a?(Steep::AST::Types::Name::Instance) &&
+        ["::TrueClass", "::FalseClass"].include?(type.name.to_s)
+    end
+
     def widen_shape(type)
       if type.is_a?(Steep::AST::Types::Tuple)
         elements = type.types.map { |element| widen_shape(element) }

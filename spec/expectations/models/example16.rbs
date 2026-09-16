@@ -6,9 +6,9 @@ class Example16
 
   private
 
-  def authenticate: () -> (Example16::User | bool)
+  def authenticate: () -> (Example16::User | true)
   def resume: () -> Example16::User?
-  def from_token: () -> (Example16::User | bool)
+  def from_token: () -> (Example16::User | true)
   def deny: () -> true
   def halt: () -> true
   def cookie?: () -> bool

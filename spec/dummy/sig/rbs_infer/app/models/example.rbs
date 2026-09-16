@@ -19,5 +19,5 @@ class Board
 end
 
 class Example
-  def self.run: () -> bool
+  def self.run: () -> true
 end
