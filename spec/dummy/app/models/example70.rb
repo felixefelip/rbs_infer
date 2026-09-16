@@ -75,16 +75,18 @@ module Example70
       ["def #{name}", part].join(";")
     end
 
-    # type should STAY `String` until S3 — the receiver is a local whose node is
-    # an `lvar` and whose type is an `Array`, so neither the syntax nor the type
-    # offers a tuple. This is the shape `ActiveSupport::Delegation` actually
-    # uses, which is why S1 alone does not move `delegate`.
+    # type should be literal `'def content;end;# content'`
     #
-    # Written with two elements on purpose. A ONE-element array literal keeps
-    # its element literal — `["def #{name}"]` infers `Array['def content']` —
-    # and the `<<` below is then a type error rather than a widening. Worth
-    # knowing for S1: some arrays do carry literals in their type, just never as
-    # a tuple.
+    # It said STAY `String` until S3, and S3's first half did not move it: the
+    # receiver is a local, and neither its node nor its type offers a tuple.
+    # What moved it is reading the PUSHES — a local born from an array literal
+    # and pushed to in the body's straight line carries what went into it.
+    #
+    # Written with two seed elements on purpose. A ONE-element array literal
+    # keeps its element literal — `["def #{name}"]` infers
+    # `Array['def content']` — and the `<<` below is then a type error rather
+    # than a widening, which is also why the contents are handed to the fold
+    # rather than written back onto the local.
     def accumulated
       parts = ["def #{name}", "end"]
       parts << "# #{name}"
