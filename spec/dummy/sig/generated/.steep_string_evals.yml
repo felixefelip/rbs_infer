@@ -49,3 +49,7 @@ call_sites:
     target: "::Example71::Target"
   app/models/example71.rb:76:4:
   - def from_inherited; :inherited; end
+  app/models/example75.rb:78:4:
+  - def email;  user.email;end
+  app/models/example75.rb:83:4:
+  - def human_name;  self.class.human_name;end
