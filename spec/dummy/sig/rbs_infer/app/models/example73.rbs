@@ -1,0 +1,9 @@
+module Example73
+  class Foo
+    def array_fixed: () -> Array[("a" | "b" | "c")]
+    def array_dynamic: () -> Array[untyped]
+    def from_a_literal: () -> Array[String]
+    def through_a_call: () -> Array[untyped]
+    def fill: (Array[untyped] parts) -> Array[untyped]
+  end
+end
