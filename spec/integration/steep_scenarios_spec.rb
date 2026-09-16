@@ -140,7 +140,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
       end
 
       class Runner
-        def self.run: () -> bool
+        def self.run: () -> true
       end
     RBS
 
@@ -183,8 +183,8 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
       end
 
       class Runner
-        def self.run_safe: () -> bool
-        def self.run_unsafe: () -> bool
+        def self.run_safe: () -> true
+        def self.run_unsafe: () -> true
       end
     RBS
 

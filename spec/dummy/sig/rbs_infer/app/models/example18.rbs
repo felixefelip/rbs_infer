@@ -6,9 +6,9 @@ class Example18
 
   private
 
-  def authenticate: () -> (Example18::User | bool)
-  def from_token: () -> (Example18::User | bool)
-  def with_token: () { (String) -> Example18::User? } -> (Example18::User | bool)
+  def authenticate: () -> (Example18::User | true)
+  def from_token: () -> (Example18::User | true)
+  def with_token: () { (String) -> Example18::User? } -> (Example18::User | true)
   def fetch_token: () { (String) -> Example18::User? } -> Example18::User?
   def deny: () -> true
   def halt: () -> true

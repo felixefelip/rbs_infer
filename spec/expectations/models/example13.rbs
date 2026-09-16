@@ -30,7 +30,7 @@ class Example13
     def initialize: (name: "John Doe") -> false
     def current_user: () -> Example13Viewer?
     def halt: () -> true
-    def with_format: () ?{ (:html) -> true } -> bool?
+    def with_format: () ?{ (:html) -> true } -> true?
     def guard_supported: () -> Example13Viewer?
     def run_supported: () -> String?
     def act_supported: () -> String
@@ -43,13 +43,13 @@ class Example13
     def guard_conjunction: () -> untyped
     def run_conjunction: () -> String?
     def act_conjunction: () -> String
-    def guard_implicit_return: () -> bool?
+    def guard_implicit_return: () -> true?
     def run_implicit_return: () -> String?
     def act_implicit_return: () -> String
     def guard_block_halt: () -> untyped
     def run_block_halt: () -> String?
     def act_block_halt: () -> String
-    def guard_composite: () -> bool?
+    def guard_composite: () -> true?
     def run_composite: () -> String?
     def act_composite: () -> String
   end

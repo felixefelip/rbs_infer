@@ -13,9 +13,9 @@ class Example20
 
   private
 
-  def authenticate: () -> (Example20::User | bool)
-  def from_token: () -> (Example20::User | bool | nil)
-  def with_token: () { (String) -> Example20::User? } -> (Example20::User | bool)
+  def authenticate: () -> (Example20::User | true)
+  def from_token: () -> (Example20::User | true | nil)
+  def with_token: () { (String) -> Example20::User? } -> (Example20::User | true)
   def fetch_token: () { (String) -> Example20::User? } -> Example20::User?
   def refuse: () -> true
   def lookup: (String token) -> Example20::User?

@@ -4,10 +4,10 @@
 # whose elements are literals written here, and the methods are pure core calls
 # on them.
 #
-# S1 landed in felixefelip/steep#172 and `joined` and `body` now answer their
-# literals. The three that do not are each held up by something OTHER than the
-# fold, and the reason is written beside each one — a line still reading
-# `String` here is not the same gap it was.
+# S1 landed over two steps: felixefelip/steep#172 brought `join`, and
+# felixefelip/steep#184 brought the two that answer by DISPATCHING, once an
+# entry could declare the methods it leans on. One line is still open, and it is
+# held up by something other than the fold — the reason is written beside it.
 #
 # Two of the cases are here for shapes the fix had to get right, not for extra
 # coverage:
@@ -35,24 +35,23 @@ module Example70
     # folds as safely as the others and is held out of the table until the stage
     # that uses it (`parameters.map(&:first)`, S2/S3), because sharpening
     # `[1].first` to `1` makes the `return unless a` after it an unreachable
-    # branch, and eight of the checker's own tests are written that way.
+    # branch, and nine of the checker's own tests are written that way.
     def first_chunk
       ["def #{name}", "end"].first
     end
 
-    # type should be literal `false` — `'content'` is none of them. Two things
-    # hold it, and the second would hold it even without the first.
-    # `::Array#include?` left the fold's table in review: it answers by
-    # dispatching `==`, and the table watches its own methods rather than the
-    # ones an entry leans on, so it returns with that tracking in S2/S3. And
-    # `literal_refinement?` asks that a literal's widening EQUAL the declared
-    # type, which `false` fails — it widens to `FalseClass`, not `bool` (#357).
+    # type should be literal `false` — `'content'` is none of them. It took two
+    # fixes, one per repo, and the second would have held it even alone.
+    # `::Array#include?` answers by dispatching `==`, so it only joined the
+    # fold's table once an entry could name what it leans on (steep#184). And
+    # `literal_refinement?` asked that a literal's widening EQUAL the declared
+    # type, which `false` failed — it widens to `FalseClass`, not `bool` (#357).
     def reserved_name
       ["class", "def", "end"].include?(name)
     end
 
-    # type should be literal `true` — held by the same two as `reserved_name`
-    # (`intersect?` answers through `eql?`/`hash`).
+    # type should be literal `true` — the same two as `reserved_name`
+    # (`intersect?` answers through `eql?`/`hash`, so it names those instead).
     def optional_params
       [:req, :opt].intersect?([:opt, :rest, :keyreq])
     end
