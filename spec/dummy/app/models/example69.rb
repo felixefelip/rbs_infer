@@ -29,8 +29,11 @@ module Example69
       name_action_dynamic(flag_name: false)
     end
 
-    # type should stay `Array['name_delete' | 'delete']` — the two call sites disagree,
-    # so `flag_name` is `bool` here and neither branch can be dropped
+    # type should be `['name_delete', 'delete']` — the two call sites disagree,
+    # so `flag_name` is `bool` here and neither branch can be dropped. A tuple
+    # rather than `Array[...]` because the array is written out where the body
+    # ends: no name here holds it, so nothing can push into it and make the
+    # order say the wrong thing (example73).
     def call_both
       [name_action_dynamic(flag_name: true), name_action_dynamic(flag_name: false)]
     end

@@ -129,10 +129,11 @@ module RbsInfer::Signatures
       subtype?(value_type, declared_type, subtyping)
     end
 
-    # Whether `declared` and `value` are the same type up to literals, with
-    # `value` the strictly more precise of the two: `("name_delete" | "delete")`
-    # against `String`, `"name_delete"` against `("name_delete" | "delete")`,
-    # `Array["a"]` against `Array[String]`.
+    # Whether `declared` and `value` are the same type up to how exactly it is
+    # said, with `value` the strictly more precise of the two:
+    # `("name_delete" | "delete")` against `String`, `"name_delete"` against
+    # `("name_delete" | "delete")`, `Array["a"]` against `Array[String]`,
+    # `["a", "b"]` against `Array[String]`.
     #
     # Three-valued like `accepts?`.
     def literal_refinement?(declared, value)
@@ -146,8 +147,8 @@ module RbsInfer::Signatures
       return false unless subtype?(value_type, declared_type, subtyping)
       return false if subtype?(declared_type, value_type, subtyping)
 
-      widened_declared = widen_literals(declared_type)
-      widened_value = widen_literals(value_type)
+      widened_declared = widen_shape(widen_literals(declared_type))
+      widened_value = widen_shape(widen_literals(value_type))
       subtype?(widened_value, widened_declared, subtyping) &&
         subtype?(widened_declared, widened_value, subtyping)
     end
@@ -599,6 +600,25 @@ module RbsInfer::Signatures
       return type.back_type if type.is_a?(Steep::AST::Types::Literal)
 
       type.map_type { |child| widen_literals(child) }
+    end
+
+    # A tuple as the array it widens to. The equality in `literal_refinement?`
+    # asks whether two types describe the same VALUES and differ only in how
+    # exactly they say so, and a tuple differs from `Array[Elem]` in exactly
+    # that way: it adds how many elements there are and which is which, and
+    # takes nothing away. Widening only the literals leaves `["a", "b"]` and
+    # `Array[String]` failing that test in the one direction a tuple can never
+    # satisfy, so a body strictly more exact than its declaration would be
+    # declined as a different type rather than taken as the better answer.
+    def widen_shape(type)
+      if type.is_a?(Steep::AST::Types::Tuple)
+        elements = type.types.map { |element| widen_shape(element) }
+        return Steep::AST::Builtin::Array.instance_type(
+          Steep::AST::Types::Union.build(types: elements)
+        )
+      end
+
+      type.map_type { |child| widen_shape(child) }
     end
 
     # Whether the environment defines every name in `type`. A name it does not
