@@ -38,6 +38,9 @@ methods:
   Example69::Foo#name_action_dynamic:
     "(flag_name: false)": '"delete"'
     "(flag_name: true)": '"name_delete"'
+  Example74::Foo#guarded:
+    "(:class)": '"  (self.class).x(...)"'
+    "(:user)": '"  (user).x(...)"'
   Example7::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
