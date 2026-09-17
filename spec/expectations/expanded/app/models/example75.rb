@@ -30,19 +30,21 @@
 # block and the accumulator cannot count them, and it keeps its reserved names
 # in a `Set` rather than an `Array`. Those are S3 and the other half of S6.
 #
-# Two things about the shape of this file that are not cosmetic, both found by
-# writing it the obvious way first:
+# Two things about the shape of this file are not cosmetic, and they were found
+# from opposite directions:
 #
-# The class names are deliberately not `Post` and `User`. With those, `email`
-# came out `String?` — `user.email` resolved against the dummy's OWN `Post` and
-# `User` rather than these, and rbs_rails types that column nilable. The macro
-# had nothing to do with it and neither did the eval; it is
-# `MethodTypeResolver` matching a receiver by bare class name.
+# The class names are deliberately not `Post` and `User` — which is what this
+# file was written with first, those being what anyone calls a delegation
+# example. With them `email` came out `String?`: `user.email` resolved against
+# the dummy's OWN `Post` and `User` rather than these, and rbs_rails types that
+# column nilable. Neither the macro nor the eval had anything to do with it; it
+# is `MethodTypeResolver` matching a receiver by bare class name.
 #
-# And the delegation target is in THIS file rather than one of its own, which
-# is where a real one would be. Split out, nothing lands at all and no eval is
-# recorded — the loop never bootstraps. Worth closing, and worth knowing that
-# the one-file shape is what these answers rest on.
+# The delegation target is in THIS file rather than one of its own, and that
+# one went the other way round: a file of its own is where a real target lives,
+# so it was moved out — and then nothing landed at all and no eval was
+# recorded, three full loop rounds with an empty sidecar. It is back here
+# because that is what these answers rest on, not because it reads better.
 module Example75
   class Skin
     def email
