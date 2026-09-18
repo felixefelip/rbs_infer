@@ -1353,22 +1353,30 @@ RSpec.describe RbsInfer::Analyzer do
         end
       end
 
-      # No ambiente real do dummy (RBS de stdlib carregada), o Steep refina
-      # o tipo de elemento de literais de coleção — paridade com o que um
-      # passe convergido produziria.
-      it "infere o tipo de elemento de literais de array via Steep", :dummy_app do
+      # `.freeze` is what decides the shape. A collection constant written
+      # without it can be pushed onto, so `Array[Elem]` is all that holds; one
+      # written with it cannot, and the checker answers with the members.
+      #
+      # The class is named for nothing in the dummy on purpose. As `Palette` it
+      # collided with the dummy's own model, whose `WEIGHTS` IS frozen, so this
+      # measured that constant instead of the file under it — and the old
+      # expectation, `Array[(1 | 2 | 3)]`, was that collision rather than
+      # anything this source produced.
+      it "reads a frozen collection constant as its members, and an unfrozen one as its element type", :dummy_app do
         files = {
-          "palette.rb" => <<~RUBY
-            class Palette
+          "swatch.rb" => <<~RUBY
+            class Swatch
               WEIGHTS = [1, 2, 3]
+              FIXED = [4, 5].freeze
             end
           RUBY
         }
 
         with_temp_files(files) do |_dir, paths|
-          rbs = described_class.new(target_class: "Palette", target_file: paths.first, source_files: paths).generate_rbs
+          rbs = described_class.new(target_class: "Swatch", target_file: paths.first, source_files: paths).generate_rbs
 
-          expect(rbs).to include("WEIGHTS: Array[(1 | 2 | 3)]")
+          expect(rbs).to include("WEIGHTS: Array[Integer]")
+          expect(rbs).to include("FIXED: [ 4, 5 ]")
         end
       end
     end

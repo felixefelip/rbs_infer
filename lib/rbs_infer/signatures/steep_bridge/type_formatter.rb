@@ -11,6 +11,14 @@ class RbsInfer::Signatures::SteepBridge
         # return.
         return "bool" if steep_type.is_a?(Steep::AST::Types::Logic::Base)
 
+        # A finite set names its members and RBS has no syntax for that, so this
+        # is where the exactness stops: `Set[Elem]` is what a signature can say,
+        # and it is what the checker itself writes the type as on the way out
+        # (`Factory#type_1`).
+        if steep_type.is_a?(Steep::AST::Types::FiniteSet)
+          return format_type(steep_type.element_type).then { |element| "Set[#{element}]" }
+        end
+
         # Steep writes a tuple `["a", "b"]` and RBS writes it `[ "a", "b" ]`.
         # The file being written is RBS, and the same type reaching it by two
         # routes — Steep's answer here, an RBS type object elsewhere — must not

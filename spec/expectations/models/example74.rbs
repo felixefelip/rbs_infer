@@ -1,7 +1,7 @@
 module Example74
   class Foo
     RESERVED: Array[("class" | "def" | "end")]
-    FROZEN: Array[String]
+    FROZEN: [ "class", "self" ]
     TWICE: Array["b"]
     MUTATED: Array["a"]
     PASSED: Array["a"]
