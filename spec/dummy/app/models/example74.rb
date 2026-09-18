@@ -44,8 +44,11 @@ module Example74
       RESERVED.include?("def")
     end
 
-    # type should be literal `'class;self'` — `.freeze` is how a constant
-    # collection is spelled and says nothing about what is in it
+    # type should be literal `'class;self'`. `.freeze` is how a constant
+    # collection is spelled, and the RBS beside this file now says
+    # `FROZEN: [ "class", "self" ]` where `RESERVED`, written without it, stays
+    # `Array[union]` — which is the right line to draw: frozen is what makes the
+    # shape unable to change, and a tuple is a claim about shape.
     def frozen_list
       FROZEN.join(";")
     end
