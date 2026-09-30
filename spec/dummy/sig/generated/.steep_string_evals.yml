@@ -53,3 +53,5 @@ call_sites:
   - def email;  user.email;end
   app/models/example75.rb:85:4:
   - def human_name;  self.class.human_name;end
+  app/models/example76.rb:76:4:
+  - def human_name(index);  self.class.human_name(index);end

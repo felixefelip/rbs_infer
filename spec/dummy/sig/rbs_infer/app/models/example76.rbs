@@ -1,0 +1,21 @@
+module Example76
+  class Peel
+    def self.human_name: ("all" index) -> "ALL"
+    def self.short_name: (untyped index) -> untyped
+    def self.banana_delegate: ((:human_name | :short_name) method) -> untyped
+
+    def human_name: ("all" index) -> "ALL"
+  end
+end
+
+module Example76
+  class Half < Peel
+    def self.short_name: (untyped index, ?String extra) -> untyped
+  end
+end
+
+module Example76
+  class Eater
+    def label: () -> "ALL"
+  end
+end

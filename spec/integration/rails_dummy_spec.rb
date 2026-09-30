@@ -524,6 +524,15 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example75", target_file: "app/models/example75.rb")
   end
 
+  # The same macro asking for the parameter list of the method it forwards to.
+  # The list comes out of the target's own declaration, through a reflection the
+  # checker answers rather than a name the tooling knows — and `short_name` is
+  # absent from the snapshot on purpose: a subclass widens it, so which list the
+  # reflection would have read depends on which class it ran on.
+  it "example76 (a macro reading the parameters of what it forwards to) matches expected RBS" do
+    assert_snapshot("models/example76", target_file: "app/models/example76.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
