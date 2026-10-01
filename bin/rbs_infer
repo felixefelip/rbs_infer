@@ -213,9 +213,12 @@ if output
   end
 
   all_changed = []
+  changed = []
   levels.each_with_index do |level_files, idx|
-    # Reset Steep cache between levels so it picks up RBS from prior levels
-    reset_caches.call if idx > 0
+    # Reset Steep cache between levels so it picks up RBS from prior levels. A
+    # level that rewrote no RBS left the environment as it was, and resetting
+    # anyway rebuilds it and drops every type check cached against it.
+    reset_caches.call if changed.any?
     changed = generate.call(level_files)
     all_changed.concat(changed)
   end
