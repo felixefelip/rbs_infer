@@ -40,6 +40,8 @@ app/models/example72.rb:67:14: [warning] Empty array doesn't have type annotatio
 app/models/example72.rb:78:14: [warning] Empty array doesn't have type annotation
 app/models/example73.rb:22:14: [warning] Empty array doesn't have type annotation
 app/models/example73.rb:42:14: [warning] Empty array doesn't have type annotation
+app/models/example77.rb:71:15: [error] Type `::Example77::Peel` does not have method `human_name`
+app/models/example77.rb:75:15: [error] Type `::Example77::Rind` does not have method `nick`
 app/models/included_hook.rb:104:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS
 app/models/post/notifiable.rb:42:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/send_dispatch.rb:107:33: [error] `public_send` cannot call `stamp` on `::SendDispatch`, which declares it private
