@@ -55,9 +55,9 @@ call_sites:
   - def human_name;  self.class.human_name;end
   app/models/example76.rb:76:4:
   - def human_name(index);  self.class.human_name(index);end
-  app/models/example77.rb:55:4:
+  app/models/example77.rb:54:4:
   - source: def human_name(index);  self.class.human_name(index);end
     target: "::Example77::Peel"
-  app/models/example77.rb:63:4:
+  app/models/example77.rb:62:4:
   - source: def nick(name);  self.class.nick(name);end
     target: "::Example77::Rind"
