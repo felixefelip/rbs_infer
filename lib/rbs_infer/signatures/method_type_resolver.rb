@@ -510,13 +510,11 @@ module RbsInfer::Signatures
         next unless analysis
 
         # Extrair tipos de métodos anotados via #: nos defs já coletados
-        comments = entry.result.comments
+        comments = RbsInfer::AST::CommentIndex.new(entry.result.comments)
         method_return_types = {}
         analysis.defs.each do |defn|
           def_line = defn.location.start_line
-          comments.each do |comment|
-            cl = comment.location.start_line
-            next unless cl.between?(def_line - 3, def_line - 1)
+          comments.between(def_line - 3, def_line - 1).each do |comment|
             text = comment.location.slice
             if text =~ /#:\s*(?:\(.*?\)\s*)?->\s*(.+)/
               method_return_types[defn.name.to_s] = $1.strip

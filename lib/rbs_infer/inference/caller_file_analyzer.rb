@@ -356,6 +356,7 @@ module RbsInfer::Inference
 
       def_visitor = RbsInfer::AST::DefCollector.new
       tree.accept(def_visitor)
+      comments = RbsInfer::AST::CommentIndex.new(comments)
 
       def_visitor.defs.each do |defn|
         def_line = defn.location.start_line
@@ -371,9 +372,8 @@ module RbsInfer::Inference
     end
 
     def find_rbs_return_type(comments, lines, def_line)
-      comments.each do |comment|
+      comments.between(def_line - 3, def_line - 1).each do |comment|
         comment_line = comment.location.start_line
-        next unless comment_line.between?(def_line - 3, def_line - 1)
         next unless lines_between_are_blank_or_comments(lines, comment_line, def_line)
 
         text = comment.location.slice
