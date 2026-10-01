@@ -533,6 +533,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example76", target_file: "app/models/example76.rb")
   end
 
+  # The same macro reflecting on the object it was HANDED, which is how
+  # `ActiveSupport::Delegation.generate` is written. Neither generated method is
+  # in the snapshot yet: the handed `self` does not name a class inside the
+  # writer, so the chunk is not a literal and the call site is refused.
+  it "example77 (a macro reflecting on the owner it was handed) matches expected RBS" do
+    assert_snapshot("models/example77", target_file: "app/models/example77.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
