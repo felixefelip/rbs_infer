@@ -1,0 +1,6 @@
+module Example78
+  class Peel
+    def self.short_name: (untyped index) -> untyped
+    def self.extract_arg: (:short_name method) -> :index
+  end
+end
