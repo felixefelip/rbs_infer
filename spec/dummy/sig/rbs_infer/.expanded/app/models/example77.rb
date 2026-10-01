@@ -27,12 +27,11 @@
 # `nickname` are the literals the class methods return. Nothing here states a
 # type.
 #
-# `Example77::Writer.generate` is written qualified on purpose. Written as
-# `Writer.generate`, which is how anyone would write it inside `Example77`, the
-# call is not recognised as handing `self` over at all: that recognition reads
-# the constant's SPELLING (`Writer.generate`) where the definition is keyed by its
-# full name (`Example77::Writer.generate`), so the call site does not even show
-# up as a hole in `.steep_string_evals.yml`. A gap of its own, still open.
+# `Writer.generate` is written relative, the way anyone writes it inside
+# `Example77` and the way `Module#delegate` calls `Delegation.generate` from
+# inside `module ActiveSupport`. Which method that names is the checker's answer
+# (felixefelip/steep#171): the spelling alone says `Writer.generate`, and the
+# definition is `Example77::Writer.generate`.
 module Example77
   module Writer
     def self.generate(owner, method)
@@ -52,7 +51,7 @@ module Example77
     end
 
     def self.banana_delegate(method)
-      Example77::Writer.generate(self, method)
+      Writer.generate(self, method)
     end
 
     banana_delegate :human_name
