@@ -58,7 +58,7 @@ module RbsInfer::Inference
     CONTROLLER_BASES = %w[ApplicationController ActionController::Base ActionController::API].freeze
 
     def initialize(comments:, lines:, target_class: nil)
-      @comments = comments
+      @comments = RbsInfer::AST::CommentIndex.new(comments)
       @lines = lines
       @members = []
       @nested_modules = []
@@ -472,8 +472,7 @@ module RbsInfer::Inference
     end
 
     def find_inline_type_same_line(comments, line)
-      comments.each do |comment|
-        next unless comment.location.start_line == line
+      comments.on(line).each do |comment|
         text = comment.location.slice
         if text =~ /#:\s*(.+)/
           return $1.strip
@@ -484,9 +483,8 @@ module RbsInfer::Inference
 
     def find_rbs_signature(comments, lines, def_line)
       # Buscar comentário rbs-inline acima do def (em sua própria linha dedicada)
-      comments.each do |comment|
+      comments.between(def_line - 3, def_line - 1).each do |comment|
         comment_line = comment.location.start_line
-        next unless comment_line.between?(def_line - 3, def_line - 1)
         next unless lines_between_are_blank_or_comments(lines, comment_line, def_line)
 
         # Ignorar comentários inline (na mesma linha de código, ex: attr_accessor :x #: Type)
@@ -549,9 +547,8 @@ module RbsInfer::Inference
     # A marker comment sits on its own line, within three lines above the `def`,
     # with nothing but blanks and comments between.
     def marker?(comments, lines, def_line, pattern)
-      comments.any? do |comment|
+      comments.between(def_line - 3, def_line - 1).any? do |comment|
         comment_line = comment.location.start_line
-        next false unless comment_line.between?(def_line - 3, def_line - 1)
         next false unless lines_between_are_blank_or_comments(lines, comment_line, def_line)
 
         source_line = lines[comment_line - 1]
