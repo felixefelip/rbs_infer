@@ -73,3 +73,11 @@ module Example77
     end
   end
 end
+
+class Example77::Peel
+  def human_name(index);  self.class.human_name(index);end
+end
+
+class Example77::Rind
+  def nick(name);  self.class.nick(name);end
+end

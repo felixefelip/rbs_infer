@@ -8,18 +8,22 @@ module Example77
   class Peel
     def self.human_name: ("all" index) -> "ALL"
     def self.banana_delegate: ((:human_name | :nick) method) -> untyped
+
+    def human_name: ("all" index) -> "ALL"
   end
 end
 
 module Example77
   class Rind < Peel
     def self.nick: ("x" name) -> "x"
+
+    def nick: ("x" name) -> "x"
   end
 end
 
 module Example77
   class Eater
-    def label: () -> untyped
-    def nickname: () -> untyped
+    def label: () -> "ALL"
+    def nickname: () -> "x"
   end
 end
