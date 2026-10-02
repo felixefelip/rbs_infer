@@ -59,6 +59,18 @@ module Example72
       parts.join(";")
     end
 
+    # The same push, under a condition its one call site decides: `flag` is
+    # `true` below, so the arm that runs is known and so is the array.
+    # should be `'a;b'`
+    def decided(flag)
+      parts = []
+      parts << "a"
+      parts << "b" if flag
+      parts.join(";")
+    end
+
+    def decides = decided(true)
+
     # UNSOUND IF MISSED. Two names for one array: the push happens through the
     # other one, so a tracker following `parts` alone sees an empty array and
     # would answer `''` for a program that produces `'a'`.

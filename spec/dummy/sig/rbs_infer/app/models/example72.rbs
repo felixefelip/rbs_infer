@@ -4,6 +4,8 @@ module Example72
     def first_piece: () -> "a"
     def looped: () -> "x;y"
     def conditional: (untyped flag) -> String
+    def decided: (true flag) -> "a;b"
+    def decides: () -> "a;b"
     def aliased: () -> String
     def through_a_call: () -> "a"
     def fill: (Array[untyped] parts) -> Array[untyped]
