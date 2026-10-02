@@ -854,7 +854,11 @@ module RbsInfer::Inference
     CONDITIONAL_TAIL_NODES = [Prism::IfNode, Prism::UnlessNode, Prism::CaseNode, Prism::CaseMatchNode].freeze
 
     def unconditional_nil_tail?(defn)
-      body = defn&.body
+      return false unless defn
+
+      # `def x; end` has no body node at all: it has no tail to be conditional.
+      body = defn.body
+      return true if body.nil?
       return false unless body.is_a?(Prism::StatementsNode)
 
       tail = body.body.last

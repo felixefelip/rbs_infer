@@ -3,5 +3,5 @@ class Module
 
   private
 
-  def bananed: () -> untyped
+  def bananed: () -> nil
 end
