@@ -8,8 +8,7 @@
 # Every method returns something that exposes what the checker believes about
 # the array: `join` shows the text, `first` shows an element. The RBS beside
 # this file is what Steep answers TODAY; where it still says `String`, that is
-# either a case deferred on purpose (`looped`) or the honest answer to a body
-# that does not decide (`conditional`, `aliased`, `through_a_call`).
+# the honest answer to a body that does not decide (`conditional`, `aliased`).
 #
 # Two of these ask for more than precision. `aliased` and `through_a_call`
 # mutate the array under another name, so an implementation that tracks the
@@ -42,7 +41,8 @@ module Example72
 
     # A loop over a literal collection. The array holds two elements and the
     # type of the collection says what they are, never how many — so this is
-    # the case where "walk the body once" and "know the length" part ways.
+    # the case where "walk the body once" and "know the length" part ways. The
+    # length is the literal's, and the body is checked once per element.
     # should be `'x;y'`, and must not be `'x'`
     def looped
       parts = []
