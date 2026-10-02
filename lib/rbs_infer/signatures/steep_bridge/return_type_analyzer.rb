@@ -58,7 +58,12 @@ class RbsInfer::Signatures::SteepBridge
         singleton_def = !plain_def || singleton_class_defs.include?(node.__id__)
         method_name = plain_def ? node.children[0].to_s : node.children[1].to_s
         body = plain_def ? node.children[2] : node.children[3]
-        next unless body
+
+        # `def x; end` has no body node to type, and evaluates to nil.
+        unless body
+          (singleton_def ? singleton : instance)[method_name] = "nil"
+          next
+        end
 
         body_type = returned_type(typing, body)
         type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(body_type)

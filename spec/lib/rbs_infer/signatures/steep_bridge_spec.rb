@@ -253,6 +253,22 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       # One inside a body of its own does not.
       expect(types["from_another_body"]).to eq("String")
     end
+
+    it "answers nil for a def with no body" do
+      code = <<~RUBY
+        class Hollow
+          def empty; end
+
+          def self.empty_singleton
+          end
+        end
+      RUBY
+
+      types = bridge.method_return_types_by_kind(code)
+
+      expect(types[:instance]["empty"]).to eq("nil")
+      expect(types[:singleton]["empty_singleton"]).to eq("nil")
+    end
   end
 
   describe "#contracts_store" do

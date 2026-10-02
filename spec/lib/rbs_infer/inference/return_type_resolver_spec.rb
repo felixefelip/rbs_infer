@@ -92,8 +92,13 @@ RSpec.describe RbsInfer::Inference::ReturnTypeResolver do
       expect(resolver.send(:unconditional_nil_tail?, defn)).to be(false)
     end
 
-    it "is false for a nil def body" do
-      expect(resolver.send(:unconditional_nil_tail?, def_node("def run\nend"))).to be(false)
+    it "is true for a def with no body" do
+      expect(resolver.send(:unconditional_nil_tail?, def_node("def run\nend"))).to be(true)
+      expect(resolver.send(:unconditional_nil_tail?, def_node("def run; end"))).to be(true)
+    end
+
+    it "is false without a def to read" do
+      expect(resolver.send(:unconditional_nil_tail?, nil)).to be(false)
     end
   end
 
