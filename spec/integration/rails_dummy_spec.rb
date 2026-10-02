@@ -548,6 +548,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example78", target_file: "app/models/example78.rb")
   end
 
+  # `Module#delegate`'s other half: the names arrive as a rest parameter and are
+  # handed on as an array to the writer that loops over them. The array the
+  # writer receives is the one the call site wrote, so each name gets its
+  # method.
+  it "example80 (a macro handing its names on as an array) matches expected RBS" do
+    assert_snapshot("models/example80", target_file: "app/models/example80.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
