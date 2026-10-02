@@ -38,6 +38,8 @@ methods:
   Example69::Foo#name_action_dynamic:
     "(flag_name: false)": '"delete"'
     "(flag_name: true)": '"name_delete"'
+  Example72::Foo#spread:
+    ("x", "y"): '"x;y"'
   Example74::Foo#guarded:
     "(:class)": '"  (self.class).x(...)"'
     "(:user)": '"  (user).x(...)"'
