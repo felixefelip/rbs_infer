@@ -32,8 +32,8 @@ app/models/example7.rb:31:28: [error] Type `(42 | nil)` does not have method `ab
 app/models/example7.rb:34:27: [error] Type `("John Doe" | nil)` does not have method `upcase`
 app/models/example72.rb:101:14: [warning] Empty array doesn't have type annotation
 app/models/example72.rb:110:14: [warning] Empty array doesn't have type annotation
-app/models/example72.rb:26:14: [warning] Empty array doesn't have type annotation
-app/models/example72.rb:37:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:25:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:36:14: [warning] Empty array doesn't have type annotation
 app/models/example72.rb:48:14: [warning] Empty array doesn't have type annotation
 app/models/example72.rb:56:14: [warning] Empty array doesn't have type annotation
 app/models/example72.rb:67:14: [warning] Empty array doesn't have type annotation
