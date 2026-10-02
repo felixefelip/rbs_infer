@@ -71,6 +71,17 @@ module Example72
 
     def decides = decided(true)
 
+    # A loop over a rest parameter. The type of `pieces` says what each element
+    # is; its one call site says how many there are, and builds the array.
+    # should be `'x;y'`
+    def spread(*pieces)
+      parts = []
+      pieces.each { |piece| parts << piece }
+      parts.join(";")
+    end
+
+    def spreads = spread("x", "y")
+
     # UNSOUND IF MISSED. Two names for one array: the push happens through the
     # other one, so a tracker following `parts` alone sees an empty array and
     # would answer `''` for a program that produces `'a'`.

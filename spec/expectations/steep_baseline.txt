@@ -30,14 +30,15 @@ app/models/example63.rb:4:21: [warning] Cannot pass a value of type `::Proc` as 
 app/models/example63.rb:9:8: [warning] Method `::Example63::Foo#greet` is not declared in RBS
 app/models/example7.rb:31:28: [error] Type `(42 | nil)` does not have method `abs`
 app/models/example7.rb:34:27: [error] Type `("John Doe" | nil)` does not have method `upcase`
-app/models/example72.rb:113:14: [warning] Empty array doesn't have type annotation
-app/models/example72.rb:122:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:101:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:124:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:133:14: [warning] Empty array doesn't have type annotation
 app/models/example72.rb:25:14: [warning] Empty array doesn't have type annotation
 app/models/example72.rb:36:14: [warning] Empty array doesn't have type annotation
 app/models/example72.rb:48:14: [warning] Empty array doesn't have type annotation
 app/models/example72.rb:56:14: [warning] Empty array doesn't have type annotation
 app/models/example72.rb:66:14: [warning] Empty array doesn't have type annotation
-app/models/example72.rb:79:14: [warning] Empty array doesn't have type annotation
+app/models/example72.rb:78:14: [warning] Empty array doesn't have type annotation
 app/models/example72.rb:90:14: [warning] Empty array doesn't have type annotation
 app/models/example73.rb:22:14: [warning] Empty array doesn't have type annotation
 app/models/example73.rb:42:14: [warning] Empty array doesn't have type annotation

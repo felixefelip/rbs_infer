@@ -6,6 +6,8 @@ module Example72
     def conditional: (untyped flag) -> String
     def decided: (true flag) -> "a;b"
     def decides: () -> "a;b"
+    def spread: (*("x" | "y") pieces) -> String
+    def spreads: () -> "x;y"
     def aliased: () -> String
     def through_a_call: () -> "a"
     def fill: (Array[untyped] parts) -> Array[untyped]
