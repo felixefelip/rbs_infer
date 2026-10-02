@@ -1,5 +1,7 @@
 module Example79
   class Peel
     def self.banana_accessors: (:nick method) -> untyped
+
+    def nick: () -> untyped
   end
 end

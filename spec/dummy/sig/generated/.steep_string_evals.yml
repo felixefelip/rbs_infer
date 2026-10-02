@@ -63,6 +63,6 @@ call_sites:
   app/models/example77.rb:62:4:
   - source: def nick(name);  self.class.nick(name);end
     target: "::Example77::Rind"
-  app/models/example79.rb:27:4:
+  app/models/example79.rb:29:4:
   - def nick;end
   -

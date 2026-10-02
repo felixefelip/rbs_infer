@@ -130,17 +130,17 @@ RSpec.describe RbsInfer::Project::StringEvalMacroExpander do
     expect(reopens("class Article\n  has_slot :content\nend\n", {})).to be_nil
   end
 
-  # A chunk whose value the call site does not fix comes through as a hole, and
-  # a class given a reader whose writer was dropped is worse than one given
-  # neither.
-  it "declines a call site the checker read only in part" do
+  # A chunk whose value the call site does not fix comes through as a hole; the
+  # chunks the checker did read still land.
+  it "writes the part of a call site the checker read" do
     source = <<~RUBY
       class Article
         has_slot :content
       end
     RUBY
 
-    expect(reopens(source, { "app/models/article.rb:2:2" => ["def content; end", nil] })).to be_nil
+    expect(reopens(source, { "app/models/article.rb:2:2" => ["def content; end", nil] }))
+      .to eq(reopens(source, { "app/models/article.rb:2:2" => ["def content; end"] })).and be_truthy
   end
 
   # The heredoc a macro is written with carries the gem's indentation; the

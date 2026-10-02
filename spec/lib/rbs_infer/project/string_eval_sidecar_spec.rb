@@ -54,14 +54,27 @@ RSpec.describe RbsInfer::Project::StringEvalSidecar do
   end
 
   # A hole is what the checker writes for a chunk whose value the call site does
-  # not fix. It declines the call site rather than handing back the rest.
-  it "declines a call site whose list holds a hole" do
+  # not fix. Only that chunk is dropped; the rest of the call site still lands.
+  it "drops a hole and keeps the chunks beside it" do
     with_sidecar(<<~YAML) do |sidecar|
       ---
       version: 1
       call_sites:
         app/models/article.rb:7:2:
         - "def content; end"
+        -
+    YAML
+      expect(sidecar.sources_for(path: "app/models/article.rb", line: 7, column: 2).map(&:source))
+        .to eq(["def content; end"])
+    end
+  end
+
+  it "declines a call site whose every chunk is a hole" do
+    with_sidecar(<<~YAML) do |sidecar|
+      ---
+      version: 1
+      call_sites:
+        app/models/article.rb:7:2:
         -
     YAML
       expect(sidecar.sources_for(path: "app/models/article.rb", line: 7, column: 2)).to be_nil

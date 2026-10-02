@@ -29,3 +29,7 @@ module Example79
     banana_accessors :nick
   end
 end
+
+class Example79::Peel
+  def nick;end
+end
