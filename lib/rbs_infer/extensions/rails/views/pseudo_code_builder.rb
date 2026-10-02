@@ -239,7 +239,7 @@ module RbsInfer
           # runtime "renders" the view by calling this one. It must exist for the ERB body to
           # map onto it; the body itself lives in the template.
           def body_method
-            ["  def __rbs_infer__body", "    nil", "  end"].join("\n")
+            ["  def __rbs_infer__body", "  end"].join("\n")
           end
 
           def reader_section(locals)
