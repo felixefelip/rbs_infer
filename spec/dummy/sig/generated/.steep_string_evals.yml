@@ -66,3 +66,9 @@ call_sites:
   app/models/example79.rb:29:4:
   - def nick;end
   -
+  app/models/example80.rb:58:4:
+  - source: def email;  user.email;end;def name;  user.name;end
+    target: "::Example80::Account"
+  app/models/example80.rb:64:4:
+  - source: def name;  _ = buyer;  _&.name;end
+    target: "::Example80::Order"

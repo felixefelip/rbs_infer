@@ -1,0 +1,33 @@
+module Example80
+  module Forwarder
+    def self.generate: (singleton(Forwarding) owner, Array[(:email | :name)] methods, to: (:user | :buyer), ?allow_nil: true?) -> nil
+  end
+end
+
+module Example80
+  class Person
+    def email: () -> "ana@example.com"
+    def name: () -> "Ana"
+  end
+end
+
+module Example80
+  class Forwarding
+    def self.forward: (*(:email | :name) methods, to: (:user | :buyer), ?allow_nil: true?) -> nil
+  end
+end
+
+module Example80
+  class Account < Forwarding
+    def user: () -> Person
+    def email: () -> "ana@example.com"
+    def name: () -> "Ana"
+  end
+end
+
+module Example80
+  class Order < Forwarding
+    def buyer: () -> Person
+    def name: () -> "Ana"
+  end
+end
