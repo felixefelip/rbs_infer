@@ -3841,7 +3841,12 @@ class Module
   #   Foo.new("Bar").name # raises NoMethodError: undefined method `name'
   #
   # The target method must be public, otherwise it will raise +NoMethodError+.
-  def delegate: (*untyped methods, ?private: untyped? `private`, ?allow_nil: untyped? allow_nil, ?prefix: untyped? prefix, ?to: untyped? to) -> untyped
+  # Amended: the collection declares every parameter `untyped`, and an
+  # `untyped` parameter cancels the checker's per-call-site specialization, so
+  # `delegate :email, to: :user` would never reach a body as the literals it
+  # passes (felixefelip/steep#171). `to:` is required because the real method
+  # raises without it, and the return is `Delegation.generate`'s method names.
+  def delegate: (*Symbol | String methods, to: Symbol | String | Module to, ?prefix: bool | Symbol | String prefix, ?allow_nil: bool allow_nil, ?private: bool `private`) -> Array[Symbol]
 
   # When building decorators, a common pattern may emerge:
   #
