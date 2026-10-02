@@ -56,7 +56,7 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     # hook Ruby does not have.
     it "leaves included the no-op it is on Module" do
       Dir.mktmpdir do |dir|
-        expect(build_in(dir).first.source).to match(/def included\(base\)\n\s+nil\n\s+end/)
+        expect(build_in(dir).first.source).to match(/def included\(base\)\n\s+end/)
       end
     end
 
@@ -108,7 +108,7 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     # `rb_obj_dummy1` again: one argument, returns nil.
     it "leaves extended the no-op it is on Module" do
       Dir.mktmpdir do |dir|
-        expect(source_of(dir, "module.rb")).to match(/def extended\(base\)\n\s+nil\n\s+end/)
+        expect(source_of(dir, "module.rb")).to match(/def extended\(base\)\n\s+end/)
       end
     end
 

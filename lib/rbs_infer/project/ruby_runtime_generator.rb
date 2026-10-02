@@ -119,7 +119,6 @@ module RbsInfer::Project
         end
 
         def __rbs_infer__include_module(mod)
-          nil
         end
 
         # @rbs_infer |...
@@ -132,7 +131,6 @@ module RbsInfer::Project
 
         # @rbs_infer |...
         def prepended(base)
-          nil
         end
 
         # The notification, and on `Module` it does nothing at all: `rb_obj_dummy1`, one
@@ -141,7 +139,6 @@ module RbsInfer::Project
         # is why `include` above has to reach this one with `send`.
         # @rbs_infer |...
         def included(base)
-          nil
         end
 
         # What `extend` delegates the singleton splice to — `rb_mod_extend_object`
@@ -167,7 +164,6 @@ module RbsInfer::Project
         # with `send`.
         # @rbs_infer |...
         def extended(base)
-          nil
         end
       end
     RUBY
