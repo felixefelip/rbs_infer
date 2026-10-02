@@ -1,0 +1,35 @@
+# A computed eval that does not fold is a hole, not an absence —
+# felixefelip/steep#171.
+#
+# `ActiveSupport::Delegation.generate` does not hand `module_eval` a string
+# literal or an interpolation; it hands it `method_def.join(";")`. Until every
+# piece of that join folds, the source it writes is not fixed by the call site,
+# and `.steep_string_evals.yml` has to say so: `[nil]` at the call site, which
+# tells the consumer the macro was read and could not be decided.
+#
+# `class_eval` handed an argument at all is the string form — the block form
+# takes none — so the argument's value is not what makes it an eval. Read as
+# "is it a string literal?", the `join` below was not an eval at all, and the
+# call site was missing from the sidecar while the same failure written as an
+# interpolation was recorded as a hole.
+#
+# `ENV.fetch` is there because nothing folds it: what it returns is decided at
+# run time, so it is a `String` and the second chunk cannot be written.
+# The first chunk folds, and each eval defines its own methods, so `nick` is
+# generated and only the hole is dropped. Recording the hole is what keeps the
+# sidecar honest about the call site: it was read, and part of it was not
+# decided.
+module Example79
+  class Peel
+    def self.banana_accessors(method)
+      class_eval ["def #{method}", "end"].join(";")
+      class_eval ["def #{method}_#{ENV.fetch("EXAMPLE79_SUFFIX", "ro")}", "end"].join(";")
+    end
+
+    banana_accessors :nick
+  end
+end
+
+class Example79::Peel
+  def nick;end
+end

@@ -30,8 +30,9 @@ module RbsInfer::Project
   # `if`/`case`/default it used to decide are decided by narrowing instead.
   #
   # A `nil` in a list is a chunk whose value the call site does not fix. It is
-  # reported rather than left out, and it declines the whole call site: a class
-  # given a reader whose writer was dropped is worse than one given neither.
+  # reported rather than left out, and only that chunk is dropped: each eval
+  # defines its own methods, and one the checker could not read does not make
+  # the ones it could any less written.
   class StringEvalSidecar
     PATH = "sig/generated/.steep_string_evals.yml"
 
@@ -77,16 +78,14 @@ module RbsInfer::Project
       !@call_sites.empty?
     end
 
-    # The chunks the call at `path:line:column` defines, or nil when it defines
-    # none this run can read — including when one of them is a hole.
+    # The chunks the call at `path:line:column` defines that this run can read,
+    # or nil when it can read none of them.
     def sources_for(path:, line:, column:)
       entries = @call_sites[key_for(path, line, column)] or return nil
       return nil unless entries.is_a?(Array) && !entries.empty?
 
-      chunks = entries.map { |entry| chunk_for(entry) }
-      return nil if chunks.any?(&:nil?)
-
-      chunks
+      chunks = entries.filter_map { |entry| chunk_for(entry) }
+      chunks unless chunks.empty?
     end
 
     private
@@ -94,8 +93,7 @@ module RbsInfer::Project
     # A bare string is a chunk with no target — the spelling version 1 wrote,
     # and still what version 2 writes for an eval on the caller's own self. A
     # map carries the class the eval names, and one this cannot read is a hole
-    # like any other: a class given half of what a macro writes is worse than
-    # one given none.
+    # like any other: a chunk with nowhere to land is dropped.
     def chunk_for(entry)
       case entry
       when String

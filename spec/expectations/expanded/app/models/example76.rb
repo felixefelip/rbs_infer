@@ -21,8 +21,8 @@
 #     `class_eval` IS the source the call site writes (steep#169).
 #
 # Without S2 the third step answers `::Method::param_types`, the chunk is not a
-# literal, and `StringEvalSidecar` refuses the WHOLE call site — so `human_name`
-# would not be `untyped` on `Peel`, it would not exist.
+# literal, and `StringEvalSidecar` drops it — the only chunk this call site
+# writes — so `human_name` would not be `untyped` on `Peel`, it would not exist.
 #
 # The RBS beside this file is the result. `def human_name: ("all" index) ->
 # "ALL"` on `Peel`: the parameter's NAME came out of the target's declaration
