@@ -115,6 +115,7 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 | `rake rbs_infer:job_runtime:all` | `RbsInfer::Extensions::Rails::ActiveJob::RuntimeGenerator` | `sig/generated/steep_activejob_runtime/` |
 | `rake rbs_infer:actionview_runtime:all` | `RbsInfer::Extensions::Rails::Views::RuntimeGenerator` | `sig/generated/steep_actionview_runtime/` |
 | `rake rbs_infer:actiontext_runtime:all` | `RbsInfer::Extensions::Rails::ActionText::RuntimeGenerator` | `sig/generated/steep_actiontext_runtime/` |
+| `rake rbs_infer:activesupport_runtime:all` | `RbsInfer::Extensions::Rails::ActiveSupport::RuntimeGenerator` | `sig/generated/steep_activesupport_runtime/` |
 
 **Enumerize generator** — walks `app/models/**/*.rb`, captures `enumerize :attr, in: [...]`, and emits per-attribute `Value` / `Attribute` classes plus instance/class accessors, predicate methods, and scope methods (shallow/deep).
 
@@ -188,6 +189,26 @@ type — rather than `::ActionText::Content`, because its serializer handling sp
 only JSON/Array/Hash coders. Transcribing them before that is fixed would emit bodies that
 report an error instead of a type, so that half waits on the rbs_rails coder fix.
 
+**ActiveSupport runtime generator** — writes one file: `Module#delegate`,
+`Module#delegate_missing_to` and the `ActiveSupport::Delegation` they hand their
+arguments to, sliced from the installed gem. It replaced a reader in the core
+(`ClassMemberCollector#extract_delegates`), which was an ActiveSupport concept in
+`lib/rbs_infer/inference/` and guessed what the gem decides: the receiver's class
+by capitalizing the reader's name, nothing at all for `to: :@ivar` or
+`to: SomeModule` (felixefelip/rbs_infer#355).
+
+`delegate :email, to: :user` defines its method by `module_eval` on a string the
+macro builds, so it takes the same path as `has_rich_text`: the checker folds the
+string at each call site (felixefelip/steep#171) and
+`Project::StringEvalMacroExpander` places it. The method it writes is
+`def email(...); _ = user; _.email(...); …; end`, and a method whose parameter
+list is `...` takes the parameters and return of the method it forwards to —
+which the checker resolves through `user`'s type (`ForwardedParametersResolver`,
+core and framework-agnostic). The one annotation in the file is
+`# @rbs_infer |...` on each macro: the signature inferred from the app's call
+sites goes ahead of gem_rbs_collection's `(*untyped …)`, whose `untyped` would
+otherwise stop the call site's literals from reaching the body.
+
 **View runtime generator** — emits *pseudo-code* (one plain `.rb` per
 `app/views/**/*.{html,turbo_stream}.erb`) modelling what ActionView does at render time, so
 the analyzer derives each view's RBS the same way it derives any other class's. Per template
@@ -223,6 +244,7 @@ lib/rbs_infer/
       views/                                 # view-runtime pseudo-code
       controllers/                           # controller-runtime pseudo-code
       action_text/                           # has_rich_text, sliced from the gem
+      active_support/                        # delegate, sliced from the gem
 spec/
   dummy/                                     # Rails 8 dummy app used by integration suite
   integration/rails_dummy_spec.rb            # snapshot tests vs spec/expectations/

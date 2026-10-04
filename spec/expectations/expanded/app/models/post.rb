@@ -143,6 +143,13 @@ class Post < ApplicationRecord
 end
 
 class Post
+  def user_email(...);  _ = user;  _.email(...);rescue NoMethodError => e;  if _.nil? && e.name == :email;    raise ::ActiveSupport::DelegationError.nil_target(:user_email, :'user');  else;    raise;  end;end
+  def full_name(...);  _ = user;  _.full_name(...);rescue NoMethodError => e;  if _.nil? && e.name == :full_name;    raise ::ActiveSupport::DelegationError.nil_target(:full_name, :'user');  else;    raise;  end;end
+  def user_created_at(...);  _ = user;  _.created_at(...);rescue NoMethodError => e;  if _.nil? && e.name == :created_at;    raise ::ActiveSupport::DelegationError.nil_target(:user_created_at, :'user');  else;    raise;  end;end
+  def name(...);  _ = tag;  if !_.nil? || nil.respond_to?(:name);    _.name(...);  end;end
+end
+
+class Post
   has_many :post_tags, dependent: :destroy
   has_many :tags, through: :post_tags
 

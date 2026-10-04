@@ -26,6 +26,10 @@ module Example60::Labels
   end
 end
 
+module Example60::Labels
+  def human_name(...);  (self.class).human_name(...);end
+end
+
 module Example60::Labels::ClassMethods
   # @type instance: singleton(::Example60) & ::Example60::Labels::ClassMethods
   def human_name(index)

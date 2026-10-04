@@ -29,10 +29,10 @@ module RbsInfer::Inference
   # `nil`. Enquanto o tipo é `untyped` não muda nada; quando os call-sites dão
   # um tipo de verdade ao param, é o que faz o `?` do nilable aparecer junto —
   # aplicado no Analyzer, onde o tipo inferido existe (#208).
-  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_nil_defaults, :block_stored_forward, :no_signature, keyword_init: true)
-
-  # Metadata extraída de uma chamada `delegate` — tipos são resolvidos depois no Analyzer
-  DelegateInfo = Struct.new(:methods, :target, :prefix, :allow_nil, keyword_init: true)
+  # `params_forward` = a lista de parâmetros é só `...`: o método aceita o que a
+  # chamada para onde ele encaminha aceita — resolvido no Analyzer, que tem o
+  # checker (`ForwardedParametersResolver`).
+  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_nil_defaults, :block_stored_forward, :no_signature, :params_forward, keyword_init: true)
 
   # Pelo que eu entendi, essa classe é responsável por gerar o signature inicial
   # de uma class/module, porém depois no analyzer, terá outras classes que irão
@@ -42,7 +42,7 @@ module RbsInfer::Inference
     include RbsInfer::Signatures::RbsAnnotationParser
     include RbsInfer::AST::LexicalScope
 
-    attr_reader :members, :delegates, :superclass_name, :is_module
+    attr_reader :members, :superclass_name, :is_module
 
     # Every module DECLARED inside the target, in source order, by the owner
     # path its members would carry. Kept apart from `members` because a
@@ -62,7 +62,6 @@ module RbsInfer::Inference
       @lines = lines
       @members = []
       @nested_modules = []
-      @delegates = []
       @current_visibility = :public
       @is_controller = false
       @superclass_name = nil
@@ -195,6 +194,7 @@ module RbsInfer::Inference
         block_arg_positions: sig ? nil : extractor.block_arg_positions,
         block_open_forward: sig ? nil : extractor.block_open_forward?,
         block_stored_forward: sig ? nil : extractor.block_stored_forward?,
+        params_forward: sig ? nil : extractor.params_forward?,
         overloading: overloading,
         no_signature: no_signature
       )
@@ -224,8 +224,6 @@ module RbsInfer::Inference
         extract_includes(node, kind: :prepend)
       when :extend
         extract_extends(node)
-      when :delegate
-        extract_delegates(node)
       when :alias_method
         extract_alias_method(node)
       end
@@ -401,47 +399,6 @@ module RbsInfer::Inference
       case node
       when Prism::SymbolNode, Prism::StringNode then node.unescaped
       end
-    end
-
-    def extract_delegates(node)
-      return unless inside_target?
-      return unless node.arguments
-
-      args = node.arguments.arguments
-      method_names = args.select { |a| a.is_a?(Prism::SymbolNode) }.map(&:value)
-      return if method_names.empty?
-
-      kwargs = args.find { |a| a.is_a?(Prism::KeywordHashNode) }
-      return unless kwargs
-
-      target = nil
-      prefix = nil
-      allow_nil = false
-
-      kwargs.elements.each do |assoc|
-        next unless assoc.is_a?(Prism::AssocNode) && assoc.key.is_a?(Prism::SymbolNode)
-
-        case assoc.key.value
-        when "to"
-          target = assoc.value.is_a?(Prism::SymbolNode) ? assoc.value.value : nil
-        when "prefix"
-          prefix = case assoc.value
-                   when Prism::TrueNode then true
-                   when Prism::SymbolNode then assoc.value.value
-                   end
-        when "allow_nil"
-          allow_nil = assoc.value.is_a?(Prism::TrueNode)
-        end
-      end
-
-      return unless target
-
-      @delegates << DelegateInfo.new(
-        methods: method_names,
-        target: target,
-        prefix: prefix,
-        allow_nil: allow_nil
-      )
     end
 
     def extract_attrs(node)

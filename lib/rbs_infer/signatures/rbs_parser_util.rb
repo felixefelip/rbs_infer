@@ -453,6 +453,33 @@ module RbsInfer::Signatures
       method_sig.sub(OPEN_FORWARD_BLOCK, "{ (#{params&.join(", ") || "*untyped"}) -> untyped }")
     end
 
+    # What the collector writes for a parameter list that is `...` alone.
+    FORWARDED_PARAMETERS = "(*untyped, **untyped) ?{ (*untyped) -> untyped }"
+
+    # `name: (*untyped, **untyped) ?{ … } -> ret` with the forwarded method's
+    # parameter lists in place of the placeholder, one overload each, the
+    # return kept. Only that exact spelling is rewritten: anything else was
+    # settled by better evidence.
+    def forward_parameters(method_sig, lists)
+      return method_sig if method_sig.nil? || lists.empty?
+
+      name, rest = method_sig.split(": ", 2)
+      return method_sig unless rest&.start_with?(FORWARDED_PARAMETERS)
+
+      returned = return_type_of(method_sig) or return method_sig
+      "#{name}: #{lists.map { |list| "#{list} -> #{returned}" }.join(" | ")}"
+    end
+
+    # The same rewrite with whole overloads, return included: `[[params, ret], …]`.
+    def forward_overloads(method_sig, overloads)
+      return method_sig if method_sig.nil? || overloads.empty?
+
+      name, rest = method_sig.split(": ", 2)
+      return method_sig unless rest&.start_with?(FORWARDED_PARAMETERS)
+
+      "#{name}: #{overloads.map { |params, returned| "#{params} -> #{returned}" }.join(" | ")}"
+    end
+
     # Drops one redundant outer pair. `(A & B)?` and `Array[A | B]` are not
     # outer-parenthesized, so they pass through untouched.
     def unparenthesized(type)

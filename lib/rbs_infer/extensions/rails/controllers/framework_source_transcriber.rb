@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "prism"
+require_relative "../../framework_source"
 
 module RbsInfer
   module Extensions
@@ -216,8 +217,8 @@ module RbsInfer
             file, line = method.source_location
             return nil unless file && line && File.file?(file)
 
-            node = def_node_at(file, line) or return nil
-            [file, owner.split("::"), dedent(desugar_dynamic_sends(node), node.location.start_column)]
+            node = FrameworkSource.def_node_at(file, line) or return nil
+            [file, owner.split("::"), FrameworkSource.dedent(desugar_dynamic_sends(node), node.location.start_column)]
           end
 
           # `controller.__send__ :render, …` → `controller.render …`
@@ -266,25 +267,6 @@ module RbsInfer
             Object.const_get(seed.receiver).instance_method(seed.method_name)
           rescue NameError
             nil
-          end
-
-          # The `def` whose own line is `line`. Located by position rather than by
-          # name so a file defining the same name twice cannot be confused.
-          def def_node_at(file, line)
-            result = Prism.parse_file(file)
-            return nil unless result.success?
-
-            RbsInfer::Analyzer.find_all_nodes(result.value) { |n| n.is_a?(Prism::DefNode) }
-                              .find { |n| n.location.start_line == line }
-          end
-
-          # `node.slice` starts AT the `def` keyword, so the first line carries no
-          # indentation while the rest keep the file's. The margin to strip is
-          # therefore the def's own column, not the minimum across lines — which
-          # is zero, and left every body at the gem's absolute indentation.
-          def dedent(source, margin)
-            first, *rest = source.lines
-            ([first] + rest.map { |line| line.strip.empty? ? line : line.sub(/\A {0,#{margin}}/, "") }).join
           end
 
           # Nests the defs under `namespace`, `class` for a constant that is one

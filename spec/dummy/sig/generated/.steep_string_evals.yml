@@ -34,6 +34,14 @@ call_sites:
                 def content=(body)
                   self.content.body = body
                 end
+  app/models/example60.rb:9:2:
+  - source: def stamp(...);  _ = example60_printer;  _.stamp(...);rescue NoMethodError
+      => e;  if _.nil? && e.name == :stamp;    raise ::ActiveSupport::DelegationError.nil_target(:stamp,
+      :'example60_printer');  else;    raise;  end;end
+    target: "::Example60"
+  app/models/example60/labels.rb:17:2:
+  - source: def human_name(...);  (self.class).human_name(...);end
+    target: "::Example60::Labels"
   app/models/example71.rb:108:4:
   - def from_mixin; :mixed; end
   app/models/example71.rb:50:4:
@@ -72,3 +80,41 @@ call_sites:
   app/models/example80.rb:64:4:
   - source: def name;  _ = buyer;  _&.name;end
     target: "::Example80::Order"
+  app/models/example81.rb:29:2:
+  - source: def full_name(...);  _ = author;  _.full_name(...);rescue NoMethodError
+      => e;  if _.nil? && e.name == :full_name;    raise ::ActiveSupport::DelegationError.nil_target(:full_name,
+      :'author');  else;    raise;  end;end
+    target: "::Example81"
+  app/models/example81.rb:30:2:
+  - source: def owner_full_name(...);  _ = @owner;  _.full_name(...);rescue NoMethodError
+      => e;  if _.nil? && e.name == :full_name;    raise ::ActiveSupport::DelegationError.nil_target(:owner_full_name,
+      :'@owner');  else;    raise;  end;end
+    target: "::Example81"
+  app/models/example81.rb:31:2:
+  - source: def fetch(key, &);  _ = ::Example81::Shelf;  _.fetch(key, &);rescue NoMethodError
+      => e;  if _.nil? && e.name == :fetch;    raise ::ActiveSupport::DelegationError.nil_target(:fetch,
+      :'::Example81::Shelf');  else;    raise;  end;end
+    target: "::Example81"
+  app/models/post.rb:31:2:
+  - source: def user_email(...);  _ = user;  _.email(...);rescue NoMethodError =>
+      e;  if _.nil? && e.name == :email;    raise ::ActiveSupport::DelegationError.nil_target(:user_email,
+      :'user');  else;    raise;  end;end
+    target: "::Post"
+  app/models/post.rb:32:2:
+  - source: def full_name(...);  _ = user;  _.full_name(...);rescue NoMethodError
+      => e;  if _.nil? && e.name == :full_name;    raise ::ActiveSupport::DelegationError.nil_target(:full_name,
+      :'user');  else;    raise;  end;end
+    target: "::Post"
+  app/models/post.rb:33:2:
+  - source: def user_created_at(...);  _ = user;  _.created_at(...);rescue NoMethodError
+      => e;  if _.nil? && e.name == :created_at;    raise ::ActiveSupport::DelegationError.nil_target(:user_created_at,
+      :'user');  else;    raise;  end;end
+    target: "::Post"
+  app/models/post.rb:34:2:
+  - source: def name(...);  _ = tag;  if !_.nil? || nil.respond_to?(:name);    _.name(...);  end;end
+    target: "::Post"
+  app/models/post/notifiable.rb:7:4:
+  - source: def user_updated_at(...);  _ = user;  _.updated_at(...);rescue NoMethodError
+      => e;  if _.nil? && e.name == :updated_at;    raise ::ActiveSupport::DelegationError.nil_target(:user_updated_at,
+      :'user');  else;    raise;  end;end
+    target: "::Post"
