@@ -18,20 +18,23 @@ class RbsInfer::Signatures::SteepBridge
     #
     # which is what `delegate :email, to: :user` writes. `...` accepts whatever
     # the call it forwards to accepts, so that call's DECLARATION is the
-    # method's parameter list — and which method the call resolves to, through
-    # a local, a nilable receiver or `self.class`, is the checker's to say.
+    # method's parameter list — and which method the call resolves to is the
+    # checker's to say.
     #
     # Only where every forwarding call in the body resolves to the same one
     # method: two different callees accept two different lists, and nothing
     # here picks between them. Keys are `name`, or `self.name` for singletons.
     #
-    # `returns:` says whether the method's VALUE is that call — every way the
-    # body can end is the call, a `raise`, or (with `nilable:`) nothing. Then
-    # the method returns what the call returns, as surely as it accepts what
-    # the call accepts:
+    # Where the checker resolved the call, it also typed the body, so the
+    # method's return is the one already resolved for it. Where it did not —
+    # a receiver that may be nil, which the checker rejects whole — `returns:`
+    # says whether the method's VALUE is that call: every way the body can end
+    # is the call, a `raise`, or (with `nilable:`) nothing. Then the method
+    # returns what the call returns, as surely as it accepts what the call
+    # accepts:
     #
     #   def name(...)
-    #     _ = tag
+    #     _ = tag              # Tag?
     #     if !_.nil? || nil.respond_to?(:name)
     #       _.name(...)        # the call…
     #     end                  # …or nil
@@ -43,12 +46,17 @@ class RbsInfer::Signatures::SteepBridge
       targets = {}
       each_forwarding_def(typing.source.node) do |def_node, method_key|
         calls = forwarding_calls(def_node)
-        callees = calls.map { |send_node| callee(typing, send_node, def_node) }
-        next if callees.empty? || callees.any?(&:nil?) || callees.uniq.size != 1
+        callees = calls.map { |send_node| callee(typing, send_node) }
+        next if callees.empty? || callees.any?(&:nil?) || callees.map(&:first).uniq.size != 1
 
-        ends = tails(body_of(def_node))
-        returns = ends.all? { |tail| tail == :nil || calls.any? { |call| call.equal?(tail) } }
-        targets[method_key] = callees.first.merge(returns: returns, nilable: returns && ends.include?(:nil))
+        target, = callees.first
+        if callees.all? { |_, resolved| resolved }
+          targets[method_key] = target.merge(returns: false, nilable: false)
+        else
+          ends = tails(body_of(def_node))
+          returns = ends.all? { |tail| tail == :nil || calls.any? { |call| call.equal?(tail) } }
+          targets[method_key] = target.merge(returns: returns, nilable: returns && ends.include?(:nil))
+        end
       end
       targets
     end
@@ -127,37 +135,37 @@ class RbsInfer::Signatures::SteepBridge
       node.children.each { |child| walk(child, &block) }
     end
 
-    # The one method a call resolved to, or nil when it resolved to none, or
-    # to several (a union receiver whose halves declare it apart).
-    def callee(typing, send_node, def_node)
+    # `[method, resolved]`: the one method a call reaches, and whether the
+    # checker resolved the call itself. nil when it reaches none, or several
+    # (a union receiver whose halves declare it apart).
+    def callee(typing, send_node)
       call = typing.call_of(node: send_node)
       decls = call.respond_to?(:method_decls) ? call.method_decls.to_a : []
-      return receiver_callee(typing, send_node, def_node) if decls.empty?
+      return receiver_callee(typing, send_node)&.then { |target| [target, false] } if decls.empty?
 
       names = decls.map(&:method_name).uniq
       return nil unless names.size == 1
 
       name = names.first
       kind = name.is_a?(Steep::SingletonMethodName) ? :singleton : :instance
-      { kind: kind, class_name: name.type_name.to_s.delete_prefix("::"), method_name: name.method_name.to_s }
+      [{ kind: kind, class_name: name.type_name.to_s.delete_prefix("::"), method_name: name.method_name.to_s }, true]
     rescue Steep::Typing::UnknownNodeError
       nil
     end
 
     # When the call itself names no method, the RECEIVER may still say which
-    # one it is. Two ways it does not, both in ActiveSupport's body:
+    # one it is — a receiver that may be nil, which the checker rejects:
     #
-    #   _ = user            # `_` is `untyped` to the checker, by convention
-    #   _.email(...)        # …and `user` is User? — a NoMethodError for nil
+    #   _ = user            # User?
+    #   _.email(...)        # a NoMethodError for nil
     #
-    # A local is read at the assignment that reaches the call, whose value the
-    # checker typed as usual. And nil is taken out: the call that passes `...`
-    # on is the one made when the receiver is NOT nil — nil raises instead,
-    # which is what the `rescue NoMethodError` around it is for. What is left
-    # has to be exactly one class.
-    def receiver_callee(typing, send_node, def_node)
+    # nil is taken out: the call that passes `...` on is the one made when the
+    # receiver is NOT nil — nil raises instead, which is what the
+    # `rescue NoMethodError` around it is for. What is left has to be exactly
+    # one class.
+    def receiver_callee(typing, send_node)
       receiver = send_node.children[0] or return nil
-      type = typing.type_of(node: reaching_value(receiver, send_node, def_node))
+      type = typing.type_of(node: receiver)
       named = type
       if type.is_a?(Steep::AST::Types::Union)
         rest = type.types.reject { |member| member.is_a?(Steep::AST::Types::Nil) }
@@ -176,30 +184,6 @@ class RbsInfer::Signatures::SteepBridge
       { kind: kind, class_name: named.name.to_s.delete_prefix("::"), method_name: send_node.children[1].to_s }
     rescue Steep::Typing::UnknownNodeError
       nil
-    end
-
-    # The value a local receiver holds at the call: the right-hand side of the
-    # last assignment to it written before the call in the same body, when
-    # the body assigns it nowhere else that could run in between — not in a
-    # block, a loop or a branch. Any other receiver is its own value.
-    def reaching_value(receiver, send_node, def_node)
-      return receiver unless receiver.type == :lvar
-
-      name = receiver.children[0]
-      body = def_node.type == :defs ? def_node.children[3] : def_node.children[2]
-      # `def x; …; rescue …; end` — the statements are the protected body.
-      body = body.children[0] while body.is_a?(Parser::AST::Node) && %i[rescue ensure].include?(body.type)
-      statements = body&.type == :begin ? body.children : [body]
-      writes = []
-      walk(body) { |node| writes << node if node.type == :lvasgn && node.children[0] == name }
-
-      assignment = statements.reverse.find do |statement|
-        statement.is_a?(Parser::AST::Node) && statement.type == :lvasgn && statement.children[0] == name &&
-          statement.loc.expression.end_pos <= send_node.loc.expression.begin_pos
-      end
-      return receiver unless assignment && writes.size == 1
-
-      assignment.children[1]
     end
   end
 end

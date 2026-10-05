@@ -52,7 +52,8 @@ RSpec.describe "a method that forwards `...`" do
     expect(generate(target)).to include("def stamp: (String label, ?Integer times) -> String")
   end
 
-  # ActiveSupport's shape: the receiver is read into a local first.
+  # ActiveSupport's shape: the receiver is read into `_` first, an ordinary
+  # local to the checker (felixefelip/steep#202).
   it "follows the receiver through a local" do
     target = write("app/target.rb", <<~RUBY)
       class Target
@@ -106,12 +107,14 @@ RSpec.describe "a method that forwards `...`" do
     expect(generate(target)).to include("def stamp: (String label) -> String | (Integer count) -> String")
   end
 
-  # The method's value is the call's, and a `rescue` that only raises adds
-  # nothing to it — ActiveSupport's shape for a receiver that may be nil.
+  # A receiver that may be nil, which the checker rejects whole: nil is taken
+  # out, the method's value is the call's, and a `rescue` that only raises
+  # adds nothing to it — ActiveSupport's shape without `allow_nil:`.
   it "returns what the forwarded method returns" do
+    write("sig/generated/target.rbs", "class Target\n  def printer: () -> Printer?\nend\n")
     target = write("app/target.rb", <<~RUBY)
       class Target
-        def printer = Printer.new
+        def printer = (Printer.new if rand > 0.5)
 
         def stamp(...)
           _ = printer
@@ -131,9 +134,10 @@ RSpec.describe "a method that forwards `...`" do
 
   # `allow_nil: true`: the call, or nothing.
   it "returns the forwarded method's value or nil when the body can end without it" do
+    write("sig/generated/target.rbs", "class Target\n  def printer: () -> Printer?\nend\n")
     target = write("app/target.rb", <<~RUBY)
       class Target
-        def printer = Printer.new
+        def printer = (Printer.new if rand > 0.5)
 
         def stamp(...)
           _ = printer
