@@ -1,0 +1,3 @@
+class Example60
+  def stamp: ("tag" label, 2 times) -> "tagtag"
+end

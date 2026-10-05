@@ -53,6 +53,16 @@ if inputs.empty?
   exit 1
 end
 
+# What each `class_eval` of a string defines, written as checked Ruby under
+# `sig/generated/steep_string_evals/` from the sidecar the last `steep check`
+# wrote (`Project::StringEvalSources`). First, so the files are inputs and
+# corpus of this very run, and a call site that is gone leaves no file behind.
+if output
+  RbsInfer::Project::StringEvalSources.generate(
+    base_dir: Dir.pwd, sidecar: RbsInfer::Project::StringEvalSidecar.load(Dir.pwd)
+  )
+end
+
 # Expandir diretórios para todos os .rb contidos neles (recursivamente)
 files = inputs.flat_map do |input|
   if File.directory?(input)

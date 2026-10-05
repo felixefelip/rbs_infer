@@ -728,3 +728,8 @@ sig/generated/steep_devise_runtime/devise_scoped_helpers.rb:
   - anchor: DeviseScopedHelpers
     annotations:
     - "# @type instance: ActionController::Base & DeviseScopedHelpers"
+sig/generated/steep_string_evals/app/models/example60/labels.rb:
+  modules:
+  - anchor: Labels
+    annotations:
+    - "# @type instance: Example60 & Example60::Labels"

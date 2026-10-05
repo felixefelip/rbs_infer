@@ -1,0 +1,25 @@
+module Example71
+  class Host
+    def from_self: () -> :self
+  end
+end
+
+module Example71
+  class Target
+    def from_constant: () -> :constant
+    def from_local: () -> :local
+    def from_fix_string: () -> 0
+  end
+end
+
+module Example71
+  class Child
+    def from_inherited: () -> :inherited
+  end
+end
+
+module Example71
+  class Mixed
+    def from_mixin: () -> :mixed
+  end
+end

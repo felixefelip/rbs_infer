@@ -1,0 +1,5 @@
+module Example79
+  class Peel
+    def nick: () -> nil
+  end
+end

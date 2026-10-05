@@ -1,0 +1,11 @@
+module Example77
+  class Peel
+    def human_name: ("all" index) -> "ALL"
+  end
+end
+
+module Example77
+  class Rind
+    def nick: ("x" name) -> "x"
+  end
+end

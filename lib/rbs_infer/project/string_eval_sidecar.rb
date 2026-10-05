@@ -78,6 +78,12 @@ module RbsInfer::Project
       !@call_sites.empty?
     end
 
+    # The files, relative to the project, that make at least one call this
+    # sidecar recorded.
+    def paths
+      @call_sites.keys.filter_map { |key| key[/\A(.+):\d+:\d+\z/, 1] }.uniq.sort
+    end
+
     # The chunks the call at `path:line:column` defines that this run can read,
     # or nil when it can read none of them.
     def sources_for(path:, line:, column:)

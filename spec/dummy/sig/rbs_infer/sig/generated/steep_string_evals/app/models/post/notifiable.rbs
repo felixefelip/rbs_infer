@@ -1,0 +1,3 @@
+class Post
+  def user_updated_at: () -> ActiveSupport::TimeWithZone?
+end

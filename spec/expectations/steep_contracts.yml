@@ -160,6 +160,42 @@ methods:
         receiver:
           kind: self
         method: user
+  Post#full_name:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: user
+    enforced: false
+  Post#user_created_at:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: user
+    enforced: false
+  Post#user_email:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: user
+    enforced: false
+  Post#user_updated_at:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: user
+    enforced: false
   Post::Exportable#export_stamp:
     requires:
     - kind: not_nil
