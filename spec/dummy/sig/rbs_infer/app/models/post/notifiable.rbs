@@ -14,3 +14,7 @@ class Post
     def author_digest_subject: () -> String
   end
 end
+
+class Post
+  def user_updated_at: () -> ActiveSupport::TimeWithZone?
+end

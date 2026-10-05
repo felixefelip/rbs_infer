@@ -97,6 +97,10 @@ module RbsInfer::Signatures
       RbsInfer::Signatures::SteepBridge::BlockAnalyzer.new(steep_bridge: self).forwarded_block_requirements(source_code)
     end
 
+    def forwarded_call_targets(source_code)
+      RbsInfer::Signatures::SteepBridge::ForwardingAnalyzer.new(steep_bridge: self).forwarded_call_targets(source_code)
+    end
+
     def stored_block_self_types(source_code)
       RbsInfer::Signatures::SteepBridge::BlockAnalyzer.new(steep_bridge: self).stored_block_self_types(source_code)
     end

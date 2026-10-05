@@ -233,6 +233,14 @@ module RbsInfer::Signatures
       @rbs_definition_resolver.method_parameters(kind, class_name, method_name)
     end
 
+    # Each overload's parameter list AND return. See
+    # `RbsDefinitionResolver#method_overloads`.
+    def resolve_method_overloads(kind, class_name, method_name)
+      return [] unless class_name && class_name != "untyped"
+
+      @rbs_definition_resolver.method_overloads(kind, class_name, method_name)
+    end
+
 
     # All class (singleton) method return types for a class, keyed by name —
     # the singleton counterpart of `resolve_all`. Lets callers resolve a

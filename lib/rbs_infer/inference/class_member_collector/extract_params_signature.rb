@@ -62,7 +62,27 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       end
 
       result = "(#{@parts.join(", ")})"
-      block_sig ? "#{result} #{block_sig}" : result
+      block = block_sig || (FORWARDED_BLOCK if forwarding?)
+      block ? "#{result} #{block}" : result
+    end
+
+    # `...` takes what any call takes — positionals, keywords and a block —
+    # and hands all three on. It used to be read as its keyword half alone,
+    # `(**untyped)`, which rejects the positional arguments it exists to pass.
+    FORWARDED_BLOCK = "?{ (*untyped) -> untyped }"
+
+    def forwarding?
+      @params.respond_to?(:keyword_rest) && @params.keyword_rest.is_a?(Prism::ForwardingParameterNode)
+    end
+
+    # A parameter list that is `...` and nothing else: the method accepts
+    # exactly what the call it forwards to accepts, and the Analyzer asks the
+    # checker which call that is (`ForwardedParametersResolver`).
+    def params_forward?
+      return false unless @params && forwarding?
+
+      @params.requireds.empty? && @params.optionals.empty? && @params.rest.nil? &&
+        @params.posts.empty? && @params.keywords.empty?
     end
 
     private
@@ -141,7 +161,10 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       end if @params.respond_to?(:keywords)
 
       # Keyword rest
-      if @params.respond_to?(:keyword_rest) && @params.keyword_rest
+      if forwarding?
+        @parts << "*untyped" unless @params.rest
+        @parts << "**untyped"
+      elsif @params.respond_to?(:keyword_rest) && @params.keyword_rest
         @parts << "**untyped"
       end
     end

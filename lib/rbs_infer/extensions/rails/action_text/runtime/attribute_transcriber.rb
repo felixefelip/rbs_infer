@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "prism"
+require_relative "../../../framework_source"
 
 module RbsInfer
   module Extensions
@@ -107,24 +108,13 @@ module RbsInfer
             def macro_source
               node = macro_def_node or return nil
 
-              "#{NO_SIGNATURE_MARKER}\n#{dedent(node.slice, node.location.start_column)}"
+              "#{NO_SIGNATURE_MARKER}\n#{FrameworkSource.source(node)}"
             end
 
             def macro_def_node
               require "action_text" unless Object.const_defined?(:ActionText)
 
-              method = Object.const_get(RECEIVER).instance_method(MACRO)
-              file, line = method.source_location
-              return nil unless file && line && File.file?(file)
-
-              result = Prism.parse_file(file)
-              return nil unless result.success?
-
-              # By POSITION, not by name, so a file defining the name twice
-              # cannot be confused — the rule the controller transcriber locates
-              # its seeds by.
-              RbsInfer::Analyzer.find_all_nodes(result.value) { |n| n.is_a?(Prism::DefNode) }
-                                .find { |n| n.location.start_line == line }
+              FrameworkSource.def_node(Object.const_get(RECEIVER).instance_method(MACRO))
             rescue LoadError, NameError
               nil
             end
@@ -144,8 +134,7 @@ module RbsInfer
               path = macro_def_node&.location && gem_file(ENGINE_PATH)
               return nil unless path && File.file?(path)
 
-              result = Prism.parse_file(path)
-              result.success? ? result.value : nil
+              FrameworkSource.parse(path)
             end
 
             # Beside the macro's own file, which is the only path this knows for
@@ -201,14 +190,6 @@ module RbsInfer
               return "" unless mixed_in?
 
               "\nclass #{INCLUDER}\n  include #{MIXED_IN}\nend\n"
-            end
-
-            # `node.slice` starts AT the `def` keyword, so its first line carries
-            # no indentation while the rest keep the file's. The margin to strip
-            # is the def's own column, not the minimum across lines.
-            def dedent(source, margin)
-              first, *rest = source.lines
-              ([first] + rest.map { |line| line.strip.empty? ? line : line.sub(/\A {0,#{margin}}/, "") }).join
             end
 
             def header

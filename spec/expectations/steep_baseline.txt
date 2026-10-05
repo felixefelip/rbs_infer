@@ -62,5 +62,9 @@ sig/generated/steep_actiontext_runtime/attribute.rb:52:43: [error] Type `(single
 sig/generated/steep_actiontext_runtime/attribute.rb:56:46: [error] Type `(singleton(::ActiveRecord::Base) & ::ActionText::Attribute::ClassMethods)` does not have method `includes`
 sig/generated/steep_actiontext_runtime/attribute.rb:57:57: [error] Type `(singleton(::ActiveRecord::Base) & ::ActionText::Attribute::ClassMethods)` does not have method `includes`
 sig/generated/steep_activejob_runtime/active_job_base.rb:15:16: [error] Unexpected positional argument
+sig/generated/steep_activesupport_runtime/delegation.rb:19:39: [error] Type `(::Array[::Thread::Backtrace::Location] | nil)` does not have method `first`
+sig/generated/steep_activesupport_runtime/delegation.rb:61:44: [error] Type `(::Array[::Thread::Backtrace::Location] | nil)` does not have method `first`
+sig/generated/steep_activesupport_runtime/delegation.rb:90:21: [warning] Empty array doesn't have type annotation
+sig/generated/steep_activesupport_runtime/delegation.rb:91:23: [warning] Empty array doesn't have type annotation
 sig/generated/steep_ar_runtime/active_support/concern.rb:53:22: [warning] Cannot pass a value of type `^(?(::Module | nil)) -> untyped` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
 sig/generated/steep_ruby_runtime/module.rb:94:8: [error] Type `(::Object | T(_))` does not have method `singleton_class`

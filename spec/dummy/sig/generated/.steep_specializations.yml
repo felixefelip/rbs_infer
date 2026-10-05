@@ -29,6 +29,7 @@ methods:
   Example4::Foo.name=:
     ("John Doe"): '"John Doe"'
   Example61.normalize:
+    ("indexed_by"): '"indexed_by"'
     "(:indexed_by)": '"indexed_by"'
   Example62::Slots#hallmark=:
     ("value"): '"value"'

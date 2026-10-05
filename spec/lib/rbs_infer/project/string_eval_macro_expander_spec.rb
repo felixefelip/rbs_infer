@@ -221,6 +221,23 @@ RSpec.describe RbsInfer::Project::StringEvalMacroExpander do
     expect(reopens(source, { "app/models/article.rb:3:4" => ["def content; end"] })).to be_nil
   end
 
+  # …unless the checker did: `included do` runs on the includer, and the
+  # sidecar names it. `delegate` written in a concern's `included` block lands
+  # on the host the checker resolved, not on the concern.
+  it "places a call written inside a block on the class the checker named" do
+    source = <<~RUBY
+      module Post::Notifiable
+        included do
+          delegate :updated_at, to: :user, prefix: true
+        end
+      end
+    RUBY
+    chunk = { "source" => "def user_updated_at(...); user.updated_at(...); end", "target" => "::Post" }
+
+    expect(reopens(source, { "app/models/post/notifiable.rb:3:4" => [chunk] }, path: "app/models/post/notifiable.rb"))
+      .to eq("class Post\n  def user_updated_at(...); user.updated_at(...); end\nend\n")
+  end
+
   it "returns nil for a file it cannot parse" do
     expect(reopens("class Article", { "app/models/article.rb:1:0" => ["def content; end"] })).to be_nil
   end

@@ -111,13 +111,16 @@ module RbsInfer::Project
     def expansions_for(node, file, sidecar, qualified)
       grouped = {} #: Hash[String, Array[String]]
 
-      macro_calls(node.body).each do |call|
+      macro_calls(node.body).each do |call, in_block|
         chunks = sidecar.sources_for(
           path: file,
           line: call.location.start_line,
           column: call.location.start_column
         )
         next unless chunks
+        # In a block the lexical rule says nothing — but the checker may have:
+        # `included do … end` runs on the includer, and the sidecar names it.
+        next if in_block && chunks.any? { |chunk| chunk.target.nil? }
 
         chunks.each do |chunk|
           (grouped[chunk.target || qualified] ||= []) << dedent(chunk.source)
@@ -129,11 +132,16 @@ module RbsInfer::Project
 
     # Where `self` stops being this class. A `def` body runs later, on whatever
     # `self` is then; a nested class or module has its own body, which the walk
-    # reaches under its own name; a block runs on whoever calls it.
+    # reaches under its own name.
     BOUNDARIES = [
-      Prism::DefNode, Prism::ClassNode, Prism::ModuleNode,
-      Prism::SingletonClassNode, Prism::BlockNode, Prism::LambdaNode
+      Prism::DefNode, Prism::ClassNode, Prism::ModuleNode, Prism::SingletonClassNode
     ].freeze
+
+    # A block runs on whoever calls it, which the lexical rule cannot say. Its
+    # calls are still read, and kept only where the CHECKER named the class a
+    # chunk lands on: `included do delegate … end` in a concern runs on the
+    # host, and the sidecar records which (felixefelip/rbs_infer#355).
+    CLOSURES = [Prism::BlockNode, Prism::LambdaNode].freeze
 
     # The receiverless calls the class body makes, through whatever control flow
     # they are written inside. A macro call under `if Rails.env.production?` runs
@@ -143,12 +151,14 @@ module RbsInfer::Project
     # Deliberately wider than "a statement": a call in argument position is a
     # call too, and reading one costs nothing, since only a site the sidecar
     # recorded is ever placed.
-    def macro_calls(node, found = [])
+    # `[call, in_block]` pairs.
+    def macro_calls(node, found = [], in_block = false)
       return found unless node.is_a?(Prism::Node)
       return found if BOUNDARIES.any? { |klass| node.is_a?(klass) }
 
-      found << node if node.is_a?(Prism::CallNode) && node.receiver.nil? && node.block.nil?
-      node.compact_child_nodes.each { |child| macro_calls(child, found) }
+      in_block ||= CLOSURES.any? { |klass| node.is_a?(klass) }
+      found << [node, in_block] if node.is_a?(Prism::CallNode) && node.receiver.nil? && node.block.nil?
+      node.compact_child_nodes.each { |child| macro_calls(child, found, in_block) }
 
       found
     end
