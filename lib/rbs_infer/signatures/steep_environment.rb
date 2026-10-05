@@ -39,7 +39,7 @@ module RbsInfer::Signatures
 
         @steep_context_builder = db
         factory = Steep::AST::Types::Factory.new(builder: db)
-        interface_builder = Steep::Interface::Builder.new(factory, implicitly_returns_nil: false)
+        interface_builder = Steep::Interface::Builder.new(factory, implicitly_returns_nil: false, underscore_casts: false)
         @steep_context = {
           subtyping: Steep::Subtyping::Check.new(builder: interface_builder),
           constant_resolver: RBS::Resolver::ConstantResolver.new(builder: db),
