@@ -161,13 +161,20 @@ machinery: with the string-literal work of #345 in place, a specialized body typ
 class that made the call — so which branch of the macro runs, and what an omitted keyword
 defaults to, are decided by narrowing rather than by a second reader of the macro.
 
+What it places is written as checked Ruby, one file per file that makes such calls
+(`RbsInfer::Project::StringEvalSources`, under `sig/generated/steep_string_evals/`, on every
+`--output` run). The methods exist at run time, so their bodies are part of the program: a
+Steepfile's `check "sig/**/*.rb"` reads them, so `steep check` checks them, infers their
+preconditions and narrows on them, and this pipeline reads the same file for their RBS.
+
 That expander is core, not a Rails feature: `class_eval` of an interpolated string is a
 plain-Ruby idiom, so an app that writes the same shape in its own concern gets the same
 treatment with no generator at all. The per-model accessors are therefore **inferred**, not
-generated, and land on the model's own RBS:
+generated, and land in the RBS of the file that writes them down
+(`sig/generated/steep_string_evals/app/models/article.rb`):
 
 ```rbs
-class Article < ApplicationRecord
+class Article
   def content: () -> ActionText::RichText
   def content?: () -> bool
 end
@@ -232,7 +239,8 @@ lib/rbs_infer/
   rbs_type_lookup.rb, method_type_resolver.rb,
   rbs_definition_resolver.rb, steep_bridge.rb # cross-call resolution via RBS/Steep
   string_eval_macro_expander.rb,
-  string_eval_sidecar.rb                     # `class_eval "def #{name}"`, placed per call site
+  string_eval_sidecar.rb,
+  string_eval_sources.rb                     # `class_eval "def #{name}"`, placed per call site, written as checked Ruby
   parse_cache.rb, file_index.rb,
   source_index.rb, caller_file_cache.rb      # caches that drive perf
   railtie.rb                                 # auto-registers rake tasks
