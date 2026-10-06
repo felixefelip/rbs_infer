@@ -7,6 +7,6 @@ end
 
 module Example80
   class Order
-    def name: () -> "Ana"?
+    def name: () -> "Ana"
   end
 end
