@@ -148,8 +148,10 @@ module RbsInfer
             end
           end
 
+          # An omitted value (`post:`) reads the name it stands for; the node's own text
+          # still carries the colon.
           def source_of(node)
-            node.slice
+            node.is_a?(Prism::ImplicitNode) ? node.value.name.to_s : node.slice
           end
         end
       end
