@@ -1,0 +1,6 @@
+class Example82
+  def self.summary: () -> Array[untyped]
+
+  def owner: () -> User?
+  def author: () -> User
+end
