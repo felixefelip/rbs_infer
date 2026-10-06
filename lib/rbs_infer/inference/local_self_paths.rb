@@ -15,14 +15,15 @@ module RbsInfer::Inference
   module LocalSelfPaths
     module_function
 
-    # `{ [method name, def line] => Set[local name] }`.
-    def for(source)
+    # `{ [method name, def line] => Set[local name] }`. `path` names the file
+    # in the warning below.
+    def for(source, path:)
       @cache ||= {}
-      @cache[source] ||= compute(source)
+      @cache[source] ||= compute(source, path)
     end
 
-    def compute(source)
-      buffer = ::Parser::Source::Buffer.new("(rbs_infer)", 1, source: source)
+    def compute(source, path)
+      buffer = ::Parser::Source::Buffer.new(path.to_s, 1, source: source)
       root = Steep::Source.new_parser.parse(buffer)
       result = {}
       each_def(root) do |node|
@@ -34,7 +35,12 @@ module RbsInfer::Inference
         result[[name.to_s, node.loc.line]] = locals.to_set unless locals.empty?
       end
       result
-    rescue StandardError
+    rescue ::Parser::SyntaxError => e
+      # The source Prism parsed, refused by the checker's parser (a construct
+      # its translation does not take). No local is then read as a reader,
+      # which costs types and nothing else — said here, since nothing else
+      # shows it. Any other error is a bug, and is left to surface.
+      warn "[rbs_infer] could not read the locals of #{path}: #{e.class}: #{e.message}"
       {}
     end
 

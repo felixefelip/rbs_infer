@@ -359,7 +359,7 @@ module RbsInfer::Inference
     # optimistic rule for a nilable reader included. Only where the tail is
     # read after the assignment.
     def self_path_local_types(defn, last_stmt, parsed_target, self_ctx, method_type_resolver, param_types)
-      locals = RbsInfer::Inference::LocalSelfPaths.for(parsed_target.source)[[defn.name.to_s, defn.location.start_line]]
+      locals = RbsInfer::Inference::LocalSelfPaths.for(parsed_target.source, path: @target_file)[[defn.name.to_s, defn.location.start_line]]
       return {} unless locals
 
       writes = {} #: Hash[String, Prism::LocalVariableWriteNode]
