@@ -1,8 +1,11 @@
 class Comment < ApplicationRecord
+  def self.latest_author_full_name: () -> String
+
   def author_name: () -> String?
   def short_body: (?Integer max) -> String
   def create_custom: () -> void
   def display_author: () -> String?
   def display_body: () -> String
   def notify_post_author: () -> String
+  def author_full_name: () -> String
 end

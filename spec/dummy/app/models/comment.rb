@@ -48,4 +48,20 @@ class Comment < ApplicationRecord
   def notify_post_author
     post.author_name
   end
+
+  # The same precondition, read through a local: `_ = user` IS `self.user`,
+  # which is how ActiveSupport's `delegate` writes its body (`_ = user;
+  # _.email(...)`). The deref through `_` is rooted at `self.user`, so the
+  # method requires it non-nil and the body narrows.
+  def author_full_name
+    _ = user
+    _.full_name
+  end
+
+  # A validated comment establishes it: `last!` returns
+  # `Comment & Comment::Validated`, whose `user` is non-nil.
+  def self.latest_author_full_name
+    comment = Comment.last!
+    comment.author_full_name
+  end
 end
