@@ -11,7 +11,7 @@ class Example31
   end
 
   module Age
-    def age: () -> Float
+    def age: () -> Integer
   end
 
   class AfterBazingado
