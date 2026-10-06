@@ -95,6 +95,12 @@ call_sites:
       => e;  if _.nil? && e.name == :fetch;    raise ::ActiveSupport::DelegationError.nil_target(:fetch,
       :'::Example81::Shelf');  else;    raise;  end;end
     target: "::Example81"
+  app/models/example82.rb:36:2:
+  - source: def owner_full_name(...);  _ = owner;  if !_.nil? || nil.respond_to?(:full_name);    _.full_name(...);  end;end
+    target: "::Example82"
+  app/models/example82.rb:37:2:
+  - source: def author_full_name(...);  _ = author;  if !_.nil? || nil.respond_to?(:full_name);    _.full_name(...);  end;end
+    target: "::Example82"
   app/models/post.rb:31:2:
   - source: def user_email(...);  _ = user;  _.email(...);rescue NoMethodError =>
       e;  if _.nil? && e.name == :email;    raise ::ActiveSupport::DelegationError.nil_target(:user_email,

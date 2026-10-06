@@ -42,6 +42,7 @@ app/models/example72.rb:90:14: [warning] Empty array doesn't have type annotatio
 app/models/example73.rb:22:14: [warning] Empty array doesn't have type annotation
 app/models/example73.rb:42:14: [warning] Empty array doesn't have type annotation
 app/models/example80.rb:31:19: [warning] Empty array doesn't have type annotation
+app/models/example82.rb:41:5: [error] `owner_full_name` requires `self.owner` to be non-nil here
 app/models/included_hook.rb:104:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS
 app/models/post/notifiable.rb:42:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/send_dispatch.rb:107:33: [error] `public_send` cannot call `stamp` on `::SendDispatch`, which declares it private
@@ -72,6 +73,8 @@ sig/generated/steep_string_evals/app/models/example81.rb:10:142: [warning] Canno
 sig/generated/steep_string_evals/app/models/example81.rb:11:148: [warning] Cannot find the declaration of constant: `DelegationError`
 sig/generated/steep_string_evals/app/models/example81.rb:12:148: [warning] Cannot find the declaration of constant: `DelegationError`
 sig/generated/steep_string_evals/app/models/example81.rb:12:54: [warning] The method cannot be called with a block
+sig/generated/steep_string_evals/app/models/example82.rb:10:89: [error] Type `(::User | nil)` does not have method `full_name`
+sig/generated/steep_string_evals/app/models/example82.rb:11:91: [error] Type `(::User | nil)` does not have method `full_name`
 sig/generated/steep_string_evals/app/models/post.rb:10:133: [warning] Cannot find the declaration of constant: `DelegationError`
 sig/generated/steep_string_evals/app/models/post.rb:10:37: [error] Type `(::User | nil)` does not have method `email`
 sig/generated/steep_string_evals/app/models/post.rb:11:140: [warning] Cannot find the declaration of constant: `DelegationError`
