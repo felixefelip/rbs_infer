@@ -49,10 +49,25 @@ module RbsInfer::Inference
 
     # The parameter lists alone, under the return the earlier passes resolved.
     def forward_lists(member, target)
-      lists = @method_type_resolver.resolve_method_parameters(target[:kind], target[:class_name], target[:method_name])
+      kind, class_name = callee_class(target)
+      return member.signature unless kind
+
+      lists = @method_type_resolver.resolve_method_parameters(kind, class_name, target[:method_name])
       return member.signature if lists.empty? || lists.any? { |list| list.match?(CONTEXTUAL) }
 
       RbsInfer::Signatures::RbsParserUtil.forward_parameters(member.signature, lists)
+    end
+
+    # `[kind, class]` of the method the call reaches. A call the checker
+    # rejected names its receiver's type instead, and reaches what a call on
+    # that receiver reaches by the rule every nilable call follows: `User?`
+    # reaches `User` where nil does not have the method.
+    def callee_class(target)
+      return [target[:kind], target[:class_name]] unless target[:receiver_type]
+
+      receiver = @method_type_resolver.optimistic_receiver(target[:receiver_type], target[:method_name]) or return nil
+      singleton = receiver[/\Asingleton\((.+)\)\z/, 1]
+      singleton ? [:singleton, singleton] : [:instance, receiver]
     end
 
     def method_key(member)

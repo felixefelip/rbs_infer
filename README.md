@@ -211,11 +211,13 @@ string at each call site (felixefelip/steep#171) and
 `def email(...); _ = user; _.email(...); …; end`, and a method whose parameter
 list is `...` takes the parameters of the method it forwards to — which the
 checker resolves through `user`'s type (`ForwardedParametersResolver`, core and
-framework-agnostic). Where `user` may be nil the checker rejects the call, and
-the method stays `untyped` until a caller establishes it: the body's
-`NoMethod` is the precondition (`requires: not_nil self.user`) Steep infers,
-and once every call site satisfies it the body narrows and the call resolves.
-The one annotation in the file is
+framework-agnostic). Where `user` may be nil the checker rejects the call (the
+body's `NoMethod` is the precondition, `requires: not_nil self.user`, Steep
+infers), and the method is typed as any call on a nilable reader is: the nil
+branch raises, a `NoMethodError` is `bot`, and `T | bot` is `T`. `_` is read
+as the `user` it holds, by the checker's own rule for when a local IS a reader
+(`Steep::Contracts::AliasResolver.local_aliases`), and a `rescue` that only
+raises adds no value. The one annotation in the file is
 `# @rbs_infer |...` on each macro: the signature inferred from the app's call
 sites goes ahead of gem_rbs_collection's `(*untyped …)`, whose `untyped` would
 otherwise stop the call site's literals from reaching the body.
