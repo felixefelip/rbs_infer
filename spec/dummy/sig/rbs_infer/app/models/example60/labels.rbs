@@ -1,8 +1,6 @@
 class Example60
   module Labels
     extend ActiveSupport::Concern
-
-    def human_name: ("all" index) -> String
   end
 end
 

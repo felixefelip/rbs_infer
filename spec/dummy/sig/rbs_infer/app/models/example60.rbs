@@ -4,5 +4,4 @@ class Example60
 
   def example60_printer: () -> Example60Printer
   def print_label: () -> "tagtag"
-  def stamp: ("tag" label, 2 times) -> "tagtag"
 end

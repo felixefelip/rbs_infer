@@ -1,0 +1,6 @@
+class Post
+  def user_email: (*untyped, **untyped) ?{ (*untyped) -> untyped } -> untyped
+  def full_name: (*untyped, **untyped) ?{ (*untyped) -> untyped } -> untyped
+  def user_created_at: (*untyped, **untyped) ?{ (*untyped) -> untyped } -> untyped
+  def name: (*untyped, **untyped) ?{ (*untyped) -> untyped } -> untyped
+end

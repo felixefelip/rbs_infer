@@ -161,13 +161,20 @@ machinery: with the string-literal work of #345 in place, a specialized body typ
 class that made the call — so which branch of the macro runs, and what an omitted keyword
 defaults to, are decided by narrowing rather than by a second reader of the macro.
 
+What it places is written as checked Ruby, one file per file that makes such calls
+(`RbsInfer::Project::StringEvalSources`, under `sig/generated/steep_string_evals/`, on every
+`--output` run). The methods exist at run time, so their bodies are part of the program: a
+Steepfile's `check "sig/**/*.rb"` reads them, so `steep check` checks them, infers their
+preconditions and narrows on them, and this pipeline reads the same file for their RBS.
+
 That expander is core, not a Rails feature: `class_eval` of an interpolated string is a
 plain-Ruby idiom, so an app that writes the same shape in its own concern gets the same
 treatment with no generator at all. The per-model accessors are therefore **inferred**, not
-generated, and land on the model's own RBS:
+generated, and land in the RBS of the file that writes them down
+(`sig/generated/steep_string_evals/app/models/article.rb`):
 
 ```rbs
-class Article < ApplicationRecord
+class Article
   def content: () -> ActionText::RichText
   def content?: () -> bool
 end
@@ -202,9 +209,13 @@ macro builds, so it takes the same path as `has_rich_text`: the checker folds th
 string at each call site (felixefelip/steep#171) and
 `Project::StringEvalMacroExpander` places it. The method it writes is
 `def email(...); _ = user; _.email(...); …; end`, and a method whose parameter
-list is `...` takes the parameters and return of the method it forwards to —
-which the checker resolves through `user`'s type (`ForwardedParametersResolver`,
-core and framework-agnostic). The one annotation in the file is
+list is `...` takes the parameters of the method it forwards to — which the
+checker resolves through `user`'s type (`ForwardedParametersResolver`, core and
+framework-agnostic). Where `user` may be nil the checker rejects the call, and
+the method stays `untyped` until a caller establishes it: the body's
+`NoMethod` is the precondition (`requires: not_nil self.user`) Steep infers,
+and once every call site satisfies it the body narrows and the call resolves.
+The one annotation in the file is
 `# @rbs_infer |...` on each macro: the signature inferred from the app's call
 sites goes ahead of gem_rbs_collection's `(*untyped …)`, whose `untyped` would
 otherwise stop the call site's literals from reaching the body.
@@ -232,7 +243,8 @@ lib/rbs_infer/
   rbs_type_lookup.rb, method_type_resolver.rb,
   rbs_definition_resolver.rb, steep_bridge.rb # cross-call resolution via RBS/Steep
   string_eval_macro_expander.rb,
-  string_eval_sidecar.rb                     # `class_eval "def #{name}"`, placed per call site
+  string_eval_sidecar.rb,
+  string_eval_sources.rb                     # `class_eval "def #{name}"`, placed per call site, written as checked Ruby
   parse_cache.rb, file_index.rb,
   source_index.rb, caller_file_cache.rb      # caches that drive perf
   railtie.rb                                 # auto-registers rake tasks

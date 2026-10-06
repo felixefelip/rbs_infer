@@ -67,3 +67,17 @@ sig/generated/steep_activesupport_runtime/delegation.rb:90:21: [warning] Empty a
 sig/generated/steep_activesupport_runtime/delegation.rb:91:23: [warning] Empty array doesn't have type annotation
 sig/generated/steep_ar_runtime/active_support/concern.rb:53:22: [warning] Cannot pass a value of type `^(?(::Module | nil)) -> untyped` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
 sig/generated/steep_ruby_runtime/module.rb:94:8: [error] Type `(::Object | T(_))` does not have method `singleton_class`
+sig/generated/steep_string_evals/app/models/example60.rb:10:141: [warning] Cannot find the declaration of constant: `DelegationError`
+sig/generated/steep_string_evals/app/models/example81.rb:10:142: [warning] Cannot find the declaration of constant: `DelegationError`
+sig/generated/steep_string_evals/app/models/example81.rb:11:148: [warning] Cannot find the declaration of constant: `DelegationError`
+sig/generated/steep_string_evals/app/models/example81.rb:12:148: [warning] Cannot find the declaration of constant: `DelegationError`
+sig/generated/steep_string_evals/app/models/example81.rb:12:54: [warning] The method cannot be called with a block
+sig/generated/steep_string_evals/app/models/post.rb:10:133: [warning] Cannot find the declaration of constant: `DelegationError`
+sig/generated/steep_string_evals/app/models/post.rb:10:37: [error] Type `(::User | nil)` does not have method `email`
+sig/generated/steep_string_evals/app/models/post.rb:11:140: [warning] Cannot find the declaration of constant: `DelegationError`
+sig/generated/steep_string_evals/app/models/post.rb:11:36: [error] Type `(::User | nil)` does not have method `full_name`
+sig/generated/steep_string_evals/app/models/post.rb:12:148: [warning] Cannot find the declaration of constant: `DelegationError`
+sig/generated/steep_string_evals/app/models/post.rb:12:42: [error] Type `(::User | nil)` does not have method `created_at`
+sig/generated/steep_string_evals/app/models/post.rb:13:22: [error] Type `::Post` does not have method `tag`
+sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:148: [warning] Cannot find the declaration of constant: `DelegationError`
+sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:42: [error] Type `(::User | nil)` does not have method `updated_at`

@@ -1332,6 +1332,29 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       assert_runtime_rbs("steep_actiontext_runtime")
     end
 
+    # What each `class_eval` of a string defines, as the checked Ruby
+    # `Project::StringEvalSources` writes from `.steep_string_evals.yml`: the
+    # methods `delegate`, `has_rich_text` and the examples' own macros define.
+    # Their RBS lives here, not in the model's, because this file is where the
+    # methods are written down — and where `steep check` reads their bodies.
+    it "string evals" do
+      assert_runtime_rbs("steep_string_evals")
+    end
+
+    # The files themselves, against a fresh render of the checked-in sidecar:
+    # `assert_runtime_rbs` derives the RBS from the `.rb` on disk, so a stale
+    # file would yield a consistent, stale signature.
+    it "writes the string evals checked into the dummy" do
+      rendered = RbsInfer::Project::StringEvalSources.render(
+        base_dir: Dir.pwd, sidecar: RbsInfer::Project::StringEvalSidecar.load(Dir.pwd)
+      )
+      on_disk = Dir["#{RbsInfer::Project::StringEvalSources::SIDECAR_DIR}/**/*.rb"].to_h do |path|
+        [path.delete_prefix("#{RbsInfer::Project::StringEvalSources::SIDECAR_DIR}/"), File.read(path)]
+      end
+
+      expect(rendered).to eq(on_disk)
+    end
+
     # The Devise helpers' RBS is now INFERRED from their pseudo-code — this snapshot is
     # where `current_account: () -> (Account & Account::Validated)?` shows up without the
     # generator ever having written a type.

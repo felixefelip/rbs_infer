@@ -1,0 +1,6 @@
+module Example75
+  class Peel
+    def email: () -> "user@example.com"
+    def human_name: () -> "Peel"
+  end
+end

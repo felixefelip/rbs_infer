@@ -20,14 +20,11 @@ end
 module Example80
   class Account < Forwarding
     def user: () -> Person
-    def email: () -> "ana@example.com"
-    def name: () -> "Ana"
   end
 end
 
 module Example80
   class Order < Forwarding
     def buyer: () -> Person
-    def name: () -> "Ana"
   end
 end

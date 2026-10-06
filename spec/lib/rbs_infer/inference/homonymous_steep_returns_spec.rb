@@ -26,7 +26,8 @@ RSpec.describe "two classes in one file defining the same method" do
   end
 
   # Both bodies read through a local, which leaves them to Steep's answer.
-  # `&.` is `T | nil` to Steep, so the two answers differ.
+  # `Order`'s buyer may be nil, so its `&.` is `T | nil` and the two answers
+  # differ.
   def account = <<~RUBY
     class Account
       def name
@@ -48,7 +49,7 @@ RSpec.describe "two classes in one file defining the same method" do
   before do
     write("app/person.rb", "class Person\n  def name = \"Ana\"\nend\n")
     write("sig/generated/person.rbs", "class Person\n  def name: () -> \"Ana\"\nend\n")
-    write("sig/generated/forwards.rbs", "class Account\n  def user: () -> Person\nend\nclass Order\n  def buyer: () -> Person\nend\n")
+    write("sig/generated/forwards.rbs", "class Account\n  def user: () -> Person\nend\nclass Order\n  def buyer: () -> Person?\nend\n")
   end
 
   it "types each from its own body" do

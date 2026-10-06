@@ -1,0 +1,12 @@
+module Example80
+  class Account
+    def email: () -> "ana@example.com"
+    def name: () -> "Ana"
+  end
+end
+
+module Example80
+  class Order
+    def name: () -> "Ana"
+  end
+end

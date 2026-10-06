@@ -18,9 +18,5 @@ class Example60
 end
 
 class Example60
-  def stamp(...);  _ = example60_printer;  _.stamp(...);rescue NoMethodError => e;  if _.nil? && e.name == :stamp;    raise ::ActiveSupport::DelegationError.nil_target(:stamp, :'example60_printer');  else;    raise;  end;end
-end
-
-class Example60
   extend ::Example60::Labels::ClassMethods
 end

@@ -41,7 +41,7 @@ module RbsInfer::Inference
 
       selected.each do |member|
         target = targets[method_key(member)] or next
-        member.signature = target[:returns] ? forward_overloads(member, target) : forward_lists(member, target)
+        member.signature = forward_lists(member, target)
       end
     end
 
@@ -53,19 +53,6 @@ module RbsInfer::Inference
       return member.signature if lists.empty? || lists.any? { |list| list.match?(CONTEXTUAL) }
 
       RbsInfer::Signatures::RbsParserUtil.forward_parameters(member.signature, lists)
-    end
-
-    # Whole overloads, return included, where the body's value IS the call —
-    # nilable where it can also end with none.
-    def forward_overloads(member, target)
-      overloads = @method_type_resolver.resolve_method_overloads(target[:kind], target[:class_name], target[:method_name])
-      return forward_lists(member, target) if overloads.empty? || overloads.any? { |overload| overload.join(" ").match?(CONTEXTUAL) }
-
-      rendered = overloads.map do |params, returned|
-        returned = RbsInfer::Signatures::RbsParserUtil.nilablize(returned) if target[:nilable]
-        [params, returned]
-      end
-      RbsInfer::Signatures::RbsParserUtil.forward_overloads(member.signature, rendered)
     end
 
     def method_key(member)

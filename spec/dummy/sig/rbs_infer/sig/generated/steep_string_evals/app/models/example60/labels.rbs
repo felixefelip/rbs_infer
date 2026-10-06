@@ -1,0 +1,5 @@
+class Example60
+  module Labels
+    def human_name: ("all" index) -> String
+  end
+end

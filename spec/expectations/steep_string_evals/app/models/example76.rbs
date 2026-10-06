@@ -1,0 +1,5 @@
+module Example76
+  class Peel
+    def human_name: ("all" index) -> "ALL"
+  end
+end
