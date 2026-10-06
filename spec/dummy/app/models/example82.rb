@@ -10,23 +10,16 @@
 #   end
 #
 # `nil.respond_to?(:full_name)` is there for a method nil itself has (`to_s`),
-# which is then called even on nil. For `full_name` it is `false` — NilClass
-# declares no such method — but the checker does not decide it, so it
-# cannot narrow `_` inside the `if`:
+# which is then called even on nil. For `full_name` the checker answers it
+# `false` — neither NilClass nor anything it reaches declares the method —
+# so the condition is `!_.nil?`, and `_` narrows inside the `if` as under
+# any other guard:
 #
-#   - `owner` may be nil: the call is rejected (`NoMethod` on `User | nil`),
-#     and the checker infers a precondition `not_nil self.owner` from it —
-#     for a method whose whole point is accepting a nil owner. `summary`
-#     below is flagged for not establishing it;
-#   - `author` cannot be nil, and still reads as `(User | nil)` in the `if`
-#     (#393, item 2): the same rejection, and a precondition every caller
-#     meets, so nobody is flagged for it.
+#   - `owner` may be nil: the method is the call or nothing, `String?`;
+#   - `author` cannot be nil: the `if` always runs, `String`.
 #
-# Both come out `() -> untyped`.
-#
-# Deciding `nil.respond_to?(:full_name)` as `false` turns the condition into
-# `!_.nil?`, which the checker narrows by itself: each method is the call or
-# nil, `String?`, and neither needs anything of its callers.
+# Neither body is rejected, so neither infers a precondition, and `summary`
+# owes them nothing.
 #
 # Nothing here states a type.
 class Example82

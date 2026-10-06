@@ -1,4 +1,4 @@
 class Example82
-  def owner_full_name: () -> untyped
-  def author_full_name: () -> untyped
+  def owner_full_name: () -> String?
+  def author_full_name: () -> String
 end

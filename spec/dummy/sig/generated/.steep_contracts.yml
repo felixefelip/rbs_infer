@@ -162,23 +162,6 @@ methods:
         chain:
         - window
         - size
-  Example82#author_full_name:
-    requires:
-    - kind: not_nil
-      expr:
-        kind: send
-        receiver:
-          kind: self
-        method: author
-  Example82#owner_full_name:
-    requires:
-    - kind: not_nil
-      expr:
-        kind: send
-        receiver:
-          kind: self
-        method: owner
-    enforced: false
   Post#author_name:
     requires:
     - kind: not_nil
