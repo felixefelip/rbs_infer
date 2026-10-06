@@ -108,6 +108,16 @@ methods:
         receiver:
           kind: self
         method: board
+  Comment#author_full_name:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: user
+    - kind: self_type
+      type: "(::Comment & ::Comment::Validated)"
   Comment#author_name:
     requires:
     - kind: not_nil
