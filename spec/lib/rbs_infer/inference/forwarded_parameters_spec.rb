@@ -135,9 +135,10 @@ RSpec.describe "a method that forwards `...`" do
   #
   # Pending on the checker: in `!_.nil? || …` the falsy side of `!_.nil?`
   # narrows `_` to `nil` even where `_` cannot be nil (a `Printer`), so the
-  # `if` body sees `(Printer | nil)` and the call is rejected. The right
-  # narrowing there is `bot`. Once it is, this passes, and `pending` fails to
-  # say so.
+  # checker rejects the call and types the `if` `untyped`. The parameters
+  # still come out, by the rule every nilable call follows; the return needs
+  # the checker's narrowing to be `bot` there. Once it is, this passes, and
+  # `pending` fails to say so.
   it "returns the call's value or nil where the body can end without it" do
     pending "steep: `x.nil?` narrows a non-nilable `x` to nil instead of bot"
     target = write("app/target.rb", <<~RUBY)
@@ -156,11 +157,11 @@ RSpec.describe "a method that forwards `...`" do
     expect(generate(target)).to include("def stamp: (String label, ?Integer times) -> String?")
   end
 
-  # A receiver that may be nil is rejected whole by the checker, and nothing
-  # reads past it: the method keeps what `...` accepts in general until a
-  # caller establishes the receiver — the precondition the checker infers
-  # from that rejection, enforced at the call sites.
-  it "accepts anything while the receiver may be nil" do
+  # A receiver that may be nil is rejected by the checker, and the call
+  # reaches what any call on a nilable receiver reaches: `Printer` — nil has
+  # no `stamp`, so that branch raises and adds no value. The `rescue` that only
+  # raises adds none either.
+  it "reaches what a call on a nilable receiver reaches" do
     write("sig/generated/target.rbs", "class Target\n  def printer: () -> Printer?\nend\n")
     target = write("app/target.rb", <<~RUBY)
       class Target
@@ -175,7 +176,26 @@ RSpec.describe "a method that forwards `...`" do
       end
     RUBY
 
-    expect(generate(target)).to include("def stamp: (*untyped, **untyped) ?{ (*untyped) -> untyped } ->")
+    expect(generate(target)).to include("def stamp: (String label, ?Integer times) -> String")
+  end
+
+  # Where nil HAS the method, its branch is ordinary code, and no one
+  # receiver's parameters are the call's.
+  it "accepts anything where nil has the method too" do
+    write("sig/generated/printer.rbs", "class Printer\n  def to_s: (Integer pad) -> String\nend\n")
+    write("sig/generated/target.rbs", "class Target\n  def printer: () -> Printer?\nend\n")
+    target = write("app/target.rb", <<~RUBY)
+      class Target
+        def printer = (Printer.new if rand > 0.5)
+
+        def to_s(...)
+          _ = printer
+          _.to_s(...)
+        end
+      end
+    RUBY
+
+    expect(generate(target)).to include("def to_s: (*untyped, **untyped) ?{ (*untyped) -> untyped } ->")
   end
 
   # Without a declaration to read, `...` stays what it accepts in general —

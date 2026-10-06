@@ -25,12 +25,11 @@ class RbsInfer::Signatures::SteepBridge
     # method: two different callees accept two different lists, and nothing
     # here picks between them. Keys are `name`, or `self.name` for singletons.
     #
-    # Only a call the checker resolved has a method to read: a receiver that
-    # may be nil is rejected whole, and the method keeps what `...` accepts in
-    # general until a caller establishes the receiver — the precondition the
-    # checker infers from that rejection (`not_nil self.user`), enforced at
-    # the call sites, narrows the body and resolves the call. Nothing here
-    # reads past what the checker says.
+    # Where the checker rejected the call — a receiver that may be nil — the
+    # entry carries the receiver's type instead, `{ receiver_type: "User?",
+    # method_name: "email" }`, and which method that reaches is the one rule
+    # every nilable call follows (`MethodTypeResolver#optimistic_receiver`).
+    # Nothing here decides it.
     def forwarded_call_targets(source_code)
       typing = @steep_bridge.type_check(source_code)
       return {} unless typing
@@ -84,17 +83,30 @@ class RbsInfer::Signatures::SteepBridge
       node.children.each { |child| walk(child, &block) }
     end
 
-    # The one method a call resolved to, or nil when it resolved to none, or
-    # to several (a union receiver whose halves declare it apart).
+    # The one method a call resolved to, or nil when it resolved to several
+    # (a union receiver whose halves declare it apart). A call the checker
+    # resolved to none answers with its receiver's type.
     def callee(typing, send_node)
       call = typing.call_of(node: send_node)
       decls = call.respond_to?(:method_decls) ? call.method_decls.to_a : []
+      return unresolved(typing, send_node) if decls.empty?
+
       names = decls.map(&:method_name).uniq
       return nil unless names.size == 1
 
       name = names.first
       kind = name.is_a?(Steep::SingletonMethodName) ? :singleton : :instance
       { kind: kind, class_name: name.type_name.to_s.delete_prefix("::"), method_name: name.method_name.to_s }
+    rescue Steep::Typing::UnknownNodeError
+      nil
+    end
+
+    def unresolved(typing, send_node)
+      receiver = send_node.children[0] or return nil
+      type = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(typing.type_of(node: receiver))
+      return nil if type.nil? || type == "untyped"
+
+      { receiver_type: type, method_name: send_node.children[1].to_s }
     rescue Steep::Typing::UnknownNodeError
       nil
     end

@@ -1,6 +1,6 @@
 class Post
-  def user_email: (*untyped, **untyped) ?{ (*untyped) -> untyped } -> untyped
-  def full_name: (*untyped, **untyped) ?{ (*untyped) -> untyped } -> untyped
-  def user_created_at: (*untyped, **untyped) ?{ (*untyped) -> untyped } -> untyped
+  def user_email: () -> String?
+  def full_name: () -> String
+  def user_created_at: () -> ActiveSupport::TimeWithZone?
   def name: (*untyped, **untyped) ?{ (*untyped) -> untyped } -> untyped
 end

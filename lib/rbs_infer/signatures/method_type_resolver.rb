@@ -135,6 +135,20 @@ module RbsInfer::Signatures
       class_types[method_name] || class_types[method_name.delete_suffix("!").delete_suffix("?")]
     end
 
+    # The receiver a call on `type` dispatches to, by the rule `resolve` gives
+    # a nilable receiver: `User?` is `User` where NilClass does not have the
+    # method — the nil branch raises, and contributes no value (`T | bot` is
+    # `T`). nil where the nil branch is ordinary code (`to_s`): no ONE
+    # receiver then answers for the call. Any other type is its own receiver.
+    def optimistic_receiver(type, method_name)
+      return type unless type.end_with?("?")
+
+      nil_result = nil_branch(method_name, nil, nil)
+      return nil unless nil_result.nil? || nil_result == "untyped"
+
+      type.delete_suffix("?")
+    end
+
     # The two branches of a call on a nilable receiver, unioned. See `resolve`
     # for why the nil branch is not optional.
     private def resolve_nilable(base, method_name, arg_types:, block_body_type:)

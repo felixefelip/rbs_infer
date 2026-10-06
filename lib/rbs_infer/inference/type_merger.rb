@@ -156,10 +156,7 @@ module RbsInfer::Inference
         body = defn.body
         next unless body
 
-        last_stmt = case body
-                    when Prism::StatementsNode then body.body.last
-                    else body
-                    end
+        last_stmt = value_tail(body)
         next unless last_stmt
 
         method_name = defn.name.to_s
@@ -241,7 +238,10 @@ module RbsInfer::Inference
         # 5. receiver.method() na última expressão
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver && method_type_resolver
           self_ctx = self_return_type_context(known_return_types, class_return_types, kind)
-          resolved = infer_call_return_type(last_stmt, self_ctx, method_type_resolver, local_types: param_types)
+          local_types = param_types.merge(
+            self_path_local_types(defn, last_stmt, parsed_target, self_ctx, method_type_resolver, param_types)
+          )
+          resolved = infer_call_return_type(last_stmt, self_ctx, method_type_resolver, local_types: local_types)
           if resolved
             replace_return_type(member, resolved)
             own_return_types[method_name] = resolved
@@ -273,10 +273,7 @@ module RbsInfer::Inference
         body = defn.body
         next unless body
 
-        last_stmt = case body
-                    when Prism::StatementsNode then body.body.last
-                    else body
-                    end
+        last_stmt = value_tail(body)
         next unless last_stmt
 
         method_name = defn.name.to_s
@@ -292,8 +289,11 @@ module RbsInfer::Inference
         next unless member.signature.end_with?("-> untyped")
 
         if last_stmt.is_a?(Prism::CallNode) && last_stmt.receiver && method_type_resolver
-          local_types = inferred_param_types(method_param_types, method_name, owner, kind)
+          param_types = inferred_param_types(method_param_types, method_name, owner, kind)
           self_ctx = self_return_type_context(known_return_types, class_return_types, kind)
+          local_types = param_types.merge(
+            self_path_local_types(defn, last_stmt, parsed_target, self_ctx, method_type_resolver, param_types)
+          )
           resolved = infer_call_return_type(last_stmt, self_ctx, method_type_resolver, local_types: local_types)
           if resolved
             member.signature = member.signature.sub(/-> untyped\z/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(resolved)}")
@@ -304,6 +304,76 @@ module RbsInfer::Inference
     end
 
     private
+
+    # The expression a body's value comes from: its last statement, and
+    # through a `begin … rescue` whose every clause raises, the protected
+    # statements' (or the `else`'s). A clause that raises adds no value — a
+    # `raise` is `bot`, and `T | bot` is `T` — so the body's value is what the
+    # protected code returns. A clause that can end with a value leaves the
+    # body to the passes that read every branch.
+    def value_tail(node)
+      case node
+      when Prism::StatementsNode
+        value_tail(node.body.last)
+      when Prism::BeginNode
+        if node.rescue_clause
+          return node unless rescue_clauses(node.rescue_clause).all? { |clause| raises?(clause.statements) }
+        end
+
+        value_tail(node.else_clause&.statements || node.statements)
+      else
+        node
+      end
+    end
+
+    def rescue_clauses(clause)
+      clauses = []
+      while clause
+        clauses << clause
+        clause = clause.subsequent
+      end
+      clauses
+    end
+
+    # Whether every way `node` can end is a `raise`: the call itself, or an
+    # `if`/`unless` with both arms raising.
+    def raises?(node)
+      case node
+      when Prism::StatementsNode
+        raises?(node.body.last)
+      when Prism::CallNode
+        %i[raise fail].include?(node.name) && node.receiver.nil?
+      when Prism::IfNode
+        raises?(node.statements) && raises?(node.subsequent)
+      when Prism::UnlessNode
+        raises?(node.statements) && raises?(node.else_clause)
+      when Prism::ElseNode
+        raises?(node.statements)
+      else
+        false
+      end
+    end
+
+    # The locals that ARE a reader of `self` (`LocalSelfPaths`), typed as that
+    # reader is: `_ = user; _.name` resolves as `user.name` does, the
+    # optimistic rule for a nilable reader included. Only where the tail is
+    # read after the assignment.
+    def self_path_local_types(defn, last_stmt, parsed_target, self_ctx, method_type_resolver, param_types)
+      locals = RbsInfer::Inference::LocalSelfPaths.for(parsed_target.source)[[defn.name.to_s, defn.location.start_line]]
+      return {} unless locals
+
+      writes = {} #: Hash[String, Prism::LocalVariableWriteNode]
+      RbsInfer::Analyzer.find_all_nodes(defn.body) { |node| node.is_a?(Prism::LocalVariableWriteNode) }
+                        .each { |write| writes[write.name.to_s] = write }
+
+      locals.each_with_object({}) do |name, types|
+        write = writes[name] or next
+        next unless write.location.end_offset <= last_stmt.location.start_offset
+
+        type = resolve_receiver_type(write.value, self_ctx, method_type_resolver, local_types: param_types)
+        types[name] = type if type && type != "untyped"
+      end
+    end
 
     # The parameter types inferred for the method identified by (name, owner,
     # kind) — `owner` relative to the target, as `DefCollector` reports it.
