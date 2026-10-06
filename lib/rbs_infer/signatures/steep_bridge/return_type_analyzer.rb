@@ -11,18 +11,69 @@ class RbsInfer::Signatures::SteepBridge
 
     BLOCK_GENERIC_METHODS = %w[map collect].freeze
 
+    # What Steep gave each method's body, for one receiver kind, keyed by the
+    # module that owns the `def` as well as by its name.
+    #
+    # By name alone, two classes in one file defining `name` wrote one entry,
+    # and each read the other's: `Account#name` (`user.name`, `"Ana"`) came
+    # out `"Ana"?` from `Order#name` (`_&.name`) written below it, and the
+    # wrong type then stood as `Account#name`'s own declaration on the next
+    # run.
+    class ReturnTable
+      def initialize
+        @types = {} #: Hash[[String, String], String]
+        @owners = Hash.new { |hash, name| hash[name] = [] } #: Hash[String, Array[String]]
+      end
+
+      # Every `def` is recorded as defining its name, typed or not: an owner
+      # whose body Steep could not type still makes the name ambiguous.
+      def define(owner, name, type)
+        @owners[name] |= [owner]
+        @types[[owner, name]] = type if type
+      end
+
+      def empty?
+        @types.empty?
+      end
+
+      # The type of `owner#name`'s body. Read by name alone only where one
+      # owner in the file defines that name, which is every case the name-keyed
+      # table read correctly: a `def` this walk attributes to another module
+      # than the caller does (one inside a `Struct.new do … end`) is still
+      # found, and an ambiguous name is not answered with another owner's
+      # type.
+      def lookup(owner, name)
+        own = @types[[owner, name]]
+        return own if own
+
+        owners = @owners.fetch(name, [])
+        @types[[owners.first, name]] if owners.size == 1
+      end
+
+      # `{ name => type }` for the names one owner defines.
+      def to_h
+        @owners.each_with_object({}) do |(name, owners), hash|
+          next unless owners.size == 1
+
+          type = @types[[owners.first, name]]
+          hash[name] = type if type
+        end
+      end
+    end
+
     def initialize(steep_bridge:)
       @steep_bridge = steep_bridge
     end
 
     # Returns { "method_name" => "ReturnType" } for all def nodes.
     # The return type is inferred from the body of the method.
-    # Return types of instance methods (`def x`), keyed by name. Singleton
+    # Return types of instance methods (`def x`), keyed by name — for the
+    # names one module in the file defines (`ReturnTable#to_h`). Singleton
     # methods (`def self.x`) are excluded — fetch those via
     # `method_return_types_by_kind(...)[:singleton]` so a class method and an
     # instance method sharing a name don't clobber each other's entry.
     def method_return_types(source_code)
-      method_return_types_by_kind(source_code)[:instance]
+      method_return_types_by_kind(source_code)[:instance].to_h
     end
 
     # Return types split by receiver kind: `{ instance: {name=>type},
@@ -37,7 +88,7 @@ class RbsInfer::Signatures::SteepBridge
     # while Steep had its type all along (felixefelip/rbs_infer#162).
     def method_return_types_by_kind(source_code)
       typing = @steep_bridge.type_check(source_code)
-      return { instance: {}, singleton: {} } unless typing
+      return { instance: ReturnTable.new, singleton: ReturnTable.new } unless typing
 
       # Index BlockBodyTypeMismatch errors by block node identity
       block_mismatches = {}
@@ -47,9 +98,10 @@ class RbsInfer::Signatures::SteepBridge
         block_mismatches[err.node.__id__] = err
       end
 
-      instance = {}
-      singleton = {}
+      instance = ReturnTable.new
+      singleton = ReturnTable.new
       singleton_class_defs = singleton_class_def_ids(typing.source.node)
+      owners = def_owners(typing.source.node)
 
       typing.each_typing do |node, _type|
         next unless node.type == :def || node.type == :defs
@@ -58,10 +110,12 @@ class RbsInfer::Signatures::SteepBridge
         singleton_def = !plain_def || singleton_class_defs.include?(node.__id__)
         method_name = plain_def ? node.children[0].to_s : node.children[1].to_s
         body = plain_def ? node.children[2] : node.children[3]
+        table = singleton_def ? singleton : instance
+        owner = owners.fetch(node.__id__, "")
 
         # `def x; end` has no body node to type, and evaluates to nil.
         unless body
-          (singleton_def ? singleton : instance)[method_name] = "nil"
+          table.define(owner, method_name, "nil")
           next
         end
 
@@ -73,9 +127,7 @@ class RbsInfer::Signatures::SteepBridge
         resolved = resolve_block_generic_type(typing, body, type_str, block_mismatches)
         type_str = resolved if resolved
 
-        next if type_str == "untyped"
-
-        (singleton_def ? singleton : instance)[method_name] = type_str
+        table.define(owner, method_name, type_str == "untyped" ? nil : type_str)
       end
 
       { instance: instance, singleton: singleton }
@@ -122,6 +174,42 @@ class RbsInfer::Signatures::SteepBridge
       end
 
       node.children.each { |child| each_return(child, &block) }
+    end
+
+    # `{ def node id => owning module path }`, from the `class`/`module` bodies
+    # the `def` is written in: `module Blog; class Entry` and
+    # `class Blog::Entry` are both `Blog::Entry`, and `class ::Entry` resets to
+    # the top level. A `class << self` keeps its class: its `def`s are that
+    # class's singleton methods. "" at the top level.
+    def def_owners(node, nesting = [], result = {})
+      return result unless node.is_a?(Parser::AST::Node)
+
+      case node.type
+      when :class, :module
+        name = constant_path(node.children[0])
+        inner = if name.nil? then nesting
+                elsif name.start_with?("::") then [name.delete_prefix("::")]
+                else nesting + [name]
+                end
+        node.children.drop(1).each { |child| def_owners(child, inner, result) }
+        return result
+      when :def, :defs
+        result[node.__id__] = nesting.join("::")
+      end
+
+      node.children.each { |child| def_owners(child, nesting, result) }
+      result
+    end
+
+    def constant_path(node)
+      return nil unless node.is_a?(Parser::AST::Node) && node.type == :const
+
+      parent, name = node.children
+      return name.to_s if parent.nil?
+      return "::#{name}" if parent.type == :cbase
+
+      prefix = constant_path(parent) or return nil
+      "#{prefix}::#{name}"
     end
 
     # Node ids of the `def`s written inside `class << self`.

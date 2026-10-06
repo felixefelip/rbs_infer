@@ -111,7 +111,7 @@ module RbsInfer::Inference
           self_types = Set.new([@target_class] + @instance_types)
 
           still_untyped.each do |m|
-            steep_type = steep_returns_for(m, steep_returns)[m.name]
+            steep_type = steep_return_for(m, steep_returns)
             # `nil` is a genuine inference, not a fallback: the env is built with
             # `implicitly_returns_nil: false`, so Steep types a body as `nil` only
             # when it evaluates to nil. Emitting `-> nil` is precise and keeps a
@@ -148,7 +148,7 @@ module RbsInfer::Inference
             next unless method_member?(m)
             next if m.name == "initialize"
             next if m.signature =~ /->\s*untyped$/
-            steep_type = steep_returns_for(m, steep_returns)[m.name]
+            steep_type = steep_return_for(m, steep_returns)
             next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
             current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next if current_type == steep_type
@@ -171,7 +171,7 @@ module RbsInfer::Inference
             current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next unless current_type&.end_with?("?")
 
-            steep_type = steep_returns_for(m, steep_returns)[m.name]
+            steep_type = steep_return_for(m, steep_returns)
             next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
             next if steep_type == current_type
             next unless RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type) == current_type
@@ -190,7 +190,7 @@ module RbsInfer::Inference
             current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next unless current_type&.start_with?("{") && current_type.include?("untyped")
 
-            steep_type = steep_returns_for(m, steep_returns)[m.name]
+            steep_type = steep_return_for(m, steep_returns)
             next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
             next unless steep_type.start_with?("{")
             next if current_type == steep_type
@@ -225,7 +225,7 @@ module RbsInfer::Inference
 
             current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next unless self_return?(m, current_type, self_types)
-            next unless steep_returns_for(m, steep_returns)[m.name] == "self"
+            next unless steep_return_for(m, steep_returns) == "self"
 
             m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> self")
           end
@@ -243,7 +243,7 @@ module RbsInfer::Inference
             current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next unless current_type && current_type != "untyped"
 
-            steep_type = steep_returns_for(m, steep_returns)[m.name]
+            steep_type = steep_return_for(m, steep_returns)
             next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
             next if steep_type == current_type
             next unless @steep_bridge.literal_refinement?(current_type, steep_type)
@@ -288,7 +288,7 @@ module RbsInfer::Inference
             current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next unless current_type && current_type != "untyped"
 
-            steep_type = steep_returns_for(m, steep_returns)[m.name]
+            steep_type = steep_return_for(m, steep_returns)
             next unless steep_type && steep_type != "untyped" && steep_type != "bot"
             # `nil` stays out for the reason the first loop distrusts it: a
             # conditional tail whose value branch is `untyped` collapses to
@@ -367,7 +367,7 @@ module RbsInfer::Inference
     def body_contradicts?(member, declared, steep_returns)
       return false unless steep_returns
 
-      steep_type = steep_returns_for(member, steep_returns)[member.name]
+      steep_type = steep_return_for(member, steep_returns)
       return false unless steep_type && steep_type != "untyped" && steep_type != "bot"
       # `nil` says nothing: a conditional tail whose value branch is `untyped`
       # collapses to it, which is why the pass below distrusts it too.
@@ -776,8 +776,13 @@ module RbsInfer::Inference
     end
 
     # Same selection for the kind-split Steep map (`{instance:, singleton:}`).
-    def steep_returns_for(member, steep_returns)
-      member.kind == :class_method ? steep_returns[:singleton] : steep_returns[:instance]
+    # What Steep gave this member's own body: by receiver kind, and by the
+    # module that owns it — the target, or the module the member sits in
+    # inside it (`ReturnTable`).
+    def steep_return_for(member, steep_returns)
+      table = member.kind == :class_method ? steep_returns[:singleton] : steep_returns[:instance]
+      owner = [@target_class&.delete_prefix("::"), member.owner].compact.join("::")
+      table.lookup(owner, member.name)
     end
 
     # Whether a body typed `steep_type` should be emitted as RBS `self`.

@@ -266,8 +266,8 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
 
       types = bridge.method_return_types_by_kind(code)
 
-      expect(types[:instance]["empty"]).to eq("nil")
-      expect(types[:singleton]["empty_singleton"]).to eq("nil")
+      expect(types[:instance].to_h["empty"]).to eq("nil")
+      expect(types[:singleton].to_h["empty_singleton"]).to eq("nil")
     end
   end
 

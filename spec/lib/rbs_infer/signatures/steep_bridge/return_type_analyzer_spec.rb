@@ -131,8 +131,8 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
       RUBY
 
       by_kind = bridge.method_return_types_by_kind(code)
-      expect(by_kind[:singleton]["tally"]).to eq("String")
-      expect(by_kind[:instance]["tally"]).to eq("Integer")
+      expect(by_kind[:singleton].to_h["tally"]).to eq("String")
+      expect(by_kind[:instance].to_h["tally"]).to eq("Integer")
       # The name-keyed accessor returns instance methods only.
       expect(bridge.method_return_types(code)["tally"]).to eq("Integer")
     end
@@ -157,8 +157,8 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
       RUBY
 
       by_kind = bridge.method_return_types_by_kind(code)
-      expect(by_kind[:singleton]["tally"]).to eq("String")
-      expect(by_kind[:instance]["tally"]).to eq("Integer")
+      expect(by_kind[:singleton].to_h["tally"]).to eq("String")
+      expect(by_kind[:instance].to_h["tally"]).to eq("Integer")
     end
 
     # `class << obj` opens THAT object's singleton class, so its methods are
@@ -176,7 +176,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
         end
       RUBY
 
-      expect(bridge.method_return_types_by_kind(code)[:singleton]).not_to have_key("tally")
+      expect(bridge.method_return_types_by_kind(code)[:singleton].to_h).not_to have_key("tally")
     end
 
     # A class body inside the singleton class is out of it again.
@@ -194,8 +194,72 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
       RUBY
 
       by_kind = bridge.method_return_types_by_kind(code)
-      expect(by_kind[:instance]["tally"]).to eq("Integer")
-      expect(by_kind[:singleton]).not_to have_key("tally")
+      expect(by_kind[:instance].to_h["tally"]).to eq("Integer")
+      expect(by_kind[:singleton].to_h).not_to have_key("tally")
+    end
+  end
+
+  # Two classes in one file defining the same name used to write ONE entry,
+  # and each read the other's.
+  describe "a name two classes in one file define" do
+    let(:code) do
+      <<~RUBY
+        class Dog
+          def name
+            "Rex"
+          end
+        end
+
+        module Pets
+          class Cat
+            def name
+              nil
+            end
+          end
+        end
+      RUBY
+    end
+
+    it "keeps each class's own type" do
+      table = bridge.method_return_types_by_kind(code)[:instance]
+
+      expect(table.lookup("Dog", "name")).to eq("String")
+      expect(table.lookup("Pets::Cat", "name")).to eq("nil")
+    end
+
+    it "answers no other owner by name alone" do
+      table = bridge.method_return_types_by_kind(code)[:instance]
+
+      expect(table.lookup("Elsewhere", "name")).to be_nil
+      expect(table.to_h).not_to have_key("name")
+    end
+
+    # A body Steep could not type still makes the name ambiguous.
+    it "does not hand an untyped body the other owner's type" do
+      table = bridge.method_return_types_by_kind(<<~RUBY)[:instance]
+        class Dog
+          def name
+            unknown_thing.name
+          end
+        end
+
+        class Cat
+          def name
+            "Tom"
+          end
+        end
+      RUBY
+
+      expect(table.lookup("Dog", "name")).to be_nil
+      expect(table.lookup("Cat", "name")).to eq("String")
+    end
+
+    it "reads a name one owner defines by name alone" do
+      table = bridge.method_return_types_by_kind(code)[:instance]
+
+      expect(table.to_h).to eq({})
+      expect(bridge.method_return_types_by_kind("class Dog\n  def bark\n    1\n  end\nend\n")[:instance]
+               .lookup("Somewhere", "bark")).to eq("Integer")
     end
   end
 
