@@ -156,6 +156,20 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
       )
     end
 
+    it "reads a local whose value is omitted as the name it stands for" do
+      # `user_filtering:` is `user_filtering: user_filtering`. Its node's source text keeps
+      # the colon, and copying that in wrote `user_filtering: user_filtering:` — a file
+      # that does not parse, which stops the checker from trusting any core method.
+      result = build(
+        "app/views/posts/_summary.html.erb" => "<%= post %>\n",
+        "app/views/posts/_list.html.erb" => "<%= render \"posts/summary\", post: %>\n"
+      )
+
+      body = method_body(source_of(result, "posts/_list.rb"), "render")
+      expect(body).to include("when \"posts/summary\" then ERBPartialPostsSummary.new(post: post).__rbs_infer__body")
+      expect(Prism.parse(source_of(result, "posts/_list.rb")).errors).to be_empty
+    end
+
     it "reproduces the enclosing iteration so the local gets the element type" do
       # Emitting the loop lets the pipeline derive the element type of `@comments`.
       # The alternative — unwrapping `Array[T]` here — is the hand-rolled inference
