@@ -132,18 +132,32 @@ RSpec.describe "a method that forwards `...`" do
   end
 
   # `allow_nil: true`: the call, or nothing — the `if` the body ends on.
-  #
-  # Pending on the checker: in `!_.nil? || …` the falsy side of `!_.nil?`
-  # narrows `_` to `nil` even where `_` cannot be nil (a `Printer`), so the
-  # checker rejects the call and types the `if` `untyped`. The parameters
-  # still come out, by the rule every nilable call follows; the return needs
-  # the checker's narrowing to be `bot` there. Once it is, this passes, and
-  # `pending` fails to say so.
-  it "returns the call's value or nil where the body can end without it" do
-    pending "steep: `x.nil?` narrows a non-nilable `x` to nil instead of bot"
+  # NilClass has no `stamp`, so `nil.respond_to?(:stamp)` is `false` and the
+  # condition is `!_.nil?`, narrowed by the checker as written
+  # (felixefelip/rbs_infer#393). `printer` cannot be nil, so the body always
+  # makes the call.
+  it "returns the call's value where the receiver cannot be nil" do
     target = write("app/target.rb", <<~RUBY)
       class Target
         def printer = Printer.new
+
+        def stamp(...)
+          _ = printer
+          if !_.nil? || nil.respond_to?(:stamp)
+            _.stamp(...)
+          end
+        end
+      end
+    RUBY
+
+    expect(generate(target)).to include("def stamp: (String label, ?Integer times) -> String\n")
+  end
+
+  it "returns the call's value or nil where the receiver may be nil" do
+    write("sig/generated/target.rbs", "class Target\n  def printer: () -> Printer?\nend\n")
+    target = write("app/target.rb", <<~RUBY)
+      class Target
+        def printer = (Printer.new if rand > 0.5)
 
         def stamp(...)
           _ = printer

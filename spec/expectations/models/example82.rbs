@@ -1,5 +1,5 @@
 class Example82
-  def self.summary: () -> Array[untyped]
+  def self.summary: () -> Array[String?]
 
   def owner: () -> User?
   def author: () -> User
