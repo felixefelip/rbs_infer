@@ -470,16 +470,6 @@ module RbsInfer::Signatures
       "#{name}: #{lists.map { |list| "#{list} -> #{returned}" }.join(" | ")}"
     end
 
-    # The same rewrite with whole overloads, return included: `[[params, ret], …]`.
-    def forward_overloads(method_sig, overloads)
-      return method_sig if method_sig.nil? || overloads.empty?
-
-      name, rest = method_sig.split(": ", 2)
-      return method_sig unless rest&.start_with?(FORWARDED_PARAMETERS)
-
-      "#{name}: #{overloads.map { |params, returned| "#{params} -> #{returned}" }.join(" | ")}"
-    end
-
     # Drops one redundant outer pair. `(A & B)?` and `Array[A | B]` are not
     # outer-parenthesized, so they pass through untouched.
     def unparenthesized(type)

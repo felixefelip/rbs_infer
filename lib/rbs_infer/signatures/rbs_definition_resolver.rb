@@ -306,31 +306,6 @@ module RbsInfer::Signatures
       []
     end
 
-    # `method_parameters` with each overload's RETURN beside its list:
-    # `[["(String label)", "String"], …]`. For a method whose value is the
-    # forwarded call's (`ForwardedParametersResolver`), the whole overload is
-    # what the declaration says.
-    def method_overloads(kind, class_name, method_name)
-      return [] unless rbs_builder
-
-      type_name = build_rbs_type_name(class_name)
-      return [] unless type_name
-      return [] unless rbs_builder.env.class_decls.key?(type_name)
-
-      definition = kind == :singleton ? rbs_builder.build_singleton(type_name) : rbs_builder.build_instance(type_name)
-      method = definition.methods[method_name.to_sym]
-      return [] unless method
-
-      method.defs.filter_map do |d|
-        params = render_parameters(d.type) or next
-        returned = d.type.type.return_type.to_s.gsub(/(?<![A-Za-z0-9_:])::/, "")
-        [params, returned]
-      end.uniq
-    rescue RBS::BaseError => e
-      warn "[rbs_infer] could not read #{kind} overloads of #{class_name}##{method_name}: #{e.class}: #{e.message}"
-      []
-    end
-
     # RBS declares `Kernel#class` as `() -> Class`, which drops the one thing the
     # call states: WHICH class. Ruby's answer is the receiver's own singleton,
     # and so is the checker's — Steep rewrites this exact method per receiver
