@@ -1,7 +1,7 @@
 module Example80
   class Account
     def email: () -> "ana@example.com"
-    def name: () -> "Ana"?
+    def name: () -> "Ana"
   end
 end
 
