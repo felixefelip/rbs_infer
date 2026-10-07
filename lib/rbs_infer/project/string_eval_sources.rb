@@ -50,16 +50,30 @@ module RbsInfer::Project
 
     # Rewrites the directory under `base_dir` from `sidecar`, dropping the
     # files of call sites that are gone. Returns the paths written.
-    def generate(base_dir:, sidecar:)
+    #
+    # `rbs_dir` is where the run writes each source's RBS. The RBS of a file
+    # this no longer writes goes too: nothing else will regenerate it, and the
+    # next `steep check` would read declarations for methods that are gone.
+    def generate(base_dir:, sidecar:, rbs_dir:)
       base = Pathname(base_dir).expand_path
       dir = base + SIDECAR_DIR
       FileUtils.rm_rf(dir)
 
-      render(base_dir: base, sidecar: sidecar).map do |path, content|
+      written = render(base_dir: base, sidecar: sidecar).map do |path, content|
         output = dir + path
         FileUtils.mkdir_p(output.dirname)
         output.write(content)
         output.to_s
+      end
+
+      drop_orphan_rbs(base + rbs_dir + SIDECAR_DIR, dir)
+      written
+    end
+
+    def drop_orphan_rbs(rbs_root, dir)
+      Pathname.glob(rbs_root + "**/*.rbs").each do |rbs|
+        source = dir + rbs.relative_path_from(rbs_root).sub_ext(".rb")
+        rbs.delete unless source.file?
       end
     end
 

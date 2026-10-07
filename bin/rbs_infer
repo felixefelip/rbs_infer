@@ -59,7 +59,7 @@ end
 # corpus of this very run, and a call site that is gone leaves no file behind.
 if output
   RbsInfer::Project::StringEvalSources.generate(
-    base_dir: Dir.pwd, sidecar: RbsInfer::Project::StringEvalSidecar.load(Dir.pwd)
+    base_dir: Dir.pwd, sidecar: RbsInfer::Project::StringEvalSidecar.load(Dir.pwd), rbs_dir: output_dir
   )
 end
 

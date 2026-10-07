@@ -26,7 +26,7 @@ RSpec.describe RbsInfer::Project::StringEvalSources do
   end
 
   def generate(call_sites)
-    described_class.generate(base_dir: Dir.pwd, sidecar: sidecar(call_sites))
+    described_class.generate(base_dir: Dir.pwd, sidecar: sidecar(call_sites), rbs_dir: "sig/generated")
   end
 
   let(:output) { "sig/generated/steep_string_evals/app/models/post.rb" }
@@ -58,6 +58,31 @@ RSpec.describe RbsInfer::Project::StringEvalSources do
     generate({})
 
     expect(File).not_to exist(output)
+  end
+
+  # The RBS of a file this stops writing is read by the next `steep check` like
+  # any other. One left behind kept a class broken after the file that broke it
+  # was gone: a duplicated method in it fails the whole class, so the check
+  # never reaches the call site that would have written the file correctly.
+  it "drops the RBS of a file it no longer writes, and keeps the rest" do
+    rbs = "sig/generated/sig/generated/steep_string_evals/app/models/post.rbs"
+    kept = "sig/generated/app/models/post.rbs"
+    write(rbs, "class Post\nend\n")
+    write(kept, "class Post\nend\n")
+
+    generate({})
+
+    expect(File).not_to exist(rbs)
+    expect(File).to exist(kept)
+  end
+
+  it "keeps the RBS of a file it writes again" do
+    rbs = "sig/generated/sig/generated/steep_string_evals/app/models/post.rbs"
+    write(rbs, "class Post\nend\n")
+
+    generate("app/models/post.rb:2:2" => ["def user_email(...)\nend\n"])
+
+    expect(File).to exist(rbs)
   end
 
   it "writes nothing for a file the sidecar names but the project does not have" do
