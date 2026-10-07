@@ -1,0 +1,4 @@
+class Example83
+  def tags: () -> :direct
+  def labels: () -> :direct
+end

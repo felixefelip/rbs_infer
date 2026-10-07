@@ -1,0 +1,18 @@
+class Example83
+  module Writer
+    def self.define_direct: (singleton(Example83) model, (:tags | :labels) name) -> untyped
+    def self.define_stored: (singleton(Example83) model, Reflection reflection) -> untyped
+  end
+
+  def self.has_direct: ((:tags | :labels) name) -> untyped
+  def self.has_stored: ((:posts | :comments) name) -> untyped
+  def self.summary: () -> Array[untyped]
+end
+
+class Example83
+  class Reflection
+    attr_reader name: (:posts | :comments)
+
+    def initialize: ((:posts | :comments) name) -> void
+  end
+end

@@ -1,0 +1,21 @@
+class Example84
+  module Writer
+    def self.define_stored: (singleton(Example84) model, Example84::Reflection reflection) -> untyped
+  end
+
+  def self.has_renamed: ((:posts | :comments) name, (:articles | :replies) as) -> untyped
+  def self.summary: () -> Array[untyped]
+end
+
+class Example84
+  class Reflection
+    attr_reader name: (:posts | :comments)
+
+    def initialize: ((:posts | :comments) name) -> void
+    def rename: ((:articles | :replies) to) -> (:articles | :replies)
+
+    class AfterRename
+      attr_reader name: :articles | :replies
+    end
+  end
+end
