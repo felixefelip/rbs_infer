@@ -101,6 +101,24 @@ call_sites:
   app/models/example82.rb:30:2:
   - source: def author_full_name(...);  _ = author;  if !_.nil? || nil.respond_to?(:full_name);    _.full_name(...);  end;end
     target: "::Example82"
+  app/models/example83.rb:49:2:
+  - source: def tags; :direct; end
+    target: "::Example83"
+  app/models/example83.rb:50:2:
+  - source: def labels; :direct; end
+    target: "::Example83"
+  app/models/example83.rb:51:2:
+  -
+  app/models/example83.rb:52:2:
+  -
+  app/models/example84.rb:42:2:
+  -
+  app/models/example84.rb:43:2:
+  -
+  app/models/example85.rb:57:2:
+  -
+  app/models/example85.rb:58:2:
+  -
   app/models/post.rb:31:2:
   - source: def user_email(...);  _ = user;  _.email(...);rescue NoMethodError =>
       e;  if _.nil? && e.name == :email;    raise ::ActiveSupport::DelegationError.nil_target(:user_email,

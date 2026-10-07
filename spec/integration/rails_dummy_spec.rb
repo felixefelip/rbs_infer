@@ -569,6 +569,25 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example82", target_file: "app/models/example82.rb")
   end
 
+  # A literal stored in an object and read back in another method
+  # (felixefelip/steep#205, stage 1). The direct macro is the control: its
+  # methods are defined, the stored one's are not.
+  it "example83 (a literal stored in an object, read in another method) matches expected RBS" do
+    assert_snapshot("models/example83", target_file: "app/models/example83.rb")
+  end
+
+  # The stored literal changed after `new`, per call site (felixefelip/steep#205,
+  # stage 2). `rename`'s marker carries one fact for both callers.
+  it "example84 (a stored literal changed after new) matches expected RBS" do
+    assert_snapshot("models/example84", target_file: "app/models/example84.rb")
+  end
+
+  # Rules accumulated in an object at load time and applied in another method,
+  # the inflector's shape (felixefelip/steep#205, stage 3; felixefelip/steep#209).
+  it "example85 (rules accumulated in an object at load time) matches expected RBS" do
+    assert_snapshot("models/example85", target_file: "app/models/example85.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that

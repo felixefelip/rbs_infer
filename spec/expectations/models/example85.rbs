@@ -1,0 +1,17 @@
+class Example85
+  self.@rules: Example85::Rules?
+
+  def self.rules: () -> Example85::Rules
+  def self.singularize: (String word) -> String
+  def self.has_many_like: ((:posts | :categories) name) -> untyped
+  def self.summary: () -> Array[untyped]
+end
+
+class Example85
+  class Rules
+    attr_reader singulars: Array[untyped]
+
+    def initialize: () -> Array[untyped]
+    def singular: (untyped rule, untyped replacement) -> Array[untyped]
+  end
+end

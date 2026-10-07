@@ -1291,6 +1291,31 @@ postconditions:
   effects:
     may_write:
     - "@owner"
+- class: Example83::Reflection
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
+- class: Example84::Reflection
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
+- class: Example84::Reflection
+  method: rename
+  effects:
+    may_write:
+    - "@name"
+- class: Example85
+  method: rules
+  effects:
+    may_write:
+    - "@rules"
+- class: Example85::Rules
+  method: initialize
+  effects:
+    may_write:
+    - "@singulars"
 - class: Example9
   method: run_age
   unconditional:
