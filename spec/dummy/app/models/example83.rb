@@ -2,13 +2,17 @@
 # stage 1.
 #
 # Both macros below write `def <name>` from the same literal, through a writer
-# that is handed the class. `has_direct` hands the writer the literal itself,
-# and the writer is read under each macro call's arguments, so `tags` and
-# `labels` are defined. `has_stored` puts the literal in a `Reflection` first
-# and the writer reads it back with `reflection.name`. An argument is known by
-# its RBS type, which for that one is just `Reflection`, so the writer is read
-# the same way for both callers: `reflection.name` is `:posts | :comments`, the
-# string does not fold, and `posts` and `comments` are never defined.
+# that is handed the class. `has_direct` hands the writer the literal itself;
+# `has_stored` puts it in a `Reflection` first, and the writer reads it back
+# with `reflection.name`.
+#
+# The stored path folds because `@name` is fixed for good: `initialize` binds
+# it from its argument and nothing else in the project writes it. So
+# `Reflection.new(:posts)` is typed as the object it builds,
+# `Example83::Reflection{@name: :posts}`, the writer is read once per object
+# rather than once per class, and `reflection.name` answers `:posts`. `posts`
+# and `comments` are defined, like `tags` and `labels`. An ivar a method can
+# change is stage 2 (example84).
 #
 # Two callers per macro on purpose. With one, the closed world types the reader
 # `:posts`, and the fold works by accident.

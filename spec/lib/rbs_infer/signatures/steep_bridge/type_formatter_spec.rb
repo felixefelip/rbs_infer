@@ -48,6 +48,22 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::TypeFormatter, :dummy_app do
       ).to eq("untyped")
     end
 
+    # A type RBS cannot spell is written as the one it can, nested or not. Its
+    # `to_s` is for diagnostics: `::Reflection{@name: :posts}` would be a
+    # syntax error in the file being written.
+    it "writes a type RBS cannot spell as its back type" do
+      reflection = Steep::AST::Types::Name::Instance.new(name: RBS::TypeName.parse("::Reflection"), args: [])
+      state = Steep::AST::Types::ObjectState.new(
+        back_type: reflection,
+        ivars: { :@name => Steep::AST::Types::Literal.new(value: :posts) }
+      )
+      set = Steep::AST::Types::FiniteSet.new(types: [Steep::AST::Types::Literal.new(value: "a")])
+
+      expect(described_class.format_type(state)).to eq("Reflection")
+      expect(described_class.format_type(Steep::AST::Types::Union.build(types: [state, Steep::AST::Builtin.nil_type]))).to eq("Reflection?")
+      expect(described_class.format_type(set)).to eq('Set["a"]')
+    end
+
     it "leaves an RBS type alone, which carries variables it cannot substitute" do
       expect(described_class.format_type(RBS::Parser.parse_type("::Array[Elem]"))).to eq("Array[Elem]")
     end

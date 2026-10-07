@@ -9,4 +9,6 @@
 class Example83
   def tags; :direct; end
   def labels; :direct; end
+  def posts; :stored; end
+  def comments; :stored; end
 end

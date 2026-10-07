@@ -101,16 +101,18 @@ call_sites:
   app/models/example82.rb:30:2:
   - source: def author_full_name(...);  _ = author;  if !_.nil? || nil.respond_to?(:full_name);    _.full_name(...);  end;end
     target: "::Example82"
-  app/models/example83.rb:49:2:
+  app/models/example83.rb:53:2:
   - source: def tags; :direct; end
     target: "::Example83"
-  app/models/example83.rb:50:2:
+  app/models/example83.rb:54:2:
   - source: def labels; :direct; end
     target: "::Example83"
-  app/models/example83.rb:51:2:
-  -
-  app/models/example83.rb:52:2:
-  -
+  app/models/example83.rb:55:2:
+  - source: def posts; :stored; end
+    target: "::Example83"
+  app/models/example83.rb:56:2:
+  - source: def comments; :stored; end
+    target: "::Example83"
   app/models/example84.rb:42:2:
   -
   app/models/example84.rb:43:2:

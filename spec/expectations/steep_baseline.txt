@@ -42,8 +42,6 @@ app/models/example72.rb:90:14: [warning] Empty array doesn't have type annotatio
 app/models/example73.rb:22:14: [warning] Empty array doesn't have type annotation
 app/models/example73.rb:42:14: [warning] Empty array doesn't have type annotation
 app/models/example80.rb:31:19: [warning] Empty array doesn't have type annotation
-app/models/example83.rb:56:40: [error] Type `::Example83` does not have method `posts`
-app/models/example83.rb:56:54: [error] Type `::Example83` does not have method `comments`
 app/models/example84.rb:47:12: [error] Type `::Example84` does not have method `articles`
 app/models/example84.rb:47:29: [error] Type `::Example84` does not have method `replies`
 app/models/example85.rb:62:12: [error] Type `::Example85` does not have method `post_ids`
