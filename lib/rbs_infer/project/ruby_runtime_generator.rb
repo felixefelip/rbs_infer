@@ -98,7 +98,66 @@ module RbsInfer::Project
           self
         end
 
+        # What `attr_reader :x` runs — `rb_mod_attr_reader` in object.c, which calls
+        # `rb_attr` (vm_method.c) once per name and answers the names:
+        #
+        #   visi = vm_scope_visibility_get(ec);       /* the caller's default */
+        #   attriv = "@" + name;
+        #   rb_add_method(klass, id, VM_METHOD_TYPE_IVAR, attriv, visi);
+        #
+        # A VM_METHOD_TYPE_IVAR method is `def x; @x; end` with nothing else to it,
+        # and the ATTRSET one `attr_writer` adds is `def x=(value); @x = value; end`.
+        # So each is written as that `def`, through `class_eval` of a string — the
+        # way Ruby has of defining a method whose name is a value — and the names
+        # are collected first and evaluated once, the shape `Module#delegate` has.
+        #
+        # Its visibility is the default of the scope that CALLED, which a string
+        # `class_eval` does not inherit and no Ruby can read. So the string says
+        # `__rbs_infer__scope_visibility`, and what places the method writes it as
+        # the keyword it is at that call site.
+        # @rbs_infer |...
+        def attr_reader(*names)
+          source = []
+          names.each do |name|
+            source << "__rbs_infer__scope_visibility def \#{name}; @\#{name}; end"
+          end
+          class_eval(source.join(";"))
+          names.map { |name| :"\#{name}" }
+        end
+
+        # `rb_mod_attr_writer`: `rb_attr` with only the ATTRSET method, answering
+        # the setters' names.
+        # @rbs_infer |...
+        def attr_writer(*names)
+          source = []
+          names.each do |name|
+            source << "__rbs_infer__scope_visibility def \#{name}=(value); @\#{name} = value; end"
+          end
+          class_eval(source.join(";"))
+          names.map { |name| :"\#{name}=" }
+        end
+
+        # `rb_mod_attr_accessor`: both methods per name, answered in pairs.
+        # @rbs_infer |...
+        def attr_accessor(*names)
+          source = []
+          names.each do |name|
+            source << "__rbs_infer__scope_visibility def \#{name}; @\#{name}; end"
+            source << "__rbs_infer__scope_visibility def \#{name}=(value); @\#{name} = value; end"
+          end
+          class_eval(source.join(";"))
+          names.flat_map { |name| [:"\#{name}", :"\#{name}="] }
+        end
+
         private
+
+        # `vm_scope_visibility_get` — the default visibility of the scope an
+        # `attr_*` was called from, given to the method it defines. Placed, a
+        # call to this is written as that keyword (`private def x; @x; end`);
+        # unplaced, it leaves the method as it is.
+        def __rbs_infer__scope_visibility(name)
+          name
+        end
 
         # What `include` delegates the actual work to — `rb_mod_append_features` in eval.c:
         #

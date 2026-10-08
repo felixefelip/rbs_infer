@@ -110,8 +110,14 @@ module RbsInfer::Project
     # cannot (felixefelip/steep#175).
     def expansions_for(node, file, sidecar, qualified)
       grouped = {} #: Hash[String, Array[String]]
+      visibility = "public"
 
       macro_calls(node.body).each do |call, in_block|
+        if !in_block && (default = default_visibility(call))
+          visibility = default
+          next
+        end
+
         chunks = sidecar.sources_for(
           path: file,
           line: call.location.start_line,
@@ -123,11 +129,31 @@ module RbsInfer::Project
         next if in_block && chunks.any? { |chunk| chunk.target.nil? }
 
         chunks.each do |chunk|
-          (grouped[chunk.target || qualified] ||= []) << dedent(chunk.source)
+          source = chunk.source.gsub(SCOPE_VISIBILITY, visibility)
+          (grouped[chunk.target || qualified] ||= []) << dedent(source)
         end
       end
 
       grouped
+    end
+
+    # What the language runtime pseudo-code writes where `rb_attr` reads the
+    # caller's default visibility (`vm_scope_visibility_get`): no Ruby can read
+    # it, and a string `class_eval` does not inherit it, but the call site
+    # spells it — so it is written here as the keyword it is there.
+    SCOPE_VISIBILITY = /\b__rbs_infer__scope_visibility\b/
+
+    # The default a bare visibility call sets for what follows it in the body.
+    # `module_function` makes the instance method private, which is what
+    # `rb_attr` gives an attr declared under it.
+    def default_visibility(call)
+      return nil unless call.receiver.nil? && call.arguments.nil? && call.block.nil?
+
+      case call.name
+      when :private, :module_function then "private"
+      when :protected then "protected"
+      when :public then "public"
+      end
     end
 
     # Where `self` stops being this class. A `def` body runs later, on whatever
