@@ -91,10 +91,10 @@ jobs:
           path: rbs_infer/coverage/
           retention-days: 14
 
-  # A result of its own, next to the suite's: the totals, the least covered
-  # files and, on a pull request, the coverage of the lines it changes, with
-  # the uncovered ones annotated on the diff. It fails when a total is below
-  # its minimum; the suite's own result is left to the `rspec` job.
+  # A result of its own, next to the suite's: named after the totals, failing
+  # when one is below its minimum and, on a pull request, annotating the
+  # changed lines no example runs. The suite's own result is left to the
+  # `rspec` job.
   coverage:
     name: "coverage: ${{ needs.rspec.outputs.line_coverage || '?' }}% lines, ${{ needs.rspec.outputs.branch_coverage || '?' }}% branches"
     needs: rspec
@@ -105,7 +105,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      # The whole history: patch coverage diffs against the pull request's base.
+      # The whole history: the annotations diff against the pull request's base.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -122,58 +122,25 @@ jobs:
       - name: Install the SimpleCov CLI
         run: gem install simplecov --no-document --version "$(sed -n 's/^    simplecov (\(.*\))$/\1/p' Gemfile.lock)"
 
-      - name: Summarize
+      - name: Check the minimums
         env:
-          BASE_REF: ${{ github.base_ref }}
+          LINE_COVERAGE: ${{ needs.rspec.outputs.line_coverage }}
+          BRANCH_COVERAGE: ${{ needs.rspec.outputs.branch_coverage }}
           # Raise these as coverage grows; never lower them to pass.
           MIN_LINE_COVERAGE: 94
           MIN_BRANCH_COVERAGE: 79
         run: |
-          read -r line_pct line_cov line_total branch_pct branch_cov branch_total < <(
-            simplecov report --json | jq -r '.total | [
-              (.lines.percent * 100 | round / 100), .lines.covered, .lines.total,
-              (.branches.percent * 100 | round / 100), .branches.covered, .branches.total
-            ] | @tsv'
-          )
-          echo "::notice title=Coverage::Lines ${line_pct}%, branches ${branch_pct}%"
-
-          {
-            echo "## Coverage"
-            echo
-            echo "| | Covered | Total | % | Minimum |"
-            echo "|---|---:|---:|---:|---:|"
-            echo "| Lines | ${line_cov} | ${line_total} | ${line_pct}% | ${MIN_LINE_COVERAGE}% |"
-            echo "| Branches | ${branch_cov} | ${branch_total} | ${branch_pct}% | ${MIN_BRANCH_COVERAGE}% |"
-            echo
-            if [ -n "$BASE_REF" ]; then
-              echo "### Lines this pull request changes"
-              echo
-              echo '```'
-              simplecov patch --base "origin/$BASE_REF" --no-color
-              echo '```'
-              echo
-            fi
-            echo "### Least covered files"
-            echo
-            echo '```'
-            simplecov uncovered --top 15 --no-color
-            echo '```'
-            echo
-            echo "The HTML report is the \`coverage\` artifact of this run."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if [ -n "$BASE_REF" ]; then
-            simplecov patch --base "origin/$BASE_REF" --annotate github
-          fi
-
           below=0
           check() { # name, percent, minimum
             if awk -v pct="$2" -v min="$3" 'BEGIN { exit !(pct < min) }'; then
               echo "::error title=Coverage below minimum::$1 coverage is $2%, under the minimum of $3%"
-              echo "**$1 coverage is $2%, under the minimum of $3%.**" >> "$GITHUB_STEP_SUMMARY"
               below=1
             fi
           }
-          check Line "$line_pct" "$MIN_LINE_COVERAGE"
-          check Branch "$branch_pct" "$MIN_BRANCH_COVERAGE"
+          check Line "$LINE_COVERAGE" "$MIN_LINE_COVERAGE"
+          check Branch "$BRANCH_COVERAGE" "$MIN_BRANCH_COVERAGE"
           exit "$below"
+
+      - name: Annotate the changed lines no example runs
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        run: simplecov patch --base "origin/${{ github.base_ref }}" --annotate github

@@ -317,8 +317,8 @@ SimpleCov, into `coverage/` (`bundle exec simplecov open` for the HTML report,
 `bundle exec simplecov uncovered` for the least covered files); without `CI`
 the suite runs unmeasured. Code the suite runs in a subprocess — `rbs_infer`
 and `steep check` on the dummy, the scenario projects — is not measured. In CI
-it is a result of its own: the `coverage` job summarizes the totals, fails when
-lines or branches fall under their minimum (`MIN_LINE_COVERAGE`,
+it is a result of its own: the `coverage` job is named after the totals, fails
+when lines or branches fall under their minimum (`MIN_LINE_COVERAGE`,
 `MIN_BRANCH_COVERAGE` in `.github/workflows/test.yml`) and, on a pull request,
 annotates the changed lines no example runs.
 
