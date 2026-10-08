@@ -21,6 +21,11 @@ jobs:
   rspec:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # For the `coverage` job's name, which can read a job it needs but not
+    # its own steps.
+    outputs:
+      line_coverage: ${{ steps.totals.outputs.line }}
+      branch_coverage: ${{ steps.totals.outputs.branch }}
 
     steps:
       # The Gemfiles reach the two forks by relative path — `../steep` here,
@@ -70,6 +75,14 @@ jobs:
         run: bundle exec rspec
 
       # SimpleCov writes it even when an example fails.
+      - name: Read the coverage totals
+        id: totals
+        if: ${{ !cancelled() && hashFiles('rbs_infer/coverage/coverage.json') != '' }}
+        working-directory: rbs_infer
+        run: |
+          jq -r '.total | "line=\(.lines.percent * 100 | round / 100)", "branch=\(.branches.percent * 100 | round / 100)"' \
+            coverage/coverage.json >> "$GITHUB_OUTPUT"
+
       - name: Upload the coverage report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -83,6 +96,7 @@ jobs:
   # the uncovered ones annotated on the diff. It fails when a total is below
   # its minimum; the suite's own result is left to the `rspec` job.
   coverage:
+    name: "coverage: ${{ needs.rspec.outputs.line_coverage || '?' }}% lines, ${{ needs.rspec.outputs.branch_coverage || '?' }}% branches"
     needs: rspec
     if: ${{ !cancelled() && needs.rspec.result != 'skipped' }}
     runs-on: ubuntu-latest
