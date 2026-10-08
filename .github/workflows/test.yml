@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       steep_ref:
-        description: "felixefelip/steep ref to test against (a paired PR's branch, say)"
+        description: "felixefelip/steep ref to test against: a branch, tag or full commit SHA"
         default: rbs_infer
       rbs_rails_ref:
         description: "felixefelip/rbs_rails ref to test against"
@@ -21,6 +21,11 @@ jobs:
   rspec:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # For the `coverage` job's name, which can read a job it needs but not
+    # its own steps.
+    outputs:
+      line_coverage: ${{ steps.totals.outputs.line }}
+      branch_coverage: ${{ steps.totals.outputs.branch }}
 
     steps:
       # The Gemfiles reach the two forks by relative path — `../steep` here,
@@ -68,3 +73,74 @@ jobs:
       - name: Run the suite
         working-directory: rbs_infer
         run: bundle exec rspec
+
+      # SimpleCov writes it even when an example fails.
+      - name: Read the coverage totals
+        id: totals
+        if: ${{ !cancelled() && hashFiles('rbs_infer/coverage/coverage.json') != '' }}
+        working-directory: rbs_infer
+        run: |
+          jq -r '.total | "line=\(.lines.percent * 100 | round / 100)", "branch=\(.branches.percent * 100 | round / 100)"' \
+            coverage/coverage.json >> "$GITHUB_OUTPUT"
+
+      - name: Upload the coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: rbs_infer/coverage/
+          retention-days: 14
+
+  # A result of its own, next to the suite's: named after the totals, failing
+  # when one is below its minimum and, on a pull request, annotating the
+  # changed lines no example runs. The suite's own result is left to the
+  # `rspec` job.
+  coverage:
+    name: "coverage: ${{ needs.rspec.outputs.line_coverage || '?' }}% lines, ${{ needs.rspec.outputs.branch_coverage || '?' }}% branches"
+    needs: rspec
+    # Only where the suite wrote a report: a run that broke before it has
+    # nothing to measure, and its failure is already the `rspec` job's.
+    if: ${{ !cancelled() && needs.rspec.outputs.line_coverage != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      # The whole history: the annotations diff against the pull request's base.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage
+          path: coverage
+
+      # Only the `simplecov` CLI, at the version the suite ran with: the
+      # project's bundle needs the forks checked out beside it.
+      - uses: ruby/setup-ruby@v1
+
+      - name: Install the SimpleCov CLI
+        run: gem install simplecov --no-document --version "$(sed -n 's/^    simplecov (\(.*\))$/\1/p' Gemfile.lock)"
+
+      - name: Check the minimums
+        env:
+          LINE_COVERAGE: ${{ needs.rspec.outputs.line_coverage }}
+          BRANCH_COVERAGE: ${{ needs.rspec.outputs.branch_coverage }}
+          # Raise these as coverage grows; never lower them to pass.
+          MIN_LINE_COVERAGE: 94
+          MIN_BRANCH_COVERAGE: 79
+        run: |
+          below=0
+          check() { # name, percent, minimum
+            if awk -v pct="$2" -v min="$3" 'BEGIN { exit !(pct < min) }'; then
+              echo "::error title=Coverage below minimum::$1 coverage is $2%, under the minimum of $3%"
+              below=1
+            fi
+          }
+          check Line "$LINE_COVERAGE" "$MIN_LINE_COVERAGE"
+          check Branch "$BRANCH_COVERAGE" "$MIN_BRANCH_COVERAGE"
+          exit "$below"
+
+      - name: Annotate the changed lines no example runs
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        run: simplecov patch --base "origin/${{ github.base_ref }}" --annotate github
