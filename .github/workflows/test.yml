@@ -56,11 +56,13 @@ jobs:
           path: ~/dummy-bundle
           key: dummy-bundle-${{ runner.os }}-${{ hashFiles('rbs_infer/.ruby-version', 'rbs_infer/spec/dummy/Gemfile.lock') }}
 
+      # Not frozen: the forks are path gems that move on their own branches, so
+      # the dependencies their gemspecs declare can drift from what the lock
+      # recorded. Rubygems versions stay pinned by the lock either way.
       - name: Install the dummy app's gems
         working-directory: rbs_infer/spec/dummy
         run: |
           bundle config set --local path "$HOME/dummy-bundle"
-          bundle config set --local frozen true
           bundle install --jobs 4
 
       - name: Run the suite
