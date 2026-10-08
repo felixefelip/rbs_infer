@@ -1,13 +1,5 @@
 PATH
-  remote: ../..
-  specs:
-    rbs_infer (0.1.0)
-      prism (>= 1.0)
-      rbs
-      steep
-
-PATH
-  remote: /home/felipefelix/workspaces/rbs_rails
+  remote: ../../../rbs_rails
   specs:
     rbs_rails (0.13.0)
       parser
@@ -15,7 +7,7 @@ PATH
       rbs (>= 1)
 
 PATH
-  remote: /home/felipefelix/workspaces/steep
+  remote: ../../../steep
   specs:
     steep (2.1.0)
       concurrent-ruby (>= 1.1.10)
@@ -34,6 +26,14 @@ PATH
       strscan (>= 1.0.0)
       terminal-table (>= 2, < 5)
       uri (>= 0.12.0)
+
+PATH
+  remote: ../..
+  specs:
+    rbs_infer (0.1.0)
+      prism (>= 1.0)
+      rbs
+      steep
 
 GEM
   remote: https://rubygems.org/

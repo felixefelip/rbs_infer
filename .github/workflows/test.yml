@@ -1,0 +1,68 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      steep_ref:
+        description: "felixefelip/steep ref to test against (a paired PR's branch, say)"
+        default: rbs_infer
+      rbs_rails_ref:
+        description: "felixefelip/rbs_rails ref to test against"
+        default: rbs_infer
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rspec:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # The Gemfiles reach the two forks by relative path — `../steep` here,
+      # `../../../steep` and `../../../rbs_rails` in the dummy app — so the three
+      # repos are checked out side by side, as they are locally.
+      - uses: actions/checkout@v4
+        with:
+          path: rbs_infer
+
+      - uses: actions/checkout@v4
+        with:
+          repository: felixefelip/steep
+          ref: ${{ inputs.steep_ref || 'rbs_infer' }}
+          path: steep
+
+      - uses: actions/checkout@v4
+        with:
+          repository: felixefelip/rbs_rails
+          ref: ${{ inputs.rbs_rails_ref || 'rbs_infer' }}
+          path: rbs_rails
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          working-directory: rbs_infer
+          bundler-cache: true
+
+      # The dummy app has a bundle of its own, which the suite installs and runs
+      # in subprocesses (spec/integration/steep_dummy_spec.rb). Its gems live
+      # outside the checkout, so nothing that globs the dummy's sources reads them.
+      - name: Cache the dummy app's gems
+        uses: actions/cache@v4
+        with:
+          path: ~/dummy-bundle
+          key: dummy-bundle-${{ runner.os }}-${{ hashFiles('rbs_infer/.ruby-version', 'rbs_infer/spec/dummy/Gemfile.lock') }}
+
+      - name: Install the dummy app's gems
+        working-directory: rbs_infer/spec/dummy
+        run: |
+          bundle config set --local path "$HOME/dummy-bundle"
+          bundle config set --local frozen true
+          bundle install --jobs 4
+
+      - name: Run the suite
+        working-directory: rbs_infer
+        run: bundle exec rspec
