@@ -46,7 +46,6 @@ app/models/example84.rb:47:12: [error] Type `::Example84` does not have method `
 app/models/example84.rb:47:29: [error] Type `::Example84` does not have method `replies`
 app/models/example85.rb:62:12: [error] Type `::Example85` does not have method `post_ids`
 app/models/example85.rb:62:29: [error] Type `::Example85` does not have method `category_ids`
-app/models/example86.rb:56:8: [error] Type `::Example86` does not have method `published`
 app/models/included_hook.rb:104:12: [warning] Method `::IncludedHook::Arbitrary#from_arbitrary` is not declared in RBS
 app/models/post/notifiable.rb:42:24: [error] Type `(::User | nil)` does not have method `full_name`
 app/models/send_dispatch.rb:107:33: [error] `public_send` cannot call `stamp` on `::SendDispatch`, which declares it private
