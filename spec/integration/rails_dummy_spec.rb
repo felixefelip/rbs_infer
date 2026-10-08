@@ -589,6 +589,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example85", target_file: "app/models/example85.rb")
   end
 
+  # An ivar an `attr_accessor` rewrites, read back past the call that rewrote it
+  # (felixefelip/steep#219). The accessor's write is not in `may_write`, so the
+  # ivar counts as fixed and the macro's string folds to the value `new` was
+  # given — `def draft` in steep_string_evals, while the method is `published`.
+  it "example86 (an ivar an attr_accessor rewrites) matches expected RBS" do
+    assert_snapshot("models/example86", target_file: "app/models/example86.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that

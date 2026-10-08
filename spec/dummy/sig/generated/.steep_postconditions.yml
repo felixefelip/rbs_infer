@@ -1316,6 +1316,11 @@ postconditions:
   effects:
     may_write:
     - "@singulars"
+- class: Example86::Box
+  method: initialize
+  effects:
+    may_write:
+    - "@value"
 - class: Example9
   method: run_age
   unconditional:
