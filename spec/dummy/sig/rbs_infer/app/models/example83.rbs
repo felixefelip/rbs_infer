@@ -6,7 +6,7 @@ class Example83
 
   def self.has_direct: ((:tags | :labels) name) -> untyped
   def self.has_stored: ((:posts | :comments) name) -> untyped
-  def self.summary: () -> Array[untyped]
+  def self.summary: () -> [ :direct, :direct, :stored, :stored ]
 end
 
 class Example83

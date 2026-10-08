@@ -570,8 +570,9 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   end
 
   # A literal stored in an object and read back in another method
-  # (felixefelip/steep#205, stage 1). The direct macro is the control: its
-  # methods are defined, the stored one's are not.
+  # (felixefelip/steep#205, stage 1). `@name` is fixed by `initialize`, so the
+  # object is typed by what it holds and the stored macro's methods are defined
+  # like the direct one's.
   it "example83 (a literal stored in an object, read in another method) matches expected RBS" do
     assert_snapshot("models/example83", target_file: "app/models/example83.rb")
   end

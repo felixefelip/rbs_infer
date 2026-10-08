@@ -1,4 +1,6 @@
 class Example83
   def tags: () -> :direct
   def labels: () -> :direct
+  def posts: () -> :stored
+  def comments: () -> :stored
 end
