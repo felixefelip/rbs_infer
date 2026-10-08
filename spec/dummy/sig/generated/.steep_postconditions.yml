@@ -50,6 +50,101 @@ postconditions:
   method: authenticate_with_http_token
   when_true:
     block_truthy: true
+- class: ActiveRecord::Base
+  method: allow_unsafe_raw_sql=
+  effects:
+    may_write:
+    - "@allow_unsafe_raw_sql"
+- class: ActiveRecord::Base
+  method: attachment_reflections=
+  effects:
+    may_write:
+    - "@attachment_reflections"
+- class: ActiveRecord::Base
+  method: belongs_to_required_by_default=
+  effects:
+    may_write:
+    - "@belongs_to_required_by_default"
+- class: ActiveRecord::Base
+  method: connection_handlers=
+  effects:
+    may_write:
+    - "@connection_handlers"
+- class: ActiveRecord::Base
+  method: default_timezone=
+  effects:
+    may_write:
+    - "@default_timezone"
+- class: ActiveRecord::Base
+  method: dump_schema_after_migration=
+  effects:
+    may_write:
+    - "@dump_schema_after_migration"
+- class: ActiveRecord::Base
+  method: dump_schemas=
+  effects:
+    may_write:
+    - "@dump_schemas"
+- class: ActiveRecord::Base
+  method: error_on_ignored_order=
+  effects:
+    may_write:
+    - "@error_on_ignored_order"
+- class: ActiveRecord::Base
+  method: index_nested_attribute_errors=
+  effects:
+    may_write:
+    - "@index_nested_attribute_errors"
+- class: ActiveRecord::Base
+  method: logger=
+  effects:
+    may_write:
+    - "@logger"
+- class: ActiveRecord::Base
+  method: maintain_test_schema=
+  effects:
+    may_write:
+    - "@maintain_test_schema"
+- class: ActiveRecord::Base
+  method: primary_key_prefix_type=
+  effects:
+    may_write:
+    - "@primary_key_prefix_type"
+- class: ActiveRecord::Base
+  method: reading_role=
+  effects:
+    may_write:
+    - "@reading_role"
+- class: ActiveRecord::Base
+  method: schema_format=
+  effects:
+    may_write:
+    - "@schema_format"
+- class: ActiveRecord::Base
+  method: time_zone_aware_attributes=
+  effects:
+    may_write:
+    - "@time_zone_aware_attributes"
+- class: ActiveRecord::Base
+  method: timestamped_migrations=
+  effects:
+    may_write:
+    - "@timestamped_migrations"
+- class: ActiveRecord::Base
+  method: verbose_query_logs=
+  effects:
+    may_write:
+    - "@verbose_query_logs"
+- class: ActiveRecord::Base
+  method: warn_on_records_fetched_greater_than=
+  effects:
+    may_write:
+    - "@warn_on_records_fetched_greater_than"
+- class: ActiveRecord::Base
+  method: writing_role=
+  effects:
+    may_write:
+    - "@writing_role"
 - class: ActiveSupport::Concern
   method: included
   effects:
@@ -105,10 +200,35 @@ postconditions:
     - "@limit"
     - "@max_depth"
 - class: Column
+  method: board=
+  effects:
+    may_write:
+    - "@board"
+- class: Column
+  method: column_name=
+  effects:
+    may_write:
+    - "@column_name"
+- class: Column
   method: initialize
   effects:
     may_write:
     - "@column_name"
+- class: Column
+  method: save
+  effects:
+    may_write:
+    - "@user_name"
+- class: Column
+  method: set_default_user_name
+  effects:
+    may_write:
+    - "@user_name"
+- class: Column
+  method: user_name=
+  effects:
+    may_write:
+    - "@user_name"
 - class: Current
   method: user=
   unconditional:
@@ -550,6 +670,21 @@ postconditions:
   effects:
     may_write:
     - "@registry_instance"
+- class: Example13::Registry::GeneratedAttributes
+  method: registry_instance=
+  effects:
+    may_write:
+    - "@registry_instance"
+- class: Example13::Registry::GeneratedAttributes
+  method: tenant=
+  effects:
+    may_write:
+    - "@tenant"
+- class: Example13::Registry::GeneratedAttributes
+  method: user=
+  effects:
+    may_write:
+    - "@user"
 - class: Example13Tenant
   method: initialize
   effects:
@@ -957,6 +1092,11 @@ postconditions:
     may_write:
     - "@bazingado_block"
 - class: Example2::Foo
+  method: name=
+  effects:
+    may_write:
+    - "@name"
+- class: Example2::Foo
   method: user=
   unconditional:
     ivars:
@@ -964,6 +1104,7 @@ postconditions:
     self: "::Example2::Foo & ::Example2::Foo::AfterUser"
   effects:
     may_write:
+    - "@name"
     - "@user"
 - class: Example2::User
   method: initialize
@@ -1064,11 +1205,29 @@ postconditions:
     establishes_consts:
       name: ("John Doe" | "x")
       user: "::Example3::User"
+  effects:
+    may_write:
+    - "@name"
 - class: Example3::Foo
   method: foo_instance
   effects:
     may_write:
     - "@foo_instance"
+- class: Example3::Foo::GeneratedAttributes
+  method: foo_instance=
+  effects:
+    may_write:
+    - "@foo_instance"
+- class: Example3::Foo::GeneratedAttributes
+  method: name=
+  effects:
+    may_write:
+    - "@name"
+- class: Example3::Foo::GeneratedAttributes
+  method: user=
+  effects:
+    may_write:
+    - "@user"
 - class: Example3::User
   method: initialize
   effects:
@@ -1164,6 +1323,16 @@ postconditions:
   effects:
     may_write:
     - "@hallmark"
+- class: Example66Trackable
+  method: flag=
+  effects:
+    may_write:
+    - "@flag"
+- class: Example66Trackable
+  method: mark!
+  effects:
+    may_write:
+    - "@flag"
 - class: Example67
   method: initialize
   effects:
@@ -1321,6 +1490,11 @@ postconditions:
   effects:
     may_write:
     - "@value"
+- class: Example86::Box
+  method: value=
+  effects:
+    may_write:
+    - "@value"
 - class: Example9
   method: run_age
   unconditional:
@@ -1391,6 +1565,11 @@ postconditions:
   effects:
     may_write:
     - "@stamp"
+- class: Module
+  method: attr_internal_naming_format=
+  effects:
+    may_write:
+    - "@attr_internal_naming_format"
 - class: Notification
   method: mute!
   effects:
@@ -1727,6 +1906,11 @@ postconditions:
   method: owner
   effects:
     returns_ivar: "@owner"
+- class: User
+  method: session_token=
+  effects:
+    may_write:
+    - "@session_token"
 - class: User_Comment::ActiveRecord_Associations_CollectionProxy
   method: build
   unconditional:
