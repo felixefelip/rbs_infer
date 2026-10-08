@@ -68,3 +68,81 @@ jobs:
       - name: Run the suite
         working-directory: rbs_infer
         run: bundle exec rspec
+
+      # SimpleCov writes it even when an example fails.
+      - name: Upload the coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: rbs_infer/coverage/
+          retention-days: 14
+
+  # A result of its own, next to the suite's: the totals, the least covered
+  # files and, on a pull request, the coverage of the lines it changes, with
+  # the uncovered ones annotated on the diff. Reports only; it fails on nothing
+  # coverage says.
+  coverage:
+    needs: rspec
+    if: ${{ !cancelled() && needs.rspec.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      # The whole history: patch coverage diffs against the pull request's base.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage
+          path: coverage
+
+      # Only the `simplecov` CLI, at the version the suite ran with: the
+      # project's bundle needs the forks checked out beside it.
+      - uses: ruby/setup-ruby@v1
+
+      - name: Install the SimpleCov CLI
+        run: gem install simplecov --no-document --version "$(sed -n 's/^    simplecov (\(.*\))$/\1/p' Gemfile.lock)"
+
+      - name: Summarize
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          read -r line_pct line_cov line_total branch_pct branch_cov branch_total < <(
+            simplecov report --json | jq -r '.total | [
+              (.lines.percent * 100 | round / 100), .lines.covered, .lines.total,
+              (.branches.percent * 100 | round / 100), .branches.covered, .branches.total
+            ] | @tsv'
+          )
+          echo "::notice title=Coverage::Lines ${line_pct}%, branches ${branch_pct}%"
+
+          {
+            echo "## Coverage"
+            echo
+            echo "| | Covered | Total | % |"
+            echo "|---|---:|---:|---:|"
+            echo "| Lines | ${line_cov} | ${line_total} | ${line_pct}% |"
+            echo "| Branches | ${branch_cov} | ${branch_total} | ${branch_pct}% |"
+            echo
+            if [ -n "$BASE_REF" ]; then
+              echo "### Lines this pull request changes"
+              echo
+              echo '```'
+              simplecov patch --base "origin/$BASE_REF" --no-color
+              echo '```'
+              echo
+            fi
+            echo "### Least covered files"
+            echo
+            echo '```'
+            simplecov uncovered --top 15 --no-color
+            echo '```'
+            echo
+            echo "The HTML report is the \`coverage\` artifact of this run."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -n "$BASE_REF" ]; then
+            simplecov patch --base "origin/$BASE_REF" --annotate github
+          fi

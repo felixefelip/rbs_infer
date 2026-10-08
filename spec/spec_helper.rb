@@ -1,5 +1,15 @@
 # frozen_string_literal: true
 
+# Before anything in lib/ is required, or its lines go uncounted. Code the
+# suite runs in a subprocess (`rbs_infer` and `steep check` on the dummy, the
+# scenario projects) is not measured.
+require "simplecov"
+SimpleCov.start do
+  enable_coverage :branch
+  cover "lib/**/*.rb"
+  formats :html, :json
+end
+
 require "rbs_infer"
 
 DUMMY_APP_ROOT = File.expand_path("dummy", __dir__)

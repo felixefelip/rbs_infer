@@ -310,6 +310,16 @@ macro touches. It asserts both the set of sources an expander rewrites and what 
 becomes — an expander can change its output without moving any emitted RBS, and that
 would otherwise go unnoticed. Same `UPDATE_EXPECTATIONS=1` workflow.
 
+### Coverage
+
+Every `bundle exec rspec` measures line and branch coverage of `lib/` with
+SimpleCov, into `coverage/` (`bundle exec simplecov open` for the HTML report,
+`bundle exec simplecov uncovered` for the least covered files). Code the suite
+runs in a subprocess — `rbs_infer` and `steep check` on the dummy, the scenario
+projects — is not measured. In CI it is a result of its own: the `coverage`
+job summarizes the totals and, on a pull request, annotates the changed lines
+no example runs.
+
 ### Unit specs
 
 ```bash
