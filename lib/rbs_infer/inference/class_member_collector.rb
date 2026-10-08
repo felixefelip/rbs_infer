@@ -201,21 +201,20 @@ module RbsInfer::Inference
       super
     end
 
+    VISIBILITIES = %i[private protected public].freeze
+
     def visit_call_node(node)
       case node.name
-      when :private
-        if node.arguments.nil?
-          # `private` sem args muda visibilidade padrão
-          @current_visibility = :private
-        end
-      when :protected
-        if node.arguments.nil?
-          @current_visibility = :protected
-        end
-      when :public
-        if node.arguments.nil?
-          @current_visibility = :public
-        end
+      when *VISIBILITIES
+        return super unless node.receiver.nil?
+
+        # `private` sem args muda visibilidade padrão
+        return @current_visibility = node.name if node.arguments.nil?
+
+        # With arguments it changes the methods it names instead — which an
+        # inline `def` or an `attr_*` among them only defines once visited.
+        super
+        return apply_visibility(node.name, node.arguments.arguments)
       when :attr_accessor, :attr_reader, :attr_writer
         extract_attrs(node)
       when :include
@@ -398,6 +397,58 @@ module RbsInfer::Inference
     def literal_method_name(node)
       case node
       when Prism::SymbolNode, Prism::StringNode then node.unescaped
+      end
+    end
+
+    # `private :x`, `private def x`, `private attr_reader :x`: each argument is
+    # a name, or an expression whose value is one (a `def` returns its name, an
+    # `attr_*` the names it defines) or a list of them. Only methods of this
+    # scope that already exist are changed — Ruby raises `NameError` for any
+    # other.
+    def apply_visibility(visibility, arguments)
+      return unless inside_target?
+
+      names = arguments.flat_map { |argument| visibility_target_names(argument) }
+      singleton = in_singleton_self?
+
+      @members.each do |member|
+        next unless member.owner == current_owner && names.include?(member.name)
+        next unless visibility_target?(member, singleton)
+
+        member.visibility = visibility
+      end
+    end
+
+    def visibility_target_names(node)
+      case node
+      when Prism::SymbolNode, Prism::StringNode
+        [node.unescaped]
+      when Prism::DefNode
+        node.receiver.nil? ? [node.name.to_s] : []
+      when Prism::ArrayNode
+        node.elements.flat_map { |element| visibility_target_names(element) }
+      when Prism::CallNode
+        attr_names(node)
+      else
+        []
+      end
+    end
+
+    # `attr_reader :x` answers `[:x]` and `attr_writer :x` `[:x=]`; both are
+    # recorded as an attr member named `x`, so either name reaches it.
+    def attr_names(node)
+      return [] unless node.receiver.nil? && %i[attr_accessor attr_reader attr_writer].include?(node.name)
+      return [] unless node.arguments
+
+      node.arguments.arguments.filter_map { |argument| argument.unescaped if argument.is_a?(Prism::SymbolNode) }
+    end
+
+    def visibility_target?(member, singleton)
+      case member.kind
+      when :method then !singleton
+      when :class_method then singleton
+      when :attr_accessor, :attr_reader, :attr_writer then !!member.singleton == singleton
+      else false
       end
     end
 
