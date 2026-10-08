@@ -1,13 +1,16 @@
 # frozen_string_literal: true
 
-# Before anything in lib/ is required, or its lines go uncounted. Code the
-# suite runs in a subprocess (`rbs_infer` and `steep check` on the dummy, the
-# scenario projects) is not measured.
-require "simplecov"
-SimpleCov.start do
-  enable_coverage :branch
-  cover "lib/**/*.rb"
-  formats :html, :json
+# Coverage is measured where `CI` is set (GitHub Actions sets it; locally,
+# `CI=1 bundle exec rspec`). It starts before anything in lib/ is required, or
+# those lines go uncounted. Code the suite runs in a subprocess (`rbs_infer` and
+# `steep check` on the dummy, the scenario projects) is not measured.
+if ENV["CI"]
+  require "simplecov"
+  SimpleCov.start do
+    enable_coverage :branch
+    cover "lib/**/*.rb"
+    formats :html, :json
+  end
 end
 
 require "rbs_infer"
