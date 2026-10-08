@@ -1,0 +1,3 @@
+class Example86
+  def draft: () -> :stamped
+end

@@ -1,0 +1,14 @@
+class Example86
+  def self.fresh: () -> Box
+  def self.publish: (Example86::Box box) -> :published
+  def self.has_stamp: (:draft name) -> untyped
+  def self.summary: () -> untyped
+end
+
+class Example86
+  class Box
+    attr_accessor value: (:published | :draft)
+
+    def initialize: ((:published | :draft) value) -> void
+  end
+end

@@ -121,6 +121,8 @@ call_sites:
   -
   app/models/example85.rb:58:2:
   -
+  app/models/example86.rb:53:2:
+  - def draft; :stamped; end
   app/models/post.rb:31:2:
   - source: def user_email(...);  _ = user;  _.email(...);rescue NoMethodError =>
       e;  if _.nil? && e.name == :email;    raise ::ActiveSupport::DelegationError.nil_target(:user_email,
