@@ -31,7 +31,8 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
       expect(result["bar"]).to eq("(User & User::Validated)?")
     end
 
-    it "excludes empty methods" do
+    # `def x; end` evaluates to nil (#379).
+    it "answers nil for an empty method" do
       code = <<~RUBY
         class Foo
           def bar
@@ -40,7 +41,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
       RUBY
 
       result = bridge.method_return_types(code)
-      expect(result).not_to have_key("bar")
+      expect(result["bar"]).to eq("nil")
     end
 
     it "normalizes void in union types to nilable" do

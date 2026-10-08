@@ -1,0 +1,5 @@
+class Comment
+  module GeneratedRelationMethods
+    def latest_author_full_name: () -> String
+  end
+end
