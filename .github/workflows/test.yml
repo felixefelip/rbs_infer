@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       steep_ref:
-        description: "felixefelip/steep ref to test against (a paired PR's branch, say)"
+        description: "felixefelip/steep ref to test against: a branch, tag or full commit SHA"
         default: rbs_infer
       rbs_rails_ref:
         description: "felixefelip/rbs_rails ref to test against"
@@ -98,7 +98,9 @@ jobs:
   coverage:
     name: "coverage: ${{ needs.rspec.outputs.line_coverage || '?' }}% lines, ${{ needs.rspec.outputs.branch_coverage || '?' }}% branches"
     needs: rspec
-    if: ${{ !cancelled() && needs.rspec.result != 'skipped' }}
+    # Only where the suite wrote a report: a run that broke before it has
+    # nothing to measure, and its failure is already the `rspec` job's.
+    if: ${{ !cancelled() && needs.rspec.outputs.line_coverage != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
