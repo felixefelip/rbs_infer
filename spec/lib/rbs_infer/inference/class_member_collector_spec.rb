@@ -85,6 +85,51 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
     expect(collector.members.find { |m| m.name == "helper" }.visibility).to eq(:private)
   end
 
+  # With arguments, a visibility call changes the methods it names rather than
+  # the default — and only those.
+  it "applies a visibility call's arguments to the methods they name" do
+    source = <<~RUBY
+      class Foo
+        private def inline; end
+        protected def guarded; end
+        private attr_reader :hidden
+        def later; end
+        private :later
+        def a; end
+        def b; end
+        protected :a, "b"
+        def listed; end
+        private [:listed]
+        def open; end
+      end
+    RUBY
+
+    visibility = collect(source).members.to_h { |m| [m.name, m.visibility] }
+    expect(visibility).to eq(
+      "inline" => :private, "guarded" => :protected, "hidden" => :private, "later" => :private,
+      "a" => :protected, "b" => :protected, "listed" => :private, "open" => :public
+    )
+  end
+
+  # `private :x` inside `class << self` is the singleton method, not an
+  # instance one of the same name; and a call on another receiver is not this
+  # class's.
+  it "applies a visibility call's arguments only to methods of its own scope" do
+    source = <<~RUBY
+      class Foo
+        def build; end
+        class << self
+          def build; end
+          private :build
+        end
+        other.private :build
+      end
+    RUBY
+
+    members = collect(source).members.select { |m| m.name == "build" }
+    expect(members.to_h { |m| [m.kind, m.visibility] }).to eq(method: :public, class_method: :private)
+  end
+
   it "detecta superclass" do
     source = <<~RUBY
       class MyController < ApplicationController
