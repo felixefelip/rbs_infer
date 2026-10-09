@@ -1485,6 +1485,12 @@ postconditions:
   effects:
     may_write:
     - "@singulars"
+- class: Example86
+  method: publish
+  unconditional:
+    params:
+      0:
+        value: ":published"
 - class: Example86::Box
   method: initialize
   effects:
