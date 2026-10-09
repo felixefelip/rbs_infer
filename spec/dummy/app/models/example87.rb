@@ -8,11 +8,12 @@
 # `HasManyReflection.new(:posts, …)` runs `MacroReflection#initialize` two
 # levels up, and nothing else in the project writes `@name`.
 #
-# Today the object state is built only from the class's own `initialize`:
-# `HasManyReflection` has none, a `super` contributes nothing, and the
-# ancestor's `initialize` writing `@name` counts as a later rewrite. The
-# reflection stays a plain `HasManyReflection`, `reflection.name` reads what
-# the reader declares, and `posts` and `comments` are never defined.
+# The object state is composed along the `initialize` chain `new` runs, read
+# off the RBS: `HasManyReflection` inherits `AssociationReflection#initialize`,
+# whose bare `super` hands `name` on at the same position to the
+# `initialize` that binds it. So `HasManyReflection.new(:posts, {})` is
+# `Example87::HasManyReflection{@name: :posts}`, `reflection.name` answers
+# `:posts`, and `posts` and `comments` are defined.
 #
 # Also pinned as it stands: `MacroReflection#initialize`'s parameters and the
 # `name` reader read `untyped`. The only call site is

@@ -4,7 +4,7 @@ class Example87
   end
 
   def self.has_association: ((:posts | :comments) name, ?Hash[untyped, untyped] options) -> untyped
-  def self.summary: () -> Array[untyped]
+  def self.summary: () -> [ :many, :many ]
 end
 
 class Example87
