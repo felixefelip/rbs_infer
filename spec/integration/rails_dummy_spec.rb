@@ -599,8 +599,8 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   # A literal stored by an ancestor's `initialize` — inherited, then reached
   # through a bare `super` — and read back in another method
-  # (felixefelip/steep#230). Only the class's own `initialize` builds an object
-  # state today, so `posts`/`comments` are holes.
+  # (felixefelip/steep#230). The object state is composed along the
+  # `initialize` chain, so `posts`/`comments` are defined.
   it "example87 (a literal stored by an ancestor's initialize) matches expected RBS" do
     assert_snapshot("models/example87", target_file: "app/models/example87.rb")
   end

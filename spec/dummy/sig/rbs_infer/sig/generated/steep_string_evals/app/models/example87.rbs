@@ -1,0 +1,4 @@
+class Example87
+  def posts: () -> :many
+  def comments: () -> :many
+end
