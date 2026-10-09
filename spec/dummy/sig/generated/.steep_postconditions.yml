@@ -1501,6 +1501,16 @@ postconditions:
   effects:
     may_write:
     - "@value"
+- class: Example87::AssociationReflection
+  method: initialize
+  effects:
+    may_write:
+    - "@collection"
+- class: Example87::MacroReflection
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
 - class: Example9
   method: run_age
   unconditional:

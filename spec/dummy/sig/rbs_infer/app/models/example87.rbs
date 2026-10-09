@@ -1,0 +1,29 @@
+class Example87
+  module Writer
+    def self.define_accessors: (singleton(Example87) model, HasManyReflection reflection) -> untyped
+  end
+
+  def self.has_association: ((:posts | :comments) name, ?Hash[untyped, untyped] options) -> untyped
+  def self.summary: () -> Array[untyped]
+end
+
+class Example87
+  class MacroReflection
+    attr_reader name: untyped
+
+    def initialize: (untyped name, untyped options) -> untyped
+  end
+end
+
+class Example87
+  class AssociationReflection < MacroReflection
+    @collection: false
+
+    def initialize: (untyped name, untyped options) -> false
+  end
+end
+
+class Example87
+  class HasManyReflection < AssociationReflection
+  end
+end
