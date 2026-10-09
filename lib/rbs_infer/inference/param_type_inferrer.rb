@@ -244,7 +244,9 @@ module RbsInfer::Inference
       end
     end
 
-    # The target's `.new`s, in every file that names it.
+    # The target's `.new`s, in every file that names it — or names a subclass
+    # whose `new` or `super` reaches its `initialize` (felixefelip/rbs_infer#412):
+    # `Kid.new(:posts)` need not spell `Base` to run `Base#initialize`.
     def find_new_calls(parsed_target)
       analyzer = CallerFileAnalyzer.new(
         target_class: @target_class,
@@ -260,7 +262,9 @@ module RbsInfer::Inference
         # for one would only cost a sweep (felixefelip/rbs_infer#331).
         inherited_forwards: {}
       )
-      @source_index.files_referencing(@target_class).flat_map { |file| analyzer.analyze(file) }
+      reachers = RbsInfer::Signatures::RbsDefinitionResolver.new.initialize_reachers(@target_class)
+      files = ([@target_class] + reachers).flat_map { |name| @source_index.files_referencing(name) }.uniq
+      files.flat_map { |file| analyzer.analyze(file) }
     end
 
     # ─── What the target declares, for matching the call sites ─────────

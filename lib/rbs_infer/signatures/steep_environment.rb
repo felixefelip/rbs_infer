@@ -46,12 +46,32 @@ module RbsInfer::Signatures
         }
       end
 
+      # Each class's direct subclasses, as the environment declares them:
+      # `{ "::Base" => ["::Kid"] }`. The env indexes a class by name, not by
+      # parent, so a question about who inherits from a class has nowhere else
+      # to be answered. Keyed by builder identity, like `steep_context`.
+      def direct_subclasses
+        db = definition_builder
+        return {} unless db
+        return @direct_subclasses if @direct_subclasses_builder.equal?(db)
+
+        @direct_subclasses_builder = db
+        @direct_subclasses = db.env.class_decls.each_with_object(Hash.new { |h, k| h[k] = [] }) do |(name, entry), acc|
+          next unless entry.is_a?(RBS::Environment::ClassEntry)
+
+          parent = entry.primary_decl.super_class or next
+          acc[parent.name.to_s] << name.to_s
+        end
+      end
+
       def reset!
         @definition_builder = nil
         @definition_builder_loaded = false
         @definition_builder_dir = nil
         @steep_context = nil
         @steep_context_builder = nil
+        @direct_subclasses = nil
+        @direct_subclasses_builder = nil
       end
 
       private

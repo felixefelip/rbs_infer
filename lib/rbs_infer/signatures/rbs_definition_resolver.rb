@@ -268,6 +268,69 @@ module RbsInfer::Signatures
       @method_owners[key] = compute_method_owner(type_str, method_name)
     end
 
+    # Which class or module owns the method a `super` in `class_name`'s own
+    # `method_name` reaches: the next definition up the ancestors, as RBS links
+    # it (`super_method`). Nil when `class_name` does not define the method
+    # itself, so there is no `super` of its own to ask about.
+    def super_method_owner(class_name, method_name)
+      return nil unless rbs_builder
+
+      type_name = build_rbs_type_name(class_name)
+      return nil unless rbs_builder.env.class_decls.key?(type_name)
+
+      method = rbs_builder.build_instance(type_name).methods[method_name.to_sym] or return nil
+      return nil unless method.defined_in == type_name
+
+      method.super_method&.defined_in&.to_s
+    rescue RBS::BaseError, RuntimeError
+      nil
+    end
+
+    # What `class_name#method_name` declares each named parameter as:
+    # `{ "name" => "Symbol", "options" => "Hash[untyped, untyped]" }`. Empty
+    # for an overloaded method, whose parameters have no one type each.
+    def parameter_types(class_name, method_name)
+      return {} unless rbs_builder
+
+      type_name = build_rbs_type_name(class_name)
+      return {} unless rbs_builder.env.class_decls.key?(type_name)
+
+      method = rbs_builder.build_instance(type_name).methods[method_name.to_sym] or return {}
+      return {} unless method.method_types.size == 1
+
+      function = method.method_types.first.type
+      return {} if function.is_a?(RBS::Types::UntypedFunction)
+
+      params = function.required_positionals + function.optional_positionals +
+               function.required_keywords.values + function.optional_keywords.values
+      params.each_with_object({}) do |param, acc|
+        type = format_rbs_return_type(param.type, class_name) if param.name
+        acc[param.name.to_s] = type if type
+      end
+    rescue RBS::BaseError, RuntimeError
+      {}
+    end
+
+    # The classes below `class_name` whose `initialize` call reaches
+    # `class_name#initialize`: by `new`, because the `initialize` they run is
+    # the one `class_name` defines, or by `super`, because their own
+    # `initialize` hands on to it. `["::Kid"]` for `class Kid < Base` with no
+    # `initialize` of its own; both are call sites of `Base#initialize`.
+    #
+    # Read off the RBS, as every other "which method runs" here is: a subclass
+    # the signatures do not declare yet answers nothing, and arrives on a later
+    # pass of the stabilization loop.
+    def initialize_reachers(class_name)
+      return [] unless rbs_builder
+
+      target = build_rbs_type_name(class_name).to_s
+      descendants(target).select do |name|
+        method_owner(name, "initialize") == target || super_method_owner(name, "initialize") == target
+      end
+    rescue RuntimeError
+      []
+    end
+
     # What `class_name` declares that `method_name` ACCEPTS: the parameter list
     # of each of its overloads, rendered the way RBS writes it and with the
     # `::` prefixes dropped the same way every other emitted type has them
@@ -507,6 +570,22 @@ module RbsInfer::Signatures
       # hide it behind a delegate that merely looks under-typed.
       warn "[rbs_infer] could not render #{method_type}: #{e.class}: #{e.message}"
       nil
+    end
+
+    # Every class below `type_name` (absolute), however deep.
+    def descendants(type_name)
+      subclasses = SteepEnvironment.direct_subclasses
+      found = []
+      queue = [type_name]
+      while (name = queue.shift)
+        subclasses.fetch(name, []).each do |child|
+          next if found.include?(child)
+
+          found << child
+          queue << child
+        end
+      end
+      found
     end
 
     def method_owner_in(type_name, method_name, kind)

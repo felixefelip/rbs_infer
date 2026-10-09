@@ -9,9 +9,11 @@ end
 
 class Example87
   class MacroReflection
-    attr_reader name: untyped
+    @options: Hash[untyped, untyped]
 
-    def initialize: (untyped name, untyped options) -> untyped
+    attr_reader name: (:posts | :comments)
+
+    def initialize: ((:posts | :comments) name, Hash[untyped, untyped] options) -> void
   end
 end
 
@@ -19,7 +21,7 @@ class Example87
   class AssociationReflection < MacroReflection
     @collection: false
 
-    def initialize: (untyped name, untyped options) -> false
+    def initialize: ((:posts | :comments) name, Hash[untyped, untyped] options) -> false
   end
 end
 

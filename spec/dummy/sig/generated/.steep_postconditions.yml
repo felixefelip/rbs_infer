@@ -1511,6 +1511,7 @@ postconditions:
   effects:
     may_write:
     - "@name"
+    - "@options"
 - class: Example9
   method: run_age
   unconditional:

@@ -2,6 +2,13 @@ module RbsInfer::Inference
   class NewCallCollector < Prism::Visitor
     attr_reader :usages, :method_call_usages, :method_block_returns
 
+    # Every node that gives a local a new value.
+    LOCAL_WRITES = [
+      Prism::LocalVariableWriteNode, Prism::LocalVariableOperatorWriteNode,
+      Prism::LocalVariableOrWriteNode, Prism::LocalVariableAndWriteNode,
+      Prism::LocalVariableTargetNode
+    ].freeze
+
     # Collect the fully-qualified names of every class/module DEFINED in a
     # parsed file, so `match_class?` can tell a bare `Foo` written inside
     # `Example3` (→ `Example3::Foo`) apart from a same-named class elsewhere
@@ -125,6 +132,7 @@ module RbsInfer::Inference
       @module_name_stack = []
       @in_singleton_method = false
       @current_method = nil
+      @current_def = nil
     end
 
     # A module declaration does not push a name — `@class_name_stack` is about
@@ -173,6 +181,8 @@ module RbsInfer::Inference
       # `def self.foo` carries a receiver; plain `def foo` does not.
       @in_singleton_method = !node.receiver.nil?
       @current_method = node.name.to_s
+      old_def = @current_def
+      @current_def = node
       old_params = @current_def_params
       @current_def_params = positional_param_names(node)
       unless @method_scoped_var_names.empty?
@@ -182,9 +192,31 @@ module RbsInfer::Inference
       collect_local_assignments(node)
       super
       @current_def_params = old_params
+      @current_def = old_def
       @current_method = old_method
       @in_singleton_method = old_singleton
       @local_var_types = old_vars
+    end
+
+    # A `super` in a subclass's `initialize` is a call site of the
+    # `initialize` it reaches (felixefelip/rbs_infer#412): `super(name)` hands
+    # on what a `.new` would, mapped the same way.
+    def visit_super_node(node)
+      if super_reaches_target_initialize?
+        args = extract_keyword_args(node)
+        args.merge!(extract_positional_args(node))
+        @usages << args unless args.empty?
+      end
+      super
+    end
+
+    # A bare `super` passes each of the method's parameters where it stands.
+    def visit_forwarding_super_node(node)
+      if super_reaches_target_initialize?
+        args = forwarded_super_args
+        @usages << args unless args.empty?
+      end
+      super
     end
 
     def positional_param_names(node)
@@ -244,7 +276,7 @@ module RbsInfer::Inference
 
       if node.name == :new && node.receiver
         receiver_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
-        if receiver_name && match_class?(receiver_name)
+        if receiver_name && (match_class?(receiver_name) || inherits_target_initialize?(node.receiver))
           args = extract_keyword_args(node)
           args.merge!(extract_positional_args(node))
           @usages << args unless args.empty?
@@ -486,6 +518,45 @@ module RbsInfer::Inference
       when nil then false
       else resolve_receiver_type(receiver).to_s.start_with?("singleton(")
       end
+    end
+
+    # `Kid.new(...)` where the `initialize` `Kid` runs is the target's: an
+    # inherited one is a call site whatever the receiver is called
+    # (felixefelip/rbs_infer#412).
+    def inherits_target_initialize?(receiver)
+      return false unless receiver.is_a?(Prism::ConstantReadNode) || receiver.is_a?(Prism::ConstantPathNode)
+
+      resolved = resolve_constant_arg_type(receiver)
+      resolved != "untyped" && reaches_target_method?(resolved, "initialize")
+    end
+
+    # Inside an `initialize` of a class, does `super` reach the target's
+    # `initialize`? The RBS links each definition to the one above it.
+    def super_reaches_target_initialize?
+      return false unless @current_method == "initialize" && !@in_singleton_method
+      return false unless @declaration_kinds.last == :class
+
+      class_name = @class_name_stack.last or return false
+      owner = rbs_definition_resolver.super_method_owner(class_name, "initialize")
+      !owner.nil? && owner.sub(/\A::/, "") == @target_class.sub(/\A::/, "")
+    end
+
+    # What a bare `super` hands on: each of the method's parameters where it
+    # stands, positionals by position and keywords by name, typed as the
+    # method declares them. One the body reassigns is no longer what the
+    # method was given, so it passes `untyped`.
+    def forwarded_super_args
+      params = @current_def&.parameters or return {}
+
+      declared = rbs_definition_resolver.parameter_types(@class_name_stack.last, "initialize")
+      reassigned = RbsInfer::Analyzer.find_all_nodes(@current_def.body) do |n|
+        LOCAL_WRITES.any? { |kind| n.is_a?(kind) }
+      end.map { |n| n.name.to_s }.to_set
+      type_of = ->(name) { reassigned.include?(name) ? "untyped" : declared.fetch(name, "untyped") }
+
+      args = map_positional_types(@current_def_params.map(&type_of))
+      params.keywords.each { |keyword| args[keyword.name.to_s] = type_of.call(keyword.name.to_s) }
+      args
     end
 
     # Does the handler this receiver would reach belong to the target?
@@ -910,28 +981,40 @@ module RbsInfer::Inference
     end
 
     def extract_positional_args(call_node)
-      args = {}
-      return args if @init_positional_params.empty?
-      return args unless call_node.arguments
+      return {} if @init_positional_params.empty?
+      return {} unless call_node.arguments
 
-      index = 0
-      splat_types = []
+      types = []
       call_node.arguments.arguments.each do |arg|
-        break if index >= @init_positional_params.size
         next if arg.is_a?(Prism::KeywordHashNode)
         # See `extract_cross_class_args`: a splat says nothing about which parameter gets
         # what, and the array itself never arrives.
         break if arg.is_a?(Prism::SplatNode)
 
+        types << argument_type(arg)
+      end
+      map_positional_types(types)
+    end
+
+    # The positional arguments' types, by position, onto the parameters of the
+    # `initialize` they reach.
+    def map_positional_types(types)
+      args = {}
+      return args if @init_positional_params.empty?
+
+      index = 0
+      splat_types = []
+      types.each do |type|
+        break if index >= @init_positional_params.size
+
         # `Klass.new(a, b, c)` onto `initialize(first, *rest)`: everything from the rest
         # param's index on is the same parameter, so fold instead of advancing.
         if splat_name(@init_positional_params[index])
-          splat_types << argument_type(arg)
+          splat_types << type
           next
         end
 
-        param_name = @init_positional_params[index]
-        args[param_name] = argument_type(arg)
+        args[@init_positional_params[index]] = type
         index += 1
       end
 
