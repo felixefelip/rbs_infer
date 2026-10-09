@@ -3,7 +3,7 @@ class Example87
     def self.define_accessors: (singleton(Example87) model, HasManyReflection reflection) -> untyped
   end
 
-  def self.has_many: ((:posts | :comments) name, ?Hash[untyped, untyped] options) -> untyped
+  def self.has_association: ((:posts | :comments) name, ?Hash[untyped, untyped] options) -> untyped
   def self.summary: () -> Array[untyped]
 end
 

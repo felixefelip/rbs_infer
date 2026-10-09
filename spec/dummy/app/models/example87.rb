@@ -51,12 +51,12 @@ class Example87
     end
   end
 
-  def self.has_many(name, options = {})
+  def self.has_association(name, options = {})
     Writer.define_accessors(self, HasManyReflection.new(name, options))
   end
 
-  has_many :posts
-  has_many :comments
+  has_association :posts
+  has_association :comments
 
   def self.summary
     record = new
