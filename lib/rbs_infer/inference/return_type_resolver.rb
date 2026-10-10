@@ -13,10 +13,6 @@ module RbsInfer::Inference
       @steep_bridge = steep_bridge
     end
 
-    # What the Steep passes share: the kind-split map of Steep's answers, the
-    # target they were read from, and the names that read as `self`.
-    SteepPass = Struct.new(:steep_returns, :parsed_target, :self_types)
-
     def improve_method_return_types(members, attr_types, parsed_target: nil)
       return unless parsed_target
 
@@ -35,7 +31,7 @@ module RbsInfer::Inference
                       end
 
       deferred_to_body = apply_declared_return_types(untyped_methods, members, attr_types, parsed_target, steep_returns)
-      refine_from_steep(members, parsed_target, steep_returns) if steep_returns
+      refine_from_steep(members, steep_returns, parsed_target) if steep_returns
 
       # A deferred declaration is applied after all if the pass above declined the
       # body anyway (a `nil` from a conditional tail is the one shape it refuses
@@ -215,20 +211,19 @@ module RbsInfer::Inference
     # each pass after the first refines one slice of declaration Steep's reading
     # of the body says more about. Order matters — each pass reads the
     # signatures the previous ones wrote.
-    def refine_from_steep(members, parsed_target, steep_returns)
+    def refine_from_steep(members, steep_returns, parsed_target)
       return if steep_returns[:instance].empty? && steep_returns[:singleton].empty?
 
-      pass = SteepPass.new(steep_returns, parsed_target, Set.new([@target_class] + @instance_types))
-      fill_untyped_from_steep(members, pass)
-      correct_block_generics(members, pass)
-      narrow_proven_non_nil(members, pass)
-      refine_untyped_records(members, pass)
-      refine_to_self(members, pass)
-      refine_literals(members, pass)
-      correct_contradicted_declarations(members, pass)
+      fill_untyped_from_steep(members, steep_returns, parsed_target)
+      correct_block_generics(members, steep_returns)
+      narrow_proven_non_nil(members, steep_returns, parsed_target)
+      refine_untyped_records(members, steep_returns, parsed_target)
+      refine_to_self(members, steep_returns)
+      refine_literals(members, steep_returns, parsed_target)
+      correct_contradicted_declarations(members, steep_returns, parsed_target)
     end
 
-    def fill_untyped_from_steep(members, pass)
+    def fill_untyped_from_steep(members, steep_returns, parsed_target)
       revisable_members(members).each do |m|
         next unless m.signature =~ /->\s*untyped$/
 
@@ -239,7 +234,7 @@ module RbsInfer::Inference
         # is `scope.find_each { … }`) from being stuck at `untyped`
         # (felixefelip/rbs_infer#60). `untyped`/`bot` stay filtered: the former
         # carries no information, the latter means an unreachable/error body.
-        steep_type = steep_answer(m, pass, allow_nil: true) or next
+        steep_type = steep_answer(m, steep_returns, allow_nil: true) or next
 
         # …but a `nil` from a *conditional* tail is not safe to emit: an
         # `if`/`unless`/`case` whose value branch is `untyped` makes Steep
@@ -247,22 +242,22 @@ module RbsInfer::Inference
         # branch (e.g. `posts.destroy_all if cond`, where `destroy_all` is
         # `untyped`). Only take `nil` from an unconditional tail; otherwise
         # leave the method `untyped` (the honest answer).
-        next if steep_type == "nil" && !unconditional_nil_tail?(def_map(pass.parsed_target)[m.name])
+        next if steep_type == "nil" && !unconditional_nil_tail?(def_map(parsed_target)[m.name])
 
         # Instance methods returning the same class (or host class for concerns) → self
-        steep_type = "self" if self_return?(m, steep_type, pass.self_types)
-        steep_type = with_early_nil_return(m, steep_type, pass)
+        steep_type = "self" if self_return?(m, steep_type, self_types)
+        steep_type = with_early_nil_return(m, steep_type, parsed_target)
         rewrite_return(m, "untyped", RbsInfer::Signatures::RbsParserUtil.parenthesize_union(steep_type))
       end
     end
 
     # Correct already-typed methods where Steep detected BlockBodyTypeMismatch
     # (existing RBS had wrong type from previous generation)
-    def correct_block_generics(members, pass)
+    def correct_block_generics(members, steep_returns)
       revisable_members(members).each do |m|
         next if m.signature =~ /->\s*untyped$/
 
-        steep_type = steep_answer(m, pass) or next
+        steep_type = steep_answer(m, steep_returns) or next
         current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
         next if current_type == steep_type
         # Only override Array types (block generic correction)
@@ -280,33 +275,33 @@ module RbsInfer::Inference
     # Restricted to a strict `nilablize(steep) == current` match, so an
     # unrelated Steep type can never clobber a good signature, and skipped when
     # the body has an explicit `nil` return (then nilable is the honest answer).
-    def narrow_proven_non_nil(members, pass)
+    def narrow_proven_non_nil(members, steep_returns, parsed_target)
       revisable_members(members).each do |m|
         current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
         next unless current_type&.end_with?("?")
 
-        steep_type = steep_answer(m, pass) or next
+        steep_type = steep_answer(m, steep_returns) or next
         next if steep_type == current_type
         next unless RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type) == current_type
-        next if early_nil_return?(m, pass)
+        next if early_nil_return?(m, parsed_target)
 
-        steep_type = "self" if self_return?(m, steep_type, pass.self_types)
+        steep_type = "self" if self_return?(m, steep_type, self_types)
         rewrite_return(m, current_type, steep_type)
       end
     end
 
     # Refine record types containing untyped values using Steep's body type inference
-    def refine_untyped_records(members, pass)
+    def refine_untyped_records(members, steep_returns, parsed_target)
       revisable_members(members).each do |m|
         current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
         next unless current_type&.start_with?("{") && current_type.include?("untyped")
 
-        steep_type = steep_answer(m, pass) or next
+        steep_type = steep_answer(m, steep_returns) or next
         next unless steep_type.start_with?("{")
         next if current_type == steep_type
 
-        steep_type = "self" if self_return?(m, steep_type, pass.self_types)
-        rewrite_return(m, current_type, with_early_nil_return(m, steep_type, pass))
+        steep_type = "self" if self_return?(m, steep_type, self_types)
+        rewrite_return(m, current_type, with_early_nil_return(m, steep_type, parsed_target))
       end
     end
 
@@ -324,11 +319,11 @@ module RbsInfer::Inference
     # `self_types` rather than the target class alone, and `self_return?`
     # rather than a bare comparison, so a setter and a class method are
     # excluded for the reasons stated there.
-    def refine_to_self(members, pass)
+    def refine_to_self(members, steep_returns)
       revisable_members(members).each do |m|
         current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
-        next unless self_return?(m, current_type, pass.self_types)
-        next unless steep_return_for(m, pass.steep_returns) == "self"
+        next unless self_return?(m, current_type, self_types)
+        next unless steep_return_for(m, steep_returns) == "self"
 
         rewrite_return(m, current_type, "self")
       end
@@ -339,18 +334,18 @@ module RbsInfer::Inference
     # `"name_delete"` where `call` is declared `-> String`
     # (felixefelip/rbs_infer#345). The general case below cannot reach it,
     # because a `String` never rejects its own literals.
-    def refine_literals(members, pass)
+    def refine_literals(members, steep_returns, parsed_target)
       revisable_members(members).each do |m|
-        next unless defines_own_body?(m, pass.parsed_target)
+        next unless defines_own_body?(m, parsed_target)
 
         current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
         next unless current_type && current_type != "untyped"
 
-        steep_type = steep_answer(m, pass) or next
+        steep_type = steep_answer(m, steep_returns) or next
         next if steep_type == current_type
         next unless @steep_bridge.literal_refinement?(current_type, steep_type)
 
-        steep_type = with_early_nil_return(m, steep_type, pass)
+        steep_type = with_early_nil_return(m, steep_type, parsed_target)
         rewrite_return(m, current_type, RbsInfer::Signatures::RbsParserUtil.parenthesize_union(steep_type))
       end
     end
@@ -377,7 +372,7 @@ module RbsInfer::Inference
     #
     # Only a decided `false` corrects: `accepts?` answers `nil` where it
     # cannot compare, and "we don't know" must not overwrite a signature.
-    def correct_contradicted_declarations(members, pass)
+    def correct_contradicted_declarations(members, steep_returns, parsed_target)
       revisable_members(members).each do |m|
         current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
         next unless current_type && current_type != "untyped"
@@ -385,10 +380,10 @@ module RbsInfer::Inference
         # `nil` stays out for the reason the first pass distrusts it: a
         # conditional tail whose value branch is `untyped` collapses to
         # `nil`, which says nothing about what the method returns.
-        steep_type = steep_answer(m, pass) or next
+        steep_type = steep_answer(m, steep_returns) or next
 
-        steep_type = "self" if self_return?(m, steep_type, pass.self_types)
-        steep_type = with_early_nil_return(m, steep_type, pass)
+        steep_type = "self" if self_return?(m, steep_type, self_types)
+        steep_type = with_early_nil_return(m, steep_type, parsed_target)
         next if steep_type == current_type
         # Compared against the declared type WIDENED BY NIL, so a body that
         # differs from it only by nilability is left alone. That axis is the
@@ -414,22 +409,22 @@ module RbsInfer::Inference
     # Steep's type for this member's body, or nil where it says nothing:
     # `untyped` carries no information and `bot` is an unreachable/error body.
     # `nil` only where the caller can tell a real nil from a collapsed one.
-    def steep_answer(member, pass, allow_nil: false)
-      steep_type = steep_return_for(member, pass.steep_returns)
+    def steep_answer(member, steep_returns, allow_nil: false)
+      steep_type = steep_return_for(member, steep_returns)
       return if steep_type.nil? || %w[untyped bot].include?(steep_type)
       return if steep_type == "nil" && !allow_nil
 
       steep_type
     end
 
-    def early_nil_return?(member, pass)
-      defn = def_map(pass.parsed_target)[member.name]
-      defn && has_nil_return?(defn, dead_ranges: dead_ranges(pass.parsed_target))
+    def early_nil_return?(member, parsed_target)
+      defn = def_map(parsed_target)[member.name]
+      defn && has_nil_return?(defn, dead_ranges: dead_ranges(parsed_target))
     end
 
     # Check for early return nil in body
-    def with_early_nil_return(member, type, pass)
-      early_nil_return?(member, pass) ? RbsInfer::Signatures::RbsParserUtil.nilablize(type) : type
+    def with_early_nil_return(member, type, parsed_target)
+      early_nil_return?(member, parsed_target) ? RbsInfer::Signatures::RbsParserUtil.nilablize(type) : type
     end
 
     def rewrite_return(member, from, to)
@@ -462,6 +457,11 @@ module RbsInfer::Inference
       table = member.kind == :class_method ? steep_returns[:singleton] : steep_returns[:instance]
       owner = [@target_class&.delete_prefix("::"), member.owner].compact.join("::")
       table.lookup(owner, member.name)
+    end
+
+    # The names a body's type reads as `self`: the target, or a concern's hosts.
+    def self_types
+      @self_types ||= Set.new([@target_class] + @instance_types)
     end
 
     # Whether a body typed `steep_type` should be emitted as RBS `self`.
