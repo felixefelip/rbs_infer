@@ -34,7 +34,7 @@ class RbsInfer::Signatures::SteepBridge
     # different slots, so they are different questions — and asking the wrong
     # one silently returns `{}` rather than failing, which is why the argument
     # is required rather than defaulted (felixefelip/rbs_infer#252).
-    def ivar_write_types(source_code, target_class:, singleton:)
+    def ivar_write_types(source_code, target_class:, singleton:) # rubocop:todo Metrics/MethodLength
       typing = @steep_bridge.type_check(source_code)
       return {} unless typing
 
@@ -172,6 +172,7 @@ class RbsInfer::Signatures::SteepBridge
     # Walks `node` looking for `:ivasgn` targets that count as definite
     # initialization (inside `def initialize` or directly in a class body
     # outside any method). Does not descend into non-initialize defs.
+    # rubocop:todo-next Metrics/MethodLength
     def walk_ivar_init_targets(node, in_init:, in_class_body:, singleton:, namespace:, target_class:, result:)
       return unless node.is_a?(::Parser::AST::Node)
 
@@ -262,7 +263,7 @@ class RbsInfer::Signatures::SteepBridge
     # `attr_reader :x` declarations in class bodies; only writer/accessor
     # contribute to the `{ :x= => "x" }` map. Reader entries are skipped
     # because they don't define `x=`.
-    def walk_attr_writer_decls(node, result:)
+    def walk_attr_writer_decls(node, result:) # rubocop:todo Metrics/MethodLength
       return unless node.is_a?(::Parser::AST::Node)
 
       case node.type
@@ -327,6 +328,7 @@ class RbsInfer::Signatures::SteepBridge
     # else, so `@block = block` in a `def self.store` produced no declaration at
     # all and the proc type it holds lost its `[self:]` binding
     # (felixefelip/rbs_infer#252).
+    # rubocop:todo-next Metrics/MethodLength
     def collect_scoped_write_node_ids(node, attr_writer_to_ivar, target_class, singleton, namespace: [],
                                       in_sclass: false, on_singleton: true, result: Set.new)
       return result unless node.is_a?(::Parser::AST::Node)
@@ -391,6 +393,7 @@ class RbsInfer::Signatures::SteepBridge
     # ignored here since they don't belong to any callable). Mirrors the
     # filter logic of `ivar_write_types` for both `:ivasgn` and
     # attr_writer-style `:send`.
+    # rubocop:todo-next Metrics/MethodLength
     def collect_ivar_writes_per_method(node, typing:, attr_writer_to_ivar:, current_method:, namespace:, target_class:,
                                        masgn_values:, result:)
       return unless node.is_a?(::Parser::AST::Node)

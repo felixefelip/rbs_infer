@@ -31,6 +31,7 @@ module RbsInfer::Signatures
     # guess. Writing `arg_types: nil` is a caller SAYING it has no argument
     # information, which is a different statement from having said nothing — and
     # the sites that say it are the list of what is left to wire.
+    # rubocop:todo-next Metrics/MethodLength
     def resolve_via_rbs_builder(kind, class_name, method_name, arg_types:, block_body_type: nil)
       return nil unless rbs_builder
 

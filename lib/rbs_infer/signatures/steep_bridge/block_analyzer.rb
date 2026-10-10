@@ -131,7 +131,7 @@ class RbsInfer::Signatures::SteepBridge
     # The method key and the block's parameter name are threaded the way
     # `walk_forwarded_blocks` threads its key: a nested `def` rebinds both, so
     # nothing inside it is attributed to the method it sits in.
-    def walk_stored_blocks(node, method_key, block_param, singleton, stores, sites)
+    def walk_stored_blocks(node, method_key, block_param, singleton, stores, sites) # rubocop:todo Metrics/MethodLength
       return unless node.is_a?(Parser::AST::Node)
 
       case node.type

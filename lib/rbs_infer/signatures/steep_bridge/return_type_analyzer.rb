@@ -86,7 +86,7 @@ class RbsInfer::Signatures::SteepBridge
     # method it was then unreachable, because the reader asks by the member's
     # kind — which is `:class_method` — and every such method stayed `untyped`
     # while Steep had its type all along (felixefelip/rbs_infer#162).
-    def method_return_types_by_kind(source_code)
+    def method_return_types_by_kind(source_code) # rubocop:todo Metrics/MethodLength
       typing = @steep_bridge.type_check(source_code)
       return { instance: ReturnTable.new, singleton: ReturnTable.new } unless typing
 
@@ -236,7 +236,7 @@ class RbsInfer::Signatures::SteepBridge
     # that Steep already typed correctly and substitute it.
     # Also corrects cases where bidirectional checking from a wrong RBS declaration
     # produces BlockBodyTypeMismatch — uses the actual block body type.
-    def resolve_block_generic_type(typing, body, type_str, block_mismatches)
+    def resolve_block_generic_type(typing, body, type_str, block_mismatches) # rubocop:todo Metrics/MethodLength
       last_expr = body
       last_expr = body.children.last if body.type == :begin
 

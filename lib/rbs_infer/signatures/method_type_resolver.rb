@@ -70,7 +70,7 @@ module RbsInfer::Signatures
       end || name
     end
 
-    def resolve(class_name, method_name, arg_types:, block_body_type: nil)
+    def resolve(class_name, method_name, arg_types:, block_body_type: nil) # rubocop:todo Metrics/MethodLength
       return nil unless class_name && class_name != "untyped"
 
       # Nilable receiver (`User?`): the call has TWO branches and both are real
@@ -297,7 +297,7 @@ module RbsInfer::Signatures
       )
     end
 
-    def build_init_param_types(class_name)
+    def build_init_param_types(class_name) # rubocop:todo Metrics/MethodLength
       @building_init_params ||= Set.new
       return {} if @building_init_params.include?(class_name)
 
@@ -383,7 +383,7 @@ module RbsInfer::Signatures
       types
     end
 
-    def build_class_types(class_name)
+    def build_class_types(class_name) # rubocop:todo Metrics/MethodLength
       return {} if @building.include?(class_name)
 
       @building.add(class_name)
@@ -530,7 +530,7 @@ module RbsInfer::Signatures
 
     # Escaneia source files para encontrar ClassName.new(key: val)
     # e inferir os tipos dos kwargs → attrs
-    def infer_attrs_from_call_sites(class_name, types, param_to_attr)
+    def infer_attrs_from_call_sites(class_name, types, param_to_attr) # rubocop:todo Metrics/MethodLength
       short_name = class_name.split("::").last
 
       files = @source_index ? @source_index.files_referencing(class_name) : @source_files

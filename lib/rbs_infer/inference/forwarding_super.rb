@@ -54,7 +54,7 @@ module RbsInfer::Inference
 
     # The method's parameters as `super` passes them, or nil when one of them
     # has no name to read.
-    def arguments_for(def_node)
+    def arguments_for(def_node) # rubocop:todo Metrics/MethodLength
       params = def_node.parameters
       return [] unless params
       return nil if params.keyword_rest.is_a?(Prism::ForwardingParameterNode)

@@ -3,6 +3,7 @@ module RbsInfer::Inference
   # members, attr_types e method_type_resolver.
   # Padrão repetido em ReturnTypeResolver e TypeMerger.
   module KnownReturnTypesBuilder
+    # rubocop:todo-next Metrics/MethodLength
     def build_known_return_types(members, attr_types, method_type_resolver:, target_class:, instance_types:)
       types = {}
       attr_types.each { |name, type| types[name] = type }

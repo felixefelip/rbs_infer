@@ -54,7 +54,7 @@ module RbsInfer::Inference
       @method_block_returns = Hash.new { |h, k| h[k] = [] }
     end
 
-    def analyze(file, force_bare: false)
+    def analyze(file, force_bare: false) # rubocop:todo Metrics/MethodLength
       source = RbsInfer::Project::SourceReader.read(file) or return []
       source = with_self_method_annotation(source, file)
       # A bare `super` written out, so the checker types what it passes

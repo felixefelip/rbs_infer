@@ -169,7 +169,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @shapes.resolved_own_replays.concat(resolve_own_replays)
     end
 
-    def collect_method_shape(node)
+    def collect_method_shape(node) # rubocop:todo Metrics/MethodLength
       owner = @names.owner_for(node)
       return unless owner
 

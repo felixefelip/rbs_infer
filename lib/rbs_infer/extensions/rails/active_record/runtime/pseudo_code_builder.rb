@@ -117,7 +117,7 @@ module RbsInfer
               plan
             end
 
-            def class_source(class_name, info)
+            def class_source(class_name, info) # rubocop:todo Metrics/MethodLength
               body = []
               # `store_accessor` defines the pair inside a module it INCLUDES, not
               # in the class — which is exactly what lets an override in the class

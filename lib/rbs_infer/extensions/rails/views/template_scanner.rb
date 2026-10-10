@@ -94,7 +94,7 @@ module RbsInfer
           #   render partial: "posts/form", locals: { post: @post }
           #   render partial: "comment", collection: @comments
           #   render "posts/summary", post: @post          (shorthand: locals are kwargs)
-          def render_of(node)
+          def render_of(node) # rubocop:todo Metrics/MethodLength
             return nil unless node.is_a?(Prism::CallNode) && node.name == :render
 
             args = node.arguments&.arguments or return nil

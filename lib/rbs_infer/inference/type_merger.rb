@@ -256,6 +256,7 @@ module RbsInfer::Inference
 
       # Atualizar signatures de métodos que retornam attrs/métodos conhecidos
       members.each do |member|
+        # rubocop:todo-next Metrics/MethodLength
         next unless %i[method class_method].include?(member.kind)
         next unless member.signature.end_with?("-> untyped")
 
@@ -539,6 +540,7 @@ module RbsInfer::Inference
     end
 
     # Resolve return type de receiver.method() ou method() com args
+    # rubocop:todo-next Metrics/MethodLength
     def infer_call_return_type(call_node, self_ctx, method_type_resolver, local_types: {})
       result = if call_node.attribute_write?
                  # Assignment expression (`obj.attr = rhs`, `obj[i] = rhs`): at
@@ -638,7 +640,7 @@ module RbsInfer::Inference
         node.is_a?(Prism::KeywordHashNode) || node.is_a?(Prism::ForwardingArgumentsNode))
     end
 
-    def resolve_receiver_type(node, self_ctx, method_type_resolver, local_types: {})
+    def resolve_receiver_type(node, self_ctx, method_type_resolver, local_types: {}) # rubocop:todo Metrics/MethodLength
       case node
       when Prism::CallNode
         if node.receiver.nil?

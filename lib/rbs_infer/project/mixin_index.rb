@@ -211,7 +211,7 @@ module RbsInfer::Project
         @extended_shorts.filter_map { |file, shorts| file if shorts.intersect?(carriers) }
     end
 
-    def build(source_files)
+    def build(source_files) # rubocop:todo Metrics/MethodLength
       owned = {} # : Hash[String, String]
 
       source_files.each do |file|

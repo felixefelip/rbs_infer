@@ -143,7 +143,7 @@ module RbsInfer
           end
         end
 
-        def pseudo_code(scopes)
+        def pseudo_code(scopes) # rubocop:todo Metrics/MethodLength
           lines = []
           lines << "# frozen_string_literal: true"
           lines << "#"

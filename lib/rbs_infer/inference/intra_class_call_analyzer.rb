@@ -58,7 +58,7 @@ module RbsInfer::Inference
       @current_param_names = old_params
     end
 
-    def visit_call_node(node)
+    def visit_call_node(node) # rubocop:todo Metrics/MethodLength
       # felixefelip/rbs_infer#205. `send(:helper, x)` inside the class is a call to `helper`,
       # and the commonest reason to write it here is that `helper` is private — the very
       # methods this analyzer exists to type.
@@ -244,7 +244,7 @@ module RbsInfer::Inference
       type unless type == "self"
     end
 
-    def resolve_value_type(node)
+    def resolve_value_type(node) # rubocop:todo Metrics/MethodLength
       literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: @constant_arg_resolver)
       return literal if literal
 

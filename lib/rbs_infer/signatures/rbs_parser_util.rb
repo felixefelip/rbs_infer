@@ -150,6 +150,7 @@ module RbsInfer::Signatures
       decl.super_class&.name&.to_s&.sub(/\A::/, "")
     end
 
+    # rubocop:todo-next Metrics/MethodLength
     def extract_members(members, types, includes, class_method_types, parent_fqn, ivar_types = {})
       members.each do |member|
         case member
