@@ -32,12 +32,10 @@ module RbsInfer::Inference
     # rubocop:todo-next Metrics/MethodLength
     def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, module_self_types:, invoker_self_types:, inherited_forwards:, inherited_initializers:, inherited_supers:,
                    local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
-      @target_class = target_class
-      # FQNs of classes/modules defined in the file being scanned; disambiguates
-      # a relative receiver from a same-simple-name class elsewhere (see
-      # `match_class?`). Required (required-threaded-deps): a forgotten wire
-      # silently re-enables the cross-class conflation this guards against.
-      @defined_class_names = defined_class_names
+      # `defined_class_names` is required (required-threaded-deps): a forgotten
+      # wire silently re-enables the cross-class conflation it guards against.
+      @receivers = ReceiverMatcher.new(target_class: target_class, method_owners: method_owners, defined_class_names: defined_class_names)
+      @arguments = CallArguments.new(value_type: method(:resolve_value_type), expression_types: expression_types, init_positional_params: init_positional_params)
       @method_return_types = method_return_types
       @local_var_types = local_var_types
       # Steep's type AT each local-variable read, keyed by [line, column]. The
@@ -56,10 +54,10 @@ module RbsInfer::Inference
       @method_scoped_var_names = local_var_types_by_method.each_value.flat_map(&:keys).to_set
       @method_type_resolver = method_type_resolver
       @caller_class_name = caller_class_name
+      @assigned_types = AssignedTypes.new(method_return_types: method_return_types, method_type_resolver: method_type_resolver, caller_class_name: caller_class_name)
       # Required: omitting it silently re-emits the invalid bare-constant
       # form this fixes (#46, required-threaded-deps).
       @constant_arg_resolver = constant_arg_resolver
-      @init_positional_params = init_positional_params
       @target_methods = target_methods
       # `{ "dispatch" => "handle" }` — a dispatcher the target INHERITS, and the
       # target method it hands its arguments to (felixefelip/rbs_infer#331).
@@ -116,11 +114,6 @@ module RbsInfer::Inference
       # felixefelip/rbs_infer#155: names whose signature carries a block, and
       # Steep's types for this file, so a call site can be asked what the block
       # it passes returns. Empty when the caller is analyzed without a bridge.
-      # felixefelip/rbs_infer#159: `{ "deny" => "Example19::Responder" }` — the
-      # target's methods that belong to a nested module, which is emitted in
-      # place rather than as a target of its own, so its call sites are matched
-      # against the OWNER's name instead of the enclosing target's.
-      @method_owners = method_owners
       @block_methods = block_methods
       @expression_types = expression_types
       @usages = []
@@ -182,9 +175,7 @@ module RbsInfer::Inference
 
     def visit_class_node(node)
       @declaration_kinds.push(:class)
-      # Pré-coletar tipos de ivars de todos os métodos da classe
-      # para que @post definido em set_post esteja disponível em publish
-      collect_class_ivar_types(node)
+      @assigned_types.from_class(node, into: @local_var_types)
 
       segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
       full_name =
@@ -218,7 +209,7 @@ module RbsInfer::Inference
         @local_var_types = @local_var_types.reject { |name, _| @method_scoped_var_names.include?(name) }
         @local_var_types.merge!(@local_var_types_by_method[@current_method] || {})
       end
-      collect_local_assignments(node)
+      @assigned_types.from_def(node, into: @local_var_types)
       super
       @current_def_params = old_params
       @current_def = old_def
@@ -234,8 +225,7 @@ module RbsInfer::Inference
     # written out (`ForwardingSuper`), so it is read the same way.
     def visit_super_node(node)
       if super_reaches_target_initialize?
-        args = extract_keyword_args(node)
-        args.merge!(extract_positional_args(node))
+        args = @arguments.for_initialize(node)
         @usages << args unless args.empty?
       elsif super_reaches_target_method?
         read_super_as_call(node, @current_method)
@@ -249,7 +239,7 @@ module RbsInfer::Inference
     # `@target_methods`, so the two are asked apart.
     def read_super_as_call(node, method_name)
       if (params = @target_methods[method_name])
-        args = extract_cross_class_args(node, params)
+        args = @arguments.for_params(node, params)
         @method_call_usages[method_name] << args unless args.empty?
       end
       return unless @block_methods.include?(method_name) && node.block.is_a?(Prism::BlockNode)
@@ -261,10 +251,7 @@ module RbsInfer::Inference
     def positional_param_names(node)
       params = node.parameters or return []
 
-      names = []
-      params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
-      params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
-      names
+      (params.requireds + params.optionals).filter_map { |p| p.name.to_s if p.respond_to?(:name) }
     end
 
     # A `case <param> ... when <literal>` branch is reachable only for callers who passed
@@ -316,8 +303,7 @@ module RbsInfer::Inference
       if node.name == :new && node.receiver
         receiver_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
         if receiver_name && (match_class?(receiver_name) || constructs_target?(node.receiver))
-          args = extract_keyword_args(node)
-          args.merge!(extract_positional_args(node))
+          args = @arguments.for_initialize(node)
           @usages << args unless args.empty?
         end
       end
@@ -327,13 +313,7 @@ module RbsInfer::Inference
         method_name = node.name.to_s
         if @target_methods.key?(method_name)
           receiver_type = resolve_receiver_type(node.receiver)
-          # ONE key per branch of the receiver, not one for the whole receiver.
-          # The branches of a union can reach different methods —
-          # `(singleton(Baz) | singleton(BazOther)).bazingado` is `Foo`'s
-          # through `Baz`'s extend and `BazOther`'s own `def self.` — and
-          # answering with the first match filed the call site against one of
-          # them and left the other with nothing (felixefelip/rbs_infer#231).
-          keys_by_branch(receiver_type, method_name).each do |key, branches|
+          @receivers.keys_by_branch(receiver_type, method_name, namespace: lexical_class_name).each do |key, branches|
             args = extract_cross_class_args_for(node, method_name, branches)
             @method_call_usages[key] << args unless args.empty?
           end
@@ -357,9 +337,9 @@ module RbsInfer::Inference
           next unless @target_methods.key?(forwarded_to)
 
           receiver_type = resolve_receiver_type(node.receiver)
-          next unless receiver_type && reaches_target_method?(receiver_type, forwarded_to)
+          next unless receiver_type && @receivers.reaches_target_method?(receiver_type, forwarded_to)
 
-          args = extract_cross_class_args(node, @target_methods[forwarded_to])
+          args = @arguments.for_params(node, @target_methods[forwarded_to])
           @method_call_usages[forwarded_to] << args unless args.empty?
         end
       end
@@ -377,7 +357,7 @@ module RbsInfer::Inference
       if !@target_methods.empty? && node.receiver.nil? && node.arguments && @match_bare_calls
         method_name = node.name.to_s
         if @target_methods.key?(method_name)
-          args = extract_cross_class_args(node, @target_methods[method_name])
+          args = @arguments.for_params(node, @target_methods[method_name])
           @method_call_usages[method_name] << args unless args.empty?
         end
       end
@@ -387,6 +367,14 @@ module RbsInfer::Inference
 
     private
 
+    def match_class?(name)
+      @receivers.match_class?(name, namespace: lexical_class_name)
+    end
+
+    def lexical_class_name
+      @class_name_stack.last || @caller_class_name
+    end
+
     def block_receiver_matches?(node)
       receiver_type = resolve_receiver_type(node.receiver)
       receiver_type && match_class?(receiver_type)
@@ -395,7 +383,7 @@ module RbsInfer::Inference
     # Lookup the type of an `:ivar` reference. Tries the `@`-prefixed
     # key first (the convention used by `ErbCallerResolver` to keep
     # ivar names separate from same-basename local vars), then falls
-    # back to the unprefixed key (used by `collect_class_ivar_types`
+    # back to the unprefixed key (used by `AssignedTypes#from_class`
     # for in-class ivars).
     def lookup_ivar_type(node)
       full = node.name.to_s
@@ -405,7 +393,7 @@ module RbsInfer::Inference
     # The type the ENCLOSING class's RBS declares for this ivar
     # (felixefelip/rbs_infer#111).
     #
-    # `collect_class_ivar_types` only records an ivar assigned from a CallNode
+    # `AssignedTypes#from_class` only records an ivar assigned from a CallNode
     # (`@post = Post.new`), so `@post = post` — storing a constructor argument, the
     # commonest shape there is — left the ivar unknown and every call site passing it
     # resolved to `untyped`. The fact was never missing: a previous stabilization pass
@@ -419,8 +407,7 @@ module RbsInfer::Inference
     def declared_ivar_type(name)
       return nil unless @method_type_resolver
 
-      class_name = @class_name_stack.last || @caller_class_name
-      return nil unless class_name
+      class_name = lexical_class_name or return nil
 
       type = @method_type_resolver.resolve_ivar_types(class_name)[name]
       type if type && type != "untyped"
@@ -476,36 +463,6 @@ module RbsInfer::Inference
       end
     end
 
-    def collect_class_ivar_types(class_node)
-      # Both `@x = Foo.new` and `@x, @y = Foo.new, Bar.new`
-      # (felixefelip/rbs_infer#183).
-      ivar_writes = RbsInfer::Analyzer.find_all_nodes(class_node) do |n|
-        (n.is_a?(Prism::InstanceVariableWriteNode) && n.value.is_a?(Prism::CallNode)) ||
-          n.is_a?(Prism::MultiWriteNode)
-      end.flat_map do |n|
-        if n.is_a?(Prism::InstanceVariableWriteNode)
-          [[n.name.to_s.sub(/\A@/, ""), n.value]]
-        else
-          RbsInfer::AST::MultiWriteDecomposer.ivar_name_pairs(n).select { |_, value| value.is_a?(Prism::CallNode) }
-        end
-      end
-
-      ivar_writes.each do |var_name, call|
-        next if @local_var_types[var_name]
-
-        if call.name == :new && call.receiver
-          class_name = RbsInfer::Analyzer.extract_constant_path(call.receiver)
-          @local_var_types[var_name] = class_name if class_name
-        elsif @method_type_resolver
-          class_name = RbsInfer::Analyzer.extract_constant_path(call.receiver)
-          if class_name
-            resolved = @method_type_resolver.resolve_class_method(class_name, call.name.to_s)
-            @local_var_types[var_name] = resolved.delete_suffix("?") if resolved && resolved != "untyped"
-          end
-        end
-      end
-    end
-
     # The call's arguments, read with the enclosing method's own call sites
     # RESTRICTED to the ones that could have produced these branches.
     #
@@ -524,7 +481,7 @@ module RbsInfer::Inference
     def extract_cross_class_args_for(node, method_name, branches)
       previous = @self_condition
       @self_condition = self_condition(node, branches)
-      extract_cross_class_args(node, @target_methods[method_name])
+      @arguments.for_params(node, @target_methods[method_name])
     ensure
       @self_condition = previous
     end
@@ -538,13 +495,6 @@ module RbsInfer::Inference
       [index, branches.first]
     end
 
-    # `{ key => [branches that reach it] }` for a receiver, in branch order.
-    #
-    # The three matchers in their historical order — the two string comparisons
-    # before the one that consults the RBS environment — applied to each branch
-    # on its own. Only the owner and ancestry matches know the call reaches
-    # something other than the target's own method, so only they qualify the key
-    # they file under.
     # A dispatcher is inherited onto the CLASS, so only a call made on the class
     # object can be one. Without this, an instance method that happens to share
     # the forward's name — `run`, `call`, `process` are all plausible — would
@@ -604,486 +554,6 @@ module RbsInfer::Inference
       end
     end
 
-    # Does the handler this receiver would reach belong to the target?
-    #
-    # NOT "is the receiver the target": a subclass that adds nothing
-    # (`class CsvImportJob < BaseImportJob; end`) still runs the target's
-    # handler, and `CsvImportJob.perform_later(path)` is the only call site
-    # `BaseImportJob#perform` has. Matching on identity discarded it and left the
-    # parameter `untyped` — narrower than the truth, under a whole-program
-    # assumption where a missed call site is a missed type.
-    #
-    # It is also what the ordinary path already does: `ancestry_match_key`
-    # accepts a direct call when the OWNER is the target. This asks the same
-    # question of the same resolver, so the two paths agree.
-    def reaches_target_method?(receiver_type, forwarded_to)
-      receiver_components(receiver_type).any? do |component|
-        owner = rbs_definition_resolver.method_owner(instance_spelling(component), forwarded_to)
-        owner && owner.sub(/\A::/, "") == @target_class.sub(/\A::/, "")
-      end
-    end
-
-    # The forward is reached on the class; the HANDLER is an instance method, so
-    # ownership is asked of the instance side of whatever the receiver names.
-    def instance_spelling(component)
-      component[/\Asingleton\((.+)\)\z/, 1] || component
-    end
-
-    def keys_by_branch(receiver_type, method_name)
-      return {} if receiver_type.nil?
-
-      receiver_components(receiver_type).each_with_object({}) do |component, acc|
-        key =
-          if match_class_branch?(component)
-            method_name
-          else
-            owner_match_key(component, method_name) || ancestry_match_key(component, method_name)
-          end
-        next unless key
-
-        (acc[key] ||= []) << component
-      end
-    end
-
-    def match_class?(name)
-      receiver_components(name).any? { |component| match_class_branch?(component) }
-    end
-
-    def match_class_branch?(component)
-      normalized_target = @target_class.sub(/\A::/, "")
-      normalized_name = component.sub(/\A::/, "")
-      return true if normalized_name == normalized_target
-
-      relative_receiver_matches_target?(normalized_name, normalized_target)
-    end
-
-    # Every nominal type the receiver could hold at the moment of the call.
-    #
-    # An intersection is the marker-decorated shape (`Caderneta &
-    # Caderneta::Validated`) — any component identifies the receiver. A union is
-    # every branch the ivar was written with. And `T?` is `T`: the call is being
-    # MADE on it, so at runtime it is a `T` or the program raises — the same
-    # optimism `MethodTypeResolver#resolve` already applies when it drops the `?`
-    # before looking a method up.
-    #
-    # Decomposing only the intersection is what silently dropped every
-    # `Current.<attr>.method(arg)` call site: a CurrentAttributes reader is
-    # honestly nilable (per-request reset), so its type arrives as
-    # `(Caderneta & Caderneta::Validated)?` and the whole string was compared
-    # against `Caderneta` (felixefelip/rbs_infer#131).
-    def receiver_components(type_str)
-      flatten_receiver_type(RBS::Parser.parse_type(type_str))
-    rescue RBS::ParsingError, RBS::BaseError
-      # A spelling RBS cannot parse still gets the legacy intersection split, so
-      # nothing that matched before stops matching.
-      intersection_components(type_str)
-    end
-
-    def flatten_receiver_type(type)
-      case type
-      when RBS::Types::Union, RBS::Types::Intersection
-        type.types.flat_map { |t| flatten_receiver_type(t) }
-      when RBS::Types::Optional
-        flatten_receiver_type(type.type)
-      when RBS::Types::Bases::Nil
-        []
-      else
-        [type.to_s]
-      end
-    end
-
-    # The call the two matchers above cannot see: `Responder.deny(self, "denied")`
-    # where `deny` belongs to `Example19::Responder`, a nested MODULE. Such a
-    # module is emitted inside its enclosing target's block rather than as a
-    # target of its own (felixefelip/rbs_infer#22), so nothing ever asked about
-    # its call sites and its parameters stayed `untyped` — while a nested CLASS
-    # three lines away, being a target, had everything inferred.
-    #
-    # The receiver is matched against the OWNER here, not the enclosing target,
-    # and only for a method that owner actually has.
-    #
-    # Returns the `MethodKey` of the owner's method the receiver reaches, or nil.
-    # WHICH owner matched is the answer, not just whether one did: the usages are
-    # filed under that key so a sibling homonym does not inherit the type
-    # (felixefelip/rbs_infer#215).
-    def owner_match_key(component, method_name)
-      entries = @method_owners[method_name]
-      return nil if entries.nil? || entries.empty?
-
-      singleton = singleton_receiver(component)
-      normalized = (singleton || component).sub(/\A::/, "")
-
-      entries.each do |owner, kind|
-        # `singleton(X)` is the one receiver spelling that says which SIDE of
-        # the owner is being called: it is X's singleton, so it reaches X's
-        # `def self.`, and reaches an instance method of a module X extends
-        # only through the ancestry — which `ancestry_match?` answers off the
-        # RBS, and which loses to a `def self.` of the same name anyway. A
-        # bare `X` says nothing: `resolve_receiver_type` returns the same
-        # string for a constant receiver (`Responder.deny`, a singleton call)
-        # and for a value of type X (an instance call), so both kinds stay
-        # eligible there.
-        next if singleton && kind != :class_method
-        next unless normalized == owner || relative_receiver_matches_target?(normalized, owner)
-
-        return RbsInfer::Inference::MethodKey.for(method_name, owner: owner, kind: kind)
-      end
-
-      nil
-    end
-
-    # `"singleton(Example23::Baz)"` → `"Example23::Baz"`; nil for anything else.
-    # `receiver_components` deliberately keeps a singleton type whole (it is one
-    # nominal type, not a decomposable union), so the unwrapping happens here.
-    def singleton_receiver(component)
-      component[/\Asingleton\((.+)\)\z/, 1]
-    end
-
-    # Does the receiver reach the target's method through its ANCESTRY — a
-    # superclass, a module it includes, a module it extends — rather than
-    # through its name?
-    #
-    # `match_class?` and `owner_match?` above both compare NAMES, which is all the
-    # sources can be asked. A receiver typed as the class that includes the target
-    # module never spells that module, so every such call site was invisible and
-    # the module's parameters stayed `untyped`. Active Record makes this the normal
-    # case rather than the exotic one: it delegates a model's class methods to its
-    # relations and proxies through `<Model>::GeneratedRelationMethods`, so
-    # `user.filters.from_params(filter_params)` — a receiver typed
-    # `User_Filter::ActiveRecord_Associations_CollectionProxy`, two ancestry links
-    # away — is how those methods are actually called, while the only call site the
-    # name-based match accepted was the AR-runtime pseudo-code's own
-    # `::Filter.from_params(params)`, forwarding a parameter still being inferred.
-    # `Filter.from_params` therefore read `(untyped params)` even though every real
-    # caller passes an `ActionController::Parameters & …::Permitted`.
-    #
-    # Asked LAST, and only for a method the target declares: the two name-based
-    # matches are string comparisons, this one consults the RBS environment.
-    #
-    # The RBS is also the only place that knows this — rbs_rails declares the
-    # relation shapes and their `include`s in signatures, never in Ruby, so
-    # `MixinIndex` (built from the sources' `include`s) cannot answer it. The
-    # same holds for the SINGLETON side, which `method_owner` reads off the
-    # same graph: `MixinIndex` records `include`/`prepend` and nothing else, so
-    # a receiver that reaches the target by `extend` has no other oracle
-    # (felixefelip/rbs_infer#208).
-    #
-    # Returns the `MethodKey` of the method the receiver reaches, or nil — the
-    # bare name when the ancestry lands on the target itself, the owner's key
-    # when it lands on one of the target's nested modules.
-    #
-    # That second case is the one `owner_match_key` deliberately leaves here: a
-    # `singleton(X)` receiver reaches a nested module's INSTANCE method only
-    # because X extends it, which is a fact of the ancestry and not of any name,
-    # so only the RBS can answer it. Answering it against the target alone left
-    # `Example24::Foo#bazingado` untyped — its one call site is
-    # `module_included.bazingado(self)` with `module_included` a
-    # `singleton(Example24::Baz)`, and `Baz` extends `Foo`
-    # (felixefelip/rbs_infer#229).
-    def ancestry_match_key(component, method_name)
-      owner = method_owner_on_either_side(component, method_name) or return nil
-
-      normalized_owner = owner.sub(/\A::/, "")
-      return method_name if normalized_owner == @target_class.sub(/\A::/, "")
-
-      entry = nested_owner_entry(normalized_owner, method_name) or return nil
-      RbsInfer::Inference::MethodKey.for(method_name, owner: entry[0], kind: entry[1])
-    end
-
-    # The owner of `method_name` as reached from `component`, asking the
-    # INSTANCE side first and the SINGLETON side after.
-    #
-    # A bare `Foo` receiver spelling does not say which side was called:
-    # `resolve_receiver_type` returns the same string for a constant receiver
-    # (`Filter.indexed_by_human_name(index)`, a singleton call) and for a value
-    # of type `Filter` (an instance call). `owner_match_key` already treats both
-    # kinds as eligible for such a spelling and says so; this matcher asked only
-    # the instance side, so a class method reached through the SINGLETON
-    # ancestry — the shape `extend`ing a concern's `ClassMethods` produces, i.e.
-    # every `ActiveSupport::Concern` in the project — had no matcher at all, and
-    # its parameters stayed `untyped` however precisely the call site typed them
-    # (felixefelip/rbs_infer#293).
-    #
-    # The fallback is only reached when the instance side does NOT define the
-    # name, and then the class object is the only receiver that can answer the
-    # call — so the extra answer costs no precision. A spelling that already
-    # says `singleton(Foo)` has stated its side and gets no second question.
-    def method_owner_on_either_side(component, method_name)
-      resolver = rbs_definition_resolver
-      owner = resolver.method_owner(component, method_name)
-      return owner if owner
-      return nil if singleton_receiver(component)
-
-      resolver.method_owner("singleton(#{component})", method_name)
-    end
-
-    # The target's nested owner the ancestry landed on, as `[owner, kind]`.
-    #
-    # The instance side wins a tie: reaching a nested module THROUGH the
-    # ancestry — `include` onto the instances, `extend` onto the singleton —
-    # always lands on its instance methods. Its `def self.` sits on the module's
-    # own singleton, which only a receiver naming the module reaches, and
-    # `owner_match_key` answers that one by name before this runs.
-    def nested_owner_entry(owner_name, method_name)
-      entries = @method_owners[method_name] or return nil
-
-      matching = entries.select { |owner, _| owner == owner_name }
-      matching.find { |_, kind| kind == :method } || matching.first
-    end
-
-    def rbs_definition_resolver
-      @rbs_definition_resolver ||= RbsInfer::Signatures::RbsDefinitionResolver.new
-    end
-
-    # A relative receiver spelling (`Foo`, `Bar::Baz`) matches a target whose
-    # full name ends with it (`Email` == `Academico::Aluno::Email`) — the
-    # whole-program unique-simple-name assumption the analyzer relies on when
-    # the receiver isn't fully qualified.
-    #
-    # The one exception: two classes sharing a simple name must not be
-    # conflated. A bare `Foo` written *inside* `class Example3` is
-    # `Example3::Foo` — Ruby resolves it against the lexical nesting — so it
-    # must not match target `Example2::Foo`. We can prove this soundly whenever
-    # the file being scanned itself defines the class the spelling resolves to:
-    # if `Foo` resolves to `Example3::Foo` (a class defined in this file) under
-    # the current nesting, it is that class, not the same-named target
-    # elsewhere. Absent such a local definition we keep the unique-name
-    # assumption (cross-file), which existing behaviour depends on.
-    def relative_receiver_matches_target?(relative_name, target)
-      return false unless target.end_with?("::#{relative_name}")
-
-      resolved = resolve_relative_in_file(relative_name)
-      return false if resolved && resolved != target
-
-      true
-    end
-
-    # Ruby-style constant lookup of a relative name against the current lexical
-    # nesting, restricted to classes DEFINED IN THIS FILE — the only
-    # whole-program-agnostic signal available locally. Walks the nesting
-    # innermost-first (`Example3::Foo` before top-level `Foo`) and returns the
-    # first candidate this file defines, or nil when the file defines no such
-    # class in scope.
-    def resolve_relative_in_file(relative_name)
-      return nil if @defined_class_names.empty?
-
-      parts = (@class_name_stack.last || @caller_class_name)&.split("::") || []
-      parts.length.downto(0) do |i|
-        candidate = (parts[0, i] + [relative_name]).join("::")
-        return candidate if @defined_class_names.include?(candidate)
-      end
-      nil
-    end
-
-    # Top-level components of an intersection type, respecting [] / ()
-    # nesting so generics aren't split: "Caderneta & Caderneta::Validated"
-    # → ["Caderneta", "Caderneta::Validated"]. A non-intersection type
-    # returns itself. Outer enveloping parens are stripped first.
-    def intersection_components(type_str) # rubocop:todo Metrics/MethodLength
-      inner = strip_enveloping_parens(type_str.strip)
-      components = []
-      depth = 0
-      buffer = +""
-      inner.each_char do |char|
-        case char
-        when "[", "(" then depth += 1
-                           buffer << char
-        when "]", ")" then depth -= 1
-                           buffer << char
-        when "&"
-          if depth.zero?
-            components << buffer.strip
-            buffer = +""
-          else
-            buffer << char
-          end
-        else buffer << char
-        end
-      end
-      components << buffer.strip
-      components.reject(&:empty?)
-    end
-
-    # Strips parens only when they envelop the whole string ("(A & B)" → "A &
-    # B"); leaves "(A) & (B)" untouched.
-    def strip_enveloping_parens(str)
-      return str unless str.start_with?("(") && str.end_with?(")")
-
-      depth = 0
-      str.each_char.with_index do |char, i|
-        depth += 1 if char == "("
-        depth -= 1 if char == ")"
-        return str if depth.zero? && i < str.length - 1
-      end
-      str[1..-2].strip
-    end
-
-    def collect_local_assignments(defn) # rubocop:todo Metrics/MethodLength
-      # Resolver tipos dos parâmetros do método via call-sites
-      collect_param_types(defn)
-
-      body = defn.body
-      return unless body
-
-      stmts = case body
-              when Prism::StatementsNode then body.body
-              else [body]
-              end
-
-      stmts.each do |stmt|
-        if stmt.is_a?(Prism::LocalVariableWriteNode)
-          var_name = stmt.name.to_s
-          if stmt.value.is_a?(Prism::CallNode)
-            if stmt.value.receiver.nil?
-              # aluno_dto = build_dto
-              method_name = stmt.value.name.to_s
-              if @method_return_types[method_name]
-                @local_var_types[var_name] = @method_return_types[method_name]
-              end
-            elsif stmt.value.name == :new && stmt.value.receiver
-              # aluno_dto = Academico::Aluno::Matricular::Dto.new(...)
-              class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
-              @local_var_types[var_name] = class_name if class_name
-            elsif @method_type_resolver
-              class_name = RbsInfer::Analyzer.extract_constant_path(stmt.value.receiver)
-              if class_name
-                resolved = @method_type_resolver.resolve_class_method(class_name, stmt.value.name.to_s)
-                @local_var_types[var_name] = resolved.delete_suffix("?") if resolved && resolved != "untyped"
-              end
-            end
-          end
-        elsif stmt.is_a?(Prism::InstanceVariableWriteNode)
-          record_ivar_call_type(stmt.name.to_s.sub(/\A@/, ""), stmt.value)
-        elsif stmt.is_a?(Prism::MultiWriteNode)
-          # `@a, @b = Foo.new, Bar.new` (felixefelip/rbs_infer#183).
-          RbsInfer::AST::MultiWriteDecomposer.ivar_name_pairs(stmt).each do |var_name, value|
-            record_ivar_call_type(var_name, value)
-          end
-        end
-      end
-    end
-
-    def record_ivar_call_type(var_name, value)
-      return unless value.is_a?(Prism::CallNode)
-
-      if value.name == :new && value.receiver
-        class_name = RbsInfer::Analyzer.extract_constant_path(value.receiver)
-        @local_var_types[var_name] = class_name if class_name
-      elsif @method_type_resolver
-        class_name = RbsInfer::Analyzer.extract_constant_path(value.receiver)
-        return unless class_name
-
-        resolved = @method_type_resolver.resolve_class_method(class_name, value.name.to_s)
-        @local_var_types[var_name] = resolved.delete_suffix("?") if resolved && resolved != "untyped"
-      end
-    end
-
-    # Resolver tipos dos parâmetros do método via call-sites do caller class
-    # Ex: Entity#initialize(email:) → email é String (inferido dos call-sites de Entity.new)
-    # Usa resolve_init_param_types (o que callers passam), NÃO resolve_all (tipos dos attrs)
-    # Motivo: param email recebe String, mas attr email é Email (self.email = Email.new(...))
-    def collect_param_types(defn)
-      return unless @method_type_resolver && @caller_class_name
-
-      # Só resolvo initialize por enquanto (caso mais comum e útil)
-      return unless defn.name == :initialize
-
-      init_param_types = @method_type_resolver.resolve_init_param_types(@caller_class_name)
-      params = defn.parameters
-      return unless params
-
-      if params.respond_to?(:keywords)
-        params.keywords.each do |kw|
-          name = kw.name.to_s
-          type = init_param_types[name]
-          @local_var_types[name] = type if type && type != "untyped"
-        end
-      end
-
-      if params.respond_to?(:requireds)
-        params.requireds.each do |p|
-          next unless p.respond_to?(:name)
-
-          name = p.name.to_s
-          type = init_param_types[name]
-          @local_var_types[name] = type if type && type != "untyped"
-        end
-      end
-    end
-
-    def extract_keyword_args(call_node)
-      args = {}
-      return args unless call_node.arguments
-
-      call_node.arguments.arguments.each do |arg|
-        next unless arg.is_a?(Prism::KeywordHashNode)
-
-        arg.elements.each do |elem|
-          next unless elem.is_a?(Prism::AssocNode)
-
-          key = extract_symbol_key(elem.key)
-          # A keyword never binds a positional parameter, even one of the
-          # same name: `Kid.new(name: x)` onto `initialize(name)` passes the
-          # hash, not `x`.
-          next if key.nil? || @init_positional_params.include?(key)
-
-          args[key] = argument_type(elem.value)
-        end
-      end
-
-      args
-    end
-
-    def extract_positional_args(call_node)
-      return {} unless call_node.arguments
-
-      types = []
-      call_node.arguments.arguments.each do |arg|
-        next if arg.is_a?(Prism::KeywordHashNode)
-        # See `extract_cross_class_args`: a splat says nothing about which parameter gets
-        # what, and the array itself never arrives.
-        break if arg.is_a?(Prism::SplatNode)
-
-        types << argument_type(arg)
-      end
-      map_positional_types(types)
-    end
-
-    # The positional arguments' types, by position, onto the parameters of the
-    # `initialize` they reach.
-    def map_positional_types(types)
-      args = {}
-      return args if @init_positional_params.empty?
-
-      index = 0
-      splat_types = []
-      types.each do |type|
-        break if index >= @init_positional_params.size
-
-        # `Klass.new(a, b, c)` onto `initialize(first, *rest)`: everything from the rest
-        # param's index on is the same parameter, so fold instead of advancing.
-        if splat_name(@init_positional_params[index])
-          splat_types << type
-          next
-        end
-
-        args[@init_positional_params[index]] = type
-        index += 1
-      end
-
-      if (splat = splat_name(@init_positional_params[index])) && !splat_types.empty?
-        args[splat] = RbsInfer::Inference::TypeMerger.union_types(splat_types.compact)
-      end
-
-      args
-    end
-
-    def extract_symbol_key(node)
-      return node.unescaped if node.is_a?(Prism::SymbolNode)
-
-      nil
-    end
-
     # Steep's type for this particular read, or nil. Prism's character column
     # matches Parser's; the byte column would drift on multibyte source.
     def lvar_read_type(node)
@@ -1095,7 +565,7 @@ module RbsInfer::Inference
       # resolve with what this collector knows — ivars, locals, method returns. The generic
       # inferrer builds the same record shape but sees none of that, so `{ post: @post }`
       # came out `{ post: untyped }` even where `@post` is a known `Post & Post::Validated`.
-      return hash_literal_type(node) if record_shaped?(node)
+      return @arguments.hash_literal_type(node) if @arguments.record_shaped?(node)
 
       literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: @constant_arg_resolver)
       return literal if literal
@@ -1127,8 +597,7 @@ module RbsInfer::Inference
     # See ConstantArgTypeResolver (#46).
     def resolve_constant_arg_type(node)
       name = RbsInfer::Analyzer.extract_constant_path(node)
-      namespace = @class_name_stack.last || @caller_class_name
-      @constant_arg_resolver.resolve(name: name, namespace: namespace) || "untyped"
+      @constant_arg_resolver.resolve(name: name, namespace: lexical_class_name) || "untyped"
     end
 
     # Resolve `self` (passed as an argument or used as a receiver) to the
@@ -1165,8 +634,7 @@ module RbsInfer::Inference
       # A `def self.x` in a module is different: there `self` IS the module.
       return module_self_type || "untyped" if !@in_singleton_method && @declaration_kinds.last == :module
 
-      base = @class_name_stack.last || @caller_class_name
-      return "untyped" unless base
+      base = lexical_class_name or return "untyped"
 
       @in_singleton_method ? "singleton(#{base})" : base
     end
@@ -1262,162 +730,6 @@ module RbsInfer::Inference
         # (felixefelip/rbs_infer#19).
         RbsInfer::Analyzer.extract_constant_path(node)
       end
-    end
-
-    # Extrair tipos de args de chamadas cross-class: receiver.method(arg1, arg2)
-    def extract_cross_class_args(call_node, param_names) # rubocop:todo Metrics/MethodLength
-      args = {}
-      return args unless call_node.arguments
-
-      # Args posicionais. Um `KeywordHashNode` normalmente é keyword — mas em Ruby 3,
-      # quando o método NÃO aceita keywords, as keywords do call-site viram um Hash
-      # POSICIONAL (`render partial: "x"` chega em `def render(target = nil, *rest)` como
-      # `target = {partial: "x"}`). Reconhecemos isso quando nenhuma chave corresponde a um
-      # parâmetro e ainda há slot posicional livre: sem isso o argumento desaparece, e o
-      # parâmetro é tipado só pelos OUTROS call-sites — estreito demais, não apenas impreciso.
-      index = 0
-      splat_types = []
-      call_node.arguments.arguments.each do |arg|
-        break if index >= param_names.size
-        # A splat argument of unknown length does not say WHICH parameter gets what:
-        # `stamp(*args)` may pass one argument or five, and what arrives is the array's
-        # ELEMENTS, never the array. Recording `Array[untyped]` against the parameter is
-        # not imprecise but wrong — `stamp` cannot receive an Array there — and a wrong
-        # parameter type is worse than none, because it reads as an answer. Everything
-        # after the splat is just as unplaced, so stop here (felixefelip/rbs_infer#205).
-        break if arg.is_a?(Prism::SplatNode)
-
-        if arg.is_a?(Prism::KeywordHashNode)
-          next unless collapses_to_positional?(arg, param_names)
-
-          type = hash_literal_type(arg)
-        else
-          type = argument_type(arg)
-        end
-
-        # A rest param takes EVERY remaining positional argument, so they all describe
-        # the same parameter. Fold them into one union instead of advancing: without
-        # this the first argument would win the slot and the others would fall off the
-        # end of `param_names`, typing `*args` by the first position alone.
-        if splat_name(param_names[index])
-          splat_types << type
-          next
-        end
-
-        args[param_names[index]] = type
-        index += 1
-      end
-
-      if (splat = splat_name(param_names[index])) && !splat_types.empty?
-        # The splat's own type is its ELEMENT type (`*T` means each argument is a `T`),
-        # which is exactly the union of what the arguments are.
-        args[splat] = RbsInfer::Inference::TypeMerger.union_types(splat_types.compact)
-      end
-
-      # Args keyword
-      call_node.arguments.arguments.each do |arg|
-        next unless arg.is_a?(Prism::KeywordHashNode)
-        next if collapses_to_positional?(arg, param_names)
-
-        arg.elements.each do |elem|
-          next unless elem.is_a?(Prism::AssocNode)
-
-          key = extract_symbol_key(elem.key)
-          next unless key
-
-          args[key] = argument_type(elem.value)
-        end
-      end
-
-      args
-    end
-
-    # The checker's answer for an argument the structural resolver could not
-    # type (felixefelip/rbs_infer#157).
-    #
-    # `self.author_name = value&.full_name` is a call site the collector matches
-    # and then throws away: `value` is the enclosing method's parameter and the
-    # send is safe-navigated, which the structural path does not follow. The
-    # argument came out `untyped`, the Analyzer drops `untyped` usages, and the
-    # attribute stayed untyped though Steep types that expression `String?`.
-    #
-    # Mostly a fallback: the structural answer wins when it has one, since it
-    # carries the naming conventions (a class name for `Klass.new`, a record for
-    # a hash literal) that a checker type does not.
-    #
-    # The exception is nilability. The structural path resolves a call through
-    # its DECLARATION — `Current.user` is `(User & User::Validated)?` because
-    # that is what the signature says. A declaration is what holds where flow
-    # can't be followed; at a position the checker has already proven non-nil,
-    # its answer is the better one, and taking the declaration there hands the
-    # callee's parameter a `nil` no call site can pass
-    # (felixefelip/rbs_infer#186).
-    def argument_type(arg)
-      resolved = resolve_value_type(arg)
-      checker = expression_type(arg)
-
-      return checker if narrowed_from?(resolved, checker)
-      return resolved unless resolved.nil? || resolved == "untyped"
-
-      checker || resolved
-    end
-
-    # Whether the two answers differ ONLY by nilability, with the checker on the
-    # non-nil side. Deliberately not a general subtype test: this is the one
-    # case where the checker is strictly better informed than the declaration,
-    # and every other disagreement leaves the structural answer in charge.
-    def narrowed_from?(declared, checked)
-      return false unless declared && checked
-
-      declared == RbsInfer::Signatures::RbsParserUtil.nilablize(checked)
-    end
-
-    def expression_type(node)
-      # Keyed by the node's whole range: a receiver starts where its call does,
-      # so a start position alone would let `ticket` answer for `ticket.holder`
-      # (felixefelip/rbs_infer#168).
-      type = @expression_types[RbsInfer::Signatures::SteepBridge.prism_expression_key(node.location)]
-
-      # `self` is a real RBS type, but it means "the receiver of THIS method" —
-      # so carrying it into ANOTHER method's parameter says the argument is a
-      # Token when it is a controller. The checker answers `self` for a `self`
-      # node; here that answer is unusable.
-      type unless type == "self"
-    end
-
-    # Whether a keyword hash at the call site is really a positional Hash: no key names a
-    # parameter, so the callee cannot be receiving them as keywords.
-    def splat_name(param_name) = RbsInfer::Inference::RestParamMarker.unmark(param_name)
-
-    def collapses_to_positional?(node, param_names)
-      keys = node.elements.filter_map { |e| e.is_a?(Prism::AssocNode) ? extract_symbol_key(e.key) : nil }
-      return false if keys.empty?
-
-      keys.none? { |k| param_names.include?(k) }
-    end
-
-    # A non-empty hash literal whose keys are ALL plain symbols — the only shape a record
-    # type can describe. Anything else (string/dynamic keys, `**splat`) keeps the generic
-    # inferrer's `Hash[K, V]`, which handles those.
-    def record_shaped?(node)
-      return false unless node.is_a?(Prism::HashNode) || node.is_a?(Prism::KeywordHashNode)
-      return false if node.elements.empty?
-
-      node.elements.all? { |e| e.is_a?(Prism::AssocNode) && extract_symbol_key(e.key) }
-    end
-
-    # `{ key: Type, ... }` for a literal keyword hash.
-    def hash_literal_type(node)
-      pairs = node.elements.filter_map do |e|
-        next unless e.is_a?(Prism::AssocNode)
-
-        key = extract_symbol_key(e.key) or next
-        "#{key}: #{resolve_value_type(e.value) || "untyped"}"
-      end
-
-      return "Hash[Symbol, untyped]" if pairs.empty?
-
-      "{ #{pairs.join(", ")} }"
     end
   end
 end

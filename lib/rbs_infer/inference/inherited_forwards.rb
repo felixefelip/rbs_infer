@@ -21,7 +21,7 @@ module RbsInfer::Inference
   # `Greeter.dispatch(...)` runs `Greeter#handle`. That is the whole licence for
   # reading such a call site as a call site of `handle` — and the receiver is
   # what says WHICH handler, which is exactly what the ancestry match in
-  # `NewCallCollector#ancestry_match_key` had to drop, since a method inherited
+  # `NewCallCollector::ReceiverMatcher#ancestry_match_key` had to drop, since a method inherited
   # from a base class has one declaration for every subclass.
   #
   # A forward qualifies only when it is TRANSPARENT: the dispatcher's arguments
@@ -30,7 +30,7 @@ module RbsInfer::Inference
   # keeps for itself, or a `shift` that peels one off, shifts every argument by
   # one and would type the handler's first parameter from the caller's control
   # argument. A wrong parameter type is worse than none, because it reads as an
-  # answer (the argument `extract_cross_class_args` already makes about splats).
+  # answer (the argument `NewCallCollector::CallArguments#for_params` already makes about splats).
   class InheritedForwards
     # `source_index` and `parse_cache` find and read the ancestor's source.
     # Neither is defaulted: without them this silently answers "no forwards" —
@@ -38,7 +38,7 @@ module RbsInfer::Inference
     # (docs/engineering/required-threaded-deps.md).
     #
     # The RBS resolver is built here rather than injected, as
-    # `NewCallCollector#rbs_definition_resolver` does: it holds no caller
+    # `NewCallCollector::ReceiverMatcher#rbs_definition_resolver` does: it holds no caller
     # context, only its own memoization of the loaded environment.
     #
     # NOTE the bootstrap: `inherited?` asks the RBS what the target's singleton

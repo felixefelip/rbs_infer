@@ -312,7 +312,7 @@ module RbsInfer::Inference
     # The parameter names of each target-class method:
     # `{ "notify" => ["user", "message"] }`.
     #
-    # Keywords come AFTER positionals: `extract_cross_class_args` maps
+    # Keywords come AFTER positionals: `NewCallCollector::CallArguments#for_params` maps
     # positional args by index (which can only reach the requireds+optionals
     # prefix) and kwargs by name, so the order preserves the positional mapping.
     #

@@ -474,8 +474,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       expect(usages.first["value"]).to eq("NarrowCompany")
     end
 
-    it "falls back to the unprefixed key when only that one is set (backward compat with in-class collect_class_ivar_types)" do
-      # `collect_class_ivar_types` writes ivars under their bare name
+    it "falls back to the unprefixed key when only that one is set (backward compat with in-class AssignedTypes#from_class)" do
+      # `AssignedTypes#from_class` writes ivars under their bare name
       # (no `@`). The lookup should still find them.
       source = <<~RUBY
         Foo.new(value: @company)

@@ -37,7 +37,6 @@ Project/ClassLengthCeiling:
   CountAsOne: ["array", "hash", "heredoc", "method_call"]
   Max: 400
   Ceilings:
-    "lib/rbs_infer/inference/new_call_collector.rb": 740
     "lib/rbs_infer/inference/param_type_inferrer.rb": 457
     "lib/rbs_infer/signatures/steep_bridge.rb": 401
 

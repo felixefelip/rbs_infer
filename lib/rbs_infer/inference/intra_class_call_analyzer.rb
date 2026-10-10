@@ -86,7 +86,7 @@ module RbsInfer::Inference
           positional_args.each_with_index do |arg, i|
             # A splat argument does not place itself: `helper(*args)` may pass one argument
             # or five, and the array itself never arrives at any parameter. See the same
-            # break in `NewCallCollector#extract_cross_class_args`.
+            # break in `NewCallCollector::CallArguments#for_params`.
             break if arg.is_a?(Prism::SplatNode)
 
             param_name = if splat_index && i >= splat_index
@@ -234,7 +234,7 @@ module RbsInfer::Inference
 
     # Steep's type for an arbitrary expression, or nil. Keyed by the node's whole
     # RANGE, so a receiver cannot answer for the call that wraps it — the same
-    # key `NewCallCollector#expression_type` builds.
+    # key `NewCallCollector::CallArguments#expression_type` builds.
     def expression_type(node)
       type = @steep_expression_types[RbsInfer::Signatures::SteepBridge.prism_expression_key(node.location)]
 
