@@ -32,112 +32,41 @@ module RbsInfer::Inference
     # rubocop:todo-next Metrics/MethodLength
     def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, module_self_types:, invoker_self_types:, inherited_forwards:, inherited_initializers:, inherited_supers:,
                    local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
-      # `defined_class_names` is required (required-threaded-deps): a forgotten
-      # wire silently re-enables the cross-class conflation it guards against.
       @receivers = ReceiverMatcher.new(target_class: target_class, method_owners: method_owners, defined_class_names: defined_class_names)
       @arguments = CallArguments.new(value_type: method(:resolve_value_type), expression_types: expression_types, init_positional_params: init_positional_params)
       @method_return_types = method_return_types
       @local_var_types = local_var_types
-      # Steep's type AT each local-variable read, keyed by [line, column]. The
-      # map above is a scratchpad this collector MUTATES to model flow (it
-      # stores ivars in there too); this one is a fact about a position, so it
-      # answers first and the scratchpad remains the fallback
-      # (felixefelip/rbs_infer#142).
       @local_var_read_types = local_var_read_types
-      # Locals keyed by the method they belong to. `local_var_types` above is
-      # flattened across the whole file, first-wins, so a name used in two
-      # methods carries ONE type — and the wrong method's, at that
-      # (felixefelip/rbs_infer#142). Entering a `def` swaps the file-wide names
-      # for that method's own; a source with no `def` at all (an ERB template
-      # is one method's body) keeps the flat map, which is all it ever had.
       @local_var_types_by_method = local_var_types_by_method
       @method_scoped_var_names = local_var_types_by_method.each_value.flat_map(&:keys).to_set
       @method_type_resolver = method_type_resolver
       @caller_class_name = caller_class_name
       @assigned_types = AssignedTypes.new(method_return_types: method_return_types, method_type_resolver: method_type_resolver, caller_class_name: caller_class_name)
-      # Required: omitting it silently re-emits the invalid bare-constant
-      # form this fixes (#46, required-threaded-deps).
       @constant_arg_resolver = constant_arg_resolver
       @target_methods = target_methods
-      # `{ "dispatch" => "handle" }` — a dispatcher the target INHERITS, and the
-      # target method it hands its arguments to (felixefelip/rbs_infer#331).
-      # `Greeter.dispatch("ada")` is a call site of `Greeter#handle`, and the
-      # only thing saying WHICH handler is the receiver, matched below exactly as
-      # a direct call's is. Required, not defaulted: a caller that forgets it
-      # gets the pre-#331 behaviour — every subclass's arguments merging into the
-      # base's parameter — which reads as an answer rather than failing
-      # (docs/engineering/required-threaded-deps.md).
       @inherited_forwards = inherited_forwards
-      # The classes whose `new` or `super` reaches the target's `initialize`
-      # (felixefelip/rbs_infer#412), as `InheritedReach::Reach`.
-      # Required for the same reason: forgetting it silently drops those call
-      # sites. A collector whose usages are not `initialize`'s passes `NONE`.
       @inherited_initializers = inherited_initializers
-      # `{ instance: { "call" => Set["Kid"] }, singleton: { ... } }`: for each
-      # target method, on each side, the classes whose own method of that name
-      # reaches it through `super` (#414, `InheritedReach#supers_by_method`).
-      # Required for the same reason; a collector that reads no method call
-      # passes `{}`.
       @inherited_supers = inherited_supers
       @match_bare_calls = match_bare_calls
-      # `{ "method_name" => "Self & Self::Validated" }` — refined `self`
-      # types per method, from after-validation callback sidecars (see
-      # SteepBridge#callback_self_types). Preferred over the lexical class
-      # name when resolving `self` inside such a method.
       @self_types_by_method = self_types_by_method
-      # `{"Card::Entropic" => "(Card & Card::Entropic)"}` — what each module's
-      # INSTANCE methods see as `self`, from the self-type annotators. Keyed by
-      # module, because one file can declare several and they have different
-      # includers (felixefelip/rbs_infer#165).
-      #
-      # Required, not defaulted (required-threaded-deps): a caller that forgets it
-      # gets `untyped` for every `self` inside a concern, which is an answer rather
-      # than a failure. That is exactly what happened to `MethodTypeResolver`'s two
-      # walks over caller files — `Detector.new(self)` in `Card::Stallable` typed
-      # the parameter `untyped` while the caller-file walk beside it, wired with
-      # the same map, read `(Card & Card::Stallable)` (felixefelip/rbs_infer#175).
       @module_self_types = module_self_types
       @invoker_self_types = invoker_self_types
-      # The positional parameters of the `def` being visited, and the pairing a
-      # call site inside it states between one of them and a receiver branch —
-      # see `extract_cross_class_args_for`.
       @current_def_params = []
       @self_condition = nil
-      # `{ "set_post" => { "@post" => "(::Post & ::Post::Validated)" } }` — ivars a
-      # self-method proves populated once it has run (postconditions sidecar). Applied
-      # in source order by `visit_call_node`, so only call sites AFTER the establishing
-      # call see the narrowed type (felixefelip/rbs_infer#109).
       @established_ivars_by_method = established_ivars_by_method
-      # `{ "render" => [{ param:, pattern:, ivars: }] }` — argument-sensitive partitions
-      # (felixefelip/steep#89, #91, #95). Applied per `when` branch by `visit_case_node`.
       @argument_partitions_by_method = argument_partitions_by_method
-      # felixefelip/rbs_infer#155: names whose signature carries a block, and
-      # Steep's types for this file, so a call site can be asked what the block
-      # it passes returns. Empty when the caller is analyzed without a bridge.
       @block_methods = block_methods
       @expression_types = expression_types
       @usages = []
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
       @method_block_returns = Hash.new { |h, k| h[k] = [] }
-      # Lexically-enclosing class names (fully qualified) and whether the
-      # current method is a singleton (`def self.x`) — used to resolve a
-      # `self` argument/receiver to its type.
       @class_name_stack = []
-      # `:class` / `:module` for each enclosing declaration, innermost last. A
-      # module's `self` is whoever includes it, so an instance method there
-      # cannot claim the module's name (felixefelip/rbs_infer#159).
       @declaration_kinds = []
-      # Enclosing MODULE names, innermost last — only to tell which module the
-      # annotators' self-type answer was about.
       @module_name_stack = []
       @in_singleton_method = false
       @current_method = nil
       @current_def = nil
-      # Every enclosing class and module, joined: `Admin::Kid` inside `module
-      # Admin`, which `@class_name_stack` (classes only) writes `Kid`.
       @lexical_names = []
-      # The `def`s written in each enclosing class's own body, per side
-      # (`InheritedReach.body_defs`).
       @class_body_defs = []
       @class_singleton_defs = []
     end
@@ -218,11 +147,6 @@ module RbsInfer::Inference
       @local_var_types = old_vars
     end
 
-    # A `super` is a call site of the method it reaches: in a subclass's
-    # `initialize`, of the target's `initialize` (felixefelip/rbs_infer#412),
-    # mapped as a `.new` would be; in any other method, of the target's method
-    # of that name (#414), mapped as a call to it. A bare `super` arrives here
-    # written out (`ForwardingSuper`), so it is read the same way.
     def visit_super_node(node)
       if super_reaches_target_initialize?
         args = @arguments.for_initialize(node)
@@ -233,10 +157,6 @@ module RbsInfer::Inference
       super
     end
 
-    # What a call to the target's `method_name` gives: its arguments, when it
-    # takes any, and what the block passed returns, when that is still open
-    # (felixefelip/rbs_infer#155). A method that only takes a block is not in
-    # `@target_methods`, so the two are asked apart.
     def read_super_as_call(node, method_name)
       if (params = @target_methods[method_name])
         args = @arguments.for_params(node, params)
@@ -288,14 +208,6 @@ module RbsInfer::Inference
     end
 
     def visit_call_node(node) # rubocop:todo Metrics/MethodLength
-      # felixefelip/rbs_infer#205. A literal-name `send` IS a call to that method, so read
-      # the call it stands for and let every branch below run unchanged — the positional
-      # mapping, the keyword args, the splat folding and the established-ivar narrowing all
-      # work on an ordinary CallNode and learn nothing about `send`.
-      #
-      # Skipped when the target declares its own `send` (`Ractor#send`, a socket's, a
-      # message bus's): there the first argument is a value, and the ordinary branch below
-      # already types it as the argument of the `send` the class actually has.
       node = SendCall.desugar(node) || node unless @target_methods.key?("send")
 
       apply_established_ivars(node)
@@ -344,9 +256,6 @@ module RbsInfer::Inference
         end
       end
 
-      # felixefelip/rbs_infer#155: what the block passed HERE returns. Not gated
-      # on `node.arguments` like the branches above — `with_token do |t| … end`
-      # passes no arguments at all, and the block is the whole point.
       if !@block_methods.empty? && node.block.is_a?(Prism::BlockNode) && @block_methods.include?(node.name.to_s) &&
          (node.receiver.nil? ? @match_bare_calls : block_receiver_matches?(node))
         type = BlockReturnCollector.block_return_type(node.block, @expression_types)
@@ -390,20 +299,6 @@ module RbsInfer::Inference
       @local_var_types[full] || @local_var_types[full.sub(/\A@/, "")] || declared_ivar_type(full)
     end
 
-    # The type the ENCLOSING class's RBS declares for this ivar
-    # (felixefelip/rbs_infer#111).
-    #
-    # `AssignedTypes#from_class` only records an ivar assigned from a CallNode
-    # (`@post = Post.new`), so `@post = post` — storing a constructor argument, the
-    # commonest shape there is — left the ivar unknown and every call site passing it
-    # resolved to `untyped`. The fact was never missing: a previous stabilization pass
-    # already wrote `@post: Post` into the class's own RBS. This reads it back rather
-    # than teaching the syntactic collector one more assignment shape.
-    # Resolved against the LEXICALLY ENCLOSING class, not the file's top-level one:
-    # `@caller_class_name` is per-file, so in a file of nested classes it names the
-    # outer one, whose RBS declares none of the inner `@x`. Reading the wrong class's
-    # declaration would be worse than reading none — two nested classes may each
-    # declare `@post` at different types.
     def declared_ivar_type(name)
       return nil unless @method_type_resolver
 
@@ -413,15 +308,6 @@ module RbsInfer::Inference
       type if type && type != "untyped"
     end
 
-    # A self-call to a method whose postcondition establishes ivars narrows them for
-    # everything that follows IN THIS BODY. Visiting happens in source order, so
-    # recording into `@local_var_types` here is enough to order the effect: a
-    # `.new(post: @post)` written before the `set_post` call still sees the declared
-    # type. `visit_def_node` saves/restores the table, so the narrowing does not leak
-    # into a sibling method.
-    #
-    # Only a bare (implicit-self) call counts — `other.set_post` writes another
-    # object's ivars, not ours.
     def apply_established_ivars(node)
       return if @established_ivars_by_method.empty?
       return unless node.receiver.nil?
@@ -463,21 +349,6 @@ module RbsInfer::Inference
       end
     end
 
-    # The call's arguments, read with the enclosing method's own call sites
-    # RESTRICTED to the ones that could have produced these branches.
-    #
-    # Two parameters of one method travel together. `Foo#bazinga` is called
-    # twice — `bazinga(Baz)` in `Bar`, `bazinga(BazOther)` in `BarOther` — so
-    # inside it `module_included` and `self` are paired, never crossed. Read
-    # independently they become `(Baz | BazOther)` and `(Bar | BarOther)`, and
-    # `module_included.bazingado(self)` then hands `BazOther.bazingado` a
-    # `base_foo` that may be `Bar` — a class that does not have what its body
-    # calls (felixefelip/rbs_infer#231).
-    #
-    # The condition is only stated when the receiver is a plain read of one of
-    # this method's own positional parameters, and only for a single branch:
-    # that is when "the receiver is THIS" and "the parameter was THIS" are the
-    # same sentence. Everything else reads as before.
     def extract_cross_class_args_for(node, method_name, branches)
       previous = @self_condition
       @self_condition = self_condition(node, branches)
