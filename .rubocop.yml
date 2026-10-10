@@ -19,3 +19,18 @@ Style/StringLiteralsInInterpolation:
 
 Style/Documentation:
   Enabled: false
+
+Metrics/MethodLength:
+  CountAsOne: ["array", "hash", "heredoc", "method_call"]
+  Max: 20
+
+Metrics/ClassLength:
+  CountAsOne: ["array", "hash", "heredoc", "method_call"]
+  Max: 400
+
+Metrics/ModuleLength:
+  CountAsOne: ["array", "hash", "heredoc", "method_call"]
+  Max: 400
+
+Metrics/BlockLength:
+  CountAsOne: ["array", "hash", "heredoc", "method_call"]
