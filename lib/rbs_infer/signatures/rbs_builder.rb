@@ -24,7 +24,8 @@ module RbsInfer::Signatures
     # members to be found through. Required, because a caller that forgets it
     # silently drops those declarations rather than failing
     # (docs/engineering/required-threaded-deps.md).
-    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types:, singleton_ivar_types:, module_ivar_types:, markers:, nested_modules:)
+    def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types:,
+              singleton_ivar_types:, module_ivar_types:, markers:, nested_modules:)
       members = reconcile_attrs_with_explicit_defs(members)
       parts = @target_class.split("::")
       class_name = parts.pop
@@ -40,7 +41,7 @@ module RbsInfer::Signatures
         lines << "#{"  " * i}#{keyword} #{mod}"
       end
       keyword = @is_module ? "module" : "class"
-      lines << "#{base_indent}#{keyword} #{class_name}#{@type_params}#{!@is_module && @superclass_name ? " < #{qualify(@superclass_name)}" : ""}"
+      lines << "#{base_indent}#{keyword} #{class_name}#{@type_params}#{" < #{qualify(@superclass_name)}" if !@is_module && @superclass_name}"
 
       # Each member group is emitted as its own block, separated from the
       # previous one by a single blank line (`add_group`). `body_start` marks
@@ -196,7 +197,9 @@ module RbsInfer::Signatures
     def emit_instance_members(lines, body_start, members, indent, init_arg_types, attr_types, method_param_types,
                               optional_params, owner:)
       %i[public protected private].each do |vis|
-        vis_members = members.select { |m| m.visibility == vis && m.owner == owner && !NON_INSTANCE_KINDS.include?(m.kind) }
+        vis_members = members.select do |m|
+          m.visibility == vis && m.owner == owner && !NON_INSTANCE_KINDS.include?(m.kind)
+        end
         next if vis_members.empty?
 
         if vis == :private
@@ -205,13 +208,17 @@ module RbsInfer::Signatures
         end
 
         attrs, methods = vis_members.partition { |m| ATTR_KINDS.include?(m.kind) }
-        add_group(lines, body_start, render_members(attrs, indent, init_arg_types, attr_types, method_param_types, optional_params))
-        add_group(lines, body_start, render_members(methods, indent, init_arg_types, attr_types, method_param_types, optional_params))
+        add_group(lines, body_start,
+                  render_members(attrs, indent, init_arg_types, attr_types, method_param_types, optional_params))
+        add_group(lines, body_start,
+                  render_members(methods, indent, init_arg_types, attr_types, method_param_types, optional_params))
       end
     end
 
     def render_members(members, indent, init_arg_types, attr_types, method_param_types, optional_params)
-      members.filter_map { |m| render_value_member(m, indent, init_arg_types, attr_types, method_param_types, optional_params) }
+      members.filter_map do |m|
+        render_value_member(m, indent, init_arg_types, attr_types, method_param_types, optional_params)
+      end
     end
 
     # `attr_accessor :x` declares `x` and `x=`; `attr_reader`/`attr_writer`
@@ -363,8 +370,12 @@ module RbsInfer::Signatures
           "#{inner_indent}#{const.signature}"
         end)
 
-        mixins = mod_members.select { |m| m.kind == :prepend }.map { |pre| "#{inner_indent}prepend #{qualify(pre.name)}" } +
-                 mod_members.select { |m| m.kind == :include }.map { |inc| "#{inner_indent}include #{qualify(inc.name)}" } +
+        mixins = mod_members.select do |m|
+          m.kind == :prepend
+        end.map { |pre| "#{inner_indent}prepend #{qualify(pre.name)}" } +
+                 mod_members.select do |m|
+                   m.kind == :include
+                 end.map { |inc| "#{inner_indent}include #{qualify(inc.name)}" } +
                  mod_members.select { |m| m.kind == :extend }.map { |ext| "#{inner_indent}extend #{qualify(ext.name)}" }
         add_group(lines, body_start, mixins)
 
@@ -419,6 +430,7 @@ module RbsInfer::Signatures
     # seria resolvido como Account::Storage::Totaled em vez de ::Storage::Totaled.
     def qualify(type_name)
       return type_name if type_name.start_with?("::")
+
       all_parts = @target_class.split("::")
       first = type_name.split("::").first
       all_parts.include?(first) ? "::#{type_name}" : type_name
@@ -448,7 +460,7 @@ module RbsInfer::Signatures
     # Substitui tipos de parâmetros do initialize preservando posicional vs keyword
     # Ex: "initialize: (untyped post, ?notifier: untyped) -> untyped" com {post: "Post"}
     #   → "initialize: (Post post, ?notifier: untyped) -> void"
-    def apply_inferred_init_types(signature, init_arg_types, optional_params)
+    def apply_inferred_init_types(signature, init_arg_types, _optional_params)
       init_arg_types.each do |param_name, type|
         # Keyword: ?param_name: untyped → ?param_name: Type
         signature = signature.gsub(/(\??)#{Regexp.escape(param_name)}:\s*untyped/, "\\1#{param_name}: #{type}")
@@ -456,8 +468,7 @@ module RbsInfer::Signatures
         signature = signature.gsub(/\buntyped\s+#{Regexp.escape(param_name)}\b/, "#{type} #{param_name}")
       end
       # Normalizar return type do initialize para void
-      signature = signature.sub(/->\s*untyped\s*$/, "-> void")
-      signature
+      signature.sub(/->\s*untyped\s*$/, "-> void")
     end
 
     # Whether the included module carries a nested `ClassMethods` — the shape

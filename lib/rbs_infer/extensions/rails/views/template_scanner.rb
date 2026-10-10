@@ -82,6 +82,7 @@ module RbsInfer
 
             params = node.block.parameters&.parameters
             return nil unless params.respond_to?(:requireds)
+
             required = params.requireds
             return nil unless required.size == 1 && required.first.respond_to?(:name)
 

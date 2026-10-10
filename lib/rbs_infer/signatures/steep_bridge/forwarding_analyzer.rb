@@ -49,7 +49,7 @@ class RbsInfer::Signatures::SteepBridge
     def each_forwarding_def(node, &block)
       return unless node.is_a?(Parser::AST::Node)
 
-      if (node.type == :def || node.type == :defs) && forwards_only?(node)
+      if %i[def defs].include?(node.type) && forwards_only?(node)
         name = node.type == :defs ? node.children[1] : node.children[0]
         yield node, node.type == :defs ? "self.#{name}" : name.to_s
       end
@@ -68,7 +68,7 @@ class RbsInfer::Signatures::SteepBridge
       body = def_node.type == :defs ? def_node.children[3] : def_node.children[2]
       calls = []
       walk(body) do |node|
-        next unless node.type == :send || node.type == :csend
+        next unless %i[send csend].include?(node.type)
 
         calls << node if node.children.drop(2).any? { |argument| argument.is_a?(Parser::AST::Node) && argument.type == :forwarded_args }
       end

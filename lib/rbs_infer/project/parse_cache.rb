@@ -22,7 +22,6 @@ module RbsInfer::Project
       end
     end
 
-
     def extract_ruby(source)
       require "herb"
       Herb.extract_ruby(source, comments: true)

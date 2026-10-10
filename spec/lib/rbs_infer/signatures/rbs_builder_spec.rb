@@ -20,8 +20,10 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
   # forgotten one is silent-wrong, not a valid empty case
   # (docs/engineering/required-threaded-deps.md). This helper supplies the
   # test-only empty defaults so examples state only what they exercise.
-  def build_rbs(builder, members, init_arg_types = {}, attr_types = {}, *rest, ivar_types: {}, singleton_ivar_types: {}, module_ivar_types: {}, markers: [], nested_modules: [])
-    builder.build(members, init_arg_types, attr_types, *rest, ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types, markers: markers, nested_modules: nested_modules)
+  def build_rbs(builder, members, init_arg_types = {}, attr_types = {}, *rest, ivar_types: {},
+                singleton_ivar_types: {}, module_ivar_types: {}, markers: [], nested_modules: [])
+    builder.build(members, init_arg_types, attr_types, *rest, ivar_types: ivar_types,
+                                                              singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types, markers: markers, nested_modules: nested_modules)
   end
 
   describe "#build com namespaces" do
@@ -29,7 +31,7 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
       builder = make_builder(
         target_class: "Card::Eventable::SystemCommenter",
         superclass_name: nil,
-        namespace_classes: Set.new  # Card::Eventable NÃO está no set → deve ser module
+        namespace_classes: Set.new # Card::Eventable NÃO está no set → deve ser module
       )
 
       result = build_rbs(builder, [], {}, {})
@@ -93,7 +95,8 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
 
     it "não prefixa include quando não há ambiguidade" do
       members = [
-        RbsInfer::Inference::Member.new(kind: :include, name: "ActiveSupport::Concern", signature: "", visibility: :public)
+        RbsInfer::Inference::Member.new(kind: :include, name: "ActiveSupport::Concern", signature: "",
+                                        visibility: :public)
       ]
       builder = make_builder(target_class: "Account::Storage", superclass_name: nil)
       result = build_rbs(builder, members, {}, {})
@@ -111,8 +114,10 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
     it "não emite 'protected' no RBS (trata como public)" do
       members = [
         RbsInfer::Inference::Member.new(kind: :method, name: "pub", signature: "pub: () -> void", visibility: :public),
-        RbsInfer::Inference::Member.new(kind: :method, name: "prot", signature: "prot: () -> untyped", visibility: :protected),
-        RbsInfer::Inference::Member.new(kind: :method, name: "priv", signature: "priv: () -> void", visibility: :private)
+        RbsInfer::Inference::Member.new(kind: :method, name: "prot", signature: "prot: () -> untyped",
+                                        visibility: :protected),
+        RbsInfer::Inference::Member.new(kind: :method, name: "priv", signature: "priv: () -> void",
+                                        visibility: :private)
       ]
 
       result = build_rbs(builder, members, {}, {})
@@ -126,8 +131,10 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
 
     it "gera RBS válido quando tem métodos protected" do
       members = [
-        RbsInfer::Inference::Member.new(kind: :method, name: "request_range", signature: "request_range: (untyped range) -> untyped", visibility: :protected),
-        RbsInfer::Inference::Member.new(kind: :method, name: "with_http", signature: "with_http: () -> untyped", visibility: :private)
+        RbsInfer::Inference::Member.new(kind: :method, name: "request_range",
+                                        signature: "request_range: (untyped range) -> untyped", visibility: :protected),
+        RbsInfer::Inference::Member.new(kind: :method, name: "with_http", signature: "with_http: () -> untyped",
+                                        visibility: :private)
       ]
 
       result = build_rbs(builder, members, {}, {})
@@ -238,7 +245,8 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
       builder = make_builder(target_class: "Color", superclass_name: nil)
       members = [
         const("MAX", "Integer"),
-        RbsInfer::Inference::Member.new(kind: :method, name: "name", signature: "name: () -> String", visibility: :public)
+        RbsInfer::Inference::Member.new(kind: :method, name: "name", signature: "name: () -> String",
+                                        visibility: :public)
       ]
 
       result = build_rbs(builder, members, {}, {})
@@ -258,7 +266,8 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
       builder = make_builder(target_class: "Color", superclass_name: nil)
       members = [
         const("MAX", "Integer"),
-        RbsInfer::Inference::Member.new(kind: :method, name: "helper", signature: "helper: () -> void", visibility: :private)
+        RbsInfer::Inference::Member.new(kind: :method, name: "helper", signature: "helper: () -> void",
+                                        visibility: :private)
       ]
 
       result = build_rbs(builder, members, {}, {})
@@ -277,7 +286,8 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
     end
 
     def meth(name)
-      RbsInfer::Inference::Member.new(kind: :method, name: name, signature: "#{name}: (untyped v) -> untyped", visibility: :public)
+      RbsInfer::Inference::Member.new(kind: :method, name: name, signature: "#{name}: (untyped v) -> untyped",
+                                      visibility: :public)
     end
 
     let(:builder) { make_builder(target_class: "Foo", superclass_name: nil) }
@@ -331,7 +341,8 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
     end
 
     it "keeps instance and singleton ivars of the same name as distinct slots" do
-      result = build_rbs(builder, [], {}, {}, ivar_types: { "x" => "Integer" }, singleton_ivar_types: { "x" => "String?" })
+      result = build_rbs(builder, [], {}, {}, ivar_types: { "x" => "Integer" },
+                                              singleton_ivar_types: { "x" => "String?" })
 
       expect(result).to include("@x: Integer")
       expect(result).to include("self.@x: String?")

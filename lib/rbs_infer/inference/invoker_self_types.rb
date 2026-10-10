@@ -251,7 +251,7 @@ module RbsInfer::Inference
       def visit_def_node(node)
         outer = @scope
         # `def self.x` inside a body, and any `def` already under `class << self`.
-        @scope = (node.receiver || @scope == :singleton) ? :singleton : :instance
+        @scope = node.receiver || @scope == :singleton ? :singleton : :instance
         super
         @scope = outer
       end

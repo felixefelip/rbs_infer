@@ -17,6 +17,7 @@ module RbsInfer
         # convention uses to attach `@type self_method:` — one convention, stated once.
         module ErbSourceOwner
           extend PathNaming
+
           module_function
 
           # Gate on the extension first: this is asked once per indexed file.

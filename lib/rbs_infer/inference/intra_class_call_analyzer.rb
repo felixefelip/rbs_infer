@@ -7,7 +7,8 @@ module RbsInfer::Inference
   #    `Telefone.new(ddd:, numero:)` → infere `ddd: String, numero: String`
   #    a partir da assinatura de Telefone#initialize
   class IntraClassCallAnalyzer < Prism::Visitor
-    def initialize(attr_types: {}, method_type_resolver: nil, method_positional_params: {}, steep_bridge: nil, source_code: nil)
+    def initialize(attr_types: {}, method_type_resolver: nil, method_positional_params: {}, steep_bridge: nil,
+                   source_code: nil)
       @attr_types = attr_types
       @method_type_resolver = method_type_resolver
       # method_name → param_name → [type, ...] candidates from each call-site
@@ -70,6 +71,7 @@ module RbsInfer::Inference
         args = extract_keyword_arg_types(node)
         args.each do |param_name, type|
           next if type == "untyped"
+
           @param_type_candidates[method_name][param_name] << type
         end
 
@@ -93,8 +95,10 @@ module RbsInfer::Inference
                            positional_params[i]
                          end
             next unless param_name
+
             type = resolve_value_type(arg)
             next if type == "untyped"
+
             @param_type_candidates[method_name][param_name] << type
           end
         end
@@ -124,6 +128,7 @@ module RbsInfer::Inference
 
     def extract_param_names(params)
       return Set.new unless params
+
       names = Set.new
       params.keywords.each { |kw| names << kw.name.to_s } if params.respond_to?(:keywords)
       params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
@@ -148,6 +153,7 @@ module RbsInfer::Inference
 
         arg.elements.each do |elem|
           next unless elem.is_a?(Prism::AssocNode)
+
           key = extract_symbol_key(elem.key)
           next unless key
 
@@ -186,8 +192,10 @@ module RbsInfer::Inference
 
       stmts.each do |stmt|
         next unless stmt.is_a?(Prism::LocalVariableWriteNode)
+
         var_name = stmt.name.to_s
         next if @local_var_types[var_name] # Don't overwrite Steep types
+
         type = resolve_value_type(stmt.value)
         @local_var_types[var_name] = type if type && type != "untyped"
       end
@@ -200,8 +208,10 @@ module RbsInfer::Inference
         when Prism::KeywordHashNode
           arg.elements.each do |elem|
             next unless elem.is_a?(Prism::AssocNode)
+
             key = extract_symbol_key(elem.key)
             next unless key
+
             type = resolve_value_type(elem.value)
             args[key] = type if type
           end
@@ -212,6 +222,7 @@ module RbsInfer::Inference
 
     def extract_symbol_key(node)
       return node.unescaped if node.is_a?(Prism::SymbolNode)
+
       nil
     end
 

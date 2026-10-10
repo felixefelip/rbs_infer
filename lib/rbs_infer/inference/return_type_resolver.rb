@@ -21,7 +21,8 @@ module RbsInfer::Inference
     # (felixefelip/rbs_infer#249).
     IvarInference = Struct.new(:instance, :singleton, :by_module)
 
-    def initialize(target_file:, target_class:, method_type_resolver:, constant_resolver:, instance_types: [], steep_bridge: nil)
+    def initialize(target_file:, target_class:, method_type_resolver:, constant_resolver:, instance_types: [],
+                   steep_bridge: nil)
       @target_file = target_file
       @target_class = target_class
       @method_type_resolver = method_type_resolver
@@ -39,21 +40,23 @@ module RbsInfer::Inference
       untyped_methods = members.select { |m| method_member?(m) && m.signature =~ /->\ s*untyped$/ }
       return if untyped_methods.empty?
 
-      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
+      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver,
+                                                                         target_class: @target_class, instance_types: @instance_types)
       # A class method resolves against its OWN surface. The map above is
       # built from instance members, so applying it to a `:class_method`
       # would leak a homonymous instance method's return type onto it (and
       # the reverse, via the name-keyed Steep map below) —
       # felixefelip/rbs_infer#33.
-      class_return_types = build_class_method_return_types(members, method_type_resolver: method_type_resolver, target_class: @target_class)
+      class_return_types = build_class_method_return_types(members, method_type_resolver: method_type_resolver,
+                                                                    target_class: @target_class)
 
       # Kind-split so a `def self.x` reads Steep's singleton-method type, not a
       # homonymous `def x`'s (felixefelip/rbs_infer#33). Read HERE, before the
       # declarations are applied, because the loop below has to know whether the
       # body disagrees with the declaration it is about to write.
       steep_returns = if @steep_bridge && parsed_target.source
-        @steep_bridge.method_return_types_by_kind(parsed_target.source)
-      end
+                        @steep_bridge.method_return_types_by_kind(parsed_target.source)
+                      end
 
       # Aplicar tipos já resolvidos pelo resolver (ex: chamadas a métodos herdados)
       #
@@ -91,6 +94,7 @@ module RbsInfer::Inference
         # reads each def's own body, which is what a setter returns
         # (felixefelip/rbs_infer#287).
         next if setter_name?(m.name)
+
         resolved = return_types_for(m, known_return_types, class_return_types)[m.name]
         next unless resolved && resolved != "untyped"
 
@@ -104,7 +108,9 @@ module RbsInfer::Inference
 
       # Use Steep for any remaining untyped methods and to correct wrong block generic types
       if steep_returns
-        still_untyped = members.select { |m| method_member?(m) && m.name != "initialize" && m.signature =~ /->\s*untyped$/ }
+        still_untyped = members.select do |m|
+          method_member?(m) && m.name != "initialize" && m.signature =~ /->\s*untyped$/
+        end
 
         unless steep_returns[:instance].empty? && steep_returns[:singleton].empty?
           def_map = def_map(parsed_target)
@@ -119,27 +125,27 @@ module RbsInfer::Inference
             # is `scope.find_each { … }`) from being stuck at `untyped`
             # (felixefelip/rbs_infer#60). `untyped`/`bot` stay filtered: the former
             # carries no information, the latter means an unreachable/error body.
-            if steep_type && steep_type != "untyped" && steep_type != "bot"
-              defn = def_map[m.name]
+            next unless steep_type && steep_type != "untyped" && steep_type != "bot"
 
-              # …but a `nil` from a *conditional* tail is not safe to emit: an
-              # `if`/`unless`/`case` whose value branch is `untyped` makes Steep
-              # collapse `untyped | nil` to `nil`, so `-> nil` would hide that
-              # branch (e.g. `posts.destroy_all if cond`, where `destroy_all` is
-              # `untyped`). Only take `nil` from an unconditional tail; otherwise
-              # leave the method `untyped` (the honest answer).
-              next if steep_type == "nil" && !unconditional_nil_tail?(defn)
+            defn = def_map[m.name]
 
-              # Instance methods returning the same class (or host class for concerns) → self
-              steep_type = "self" if self_return?(m, steep_type, self_types)
+            # …but a `nil` from a *conditional* tail is not safe to emit: an
+            # `if`/`unless`/`case` whose value branch is `untyped` makes Steep
+            # collapse `untyped | nil` to `nil`, so `-> nil` would hide that
+            # branch (e.g. `posts.destroy_all if cond`, where `destroy_all` is
+            # `untyped`). Only take `nil` from an unconditional tail; otherwise
+            # leave the method `untyped` (the honest answer).
+            next if steep_type == "nil" && !unconditional_nil_tail?(defn)
 
-              # Check for early return nil in body
-              if defn && has_nil_return?(defn, dead_ranges: dead_ranges(parsed_target))
-                steep_type = RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type)
-              end
+            # Instance methods returning the same class (or host class for concerns) → self
+            steep_type = "self" if self_return?(m, steep_type, self_types)
 
-              m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(steep_type)}")
+            # Check for early return nil in body
+            if defn && has_nil_return?(defn, dead_ranges: dead_ranges(parsed_target))
+              steep_type = RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type)
             end
+
+            m.signature = m.signature.sub(/-> untyped$/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(steep_type)}")
           end
 
           # Correct already-typed methods where Steep detected BlockBodyTypeMismatch
@@ -148,12 +154,15 @@ module RbsInfer::Inference
             next unless method_member?(m)
             next if m.name == "initialize"
             next if m.signature =~ /->\s*untyped$/
+
             steep_type = steep_return_for(m, steep_returns)
             next unless steep_type && steep_type != "untyped" && steep_type != "nil" && steep_type != "bot"
+
             current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next if current_type == steep_type
             # Only override Array types (block generic correction)
             next unless current_type&.start_with?("Array[") && steep_type.start_with?("Array[")
+
             m.signature = m.signature.sub(/-> #{Regexp.escape(current_type)}$/, "-> #{steep_type}")
           end
 
@@ -168,6 +177,7 @@ module RbsInfer::Inference
           members.each do |m|
             next unless method_member?(m)
             next if m.name == "initialize"
+
             current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next unless current_type&.end_with?("?")
 
@@ -187,6 +197,7 @@ module RbsInfer::Inference
           members.each do |m|
             next unless method_member?(m)
             next if m.name == "initialize"
+
             current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
             next unless current_type&.start_with?("{") && current_type.include?("untyped")
 
@@ -327,6 +338,7 @@ module RbsInfer::Inference
       # have started.
       deferred_to_body.each do |m, resolved|
         next unless m.signature =~ /->\s*untyped$/
+
         apply_return_type(m, resolved)
       end
     end
@@ -385,6 +397,7 @@ module RbsInfer::Inference
         parsed_target.tree.accept(collector)
         collector.defs.each_with_object(Hash.new(0)) do |d, counts|
           next unless d.is_a?(Prism::DefNode)
+
           counts[[d.name.to_s, collector.class_method?(d)]] += 1
         end
       end
@@ -438,7 +451,7 @@ module RbsInfer::Inference
       # written in `def self.x` (a distinct `self.@x` slot). Only a singleton
       # attr (`class << self; attr_accessor :x`) covers that one
       # (felixefelip/rbs_infer#86).
-      attrs = members.select { |m| [:attr_accessor, :attr_reader, :attr_writer].include?(m.kind) }
+      attrs = members.select { |m| %i[attr_accessor attr_reader attr_writer].include?(m.kind) }
       # Every non-singleton attr, wherever it is declared: one in a nested module
       # the class includes still types the class's `@x`, so it still means "don't
       # re-emit". The owner matters for WHERE a slot is declared, not for whether
@@ -474,9 +487,10 @@ module RbsInfer::Inference
         steep_singleton_ivars = @steep_bridge.ivar_write_types(parsed_target.source, target_class: @target_class,
                                                                                      singleton: true)
         steep_ivars = @steep_bridge.ivar_write_types(parsed_target.source, target_class: @target_class,
-                                                                          singleton: false)
+                                                                           singleton: false)
         steep_ivars.each do |name, type|
           next if instance_attr_names.include?(name)
+
           if type == "nil"
             steep_nil_only << name
             next
@@ -501,7 +515,8 @@ module RbsInfer::Inference
 
       # Fallback: Prism-side ivar type inference for ivars Steep didn't
       # cover (e.g., parse failures or pure ivasgn that Steep can't type).
-      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver, target_class: @target_class, instance_types: @instance_types)
+      known_return_types = build_known_return_types(members, attr_types, method_type_resolver: method_type_resolver,
+                                                                         target_class: @target_class, instance_types: @instance_types)
 
       collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
       parsed_target.tree.accept(collector)
@@ -554,10 +569,12 @@ module RbsInfer::Inference
       # can have (no constructor runs for them). Feeds both the type set and the
       # set of names that are non-nilable (felixefelip/rbs_infer#86).
       class_instance_initialized =
-        collect_class_body_ivar_writes(parsed_target.tree, known_return_types, singleton_type_sets, singleton_attr_names)
+        collect_class_body_ivar_writes(parsed_target.tree, known_return_types, singleton_type_sets,
+                                       singleton_attr_names)
 
       fallback_type_sets.each do |name, type_set|
         next if ivar_types.key?(name)
+
         force_nilable = !initialized_ivars.include?(name) || steep_nil_only.include?(name)
         emitted = type_set.emit(force_nilable: force_nilable)
         if emitted
@@ -630,6 +647,7 @@ module RbsInfer::Inference
       # self-calls (`atribui_user` → `@user = ...`).
       (method_defs["initialize"] || []).each do |init_def|
         next unless init_def.body
+
         collect_transitive_init_ivars(init_def.body, method_defs, result, visited: Set.new(["initialize"]))
       end
       result
@@ -740,7 +758,9 @@ module RbsInfer::Inference
           type_sets[name].add(inferred) if inferred
           result << name
         end
-        node.compact_child_nodes.each { |c| collect_body_level_ivar_writes(c, known_return_types, type_sets, attr_names, result) }
+        node.compact_child_nodes.each do |c|
+          collect_body_level_ivar_writes(c, known_return_types, type_sets, attr_names, result)
+        end
       when Prism::MultiWriteNode
         RbsInfer::AST::MultiWriteDecomposer.ivar_name_pairs(node).each do |name, value|
           next if attr_names.include?(name)
@@ -749,9 +769,13 @@ module RbsInfer::Inference
           type_sets[name].add(inferred) if inferred
           result << name
         end
-        node.compact_child_nodes.each { |c| collect_body_level_ivar_writes(c, known_return_types, type_sets, attr_names, result) }
+        node.compact_child_nodes.each do |c|
+          collect_body_level_ivar_writes(c, known_return_types, type_sets, attr_names, result)
+        end
       else
-        node.compact_child_nodes.each { |c| collect_body_level_ivar_writes(c, known_return_types, type_sets, attr_names, result) }
+        node.compact_child_nodes.each do |c|
+          collect_body_level_ivar_writes(c, known_return_types, type_sets, attr_names, result)
+        end
       end
     end
 
@@ -766,7 +790,7 @@ module RbsInfer::Inference
     # `class_member_collector.rb` mas tem o mesmo tratamento de inferência de
     # retorno que `:method` (steep_bridge devolve por nome para ambos).
     def method_member?(member)
-      member.kind == :method || member.kind == :class_method
+      %i[method class_method].include?(member.kind)
     end
 
     # Pick the return-type map matching a member's kind so instance and
@@ -924,22 +948,28 @@ module RbsInfer::Inference
         body = node.body
         walk_prism_init_targets(body, in_init: false, in_class_body: true, result: result) if body
       when Prism::DefNode
-        if node.name == :initialize && node.receiver.nil?
-          walk_prism_init_targets(node.body, in_init: true, in_class_body: false, result: result) if node.body
+        if node.name == :initialize && node.receiver.nil? && node.body
+          walk_prism_init_targets(node.body, in_init: true, in_class_body: false, result: result)
         end
         # other defs: do not descend (their ivasgns don't count as init)
       when Prism::InstanceVariableWriteNode
         if in_init || in_class_body
           result << node.name.to_s.sub(/\A@/, "")
         end
-        walk_prism_init_targets(node.value, in_init: in_init, in_class_body: in_class_body, result: result) if node.value
+        if node.value
+          walk_prism_init_targets(node.value, in_init: in_init, in_class_body: in_class_body,
+                                              result: result)
+        end
       when Prism::MultiWriteNode
         # `@a, @b = x, y` initializes both, whatever the values look like — so
         # this uses every ivar target, not just the pairable ones.
         if in_init || in_class_body
           result.merge(RbsInfer::AST::MultiWriteDecomposer.ivar_target_names(node))
         end
-        walk_prism_init_targets(node.value, in_init: in_init, in_class_body: in_class_body, result: result) if node.value
+        if node.value
+          walk_prism_init_targets(node.value, in_init: in_init, in_class_body: in_class_body,
+                                              result: result)
+        end
       when Prism::CallNode
         # `self.x = expr` inside initialize or class body counts as init
         # for `@x` if `x=` is a writer/accessor on this class. We mark
@@ -965,7 +995,8 @@ module RbsInfer::Inference
     # Klass.new, and simple same-class method lookups.
     # Complex chain resolution is delegated to Steep.
     def basic_value_type(node, known_return_types)
-      literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node, known_types: known_return_types, context_class: @target_class, constant_resolver: @constant_resolver)
+      literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node, known_types: known_return_types,
+                                                                              context_class: @target_class, constant_resolver: @constant_resolver)
       return literal if literal
 
       case node
@@ -978,7 +1009,8 @@ module RbsInfer::Inference
         end
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         # Constant's VALUE type, not its bare name (#56).
-        RbsInfer::AST::NodeTypeInferrer.resolve_constant_value_type(node, namespace: @target_class, constant_resolver: @constant_resolver)
+        RbsInfer::AST::NodeTypeInferrer.resolve_constant_value_type(node, namespace: @target_class,
+                                                                          constant_resolver: @constant_resolver)
       end
     end
   end

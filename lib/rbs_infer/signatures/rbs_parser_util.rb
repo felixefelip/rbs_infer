@@ -1,7 +1,6 @@
 require "rbs"
 
 module RbsInfer::Signatures
-
   # Utilitário para extrair informações de classes/módulos usando RBS::Parser.
   # Substitui os parsers ad-hoc baseados em regex por parsing oficial da AST RBS.
   module RbsParserUtil
@@ -47,9 +46,9 @@ module RbsInfer::Signatures
 
         (index[fqn] ||= []) << decl
 
-        nested = decl.members.select { |m|
+        nested = decl.members.select do |m|
           m.is_a?(RBS::AST::Declarations::Class) || m.is_a?(RBS::AST::Declarations::Module)
-        }
+        end
         build_declaration_index(nested, fqn, index) if nested.any?
       end
       index
@@ -61,7 +60,10 @@ module RbsInfer::Signatures
     def class_info_from_index(index, class_name)
       normalized = class_name.sub(/\A::/, "")
       decls = index[normalized]
-      return RbsClassInfo.new(superclass: nil, types: {}, includes: [], class_method_types: {}) if decls.nil? || decls.empty?
+      if decls.nil? || decls.empty?
+        return RbsClassInfo.new(superclass: nil, types: {}, includes: [],
+                                class_method_types: {})
+      end
 
       superclass = nil
       types = {}
@@ -135,15 +137,16 @@ module RbsInfer::Signatures
         end
 
         # Recursar em membros que são declarações aninhadas
-        nested = decl.members.select { |m|
+        nested = decl.members.select do |m|
           m.is_a?(RBS::AST::Declarations::Class) || m.is_a?(RBS::AST::Declarations::Module)
-        }
+        end
         find_declaration(nested, target_fqn, fqn, &block) if nested.any?
       end
     end
 
     def extract_superclass(decl)
       return nil unless decl.is_a?(RBS::AST::Declarations::Class)
+
       decl.super_class&.name&.to_s&.sub(/\A::/, "")
     end
 
@@ -153,6 +156,7 @@ module RbsInfer::Signatures
         when RBS::AST::Members::MethodDefinition
           ret = extract_return_type(member)
           next unless ret
+
           name = member.name.to_s
           if member.kind == :singleton
             class_method_types[name] ||= ret
@@ -231,7 +235,7 @@ module RbsInfer::Signatures
       return nil unless parsed.is_a?(RBS::Types::Literal)
 
       value = parsed.literal
-      return "bool" if value == true || value == false
+      return "bool" if [true, false].include?(value)
 
       LITERAL_TYPE_CLASSES[LITERAL_TYPE_CLASSES.keys.find { |k| value.is_a?(k) }]
     rescue RBS::ParsingError, RBS::BaseError
@@ -407,7 +411,9 @@ module RbsInfer::Signatures
     def replace_block_return_type(method_sig, type)
       return method_sig unless method_sig && usable_type?(type)
 
-      method_sig.sub(BLOCK_RETURN) { "#{Regexp.last_match[:open]}#{parenthesize_compound(type)}#{Regexp.last_match[:close]}" }
+      method_sig.sub(BLOCK_RETURN) do
+        "#{Regexp.last_match[:open]}#{parenthesize_compound(type)}#{Regexp.last_match[:close]}"
+      end
     end
 
     # Binds `self` inside a method's block clause: `?{ (*untyped) -> untyped }`
@@ -502,5 +508,4 @@ module RbsInfer::Signatures
       false
     end
   end
-
 end

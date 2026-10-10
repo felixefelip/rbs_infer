@@ -141,10 +141,10 @@ module RbsInfer
             # certain — `lib/action_text/attribute.rb` and `lib/action_text/engine.rb`
             # are siblings in the gem.
             def gem_file(relative)
-              node = macro_def_node or return nil
+              macro_def_node or return nil
 
               method = Object.const_get(RECEIVER).instance_method(MACRO)
-              dir = File.dirname(File.dirname(method.source_location.first))
+              dir = File.dirname(method.source_location.first, 2)
               File.join(dir, relative)
             rescue NameError
               nil

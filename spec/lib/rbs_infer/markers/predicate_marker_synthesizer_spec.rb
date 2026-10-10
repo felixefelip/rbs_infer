@@ -15,7 +15,8 @@ RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
     Member.new(kind: kind, name: name, signature: "#{name}: untyped", visibility: :public)
   end
 
-  def entry(class_name:, method_name:, when_true_ivars: {}, when_true_methods: {}, when_true_self_type_string: nil, ivars: {}, self_type_string: nil, singleton: false)
+  def entry(class_name:, method_name:, when_true_ivars: {}, when_true_methods: {}, when_true_self_type_string: nil,
+            ivars: {}, self_type_string: nil, singleton: false)
     InferredEntry.new(
       class_name: class_name,
       method_name: method_name,
@@ -38,7 +39,7 @@ RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
         entry(
           class_name: "Venue",
           method_name: :confirmed?,
-          when_true_ivars: { :"@name" => string_type },
+          when_true_ivars: { "@name": string_type },
           when_true_self_type_string: "::Venue & ::Venue::AfterConfirmed"
         )
       ],
@@ -81,7 +82,7 @@ RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
         entry(
           class_name: "Source",
           method_name: :both?,
-          when_true_ivars: { :"@cache" => string_type },
+          when_true_ivars: { "@cache": string_type },
           when_true_methods: { window: string_type },
           when_true_self_type_string: "::Source & ::Source::AfterBoth"
         )
@@ -124,7 +125,7 @@ RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
         entry(
           class_name: "Venue",
           method_name: :ready?,
-          when_true_ivars: { :"@internal_state" => string_type }
+          when_true_ivars: { "@internal_state": string_type }
         )
       ],
       target_class: "Venue",
@@ -142,7 +143,7 @@ RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
         entry(
           class_name: "OtherClass",
           method_name: :confirmed?,
-          when_true_ivars: { :"@name" => string_type }
+          when_true_ivars: { "@name": string_type }
         )
       ],
       target_class: "Venue",
@@ -161,7 +162,7 @@ RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
         entry(
           class_name: "Venue",
           method_name: :set_default_name,
-          ivars: { :"@name" => string_type },
+          ivars: { "@name": string_type },
           self_type_string: "::Venue & ::Venue::AfterSetDefaultName"
         )
       ],
@@ -179,7 +180,7 @@ RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
           class_name: "Venue",
           method_name: :self_check?,
           singleton: true,
-          when_true_ivars: { :"@name" => string_type }
+          when_true_ivars: { "@name": string_type }
         )
       ],
       target_class: "Venue",
@@ -195,19 +196,19 @@ RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
         entry(
           class_name: "Venue",
           method_name: :zebra?,
-          when_true_ivars: { :"@name" => string_type }
+          when_true_ivars: { "@name": string_type }
         ),
         entry(
           class_name: "Venue",
           method_name: :alpha?,
-          when_true_ivars: { :"@name" => string_type }
+          when_true_ivars: { "@name": string_type }
         )
       ],
       target_class: "Venue",
       members: [member(kind: :attr_accessor, name: "name")]
     )
 
-    expect(markers.map(&:marker_name)).to eq(["AfterAlpha", "AfterZebra"])
+    expect(markers.map(&:marker_name)).to eq(%w[AfterAlpha AfterZebra])
   end
 
   it "agrees with Steep::Postconditions::MarkerNaming naming convention" do
@@ -225,7 +226,7 @@ RSpec.describe RbsInfer::Markers::PredicateMarkerSynthesizer do
         entry(
           class_name: "Venue",
           method_name: :confirmed?,
-          when_true_ivars: { :"@name" => string_type },
+          when_true_ivars: { "@name": string_type },
           when_true_self_type_string: expected
         )
       ],

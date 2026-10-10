@@ -152,9 +152,9 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
     let(:resolver) do
       instance_double(RbsInfer::Signatures::MethodTypeResolver).tap do |r|
         allow(r).to receive(:resolve_all).with("Phone").and_return({
-          "area_code" => "String",
-          "number" => "String"
-        })
+                                                                     "area_code" => "String",
+                                                                     "number" => "String"
+                                                                   })
       end
     end
 
@@ -183,9 +183,9 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
 
       resolver_local = instance_double(RbsInfer::Signatures::MethodTypeResolver)
       allow(resolver_local).to receive(:resolve_all).with("Phone").and_return({
-        "area_code" => "String",
-        "number" => "String"
-      })
+                                                                                "area_code" => "String",
+                                                                                "number" => "String"
+                                                                              })
 
       visitor = analyze(source, method_type_resolver: resolver_local)
       expect(visitor.inferred_param_types["add"]["code"]).to eq("String")

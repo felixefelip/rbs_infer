@@ -21,8 +21,8 @@ class RbsInfer::Signatures::SteepBridge
     # run.
     class ReturnTable
       def initialize
-        @types = {} #: Hash[[String, String], String]
-        @owners = Hash.new { |hash, name| hash[name] = [] } #: Hash[String, Array[String]]
+        @types = {} # : Hash[[String, String], String]
+        @owners = Hash.new { |hash, name| hash[name] = [] } # : Hash[String, Array[String]]
       end
 
       # Every `def` is recorded as defining its name, typed or not: an owner
@@ -104,7 +104,7 @@ class RbsInfer::Signatures::SteepBridge
       owners = def_owners(typing.source.node)
 
       typing.each_typing do |node, _type|
-        next unless node.type == :def || node.type == :defs
+        next unless %i[def defs].include?(node.type)
 
         plain_def = node.type == :def
         singleton_def = !plain_def || singleton_class_defs.include?(node.__id__)

@@ -51,7 +51,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -82,7 +82,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("entity.rb" => entity_src, "service.rb" => service_src) do |dir, paths|
+      with_temp_files("entity.rb" => entity_src, "service.rb" => service_src) do |_dir, paths|
         entity = paths.find { |p| p.end_with?("entity.rb") }
         analyzer = described_class.new(target_file: entity, source_files: paths)
         rbs = analyzer.generate_rbs
@@ -115,7 +115,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("entity.rb" => entity_src, "caller.rb" => caller_src) do |dir, paths|
+      with_temp_files("entity.rb" => entity_src, "caller.rb" => caller_src) do |_dir, paths|
         entity = paths.find { |p| p.end_with?("entity.rb") }
         analyzer = described_class.new(target_file: entity, source_files: paths)
         rbs = analyzer.generate_rbs
@@ -143,7 +143,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -173,7 +173,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("foo.rb" => email_src, "caller.rb" => caller_src) do |dir, paths|
+      with_temp_files("foo.rb" => email_src, "caller.rb" => caller_src) do |_dir, paths|
         email_file = paths.find { |p| p.end_with?("foo.rb") }
         analyzer = described_class.new(target_file: email_file, source_files: paths)
         rbs = analyzer.generate_rbs
@@ -195,7 +195,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -218,7 +218,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -240,7 +240,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -261,7 +261,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -283,7 +283,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -309,7 +309,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -364,7 +364,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -398,7 +398,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -430,7 +430,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -465,7 +465,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -497,7 +497,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -526,7 +526,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -604,7 +604,7 @@ RSpec.describe RbsInfer::Analyzer do
         RUBY
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -651,7 +651,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("dto.rb" => dto_src, "entity.rb" => entity_src, "service.rb" => service_src) do |dir, paths|
+      with_temp_files("dto.rb" => dto_src, "entity.rb" => entity_src, "service.rb" => service_src) do |_dir, paths|
         entity = paths.find { |p| p.end_with?("entity.rb") }
         analyzer = described_class.new(target_file: entity, source_files: paths)
         rbs = analyzer.generate_rbs
@@ -696,7 +696,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("entity.rb" => entity_src, "email.rb" => email_src, "caller.rb" => caller_src) do |dir, paths|
+      with_temp_files("entity.rb" => entity_src, "email.rb" => email_src, "caller.rb" => caller_src) do |_dir, paths|
         email = paths.find { |p| p.end_with?("email.rb") }
         analyzer = described_class.new(target_file: email, source_files: paths)
         rbs = analyzer.generate_rbs
@@ -729,7 +729,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("email.rb" => email_src, "caller.rb" => caller_src) do |dir, paths|
+      with_temp_files("email.rb" => email_src, "caller.rb" => caller_src) do |_dir, paths|
         email = paths.find { |p| p.end_with?("email.rb") }
         analyzer = described_class.new(target_file: email, source_files: paths)
         rbs = analyzer.generate_rbs
@@ -766,7 +766,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("foo.rb" => src) do |dir, paths|
+      with_temp_files("foo.rb" => src) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -791,7 +791,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("my_app/factory.rb" => src) do |dir, paths|
+      with_temp_files("my_app/factory.rb" => src) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -816,7 +816,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("my_app/service.rb" => src) do |dir, paths|
+      with_temp_files("my_app/service.rb" => src) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -851,7 +851,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("my_app/entity.rb" => entity_src, "my_app/service.rb" => service_src) do |dir, paths|
+      with_temp_files("my_app/entity.rb" => entity_src, "my_app/service.rb" => service_src) do |_dir, paths|
         service = paths.find { |p| p.end_with?("service.rb") }
         analyzer = described_class.new(target_file: service, source_files: paths)
         rbs = analyzer.generate_rbs
@@ -881,7 +881,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("my_app/entity.rb" => entity_src) do |dir, paths|
+      with_temp_files("my_app/entity.rb" => entity_src) do |_dir, paths|
         entity = paths.find { |p| p.end_with?("entity.rb") }
         analyzer = described_class.new(target_file: entity, source_files: paths)
         rbs = analyzer.generate_rbs
@@ -913,7 +913,7 @@ RSpec.describe RbsInfer::Analyzer do
           end
         RUBY
 
-        with_temp_files("my_app/entity.rb" => entity_src) do |dir, paths|
+        with_temp_files("my_app/entity.rb" => entity_src) do |_dir, paths|
           entity = paths.find { |p| p.end_with?("entity.rb") }
           analyzer = described_class.new(target_file: entity, source_files: paths)
           rbs = analyzer.generate_rbs
@@ -965,7 +965,8 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("my_app/dto.rb" => dto_src, "my_app/usecase.rb" => usecase_src, "caller.rb" => caller_src) do |dir, paths|
+      with_temp_files("my_app/dto.rb" => dto_src, "my_app/usecase.rb" => usecase_src,
+                      "caller.rb" => caller_src) do |_dir, paths|
         usecase = paths.find { |p| p.end_with?("usecase.rb") }
         analyzer = described_class.new(target_file: usecase, source_files: paths)
         rbs = analyzer.generate_rbs
@@ -992,7 +993,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("my_app/usecase.rb" => usecase_src) do |dir, paths|
+      with_temp_files("my_app/usecase.rb" => usecase_src) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -1017,7 +1018,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("my_helper.rb" => helper_src) do |dir, paths|
+      with_temp_files("my_helper.rb" => helper_src) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -1054,7 +1055,7 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      with_temp_files("my_helper.rb" => helper_src) do |dir, paths|
+      with_temp_files("my_helper.rb" => helper_src) do |_dir, paths|
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
@@ -1151,7 +1152,7 @@ RSpec.describe RbsInfer::Analyzer do
         "foo/bar/baz.rb" => "module Foo\n  module Bar\n    class Baz\n    end\n  end\nend\n"
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         target = paths.find { |p| p.end_with?("foo/bar/baz.rb") }
         analyzer = described_class.new(target_file: target, source_files: paths)
         rbs = analyzer.generate_rbs
@@ -1166,12 +1167,12 @@ RSpec.describe RbsInfer::Analyzer do
     it "usa 'class' para namespace quando outro arquivo tem sufixo igual mas caminho diferente" do
       # Reproduz o caso MagicLink: "via_magic_link.rb" não deve ser confundido com "magic_link.rb"
       files = {
-        "models/magic_link.rb"                              => "class MagicLink\nend\n",
-        "controllers/via_magic_link.rb"                     => "module ViaMagicLink\nend\n",
-        "models/magic_link/code.rb"                         => "module MagicLink::Code\nend\n"
+        "models/magic_link.rb" => "class MagicLink\nend\n",
+        "controllers/via_magic_link.rb" => "module ViaMagicLink\nend\n",
+        "models/magic_link/code.rb" => "module MagicLink::Code\nend\n"
       }
 
-      with_temp_files(files) do |dir, paths|
+      with_temp_files(files) do |_dir, paths|
         target = paths.find { |p| p.end_with?("magic_link/code.rb") }
         analyzer = described_class.new(target_file: target, source_files: paths)
         rbs = analyzer.generate_rbs
@@ -1311,7 +1312,8 @@ RSpec.describe RbsInfer::Analyzer do
         }
 
         with_temp_files(files) do |_dir, paths|
-          rbs = described_class.new(target_class: "Settings", target_file: paths.first, source_files: paths).generate_rbs
+          rbs = described_class.new(target_class: "Settings", target_file: paths.first,
+                                    source_files: paths).generate_rbs
 
           expect(rbs).to include("module Settings")
           expect(rbs).to include("VERSION: String")
@@ -1591,7 +1593,8 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      rbs = described_class.new(target_class: "Outer::Partial", target_file: source, source_files: [source]).generate_rbs
+      rbs = described_class.new(target_class: "Outer::Partial", target_file: source,
+                                source_files: [source]).generate_rbs
 
       expect(rbs).to include("def initialize: (post: Outer::Post) -> void")
       expect(rbs).not_to include("String")
@@ -1618,7 +1621,6 @@ RSpec.describe RbsInfer::Analyzer do
       expect(rbs).to include("def initialize: (post: untyped) -> void")
     end
   end
-
 
   # ─── optarg from call sites across a reopened class ─────────────
 
@@ -1654,7 +1656,8 @@ RSpec.describe RbsInfer::Analyzer do
         end
       RUBY
 
-      rbs = described_class.new(target_class: "Reopened", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
+      rbs = described_class.new(target_class: "Reopened", target_file: target,
+                                source_files: Dir["app/*.rb"]).generate_rbs
 
       expect(rbs).to include("def handle: (?(:edit)? target")
     end
@@ -1818,5 +1821,4 @@ RSpec.describe RbsInfer::Analyzer do
       expect(rbs).to include("module Reporting\n")
     end
   end
-
 end

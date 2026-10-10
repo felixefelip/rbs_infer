@@ -43,7 +43,9 @@ RSpec.describe RbsInfer::Project::SelfTypeAnnotators do
     it "injects each registered annotator's entry into the target source" do
       seen = []
       described_class.register(
-        fake_annotator(seen: seen, entries: [{ "anchor" => "Bar", "annotations" => ["# @type self: singleton(::Foo)"] }])
+        fake_annotator(seen: seen,
+                       entries: [{ "anchor" => "Bar",
+                                   "annotations" => ["# @type self: singleton(::Foo)"] }])
       )
 
       result = described_class.apply(
@@ -74,10 +76,15 @@ RSpec.describe RbsInfer::Project::SelfTypeAnnotators do
 
     it "is a no-op (and never calls annotators) when module_name is blank" do
       seen = []
-      described_class.register(fake_annotator(seen: seen, entries: [{ "anchor" => "Bar", "annotations" => ["# @type self: X"] }]))
+      described_class.register(fake_annotator(seen: seen,
+                                              entries: [{
+                                                "anchor" => "Bar", "annotations" => ["# @type self: X"]
+                                              }]))
 
-      expect(described_class.apply(target_source, detect_source: original_source, path: "x.rb", module_name: nil)).to eq(target_source)
-      expect(described_class.apply(target_source, detect_source: original_source, path: "x.rb", module_name: "")).to eq(target_source)
+      expect(described_class.apply(target_source, detect_source: original_source, path: "x.rb",
+                                                  module_name: nil)).to eq(target_source)
+      expect(described_class.apply(target_source, detect_source: original_source, path: "x.rb",
+                                                  module_name: "")).to eq(target_source)
       expect(seen).to be_empty
     end
   end
@@ -98,7 +105,8 @@ RSpec.describe RbsInfer::Project::SelfTypeAnnotators do
                                                  "# @type instance: Card & Card::Entropic")])
       )
 
-      expect(described_class.instance_type(path: "app/models/card/entropic.rb", module_name: "Card::Entropic", source: ""))
+      expect(described_class.instance_type(path: "app/models/card/entropic.rb", module_name: "Card::Entropic",
+                                           source: ""))
         .to eq("(Card & Card::Entropic)")
     end
 

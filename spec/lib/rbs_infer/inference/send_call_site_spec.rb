@@ -35,7 +35,7 @@ RSpec.describe "send as a call site" do
 
   it "types the parameter from what the send passes" do
     rbs = with_caller(
-      "  def stamp(value)\n    \"stamped: #{'#{value}'}\"\n  end",
+      "  def stamp(value)\n    \"stamped: \#{value}\"\n  end",
       "    Stamper.new.send(:stamp, \"post\")"
     )
 
@@ -87,7 +87,7 @@ RSpec.describe "send as a call site" do
   it "reads nothing from an interpolated symbol" do
     rbs = with_caller(
       "  def stamp(value)\n    value\n  end",
-      "    part = \"amp\"\n    Stamper.new.send(:\"st#{'#{part}'}\", \"post\")"
+      "    part = \"amp\"\n    Stamper.new.send(:\"st\#{part}\", \"post\")"
     )
 
     expect(rbs).to include("def stamp: (untyped value) ->")
@@ -140,8 +140,8 @@ RSpec.describe "send as a call site" do
   it "leaves a receiver's own send alone" do
     rbs = rbs_for(
       "bus.rb",
-      "bus.rb" => "class Bus\n  def send(channel, payload)\n    [channel, payload]\n  end\n\n" \
-                  "  def notify(text)\n    text\n  end\nend\n",
+      "bus.rb" => "class Bus\n  def send(channel, payload)\n    [channel, payload]\n  end\n\n  " \
+                  "def notify(text)\n    text\n  end\nend\n",
       "caller.rb" => "class Caller\n  def run\n    Bus.new.send(:notify, \"payload\")\n  end\nend\n"
     )
 

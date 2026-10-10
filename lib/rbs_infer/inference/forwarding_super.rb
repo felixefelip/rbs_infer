@@ -42,7 +42,7 @@ module RbsInfer::Inference
       when Prism::ClassNode, Prism::ModuleNode, Prism::SingletonClassNode
         def_node = nil
       when Prism::BlockNode, Prism::LambdaNode
-        shadowed = shadowed | block_locals(node)
+        shadowed |= block_locals(node)
       when Prism::ForwardingSuperNode
         if def_node && (arguments = arguments_for(def_node)) && (arguments.map { |a| a[/\w+/] } & shadowed.to_a).empty?
           insertions << [node.location.start_offset + "super".bytesize, "(#{arguments.join(", ")})"]

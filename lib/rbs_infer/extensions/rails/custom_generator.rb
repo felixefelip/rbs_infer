@@ -2,7 +2,6 @@
 
 require "fileutils"
 require "prism"
-require "set"
 require_relative "../../../rbs_infer"
 
 module RbsInfer
@@ -196,8 +195,8 @@ module RbsInfer
           signatures = {}
           rbs.each_line do |line|
             stripped = line.strip
-            if (m = stripped.match(/\Adef (\w+[?!]?): (.+)\z/))
-              signatures[m[1]] = m[2] if names.include?(m[1])
+            if (m = stripped.match(/\Adef (\w+[?!]?): (.+)\z/)) && names.include?(m[1])
+              signatures[m[1]] = m[2]
             end
           end
           signatures

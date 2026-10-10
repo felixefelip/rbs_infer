@@ -130,45 +130,45 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
     end
   end
 
-    # felixefelip/rbs_infer#128. `has_many :recomendacao_vacinas` inside `Caderneta`
-    # resolves to `Caderneta::RecomendacaoVacina` when that exists — Ruby looks a constant
-    # up from the enclosing namespace outward, and `compute_type` follows suit. Matching on
-    # the bare `classify` (`RecomendacaoVacina`) found no scanned model under that name and
-    # dropped the association entirely: no getter, no proxy reopen, and
-    # `caderneta.recomendacao_vacinas` had no type at all.
-    it "resolves a namespaced element from the owner's namespace outward" do
-      in_app(
-        "app/models/caderneta.rb" => <<~RUBY,
-          class Caderneta < ApplicationRecord
-            has_many :recomendacao_vacinas, dependent: :destroy, inverse_of: :caderneta
-          end
-        RUBY
-        "app/models/caderneta/recomendacao_vacina.rb" => <<~RUBY
-          class Caderneta::RecomendacaoVacina < ApplicationRecord
-            belongs_to :caderneta
-          end
-        RUBY
-      ) do |dir|
-        owner = source_of(described_class.new(app_dir: dir).build, "caderneta.rb")
+  # felixefelip/rbs_infer#128. `has_many :recomendacao_vacinas` inside `Caderneta`
+  # resolves to `Caderneta::RecomendacaoVacina` when that exists — Ruby looks a constant
+  # up from the enclosing namespace outward, and `compute_type` follows suit. Matching on
+  # the bare `classify` (`RecomendacaoVacina`) found no scanned model under that name and
+  # dropped the association entirely: no getter, no proxy reopen, and
+  # `caderneta.recomendacao_vacinas` had no type at all.
+  it "resolves a namespaced element from the owner's namespace outward" do
+    in_app(
+      "app/models/caderneta.rb" => <<~RUBY,
+        class Caderneta < ApplicationRecord
+          has_many :recomendacao_vacinas, dependent: :destroy, inverse_of: :caderneta
+        end
+      RUBY
+      "app/models/caderneta/recomendacao_vacina.rb" => <<~RUBY
+        class Caderneta::RecomendacaoVacina < ApplicationRecord
+          belongs_to :caderneta
+        end
+      RUBY
+    ) do |dir|
+      owner = source_of(described_class.new(app_dir: dir).build, "caderneta.rb")
 
-        expect(owner).to match(
-          /def recomendacao_vacinas\n\s*Caderneta_Caderneta_RecomendacaoVacina::ActiveRecord_Associations_CollectionProxy\.new\(Caderneta::RecomendacaoVacina, self\)/
-        )
-      end
+      expect(owner).to match(
+        /def recomendacao_vacinas\n\s*Caderneta_Caderneta_RecomendacaoVacina::ActiveRecord_Associations_CollectionProxy\.new\(Caderneta::RecomendacaoVacina, self\)/
+      )
     end
+  end
 
-    # The outward walk must not shadow a top-level element with a same-named nested one
-    # that does not exist — `has_many :posts` in `Caderneta` is still `::Post`.
-    it "falls through to the top-level element when the owner has no nested one" do
-      in_app(
-        "app/models/caderneta.rb" => "class Caderneta < ApplicationRecord\n  has_many :posts\nend\n",
-        "app/models/post.rb" => "class Post < ApplicationRecord\n  belongs_to :caderneta\nend\n"
-      ) do |dir|
-        owner = source_of(described_class.new(app_dir: dir).build, "caderneta.rb")
+  # The outward walk must not shadow a top-level element with a same-named nested one
+  # that does not exist — `has_many :posts` in `Caderneta` is still `::Post`.
+  it "falls through to the top-level element when the owner has no nested one" do
+    in_app(
+      "app/models/caderneta.rb" => "class Caderneta < ApplicationRecord\n  has_many :posts\nend\n",
+      "app/models/post.rb" => "class Post < ApplicationRecord\n  belongs_to :caderneta\nend\n"
+    ) do |dir|
+      owner = source_of(described_class.new(app_dir: dir).build, "caderneta.rb")
 
-        expect(owner).to match(/Caderneta_Post::ActiveRecord_Associations_CollectionProxy\.new\(Post, self\)/)
-      end
+      expect(owner).to match(/Caderneta_Post::ActiveRecord_Associations_CollectionProxy\.new\(Post, self\)/)
     end
+  end
 
   # felixefelip/rbs_infer#139. An association is as often declared in a concern's
   # `included do` as in the model's own body (`has_many :notifications` inside
@@ -291,7 +291,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       # inferred RBS.
       both = "class User < ApplicationRecord\n  include User::Notifiable\n  has_many :notifications, dependent: :destroy\nend\n"
       concern_app("app/models/user.rb" => both) do |files|
-        expect(source_of(files, "user.rb").scan(/def notifications\n/).size).to eq(1)
+        expect(source_of(files, "user.rb").scan("def notifications\n").size).to eq(1)
       end
     end
 
@@ -546,7 +546,8 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
 
     it "omits build when the only association reaching the element is a through" do
       through_only = "class User < ApplicationRecord\n  has_many :pins\n  has_many :pinned_cards, through: :pins, source: :card\nend\n"
-      in_app("app/models/user.rb" => through_only, "app/models/pin.rb" => PIN, "app/models/card.rb" => OWNED_CARD) do |dir|
+      in_app("app/models/user.rb" => through_only, "app/models/pin.rb" => PIN,
+             "app/models/card.rb" => OWNED_CARD) do |dir|
         proxy = source_of(described_class.new(app_dir: dir).build, "user_card.rb")
 
         expect(proxy).to match(/def owner\n\s*@owner\n\s*end/)
@@ -714,8 +715,8 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
 
       relation_methods_for("app/models/filter.rb" => model) do |files|
         expect(source_of(files, "filter/generated_relation_methods.rb")).to include(
-          "  def remember(attrs, limit = 5, *rest, touch: true, **opts, &blk)\n" \
-          "    ::Filter.remember(attrs, limit, *rest, touch: touch, **opts, &blk)\n"
+          "  def remember(attrs, limit = 5, *rest, touch: true, **opts, &blk)\n    " \
+          "::Filter.remember(attrs, limit, *rest, touch: touch, **opts, &blk)\n"
         )
       end
     end

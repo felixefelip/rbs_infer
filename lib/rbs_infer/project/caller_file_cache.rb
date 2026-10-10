@@ -15,6 +15,7 @@ module RbsInfer::Project
 
     def get(file)
       return @cache[file] if @cache.key?(file)
+
       @cache[file] = analyze(file)
     end
 

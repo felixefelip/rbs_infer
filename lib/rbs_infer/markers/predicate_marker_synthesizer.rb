@@ -55,6 +55,7 @@ module RbsInfer::Markers
       @inferred_entries.each do |entry|
         next unless normalize_class_name(entry.class_name) == @target_class
         next if entry.singleton
+
         overrides = filter_observable_overrides(entry.when_true_ivars || {}, reader_ivars)
         method_overrides = format_method_overrides(entry.when_true_methods || {})
         next if overrides.empty? && method_overrides.empty?
@@ -76,7 +77,7 @@ module RbsInfer::Markers
 
     def collect_reader_ivars
       @members
-        .select { |m| [:attr_reader, :attr_accessor].include?(m.kind) }
+        .select { |m| %i[attr_reader attr_accessor].include?(m.kind) }
         .map(&:name)
         .to_set
     end
@@ -91,6 +92,7 @@ module RbsInfer::Markers
       when_true_ivars.each do |ivar_sym, refined_type|
         ivar_name = ivar_sym.to_s.sub(/\A@/, "")
         next unless reader_ivars.include?(ivar_name)
+
         overrides[ivar_name] = format_type(refined_type)
       end
       overrides
@@ -107,6 +109,7 @@ module RbsInfer::Markers
       when_true_methods.each_with_object({}) do |(method_sym, refined_type), overrides|
         name = method_sym.to_s
         next if name.empty?
+
         overrides[name] = format_type(refined_type)
       end
     end
@@ -121,6 +124,7 @@ module RbsInfer::Markers
 
     def marker_short_name_for(method_name)
       return nil unless Steep::Postconditions::MarkerNaming.valid_method_name?(method_name)
+
       "After#{Steep::Postconditions::MarkerNaming.pascal_case(method_name)}"
     end
 

@@ -20,7 +20,7 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander::CallGraph do
     reached = graph(forwards: [forward(callee: "include", singleton: false)])
               .keepers_for("Module", "hand_over", "DSL")
 
-    expect(reached).to eq([["DSL", "include"]])
+    expect(reached).to eq([%w[DSL include]])
   end
 
   it "looks a forward through `singleton_class` up in the argument's singleton" do
@@ -44,6 +44,6 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander::CallGraph do
     reached = graph(forwards: [forward(callee: "include", singleton: true)], delegations: [delegation])
               .keepers_for("Module", "hand_over", "DSL")
 
-    expect(reached).to eq([["Holder", "keep"]])
+    expect(reached).to eq([%w[Holder keep]])
   end
 end

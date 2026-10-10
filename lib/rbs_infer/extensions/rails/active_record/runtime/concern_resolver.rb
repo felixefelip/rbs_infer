@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "set"
 require_relative "reflection_scanner"
 require_relative "../../../../ast/lexical_constant_resolver"
 
@@ -57,8 +56,8 @@ module RbsInfer
               concerns = index_concerns(units)
 
               units.select { |unit| unit.kind == :class }
-                .group_by(&:class_name)
-                .map { |class_name, reopens| merge(class_name, reopens, concerns) }
+                   .group_by(&:class_name)
+                   .map { |class_name, reopens| merge(class_name, reopens, concerns) }
             end
 
             # Every reopen of the same class is ONE model: Ruby reopens a class

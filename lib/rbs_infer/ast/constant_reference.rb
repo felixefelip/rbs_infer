@@ -62,7 +62,6 @@ module RbsInfer
           return created
         end
 
-
         name = fetched_name(node)
         [name, true, nil] if name
       end

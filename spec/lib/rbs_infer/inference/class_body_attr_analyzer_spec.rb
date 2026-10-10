@@ -7,7 +7,8 @@ RSpec.describe RbsInfer::Inference::ClassBodyAttrAnalyzer do
   # explicit class.
   def analyze(source, attr_names, constant_resolver: fake_constant_resolver, target_class: nil)
     result = Prism.parse(source)
-    visitor = described_class.new(attr_names: attr_names.to_set, constant_resolver: constant_resolver, target_class: target_class)
+    visitor = described_class.new(attr_names: attr_names.to_set, constant_resolver: constant_resolver,
+                                  target_class: target_class)
     result.value.accept(visitor)
     visitor
   end

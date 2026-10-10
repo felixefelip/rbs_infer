@@ -22,7 +22,8 @@ RSpec.describe "a call on a nilable reader" do
   end
 
   def generate(body)
-    target = write("app/target.rb", "class Target\n  def user = (User.new if rand > 0.5)\n\n#{body.gsub(/^/, "  ")}end\n")
+    target = write("app/target.rb",
+                   "class Target\n  def user = (User.new if rand > 0.5)\n\n#{body.gsub(/^/, "  ")}end\n")
     RbsInfer::Analyzer.new(target_class: "Target", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
   end
 

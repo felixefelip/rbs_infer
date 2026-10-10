@@ -125,7 +125,7 @@ module RbsInfer::Project
         @instance_def_scope = nil
         @instance_def_name = nil
         @found = []
-        super()
+        super
       end
 
       def visit_class_node(node) = with_scope(node, "class") { super }

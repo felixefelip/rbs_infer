@@ -106,9 +106,18 @@ module RbsInfer::Inference
       positional_params = {}
       collector.defs.each do |defn|
         next unless defn.is_a?(Prism::DefNode) && defn.parameters
+
         names = []
-        defn.parameters.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if defn.parameters.respond_to?(:requireds)
-        defn.parameters.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if defn.parameters.respond_to?(:optionals)
+        if defn.parameters.respond_to?(:requireds)
+          defn.parameters.requireds.each do |p|
+            names << p.name.to_s if p.respond_to?(:name)
+          end
+        end
+        if defn.parameters.respond_to?(:optionals)
+          defn.parameters.optionals.each do |p|
+            names << p.name.to_s if p.respond_to?(:name)
+          end
+        end
         rest = RestParamMarker.name_from(defn.parameters)
         names << RestParamMarker.mark(rest) if rest
         positional_params[defn.name.to_s] = names unless names.empty?
@@ -129,8 +138,8 @@ module RbsInfer::Inference
       forwarding = detect_forwarding_methods(parsed_target.result)
       forwarding.each do |method_name, param_names|
         # Pular se já temos tipos inferidos (não-untyped) para este método
-        if inferred[method_name]
-          next unless inferred[method_name].values.all? { |t| t == "untyped" }
+        if inferred[method_name] && !inferred[method_name].values.all? { |t| t == "untyped" }
+          next
         end
 
         types = infer_wrapper_method_param_types(method_name, param_names)
@@ -319,6 +328,7 @@ module RbsInfer::Inference
       methods = {}
       collector.defs.each do |defn|
         next if defn.name == :initialize
+
         params = defn.parameters
         next unless params
 
@@ -359,7 +369,8 @@ module RbsInfer::Inference
     # any other method argument (felixefelip/rbs_infer#71).
     def attr_writer_methods(members)
       members.each_with_object({}) do |m, acc|
-        next unless [:attr_accessor, :attr_writer].include?(m.kind)
+        next unless %i[attr_accessor attr_writer].include?(m.kind)
+
         acc["#{m.name}="] = [m.name]
       end
     end
@@ -380,7 +391,7 @@ module RbsInfer::Inference
     # site (felixefelip/rbs_infer#215).
     def nested_method_owners(members)
       members.each_with_object({}) do |member, owners|
-        next unless [:method, :class_method].include?(member.kind)
+        next unless %i[method class_method].include?(member.kind)
         next if member.owner.nil? || member.owner.empty?
 
         entry = [RbsInfer::Inference::MethodKey.qualify_owner(@target_class, member.owner), member.kind]
@@ -396,7 +407,7 @@ module RbsInfer::Inference
     # and `untyped?` is not a spelling.
     def nilablize_nil_defaults(members, inferred)
       members.each do |member|
-        next unless [:method, :class_method].include?(member.kind)
+        next unless %i[method class_method].include?(member.kind)
         next if member.param_nil_defaults.nil? || member.param_nil_defaults.empty?
 
         # Written through `tables`, not `lookup`: the parameters of one method
@@ -455,7 +466,11 @@ module RbsInfer::Inference
         next unless defn.parameters.is_a?(Prism::ParametersNode)
 
         param_names = Set.new
-        defn.parameters.keywords.each { |kw| param_names << kw.name.to_s.chomp(":") } if defn.parameters.respond_to?(:keywords)
+        if defn.parameters.respond_to?(:keywords)
+          defn.parameters.keywords.each do |kw|
+            param_names << kw.name.to_s.chomp(":")
+          end
+        end
         defn.parameters.requireds.each { |p| param_names << p.name.to_s } if defn.parameters.respond_to?(:requireds)
         next if param_names.empty?
 
@@ -468,6 +483,7 @@ module RbsInfer::Inference
           if target_class_filter
             receiver_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
             next unless receiver_name
+
             normalized = receiver_name.sub(/\A::/, "")
             target = target_class_filter.sub(/\A::/, "")
             next unless normalized == target || target.end_with?("::#{normalized}")
@@ -533,11 +549,11 @@ module RbsInfer::Inference
           case m.kind
           when :method
             if m.signature =~ /.*->\s*(.+)$/
-              method_return_types[m.name] = $1.strip
+              method_return_types[m.name] = ::Regexp.last_match(1).strip
             end
           when :attr_accessor, :attr_reader
             if m.signature =~ /\w+:\s*(.+)/
-              type = $1.strip
+              type = ::Regexp.last_match(1).strip
               method_return_types[m.name] ||= type unless type == "untyped"
             end
           end
@@ -551,8 +567,8 @@ module RbsInfer::Inference
         # Procurar chamadas ao método e extrair tipos dos keyword args
         matching_calls = RbsInfer::Analyzer.find_all_nodes(file_result.value) { |n| n.is_a?(Prism::CallNode) && n.name == method_name.to_sym && n.arguments }
         matching_calls.each do |node|
-
-          local_var_types = collect_local_var_types_for_scope(node, file_result, method_return_types, analysis.class_name, source_code: entry.source)
+          local_var_types = collect_local_var_types_for_scope(node, file_result, method_return_types,
+                                                              analysis.class_name, source_code: entry.source)
 
           usage = {}
           node.arguments.arguments.each do |arg|
@@ -560,6 +576,7 @@ module RbsInfer::Inference
 
             arg.elements.each do |elem|
               next unless elem.is_a?(Prism::AssocNode)
+
               key = elem.key
               key_name = key.is_a?(Prism::SymbolNode) ? key.unescaped : nil
               next unless key_name && param_names.include?(key_name)
@@ -579,7 +596,8 @@ module RbsInfer::Inference
 
     # Resolve o tipo de um valor de argumento
     def resolve_arg_value_type(node, local_var_types, method_return_types)
-      literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: @constant_arg_resolver, context_class: @constant_namespace)
+      literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node,
+                                                                        constant_resolver: @constant_arg_resolver, context_class: @constant_namespace)
       return literal if literal
 
       case node
@@ -610,7 +628,8 @@ module RbsInfer::Inference
     end
 
     # Coleta tipos de variáveis locais no escopo do nó
-    def collect_local_var_types_for_scope(target_node, parse_result, method_return_types, caller_class_name, source_code: nil)
+    def collect_local_var_types_for_scope(target_node, parse_result, method_return_types, caller_class_name,
+                                          source_code: nil)
       local_var_types = {}
 
       # Encontrar o def encapsulante
@@ -637,8 +656,18 @@ module RbsInfer::Inference
         init_params = @method_type_resolver.resolve_init_param_types(caller_class_name)
         params = enclosing_def.parameters
         if params
-          params.keywords.each { |kw| name = kw.name.to_s.chomp(":"); local_var_types[name] = init_params[name] if init_params[name] } if params.respond_to?(:keywords)
-          params.requireds.each { |p| name = p.name.to_s; local_var_types[name] = init_params[name] if init_params[name] } if params.respond_to?(:requireds)
+          if params.respond_to?(:keywords)
+            params.keywords.each do |kw|
+              name = kw.name.to_s.chomp(":")
+              local_var_types[name] = init_params[name] if init_params[name]
+            end
+          end
+          if params.respond_to?(:requireds)
+            params.requireds.each do |p|
+              name = p.name.to_s
+              local_var_types[name] = init_params[name] if init_params[name]
+            end
+          end
         end
       end
 
@@ -717,6 +746,7 @@ module RbsInfer::Inference
 
         # Resolver tipo da coleção (receiver do .each, .map, etc.)
         next unless call.receiver
+
         collection_type = resolve_arg_value_type(call.receiver, local_var_types, method_return_types)
         next if collection_type.nil? || collection_type == "untyped"
 

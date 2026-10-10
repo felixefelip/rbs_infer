@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "prism"
-require "set"
 require_relative "../../inference/send_call"
 
 module RbsInfer::Project::StoredBlockReplayExpander
@@ -75,6 +74,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
         grown = false
         nodes(body).each do |node|
           next unless node.is_a?(Prism::CallNode)
+
           receiver = node.receiver
           next unless receiver.is_a?(Prism::LocalVariableReadNode) && names.include?(receiver.name.to_s)
           next unless node.block.is_a?(Prism::BlockNode)

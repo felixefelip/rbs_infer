@@ -12,6 +12,7 @@ module RbsInfer::Inference
       stack = []
       walk = lambda do |node|
         return unless node.is_a?(Prism::Node)
+
         pushed = nil
         if node.is_a?(Prism::ClassNode) || node.is_a?(Prism::ModuleNode)
           segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
@@ -28,7 +29,8 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types:, invoker_self_types:, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {}, inherited_forwards:, inherited_initializers:, inherited_supers:)
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, module_self_types:, invoker_self_types:, inherited_forwards:, inherited_initializers:, inherited_supers:,
+                   local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -364,11 +366,9 @@ module RbsInfer::Inference
       # felixefelip/rbs_infer#155: what the block passed HERE returns. Not gated
       # on `node.arguments` like the branches above — `with_token do |t| … end`
       # passes no arguments at all, and the block is the whole point.
-      if !@block_methods.empty? && node.block.is_a?(Prism::BlockNode) && @block_methods.include?(node.name.to_s)
-        if node.receiver.nil? ? @match_bare_calls : block_receiver_matches?(node)
-          type = BlockReturnCollector.block_return_type(node.block, @expression_types)
-          @method_block_returns[node.name.to_s] << type if type
-        end
+      if !@block_methods.empty? && node.block.is_a?(Prism::BlockNode) && @block_methods.include?(node.name.to_s) && node.receiver.nil? ? @match_bare_calls : block_receiver_matches?(node)
+        type = BlockReturnCollector.block_return_type(node.block, @expression_types)
+        @method_block_returns[node.name.to_s] << type if type
       end
 
       # Bare method calls matching target_methods (for included modules, e.g. helpers in ERB views)
@@ -849,8 +849,10 @@ module RbsInfer::Inference
     # assumption (cross-file), which existing behaviour depends on.
     def relative_receiver_matches_target?(relative_name, target)
       return false unless target.end_with?("::#{relative_name}")
+
       resolved = resolve_relative_in_file(relative_name)
       return false if resolved && resolved != target
+
       true
     end
 
@@ -862,6 +864,7 @@ module RbsInfer::Inference
     # class in scope.
     def resolve_relative_in_file(relative_name)
       return nil if @defined_class_names.empty?
+
       parts = (@class_name_stack.last || @caller_class_name)&.split("::") || []
       parts.length.downto(0) do |i|
         candidate = (parts[0, i] + [relative_name]).join("::")
@@ -881,8 +884,10 @@ module RbsInfer::Inference
       buffer = +""
       inner.each_char do |char|
         case char
-        when "[", "(" then depth += 1; buffer << char
-        when "]", ")" then depth -= 1; buffer << char
+        when "[", "(" then depth += 1
+                           buffer << char
+        when "]", ")" then depth -= 1
+                           buffer << char
         when "&"
           if depth.zero?
             components << buffer.strip
@@ -996,6 +1001,7 @@ module RbsInfer::Inference
       if params.respond_to?(:requireds)
         params.requireds.each do |p|
           next unless p.respond_to?(:name)
+
           name = p.name.to_s
           type = init_param_types[name]
           @local_var_types[name] = type if type && type != "untyped"
@@ -1072,6 +1078,7 @@ module RbsInfer::Inference
 
     def extract_symbol_key(node)
       return node.unescaped if node.is_a?(Prism::SymbolNode)
+
       nil
     end
 
@@ -1312,8 +1319,10 @@ module RbsInfer::Inference
 
         arg.elements.each do |elem|
           next unless elem.is_a?(Prism::AssocNode)
+
           key = extract_symbol_key(elem.key)
           next unless key
+
           args[key] = argument_type(elem.value)
         end
       end
@@ -1399,6 +1408,7 @@ module RbsInfer::Inference
     def hash_literal_type(node)
       pairs = node.elements.filter_map do |e|
         next unless e.is_a?(Prism::AssocNode)
+
         key = extract_symbol_key(e.key) or next
         "#{key}: #{resolve_value_type(e.value) || "untyped"}"
       end

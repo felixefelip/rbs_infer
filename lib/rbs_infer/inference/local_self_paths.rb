@@ -47,7 +47,7 @@ module RbsInfer::Inference
     def each_def(node, &block)
       return unless node.is_a?(::Parser::AST::Node)
 
-      yield node if node.type == :def || node.type == :defs
+      yield node if %i[def defs].include?(node.type)
       node.children.each { |child| each_def(child, &block) }
     end
   end

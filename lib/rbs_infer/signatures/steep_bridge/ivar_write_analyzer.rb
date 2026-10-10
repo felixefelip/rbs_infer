@@ -53,7 +53,7 @@ class RbsInfer::Signatures::SteepBridge
       in_scope = collect_scoped_write_node_ids(source_node, attr_writer_to_ivar, target_class, singleton)
       masgn_values = collect_masgn_target_values(source_node)
 
-      typing.each_typing do |node, type|
+      typing.each_typing do |node, _type|
         next unless in_scope.include?(node.object_id)
 
         case node.type
@@ -178,13 +178,17 @@ class RbsInfer::Signatures::SteepBridge
       case node.type
       when :class, :module
         body = node.type == :class ? node.children[2] : node.children[1]
-        walk_ivar_init_targets(body, in_init: false, in_class_body: true, singleton: singleton,
-                                     namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
-                                     target_class: target_class, result: result) if body
+        if body
+          walk_ivar_init_targets(body, in_init: false, in_class_body: true, singleton: singleton,
+                                       namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
+                                       target_class: target_class, result: result)
+        end
       when :sclass
         body = node.children[1]
-        walk_ivar_init_targets(body, in_init: false, in_class_body: true, singleton: singleton,
-                                     namespace: namespace, target_class: target_class, result: result) if body
+        if body
+          walk_ivar_init_targets(body, in_init: false, in_class_body: true, singleton: singleton,
+                                       namespace: namespace, target_class: target_class, result: result)
+        end
       when :def
         # `initialize` initializes the INSTANCE slot. A class-instance variable
         # has no constructor at all, so when answering for `self.@x` this says
@@ -192,8 +196,10 @@ class RbsInfer::Signatures::SteepBridge
         # suppress the singleton slot's `| nil`.
         if node.children[0] == :initialize && !singleton
           body = node.children[2]
-          walk_ivar_init_targets(body, in_init: true, in_class_body: false, singleton: singleton,
-                                       namespace: namespace, target_class: target_class, result: result) if body
+          if body
+            walk_ivar_init_targets(body, in_init: true, in_class_body: false, singleton: singleton,
+                                         namespace: namespace, target_class: target_class, result: result)
+          end
         end
       when :defs
         # def self.X — singleton method, skip; ivar there is class-instance
@@ -209,10 +215,12 @@ class RbsInfer::Signatures::SteepBridge
         # also walk RHS for nested classes (`@x = Class.new { @y = ... }` is
         # exotic but harmless to descend)
         rhs = node.children[1]
-        walk_ivar_init_targets(rhs, in_init: in_init, in_class_body: in_class_body, singleton: singleton,
-                                    namespace: namespace, target_class: target_class, result: result) if rhs
+        if rhs
+          walk_ivar_init_targets(rhs, in_init: in_init, in_class_body: in_class_body, singleton: singleton,
+                                      namespace: namespace, target_class: target_class, result: result)
+        end
       when :send
-        receiver, method_name, *args = node.children
+        receiver, method_name, = node.children
         if (in_init || in_class_body) && RbsInfer::Signatures::SteepBridge::LexicalScope.class_scope_match?(namespace,
                                                                                                             target_class) &&
            (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)) &&
@@ -325,8 +333,8 @@ class RbsInfer::Signatures::SteepBridge
 
       collect = lambda do |child, **overrides|
         collect_scoped_write_node_ids(child, attr_writer_to_ivar, target_class, singleton,
-                                      **{ namespace: namespace, in_sclass: in_sclass, on_singleton: on_singleton,
-                                          result: result }.merge(overrides))
+                                      namespace: namespace, in_sclass: in_sclass, on_singleton: on_singleton,
+                                      result: result, **overrides)
       end
       # A write belongs to the caller's question when the `self` it runs against
       # is the one they asked about, and it is lexically in the target class.
@@ -336,8 +344,10 @@ class RbsInfer::Signatures::SteepBridge
       case node.type
       when :class, :module
         body = node.type == :class ? node.children[2] : node.children[1]
-        collect.call(body, namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
-                           in_sclass: false, on_singleton: true) if body
+        if body
+          collect.call(body, namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
+                             in_sclass: false, on_singleton: true)
+        end
       when :sclass
         # `class << self` — `self` is the singleton class, and the instance
         # methods defined inside it run with the class as `self`.
@@ -361,7 +371,8 @@ class RbsInfer::Signatures::SteepBridge
         result << node.object_id if in_scope && node.children[0].type == :ivasgn
         node.children.each { |c| collect.call(c) }
       when :send
-        receiver, method_name = node.children[0], node.children[1]
+        receiver = node.children[0]
+        method_name = node.children[1]
         if in_scope && attr_writer_to_ivar.key?(method_name) &&
            (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self))
           result << node.object_id
@@ -387,34 +398,40 @@ class RbsInfer::Signatures::SteepBridge
       case node.type
       when :class, :module
         body = node.type == :class ? node.children[2] : node.children[1]
-        collect_ivar_writes_per_method(body, typing: typing,
-                                             attr_writer_to_ivar: attr_writer_to_ivar,
-                                             current_method: nil,
-                                             namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
-                                             target_class: target_class,
-                                             masgn_values: masgn_values,
-                                             result: result) if body
+        if body
+          collect_ivar_writes_per_method(body, typing: typing,
+                                               attr_writer_to_ivar: attr_writer_to_ivar,
+                                               current_method: nil,
+                                               namespace: RbsInfer::Signatures::SteepBridge::LexicalScope.push_namespace(namespace, node),
+                                               target_class: target_class,
+                                               masgn_values: masgn_values,
+                                               result: result)
+        end
       when :sclass
         # `class << self` — same lexical class, singleton scope; keep the
         # namespace so writes inside still attribute to the enclosing class.
         body = node.children[1]
-        collect_ivar_writes_per_method(body, typing: typing,
-                                             attr_writer_to_ivar: attr_writer_to_ivar,
-                                             current_method: nil,
-                                             namespace: namespace,
-                                             target_class: target_class,
-                                             masgn_values: masgn_values,
-                                             result: result) if body
+        if body
+          collect_ivar_writes_per_method(body, typing: typing,
+                                               attr_writer_to_ivar: attr_writer_to_ivar,
+                                               current_method: nil,
+                                               namespace: namespace,
+                                               target_class: target_class,
+                                               masgn_values: masgn_values,
+                                               result: result)
+        end
       when :def
         method_name = node.children[0].to_s
         body = node.children[2]
-        collect_ivar_writes_per_method(body, typing: typing,
-                                             attr_writer_to_ivar: attr_writer_to_ivar,
-                                             current_method: method_name,
-                                             namespace: namespace,
-                                             target_class: target_class,
-                                             masgn_values: masgn_values,
-                                             result: result) if body
+        if body
+          collect_ivar_writes_per_method(body, typing: typing,
+                                               attr_writer_to_ivar: attr_writer_to_ivar,
+                                               current_method: method_name,
+                                               namespace: namespace,
+                                               target_class: target_class,
+                                               masgn_values: masgn_values,
+                                               result: result)
+        end
       when :defs
         # Singleton `def self.X` — class-instance variable scope, not
         # relevant for the per-action narrowing this method serves.
@@ -439,13 +456,15 @@ class RbsInfer::Signatures::SteepBridge
             result[current_method][var_name].add(RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(rhs_type))
           end
         end
-        collect_ivar_writes_per_method(rhs, typing: typing,
-                                            attr_writer_to_ivar: attr_writer_to_ivar,
-                                            current_method: current_method,
-                                            namespace: namespace,
-                                            target_class: target_class,
-                                            masgn_values: masgn_values,
-                                            result: result) if rhs
+        if rhs
+          collect_ivar_writes_per_method(rhs, typing: typing,
+                                              attr_writer_to_ivar: attr_writer_to_ivar,
+                                              current_method: current_method,
+                                              namespace: namespace,
+                                              target_class: target_class,
+                                              masgn_values: masgn_values,
+                                              result: result)
+        end
       when :send
         receiver, method_name, *args = node.children
         if current_method && attr_writer_to_ivar.key?(method_name) &&

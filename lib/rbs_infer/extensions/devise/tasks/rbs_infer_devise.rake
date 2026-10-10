@@ -20,7 +20,9 @@ namespace :rbs_infer do
         next
       end
 
-      puts "Generated Devise scoped helpers pseudo-code in #{sidecar_dir}/ (scopes: #{scopes.map { |s| s[:scope] }.join(", ")})"
+      puts "Generated Devise scoped helpers pseudo-code in #{sidecar_dir}/ (scopes: #{scopes.map do |s|
+        s[:scope]
+      end.join(", ")})"
     end
   end
 end

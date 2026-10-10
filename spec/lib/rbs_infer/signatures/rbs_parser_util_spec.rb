@@ -411,7 +411,7 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
         "f: () -> (A | B)?",
         "f: () -> Array[String | Integer]",
         "f: () -> (^() -> void)",
-        "x: untyped",
+        "x: untyped"
       ].each { |sig| expect(described_class.parenthesize_return_type(sig)).to eq(sig) }
     end
   end
@@ -455,9 +455,9 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
   describe ".replace_block_param_types" do
     it "fills in the block's parameters, leaving the rest of the signature alone" do
       expect(described_class.replace_block_param_types(
-        "authenticate: (untyped controller) { (untyped, untyped) -> untyped } -> untyped",
-        ["String", "ActiveSupport::HashWithIndifferentAccess[untyped, untyped]?"]
-      )).to eq("authenticate: (untyped controller) { (String, ActiveSupport::HashWithIndifferentAccess[untyped, untyped]?) -> untyped } -> untyped")
+               "authenticate: (untyped controller) { (untyped, untyped) -> untyped } -> untyped",
+               ["String", "ActiveSupport::HashWithIndifferentAccess[untyped, untyped]?"]
+             )).to eq("authenticate: (untyped controller) { (String, ActiveSupport::HashWithIndifferentAccess[untyped, untyped]?) -> untyped } -> untyped")
     end
 
     it "fills an optional block too" do
@@ -468,7 +468,8 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
     # A parameter no site could type stays `untyped` rather than dragging the
     # whole block down with it.
     it "fills the parameters it knows and keeps the others" do
-      expect(described_class.replace_block_param_types("m: () { (untyped, untyped) -> untyped } -> untyped", [nil, "Integer"]))
+      expect(described_class.replace_block_param_types("m: () { (untyped, untyped) -> untyped } -> untyped",
+                                                       [nil, "Integer"]))
         .to eq("m: () { (untyped, Integer) -> untyped } -> untyped")
     end
 
@@ -476,7 +477,8 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
     # `TypeMerger` adds is redundant here — `(String | Integer, Integer)` reads
     # as two parameters either way.
     it "drops the redundant parens a merged union arrives with" do
-      expect(described_class.replace_block_param_types("m: () { (untyped, untyped) -> untyped } -> untyped", ["(String | Integer)", "Integer"]))
+      expect(described_class.replace_block_param_types("m: () { (untyped, untyped) -> untyped } -> untyped",
+                                                       ["(String | Integer)", "Integer"]))
         .to eq("m: () { (String | Integer, Integer) -> untyped } -> untyped")
     end
 
@@ -542,12 +544,15 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
     # `bind_block_self` runs FIRST and puts the binding between the parameter
     # list and the arrow, so a clause that reaches here has usually got one.
     it "reaches past a `self` binding to the return behind it" do
-      expect(described_class.replace_block_return_type("m: () ?{ (*untyped) [self: singleton(Bar)] -> untyped } -> untyped", "Symbol"))
+      expect(described_class.replace_block_return_type(
+               "m: () ?{ (*untyped) [self: singleton(Bar)] -> untyped } -> untyped", "Symbol"
+             ))
         .to eq("m: () ?{ (*untyped) [self: singleton(Bar)] -> Symbol } -> untyped")
     end
 
     it "reads a bound clause whose self type is itself bracketed" do
-      expect(described_class.replace_block_return_type("m: () { (String) [self: Array[Foo]] -> untyped } -> untyped", "Post"))
+      expect(described_class.replace_block_return_type("m: () { (String) [self: Array[Foo]] -> untyped } -> untyped",
+                                                       "Post"))
         .to eq("m: () { (String) [self: Array[Foo]] -> Post } -> untyped")
     end
   end
@@ -590,7 +595,9 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
     # The pair, in the order `BlockSignatureResolver` applies them: binding, then
     # return. Both have to land, or the clause is a different type each pass.
     it "composes with the return replacement that follows it" do
-      bound = described_class.bind_block_self("bazingado: (?singleton(Bar)? base) ?{ (*untyped) -> untyped } -> untyped", "singleton(Bar)")
+      bound = described_class.bind_block_self(
+        "bazingado: (?singleton(Bar)? base) ?{ (*untyped) -> untyped } -> untyped", "singleton(Bar)"
+      )
 
       expect(described_class.replace_block_return_type(bound, "Symbol"))
         .to eq("bazingado: (?singleton(Bar)? base) ?{ (*untyped) [self: singleton(Bar)] -> Symbol } -> untyped")
@@ -629,7 +636,7 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
 
   describe ".require_block" do
     it "adopts the callee's block: required, and shaped like theirs" do
-      expect(described_class.require_block("m: () ?{ (*untyped) -> untyped } -> untyped", ["String", "Integer"]))
+      expect(described_class.require_block("m: () ?{ (*untyped) -> untyped } -> untyped", %w[String Integer]))
         .to eq("m: () { (String, Integer) -> untyped } -> untyped")
     end
 

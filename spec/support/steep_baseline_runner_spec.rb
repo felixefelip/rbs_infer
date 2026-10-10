@@ -65,10 +65,10 @@ RSpec.describe SteepBaselineRunner do
 
   it "rejects a failed Steep process instead of accepting its partial stdout" do
     allow(Open3).to receive(:capture3).and_return([
-      "app/models/example.rb:1:0: [error] partial",
-      "IndexError: formatter crashed",
-      Status.new(false, 2)
-    ])
+                                                    "app/models/example.rb:1:0: [error] partial",
+                                                    "IndexError: formatter crashed",
+                                                    Status.new(false, 2)
+                                                  ])
 
     expect { runner.call }
       .to raise_error(RuntimeError, /exit status 2; baseline was not updated.*formatter crashed/m)

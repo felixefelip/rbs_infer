@@ -74,6 +74,5 @@ module RbsInfer::Project
         }
       end
     end
-
   end
 end

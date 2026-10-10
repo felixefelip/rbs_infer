@@ -42,7 +42,7 @@ module RbsInfer
           "action_text_content" => "ActionText::Content",
           "action_text_rich_text" => "ActionText::RichText",
           "action_text_encrypted_rich_text" => "ActionText::EncryptedRichText",
-          "active_job" => "ActiveJob::Base",
+          "active_job" => "ActiveJob::Base"
         }.freeze
 
         module_function
@@ -85,7 +85,7 @@ module RbsInfer
           {
             start: call.location.start_offset,
             end: call.location.end_offset,
-            text: "class #{klass}\n#{body_source}\nend",
+            text: "class #{klass}\n#{body_source}\nend"
           }
         end
 

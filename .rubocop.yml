@@ -34,3 +34,9 @@ Metrics/ModuleLength:
 
 Metrics/BlockLength:
   CountAsOne: ["array", "hash", "heredoc", "method_call"]
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/GuardClause:
+  Enabled: false

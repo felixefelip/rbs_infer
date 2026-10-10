@@ -7,7 +7,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
   it "prioritises resolved types over untyped" do
     usages = [
       { "nome" => "String", "email" => "untyped" },
-      { "nome" => "String", "email" => "String" },
+      { "nome" => "String", "email" => "String" }
     ]
 
     result = merger.merge_argument_types(usages)
@@ -18,7 +18,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
   it "builds a union type when the types differ" do
     usages = [
       { "value" => "String" },
-      { "value" => "Integer" },
+      { "value" => "Integer" }
     ]
 
     result = merger.merge_argument_types(usages)
@@ -28,7 +28,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
   it "normalises the :: prefix and deduplicates" do
     usages = [
       { "cpf" => "::Shared::Cpf" },
-      { "cpf" => "Shared::Cpf" },
+      { "cpf" => "Shared::Cpf" }
     ]
 
     result = merger.merge_argument_types(usages)
@@ -56,7 +56,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
     end
 
     it "drops untyped when at least one resolved type exists" do
-      expect(described_class.union_types(["untyped", "String"])).to eq("String")
+      expect(described_class.union_types(%w[untyped String])).to eq("String")
     end
 
     # The same intersection arrives parenthesized when read back from an RBS declaration
@@ -75,15 +75,15 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
     # constants (`Model#present?: () -> true` / `NilClass#present?: () -> false`),
     # so the union that spans them is the whole of `bool` and should say so.
     it "collapses the two boolean constants into bool" do
-      expect(described_class.union_types(["true", "false"])).to eq("bool")
+      expect(described_class.union_types(%w[true false])).to eq("bool")
     end
 
     it "drops a boolean constant bool already covers" do
-      expect(described_class.union_types(["bool", "false"])).to eq("bool")
+      expect(described_class.union_types(%w[bool false])).to eq("bool")
     end
 
     it "keeps nil alongside the collapsed bool" do
-      expect(described_class.union_types(["true", "false", "nil"])).to eq("(bool | nil)")
+      expect(described_class.union_types(%w[true false nil])).to eq("(bool | nil)")
     end
 
     # `NilClass#to_s: () -> ""` against any other branch's `String`.
@@ -125,7 +125,8 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         end
       RUBY
       result = Prism.parse(source)
-      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments,
+                                               lines: source.lines)
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)
       member = collector.members.find { |candidate| candidate.name == "for" }
@@ -150,7 +151,8 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         end
       RUBY
       result = Prism.parse(source)
-      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments,
+                                               lines: source.lines)
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)
       member = collector.members.find { |candidate| candidate.name == "rebuild" }
@@ -175,7 +177,8 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         end
       RUBY
       result = Prism.parse(source)
-      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments,
+                                               lines: source.lines)
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)
       member = collector.members.find { |candidate| candidate.name == "user=" }
@@ -201,7 +204,8 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         end
       RUBY
       result = Prism.parse(source)
-      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments,
+                                               lines: source.lines)
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)
       member = collector.members.find { |candidate| candidate.name == "user=" }
@@ -225,7 +229,8 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         end
       RUBY
       result = Prism.parse(source)
-      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments,
+                                               lines: source.lines)
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)
       member = collector.members.find { |candidate| candidate.name == "set_current_session" }
@@ -257,7 +262,8 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         end
       RUBY
       result = Prism.parse(source)
-      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, lines: source.lines)
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments,
+                                               lines: source.lines)
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)
       member = collector.members.find { |candidate| candidate.name == "write" }

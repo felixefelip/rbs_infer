@@ -85,7 +85,6 @@ module RbsInfer
           # existing per controller rather than on the framework class.
           RENDER_TARGET_PARAM = "target"
 
-
           HEADER = <<~RUBY
             # frozen_string_literal: true
             #
@@ -343,7 +342,7 @@ module RbsInfer
             end
 
             body = (lines + [action] + view_render_lines(class_name, action))
-                     .map { |line| line.empty? ? "" : "    #{line}" }
+                   .map { |line| line.empty? ? "" : "    #{line}" }
 
             ["  def __rbs_infer__run_#{action}", *body, "  end"].join("\n") + "\n"
           end

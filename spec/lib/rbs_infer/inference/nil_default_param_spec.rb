@@ -128,7 +128,8 @@ RSpec.describe "a parameter defaulting to nil" do
         end
       RBS
 
-      rbs = RbsInfer::Analyzer.new(target_class: "Wrap", target_file: target, source_files: Dir["app/*.rb"]).generate_rbs
+      rbs = RbsInfer::Analyzer.new(target_class: "Wrap", target_file: target,
+                                   source_files: Dir["app/*.rb"]).generate_rbs
 
       expect(rbs).to include('def stamp: (?"hi"? value, ?message: "hi"?) ->')
     end

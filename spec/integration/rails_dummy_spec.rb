@@ -22,7 +22,8 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     Dir.chdir(DUMMY_APP_ROOT) do
       Bundler.with_unbundled_env do
         system("bundle", "install", "--quiet", exception: true)
-        system("bundle", "exec", "rake", "db:create", "db:migrate", "RAILS_ENV=development", exception: true, out: File::NULL, err: File::NULL)
+        system("bundle", "exec", "rake", "db:create", "db:migrate", "RAILS_ENV=development", exception: true,
+                                                                                             out: File::NULL, err: File::NULL)
         system("bundle", "exec", "rake", "rbs_rails:all", exception: true, out: File::NULL, err: File::NULL)
         system("bundle", "exec", "rbs", "collection", "install", exception: true, out: File::NULL, err: File::NULL)
       end
@@ -44,7 +45,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   # To regenerate expectations after intentional changes:
   #   UPDATE_EXPECTATIONS=1 bundle exec rspec spec/integration/
-  def assert_snapshot(name, target_class: nil, target_file:, **kwargs)
+  def assert_snapshot(name, target_file:, target_class: nil, **kwargs)
     rbs = RbsInfer::Analyzer.new(
       target_class: target_class,
       target_file: target_file,
@@ -136,7 +137,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   it "EvalReopen::Slots (the class_eval block's super target) matches expected RBS" do
     assert_snapshot("models/eval_reopen/slots", target_class: "EvalReopen::Slots",
-                    target_file: "app/models/eval_reopen/slots.rb")
+                                                target_file: "app/models/eval_reopen/slots.rb")
   end
 
   # `Module#included` is a plain Ruby hook: `include X` calls `X.included(self)`, so
@@ -155,7 +156,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   it "IncludedHook::Slots (the hook block's super target) matches expected RBS" do
     assert_snapshot("models/included_hook/slots", target_class: "IncludedHook::Slots",
-                    target_file: "app/models/included_hook/slots.rb")
+                                                  target_file: "app/models/included_hook/slots.rb")
   end
 
   # One module written both ways in one file: `class Example49; module Baz` nests it
@@ -615,7 +616,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # checks nothing inside it. `#dynamic` is the limit case and must stay `untyped`.
   it "SendDispatch (send reaching a private method) matches expected RBS" do
     assert_snapshot("models/send_dispatch", target_class: "SendDispatch",
-                    target_file: "app/models/send_dispatch.rb")
+                                            target_file: "app/models/send_dispatch.rb")
   end
 
   # The call-site half, where the checker's answer shows: every one of these is the type
@@ -623,7 +624,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # is the one that has to keep reading it.
   it "SendDispatchCaller (the send call sites) matches expected RBS" do
     assert_snapshot("models/send_dispatch_caller", target_class: "SendDispatchCaller",
-                    target_file: "app/models/send_dispatch.rb")
+                                                   target_file: "app/models/send_dispatch.rb")
   end
 
   # A namespaced service object called by its BARE name from the model that
@@ -640,7 +641,8 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # `published_at`; the annotators' `Post & Post::Taggable` has both, and this
   # snapshot is where the difference shows (felixefelip/rbs_infer#161).
   it "Post::TagDigest (self handed out by a concern) matches expected RBS" do
-    assert_snapshot("models/post/tag_digest", target_class: "Post::TagDigest", target_file: "app/models/post/tag_digest.rb")
+    assert_snapshot("models/post/tag_digest", target_class: "Post::TagDigest",
+                                              target_file: "app/models/post/tag_digest.rb")
   end
 
   it "Coupon::Code (constant argument) matches expected RBS" do
@@ -1524,31 +1526,36 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     # Once per host, and with the body still attached: a replay that lands the
     # method but loses what it returns would keep the first count and drop the
     # second.
-    expect(rbs.scan(/def prepend_order:/).size).to eq(2)
-    expect(rbs.scan(/def prepend_order_marker: \(\) -> "prepend_order"/).size).to eq(2)
+    expect(rbs.scan("def prepend_order:").size).to eq(2)
+    expect(rbs.scan('def prepend_order_marker: () -> "prepend_order"').size).to eq(2)
   end
 
   it "PostsController matches expected RBS" do
-    assert_snapshot("controllers/posts_controller", target_class: "PostsController", target_file: "app/controllers/posts_controller.rb")
+    assert_snapshot("controllers/posts_controller", target_class: "PostsController",
+                                                    target_file: "app/controllers/posts_controller.rb")
   end
 
   it "UsersController matches expected RBS" do
-    assert_snapshot("controllers/users_controller", target_class: "UsersController", target_file: "app/controllers/users_controller.rb")
+    assert_snapshot("controllers/users_controller", target_class: "UsersController",
+                                                    target_file: "app/controllers/users_controller.rb")
   end
 
   it "Users::AvatarsController matches expected RBS" do
-    assert_snapshot("controllers/users/avatars_controller", target_class: "Users::AvatarsController", target_file: "app/controllers/users/avatars_controller.rb")
+    assert_snapshot("controllers/users/avatars_controller", target_class: "Users::AvatarsController",
+                                                            target_file: "app/controllers/users/avatars_controller.rb")
   end
 
   # The Devise consumer. `@account = current_account` gets its type from the generated
   # `DeviseScopedHelpers` — nothing in the source names `Account` — so this snapshot is
   # what would catch the scoped helpers silently reverting to `untyped`.
   it "DashboardController matches expected RBS" do
-    assert_snapshot("controllers/dashboard_controller", target_class: "DashboardController", target_file: "app/controllers/dashboard_controller.rb")
+    assert_snapshot("controllers/dashboard_controller", target_class: "DashboardController",
+                                                        target_file: "app/controllers/dashboard_controller.rb")
   end
 
   it "AvatarUploader matches expected RBS" do
-    assert_snapshot("uploaders/avatar_uploader", target_class: "AvatarUploader", target_file: "app/uploaders/avatar_uploader.rb")
+    assert_snapshot("uploaders/avatar_uploader", target_class: "AvatarUploader",
+                                                 target_file: "app/uploaders/avatar_uploader.rb")
   end
 
   describe "CarrierWave mount_uploader generator" do
@@ -1673,19 +1680,21 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       # the last one being why `Current.account.label` in dashboard/show.html.erb needs no
       # nil check.
       carriers = (postconditions["method_entry_facts"] || [])
-                   .select { |e| (e["consts"] || {})["Current.account"] == account_type }
-                   .map { |e| "#{e["class"]}##{e["method"]}" }
+                 .select { |e| (e["consts"] || {})["Current.account"] == account_type }
+                 .map { |e| "#{e["class"]}##{e["method"]}" }
       expect(carriers).to include("DashboardController#show", "DashboardController#render",
                                   "ERBDashboardShow#__rbs_infer__body")
     end
   end
 
   it "PostPublisher service matches expected RBS" do
-    assert_snapshot("services/post_publisher", target_class: "PostPublisher", target_file: "app/services/post_publisher.rb")
+    assert_snapshot("services/post_publisher", target_class: "PostPublisher",
+                                               target_file: "app/services/post_publisher.rb")
   end
 
   it "ProfileFormatter service matches expected RBS" do
-    assert_snapshot("services/profile_formatter", target_class: "ProfileFormatter", target_file: "app/services/profile_formatter.rb")
+    assert_snapshot("services/profile_formatter", target_class: "ProfileFormatter",
+                                                  target_file: "app/services/profile_formatter.rb")
   end
 
   # felixefelip/rbs_infer#175. Constructed only from inside a concern, with
@@ -1694,7 +1703,8 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # answered `untyped`, and those are the ones that decide an `initialize`
   # parameter. Fizzy's `Card::ActivitySpike::Detector.new(self)` is this shape.
   it "WidgetAuditor takes the includer's type from a concern's `self`" do
-    assert_snapshot("services/widget_auditor", target_class: "WidgetAuditor", target_file: "app/services/widget_auditor.rb")
+    assert_snapshot("services/widget_auditor", target_class: "WidgetAuditor",
+                                               target_file: "app/services/widget_auditor.rb")
   end
 
   # felixefelip/rbs_infer#183. `initialize` assigns every ivar on one line
@@ -1703,7 +1713,8 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # rule behind it, both have to read that shape or the attrs come out
   # `untyped`/`T?` while the params are fully typed. Fizzy's `User::Filtering`.
   it "PostFiltering types attrs assigned by a single multiple assignment" do
-    assert_snapshot("services/post_filtering", target_class: "PostFiltering", target_file: "app/services/post_filtering.rb")
+    assert_snapshot("services/post_filtering", target_class: "PostFiltering",
+                                               target_file: "app/services/post_filtering.rb")
   end
 
   it "ApplicationJob base class matches expected RBS" do
@@ -1711,7 +1722,8 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   end
 
   it "ProfileFormatterJob matches expected RBS" do
-    assert_snapshot("jobs/profile_formatter_job", target_class: "ProfileFormatterJob", target_file: "app/jobs/profile_formatter_job.rb")
+    assert_snapshot("jobs/profile_formatter_job", target_class: "ProfileFormatterJob",
+                                                  target_file: "app/jobs/profile_formatter_job.rb")
   end
 
   # `PostsController#publish` enqueues this job with a `Post` and a `String`, and
@@ -1719,7 +1731,8 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # the receiver of `AuthorDigestJob.perform_later(...)` says which job's
   # handler the arguments belong to (felixefelip/rbs_infer#331).
   it "AuthorDigestJob infers the arguments its perform_later site states" do
-    assert_snapshot("jobs/author_digest_job", target_class: "AuthorDigestJob", target_file: "app/jobs/author_digest_job.rb")
+    assert_snapshot("jobs/author_digest_job", target_class: "AuthorDigestJob",
+                                              target_file: "app/jobs/author_digest_job.rb")
   end
 
   # The second enqueue site, from another controller, with arguments sharing
@@ -1727,11 +1740,13 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # both — it genuinely receives both — but each job now takes only its own,
   # which is what a receiver filter too loose would break.
   it "AvatarThumbnailJob infers its own, without taking the other job's" do
-    assert_snapshot("jobs/avatar_thumbnail_job", target_class: "AvatarThumbnailJob", target_file: "app/jobs/avatar_thumbnail_job.rb")
+    assert_snapshot("jobs/avatar_thumbnail_job", target_class: "AvatarThumbnailJob",
+                                                 target_file: "app/jobs/avatar_thumbnail_job.rb")
   end
 
   it "EmailNotifier service matches expected RBS" do
-    assert_snapshot("services/email_notifier", target_class: "EmailNotifier", target_file: "app/services/email_notifier.rb")
+    assert_snapshot("services/email_notifier", target_class: "EmailNotifier",
+                                               target_file: "app/services/email_notifier.rb")
   end
 
   it "TagDestroy service matches expected RBS" do
@@ -1745,7 +1760,8 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # felixefelip/rbs_infer#64: `action` is called with `String` (intra-class)
   # and `Symbol` (via EventReporter), so it should infer `(String | Symbol)`.
   it "EventTracker service unions param types across call-sites" do
-    assert_snapshot("services/event_tracker", target_class: "EventTracker", target_file: "app/services/event_tracker.rb")
+    assert_snapshot("services/event_tracker", target_class: "EventTracker",
+                                              target_file: "app/services/event_tracker.rb")
   end
 
   # felixefelip/rbs_infer#64: `track_event` (in a concern) is called *bare*
@@ -1760,11 +1776,13 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   end
 
   it "Post::Notifiable concern matches expected RBS" do
-    assert_snapshot("models/post/notifiable", target_class: "Post::Notifiable", target_file: "app/models/post/notifiable.rb")
+    assert_snapshot("models/post/notifiable", target_class: "Post::Notifiable",
+                                              target_file: "app/models/post/notifiable.rb")
   end
 
   it "User::Recoverable concern matches expected RBS" do
-    assert_snapshot("models/user/recoverable", target_class: "User::Recoverable", target_file: "app/models/user/recoverable.rb")
+    assert_snapshot("models/user/recoverable", target_class: "User::Recoverable",
+                                               target_file: "app/models/user/recoverable.rb")
   end
 
   # felixefelip/rbs_infer#139. `has_many :notifications` is declared ONLY in this
@@ -1773,23 +1791,28 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   # to `User`. Before the fix the getter did not exist and all four came out
   # `untyped`; the snapshot is where that regression would resurface.
   it "User::Notifiable concern (has_many from a concern) matches expected RBS" do
-    assert_snapshot("models/user/notifiable", target_class: "User::Notifiable", target_file: "app/models/user/notifiable.rb")
+    assert_snapshot("models/user/notifiable", target_class: "User::Notifiable",
+                                              target_file: "app/models/user/notifiable.rb")
   end
 
   it "User::Displayable concern matches expected RBS" do
-    assert_snapshot("models/user/displayable", target_class: "User::Displayable", target_file: "app/models/user/displayable.rb")
+    assert_snapshot("models/user/displayable", target_class: "User::Displayable",
+                                               target_file: "app/models/user/displayable.rb")
   end
 
   it "Test::Filtrable concern matches expected RBS" do
-    assert_snapshot("models/concerns/test/filtrable", target_class: "Test::Filtrable", target_file: "app/models/concerns/test/filtrable.rb")
+    assert_snapshot("models/concerns/test/filtrable", target_class: "Test::Filtrable",
+                                                      target_file: "app/models/concerns/test/filtrable.rb")
   end
 
   it "FilterConfiguration controller concern matches expected RBS" do
-    assert_snapshot("controllers/concerns/filter_configuration", target_class: "FilterConfiguration", target_file: "app/controllers/concerns/filter_configuration.rb")
+    assert_snapshot("controllers/concerns/filter_configuration", target_class: "FilterConfiguration",
+                                                                 target_file: "app/controllers/concerns/filter_configuration.rb")
   end
 
   it "ApplicationHelper matches expected RBS" do
-    assert_snapshot("helpers/application_helper", target_class: "ApplicationHelper", target_file: "app/helpers/application_helper.rb")
+    assert_snapshot("helpers/application_helper", target_class: "ApplicationHelper",
+                                                  target_file: "app/helpers/application_helper.rb")
   end
 
   it "PostsHelper matches expected RBS" do
@@ -1806,7 +1829,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
   it "narrows helper param via block-param resolution (ivar/local name-collision regression)" do
     rbs = generate_rbs(
       target_class: "PostsHelper",
-      target_file: "app/helpers/posts_helper.rb",
+      target_file: "app/helpers/posts_helper.rb"
     )
 
     expect(rbs).to include("def post_index_marker: ((Post & Post::Validated) post)")
@@ -1851,5 +1874,4 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       expect(rbs.chomp).to eq(expected_rbs("rails_custom_action_view_context").chomp)
     end
   end
-
 end

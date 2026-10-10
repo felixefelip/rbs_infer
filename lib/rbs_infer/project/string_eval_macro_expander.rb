@@ -109,7 +109,7 @@ module RbsInfer::Project
     # there instead — `Target.class_eval "…"` knows something the lexical rule
     # cannot (felixefelip/steep#175).
     def expansions_for(node, file, sidecar, qualified)
-      grouped = {} #: Hash[String, Array[String]]
+      grouped = {} # : Hash[String, Array[String]]
 
       macro_calls(node.body).each do |call, in_block|
         chunks = sidecar.sources_for(

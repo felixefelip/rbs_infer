@@ -45,7 +45,7 @@ module RbsInfer::Signatures
           mtime: mtime,
           content: content,
           declarations: declarations,
-          index: RbsParserUtil.build_declaration_index(declarations),
+          index: RbsParserUtil.build_declaration_index(declarations)
         }
       rescue Errno::ENOENT, Errno::EACCES
         { mtime: nil, content: "", declarations: [], index: {} }
@@ -130,6 +130,7 @@ module RbsInfer::Signatures
       class_path = RbsInfer.class_name_to_path(normalized)
       self.class.glob("sig/**/*.rbs").each do |rbs_file|
         next unless rbs_file.end_with?("#{class_path}.rbs")
+
         seen.add(rbs_file)
         info = class_info_from_file(rbs_file, normalized)
         superclass ||= info.superclass
@@ -141,14 +142,16 @@ module RbsInfer::Signatures
       #    num arquivo com outro nome.
       self.class.files_declaring(normalized).each do |rbs_file|
         next if seen.include?(rbs_file)
+
         info = class_info_from_file(rbs_file, normalized)
         next if info.types.empty? && info.superclass.nil? && info.includes.empty?
+
         superclass ||= info.superclass
         info.types.each { |name, type| types[name] ||= type }
         all_includes.concat(info.includes)
       end
 
-      return types, superclass, all_includes.uniq
+      [types, superclass, all_includes.uniq]
     end
 
     # Declared instance-variable types of a class (`{"@post" => "Post"}`), merged over
@@ -166,6 +169,7 @@ module RbsInfer::Signatures
       class_path = RbsInfer.class_name_to_path(normalized)
       self.class.glob("sig/**/*.rbs").each do |rbs_file|
         next unless rbs_file.end_with?("#{class_path}.rbs")
+
         seen.add(rbs_file)
         class_info_from_file(rbs_file, normalized).ivar_types.each { |name, type| ivars[name] ||= type }
       end
@@ -175,6 +179,7 @@ module RbsInfer::Signatures
       # reopenings — a reopening declares the same slot.
       self.class.files_declaring(normalized).each do |rbs_file|
         next if seen.include?(rbs_file)
+
         class_info_from_file(rbs_file, normalized).ivar_types.each { |name, type| ivars[name] ||= type }
       end
 
@@ -205,8 +210,10 @@ module RbsInfer::Signatures
     # Resolve tipos herdados percorrendo a cadeia de superclasses via RBS
     def lookup_inherited_types(superclass_name, visited = Set.new)
       return {} unless superclass_name
+
       normalized = superclass_name.sub(/\A::/, "")
       return {} if visited.include?(normalized)
+
       visited.add(normalized)
 
       return @inherited_cache[normalized] if @inherited_cache.key?(normalized)
@@ -254,14 +261,15 @@ module RbsInfer::Signatures
           (parts.size - 2).downto(1) do |i|
             candidate = (parts[0...i] + [parts.last]).join("::")
             next if visited.include?(candidate)
+
             gem_info2 = lookup_gem_rbs_collection_class(candidate)
-            if gem_info2.types.any? || gem_info2.superclass
-              visited.add(candidate)
-              parent_superclass ||= gem_info2.superclass
-              gem_info2.types.each { |name, type| types[name] ||= type }
-              all_includes.concat(gem_info2.includes)
-              break
-            end
+            next unless gem_info2.types.any? || gem_info2.superclass
+
+            visited.add(candidate)
+            parent_superclass ||= gem_info2.superclass
+            gem_info2.types.each { |name, type| types[name] ||= type }
+            all_includes.concat(gem_info2.includes)
+            break
           end
         end
       end
@@ -327,8 +335,10 @@ module RbsInfer::Signatures
       all_includes = []
       rbs_files.each do |rbs_file|
         next unless cached_content_for(rbs_file).include?(parts.last)
+
         info = class_info_from_file(rbs_file, normalized)
         next if info.types.empty? && info.superclass.nil? && info.includes.empty?
+
         superclass ||= info.superclass
         info.types.each { |name, type| types[name] ||= type }
         all_includes.concat(info.includes)
@@ -372,7 +382,7 @@ module RbsInfer::Signatures
       gem_hints = [
         first.downcase,
         first.gsub(/([a-z])([A-Z])/, '\1_\2').downcase,
-        first.gsub(/([a-z])([A-Z])/, '\1-\2').downcase,
+        first.gsub(/([a-z])([A-Z])/, '\1-\2').downcase
       ].uniq
 
       rbs_files = gem_hints.flat_map { |hint| self.class.glob(".gem_rbs_collection/#{hint}/**/*.rbs") }.uniq
@@ -381,6 +391,7 @@ module RbsInfer::Signatures
       types = {}
       rbs_files.each do |rbs_file|
         next unless cached_content_for(rbs_file).include?(parts.last)
+
         info = class_info_from_file(rbs_file, module_name)
         info.types.each do |name, ret_type|
           parent_module = parts[0..-2].join("::")

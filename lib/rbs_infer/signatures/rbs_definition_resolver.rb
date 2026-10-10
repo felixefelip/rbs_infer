@@ -42,7 +42,7 @@ module RbsInfer::Signatures
       if (components = parse_intersection_components(class_name))
         components.reverse_each do |component|
           result = resolve_via_rbs_builder(kind, component, method_name, block_body_type: block_body_type,
-                                                                        arg_types: arg_types)
+                                                                         arg_types: arg_types)
           return result if result && result != "untyped"
         end
         return nil
@@ -77,6 +77,7 @@ module RbsInfer::Signatures
           formatted = d.type.type.return_type.name.to_s
         end
         next unless formatted
+
         if d.type.type_params.any?
           type_var_map = infer_type_vars_from_block(d.type, block_body_type: block_body_type)
           d.type.type_params.each do |tp|
@@ -86,6 +87,7 @@ module RbsInfer::Signatures
           end
         end
         return formatted unless formatted.include?("[self]")
+
         best ||= formatted
       end
       best
@@ -390,7 +392,7 @@ module RbsInfer::Signatures
       when RBS::Types::Variable
         nil
       else
-        rbs_type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }
+        rbs_type.to_s.gsub(/(^|[\[(, |])::/) { ::Regexp.last_match(1) }
       end
     end
 
@@ -400,6 +402,7 @@ module RbsInfer::Signatures
     def parse_intersection_components(class_name)
       parsed = RBS::Parser.parse_type(class_name)
       return nil unless parsed.is_a?(RBS::Types::Intersection)
+
       parsed.types.map(&:to_s)
     rescue RBS::ParsingError
       nil
@@ -468,6 +471,7 @@ module RbsInfer::Signatures
 
     def rbs_builder
       return @rbs_builder if @rbs_builder_loaded
+
       @rbs_builder_loaded = true
       @rbs_builder = SteepEnvironment.definition_builder
     end

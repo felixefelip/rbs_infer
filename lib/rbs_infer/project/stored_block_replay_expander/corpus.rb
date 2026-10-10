@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "set"
-
 module RbsInfer::Project::StoredBlockReplayExpander
   # The walk from one file to the files it names but does not declare.
   #

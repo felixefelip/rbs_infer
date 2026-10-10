@@ -147,7 +147,7 @@ module RbsInfer::Inference
     # inferred by the cross-class pass). Nilability is NOT decided here — see
     # `finalize`.
     def apply_external_setter_types(attr_types, members, method_param_types)
-      writable = members.select { |m| [:attr_accessor, :attr_writer].include?(m.kind) }
+      writable = members.select { |m| %i[attr_accessor attr_writer].include?(m.kind) }
       return if writable.empty?
 
       writable.each do |m|
@@ -172,13 +172,14 @@ module RbsInfer::Inference
     def apply_definite_init_nilability(attr_types, members)
       return unless @parsed_target
 
-      getters = members.select { |m| [:attr_reader, :attr_accessor].include?(m.kind) }
+      getters = members.select { |m| %i[attr_reader attr_accessor].include?(m.kind) }
       return if getters.empty?
 
       initialized = @return_type_resolver.collect_prism_initialized_ivars(@parsed_target.tree)
 
       getters.each do |m|
         next if initialized.include?(m.name)
+
         type = attr_types[m.name]
         next if type.nil? || type == "untyped"
 
@@ -212,7 +213,7 @@ module RbsInfer::Inference
     def class_body(members)
       return nil unless @parsed_target
 
-      attr_names = members.select { |m| [:attr_accessor, :attr_reader, :attr_writer].include?(m.kind) }
+      attr_names = members.select { |m| %i[attr_accessor attr_reader attr_writer].include?(m.kind) }
                           .map(&:name)
                           .to_set
       return nil if attr_names.empty?

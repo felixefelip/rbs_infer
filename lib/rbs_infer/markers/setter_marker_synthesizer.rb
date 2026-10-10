@@ -95,7 +95,7 @@ module RbsInfer::Markers
     # larger commitment than the marker output warrants.
     def collect_reader_ivars
       @members
-        .select { |m| [:attr_reader, :attr_accessor].include?(m.kind) }
+        .select { |m| %i[attr_reader attr_accessor].include?(m.kind) }
         .map(&:name)
         .to_set
     end
@@ -104,9 +104,11 @@ module RbsInfer::Markers
       overrides = {}
       ivar_types.each do |ivar_name, narrowed_type|
         next unless reader_ivars.include?(ivar_name)
+
         declared = @declared_ivar_types[ivar_name]
         next if declared.nil?
         next if same_type?(declared, narrowed_type)
+
         overrides[ivar_name] = narrowed_type
       end
       overrides
@@ -131,8 +133,7 @@ module RbsInfer::Markers
     def normalize(type_string)
       s = type_string.to_s.gsub(/\s+/, "")
       s = s.sub(/\A\((.*)\)\z/, '\1')
-      s = s.sub(/\?\z/, "|nil")
-      s
+      s.sub(/\?\z/, "|nil")
     end
 
     # Delegates to the shared convention. `pascal_case` is the
@@ -141,6 +142,7 @@ module RbsInfer::Markers
     # for method names that strip to empty (e.g. `:"="`).
     def marker_short_name_for(method_name)
       return nil unless Steep::Postconditions::MarkerNaming.valid_method_name?(method_name)
+
       "After#{Steep::Postconditions::MarkerNaming.pascal_case(method_name)}"
     end
   end

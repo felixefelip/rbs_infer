@@ -12,7 +12,8 @@ module RbsInfer::Inference
     # covered by `IntraClassCallAnalyzer`. Omitting it would double-count every same-file
     # self-call — the two paths resolve the receiver differently, so the parameter widens
     # into a union instead of failing loudly (required-threaded-deps).
-    def initialize(target_class:, method_type_resolver:, target_file:, mixin_index:, invoker_self_types:, inherited_forwards:, inherited_initializers:, inherited_supers:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {})
+    def initialize(target_class:, method_type_resolver:, target_file:, mixin_index:, invoker_self_types:,
+                   inherited_forwards:, inherited_initializers:, inherited_supers:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {})
       @target_class = target_class
       @target_file = target_file
       @method_type_resolver = method_type_resolver
@@ -283,7 +284,11 @@ module RbsInfer::Inference
         next unless params
 
         param_names = []
-        params.requireds.each { |p| param_names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
+        if params.respond_to?(:requireds)
+          params.requireds.each do |p|
+            param_names << p.name.to_s if p.respond_to?(:name)
+          end
+        end
         next if param_names.empty?
 
         collection_type = resolve_receiver_collection_type(call.receiver, local_var_types)
@@ -329,6 +334,7 @@ module RbsInfer::Inference
 
     def unwrap_outer_nilable(type_str)
       return type_str unless type_str.is_a?(String) && type_str.end_with?("?")
+
       stripped = type_str.chomp("?")
       if stripped.start_with?("(") && stripped.end_with?(")") && balanced_outer_parens?(stripped)
         stripped[1..-2]
@@ -339,6 +345,7 @@ module RbsInfer::Inference
 
     def balanced_outer_parens?(str)
       return false unless str.start_with?("(") && str.end_with?(")")
+
       depth = 0
       str.each_char.with_index do |c, i|
         depth += 1 if c == "("
@@ -354,9 +361,10 @@ module RbsInfer::Inference
       collector = ClassMemberCollector.new(comments: comments, lines: lines)
       tree.accept(collector)
       collector.members.each do |member|
-        next unless [:attr_accessor, :attr_reader].include?(member.kind)
+        next unless %i[attr_accessor attr_reader].include?(member.kind)
+
         if member.signature =~ /\w+:\s*(.+)/
-          type = $1.strip
+          type = ::Regexp.last_match(1).strip
           types[member.name] = type unless type == "untyped"
         end
       end
@@ -393,12 +401,12 @@ module RbsInfer::Inference
 
         # @rbs () -> ReturnType
         if text =~ /@rbs\s*\(.*?\)\s*->\s*(.+)/
-          return $1.strip
+          return ::Regexp.last_match(1).strip
         end
 
         # #: () -> ReturnType  ou  #: -> ReturnType
         if text =~ /#:\s*(?:\(.*?\)\s*)?->\s*(.+)/
-          return $1.strip
+          return ::Regexp.last_match(1).strip
         end
       end
       nil

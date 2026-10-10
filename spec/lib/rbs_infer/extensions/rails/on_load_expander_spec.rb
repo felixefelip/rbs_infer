@@ -71,7 +71,7 @@ RSpec.describe RbsInfer::Extensions::Rails::OnLoadExpander do
       "active_record" => "ActiveRecord::Base",
       "action_controller" => "ActionController::Base",
       "action_mailer" => "ActionMailer::Base",
-      "active_job" => "ActiveJob::Base",
+      "active_job" => "ActiveJob::Base"
     }.each do |hook, klass|
       expanded = expand("ActiveSupport.on_load :#{hook} do\n  def x; end\nend\n")
       expect(expanded).to include("class #{klass}"), "expected :#{hook} → #{klass}"

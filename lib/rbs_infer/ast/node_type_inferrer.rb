@@ -17,17 +17,20 @@ module RbsInfer::AST
     # to nil: a future includer that types value constants but forgets to override
     # would silently degrade them to untyped; raising forces a conscious choice.
     def constant_resolver
-      raise NotImplementedError, "#{self.class} must declare #constant_resolver (a ConstantArgTypeResolver, or nil if it never types value-position constants)"
+      raise NotImplementedError,
+            "#{self.class} must declare #constant_resolver (a ConstantArgTypeResolver, or nil if it never types value-position constants)"
     end
 
     def infer_node_type(node, context_class: nil, known_types: {})
-      literal = NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: constant_resolver, known_types: known_types, context_class: context_class)
+      literal = NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: constant_resolver,
+                                                               known_types: known_types, context_class: context_class)
       return literal if literal
 
       case node
       when Prism::SelfNode then context_class
       when Prism::ConstantReadNode, Prism::ConstantPathNode
-        NodeTypeInferrer.resolve_constant_value_type(node, namespace: context_class, constant_resolver: constant_resolver)
+        NodeTypeInferrer.resolve_constant_value_type(node, namespace: context_class,
+                                                           constant_resolver: constant_resolver)
       when Prism::CallNode
         if node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
@@ -50,6 +53,7 @@ module RbsInfer::AST
     # method and the module-level value/hash typers.
     def self.resolve_constant_value_type(node, namespace:, constant_resolver:)
       return nil unless constant_resolver
+
       constant_resolver.resolve(name: RbsInfer::Analyzer.extract_constant_path(node), namespace: namespace)
     end
 
@@ -86,8 +90,10 @@ module RbsInfer::AST
       when Prism::TrueNode then "true"
       when Prism::FalseNode then "false"
       when Prism::NilNode then "nil"
-      when Prism::ArrayNode then infer_array_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
-      when Prism::HashNode then infer_hash_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
+      when Prism::ArrayNode then infer_array_type(node, known_types: known_types, context_class: context_class,
+                                                        constant_resolver: constant_resolver)
+      when Prism::HashNode then infer_hash_type(node, known_types: known_types, context_class: context_class,
+                                                      constant_resolver: constant_resolver)
       when Prism::InterpolatedRegularExpressionNode, Prism::RegularExpressionNode then "Regexp"
       end
     end
@@ -115,7 +121,8 @@ module RbsInfer::AST
       return "Array[untyped]" if elements.any? { |e| e.is_a?(Prism::SplatNode) }
 
       types = elements.map do |element|
-        infer_value_type(element, constant_resolver: constant_resolver, known_types: known_types, context_class: context_class)
+        infer_value_type(element, constant_resolver: constant_resolver, known_types: known_types,
+                                  context_class: context_class)
       end
       return "Array[untyped]" if types.any? { |type| type == "untyped" }
 
@@ -136,27 +143,29 @@ module RbsInfer::AST
 
       if all_symbol_keys
         # Record type: { key: Type, ... }
-        pairs = assocs.map { |e|
+        pairs = assocs.map do |e|
           key_name = e.key.unescaped
-          value_type = infer_value_type(e.value, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
+          value_type = infer_value_type(e.value, known_types: known_types, context_class: context_class,
+                                                 constant_resolver: constant_resolver)
           "#{key_name}: #{value_type}"
-        }
+        end
         "{ #{pairs.join(", ")} }"
       else
-        key_types = assocs.filter_map { |e|
+        key_types = assocs.filter_map do |e|
           case e.key
           when Prism::SymbolNode then "Symbol"
           when Prism::StringNode then "String"
           when Prism::IntegerNode then "Integer"
           end
-        }.uniq
+        end.uniq
         key_type = key_types.size == 1 ? key_types.first : "untyped"
         "Hash[#{key_type}, untyped]"
       end
     end
 
     def self.infer_value_type(node, constant_resolver:, known_types: {}, context_class: nil)
-      literal = infer_literal_node_type(node, constant_resolver: constant_resolver, known_types: known_types, context_class: context_class)
+      literal = infer_literal_node_type(node, constant_resolver: constant_resolver, known_types: known_types,
+                                              context_class: context_class)
       return literal if literal
 
       case node

@@ -53,11 +53,11 @@ RSpec.describe RbsInfer::AST::MultiWriteDecomposer do
   describe ".ivar_target_names" do
     it "names every ivar written, including targets it would not pair" do
       expect(described_class.ivar_target_names(multi_write("@a, *@rest, @z = whatever")))
-        .to eq(["a", "rest", "z"])
+        .to eq(%w[a rest z])
     end
 
     it "names the ivars of a value it cannot destructure statically" do
-      expect(described_class.ivar_target_names(multi_write("@a, @b = pair"))).to eq(["a", "b"])
+      expect(described_class.ivar_target_names(multi_write("@a, @b = pair"))).to eq(%w[a b])
     end
   end
 end

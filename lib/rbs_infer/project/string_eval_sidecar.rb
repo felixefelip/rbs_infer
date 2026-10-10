@@ -62,7 +62,7 @@ module RbsInfer::Project
           return new({}, base_dir: base)
         end
 
-        new(((raw && raw["call_sites"]) || {}), base_dir: base)
+        new((raw && raw["call_sites"]) || {}, base_dir: base)
       rescue StandardError => e
         warn "[rbs_infer] failed to load #{path}: #{e.class}: #{e.message}"
         new({}, base_dir: base)

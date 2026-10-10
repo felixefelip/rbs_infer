@@ -230,16 +230,19 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       node.compact_child_nodes.any? { |child| mentions_block?(child, name) }
     end
 
-    def walk_body(&predicate)
+    def walk_body(&)
       return false unless @body
 
-      RbsInfer::Analyzer.find_all_nodes(@body, &predicate).any?
+      RbsInfer::Analyzer.find_all_nodes(@body, &).any?
     end
 
     def walk_nodes
       return unless @body
 
-      RbsInfer::Analyzer.find_all_nodes(@body) { |node| yield node; false }
+      RbsInfer::Analyzer.find_all_nodes(@body) do |node|
+        yield node
+        false
+      end
     end
   end
 end

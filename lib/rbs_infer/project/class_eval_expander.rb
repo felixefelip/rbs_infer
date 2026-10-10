@@ -112,7 +112,7 @@ module RbsInfer::Project
       {
         start: call.location.start_offset,
         end: call.location.end_offset,
-        text: BlockReopen.in_place(source: source, call: call, name: name),
+        text: BlockReopen.in_place(source: source, call: call, name: name)
       }
     end
 

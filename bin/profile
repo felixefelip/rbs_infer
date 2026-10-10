@@ -16,7 +16,7 @@ Dir.chdir(DUMMY_APP_ROOT) do
     { target_class: "Comment",       target_file: "app/models/comment.rb" },
     { target_class: "PostPublisher", target_file: "app/services/post_publisher.rb" },
     { target_class: "TagDestroy",    target_file: "app/services/tag_destroy.rb" },
-    { target_class: "PostsController", target_file: "app/controllers/posts_controller.rb" },
+    { target_class: "PostsController", target_file: "app/controllers/posts_controller.rb" }
   ]
 
   profile = StackProf.run(mode: :wall, interval: 100, raw: true) do

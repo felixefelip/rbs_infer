@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "prism"
-require "set"
 require "active_support/core_ext/string/inflections"
 
 module RbsInfer
@@ -90,7 +89,7 @@ module RbsInfer
             :kind,       # :class | :module (a concern)
             :superclass, # "ApplicationRecord" (nil for a module, or a bare class)
             :body,       # [BelongsTo | HasMany | BeforeValidation | Include | Scope |
-                         #  SingletonMethod | ClassMethodsModule | StoreAccessor]
+            #  SingletonMethod | ClassMethodsModule | StoreAccessor]
             keyword_init: true
           ) do
             # A later declaration of the same association REPLACES the earlier
@@ -361,7 +360,7 @@ module RbsInfer
               end
 
               nodes.reject { |node| private_names.include?(node.name.to_s) }
-                .map { |node| singleton_method(node) }
+                   .map { |node| singleton_method(node) }
             end
 
             # The receiverless defs of a `class << self` / `class_methods do`
@@ -382,9 +381,9 @@ module RbsInfer
 
             def private_class_method_names(stmts)
               stmts.grep(Prism::CallNode)
-                .select { |call| call.name == :private_class_method && call.receiver.nil? && call.arguments }
-                .flat_map { |call| symbol_args(call) }
-                .to_set
+                   .select { |call| call.name == :private_class_method && call.receiver.nil? && call.arguments }
+                   .flat_map { |call| symbol_args(call) }
+                   .to_set
             end
 
             # The delegation's parameter list and matching forwarding list. Both

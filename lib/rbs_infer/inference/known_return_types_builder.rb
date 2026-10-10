@@ -10,12 +10,12 @@ module RbsInfer::Inference
       members.each do |m|
         case m.kind
         when :method
-          if m.signature =~ /.*->\s*(.+)$/ && $1.strip != "untyped" && $1.strip != "void"
-            types[m.name] = $1.strip
+          if m.signature =~ /.*->\s*(.+)$/ && ::Regexp.last_match(1).strip != "untyped" && ::Regexp.last_match(1).strip != "void"
+            types[m.name] = ::Regexp.last_match(1).strip
           end
         when :attr_accessor, :attr_reader
           if m.signature =~ /\w+:\s*(.+)/
-            type = $1.strip
+            type = ::Regexp.last_match(1).strip
             types[m.name] = type unless type == "untyped"
           end
         end
@@ -47,8 +47,9 @@ module RbsInfer::Inference
 
       members.each do |m|
         next unless m.kind == :class_method
-        if m.signature =~ /.*->\s*(.+)$/ && $1.strip != "untyped" && $1.strip != "void"
-          types[m.name] = $1.strip
+
+        if m.signature =~ /.*->\s*(.+)$/ && ::Regexp.last_match(1).strip != "untyped" && ::Regexp.last_match(1).strip != "void"
+          types[m.name] = ::Regexp.last_match(1).strip
         end
       end
 

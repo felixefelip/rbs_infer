@@ -139,14 +139,14 @@ module RbsInfer
             "module GeneratedAttributeMethods",
             *inner.flat_map { |defn| defn.map { |line| "  #{line}" } },
             "end",
-            "include GeneratedAttributeMethods",
+            "include GeneratedAttributeMethods"
           ]
         end
 
         def instance_accessor_defs(name)
           [
             ["def #{name}", "  @#{name}", "end"],
-            ["def #{name}=(value)", "  @#{name} = value", "end"],
+            ["def #{name}=(value)", "  @#{name} = value", "end"]
           ]
         end
 
@@ -212,7 +212,7 @@ module RbsInfer
           # (felixefelip/rbs_infer#147), so the placeholder became the block's
           # declared parameter TYPE — `?{ (nil) -> untyped }`, which is no type
           # for a caller's block parameter to have.
-          ["set", "with"].map do |method|
+          %w[set with].map do |method|
             ["def self.#{method}(#{kwargs}, &block)", *names.map { |n| "  @#{n} = #{n}" }, "  block&.call", "end"]
           end
         end
@@ -262,7 +262,7 @@ module RbsInfer
         def default_expression_source(source, node)
           body = case node
                  when Prism::LambdaNode then node.body
-                 when Prism::CallNode then node.block&.body if [:lambda, :proc].include?(node.name)
+                 when Prism::CallNode then node.block&.body if %i[lambda proc].include?(node.name)
                  end
           expr = body || node
           slice = source.byteslice(expr.location.start_offset, expr.location.end_offset - expr.location.start_offset)

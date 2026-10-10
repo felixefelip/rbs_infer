@@ -11,7 +11,10 @@ require "tmpdir"
 # environment rather than degrading, which is why the marker is confirmed and not trusted.
 RSpec.describe "the `# @rbs_infer |...` overloading marker" do
   around do |example|
-    Dir.mktmpdir { |dir| @dir = dir; example.run }
+    Dir.mktmpdir do |dir|
+      @dir = dir
+      example.run
+    end
   end
 
   def rbs_for(class_name, source)

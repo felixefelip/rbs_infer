@@ -63,6 +63,7 @@ module RbsInfer::Project
         result << host
         @included_shorts.fetch(host, EMPTY).each do |sibling_short|
           next if carriers.include?(sibling_short)
+
           @files_defining[sibling_short].each { |f| result << f }
         end
       end
@@ -211,7 +212,7 @@ module RbsInfer::Project
     end
 
     def build(source_files)
-      owned = {} #: Hash[String, String]
+      owned = {} # : Hash[String, String]
 
       source_files.each do |file|
         entry = @parse_cache.get(file)
@@ -358,7 +359,7 @@ module RbsInfer::Project
         @includes = Hash.new { |h, k| h[k] = Set.new }
         @extends = Hash.new { |h, k| h[k] = Set.new }
         @module_declarations = Set.new
-        super()
+        super
       end
 
       def visit_class_node(node)
@@ -366,7 +367,10 @@ module RbsInfer::Project
       end
 
       def visit_module_node(node)
-        with_scope(node) { |fqn| @module_declarations << fqn if fqn; super }
+        with_scope(node) do |fqn|
+          @module_declarations << fqn if fqn
+          super
+        end
       end
 
       def visit_singleton_class_node(node)

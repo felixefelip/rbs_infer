@@ -416,7 +416,6 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
     expect(result.diagnostics).to be_empty
   end
 
-
   # felixefelip/rbs_infer#287. A setter's DECLARED return is its body's tail,
   # like any other method's. `obj.x = v` evaluating to `v` is a property of the
   # assignment operator — Ruby discards the method's return there — so the

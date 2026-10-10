@@ -51,7 +51,8 @@ RSpec.describe RbsInfer::Inference::InheritedReach do
       base_rbs
       write("app/kid.rb", "class Kid < Base\nend\n")
       write("app/caller.rb", "class Caller\n  def run = Kid.new(:posts)\nend\n")
-      write("sig/generated/base.rbs", "class Base\n  def initialize: (untyped name) -> void\nend\nclass Kid < Base\nend\n")
+      write("sig/generated/base.rbs",
+            "class Base\n  def initialize: (untyped name) -> void\nend\nclass Kid < Base\nend\n")
 
       expect(base_initialize).to eq("def initialize: (:posts name) -> void")
     end
@@ -137,7 +138,8 @@ RSpec.describe RbsInfer::Inference::InheritedReach do
         end
       RUBY
       write("app/caller.rb", "class Caller\n  def run = [Base.new(:direct), Kid.new(3, :x)]\nend\n")
-      write("sig/generated/base.rbs", "class Base\n  def initialize: (untyped name) -> void\nend\nclass Kid < Base\nend\n")
+      write("sig/generated/base.rbs",
+            "class Base\n  def initialize: (untyped name) -> void\nend\nclass Kid < Base\nend\n")
 
       expect(base_initialize).to eq("def initialize: (:direct name) -> void")
     end
@@ -483,7 +485,8 @@ RSpec.describe RbsInfer::Inference::InheritedReach do
         end
       RBS
 
-      rbs = RbsInfer::Analyzer.new(target_class: "Base", target_file: "app/base.rb", source_files: Dir["app/*.rb"]).generate_rbs
+      rbs = RbsInfer::Analyzer.new(target_class: "Base", target_file: "app/base.rb",
+                                   source_files: Dir["app/*.rb"]).generate_rbs
       expect(rbs[/def name=: .*?(?= ->)/]).to eq("def name=: (untyped value)")
     end
 
@@ -522,7 +525,8 @@ RSpec.describe RbsInfer::Inference::InheritedReach do
         end
       RBS
 
-      rbs = RbsInfer::Analyzer.new(target_class: "Base", target_file: "app/base.rb", source_files: Dir["app/*.rb"]).generate_rbs
+      rbs = RbsInfer::Analyzer.new(target_class: "Base", target_file: "app/base.rb",
+                                   source_files: Dir["app/*.rb"]).generate_rbs
       expect(rbs[/def self\.call: .*?(?= ->)/]).to eq("def self.call: ((Symbol | 1) name)")
     end
 
@@ -555,7 +559,8 @@ RSpec.describe RbsInfer::Inference::InheritedReach do
         end
       RBS
 
-      rbs = RbsInfer::Analyzer.new(target_class: "Base", target_file: "app/base.rb", source_files: Dir["app/*.rb"]).generate_rbs
+      rbs = RbsInfer::Analyzer.new(target_class: "Base", target_file: "app/base.rb",
+                                   source_files: Dir["app/*.rb"]).generate_rbs
       expect(rbs[/def each_row: .*?(?= -> untyped$)/]).to eq("def each_row: () { (1) -> Symbol }")
     end
 

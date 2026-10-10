@@ -247,7 +247,7 @@ RSpec.describe RbsInfer::Inference::InheritedForwards do
       allow(index).to receive(:forwards_into).with("setup").and_return(["run"])
       allow(index).to receive(:forwards_into).with("handle").and_return(["run"])
 
-      expect(index.for_methods(["setup", "handle"])).to eq("run" => ["setup", "handle"])
+      expect(index.for_methods(%w[setup handle])).to eq("run" => %w[setup handle])
     end
 
     it "answers nothing when asked about nothing" do

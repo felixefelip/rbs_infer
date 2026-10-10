@@ -98,8 +98,8 @@ class RbsInfer::Signatures::SteepBridge
     # an `lvar` one. Reading only the `lvar` shape left those methods with the
     # callee's requirement unasked — `?{ (*untyped) }` where the callee makes it
     # `{ (String) }` (felixefelip/rbs_infer#174).
-    def each_forwarded_block(typing, &block)
-      walk_forwarded_blocks(typing.source.node, nil, false, &block)
+    def each_forwarded_block(typing, &)
+      walk_forwarded_blocks(typing.source.node, nil, false, &)
     end
 
     def walk_forwarded_blocks(node, method_key, singleton, &block)
@@ -194,12 +194,16 @@ class RbsInfer::Signatures::SteepBridge
 
       if self_type.is_a?(RBS::Types::Bases::Self)
         receiver = send_node.children[0] or return nil
-        self_type = typing.type_of(node: receiver) rescue nil
+        self_type = begin
+          typing.type_of(node: receiver)
+        rescue StandardError
+          nil
+        end
         return nil unless self_type
       end
 
       formatted = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(self_type)
-      formatted unless formatted == "untyped" || formatted == "bot" || formatted == "void"
+      formatted unless %w[untyped bot void].include?(formatted)
     end
 
     # The block the callee declares, as `[param types]`, or `:unknown` when it

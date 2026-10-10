@@ -60,7 +60,8 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::TypeFormatter, :dummy_app do
       set = Steep::AST::Types::FiniteSet.new(types: [Steep::AST::Types::Literal.new(value: "a")])
 
       expect(described_class.format_type(state)).to eq("Reflection")
-      expect(described_class.format_type(Steep::AST::Types::Union.build(types: [state, Steep::AST::Builtin.nil_type]))).to eq("Reflection?")
+      expect(described_class.format_type(Steep::AST::Types::Union.build(types: [state,
+                                                                                Steep::AST::Builtin.nil_type]))).to eq("Reflection?")
       expect(described_class.format_type(set)).to eq('Set["a"]')
     end
 
