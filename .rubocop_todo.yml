@@ -1214,42 +1214,6 @@ Style/DocumentDynamicEvalDefinition:
   Exclude:
     - 'spec/lib/rbs_infer/project/block_reopen_spec.rb'
 
-# Offense count: 29
-# Configuration parameters: AllowedConstants.
-Style/Documentation:
-  Exclude:
-    - 'spec/**/*'
-    - 'test/**/*'
-    - 'lib/rbs_infer.rb'
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/ast/class_name_extractor.rb'
-    - 'lib/rbs_infer/ast/def_collector.rb'
-    - 'lib/rbs_infer/ast/optional_param_extractor.rb'
-    - 'lib/rbs_infer/extensions/enumerize/generator.rb'
-    - 'lib/rbs_infer/extensions/rails/custom_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/module_self_type_annotator.rb'
-    - 'lib/rbs_infer/extensions/rails/on_load_expander.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_body_attr_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/project/class_eval_expander.rb'
-    - 'lib/rbs_infer/project/constant_declaration_expander.rb'
-    - 'lib/rbs_infer/project/self_class_eval_expander.rb'
-    - 'lib/rbs_infer/railtie.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/lexical_scope.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/type_formatter.rb'
-
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle, AllowComments.
