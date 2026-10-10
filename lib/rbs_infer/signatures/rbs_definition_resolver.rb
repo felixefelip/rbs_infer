@@ -270,15 +270,18 @@ module RbsInfer::Signatures
 
     # Which class or module owns the method a `super` in `class_name`'s own
     # `method_name` reaches: the next definition up the ancestors, as RBS links
-    # it (`super_method`). Nil when `class_name` does not define the method
-    # itself, so there is no `super` of its own to ask about.
-    def super_method_owner(class_name, method_name)
+    # it (`super_method`). `kind` is the side, as in `method_owner`: `:instance`
+    # for `def call`, `:singleton` for `def self.call`. Nil when `class_name`
+    # does not define the method itself, so there is no `super` of its own to
+    # ask about.
+    def super_method_owner(class_name, method_name, kind:)
       return nil unless rbs_builder
 
       type_name = build_rbs_type_name(class_name)
       return nil unless rbs_builder.env.class_decls.key?(type_name)
 
-      method = rbs_builder.build_instance(type_name).methods[method_name.to_sym] or return nil
+      definition = kind == :singleton ? rbs_builder.build_singleton(type_name) : rbs_builder.build_instance(type_name)
+      method = definition.methods[method_name.to_sym] or return nil
       return nil unless method.defined_in == type_name
 
       method.super_method&.defined_in&.to_s
