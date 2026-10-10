@@ -5,11 +5,11 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
   # `initialize` for a `.new` or a `super` (`for_initialize`), onto a method's
   # parameters for any other call (`for_params`).
   #
-  # `value_type` types one argument node in the collector's current scope; the
+  # `value_types` types one argument node in the collector's current scope; the
   # checker's `expression_types` refine it (`argument_type`).
   class CallArguments
-    def initialize(value_type:, expression_types:, init_positional_params:)
-      @value_type = value_type
+    def initialize(value_types:, expression_types:, init_positional_params:)
+      @value_types = value_types
       @expression_types = expression_types
       @init_positional_params = init_positional_params
     end
@@ -38,33 +38,9 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       arguments = call_node.arguments.arguments
       keyword = ->(arg) { arg.is_a?(Prism::KeywordHashNode) && !collapses_to_positional?(arg, param_names) }
       args = bind_positionals(placeable(arguments).reject(&keyword), param_names) do |arg|
-        arg.is_a?(Prism::KeywordHashNode) ? hash_literal_type(arg) : argument_type(arg)
+        arg.is_a?(Prism::KeywordHashNode) ? @value_types.hash_literal_type(arg) : argument_type(arg)
       end
       args.merge!(keyword_types(arguments.select(&keyword)))
-    end
-
-    # A non-empty hash literal whose keys are ALL plain symbols — the only shape a record
-    # type can describe. Anything else (string/dynamic keys, `**splat`) keeps the generic
-    # inferrer's `Hash[K, V]`, which handles those.
-    def record_shaped?(node)
-      return false unless node.is_a?(Prism::HashNode) || node.is_a?(Prism::KeywordHashNode)
-      return false if node.elements.empty?
-
-      node.elements.all? { |e| e.is_a?(Prism::AssocNode) && symbol_key(e.key) }
-    end
-
-    # `{ key: Type, ... }` for a literal keyword hash.
-    def hash_literal_type(node)
-      pairs = node.elements.filter_map do |e|
-        next unless e.is_a?(Prism::AssocNode)
-
-        key = symbol_key(e.key) or next
-        "#{key}: #{@value_type.call(e.value) || "untyped"}"
-      end
-
-      return "Hash[Symbol, untyped]" if pairs.empty?
-
-      "{ #{pairs.join(", ")} }"
     end
 
     private
@@ -138,7 +114,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
     # callee's parameter a `nil` no call site can pass
     # (felixefelip/rbs_infer#186).
     def argument_type(arg)
-      resolved = @value_type.call(arg)
+      resolved = @value_types.value_type(arg)
       checker = expression_type(arg)
 
       return checker if narrowed_from?(resolved, checker)
