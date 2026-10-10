@@ -34,6 +34,10 @@ Metrics/ModuleLength:
 
 Metrics/BlockLength:
   CountAsOne: ["array", "hash", "heredoc", "method_call"]
+  inherit_mode:
+    merge: ["Exclude"]
+  Exclude:
+    - "spec/**/*"
 
 Style/IfUnlessModifier:
   Enabled: false
