@@ -251,8 +251,8 @@ module RbsInfer
       # Inferir tipos de instance variables (@post, @posts, etc.)
       # method_param_types feeds `@x = param` when the param's type came
       # from cross-class call-sites (felixefelip/rbs_infer#19).
-      ivar_inference = return_type_resolver.infer_ivar_types(target_members, attr_types, parsed_target: @parsed_target,
-                                                                                         method_param_types: method_param_types)
+      ivar_inference = ivar_type_inferrer.infer_ivar_types(target_members, attr_types, parsed_target: @parsed_target,
+                                                                                       method_param_types: method_param_types)
       ivar_types = ivar_inference.instance
       # Class-instance variables (`@x` in `def self.x`) declared `self.@x`
       # (felixefelip/rbs_infer#86). Threaded straight to the builder — the
@@ -786,6 +786,15 @@ module RbsInfer
         target_file: @target_file,
         target_class: @target_class,
         method_type_resolver: method_type_resolver,
+        instance_types: @instance_types || [],
+        steep_bridge: steep_bridge
+      )
+    end
+
+    def ivar_type_inferrer
+      @ivar_type_inferrer ||= RbsInfer::Inference::IvarTypeInferrer.new(
+        target_class: @target_class,
+        method_type_resolver: method_type_resolver,
         constant_resolver: constant_arg_resolver,
         instance_types: @instance_types || [],
         steep_bridge: steep_bridge
@@ -813,7 +822,7 @@ module RbsInfer
         parsed_target: @parsed_target,
         method_type_resolver: method_type_resolver,
         constant_resolver: constant_arg_resolver,
-        return_type_resolver: return_type_resolver
+        ivar_type_inferrer: ivar_type_inferrer
       )
     end
 
@@ -957,6 +966,7 @@ require_relative "inference/send_call"
 require_relative "inference/type_merger"
 require_relative "inference/ivar_type_set"
 require_relative "inference/return_type_resolver"
+require_relative "inference/ivar_type_inferrer"
 require_relative "inference/attr_type_inferrer"
 require_relative "inference/inherited_forwards"
 require_relative "inference/inherited_reach"

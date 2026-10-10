@@ -221,6 +221,7 @@ Metrics/AbcSize:
     - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
     - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
     - "lib/rbs_infer/inference/invoker_self_types.rb"
+    - "lib/rbs_infer/inference/ivar_type_inferrer.rb"
     - "lib/rbs_infer/inference/known_return_types_builder.rb"
     - "lib/rbs_infer/inference/local_self_paths.rb"
     - "lib/rbs_infer/inference/new_call_collector.rb"
@@ -282,9 +283,9 @@ Metrics/BlockLength:
 # Configuration parameters: CountBlocks, CountModifierForms, Max.
 Metrics/BlockNesting:
   Exclude:
+    - "lib/rbs_infer/inference/ivar_type_inferrer.rb"
     - "lib/rbs_infer/inference/new_call_collector.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
-    - "lib/rbs_infer/inference/return_type_resolver.rb"
     - "lib/rbs_infer/inference/type_merger.rb"
     - "lib/rbs_infer/signatures/method_type_resolver.rb"
 
@@ -324,6 +325,7 @@ Metrics/CyclomaticComplexity:
     - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
     - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
     - "lib/rbs_infer/inference/invoker_self_types.rb"
+    - "lib/rbs_infer/inference/ivar_type_inferrer.rb"
     - "lib/rbs_infer/inference/ivar_type_set.rb"
     - "lib/rbs_infer/inference/known_return_types_builder.rb"
     - "lib/rbs_infer/inference/new_call_collector.rb"
@@ -390,6 +392,7 @@ Metrics/PerceivedComplexity:
     - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
     - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
     - "lib/rbs_infer/inference/invoker_self_types.rb"
+    - "lib/rbs_infer/inference/ivar_type_inferrer.rb"
     - "lib/rbs_infer/inference/ivar_type_set.rb"
     - "lib/rbs_infer/inference/known_return_types_builder.rb"
     - "lib/rbs_infer/inference/new_call_collector.rb"
@@ -491,7 +494,7 @@ Style/CaseLikeIf:
   Exclude:
     - "lib/rbs_infer/inference/new_call_collector.rb"
 
-# Offense count: 89
+# Offense count: 90
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: EnforcedStyle, EnforcedStyleForClasses, EnforcedStyleForModules.
 # SupportedStyles: nested, compact
@@ -525,6 +528,7 @@ Style/ClassAndModuleChildren:
     - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
     - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
     - "lib/rbs_infer/inference/invoker_self_types.rb"
+    - "lib/rbs_infer/inference/ivar_type_inferrer.rb"
     - "lib/rbs_infer/inference/ivar_type_set.rb"
     - "lib/rbs_infer/inference/known_return_types_builder.rb"
     - "lib/rbs_infer/inference/local_self_paths.rb"
@@ -720,8 +724,8 @@ Style/HashEachMethods:
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/HashExcept:
   Exclude:
+    - "lib/rbs_infer/inference/ivar_type_inferrer.rb"
     - "lib/rbs_infer/inference/new_call_collector.rb"
-    - "lib/rbs_infer/inference/return_type_resolver.rb"
 
 # Offense count: 1
 Style/ItAssignment:
@@ -749,8 +753,8 @@ Style/MapToSet:
     - "lib/rbs_infer/inference/attr_type_inferrer.rb"
     - "lib/rbs_infer/inference/block_signature_resolver.rb"
     - "lib/rbs_infer/inference/inherited_forwards.rb"
+    - "lib/rbs_infer/inference/ivar_type_inferrer.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
-    - "lib/rbs_infer/inference/return_type_resolver.rb"
     - "lib/rbs_infer/inference/type_merger.rb"
     - "lib/rbs_infer/markers/predicate_marker_synthesizer.rb"
     - "lib/rbs_infer/markers/setter_marker_synthesizer.rb"
@@ -895,6 +899,7 @@ Layout/LineLength:
     - "lib/rbs_infer/inference/class_member_collector.rb"
     - "lib/rbs_infer/inference/inherited_reach.rb"
     - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
+    - "lib/rbs_infer/inference/ivar_type_inferrer.rb"
     - "lib/rbs_infer/inference/known_return_types_builder.rb"
     - "lib/rbs_infer/inference/new_call_collector.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
