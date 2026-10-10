@@ -580,7 +580,7 @@ Metrics/AbcSize:
     - "spec/support/steep_baseline_runner.rb"
     - "spec/support/steep_scenario_helper.rb"
 
-# Offense count: 288
+# Offense count: 187
 # Configuration parameters: CountComments, Max, CountAsOne, AllowedMethods, AllowedPatterns.
 # AllowedMethods: refine
 Metrics/BlockLength:
@@ -591,7 +591,6 @@ Metrics/BlockLength:
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
     - "lib/rbs_infer/inference/type_merger.rb"
     - "lib/rbs_infer/signatures/method_type_resolver.rb"
-    - "lib/rbs_infer/signatures/rbs_builder.rb"
     - "spec/bin/rbs_infer_spec.rb"
     - "spec/integration/expanded_source_spec.rb"
     - "spec/integration/rails_dummy_spec.rb"
@@ -604,7 +603,6 @@ Metrics/BlockLength:
     - "spec/lib/rbs_infer/ast/lexical_constant_resolver_spec.rb"
     - "spec/lib/rbs_infer/ast/multi_write_decomposer_spec.rb"
     - "spec/lib/rbs_infer/ast/node_type_inferrer_spec.rb"
-    - "spec/lib/rbs_infer/ast/optional_param_extractor_spec.rb"
     - "spec/lib/rbs_infer/ast/target_discovery_spec.rb"
     - "spec/lib/rbs_infer/extensions/carrierwave/generator_spec.rb"
     - "spec/lib/rbs_infer/extensions/devise/generator_spec.rb"
@@ -620,9 +618,7 @@ Metrics/BlockLength:
     - "spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb"
     - "spec/lib/rbs_infer/extensions/rails/on_load_expander_spec.rb"
     - "spec/lib/rbs_infer/extensions/rails/views/runtime_generator_spec.rb"
-    - "spec/lib/rbs_infer/inference/bare_call_universal_ancestor_spec.rb"
     - "spec/lib/rbs_infer/inference/block_return_collector_spec.rb"
-    - "spec/lib/rbs_infer/inference/block_signature_resolver_spec.rb"
     - "spec/lib/rbs_infer/inference/caller_file_analyzer_spec.rb"
     - "spec/lib/rbs_infer/inference/class_body_attr_analyzer_spec.rb"
     - "spec/lib/rbs_infer/inference/class_member_collector/block_signature_spec.rb"
@@ -649,11 +645,9 @@ Metrics/BlockLength:
     - "spec/lib/rbs_infer/inference/splat_param_inference_spec.rb"
     - "spec/lib/rbs_infer/inference/stored_block_self_spec.rb"
     - "spec/lib/rbs_infer/inference/type_merger_spec.rb"
-    - "spec/lib/rbs_infer/inference/underscore_local_spec.rb"
     - "spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb"
     - "spec/lib/rbs_infer/markers/setter_marker_synthesizer_spec.rb"
     - "spec/lib/rbs_infer/project/block_reopen_spec.rb"
-    - "spec/lib/rbs_infer/project/call_graph_spec.rb"
     - "spec/lib/rbs_infer/project/class_eval_expander_spec.rb"
     - "spec/lib/rbs_infer/project/constant_declaration_expander_spec.rb"
     - "spec/lib/rbs_infer/project/constant_sources_spec.rb"
@@ -664,7 +658,6 @@ Metrics/BlockLength:
     - "spec/lib/rbs_infer/project/parse_cache_spec.rb"
     - "spec/lib/rbs_infer/project/ruby_runtime_generator_spec.rb"
     - "spec/lib/rbs_infer/project/self_class_eval_expander_spec.rb"
-    - "spec/lib/rbs_infer/project/self_class_eval_marker_spec.rb"
     - "spec/lib/rbs_infer/project/self_type_annotators_spec.rb"
     - "spec/lib/rbs_infer/project/shape_reader_spec.rb"
     - "spec/lib/rbs_infer/project/source_expanders_spec.rb"
@@ -682,13 +675,11 @@ Metrics/BlockLength:
     - "spec/lib/rbs_infer/signatures/rbs_definition_resolver_spec.rb"
     - "spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb"
     - "spec/lib/rbs_infer/signatures/rbs_type_lookup_spec.rb"
-    - "spec/lib/rbs_infer/signatures/steep_bridge/block_analyzer_spec.rb"
     - "spec/lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer_spec.rb"
     - "spec/lib/rbs_infer/signatures/steep_bridge/return_type_analyzer_spec.rb"
     - "spec/lib/rbs_infer/signatures/steep_bridge/type_formatter_spec.rb"
     - "spec/lib/rbs_infer/signatures/steep_bridge_spec.rb"
     - "spec/support/steep_baseline_runner_spec.rb"
-    - "spec/support/steep_scenario_helper.rb"
 
 # Offense count: 9
 # Configuration parameters: CountBlocks, CountModifierForms, Max.
@@ -700,15 +691,13 @@ Metrics/BlockNesting:
     - "lib/rbs_infer/inference/type_merger.rb"
     - "lib/rbs_infer/signatures/method_type_resolver.rb"
 
-# Offense count: 5
+# Offense count: 3
 # Configuration parameters: CountComments, Max, CountAsOne.
 Metrics/ClassLength:
   Exclude:
-    - "lib/rbs_infer/analyzer.rb"
     - "lib/rbs_infer/inference/new_call_collector.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
     - "lib/rbs_infer/inference/return_type_resolver.rb"
-    - "lib/rbs_infer/signatures/steep_bridge.rb"
 
 # Offense count: 238
 # Configuration parameters: AllowedMethods, AllowedPatterns, Max.
@@ -783,25 +772,21 @@ Metrics/CyclomaticComplexity:
     - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
     - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
 
-# Offense count: 84
+# Offense count: 65
 # Configuration parameters: CountComments, Max, CountAsOne, AllowedMethods, AllowedPatterns.
 Metrics/MethodLength:
   Exclude:
     - "lib/rbs_infer/analyzer.rb"
     - "lib/rbs_infer/ast/node_type_inferrer.rb"
-    - "lib/rbs_infer/extensions/carrierwave/generator.rb"
     - "lib/rbs_infer/extensions/devise/generator.rb"
     - "lib/rbs_infer/extensions/enumerize/generator.rb"
     - "lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb"
     - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
-    - "lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb"
-    - "lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb"
     - "lib/rbs_infer/extensions/rails/custom_generator.rb"
     - "lib/rbs_infer/extensions/rails/views/template_scanner.rb"
     - "lib/rbs_infer/inference/attr_type_inferrer.rb"
     - "lib/rbs_infer/inference/caller_file_analyzer.rb"
     - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
-    - "lib/rbs_infer/inference/class_member_collector.rb"
     - "lib/rbs_infer/inference/forwarding_super.rb"
     - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
     - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
@@ -823,10 +808,6 @@ Metrics/MethodLength:
     - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
     - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
     - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
-    - "spec/bin/rbs_infer_spec.rb"
-    - "spec/lib/rbs_infer/inference/invoker_self_types_spec.rb"
-    - "spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb"
-    - "spec/support/steep_scenario_helper.rb"
 
 # Offense count: 25
 # Configuration parameters: Max, CountKeywordArgs, MaxOptionalParameters.
