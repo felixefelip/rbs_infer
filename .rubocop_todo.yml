@@ -183,7 +183,7 @@ Lint/UselessConstantScoping:
     - "lib/rbs_infer/signatures/rbs_builder.rb"
     - "spec/support/steep_baseline_runner.rb"
 
-# Offense count: 245
+# Offense count: 242
 # Configuration parameters: AllowedMethods, AllowedPatterns, CountRepeatedAttributes, Max.
 Metrics/AbcSize:
   Exclude:
@@ -228,6 +228,8 @@ Metrics/AbcSize:
     - "lib/rbs_infer/inference/new_call_collector/assigned_types.rb"
     - "lib/rbs_infer/inference/new_call_collector/call_arguments.rb"
     - "lib/rbs_infer/inference/new_call_collector/receiver_matcher.rb"
+    - "lib/rbs_infer/inference/new_call_collector/scope.rb"
+    - "lib/rbs_infer/inference/new_call_collector/value_types.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
     - "lib/rbs_infer/inference/return_type_resolver.rb"
     - "lib/rbs_infer/inference/type_merger.rb"
@@ -271,7 +273,7 @@ Metrics/AbcSize:
     - "spec/support/steep_baseline_runner.rb"
     - "spec/support/steep_scenario_helper.rb"
 
-# Offense count: 8
+# Offense count: 7
 # Configuration parameters: CountComments, Max, CountAsOne, AllowedMethods, AllowedPatterns.
 # AllowedMethods: refine
 Metrics/BlockLength:
@@ -281,7 +283,7 @@ Metrics/BlockLength:
     - "lib/rbs_infer/inference/type_merger.rb"
     - "lib/rbs_infer/signatures/method_type_resolver.rb"
 
-# Offense count: 8
+# Offense count: 6
 # Configuration parameters: CountBlocks, CountModifierForms, Max.
 Metrics/BlockNesting:
   Exclude:
@@ -290,7 +292,7 @@ Metrics/BlockNesting:
     - "lib/rbs_infer/inference/type_merger.rb"
     - "lib/rbs_infer/signatures/method_type_resolver.rb"
 
-# Offense count: 235
+# Offense count: 238
 # Configuration parameters: AllowedMethods, AllowedPatterns, Max.
 Metrics/CyclomaticComplexity:
   Exclude:
@@ -332,6 +334,7 @@ Metrics/CyclomaticComplexity:
     - "lib/rbs_infer/inference/new_call_collector.rb"
     - "lib/rbs_infer/inference/new_call_collector/assigned_types.rb"
     - "lib/rbs_infer/inference/new_call_collector/receiver_matcher.rb"
+    - "lib/rbs_infer/inference/new_call_collector/value_types.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
     - "lib/rbs_infer/inference/return_type_resolver.rb"
     - "lib/rbs_infer/inference/type_merger.rb"
@@ -401,6 +404,7 @@ Metrics/PerceivedComplexity:
     - "lib/rbs_infer/inference/new_call_collector.rb"
     - "lib/rbs_infer/inference/new_call_collector/assigned_types.rb"
     - "lib/rbs_infer/inference/new_call_collector/receiver_matcher.rb"
+    - "lib/rbs_infer/inference/new_call_collector/value_types.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
     - "lib/rbs_infer/inference/return_type_resolver.rb"
     - "lib/rbs_infer/inference/type_merger.rb"
@@ -492,13 +496,7 @@ Style/ArrayIntersect:
   Exclude:
     - "lib/rbs_infer/inference/forwarding_super.rb"
 
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: MinBranchesCount.
-Style/CaseLikeIf:
-  Exclude:
-
-# Offense count: 90
+# Offense count: 95
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: EnforcedStyle, EnforcedStyleForClasses, EnforcedStyleForModules.
 # SupportedStyles: nested, compact
@@ -540,6 +538,8 @@ Style/ClassAndModuleChildren:
     - "lib/rbs_infer/inference/new_call_collector/assigned_types.rb"
     - "lib/rbs_infer/inference/new_call_collector/call_arguments.rb"
     - "lib/rbs_infer/inference/new_call_collector/receiver_matcher.rb"
+    - "lib/rbs_infer/inference/new_call_collector/scope.rb"
+    - "lib/rbs_infer/inference/new_call_collector/value_types.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
     - "lib/rbs_infer/inference/return_type_resolver.rb"
     - "lib/rbs_infer/inference/self_return_type_context.rb"
@@ -600,11 +600,10 @@ Style/ClassAndModuleChildren:
     - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
     - "lib/rbs_infer/signatures/steep_environment.rb"
 
-# Offense count: 7
+# Offense count: 2
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/CombinableLoops:
   Exclude:
-    - "lib/rbs_infer/inference/return_type_resolver.rb"
     - "lib/rbs_infer/project/dependency_sorter.rb"
     - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
 
@@ -776,7 +775,7 @@ Style/ModuleFunction:
     - "lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb"
     - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
 
-# Offense count: 10
+# Offense count: 9
 Style/MultilineBlockChain:
   Exclude:
     - "lib/rbs_infer/analyzer.rb"
@@ -890,7 +889,7 @@ Style/StringConcatenation:
     - "spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb"
     - "spec/support/steep_scenario_helper.rb"
 
-# Offense count: 84
+# Offense count: 91
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: Max, AllowHeredoc, AllowURI, AllowQualifiedName, URISchemes, AllowRBSInlineAnnotation, AllowCopDirectives, AllowedPatterns, SplitStrings.
 # URISchemes: http, https

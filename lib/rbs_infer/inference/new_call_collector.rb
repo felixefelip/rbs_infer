@@ -29,30 +29,22 @@ module RbsInfer::Inference
       names
     end
 
-    # rubocop:todo-next Metrics/MethodLength
     def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, module_self_types:, invoker_self_types:, inherited_forwards:, inherited_initializers:, inherited_supers:,
                    local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
       @receivers = ReceiverMatcher.new(target_class: target_class, method_owners: method_owners, defined_class_names: defined_class_names)
-      @arguments = CallArguments.new(value_type: method(:resolve_value_type), expression_types: expression_types, init_positional_params: init_positional_params)
-      @method_return_types = method_return_types
-      @local_var_types = local_var_types
-      @local_var_read_types = local_var_read_types
+      @scope = Scope.new(local_var_types: local_var_types, caller_class_name: caller_class_name)
+      @types = ValueTypes.new(scope: @scope, method_return_types: method_return_types, local_var_read_types: local_var_read_types,
+                              method_type_resolver: method_type_resolver, constant_arg_resolver: constant_arg_resolver,
+                              self_types_by_method: self_types_by_method, module_self_types: module_self_types, invoker_self_types: invoker_self_types)
+      @arguments = CallArguments.new(value_types: @types, expression_types: expression_types, init_positional_params: init_positional_params)
       @local_var_types_by_method = local_var_types_by_method
       @method_scoped_var_names = local_var_types_by_method.each_value.flat_map(&:keys).to_set
-      @method_type_resolver = method_type_resolver
-      @caller_class_name = caller_class_name
       @assigned_types = AssignedTypes.new(method_return_types: method_return_types, method_type_resolver: method_type_resolver, caller_class_name: caller_class_name)
-      @constant_arg_resolver = constant_arg_resolver
       @target_methods = target_methods
       @inherited_forwards = inherited_forwards
       @inherited_initializers = inherited_initializers
       @inherited_supers = inherited_supers
       @match_bare_calls = match_bare_calls
-      @self_types_by_method = self_types_by_method
-      @module_self_types = module_self_types
-      @invoker_self_types = invoker_self_types
-      @current_def_params = []
-      @self_condition = nil
       @established_ivars_by_method = established_ivars_by_method
       @argument_partitions_by_method = argument_partitions_by_method
       @block_methods = block_methods
@@ -60,91 +52,26 @@ module RbsInfer::Inference
       @usages = []
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
       @method_block_returns = Hash.new { |h, k| h[k] = [] }
-      @class_name_stack = []
-      @declaration_kinds = []
-      @module_name_stack = []
-      @in_singleton_method = false
-      @current_method = nil
-      @current_def = nil
-      @lexical_names = []
-      @class_body_defs = []
-      @class_singleton_defs = []
     end
 
-    # A module declaration does not push a name — `@class_name_stack` is about
-    # the enclosing CLASS — but it does decide what `self` is inside it.
     def visit_module_node(node)
-      @declaration_kinds.push(:module)
-      @module_name_stack.push(module_name_for(node))
-      @lexical_names.push(lexical_name_for(node))
-      super
-    ensure
-      @declaration_kinds.pop
-      @module_name_stack.pop
-      @lexical_names.pop
-    end
-
-    def lexical_name_for(node)
-      segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path) or return @lexical_names.last
-      outer = @lexical_names.last
-
-      outer ? "#{outer}::#{segment}" : segment
-    end
-
-    # A module's FQN, joined with whatever encloses it. Tracked apart from
-    # `@class_name_stack`, which modules deliberately stay out of — a module
-    # name is not a `self` type, and the only thing this answers is WHICH module
-    # the annotators' answer was about (felixefelip/rbs_infer#161).
-    def module_name_for(node)
-      segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path) or return nil
-      outer = @module_name_stack.last || @class_name_stack.last
-
-      outer ? "#{outer}::#{segment}" : segment
+      @scope.in_module(node) { super }
     end
 
     def visit_class_node(node)
-      @declaration_kinds.push(:class)
-      @assigned_types.from_class(node, into: @local_var_types)
-
-      segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
-      full_name =
-        if segment
-          @class_name_stack.empty? ? segment : "#{@class_name_stack.last}::#{segment}"
-        end
-      @class_name_stack.push(full_name) if full_name
-      @lexical_names.push(lexical_name_for(node))
-      @class_body_defs.push(InheritedReach.body_defs(node, :instance).to_set)
-      @class_singleton_defs.push(InheritedReach.body_defs(node, :singleton).to_set)
-      super
-      @class_body_defs.pop
-      @class_singleton_defs.pop
-      @lexical_names.pop
-      @class_name_stack.pop if full_name
-      @declaration_kinds.pop
+      @assigned_types.from_class(node, into: @scope.local_var_types)
+      @scope.in_class(node) { super }
     end
 
     def visit_def_node(node)
-      old_vars = @local_var_types.dup
-      old_singleton = @in_singleton_method
-      old_method = @current_method
-      # `def self.foo` carries a receiver; plain `def foo` does not.
-      @in_singleton_method = !node.receiver.nil?
-      @current_method = node.name.to_s
-      old_def = @current_def
-      @current_def = node
-      old_params = @current_def_params
-      @current_def_params = positional_param_names(node)
-      unless @method_scoped_var_names.empty?
-        @local_var_types = @local_var_types.reject { |name, _| @method_scoped_var_names.include?(name) }
-        @local_var_types.merge!(@local_var_types_by_method[@current_method] || {})
+      @scope.in_def(node) do
+        unless @method_scoped_var_names.empty?
+          @scope.local_var_types = @scope.local_var_types.reject { |name, _| @method_scoped_var_names.include?(name) }
+          @scope.local_var_types.merge!(@local_var_types_by_method[@scope.current_method] || {})
+        end
+        @assigned_types.from_def(node, into: @scope.local_var_types)
+        super
       end
-      @assigned_types.from_def(node, into: @local_var_types)
-      super
-      @current_def_params = old_params
-      @current_def = old_def
-      @current_method = old_method
-      @in_singleton_method = old_singleton
-      @local_var_types = old_vars
     end
 
     def visit_super_node(node)
@@ -152,7 +79,7 @@ module RbsInfer::Inference
         args = @arguments.for_initialize(node)
         @usages << args unless args.empty?
       elsif super_reaches_target_method?
-        read_super_as_call(node, @current_method)
+        read_super_as_call(node, @scope.current_method)
       end
       super
     end
@@ -166,12 +93,6 @@ module RbsInfer::Inference
 
       type = BlockReturnCollector.block_return_type(node.block, @expression_types)
       @method_block_returns[method_name] << type if type
-    end
-
-    def positional_param_names(node)
-      params = node.parameters or return []
-
-      (params.requireds + params.optionals).filter_map { |p| p.name.to_s if p.respond_to?(:name) }
     end
 
     # A `case <param> ... when <literal>` branch is reachable only for callers who passed
@@ -196,10 +117,7 @@ module RbsInfer::Inference
           next
         end
 
-        saved = @local_var_types.dup
-        ivars.each { |name, type| @local_var_types[name] = type }
-        clause.statements&.accept(self)
-        @local_var_types = saved
+        @scope.with_local_types(ivars) { clause.statements&.accept(self) }
       end
 
       node.else_clause&.accept(self)
@@ -224,8 +142,8 @@ module RbsInfer::Inference
       if !@target_methods.empty? && node.receiver && node.arguments
         method_name = node.name.to_s
         if @target_methods.key?(method_name)
-          receiver_type = resolve_receiver_type(node.receiver)
-          @receivers.keys_by_branch(receiver_type, method_name, namespace: lexical_class_name).each do |key, branches|
+          receiver_type = @types.receiver_type(node.receiver)
+          @receivers.keys_by_branch(receiver_type, method_name, namespace: @scope.lexical_class_name).each do |key, branches|
             args = extract_cross_class_args_for(node, method_name, branches)
             @method_call_usages[key] << args unless args.empty?
           end
@@ -248,7 +166,7 @@ module RbsInfer::Inference
         Array(@inherited_forwards[node.name.to_s]).each do |forwarded_to|
           next unless @target_methods.key?(forwarded_to)
 
-          receiver_type = resolve_receiver_type(node.receiver)
+          receiver_type = @types.receiver_type(node.receiver)
           next unless receiver_type && @receivers.reaches_target_method?(receiver_type, forwarded_to)
 
           args = @arguments.for_params(node, @target_methods[forwarded_to])
@@ -277,35 +195,12 @@ module RbsInfer::Inference
     private
 
     def match_class?(name)
-      @receivers.match_class?(name, namespace: lexical_class_name)
-    end
-
-    def lexical_class_name
-      @class_name_stack.last || @caller_class_name
+      @receivers.match_class?(name, namespace: @scope.lexical_class_name)
     end
 
     def block_receiver_matches?(node)
-      receiver_type = resolve_receiver_type(node.receiver)
+      receiver_type = @types.receiver_type(node.receiver)
       receiver_type && match_class?(receiver_type)
-    end
-
-    # Lookup the type of an `:ivar` reference. Tries the `@`-prefixed
-    # key first (the convention used by `ErbCallerResolver` to keep
-    # ivar names separate from same-basename local vars), then falls
-    # back to the unprefixed key (used by `AssignedTypes#from_class`
-    # for in-class ivars).
-    def lookup_ivar_type(node)
-      full = node.name.to_s
-      @local_var_types[full] || @local_var_types[full.sub(/\A@/, "")] || declared_ivar_type(full)
-    end
-
-    def declared_ivar_type(name)
-      return nil unless @method_type_resolver
-
-      class_name = lexical_class_name or return nil
-
-      type = @method_type_resolver.resolve_ivar_types(class_name)[name]
-      type if type && type != "untyped"
     end
 
     def apply_established_ivars(node)
@@ -313,7 +208,7 @@ module RbsInfer::Inference
       return unless node.receiver.nil?
 
       established = @established_ivars_by_method[node.name.to_s] or return
-      established.each { |ivar, type| @local_var_types[ivar] = type }
+      established.each { |ivar, type| @scope.local_var_types[ivar] = type }
     end
 
     # `{ literal_key => ivars }` for the partitions keyed on this `case`'s subject, or `{}`.
@@ -322,13 +217,13 @@ module RbsInfer::Inference
     # what the caller passed.
     def partitions_for_case(node)
       return {} if @argument_partitions_by_method.empty?
-      return {} unless @current_method
+      return {} unless @scope.current_method
 
       predicate = node.predicate
       return {} unless predicate.is_a?(Prism::LocalVariableReadNode)
 
       param = predicate.name.to_s
-      (@argument_partitions_by_method[@current_method] || []).each_with_object({}) do |partition, acc|
+      (@argument_partitions_by_method[@scope.current_method] || []).each_with_object({}) do |partition, acc|
         next unless partition[:param] == param
 
         acc[partition[:pattern]] = partition[:ivars]
@@ -350,11 +245,7 @@ module RbsInfer::Inference
     end
 
     def extract_cross_class_args_for(node, method_name, branches)
-      previous = @self_condition
-      @self_condition = self_condition(node, branches)
-      @arguments.for_params(node, @target_methods[method_name])
-    ensure
-      @self_condition = previous
+      @scope.with_self_condition(self_condition(node, branches)) { @arguments.for_params(node, @target_methods[method_name]) }
     end
 
     # `[parameter index, branch]`, or nil when the pairing cannot be stated.
@@ -362,7 +253,7 @@ module RbsInfer::Inference
       return nil unless branches.size == 1
       return nil unless node.receiver.is_a?(Prism::LocalVariableReadNode)
 
-      index = @current_def_params.index(node.receiver.name.to_s) or return nil
+      index = @scope.current_def_params.index(node.receiver.name.to_s) or return nil
       [index, branches.first]
     end
 
@@ -375,7 +266,7 @@ module RbsInfer::Inference
       case receiver
       when Prism::ConstantReadNode, Prism::ConstantPathNode, Prism::SelfNode then true
       when nil then false
-      else resolve_receiver_type(receiver).to_s.start_with?("singleton(")
+      else @types.receiver_type(receiver).to_s.start_with?("singleton(")
       end
     end
 
@@ -386,7 +277,7 @@ module RbsInfer::Inference
       return false if @inherited_initializers.constructs.empty?
       return false unless receiver.is_a?(Prism::ConstantReadNode) || receiver.is_a?(Prism::ConstantPathNode)
 
-      resolved = resolve_constant_arg_type(receiver)[/\Asingleton\((.+)\)\z/, 1] or return false
+      resolved = @types.constant_type(receiver)[/\Asingleton\((.+)\)\z/, 1] or return false
       @inherited_initializers.constructs.include?(resolved.delete_prefix("::"))
     end
 
@@ -394,9 +285,9 @@ module RbsInfer::Inference
     # whose `super` reaches the target's.
     def super_reaches_target_initialize?
       return false if @inherited_initializers.supers.empty?
-      return false unless @current_method == "initialize" && own_method_side == :instance
+      return false unless @scope.current_method == "initialize" && @scope.own_method_side == :instance
 
-      @inherited_initializers.supers.include?(@lexical_names.last)
+      @inherited_initializers.supers.include?(@scope.lexical_name)
     end
 
     # The same for any other target method, on either side: a `super` in the
@@ -405,202 +296,9 @@ module RbsInfer::Inference
     def super_reaches_target_method?
       return false if @inherited_supers.empty?
 
-      side = own_method_side or return false
-      classes = @inherited_supers.dig(side, @current_method) or return false
-      classes.include?(@lexical_names.last)
-    end
-
-    # Which side of the enclosing class's own body the current method is
-    # written on (`InheritedReach.body_defs`): `:instance`, `:singleton` for a
-    # `def self.` or a `def` in its `class << self`, or nil for one in a block
-    # (`Class.new(Other) do`) or inside another method, which belongs to some
-    # other chain.
-    def own_method_side
-      return nil unless @declaration_kinds.last == :class
-
-      if @class_body_defs.last&.include?(@current_def)
-        :instance
-      elsif @class_singleton_defs.last&.include?(@current_def)
-        :singleton
-      end
-    end
-
-    # Steep's type for this particular read, or nil. Prism's character column
-    # matches Parser's; the byte column would drift on multibyte source.
-    def lvar_read_type(node)
-      @local_var_read_types[[node.location.start_line, node.location.start_character_column]]
-    end
-
-    def resolve_value_type(node) # rubocop:todo Metrics/MethodLength
-      # A hash literal is handled here, ahead of the generic literal inferrer, so its VALUES
-      # resolve with what this collector knows — ivars, locals, method returns. The generic
-      # inferrer builds the same record shape but sees none of that, so `{ post: @post }`
-      # came out `{ post: untyped }` even where `@post` is a known `Post & Post::Validated`.
-      return @arguments.hash_literal_type(node) if @arguments.record_shaped?(node)
-
-      literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: @constant_arg_resolver)
-      return literal if literal
-
-      case node
-      when Prism::LocalVariableReadNode
-        lvar_read_type(node) || @local_var_types[node.name.to_s] || "untyped"
-      when Prism::InstanceVariableReadNode
-        lookup_ivar_type(node) || "untyped"
-      when Prism::CallNode
-        if node.receiver.nil?
-          refined_self_method_type(node.name.to_s) || @method_return_types[node.name.to_s] || "untyped"
-        elsif node.name == :new && node.receiver
-          RbsInfer::Analyzer.extract_constant_path(node.receiver) || "untyped"
-        else
-          resolve_method_chain(node) || "untyped"
-        end
-      when Prism::ConstantReadNode, Prism::ConstantPathNode
-        resolve_constant_arg_type(node)
-      when Prism::SelfNode
-        current_self_type
-      when Prism::ImplicitNode
-        resolve_value_type(node.value)
-      else
-        "untyped"
-      end
-    end
-
-    # See ConstantArgTypeResolver (#46).
-    def resolve_constant_arg_type(node)
-      name = RbsInfer::Analyzer.extract_constant_path(node)
-      @constant_arg_resolver.resolve(name: name, namespace: lexical_class_name) || "untyped"
-    end
-
-    # Resolve `self` (passed as an argument or used as a receiver) to the
-    # lexically-enclosing class. Inside an instance method `self` is an
-    # instance of that class (`Caderneta`); inside a singleton method
-    # (`def self.x`) it's the class object itself (`singleton(Caderneta)`),
-    # so we never infer a bogus instance type for it. Falls back to the
-    # caller class (derived from the file path) when no class node is on
-    # the stack, and to `"untyped"` when even that is unknown.
-    #
-    # Drives call-site inference like `Cadastrar.new(self)` inside
-    # `Caderneta#criar_caderneta_de_vacinacao`, where the positional
-    # `initialize(caderneta)` param should infer as `Caderneta`.
-    def current_self_type
-      # Inside an instance method covered by an after-validation callback,
-      # `self` is the validated record — prefer the refined type from the
-      # callback sidecar (e.g. `Caderneta & Caderneta::Validated`) over the
-      # bare lexical class. Singleton methods aren't callback handlers, so
-      # they keep the lexical resolution.
-      unless @in_singleton_method
-        refined = @current_method && @self_types_by_method[@current_method]
-        return refined if refined && !refined.empty?
-      end
-
-      # Inside a module, an INSTANCE method's `self` is whatever includes it.
-      # Unknowable from the nesting — claiming the module is a lie that reaches
-      # the signature (`Token.authenticate(self, …)` typed its parameter
-      # `ActionController::HttpAuthentication`, which has no `request`) — but
-      # not unknowable in general: the self-type annotators answer it for a
-      # covered concern, and that answer is the one the call site should see.
-      # `Card::Entropy.for(self)` needs the `Card` half of `Card & Card::Entropic`
-      # for `last_active_at`. Only for the module the file is named after, so a
-      # sibling module in the same file cannot borrow it.
-      # A `def self.x` in a module is different: there `self` IS the module.
-      return module_self_type || "untyped" if !@in_singleton_method && @declaration_kinds.last == :module
-
-      base = lexical_class_name or return "untyped"
-
-      @in_singleton_method ? "singleton(#{base})" : base
-    end
-
-    # The answer for the module being visited. An unnameable one (a dynamic
-    # constant path) falls back to the name the file stands for.
-    #
-    # Narrowed to the hosts that actually call THIS method. The annotators state
-    # what `self` may be across the whole module — every class that includes it,
-    # every one that extends it — and that is the right answer for a
-    # declaration. As the type of an ARGUMENT it is too wide: `Foo#bazinga` is
-    # invoked from `Bar`'s body and nowhere else, so the `self` it passes on is
-    # `singleton(Bar)`, not the union with `Baz` (felixefelip/rbs_infer#222).
-    def module_self_type
-      declared = @module_self_types[@module_name_stack.last || @caller_class_name]
-      return declared if declared.nil? || @current_method.nil?
-
-      @invoker_self_types.narrow(method_name: @current_method, declared: declared, given: @self_condition)
-    end
-
-    # Resolves a `self.<method>` against the refined `self` type when the
-    # enclosing method is covered by an after-validation callback (its `self`
-    # is `Model & Model::Validated`). This makes `self.<association>` resolve
-    # to the marker-decorated reader (e.g. `Caderneta & Caderneta::Validated`)
-    # rather than the base nilable reader. Returns nil outside such methods,
-    # so the normal `@method_return_types` path is preserved unchanged.
-    def refined_self_method_type(method_name)
-      return nil if @in_singleton_method
-      return nil unless @method_type_resolver
-
-      refined = @current_method && @self_types_by_method[@current_method]
-      return nil if refined.nil? || refined.empty?
-
-      resolved = @method_type_resolver.resolve(refined, method_name, arg_types: nil)
-      resolved if resolved && resolved != "untyped"
-    end
-
-    # Resolver receiver.method() → tipo do retorno do method no receiver
-    def resolve_method_chain(node)
-      return nil unless @method_type_resolver
-
-      # Constant receiver → singleton lookup (`Account.first`), not
-      # instance. `self` in a class method's RBS is the class itself
-      # (same convention as Analyzer#infer_attr_types_from_initialize).
-      if node.receiver.is_a?(Prism::ConstantReadNode) || node.receiver.is_a?(Prism::ConstantPathNode)
-        class_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
-        return nil unless class_name
-
-        resolved = @method_type_resolver.resolve_class_method(class_name, node.name.to_s)
-        return resolved == "self" ? class_name : resolved
-      end
-
-      receiver_type = resolve_receiver_type(node.receiver)
-      return nil unless receiver_type && receiver_type != "untyped"
-
-      resolved = @method_type_resolver.resolve(receiver_type, node.name.to_s, arg_types: nil)
-      # `a&.b` with a nilable receiver: the nil flows into the result (on
-      # a plain call the resolve is optimistic — `a.b` raises on nil).
-      if resolved && node.safe_navigation? && receiver_type.end_with?("?")
-        resolved = RbsInfer::Signatures::RbsParserUtil.nilablize(resolved)
-      end
-      resolved
-    end
-
-    # Resolver o tipo do receiver de um method call
-    def resolve_receiver_type(node)
-      case node
-      when Prism::LocalVariableReadNode
-        @local_var_types[node.name.to_s]
-      when Prism::InstanceVariableReadNode
-        lookup_ivar_type(node)
-      when Prism::CallNode
-        if node.receiver.nil?
-          # Implicit `self.<method>` (ex: attr_reader/association). Inside a
-          # callback-refined method, resolve against the refined self so a
-          # `self.<association>` picks up the marker-decorated reader instead
-          # of the base nilable one.
-          refined_self_method_type(node.name.to_s) || @method_return_types[node.name.to_s]
-        elsif node.name == :new && node.receiver
-          RbsInfer::Analyzer.extract_constant_path(node.receiver)
-        else
-          resolve_method_chain(node)
-        end
-      when Prism::SelfNode
-        # self → tipo da classe léxica (instância ou singleton); nil quando
-        # desconhecido, mantendo a convenção nil-returning deste método.
-        resolved = current_self_type
-        resolved == "untyped" ? nil : resolved
-      when Prism::ConstantReadNode, Prism::ConstantPathNode
-        # Constant receiver → singleton method call on the class
-        # (`Current.user = x`, `Notifier.notify(...)`). The class name is
-        # itself the receiver's "type" for match_class? purposes
-        # (felixefelip/rbs_infer#19).
-        RbsInfer::Analyzer.extract_constant_path(node)
-      end
+      side = @scope.own_method_side or return false
+      classes = @inherited_supers.dig(side, @scope.current_method) or return false
+      classes.include?(@scope.lexical_name)
     end
   end
 end
