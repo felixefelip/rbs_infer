@@ -12,7 +12,7 @@ module RbsInfer::Inference
     # covered by `IntraClassCallAnalyzer`. Omitting it would double-count every same-file
     # self-call — the two paths resolve the receiver differently, so the parameter widens
     # into a union instead of failing loudly (required-threaded-deps).
-    def initialize(target_class:, method_type_resolver:, target_file:, mixin_index:, invoker_self_types:, inherited_forwards:, inherited_initializers:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {})
+    def initialize(target_class:, method_type_resolver:, target_file:, mixin_index:, invoker_self_types:, inherited_forwards:, inherited_initializers:, inherited_supers:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {})
       @target_class = target_class
       @target_file = target_file
       @method_type_resolver = method_type_resolver
@@ -46,6 +46,9 @@ module RbsInfer::Inference
       # The classes whose `new` or `super` reaches the target's `initialize`
       # (felixefelip/rbs_infer#412). Required for the same reason.
       @inherited_initializers = inherited_initializers
+      # The subclasses whose own method's `super` reaches one of the target's
+      # (felixefelip/rbs_infer#414). Required for the same reason.
+      @inherited_supers = inherited_supers
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
       @method_block_returns = Hash.new { |h, k| h[k] = [] }
     end
@@ -198,6 +201,7 @@ module RbsInfer::Inference
         method_owners: @method_owners,
         inherited_forwards: @inherited_forwards,
         inherited_initializers: @inherited_initializers,
+        inherited_supers: @inherited_supers,
         expression_types: @steep_bridge ? @steep_bridge.all_expression_types(source) : {}
       )
       result.value.accept(visitor)
@@ -242,6 +246,7 @@ module RbsInfer::Inference
         target_methods: @target_methods,
         inherited_forwards: @inherited_forwards,
         inherited_initializers: @inherited_initializers,
+        inherited_supers: @inherited_supers,
         match_bare_calls: true,
         # Pre-converted ERB source has no constant defs of its own → {}.
         constant_arg_resolver: ConstantArgTypeResolver.new(steep_bridge: @steep_bridge, caller_constant_types: {}),

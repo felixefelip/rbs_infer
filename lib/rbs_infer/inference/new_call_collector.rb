@@ -28,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types:, invoker_self_types:, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {}, inherited_forwards:, inherited_initializers:)
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types:, invoker_self_types:, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {}, inherited_forwards:, inherited_initializers:, inherited_supers:)
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -68,10 +68,14 @@ module RbsInfer::Inference
       # (docs/engineering/required-threaded-deps.md).
       @inherited_forwards = inherited_forwards
       # The classes whose `new` or `super` reaches the target's `initialize`
-      # (felixefelip/rbs_infer#412), as `InheritedInitializers::Reach`.
+      # (felixefelip/rbs_infer#412), as `InheritedReach::Reach`.
       # Required for the same reason: forgetting it silently drops those call
       # sites. A collector whose usages are not `initialize`'s passes `NONE`.
       @inherited_initializers = inherited_initializers
+      # `{ "call" => Set["Kid"] }`: for each target method, the classes whose
+      # own method of that name reaches it through `super` (#414). Required for
+      # the same reason; a collector that reads no method call passes `{}`.
+      @inherited_supers = inherited_supers
       @match_bare_calls = match_bare_calls
       # `{ "method_name" => "Self & Self::Validated" }` — refined `self`
       # types per method, from after-validation callback sidecars (see
@@ -182,8 +186,7 @@ module RbsInfer::Inference
         end
       @class_name_stack.push(full_name) if full_name
       @lexical_names.push(lexical_name_for(node))
-      body = node.body.is_a?(Prism::StatementsNode) ? node.body.body : []
-      @class_body_defs.push(body.grep(Prism::DefNode).to_set)
+      @class_body_defs.push(InheritedReach.body_defs(node).to_set)
       super
       @class_body_defs.pop
       @lexical_names.pop
@@ -215,15 +218,19 @@ module RbsInfer::Inference
       @local_var_types = old_vars
     end
 
-    # A `super` in a subclass's `initialize` is a call site of the
-    # `initialize` it reaches (felixefelip/rbs_infer#412): `super(name)` hands
-    # on what a `.new` would, mapped the same way. A bare `super` arrives here
-    # written out (`ForwardingSuper`), so it is read the same way too.
+    # A `super` is a call site of the method it reaches: in a subclass's
+    # `initialize`, of the target's `initialize` (felixefelip/rbs_infer#412),
+    # mapped as a `.new` would be; in any other method, of the target's method
+    # of that name (#414), mapped as a call to it. A bare `super` arrives here
+    # written out (`ForwardingSuper`), so it is read the same way.
     def visit_super_node(node)
       if super_reaches_target_initialize?
         args = extract_keyword_args(node)
         args.merge!(extract_positional_args(node))
         @usages << args unless args.empty?
+      elsif super_reaches_target_method?
+        args = extract_cross_class_args(node, @target_methods[@current_method])
+        @method_call_usages[@current_method] << args unless args.empty?
       end
       super
     end
@@ -541,14 +548,28 @@ module RbsInfer::Inference
     end
 
     # A `super` written in an `initialize` of a class's own body, in a class
-    # whose `super` reaches the target's. One under `class << self` or in a
-    # block (`Class.new(Other) do`) belongs to some other class.
+    # whose `super` reaches the target's.
     def super_reaches_target_initialize?
       return false if @inherited_initializers.supers.empty?
-      return false unless @current_method == "initialize" && @declaration_kinds.last == :class
-      return false unless @class_body_defs.last&.include?(@current_def)
+      return false unless @current_method == "initialize" && in_own_instance_method?
 
       @inherited_initializers.supers.include?(@lexical_names.last)
+    end
+
+    # The same for any other target method: a `super` in the class's own
+    # method of that name, in a class whose `super` reaches the target's.
+    def super_reaches_target_method?
+      classes = @inherited_supers[@current_method] or return false
+      return false unless @target_methods.key?(@current_method) && in_own_instance_method?
+
+      classes.include?(@lexical_names.last)
+    end
+
+    # Inside an instance method written in the enclosing class's own body
+    # (`InheritedReach.body_defs`). One under `class << self`, a `def self.`,
+    # or one in a block (`Class.new(Other) do`) belongs to some other chain.
+    def in_own_instance_method?
+      @declaration_kinds.last == :class && @class_body_defs.last&.include?(@current_def) || false
     end
 
     # Does the handler this receiver would reach belong to the target?

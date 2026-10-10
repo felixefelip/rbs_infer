@@ -159,6 +159,8 @@ module RbsInfer::Inference
       target_methods = attr_writer_methods(members).merge(target_method_params(parsed_target))
       return {} if target_methods.empty?
 
+      inherited_supers = inherited_reach.supers_by_method(target_methods.keys)
+
       analyzer = CallerFileAnalyzer.new(
         target_class: @target_class,
         target_file: @target_file,
@@ -169,7 +171,10 @@ module RbsInfer::Inference
         inherited_forwards: inherited_forwards_for(target_methods),
         # Method call usages only: the `initialize` usages this walk also
         # collects are discarded, so nothing reaching it is needed.
-        inherited_initializers: InheritedInitializers::NONE,
+        inherited_initializers: InheritedReach::NONE,
+        # felixefelip/rbs_infer#414: the subclasses whose own method's `super`
+        # reaches one of the target's.
+        inherited_supers: inherited_supers,
         init_positional_params: init_positional_params(parsed_target),
         target_methods: target_methods,
         steep_bridge: @steep_bridge,
@@ -181,7 +186,7 @@ module RbsInfer::Inference
         invoker_self_types: @invoker_self_types
       )
 
-      caller_files(target_methods, is_module: is_module) do |file, force_bare|
+      caller_files(target_methods, is_module: is_module, inherited_supers: inherited_supers) do |file, force_bare|
         analyzer.analyze(file, force_bare: force_bare)
       end
 
@@ -209,11 +214,15 @@ module RbsInfer::Inference
       ).for_methods(target_methods.keys)
     end
 
-    # Who may be calling the target, by four routes no single index covers. Yields
+    # Who may be calling the target, by five routes no single index covers. Yields
     # each file along with whether it matches RECEIVERLESS calls — which only the
     # two routes that proved reachability earn.
-    def caller_files(target_methods, is_module:)
+    def caller_files(target_methods, is_module:, inherited_supers:)
       referencing = @source_index.files_referencing(@target_class)
+
+      # A subclass whose own method hands on to the target's with `super`
+      # (felixefelip/rbs_infer#414): its file need not name the target.
+      supering = inherited_supers.values.reduce(Set.new, :|).flat_map { |name| @source_index.files_referencing(name) }.to_set
 
       # A concern's instance methods are called *bare* by includer hosts and by
       # the host's sibling concerns — files that never name the concern, so the
@@ -242,7 +251,7 @@ module RbsInfer::Inference
           Set.new
         end
 
-      (referencing.to_set | reaching | calling | bare_reaching).each do |file|
+      (referencing.to_set | reaching | calling | bare_reaching | supering).each do |file|
         yield file, reaching.include?(file) || bare_reaching.include?(file)
       end
     end
@@ -251,12 +260,7 @@ module RbsInfer::Inference
     # whose `new` or `super` reaches its `initialize` (felixefelip/rbs_infer#412):
     # `Kid.new(:posts)` need not spell `Base` to run `Base#initialize`.
     def find_new_calls(parsed_target)
-      reach = InheritedInitializers.new(
-        target_class: @target_class,
-        source_index: @source_index,
-        parse_cache: @parse_cache,
-        rbs_definition_resolver: rbs_definition_resolver
-      ).reach
+      reach = inherited_reach.reach("initialize")
       analyzer = CallerFileAnalyzer.new(
         target_class: @target_class,
         method_type_resolver: @method_type_resolver,
@@ -270,16 +274,24 @@ module RbsInfer::Inference
         # so an inherited dispatcher has nothing to contribute here and looking
         # for one would only cost a sweep (felixefelip/rbs_infer#331).
         inherited_forwards: {},
-        inherited_initializers: reach
+        inherited_initializers: reach,
+        # The method-call usages this walk collects are discarded too.
+        inherited_supers: {}
       )
       reachers = reach.constructs | reach.supers
       files = ([@target_class] + reachers.to_a).flat_map { |name| @source_index.files_referencing(name) }.uniq
       files.flat_map { |file| analyzer.analyze(file) }
     end
 
-    # One per inferrer, so the owner lookups it memoizes are shared.
-    def rbs_definition_resolver
-      @rbs_definition_resolver ||= RbsInfer::Signatures::RbsDefinitionResolver.new
+    # One per inferrer, so the descendant tree and the owner lookups it
+    # memoizes are shared by `initialize` and the other methods.
+    def inherited_reach
+      @inherited_reach ||= InheritedReach.new(
+        target_class: @target_class,
+        source_index: @source_index,
+        parse_cache: @parse_cache,
+        rbs_definition_resolver: rbs_definition_resolver
+      )
     end
 
     # ─── What the target declares, for matching the call sites ─────────

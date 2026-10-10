@@ -18,7 +18,8 @@ RSpec.describe RbsInfer::Inference::CallerFileAnalyzer do
         parse_cache: RbsInfer::Project::ParseCache.new
       ),
       inherited_forwards: {},
-      inherited_initializers: RbsInfer::Inference::InheritedInitializers::NONE
+      inherited_initializers: RbsInfer::Inference::InheritedReach::NONE,
+      inherited_supers: {}
     )
   end
 
