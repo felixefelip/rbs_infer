@@ -48,7 +48,7 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
     # `body` decides whether a block is required, and whether a method that only
     # `yield`s takes one at all — neither is visible from the parameters alone.
     def initialize(params, body: nil)
-			@params = params
+      @params = params
       @body = body
       @parts = []
       @constant_default_params = {}
@@ -127,14 +127,18 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
 
     def extract_positional_params_signature
       # Parâmetros posicionais obrigatórios
-      @params.requireds.each do |p|
-        @parts << param_name(p)
-      end if @params.respond_to?(:requireds)
+      if @params.respond_to?(:requireds)
+        @params.requireds.each do |p|
+          @parts << param_name(p)
+        end
+      end
 
       # Parâmetros opcionais
-      @params.optionals.each do |p|
-        @parts << "?#{optional_param_type(p)} #{p.name}"
-      end if @params.respond_to?(:optionals)
+      if @params.respond_to?(:optionals)
+        @params.optionals.each do |p|
+          @parts << "?#{optional_param_type(p)} #{p.name}"
+        end
+      end
 
       # Rest param. Emitted WITH its name when it has one, for the same reason every
       # other parameter is: the type substitution downstream is keyed by name
@@ -150,15 +154,17 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
 
     def extract_keyword_params_signature
       # Keywords obrigatórios
-      @params.keywords.each do |p|
-        case p
-        when Prism::RequiredKeywordParameterNode
-          @parts << "#{p.name}: untyped"
-        when Prism::OptionalKeywordParameterNode
-          @nil_default_params << p.name.to_s if p.value.is_a?(Prism::NilNode)
-          @parts << "?#{p.name}: untyped"
+      if @params.respond_to?(:keywords)
+        @params.keywords.each do |p|
+          case p
+          when Prism::RequiredKeywordParameterNode
+            @parts << "#{p.name}: untyped"
+          when Prism::OptionalKeywordParameterNode
+            @nil_default_params << p.name.to_s if p.value.is_a?(Prism::NilNode)
+            @parts << "?#{p.name}: untyped"
+          end
         end
-      end if @params.respond_to?(:keywords)
+      end
 
       # Keyword rest
       if forwarding?

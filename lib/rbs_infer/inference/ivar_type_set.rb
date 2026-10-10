@@ -34,6 +34,7 @@ module RbsInfer::Inference
 
     def add(type_str)
       return if type_str.nil?
+
       type_str = type_str.to_s.strip
       return if type_str.empty?
       return if IGNORABLE.include?(type_str)
@@ -111,6 +112,7 @@ module RbsInfer::Inference
       # disagree on outer parens (resolve format vs Steep format).
       key = key[1..-2] while key.start_with?("(") && key.end_with?(")") && balanced_outer?(key)
       return if @seen[key]
+
       @seen[key] = true
       @ordered << type_str
     end

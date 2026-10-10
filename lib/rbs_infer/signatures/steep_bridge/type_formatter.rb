@@ -32,7 +32,7 @@ class RbsInfer::Signatures::SteepBridge
         str = erase_type_variables(steep_type).to_s
 
         # Remove leading :: from all type names
-        str = str.gsub(/(^|[\[\(, |])::/) { $1 }
+        str = str.gsub(/(^|[\[(, |])::/) { ::Regexp.last_match(1) }
 
         # Normalize record key format: { :sym => Type } → { sym: Type }
         str = str.gsub(/:(\w+) =>/, '\1:')
@@ -44,8 +44,8 @@ class RbsInfer::Signatures::SteepBridge
         # with one answer, and hand-rolling it got the answer wrong for a proc —
         # `^() -> Symbol?` is a proc whose RETURN is optional
         # (felixefelip/rbs_infer#237).
-        str = str.gsub(/\(([^|()]+) \| nil\)/) { nilablize($1.strip) }
-        str = str.gsub(/\(nil \| ([^|()]+)\)/) { nilablize($1.strip) }
+        str = str.gsub(/\(([^|()]+) \| nil\)/) { nilablize(::Regexp.last_match(1).strip) }
+        str = str.gsub(/\(nil \| ([^|()]+)\)/) { nilablize(::Regexp.last_match(1).strip) }
 
         # Normalize void out of union types: (void | T) → T?
         # void in a union means "return value not used in that branch", treat as nil
@@ -64,11 +64,11 @@ class RbsInfer::Signatures::SteepBridge
 
         # Normalize (T | nil) to T?
         if str =~ /\A\((.+) \| nil\)\z/
-          inner = $1.strip
+          inner = ::Regexp.last_match(1).strip
           return nilablize(inner) unless inner.include?("|")
         end
         if str =~ /\A\(nil \| (.+)\)\z/
-          inner = $1.strip
+          inner = ::Regexp.last_match(1).strip
           return nilablize(inner) unless inner.include?("|")
         end
 
@@ -114,7 +114,11 @@ class RbsInfer::Signatures::SteepBridge
         when :regexp
           Steep::AST::Builtin::Regexp.instance_type
         else
-          typing.type_of(node: node) rescue nil
+          begin
+            typing.type_of(node: node)
+          rescue StandardError
+            nil
+          end
         end
       end
     end

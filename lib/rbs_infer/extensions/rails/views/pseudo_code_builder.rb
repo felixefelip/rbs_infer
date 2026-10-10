@@ -115,6 +115,7 @@ module RbsInfer
               dir = nil if dir == "."
               TemplateScanner.scan(File.read(path)).renders.each do |render|
                 next unless resolve_partial(render.partial, dir) == key
+
                 names.concat(render.locals.keys)
               end
             end
@@ -166,10 +167,10 @@ module RbsInfer
           # Two renders of the same partial collapse into one branch — a duplicate `when`
           # key would be dead after the first.
           def render_method(scan, caller_dir)
-            branches = scan.renders.filter_map { |render|
+            branches = scan.renders.filter_map do |render|
               call = render_call(render, caller_dir) or next
               [render.partial, call]
-            }.uniq(&:first)
+            end.uniq(&:first)
             return nil if branches.empty?
 
             body = branches.map { |name, call| "    when #{name.inspect} then #{call}" }

@@ -8,6 +8,7 @@ module RbsInfer::AST
 
     def visit_def_node(node)
       return super unless node.name == :initialize
+
       params = node.parameters
       return unless params&.respond_to?(:keywords)
 
@@ -17,9 +18,11 @@ module RbsInfer::AST
         end
       end
 
-      params.optionals.each do |p|
-        @optional_params.add(p.name.to_s) if p.respond_to?(:name)
-      end if params.respond_to?(:optionals)
+      if params.respond_to?(:optionals)
+        params.optionals.each do |p|
+          @optional_params.add(p.name.to_s) if p.respond_to?(:name)
+        end
+      end
     end
   end
 end

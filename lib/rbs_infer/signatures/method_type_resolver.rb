@@ -25,7 +25,8 @@ module RbsInfer::Signatures
     # invoker_self_types: required for the same reason and on the same path — it
     # is what narrows that module `self` from every host to the ones that call
     # the method being read (felixefelip/rbs_infer#222).
-    def initialize(source_files, constant_resolver:, mixin_index:, invoker_self_types:, source_index: nil, parse_cache: nil, file_index: nil, caller_file_cache: nil)
+    def initialize(source_files, constant_resolver:, mixin_index:, invoker_self_types:, source_index: nil,
+                   parse_cache: nil, file_index: nil, caller_file_cache: nil)
       @source_files = source_files
       @source_index = source_index
       @constant_resolver = constant_resolver
@@ -96,7 +97,7 @@ module RbsInfer::Signatures
 
       if class_name.end_with?("?")
         return resolve_nilable(class_name.delete_suffix("?"), method_name, block_body_type: block_body_type,
-                               arg_types: arg_types)
+                                                                           arg_types: arg_types)
       end
 
       # Intersection types (e.g. `(OrderImport & OrderImport::Validated)` from
@@ -121,6 +122,7 @@ module RbsInfer::Signatures
         results = components.map { |c| resolve(c, method_name, block_body_type: block_body_type, arg_types: arg_types) }
         return nil if results.any?(&:nil?)
         return results.first if results.uniq.length == 1
+
         return nil
       end
 
@@ -181,7 +183,7 @@ module RbsInfer::Signatures
       return @nil_branch_cache[key] if @nil_branch_cache.key?(key)
 
       @nil_branch_cache[key] = resolve("NilClass", method_name, block_body_type: block_body_type,
-                                                               arg_types: arg_types)
+                                                                arg_types: arg_types)
     end
 
     private def self_relative?(type)
@@ -202,6 +204,7 @@ module RbsInfer::Signatures
     private def parse_intersection(class_name)
       parsed = RBS::Parser.parse_type(class_name)
       return nil unless parsed.is_a?(RBS::Types::Intersection)
+
       parsed.types.map(&:to_s)
     rescue RBS::ParsingError
       nil
@@ -210,6 +213,7 @@ module RbsInfer::Signatures
     private def parse_union(class_name)
       parsed = RBS::Parser.parse_type(class_name)
       return nil unless parsed.is_a?(RBS::Types::Union)
+
       parsed.types.map(&:to_s)
     rescue RBS::ParsingError
       nil
@@ -224,7 +228,7 @@ module RbsInfer::Signatures
       # below reaches it with a method NAME only. Saying so keeps the gap visible
       # rather than letting it read as an oversight.
       resolved = @rbs_definition_resolver.resolve_via_rbs_builder(:singleton, class_name, method_name,
-                                                                 arg_types: nil, block_body_type: block_body_type)
+                                                                  arg_types: nil, block_body_type: block_body_type)
       return resolved if resolved
 
       # Fallback: regex-based lookup
@@ -234,6 +238,7 @@ module RbsInfer::Signatures
 
     def resolve_all(class_name)
       return {} unless class_name && class_name != "untyped"
+
       @cache[class_name] ||= build_class_types(class_name)
     end
 
@@ -247,14 +252,13 @@ module RbsInfer::Signatures
       @rbs_definition_resolver.method_parameters(kind, class_name, method_name)
     end
 
-
-
     # All class (singleton) method return types for a class, keyed by name —
     # the singleton counterpart of `resolve_all`. Lets callers resolve a
     # class method's body against other class methods without pulling in the
     # instance-method table (felixefelip/rbs_infer#33).
     def resolve_all_class_methods(class_name)
       return {} unless class_name && class_name != "untyped"
+
       lookup_class_methods(class_name)
     end
 
@@ -276,6 +280,7 @@ module RbsInfer::Signatures
     def resolve_init_param_types(class_name)
       return {} unless class_name && class_name != "untyped"
       return {} if @building_init_params&.include?(class_name)
+
       @init_params_cache ||= {}
       @init_params_cache[class_name] ||= build_init_param_types(class_name)
     end
@@ -295,6 +300,7 @@ module RbsInfer::Signatures
     def build_init_param_types(class_name)
       @building_init_params ||= Set.new
       return {} if @building_init_params.include?(class_name)
+
       @building_init_params.add(class_name)
 
       types = {}
@@ -316,11 +322,11 @@ module RbsInfer::Signatures
           case m.kind
           when :method
             if m.signature =~ /.*->\s*(.+)$/
-              mrt[m.name] = $1.strip
+              mrt[m.name] = ::Regexp.last_match(1).strip
             end
           when :attr_accessor, :attr_reader
             if m.signature =~ /\w+:\s*(.+)/
-              type = $1.strip
+              type = ::Regexp.last_match(1).strip
               mrt[m.name] ||= type unless type == "untyped"
             end
           end
@@ -379,6 +385,7 @@ module RbsInfer::Signatures
 
     def build_class_types(class_name)
       return {} if @building.include?(class_name)
+
       @building.add(class_name)
 
       types = {}
@@ -401,7 +408,7 @@ module RbsInfer::Signatures
             case member.kind
             when :method
               if member.signature =~ /.*->\s*(.+)$/
-                type = $1.strip
+                type = ::Regexp.last_match(1).strip
                 # `untyped` is not an answer, it is the absence of one — recording
                 # it OCCUPIES the slot, and every later source here fills with
                 # `||=`, so the RBS lookup at step 6 never got to speak. That is
@@ -415,7 +422,7 @@ module RbsInfer::Signatures
             when :attr_accessor, :attr_reader
               attr_names.add(member.name)
               if member.signature =~ /\w+:\s*(.+)/
-                type = $1.strip
+                type = ::Regexp.last_match(1).strip
                 types[member.name] = type unless type == "untyped"
               end
             end
@@ -426,8 +433,10 @@ module RbsInfer::Signatures
           result.value.accept(def_collector)
           def_collector.defs.each do |defn|
             next if types[defn.name.to_s] && types[defn.name.to_s] != "untyped"
+
             body = defn.body
             next unless body
+
             last_stmt = body.is_a?(Prism::StatementsNode) ? body.body.last : body
             next unless last_stmt
 
@@ -489,10 +498,12 @@ module RbsInfer::Signatures
         inherited.each { |name, type| types[name] ||= type }
       end
 
-      rbs_includes.each do |mod_name|
-        mod_types = @rbs_type_lookup.lookup_inherited_types(mod_name)
-        mod_types.each { |name, type| types[name] ||= type }
-      end if rbs_includes&.any?
+      if rbs_includes&.any?
+        rbs_includes.each do |mod_name|
+          mod_types = @rbs_type_lookup.lookup_inherited_types(mod_name)
+          mod_types.each { |name, type| types[name] ||= type }
+        end
+      end
 
       @building.delete(class_name)
       types
@@ -508,6 +519,7 @@ module RbsInfer::Signatures
 
       RbsTypeLookup.glob("sig/**/*.rbs").each do |rbs_file|
         next unless @rbs_type_lookup.cached_content_for(rbs_file).include?(normalized.split("::").last)
+
         info = @rbs_type_lookup.class_info_from_file(rbs_file, normalized)
         info.class_method_types.each { |name, type| types[name] ||= type }
       end
@@ -538,16 +550,17 @@ module RbsInfer::Signatures
           comments.between(def_line - 3, def_line - 1).each do |comment|
             text = comment.location.slice
             if text =~ /#:\s*(?:\(.*?\)\s*)?->\s*(.+)/
-              method_return_types[defn.name.to_s] = $1.strip
+              method_return_types[defn.name.to_s] = ::Regexp.last_match(1).strip
             end
           end
         end
 
         # Incluir attr types anotados a partir dos membros já coletados
         analysis.members.each do |m|
-          next unless [:attr_accessor, :attr_reader].include?(m.kind)
+          next unless %i[attr_accessor attr_reader].include?(m.kind)
+
           if m.signature =~ /\w+:\s*(.+)/
-            type = $1.strip
+            type = ::Regexp.last_match(1).strip
             method_return_types[m.name] ||= type unless type == "untyped"
           end
         end
@@ -641,7 +654,7 @@ module RbsInfer::Signatures
           infer_block_return_type(node.block, class_name)
         elsif node.receiver.nil? && class_name
           resolved = @rbs_definition_resolver.resolve_via_rbs_builder(:instance, class_name, node.name.to_s,
-                                                                     arg_types: nil)
+                                                                      arg_types: nil)
           return resolved if resolved && resolved != "untyped"
 
           infer_block_return_type(node.block, class_name)

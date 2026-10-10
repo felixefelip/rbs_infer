@@ -43,7 +43,7 @@ RSpec.describe RbsInfer::Signatures::RbsDefinitionResolver do
 
     it "splits three-component intersections" do
       expect(resolver.parse_intersection_components("A & B & C"))
-        .to eq(["A", "B", "C"])
+        .to eq(%w[A B C])
     end
   end
 

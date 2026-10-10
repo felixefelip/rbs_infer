@@ -9,7 +9,6 @@ require "optparse"
 output = false
 output_dir = "sig/generated"
 max_passes = 10
-files = []
 
 # When set, the stabilization loop prints a line-level diff every time a
 # file's regenerated RBS differs from the previous pass. This surfaces the
@@ -116,7 +115,11 @@ end
 
 source_files = (files + steepfile_sources.to_a).uniq
 
-rails_project = Gem::Specification.find_by_name("rails") rescue nil
+rails_project = begin
+  Gem::Specification.find_by_name("rails")
+rescue StandardError
+  nil
+end
 
 if rails_project
   # Registers the ERB path -> class convention, so a template is selected as a caller of
@@ -141,7 +144,6 @@ generate = lambda do |inputs_to_process, silent: false|
            else
              { target_class: input, source_files: source_files }
            end
-
 
     analyzer = RbsInfer::Analyzer.new(**args)
     rbs = analyzer.generate_rbs
@@ -224,7 +226,7 @@ if output
 
   all_changed = []
   changed = []
-  levels.each_with_index do |level_files, idx|
+  levels.each_with_index do |level_files, _idx|
     # Reset Steep cache between levels so it picks up RBS from prior levels. A
     # level that rewrote no RBS left the environment as it was, and resetting
     # anyway rebuilds it and drops every type check cached against it.

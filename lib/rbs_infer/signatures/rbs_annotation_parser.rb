@@ -7,6 +7,7 @@ module RbsInfer::Signatures
       ((from_line)...(to_line - 1)).all? do |i|
         line = lines[i]
         next true if line.nil?
+
         stripped = line.strip
         stripped.empty? || stripped.start_with?("#")
       end

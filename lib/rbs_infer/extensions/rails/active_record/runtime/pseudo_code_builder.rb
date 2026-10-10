@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "set"
 require "active_support/core_ext/string/inflections"
 require_relative "../../../../ast/lexical_constant_resolver"
 require_relative "reflection_scanner"
@@ -86,7 +85,10 @@ module RbsInfer
               @models.each do |model|
                 plan[model.class_name][:store_accessors] = true if model.store_accessors.any?
 
-                plan[model.class_name][:callbacks] = model.before_validation_callbacks if model.before_validation_callbacks.any?
+                if model.before_validation_callbacks.any?
+                  plan[model.class_name][:callbacks] =
+                    model.before_validation_callbacks
+                end
 
                 # A `belongs_to ... default: -> { expr }` runs `expr` in a
                 # before_validation callback with `self` = the record, so its
@@ -134,7 +136,7 @@ module RbsInfer
                 rbvc = info[:callbacks].dup
                 rbvc << "run_belongs_to_default_callbacks" if defaults.any?
 
-                body.concat(method_lines("save", "**") { ["run_before_validation_callbacks", "true"] })
+                body.concat(method_lines("save", "**") { %w[run_before_validation_callbacks true] })
                 body << ""
                 body.concat(method_lines("run_before_validation_callbacks") { rbvc })
 

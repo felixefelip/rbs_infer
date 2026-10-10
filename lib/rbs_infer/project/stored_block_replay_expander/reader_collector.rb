@@ -16,7 +16,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @scope = []
       @method_depth = 0
       @readers = []
-      super()
+      super
     end
 
     def visit_class_node(node) = with_scope(node) { super }

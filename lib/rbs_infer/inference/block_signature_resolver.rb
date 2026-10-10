@@ -33,7 +33,7 @@ module RbsInfer::Inference
     # kinds — this runs over every member the collector produced, not only the ones
     # with a method type.
     def self.untyped_block_return?(member)
-      [:method, :class_method].include?(member.kind) && member.signature.to_s.include?("-> untyped }")
+      %i[method class_method].include?(member.kind) && member.signature.to_s.include?("-> untyped }")
     end
 
     # `parsed_target` may be nil (a consumer that never parsed a target file); the
@@ -72,7 +72,7 @@ module RbsInfer::Inference
     # come from here, the same division as constant defaults in the Analyzer.
     def resolve_param_types(members)
       selected = members.select do |m|
-        [:method, :class_method].include?(m.kind) && m.block_arg_positions && !m.block_arg_positions.empty?
+        %i[method class_method].include?(m.kind) && m.block_arg_positions && !m.block_arg_positions.empty?
       end
       return if selected.empty?
 
@@ -104,7 +104,7 @@ module RbsInfer::Inference
     # Only members the collector left open are touched: no call of their own, no
     # guard, nothing but the forward (`?{ (*untyped) -> untyped }`).
     def resolve_forwarded_requirements(members)
-      selected = members.select { |m| [:method, :class_method].include?(m.kind) && m.block_open_forward }
+      selected = members.select { |m| %i[method class_method].include?(m.kind) && m.block_open_forward }
       return if selected.empty?
 
       requirements = @steep_bridge.forwarded_block_requirements(@parsed_target.source)
@@ -127,7 +127,7 @@ module RbsInfer::Inference
     # Only members the collector left stored, and only the binding — see
     # `RbsParserUtil.bind_block_self` for what is deliberately not taken.
     def resolve_stored_self_types(members)
-      selected = members.select { |m| [:method, :class_method].include?(m.kind) && m.block_stored_forward }
+      selected = members.select { |m| %i[method class_method].include?(m.kind) && m.block_stored_forward }
       return if selected.empty?
 
       bindings = @steep_bridge.stored_block_self_types(@parsed_target.source)

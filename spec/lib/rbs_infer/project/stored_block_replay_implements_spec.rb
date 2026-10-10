@@ -191,7 +191,8 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
   end
 
   it "returns nothing for a file with no replay" do
-    expect(described_class.blocks_for(source: "class Foo\n  def bar = 1\nend\n", sources: project, mixin_index: NO_HOSTS)).to eq([])
+    expect(described_class.blocks_for(source: "class Foo\n  def bar = 1\nend\n", sources: project,
+                                      mixin_index: NO_HOSTS)).to eq([])
   end
 
   # The substring gate: no `class_eval`/`module_eval` anywhere means no parse.

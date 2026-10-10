@@ -141,10 +141,10 @@ RSpec.describe "Steep type check on dummy app", :dummy_app do
 
     failures = []
     if new_errors.any?
-      failures << "New steep errors not in baseline (regression):\n  " + new_errors.join("\n  ")
+      failures << ("New steep errors not in baseline (regression):\n  " + new_errors.join("\n  "))
     end
     if fixed_errors.any?
-      failures << "Errors gone from baseline (good — refresh with UPDATE_STEEP_BASELINE=1):\n  " + fixed_errors.join("\n  ")
+      failures << ("Errors gone from baseline (good — refresh with UPDATE_STEEP_BASELINE=1):\n  " + fixed_errors.join("\n  "))
     end
 
     expect(failures).to be_empty, failures.join("\n\n")

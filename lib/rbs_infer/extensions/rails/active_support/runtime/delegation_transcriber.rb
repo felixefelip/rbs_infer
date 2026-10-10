@@ -71,11 +71,10 @@ module RbsInfer
             def macro_sources
               load_active_support or return nil
 
-              sources = MACROS.map do |name|
+              MACROS.map do |name|
                 node = FrameworkSource.def_node(::Module.instance_method(name)) or return nil
                 "#{OVERLOAD_MARKER}\n#{FrameworkSource.source(node)}"
               end
-              sources
             rescue NameError
               nil
             end

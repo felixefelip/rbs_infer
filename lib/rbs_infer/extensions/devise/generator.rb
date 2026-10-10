@@ -121,6 +121,7 @@ module RbsInfer
             when Prism::KeywordHashNode
               arg.elements.each do |elem|
                 next unless elem.is_a?(Prism::AssocNode) && elem.key.is_a?(Prism::SymbolNode)
+
                 options[elem.key.value.to_sym] = literal_value(elem.value)
               end
             end
@@ -130,7 +131,7 @@ module RbsInfer
             scoped_path = (options[:as] || resource).to_s.tr("/", "_")
             {
               scope: (options[:singular] || scoped_path.singularize).to_s,
-              class_name: (options[:class_name] || resource.classify).to_s,
+              class_name: (options[:class_name] || resource.classify).to_s
             }
           end
         end
@@ -208,7 +209,7 @@ module RbsInfer
             "",
             "  def #{scope}_session",
             "    session",
-            "  end",
+            "  end"
           ]
         end
 

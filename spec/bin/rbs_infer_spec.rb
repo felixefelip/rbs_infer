@@ -200,7 +200,7 @@ RSpec.describe "bin/rbs_infer" do
   describe "multi-pass convergence" do
     it "does not re-run files when output is unchanged" do
       setup_project
-      stdout, _stderr, status = run_rbs_infer("--output", "app/models/user.rb", dir: @tmpdir)
+      _, _stderr, status = run_rbs_infer("--output", "app/models/user.rb", dir: @tmpdir)
       expect(status).to be_success
 
       # Run again — since files already exist and content is the same, should print once
@@ -587,7 +587,7 @@ RSpec.describe "bin/rbs_infer" do
       sidecar = "sig/generated/rbs_infer_postconditions/.steep_postconditions.yml"
       expect(status).to be_success
       expect(stdout).to include(sidecar)
-      expect(YAML.safe_load(File.read(File.join(@tmpdir, sidecar)))["postconditions"]).to include(
+      expect(YAML.safe_load_file(File.join(@tmpdir, sidecar))["postconditions"]).to include(
         a_hash_including("class" => "Foo", "method" => "build_age")
       )
       expect(Dir.glob(File.join(@tmpdir, "sig/**/.steep_postconditions.yml")))

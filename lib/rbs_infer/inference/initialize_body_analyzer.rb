@@ -67,13 +67,18 @@ module RbsInfer::Inference
 
     def extract_param_names(params)
       return [] unless params
+
       names = []
-      params.keywords.each do |kw|
-        names << kw.name.to_s
-      end if params.respond_to?(:keywords)
-      params.requireds.each do |p|
-        names << p.name.to_s if p.respond_to?(:name)
-      end if params.respond_to?(:requireds)
+      if params.respond_to?(:keywords)
+        params.keywords.each do |kw|
+          names << kw.name.to_s
+        end
+      end
+      if params.respond_to?(:requireds)
+        params.requireds.each do |p|
+          names << p.name.to_s if p.respond_to?(:name)
+        end
+      end
       names
     end
 
@@ -82,6 +87,7 @@ module RbsInfer::Inference
 
       params.keywords.each do |kw|
         next unless kw.is_a?(Prism::OptionalKeywordParameterNode)
+
         param_name = kw.name.to_s
 
         if kw.value.is_a?(Prism::NilNode)
@@ -138,6 +144,7 @@ module RbsInfer::Inference
     def infer_type_from_node(node)
       # NilNode ignorado: default nil indica parâmetro opcional, não tipo nil
       return nil if node.is_a?(Prism::NilNode)
+
       infer_node_type(node)
     end
 
@@ -149,6 +156,5 @@ module RbsInfer::Inference
 
       types.join(" | ")
     end
-
   end
 end

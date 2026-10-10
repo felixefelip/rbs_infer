@@ -19,6 +19,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     found = nil
     walk = lambda do |node|
       return unless node.is_a?(Prism::Node)
+
       if node.is_a?(Prism::LocalVariableReadNode) && node.name.to_s == name
         found = [node.location.start_line, node.location.start_character_column]
       end
@@ -142,8 +143,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     RUBY
 
     usages = collect_usages(source,
-      target_class: "Foo",
-      method_return_types: { "build_dto" => "MyDto" })
+                            target_class: "Foo",
+                            method_return_types: { "build_dto" => "MyDto" })
     expect(usages.first["data"]).to eq("MyDto")
   end
 
@@ -176,7 +177,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
     with_temp_files(files) do |dir, paths|
       Dir.chdir(dir) do
-        resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver, mixin_index: RbsInfer::Project::MixinIndex.new(paths), invoker_self_types: null_invoker_self_types)
+        resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver,
+                                                                       mixin_index: RbsInfer::Project::MixinIndex.new(paths), invoker_self_types: null_invoker_self_types)
         source = File.read(paths.last)
         result = Prism.parse(source)
         visitor = build_collector(
@@ -221,8 +223,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     RUBY
 
     usages = collect_usages(source,
-      target_class: "Foo",
-      method_return_types: { "build_nome" => "String" })
+                            target_class: "Foo",
+                            method_return_types: { "build_nome" => "String" })
     expect(usages.first["nome"]).to eq("String")
   end
 
@@ -389,7 +391,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       it "uses the includer's type when an annotator answers" do
         usages = collect_with_self(
           source, target_class: "Digest", caller_class_name: "Post::Taggable",
-          init_positional_params: ["post"], module_self_types: { "Post::Taggable" => "(Post & Post::Taggable)" }
+                  init_positional_params: ["post"], module_self_types: { "Post::Taggable" => "(Post & Post::Taggable)" }
         )
         expect(usages.first["post"]).to eq("(Post & Post::Taggable)")
       end
@@ -409,7 +411,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
         usages = collect_with_self(
           nested, target_class: "Digest", caller_class_name: "Post::Taggable",
-          init_positional_params: ["post"], module_self_types: { "Post::Taggable" => "(Post & Post::Taggable)" }
+                  init_positional_params: ["post"], module_self_types: { "Post::Taggable" => "(Post & Post::Taggable)" }
         )
         expect(usages.first["post"]).to eq("untyped")
       end
@@ -427,7 +429,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
         usages = collect_with_self(
           singleton, target_class: "Digest", caller_class_name: "Post::Taggable",
-          init_positional_params: ["post"], module_self_types: { "Post::Taggable" => "(Post & Post::Taggable)" }
+                     init_positional_params: ["post"], module_self_types: { "Post::Taggable" => "(Post & Post::Taggable)" }
         )
         expect(usages.first["post"]).to eq("singleton(Post::Taggable)")
       end
@@ -607,7 +609,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
 
       with_temp_files(files) do |dir, paths|
         Dir.chdir(dir) do
-          resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver, mixin_index: RbsInfer::Project::MixinIndex.new(paths), invoker_self_types: null_invoker_self_types)
+          resolver = RbsInfer::Signatures::MethodTypeResolver.new(paths, constant_resolver: fake_constant_resolver,
+                                                                         mixin_index: RbsInfer::Project::MixinIndex.new(paths), invoker_self_types: null_invoker_self_types)
           source = File.read(File.join(dir, "caller.rb"))
           result = Prism.parse(source)
           visitor = build_collector(
@@ -833,7 +836,6 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     end
   end
 
-
   # Argument-sensitive partitions (felixefelip/steep#89, #91, #95). A `case <param>` branch
   # is reachable only for callers who passed that literal, so the facts those callers
   # established hold inside it — and only inside it. This is what keeps a shared dispatcher
@@ -930,7 +932,6 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     end
   end
 
-
   # Ruby 3: when the callee accepts NO keyword parameters, keywords at the call site are
   # passed as a positional Hash. Skipping them made the argument vanish, so the parameter
   # was typed from the OTHER call sites alone — narrow enough to reject real calls, which
@@ -1011,5 +1012,4 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       expect(usages["render"].first["target"]).to eq('"posts/summary"')
     end
   end
-
 end

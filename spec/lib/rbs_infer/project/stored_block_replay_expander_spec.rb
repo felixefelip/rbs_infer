@@ -289,15 +289,15 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     # and two sites naming one source are two replays.
     it "reopens every target a stored block is replayed against" do
       source = concern.sub(/  class Target.*?\n  end\n/m, <<~RUBY)
-          class First
-            extend DSL
-            apply(Source)
-          end
+        class First
+          extend DSL
+          apply(Source)
+        end
 
-          class Second
-            extend DSL
-            apply(Source)
-          end
+        class Second
+          extend DSL
+          apply(Source)
+        end
       RUBY
 
       expanded = expand(source)
@@ -682,7 +682,6 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
   # core reopening as a provider, and the two halves sharing an owner
   # (felixefelip/rbs_infer#256).
   context "a DSL whose applier is declared elsewhere" do
-
     def core_applier(name: "Module")
       <<~RUBY
         class #{name}
@@ -1231,7 +1230,6 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
     end
   end
 
-
   # The DSL that runs the block it was just handed, with nothing stored: both
   # other outward shapes fetch their block from a slot, so an immediate
   # `class_eval(&block)` was no shape at all — the plainest spelling there is
@@ -1674,7 +1672,6 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
       expect(expand(expand(hook))).to be_nil
     end
   end
-
 
   # A concern's two halves are read by two different files. The host includes the
   # concern, the concern extends the module holding the DSL, and that module is
@@ -2283,13 +2280,13 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
         "DSL" => dsl,
         "Src" => "module Src\n  extend DSL\n  keep do\n    def greet; end\n  end\nend\n",
         "Mid" => "module Mid\n  extend DSL\n  include Src\nend\n",
-        "Module" => "class Module\n  def include(*modules)\n" \
-                    "    modules.reverse_each { |mod| mod.send(:apply, self) }\n    self\n  end\nend\n",
+        "Module" => "class Module\n  def include(*modules)\n    " \
+                    "modules.reverse_each { |mod| mod.send(:apply, self) }\n    self\n  end\nend\n",
         # The half that says `DSL.extended(Mid)` ran, so `Mid` holds the slot and
         # registers rather than replaying. Absorbed from another file here, which
         # is where a real project reads it from too — the runtime sidecar.
-        "Object" => "class Object\n  def extend(*modules)\n" \
-                    "    modules.reverse_each { |mod| mod.send(:extended, self) }\n    self\n  end\nend\n"
+        "Object" => "class Object\n  def extend(*modules)\n    " \
+                    "modules.reverse_each { |mod| mod.send(:extended, self) }\n    self\n  end\nend\n"
       )
 
       expanded = expand("class Host\n  include Mid\nend\n", sources: elsewhere)

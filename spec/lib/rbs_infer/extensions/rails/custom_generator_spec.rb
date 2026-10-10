@@ -29,10 +29,10 @@ RSpec.describe RbsInfer::Extensions::Rails::CustomGenerator do
 
   it "includes every app helper module by default (include_all_helpers on)" do
     rbs = action_view_context(helpers: {
-      "application_helper.rb" => "module ApplicationHelper\nend\n",
-      "posts_helper.rb" => "module PostsHelper\nend\n",
-      "sugestoes_helper.rb" => "module SugestoesHelper\nend\n",
-    })
+                                "application_helper.rb" => "module ApplicationHelper\nend\n",
+                                "posts_helper.rb" => "module PostsHelper\nend\n",
+                                "sugestoes_helper.rb" => "module SugestoesHelper\nend\n"
+                              })
 
     expect(rbs).to include("include ApplicationHelper")
     expect(rbs).to include("include PostsHelper")
@@ -42,17 +42,17 @@ RSpec.describe RbsInfer::Extensions::Rails::CustomGenerator do
 
   it "names namespaced helpers by the path -> constant convention" do
     rbs = action_view_context(helpers: {
-      "admin/widgets_helper.rb" => "module Admin\n  module WidgetsHelper\n  end\nend\n",
-    })
+                                "admin/widgets_helper.rb" => "module Admin\n  module WidgetsHelper\n  end\nend\n"
+                              })
 
     expect(rbs).to include("include Admin::WidgetsHelper")
   end
 
   it "emits helpers sorted, for deterministic collision order" do
     rbs = action_view_context(helpers: {
-      "posts_helper.rb" => "module PostsHelper\nend\n",
-      "application_helper.rb" => "module ApplicationHelper\nend\n",
-    })
+                                "posts_helper.rb" => "module PostsHelper\nend\n",
+                                "application_helper.rb" => "module ApplicationHelper\nend\n"
+                              })
 
     expect(rbs.index("include ApplicationHelper")).to be < rbs.index("include PostsHelper")
   end
@@ -61,10 +61,10 @@ RSpec.describe RbsInfer::Extensions::Rails::CustomGenerator do
     rbs = action_view_context(
       helpers: {
         "application_helper.rb" => "module ApplicationHelper\nend\n",
-        "posts_helper.rb" => "module PostsHelper\nend\n",
+        "posts_helper.rb" => "module PostsHelper\nend\n"
       },
       config: {
-        "application.rb" => <<~RUBY,
+        "application.rb" => <<~RUBY
           module Dummy
             class Application < Rails::Application
               config.action_controller.include_all_helpers = false

@@ -33,7 +33,7 @@ module RbsInfer::Inference
     def apply(members)
       return if @parsed_target.nil?
 
-      selected = members.select { |m| [:method, :class_method].include?(m.kind) && m.params_forward }
+      selected = members.select { |m| %i[method class_method].include?(m.kind) && m.params_forward }
       return if selected.empty?
 
       targets = @steep_bridge.forwarded_call_targets(@parsed_target.source)

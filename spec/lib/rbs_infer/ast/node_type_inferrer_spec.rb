@@ -5,11 +5,13 @@ RSpec.describe RbsInfer::AST::NodeTypeInferrer do
   def infer_hash(source, known_types: {}, context_class: nil, constant_resolver: fake_constant_resolver)
     result = Prism.parse(source)
     hash_node = find_hash_node(result.value)
-    described_class.infer_hash_type(hash_node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
+    described_class.infer_hash_type(hash_node, known_types: known_types, context_class: context_class,
+                                               constant_resolver: constant_resolver)
   end
 
   def find_hash_node(node)
     return node if node.is_a?(Prism::HashNode)
+
     node.compact_child_nodes.each do |child|
       found = find_hash_node(child)
       return found if found
@@ -20,7 +22,8 @@ RSpec.describe RbsInfer::AST::NodeTypeInferrer do
   describe ".infer_array_type" do
     def infer_array(source, known_types: {}, context_class: nil, constant_resolver: fake_constant_resolver)
       node = Prism.parse(source).value.statements.body.first
-      described_class.infer_array_type(node, known_types: known_types, context_class: context_class, constant_resolver: constant_resolver)
+      described_class.infer_array_type(node, known_types: known_types, context_class: context_class,
+                                             constant_resolver: constant_resolver)
     end
 
     it "reads the element type off the elements" do

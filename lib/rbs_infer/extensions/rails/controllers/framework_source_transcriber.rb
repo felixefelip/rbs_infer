@@ -275,7 +275,9 @@ module RbsInfer
             body = defs.join("\n\n").rstrip
             depth = namespace.size
 
-            lines = namespace.each_with_index.map { |segment, i| "#{"  " * i}#{keyword_for(namespace[0..i])} #{segment}" }
+            lines = namespace.each_with_index.map do |segment, i|
+              "#{"  " * i}#{keyword_for(namespace[0..i])} #{segment}"
+            end
             lines << body.lines.map { |l| l.strip.empty? ? l : "#{"  " * depth}#{l}" }.join
             lines.concat((0...depth).to_a.reverse.map { |i| "#{"  " * i}end" })
             "#{lines.join("\n")}\n"

@@ -54,9 +54,9 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     RUBY
 
     expect(d.declaration_targets).to eq([
-      { name: "Outer::Inner", is_module: false },
-      { name: "Inner", is_module: false }
-    ])
+                                          { name: "Outer::Inner", is_module: false },
+                                          { name: "Inner", is_module: false }
+                                        ])
   end
 
   it "discovers sibling top-level declarations with their kind" do
@@ -66,9 +66,9 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     RUBY
 
     expect(d.declaration_targets).to eq([
-      { name: "Foo", is_module: false },
-      { name: "Bar", is_module: true },
-    ])
+                                          { name: "Foo", is_module: false },
+                                          { name: "Bar", is_module: true }
+                                        ])
   end
 
   it "treats blocks as transparent (a module inside to_prepare is top-level)" do
@@ -117,10 +117,10 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     # The owner mechanism only ever handled nested modules, so without
     # promotion User/Foo's members were flattened into Example2.
     expect(d.declaration_targets).to eq([
-      { name: "Example2", is_module: false },
-      { name: "Example2::User", is_module: false },
-      { name: "Example2::Foo", is_module: false },
-    ])
+                                          { name: "Example2", is_module: false },
+                                          { name: "Example2::User", is_module: false },
+                                          { name: "Example2::Foo", is_module: false }
+                                        ])
   end
 
   it "qualifies a nested class against a compact enclosing path" do
@@ -135,9 +135,9 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     RUBY
 
     expect(d.declaration_targets).to eq([
-      { name: "Admin::Report", is_module: false },
-      { name: "Admin::Report::Row", is_module: false },
-    ])
+                                          { name: "Admin::Report", is_module: false },
+                                          { name: "Admin::Report::Row", is_module: false }
+                                        ])
   end
 
   it "skips a pure namespace wrapper, keeping only the class it wraps" do
@@ -162,9 +162,9 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     RUBY
 
     expect(d.declaration_targets).to eq([
-      { name: "Foo", is_module: false },
-      { name: "Bar", is_module: true },
-    ])
+                                          { name: "Foo", is_module: false },
+                                          { name: "Bar", is_module: true }
+                                        ])
   end
 
   it "promotes every class under a namespace wrapper" do
@@ -181,9 +181,9 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     RUBY
 
     expect(d.declaration_targets).to eq([
-      { name: "Admin::User", is_module: false },
-      { name: "Admin::Post", is_module: false },
-    ])
+                                          { name: "Admin::User", is_module: false },
+                                          { name: "Admin::Post", is_module: false }
+                                        ])
   end
 
   # A nested module is emitted inside its enclosing target's block and nowhere
@@ -204,9 +204,9 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     RUBY
 
     expect(d.declaration_targets).to eq([
-      { name: "Example22", is_module: false },
-      { name: "Example22::Bar", is_module: false },
-    ])
+                                          { name: "Example22", is_module: false },
+                                          { name: "Example22::Bar", is_module: false }
+                                        ])
   end
 
   # The other half of the same rule: with no target of its own the file takes
@@ -246,9 +246,9 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     RUBY
 
     expect(d.declaration_targets).to eq([
-      { name: "Holder::Wrapping::Inner", is_module: false },
-      { name: "Holder::Bar", is_module: false },
-    ])
+                                          { name: "Holder::Wrapping::Inner", is_module: false },
+                                          { name: "Holder::Bar", is_module: false }
+                                        ])
   end
 
   # `declarations` answers "what kind is X?" for every type the file declares —
@@ -279,12 +279,12 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     RUBY
 
     expect(d.declarations).to eq({
-      "Holder" => false,
-      "Holder::User" => false,
-      "Holder::Helpers" => true,
-      "Admin" => true,
-      "Admin::Report" => false,
-    })
+                                   "Holder" => false,
+                                   "Holder::User" => false,
+                                   "Holder::Helpers" => true,
+                                   "Admin" => true,
+                                   "Admin::Report" => false
+                                 })
   end
 
   it "collects Receiver.include calls as include targets" do
@@ -295,9 +295,9 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
     RUBY
 
     expect(d.include_targets).to eq({
-      "Foo::Bar" => ["Mixin", "OtherMixin"],
-      "Baz" => ["Mixin"],
-    })
+                                      "Foo::Bar" => %w[Mixin OtherMixin],
+                                      "Baz" => ["Mixin"]
+                                    })
   end
 
   it "does not treat an implicit include (self receiver) as a reopen target" do
@@ -374,5 +374,4 @@ RSpec.describe RbsInfer::AST::TargetDiscovery do
 
     expect(d.declaration_targets).to eq([{ name: "ZzOnce", is_module: false }])
   end
-
 end

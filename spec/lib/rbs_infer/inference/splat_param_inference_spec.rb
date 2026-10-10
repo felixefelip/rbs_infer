@@ -158,7 +158,8 @@ RSpec.describe "rest parameter inference" do
   end
 
   it "stays untyped when no call site says anything" do
-    rbs = rbs_for("notifier.rb", "notifier.rb" => "class Notifier\n  def notify(*recipients)\n    recipients\n  end\nend\n")
+    rbs = rbs_for("notifier.rb",
+                  "notifier.rb" => "class Notifier\n  def notify(*recipients)\n    recipients\n  end\nend\n")
 
     expect(rbs).to include("def notify: (*untyped recipients) ->")
   end

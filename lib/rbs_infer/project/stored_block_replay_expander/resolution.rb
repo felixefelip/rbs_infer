@@ -32,9 +32,9 @@ module RbsInfer::Project::StoredBlockReplayExpander
       @deferred_registry = Hash.new { |hash, key| hash[key] = [] }
       @extensions = []
       @graph = CallGraph.new(replay_methods: shapes.replay_methods, readers: shapes.readers,
-                            inward_replays: shapes.inward_replays, literal_replays: shapes.literal_replays,
-                            forwards: shapes.forwards, delegations: shapes.resolved_delegations,
-                            storages: shapes.storages)
+                             inward_replays: shapes.inward_replays, literal_replays: shapes.literal_replays,
+                             forwards: shapes.forwards, delegations: shapes.resolved_delegations,
+                             storages: shapes.storages)
     end
 
     # The `extend`s the module calls put on their targets. Populated by `run`
@@ -58,7 +58,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       # only the local ones left a host unable to see the module its own concern
       # builds, so the `extend` that hands it over declined.
       resolved = @shapes.stored_calls.filter_map { |stored| resolve_own_block(stored, providers) }
-                              .select { |replay| replay.source.equal?(@source) }
+                        .select { |replay| replay.source.equal?(@source) }
 
       @extensions = @shapes.module_calls.flat_map { |module_call| resolve_extensions(module_call, providers) }.uniq
 
@@ -523,7 +523,9 @@ module RbsInfer::Project::StoredBlockReplayExpander
       storage_method = @graph.storage_method_for(source_provider, storage_owner, ivar)
       return nil unless storage_method
 
-      blocks = @shapes.stored_calls.select { |stored| stored.subject == source_subject && stored.method == storage_method }
+      blocks = @shapes.stored_calls.select do |stored|
+        stored.subject == source_subject && stored.method == storage_method
+      end
       return nil unless blocks.size == 1
 
       Replay.new(target: subject, block: blocks.first.block, kind: kind,

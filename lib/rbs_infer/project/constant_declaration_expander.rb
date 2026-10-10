@@ -110,7 +110,7 @@ module RbsInfer::Project
 
       def initialize
         @statements = []
-        super()
+        super
       end
 
       def visit_program_node(node)

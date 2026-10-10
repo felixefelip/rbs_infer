@@ -97,7 +97,7 @@ RSpec.describe RbsInfer::Inference::InitializeBodyAnalyzer do
 
     visitor = analyze(source)
     expect(visitor.nil_default_params).to include("nome")
-    expect(visitor.nil_default_params).not_to include("idade")  # default literal, não nil
+    expect(visitor.nil_default_params).not_to include("idade") # default literal, não nil
     expect(visitor.keyword_defaults["idade"]).to eq("Integer")
     expect(visitor.keyword_defaults).not_to have_key("nome")
   end

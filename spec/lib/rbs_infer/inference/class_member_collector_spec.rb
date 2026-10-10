@@ -534,7 +534,7 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
       RUBY
 
       members = constants(source, target_class: "Color")
-      expect(members.map(&:name)).to eq(["MAX", "DEFAULT_NAME"])
+      expect(members.map(&:name)).to eq(%w[MAX DEFAULT_NAME])
       # signature é preenchida só depois, pelo Analyzer
       expect(members.map(&:signature)).to eq([nil, nil])
       expect(members.map { |m| m.value_node.class }).to eq([Prism::IntegerNode, Prism::StringNode])
@@ -550,7 +550,7 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
         end
       RUBY
 
-      expect(constants(source, target_class: "Color").map(&:name)).to eq(["COLORS", "MAX", "DEFAULT_NAME"])
+      expect(constants(source, target_class: "Color").map(&:name)).to eq(%w[COLORS MAX DEFAULT_NAME])
     end
 
     it "NÃO coleta a constante top-level que precede uma classe reaberta" do
@@ -761,5 +761,4 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
       expect(signature_of(source, "page")).to include("?String label")
     end
   end
-
 end

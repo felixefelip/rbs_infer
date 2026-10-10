@@ -15,14 +15,14 @@ RSpec.describe RbsInfer::Inference::BlockSignatureResolver do
   describe ".untyped_block_return?" do
     it "is true for a method whose block return is still open" do
       expect(described_class.untyped_block_return?(
-        member(signature: "run: () { (String) -> untyped } -> untyped")
-      )).to be(true)
+               member(signature: "run: () { (String) -> untyped } -> untyped")
+             )).to be(true)
     end
 
     it "is false once the block return has been filled in" do
       expect(described_class.untyped_block_return?(
-        member(signature: "run: () { (String) -> Integer } -> untyped")
-      )).to be(false)
+               member(signature: "run: () { (String) -> Integer } -> untyped")
+             )).to be(false)
     end
 
     # A member whose signature a later pass still has to fill in — the predicate runs
@@ -33,8 +33,8 @@ RSpec.describe RbsInfer::Inference::BlockSignatureResolver do
 
     it "is false for a member that is not a method" do
       expect(described_class.untyped_block_return?(
-        member(kind: :include, name: "Comparable", signature: "Comparable")
-      )).to be(false)
+               member(kind: :include, name: "Comparable", signature: "Comparable")
+             )).to be(false)
     end
   end
 

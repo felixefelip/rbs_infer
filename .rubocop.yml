@@ -38,3 +38,9 @@ Metrics/BlockLength:
     merge: ["Exclude"]
   Exclude:
     - "spec/**/*"
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/GuardClause:
+  Enabled: false

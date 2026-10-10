@@ -42,12 +42,14 @@ module RbsInfer::Inference
     attr_reader :forwards
 
     def visit_def_node(node)
-      previous_method, previous_block = @current_method, @current_block_param
+      previous_method = @current_method
+      previous_block = @current_block_param
       @current_method = node.name.to_s
       @current_block_param = node.parameters&.block&.name&.to_s
       super
     ensure
-      @current_method, @current_block_param = previous_method, previous_block
+      @current_method = previous_method
+      @current_block_param = previous_block
     end
 
     def visit_call_node(node)

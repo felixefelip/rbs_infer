@@ -41,11 +41,14 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def replay_shape(body)
       shapes = nodes(body).filter_map do |node|
         next unless node.is_a?(Prism::CallNode)
+
         call = dispatched(node)
         next unless REPLAY_METHODS.include?(call.name)
+
         pass = call.block
         next unless pass.is_a?(Prism::BlockArgumentNode)
         next unless pass.expression.is_a?(Prism::CallNode)
+
         reader = dispatched(pass.expression)
         next unless (reader.arguments&.arguments || []).empty?
         next unless reader.receiver.is_a?(Prism::LocalVariableReadNode)
@@ -123,10 +126,13 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def literal_replay_shape(body, parameters)
       shapes = nodes(body).filter_map do |node|
         next unless node.is_a?(Prism::CallNode)
+
         call = dispatched(node)
         next unless REPLAY_METHODS.include?(call.name)
+
         target, singleton = handed_receiver(call.receiver, parameters)
         next unless target
+
         block = call.block
         next unless block.is_a?(Prism::BlockNode)
 
@@ -158,8 +164,10 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       shapes = nodes(body).filter_map do |node|
         next unless node.is_a?(Prism::CallNode)
+
         call = dispatched(node)
         next unless REPLAY_METHODS.include?(call.name)
+
         pass = call.block
         next unless pass.is_a?(Prism::BlockArgumentNode)
         next unless pass.expression.is_a?(Prism::LocalVariableReadNode)
@@ -277,6 +285,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def inward_module_calls(body, parameters)
       nodes(body).flat_map do |node|
         next [] unless node.is_a?(Prism::CallNode)
+
         call = dispatched(node)
         handed = handed_receiver(call.receiver, parameters)
         next [] unless handed
@@ -317,9 +326,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
     def forward_shapes(body, parameters)
       nodes(body).filter_map do |node|
         next unless node.is_a?(Prism::CallNode)
+
         call = dispatched(node)
         handed = handed_receiver(call.receiver, parameters)
         next unless handed
+
         arguments = call.arguments&.arguments || []
         next unless arguments.size == 1 && arguments.first.is_a?(Prism::SelfNode)
 
@@ -351,9 +362,11 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       callees = nodes(node.body).filter_map do |child|
         next unless child.is_a?(Prism::CallNode)
+
         call = dispatched(child)
         receiver = call.receiver
         next unless receiver.is_a?(Prism::InstanceVariableReadNode) && receiver.name.to_s == ivar
+
         pass = call.block
         next unless pass.is_a?(Prism::BlockArgumentNode)
         next unless pass.expression.is_a?(Prism::LocalVariableReadNode)

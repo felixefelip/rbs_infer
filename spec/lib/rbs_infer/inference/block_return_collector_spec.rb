@@ -36,7 +36,7 @@ RSpec.describe RbsInfer::Inference::BlockReturnCollector do
     RUBY
 
     expect(collect(source, methods: ["wrap"], expression_types: { "2:9-2:10" => "Integer", "3:9-3:12" => "String" }))
-      .to eq("wrap" => ["Integer", "String"])
+      .to eq("wrap" => %w[Integer String])
   end
 
   # A call with a receiver is somebody else's method until proven otherwise. The
@@ -50,7 +50,9 @@ RSpec.describe RbsInfer::Inference::BlockReturnCollector do
   it "asks the supplied check about a receiver" do
     source = "def go; other.wrap { 1 }; end"
 
-    expect(collect(source, methods: ["wrap"], expression_types: { "1:21-1:22" => "Integer" }, receiver_check: ->(_node) { true }))
+    expect(collect(source, methods: ["wrap"], expression_types: { "1:21-1:22" => "Integer" }, receiver_check: lambda { |_node|
+      true
+    }))
       .to eq("wrap" => ["Integer"])
   end
 

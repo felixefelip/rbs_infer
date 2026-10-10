@@ -93,7 +93,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
         [
           "require_authentication", "return if performed?",
           "set_post", "return if performed?",
-          "show",
+          "show"
         ]
       )
     end
@@ -150,7 +150,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
           "require_account", "return if performed?",
           "require_authentication", "return if performed?",
           "set_post", "return if performed?",
-          "show",
+          "show"
         ]
       )
     end
@@ -373,7 +373,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
           "case target",
           "when :new then ERBPostsNew.new(post: @post).__rbs_infer__body",
           "end",
-          "true",
+          "true"
         ]
       )
     end
@@ -543,7 +543,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
       expect(whens).to eq(
         [
           "when :edit then ERBPostsEdit.new.__rbs_infer__body",
-          "when :new then ERBPostsNew.new.__rbs_infer__body",
+          "when :new then ERBPostsNew.new.__rbs_infer__body"
         ]
       )
     end
@@ -681,7 +681,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
         [
           "when :index then ERBPostsIndex.new(posts: @posts).__rbs_infer__body",
           "when :new then ERBPostsNew.new(post: @post).__rbs_infer__body",
-          "when :show then ERBPostsShow.new(post: @post).__rbs_infer__body",
+          "when :show then ERBPostsShow.new(post: @post).__rbs_infer__body"
         ]
       )
     end

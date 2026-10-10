@@ -53,8 +53,6 @@ module RbsInfer
             nil
           when Prism::ClassNode
             { name: constant_path_to_string(node.constant_path) }
-          else
-            nil
           end
         end
 
@@ -184,8 +182,6 @@ module RbsInfer
             :deep
           when Prism::SymbolNode
             node.value.to_sym
-          else
-            nil
           end
         end
 
@@ -235,13 +231,13 @@ module RbsInfer
           attr_name = call[:name]
           lines = []
 
-          if call[:multiple]
-            lines << "  def #{attr_name}: () -> Enumerize::Set"
-          elsif call[:default]
-            lines << "  def #{attr_name}: () -> #{call[:value_type]}"
-          else
-            lines << "  def #{attr_name}: () -> #{call[:value_type]}?"
-          end
+          lines << if call[:multiple]
+                     "  def #{attr_name}: () -> Enumerize::Set"
+                   elsif call[:default]
+                     "  def #{attr_name}: () -> #{call[:value_type]}"
+                   else
+                     "  def #{attr_name}: () -> #{call[:value_type]}?"
+                   end
 
           lines << "  def #{attr_name}=: (String | Symbol | nil) -> (String | Symbol | nil)"
           lines << "  def #{attr_name}_text: () -> String?"

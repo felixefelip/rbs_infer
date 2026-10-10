@@ -1,5 +1,4 @@
 require "prism"
-require "set"
 
 module RbsInfer::Project
   # Builds a dependency graph from source files and returns them sorted in
@@ -18,14 +17,14 @@ module RbsInfer::Project
 
     def initialize(files)
       @files = files
-      @file_class = {}     # file → class_name defined in file
+      @file_class = {} # file → class_name defined in file
       # class_name → EVERY file that declares it. A class reopened across files is
       # the norm here, not an oddity: `Tag` is `app/models/tag.rb` *and* the
       # AR-runtime pseudo-code that reopens it. Keying one file per class silently
       # dropped all but the last one scanned, so an edge meant for `app/models/tag.rb`
       # landed on `sig/generated/steep_ar_runtime/tag.rb` instead.
       @class_files = Hash.new { |h, k| h[k] = [] }
-      @file_deps = {}      # file → Set of files it depends on
+      @file_deps = {} # file → Set of files it depends on
       @prepared = false
     end
 
@@ -67,6 +66,7 @@ module RbsInfer::Project
 
     def prepare
       return if @prepared
+
       @prepared = true
 
       scan_files
@@ -77,7 +77,7 @@ module RbsInfer::Project
     # names it references.
     def scan_files
       @file_class = {}
-      @file_refs = {}  # file → Set of referenced constant short names
+      @file_refs = {} # file → Set of referenced constant short names
 
       @files.each do |file|
         begin

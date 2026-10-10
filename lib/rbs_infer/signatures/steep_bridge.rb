@@ -38,10 +38,10 @@ module RbsInfer::Signatures
         # :procarg0 = single block parameter (|x|)
         # :arg = block parameter in multi-param blocks (|x, y|);
         #        also matches def params, but those are typically untyped and get filtered below
-        next unless node.type == :lvasgn || node.type == :procarg0 || node.type == :arg
+        next unless %i[lvasgn procarg0 arg].include?(node.type)
 
         type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
-        next if type_str == "untyped" || type_str == "nil" || type_str == "bot"
+        next if %w[untyped nil bot].include?(type_str)
 
         var_name = node.children[0].to_s
         # A body checked with `@type self_method:` has no enclosing `def` — an ERB template
@@ -86,7 +86,7 @@ module RbsInfer::Signatures
         type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
         # An unusable answer defers to the per-method map rather than
         # overriding it with nothing.
-        next if type_str == "untyped" || type_str == "bot"
+        next if %w[untyped bot].include?(type_str)
 
         result[[node.loc.line, node.loc.column]] = type_str
       end
@@ -175,7 +175,7 @@ module RbsInfer::Signatures
         next unless node.type == :casgn
 
         type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
-        next if type_str == "untyped" || type_str == "bot" || type_str == "void"
+        next if %w[untyped bot void].include?(type_str)
 
         result[node.children[1].to_s] = type_str
       end
@@ -196,7 +196,7 @@ module RbsInfer::Signatures
         entry = env.constant_decls[type_name]
         next unless entry
 
-        return entry.decl.type.to_s.gsub(/(^|[\[\(, |])::/) { $1 }
+        return entry.decl.type.to_s.gsub(/(^|[\[(, |])::/) { ::Regexp.last_match(1) }
       end
       nil
     end
@@ -392,7 +392,7 @@ module RbsInfer::Signatures
         next unless loc
 
         type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(type)
-        next if type_str == "untyped" || type_str == "bot"
+        next if %w[untyped bot].include?(type_str)
 
         key = self.class.expression_key(loc.first_line, loc.column, loc.last_line, loc.last_column)
         result[key] = type_str
@@ -647,8 +647,11 @@ module RbsInfer::Signatures
       env = SteepEnvironment.definition_builder&.env
       return true unless env
 
-      names = [] #: Array[RBS::TypeName]
-      type.map_type_name { |name, _, _| names << name; name }
+      names = [] # : Array[RBS::TypeName]
+      type.map_type_name do |name, _, _|
+        names << name
+        name
+      end
       names.all? { |name| env.type_name?(name) }
     end
 

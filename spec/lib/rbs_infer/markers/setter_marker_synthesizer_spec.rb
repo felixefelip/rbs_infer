@@ -127,13 +127,13 @@ RSpec.describe RbsInfer::Markers::SetterMarkerSynthesizer do
     markers = synthesize(
       members: [member(kind: :attr_reader, name: "name")],
       per_method: {
-        "z_finalize"    => { "name" => "String" },
-        "a_initialize"  => { "name" => "Integer" }
+        "z_finalize" => { "name" => "String" },
+        "a_initialize" => { "name" => "Integer" }
       },
       declared: { "name" => "untyped" }
     )
 
-    expect(markers.map(&:marker_name)).to eq(["AfterAInitialize", "AfterZFinalize"])
+    expect(markers.map(&:marker_name)).to eq(%w[AfterAInitialize AfterZFinalize])
   end
 
   it "skips methods whose marker name would strip to empty" do

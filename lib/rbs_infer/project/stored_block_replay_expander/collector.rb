@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "prism"
-require "set"
 require_relative "../../ast/constant_reference"
 require_relative "../../inference/send_call"
 require_relative "../constant_sources"
@@ -185,7 +184,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       if (replay = ShapeReader.replay_shape(node.body))
         parameter, reader, singleton = replay
         @shapes.replay_methods << ReplayMethod.new(owner: owner, method: method_name, parameter: parameter, reader: reader,
-                                            singleton: singleton)
+                                                   singleton: singleton)
       end
 
       parameters = NodeReading.handed_names(node.body, NodeReading.parameter_names(params))
@@ -193,7 +192,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       if (inward = ShapeReader.inward_replay_shape(node.body, parameters))
         parameter, ivar, singleton = inward
         @shapes.inward_replays << InwardReplay.new(owner: owner, method: method_name, parameter: parameter, ivar: ivar,
-                                            singleton: singleton)
+                                                   singleton: singleton)
       end
 
       # Kept rather than read: the slot a deferral registers into may be reached
@@ -216,7 +215,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
       if (literal = ShapeReader.literal_replay_shape(node.body, parameters))
         call, block, singleton = literal
         @shapes.literal_replays << LiteralReplay.new(owner: owner, method: method_name, scope: @names.current_scope,
-                                              call: call, block: block, source: @source, singleton: singleton)
+                                                     call: call, block: block, source: @source, singleton: singleton)
       end
 
       if (delegation = ShapeReader.delegation_shape(node))
@@ -235,7 +234,7 @@ module RbsInfer::Project::StoredBlockReplayExpander
 
       if node.block.is_a?(Prism::BlockNode)
         @shapes.stored_calls << StoredCall.new(owner: nil, subject: @names.current_scope, method: node.name.to_s,
-                                        block: node.block, source: @source)
+                                               block: node.block, source: @source)
       elsif node.arguments
         # One module call per argument. `apply(A, B)` asks for A's block AND B's,
         # which is what a `*modules` forward means at runtime — each gets its

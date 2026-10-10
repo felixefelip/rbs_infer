@@ -56,7 +56,7 @@ RSpec.configure do |config|
   config.filter_run_excluding :integration unless ENV["PROJECT_ROOT"]
 
   config.around(:each, :integration) do |example|
-    project_root = ENV["PROJECT_ROOT"]
+    project_root = ENV.fetch("PROJECT_ROOT", nil)
     if project_root && Dir.exist?(project_root)
       Dir.chdir(project_root) { example.run }
     else

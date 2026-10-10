@@ -1,7 +1,6 @@
 require_relative "source_owners"
 
 module RbsInfer::Project
-
   # Índice reverso de source files para lookup eficiente por nome de classe.
   # Evita a iteração O(n×m) ao buscar referências a classes nos source files.
   #
@@ -73,7 +72,7 @@ module RbsInfer::Project
         end
         content.scan(SEND_CALL).flatten.compact.uniq.each do |method_name|
           # The quote capture comes back too; it is never a method name.
-          next if method_name == '"' || method_name == "'"
+          next if ['"', "'"].include?(method_name)
 
           @call_index[method_name] << file
         end
@@ -175,5 +174,4 @@ module RbsInfer::Project
     EMPTY_ARRAY = [].freeze
     private_constant :EMPTY_ARRAY
   end
-
 end

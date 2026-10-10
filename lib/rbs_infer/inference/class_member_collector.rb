@@ -32,7 +32,8 @@ module RbsInfer::Inference
   # `params_forward` = a lista de parâmetros é só `...`: o método aceita o que a
   # chamada para onde ele encaminha aceita — resolvido no Analyzer, que tem o
   # checker (`ForwardedParametersResolver`).
-  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name, :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_nil_defaults, :block_stored_forward, :no_signature, :params_forward, keyword_init: true)
+  Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name,
+                      :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_nil_defaults, :block_stored_forward, :no_signature, :params_forward, keyword_init: true)
 
   # Pelo que eu entendi, essa classe é responsável por gerar o signature inicial
   # de uma class/module, porém depois no analyzer, terá outras classes que irão
@@ -79,7 +80,9 @@ module RbsInfer::Inference
     def visit_module_node(node)
       segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
       with_scope(:module, segment) do
-        @is_module = true unless @superclass_name if capture_metadata_here?
+        if capture_metadata_here? && !@superclass_name
+          @is_module = true
+        end
         # A nested module is emitted from the OWNER its members carry, so one
         # with no members was emitted nowhere — a declaration the source makes
         # and the RBS does not, which is only invisible until something names
@@ -174,10 +177,10 @@ module RbsInfer::Inference
                     "#{name}: #{sig}"
                   else
                     return_type = if @is_controller && @current_visibility == :public
-                                   "void"
-                                 else
-                                   infer_return_type(node) || "untyped"
-                                 end
+                                    "void"
+                                  else
+                                    infer_return_type(node) || "untyped"
+                                  end
                     "#{name}: #{params_sig} -> #{return_type}"
                   end
 
@@ -268,12 +271,14 @@ module RbsInfer::Inference
         case namespace
         when :current
           return unless within_target_scope?
+
           current_owner
         else
           # Qualified path write. Only `<target>::NAME = ...` is ours; it
           # names the class directly, so it's a direct member (owner nil)
           # and may legitimately sit at top level (no open scope needed).
           return unless namespace == scope_target&.sub(/\A::/, "")
+
           nil
         end
 
@@ -462,6 +467,7 @@ module RbsInfer::Inference
 
       node.arguments.arguments.each do |arg|
         next unless arg.is_a?(Prism::SymbolNode)
+
         attr_name = arg.unescaped
         type = inline_type || "untyped"
 
@@ -483,7 +489,7 @@ module RbsInfer::Inference
       comments.on(line).each do |comment|
         text = comment.location.slice
         if text =~ /#:\s*(.+)/
-          return $1.strip
+          return ::Regexp.last_match(1).strip
         end
       end
       nil
@@ -499,21 +505,21 @@ module RbsInfer::Inference
         source_line = lines[comment_line - 1]
         if source_line
           code_before_comment = source_line[0...comment.location.start_column].strip
-          next if !code_before_comment.empty?
+          next unless code_before_comment.empty?
         end
 
         text = comment.location.slice
 
         # #: (args) -> ReturnType  ou  #: -> ReturnType
         if text =~ /#:\s*(.+)/
-          return $1.strip
+          return ::Regexp.last_match(1).strip
         end
 
         # @rbs (args) -> ReturnType  (pular @rbs @ivar: que são anotações de ivar)
-        if text =~ /@rbs\s+(@?)(.+)/
-          next if $1 == "@"
-          return $2.strip
-        end
+        next unless text =~ /@rbs\s+(@?)(.+)/
+        next if ::Regexp.last_match(1) == "@"
+
+        return ::Regexp.last_match(2).strip
       end
       nil
     end
@@ -650,6 +656,7 @@ module RbsInfer::Inference
     def has_nil_return?(defn)
       RbsInfer::Analyzer.find_all_nodes(defn) do |node|
         next false unless node.is_a?(Prism::ReturnNode)
+
         node.arguments.nil? ||
           node.arguments.arguments.any? { |arg| arg.is_a?(Prism::NilNode) }
       end.any?

@@ -52,7 +52,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
         "class Search::Record\n  include Search::Record::SQLite\nend\n"
     ) do |dir|
       out = described_class.new(app_dir: dir).generate
-      table = YAML.safe_load(File.read(out))
+      table = YAML.safe_load_file(out)
 
       mod = table.fetch("app/models/search/record/sqlite.rb")["modules"].first
       expect(mod["anchor"]).to eq("SQLite")
@@ -65,11 +65,11 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
 
   it "covers every source that declares a module with a host; skips the rest" do
     in_app(
-      "app/models/post/taggable.rb"            => "module Post::Taggable\nend\n",
-      "app/models/post.rb"                     => "class Post\n  include Post::Taggable\nend\n",
-      "app/helpers/posts_helper.rb"            => "module PostsHelper\nend\n",
+      "app/models/post/taggable.rb" => "module Post::Taggable\nend\n",
+      "app/models/post.rb" => "class Post\n  include Post::Taggable\nend\n",
+      "app/helpers/posts_helper.rb" => "module PostsHelper\nend\n",
       "app/controllers/concerns/filterable.rb" => "module Filterable\n  extend ActiveSupport::Concern\nend\n",
-      "lib/ignored.rb"                         => "module Ignored\nend\n"
+      "lib/ignored.rb" => "module Ignored\nend\n"
     ) do |dir|
       table = described_class.new(app_dir: dir).build_table
 
@@ -96,7 +96,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
         "module Notifiable\n  extend ActiveSupport::Concern\nend\n",
       "app/models/user/notifiable.rb" =>
         "module User::Notifiable\n  extend ActiveSupport::Concern\nend\n",
-      "app/models/user.rb"  => "class User\n  include Notifiable\nend\n",
+      "app/models/user.rb" => "class User\n  include Notifiable\nend\n",
       "app/models/event.rb" => "class Event\n  include Notifiable\nend\n"
     ) do |dir|
       table = described_class.new(app_dir: dir).build_table

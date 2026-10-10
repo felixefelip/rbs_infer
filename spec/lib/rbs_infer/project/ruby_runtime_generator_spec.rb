@@ -19,10 +19,10 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
       expect(files.first.source).to include(
         "class Module\n",
         "  def include(*modules)\n",
-        "    modules.reverse_each do |mod|\n" \
-        "      mod.send(:append_features, self)\n" \
-        "      mod.send(:included, self)\n" \
-        "    end\n",
+        "    modules.reverse_each do |mod|\n      " \
+        "mod.send(:append_features, self)\n      " \
+        "mod.send(:included, self)\n    " \
+        "end\n",
         "    self\n  end\n"
       )
     end
@@ -142,10 +142,10 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     it "walks the arguments backwards, through send, as `include` does" do
       Dir.mktmpdir do |dir|
         expect(source_of(dir, "module.rb")).to include(
-          "    modules.reverse_each do |mod|\n" \
-          "      mod.send(:prepend_features, self)\n" \
-          "      mod.send(:prepended, self)\n" \
-          "    end\n"
+          "    modules.reverse_each do |mod|\n      " \
+          "mod.send(:prepend_features, self)\n      " \
+          "mod.send(:prepended, self)\n    " \
+          "end\n"
         )
       end
     end
@@ -183,10 +183,10 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
         source = source_of(dir, "object.rb")
 
         expect(source).to include(
-          "    modules.reverse_each do |mod|\n" \
-          "      mod.send(:extend_object, self)\n" \
-          "      mod.send(:extended, self)\n" \
-          "    end\n"
+          "    modules.reverse_each do |mod|\n      " \
+          "mod.send(:extend_object, self)\n      " \
+          "mod.send(:extended, self)\n    " \
+          "end\n"
         )
         expect(source).not_to include("mod.extended(self)")
       end

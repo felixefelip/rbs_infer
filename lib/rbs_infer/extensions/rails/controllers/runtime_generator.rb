@@ -46,7 +46,6 @@ module RbsInfer
             files + framework_source_files
           end
 
-
           # Writes the sidecar directory (one .rb/.rbs pair per controller, plus
           # the framework reopen), removing a stale dir when nothing qualifies.
           # Returns the sidecar dir path.

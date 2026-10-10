@@ -18,7 +18,10 @@ require "tmpdir"
 # sources would resolve to nothing and prove nothing.
 RSpec.describe "a receiverless call to a universal ancestor's method" do
   around do |example|
-    Dir.mktmpdir { |dir| @dir = dir; example.run }
+    Dir.mktmpdir do |dir|
+      @dir = dir
+      example.run
+    end
   end
 
   def rbs_for(target, files)

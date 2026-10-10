@@ -23,9 +23,9 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
 
       expect(entry["anchor"]).to eq("SQLite")
       expect(entry["annotations"]).to eq([
-        "# @type self: singleton(Search::Record) & singleton(Search::Record::SQLite)",
-        "# @type instance: Search::Record & Search::Record::SQLite"
-      ])
+                                           "# @type self: singleton(Search::Record) & singleton(Search::Record::SQLite)",
+                                           "# @type instance: Search::Record & Search::Record::SQLite"
+                                         ])
     end
 
     it "builds only the instance annotation for a plain model module" do
@@ -215,7 +215,8 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
     end
 
     it "returns nil for a model module without a namespace (no host to derive)" do
-      expect(described_class.entry_for(path: "app/models/trashable.rb", module_name: "Trashable", source: PLAIN_SRC)).to be_nil
+      expect(described_class.entry_for(path: "app/models/trashable.rb", module_name: "Trashable",
+                                       source: PLAIN_SRC)).to be_nil
     end
 
     it "returns nil for a nil/empty module name" do
@@ -270,9 +271,9 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       )
 
       expect(entry["annotations"]).to eq([
-        "# @type self: (singleton(Card) & singleton(Eventable)) | (singleton(Comment) & singleton(Eventable))",
-        "# @type instance: (Card & Eventable) | (Comment & Eventable)"
-      ])
+                                           "# @type self: (singleton(Card) & singleton(Eventable)) | (singleton(Comment) & singleton(Eventable))",
+                                           "# @type instance: (Card & Eventable) | (Comment & Eventable)"
+                                         ])
     end
 
     # A top-level concern has no namespace to guess from, so before the index it
