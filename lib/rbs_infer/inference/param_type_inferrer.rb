@@ -159,7 +159,8 @@ module RbsInfer::Inference
       target_methods = attr_writer_methods(members).merge(target_method_params(parsed_target))
       return {} if target_methods.empty?
 
-      inherited_supers = inherited_reach.supers_by_method(target_methods.keys)
+      block_methods = members.select { |m| BlockSignatureResolver.untyped_block_return?(m) }.map(&:name).to_set
+      inherited_supers = inherited_reach.supers_by_method(target_methods.keys.to_set | block_methods)
 
       analyzer = CallerFileAnalyzer.new(
         target_class: @target_class,
@@ -180,7 +181,7 @@ module RbsInfer::Inference
         steep_bridge: @steep_bridge,
         # felixefelip/rbs_infer#155: the methods whose block return is still open
         # — the ones worth collecting call-site blocks for.
-        block_methods: members.select { |m| BlockSignatureResolver.untyped_block_return?(m) }.map(&:name).to_set,
+        block_methods: block_methods,
         method_owners: nested_method_owners(members),
         mixin_index: @mixin_index,
         invoker_self_types: @invoker_self_types
@@ -221,8 +222,9 @@ module RbsInfer::Inference
       referencing = @source_index.files_referencing(@target_class)
 
       # A subclass whose own method hands on to the target's with `super`
-      # (felixefelip/rbs_infer#414): its file need not name the target.
-      supering = inherited_supers.values.reduce(Set.new, :|).flat_map { |name| @source_index.files_referencing(name) }.to_set
+      # (felixefelip/rbs_infer#414): the files writing its body, which need not
+      # name the target. Only those: the `super` can be nowhere else.
+      supering = inherited_reach.defining_files(inherited_supers.values.flat_map(&:values).reduce(Set.new, :|))
 
       # A concern's instance methods are called *bare* by includer hosts and by
       # the host's sibling concerns — files that never name the concern, so the
@@ -278,8 +280,10 @@ module RbsInfer::Inference
         # The method-call usages this walk collects are discarded too.
         inherited_supers: {}
       )
-      reachers = reach.constructs | reach.supers
-      files = ([@target_class] + reachers.to_a).flat_map { |name| @source_index.files_referencing(name) }.uniq
+      # `Kid.new` can be anywhere `Kid` is named; a `super` only where its body
+      # is written.
+      files = ([@target_class] + reach.constructs.to_a).flat_map { |name| @source_index.files_referencing(name) }.to_set
+      files.merge(inherited_reach.defining_files(reach.supers))
       files.flat_map { |file| analyzer.analyze(file) }
     end
 

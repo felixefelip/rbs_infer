@@ -72,9 +72,11 @@ module RbsInfer::Inference
       # Required for the same reason: forgetting it silently drops those call
       # sites. A collector whose usages are not `initialize`'s passes `NONE`.
       @inherited_initializers = inherited_initializers
-      # `{ "call" => Set["Kid"] }`: for each target method, the classes whose
-      # own method of that name reaches it through `super` (#414). Required for
-      # the same reason; a collector that reads no method call passes `{}`.
+      # `{ instance: { "call" => Set["Kid"] }, singleton: { ... } }`: for each
+      # target method, on each side, the classes whose own method of that name
+      # reaches it through `super` (#414, `InheritedReach#supers_by_method`).
+      # Required for the same reason; a collector that reads no method call
+      # passes `{}`.
       @inherited_supers = inherited_supers
       @match_bare_calls = match_bare_calls
       # `{ "method_name" => "Self & Self::Validated" }` — refined `self`
@@ -138,8 +140,10 @@ module RbsInfer::Inference
       # Every enclosing class and module, joined: `Admin::Kid` inside `module
       # Admin`, which `@class_name_stack` (classes only) writes `Kid`.
       @lexical_names = []
-      # The `def`s written directly in each enclosing class's body.
+      # The `def`s written in each enclosing class's own body, per side
+      # (`InheritedReach.body_defs`).
       @class_body_defs = []
+      @class_singleton_defs = []
     end
 
     # A module declaration does not push a name — `@class_name_stack` is about
@@ -186,9 +190,11 @@ module RbsInfer::Inference
         end
       @class_name_stack.push(full_name) if full_name
       @lexical_names.push(lexical_name_for(node))
-      @class_body_defs.push(InheritedReach.body_defs(node).to_set)
+      @class_body_defs.push(InheritedReach.body_defs(node, :instance).to_set)
+      @class_singleton_defs.push(InheritedReach.body_defs(node, :singleton).to_set)
       super
       @class_body_defs.pop
+      @class_singleton_defs.pop
       @lexical_names.pop
       @class_name_stack.pop if full_name
       @declaration_kinds.pop
@@ -229,10 +235,24 @@ module RbsInfer::Inference
         args.merge!(extract_positional_args(node))
         @usages << args unless args.empty?
       elsif super_reaches_target_method?
-        args = extract_cross_class_args(node, @target_methods[@current_method])
-        @method_call_usages[@current_method] << args unless args.empty?
+        read_super_as_call(node, @current_method)
       end
       super
+    end
+
+    # What a call to the target's `method_name` gives: its arguments, when it
+    # takes any, and what the block passed returns, when that is still open
+    # (felixefelip/rbs_infer#155). A method that only takes a block is not in
+    # `@target_methods`, so the two are asked apart.
+    def read_super_as_call(node, method_name)
+      if (params = @target_methods[method_name])
+        args = extract_cross_class_args(node, params)
+        @method_call_usages[method_name] << args unless args.empty?
+      end
+      return unless @block_methods.include?(method_name) && node.block.is_a?(Prism::BlockNode)
+
+      type = BlockReturnCollector.block_return_type(node.block, @expression_types)
+      @method_block_returns[method_name] << type if type
     end
 
     def positional_param_names(node)
@@ -551,25 +571,35 @@ module RbsInfer::Inference
     # whose `super` reaches the target's.
     def super_reaches_target_initialize?
       return false if @inherited_initializers.supers.empty?
-      return false unless @current_method == "initialize" && in_own_instance_method?
+      return false unless @current_method == "initialize" && own_method_side == :instance
 
       @inherited_initializers.supers.include?(@lexical_names.last)
     end
 
-    # The same for any other target method: a `super` in the class's own
-    # method of that name, in a class whose `super` reaches the target's.
+    # The same for any other target method, on either side: a `super` in the
+    # class's own method of that name, in a class whose `super` reaches the
+    # target's.
     def super_reaches_target_method?
-      classes = @inherited_supers[@current_method] or return false
-      return false unless @target_methods.key?(@current_method) && in_own_instance_method?
+      return false if @inherited_supers.empty?
 
+      side = own_method_side or return false
+      classes = @inherited_supers.dig(side, @current_method) or return false
       classes.include?(@lexical_names.last)
     end
 
-    # Inside an instance method written in the enclosing class's own body
-    # (`InheritedReach.body_defs`). One under `class << self`, a `def self.`,
-    # or one in a block (`Class.new(Other) do`) belongs to some other chain.
-    def in_own_instance_method?
-      @declaration_kinds.last == :class && @class_body_defs.last&.include?(@current_def) || false
+    # Which side of the enclosing class's own body the current method is
+    # written on (`InheritedReach.body_defs`): `:instance`, `:singleton` for a
+    # `def self.` or a `def` in its `class << self`, or nil for one in a block
+    # (`Class.new(Other) do`) or inside another method, which belongs to some
+    # other chain.
+    def own_method_side
+      return nil unless @declaration_kinds.last == :class
+
+      if @class_body_defs.last&.include?(@current_def)
+        :instance
+      elsif @class_singleton_defs.last&.include?(@current_def)
+        :singleton
+      end
     end
 
     # Does the handler this receiver would reach belong to the target?
