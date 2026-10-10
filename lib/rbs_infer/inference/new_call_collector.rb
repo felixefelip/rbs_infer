@@ -28,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types:, invoker_self_types:, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {}, inherited_forwards:)
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types:, invoker_self_types:, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {}, inherited_forwards:, inherited_initializers:)
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -67,6 +67,11 @@ module RbsInfer::Inference
       # base's parameter — which reads as an answer rather than failing
       # (docs/engineering/required-threaded-deps.md).
       @inherited_forwards = inherited_forwards
+      # The classes whose `new` or `super` reaches the target's `initialize`
+      # (felixefelip/rbs_infer#412), as `InheritedInitializers::Reach`.
+      # Required for the same reason: forgetting it silently drops those call
+      # sites. A collector whose usages are not `initialize`'s passes `NONE`.
+      @inherited_initializers = inherited_initializers
       @match_bare_calls = match_bare_calls
       # `{ "method_name" => "Self & Self::Validated" }` — refined `self`
       # types per method, from after-validation callback sidecars (see
@@ -125,6 +130,12 @@ module RbsInfer::Inference
       @module_name_stack = []
       @in_singleton_method = false
       @current_method = nil
+      @current_def = nil
+      # Every enclosing class and module, joined: `Admin::Kid` inside `module
+      # Admin`, which `@class_name_stack` (classes only) writes `Kid`.
+      @lexical_names = []
+      # The `def`s written directly in each enclosing class's body.
+      @class_body_defs = []
     end
 
     # A module declaration does not push a name — `@class_name_stack` is about
@@ -132,10 +143,19 @@ module RbsInfer::Inference
     def visit_module_node(node)
       @declaration_kinds.push(:module)
       @module_name_stack.push(module_name_for(node))
+      @lexical_names.push(lexical_name_for(node))
       super
     ensure
       @declaration_kinds.pop
       @module_name_stack.pop
+      @lexical_names.pop
+    end
+
+    def lexical_name_for(node)
+      segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path) or return @lexical_names.last
+      outer = @lexical_names.last
+
+      outer ? "#{outer}::#{segment}" : segment
     end
 
     # A module's FQN, joined with whatever encloses it. Tracked apart from
@@ -161,7 +181,12 @@ module RbsInfer::Inference
           @class_name_stack.empty? ? segment : "#{@class_name_stack.last}::#{segment}"
         end
       @class_name_stack.push(full_name) if full_name
+      @lexical_names.push(lexical_name_for(node))
+      body = node.body.is_a?(Prism::StatementsNode) ? node.body.body : []
+      @class_body_defs.push(body.grep(Prism::DefNode).to_set)
       super
+      @class_body_defs.pop
+      @lexical_names.pop
       @class_name_stack.pop if full_name
       @declaration_kinds.pop
     end
@@ -173,6 +198,8 @@ module RbsInfer::Inference
       # `def self.foo` carries a receiver; plain `def foo` does not.
       @in_singleton_method = !node.receiver.nil?
       @current_method = node.name.to_s
+      old_def = @current_def
+      @current_def = node
       old_params = @current_def_params
       @current_def_params = positional_param_names(node)
       unless @method_scoped_var_names.empty?
@@ -182,9 +209,23 @@ module RbsInfer::Inference
       collect_local_assignments(node)
       super
       @current_def_params = old_params
+      @current_def = old_def
       @current_method = old_method
       @in_singleton_method = old_singleton
       @local_var_types = old_vars
+    end
+
+    # A `super` in a subclass's `initialize` is a call site of the
+    # `initialize` it reaches (felixefelip/rbs_infer#412): `super(name)` hands
+    # on what a `.new` would, mapped the same way. A bare `super` arrives here
+    # written out (`ForwardingSuper`), so it is read the same way too.
+    def visit_super_node(node)
+      if super_reaches_target_initialize?
+        args = extract_keyword_args(node)
+        args.merge!(extract_positional_args(node))
+        @usages << args unless args.empty?
+      end
+      super
     end
 
     def positional_param_names(node)
@@ -244,7 +285,7 @@ module RbsInfer::Inference
 
       if node.name == :new && node.receiver
         receiver_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
-        if receiver_name && match_class?(receiver_name)
+        if receiver_name && (match_class?(receiver_name) || constructs_target?(node.receiver))
           args = extract_keyword_args(node)
           args.merge!(extract_positional_args(node))
           @usages << args unless args.empty?
@@ -486,6 +527,28 @@ module RbsInfer::Inference
       when nil then false
       else resolve_receiver_type(receiver).to_s.start_with?("singleton(")
       end
+    end
+
+    # `Kid.new(...)` where the `initialize` `Kid` runs is the target's: an
+    # inherited one is a call site whatever the receiver is called
+    # (felixefelip/rbs_infer#412).
+    def constructs_target?(receiver)
+      return false if @inherited_initializers.constructs.empty?
+      return false unless receiver.is_a?(Prism::ConstantReadNode) || receiver.is_a?(Prism::ConstantPathNode)
+
+      resolved = resolve_constant_arg_type(receiver)[/\Asingleton\((.+)\)\z/, 1] or return false
+      @inherited_initializers.constructs.include?(resolved.delete_prefix("::"))
+    end
+
+    # A `super` written in an `initialize` of a class's own body, in a class
+    # whose `super` reaches the target's. One under `class << self` or in a
+    # block (`Class.new(Other) do`) belongs to some other class.
+    def super_reaches_target_initialize?
+      return false if @inherited_initializers.supers.empty?
+      return false unless @current_method == "initialize" && @declaration_kinds.last == :class
+      return false unless @class_body_defs.last&.include?(@current_def)
+
+      @inherited_initializers.supers.include?(@lexical_names.last)
     end
 
     # Does the handler this receiver would reach belong to the target?
@@ -900,7 +963,10 @@ module RbsInfer::Inference
           next unless elem.is_a?(Prism::AssocNode)
 
           key = extract_symbol_key(elem.key)
-          next unless key
+          # A keyword never binds a positional parameter, even one of the
+          # same name: `Kid.new(name: x)` onto `initialize(name)` passes the
+          # hash, not `x`.
+          next if key.nil? || @init_positional_params.include?(key)
 
           args[key] = argument_type(elem.value)
         end
@@ -910,28 +976,39 @@ module RbsInfer::Inference
     end
 
     def extract_positional_args(call_node)
-      args = {}
-      return args if @init_positional_params.empty?
-      return args unless call_node.arguments
+      return {} unless call_node.arguments
 
-      index = 0
-      splat_types = []
+      types = []
       call_node.arguments.arguments.each do |arg|
-        break if index >= @init_positional_params.size
         next if arg.is_a?(Prism::KeywordHashNode)
         # See `extract_cross_class_args`: a splat says nothing about which parameter gets
         # what, and the array itself never arrives.
         break if arg.is_a?(Prism::SplatNode)
 
+        types << argument_type(arg)
+      end
+      map_positional_types(types)
+    end
+
+    # The positional arguments' types, by position, onto the parameters of the
+    # `initialize` they reach.
+    def map_positional_types(types)
+      args = {}
+      return args if @init_positional_params.empty?
+
+      index = 0
+      splat_types = []
+      types.each do |type|
+        break if index >= @init_positional_params.size
+
         # `Klass.new(a, b, c)` onto `initialize(first, *rest)`: everything from the rest
         # param's index on is the same parameter, so fold instead of advancing.
         if splat_name(@init_positional_params[index])
-          splat_types << argument_type(arg)
+          splat_types << type
           next
         end
 
-        param_name = @init_positional_params[index]
-        args[param_name] = argument_type(arg)
+        args[@init_positional_params[index]] = type
         index += 1
       end
 

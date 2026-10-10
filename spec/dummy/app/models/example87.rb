@@ -15,10 +15,10 @@
 # `Example87::HasManyReflection{@name: :posts}`, `reflection.name` answers
 # `:posts`, and `posts` and `comments` are defined.
 #
-# Also pinned as it stands: `MacroReflection#initialize`'s parameters and the
-# `name` reader read `untyped`. The only call site is
-# `HasManyReflection.new(name, options)`, and it reaches neither the inherited
-# `initialize` nor the one a bare `super` forwards to.
+# The same chain types both `initialize`s (felixefelip/rbs_infer#412): the one
+# call site, `HasManyReflection.new(name, options)`, runs the inherited
+# `AssociationReflection#initialize`, whose bare `super` is a call site of
+# `MacroReflection#initialize`. Both take `(:posts | :comments) name`.
 #
 # Two callers on purpose. With one, the closed world types the reader `:posts`,
 # and the fold works by accident.

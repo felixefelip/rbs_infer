@@ -38,7 +38,8 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
   # no files to read it finds no call sites and declines, which is exactly "do
   # not narrow" — and it stays honest if the class changes.
   def build_collector(**kwargs)
-    described_class.new(module_self_types: {}, invoker_self_types: null_invoker_self_types, inherited_forwards: {}, **kwargs)
+    described_class.new(module_self_types: {}, invoker_self_types: null_invoker_self_types, inherited_forwards: {},
+                        inherited_initializers: RbsInfer::Inference::InheritedInitializers::NONE, **kwargs)
   end
 
   def null_invoker_self_types

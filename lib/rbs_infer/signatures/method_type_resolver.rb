@@ -350,7 +350,11 @@ module RbsInfer::Signatures
           # `target_methods`, so no method call is collected here and no
           # inherited dispatcher could be recognized. Empty is the answer, not a
           # missing wire (felixefelip/rbs_infer#331).
-          inherited_forwards: {}
+          inherited_forwards: {},
+          # Keyword-only reads of the class's own `.new`s. The `.new`s and
+          # `super`s that reach an inherited `initialize` are
+          # `ParamTypeInferrer#find_new_calls`'s (felixefelip/rbs_infer#412).
+          inherited_initializers: RbsInfer::Inference::InheritedInitializers::NONE
         )
         entry.result.value.accept(visitor)
         all_usages.concat(visitor.usages)
@@ -570,7 +574,11 @@ module RbsInfer::Signatures
           # `target_methods`, so no method call is collected here and no
           # inherited dispatcher could be recognized. Empty is the answer, not a
           # missing wire (felixefelip/rbs_infer#331).
-          inherited_forwards: {}
+          inherited_forwards: {},
+          # Keyword-only reads of the class's own `.new`s. The `.new`s and
+          # `super`s that reach an inherited `initialize` are
+          # `ParamTypeInferrer#find_new_calls`'s (felixefelip/rbs_infer#412).
+          inherited_initializers: RbsInfer::Inference::InheritedInitializers::NONE
         )
         entry.result.value.accept(visitor)
 

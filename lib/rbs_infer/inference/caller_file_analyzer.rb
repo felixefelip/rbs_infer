@@ -12,7 +12,7 @@ module RbsInfer::Inference
     # covered by `IntraClassCallAnalyzer`. Omitting it would double-count every same-file
     # self-call — the two paths resolve the receiver differently, so the parameter widens
     # into a union instead of failing loudly (required-threaded-deps).
-    def initialize(target_class:, method_type_resolver:, target_file:, mixin_index:, invoker_self_types:, inherited_forwards:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {})
+    def initialize(target_class:, method_type_resolver:, target_file:, mixin_index:, invoker_self_types:, inherited_forwards:, inherited_initializers:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {})
       @target_class = target_class
       @target_file = target_file
       @method_type_resolver = method_type_resolver
@@ -43,6 +43,9 @@ module RbsInfer::Inference
       # reason as the index above: forgetting it silently drops the call sites
       # that only reach the target through an inherited forward.
       @inherited_forwards = inherited_forwards
+      # The classes whose `new` or `super` reaches the target's `initialize`
+      # (felixefelip/rbs_infer#412). Required for the same reason.
+      @inherited_initializers = inherited_initializers
       @method_call_usages = Hash.new { |h, k| h[k] = [] }
       @method_block_returns = Hash.new { |h, k| h[k] = [] }
     end
@@ -50,6 +53,9 @@ module RbsInfer::Inference
     def analyze(file, force_bare: false)
       source = RbsInfer::Project::SourceReader.read(file) or return []
       source = with_self_method_annotation(source, file)
+      # A bare `super` written out, so the checker types what it passes
+      # (felixefelip/rbs_infer#412).
+      source = ForwardingSuper.desugar(source)
       result = Prism.parse(source)
       comments = result.comments
       method_return_types = extract_method_return_types(source, comments, result.value)
@@ -191,6 +197,7 @@ module RbsInfer::Inference
         block_methods: @block_methods,
         method_owners: @method_owners,
         inherited_forwards: @inherited_forwards,
+        inherited_initializers: @inherited_initializers,
         expression_types: @steep_bridge ? @steep_bridge.all_expression_types(source) : {}
       )
       result.value.accept(visitor)
@@ -234,6 +241,7 @@ module RbsInfer::Inference
         init_positional_params: @init_positional_params,
         target_methods: @target_methods,
         inherited_forwards: @inherited_forwards,
+        inherited_initializers: @inherited_initializers,
         match_bare_calls: true,
         # Pre-converted ERB source has no constant defs of its own → {}.
         constant_arg_resolver: ConstantArgTypeResolver.new(steep_bridge: @steep_bridge, caller_constant_types: {}),

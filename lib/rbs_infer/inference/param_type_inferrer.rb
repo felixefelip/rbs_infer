@@ -167,6 +167,9 @@ module RbsInfer::Inference
         # call site that only ever names the dispatcher (`Greeter.dispatch(...)`)
         # is read as the call site of the handler it runs.
         inherited_forwards: inherited_forwards_for(target_methods),
+        # Method call usages only: the `initialize` usages this walk also
+        # collects are discarded, so nothing reaching it is needed.
+        inherited_initializers: InheritedInitializers::NONE,
         init_positional_params: init_positional_params(parsed_target),
         target_methods: target_methods,
         steep_bridge: @steep_bridge,
@@ -244,8 +247,16 @@ module RbsInfer::Inference
       end
     end
 
-    # The target's `.new`s, in every file that names it.
+    # The target's `.new`s, in every file that names it — or names a subclass
+    # whose `new` or `super` reaches its `initialize` (felixefelip/rbs_infer#412):
+    # `Kid.new(:posts)` need not spell `Base` to run `Base#initialize`.
     def find_new_calls(parsed_target)
+      reach = InheritedInitializers.new(
+        target_class: @target_class,
+        source_index: @source_index,
+        parse_cache: @parse_cache,
+        rbs_definition_resolver: rbs_definition_resolver
+      ).reach
       analyzer = CallerFileAnalyzer.new(
         target_class: @target_class,
         method_type_resolver: @method_type_resolver,
@@ -258,9 +269,17 @@ module RbsInfer::Inference
         # This walk keeps the `.new` usages and discards the method-call ones,
         # so an inherited dispatcher has nothing to contribute here and looking
         # for one would only cost a sweep (felixefelip/rbs_infer#331).
-        inherited_forwards: {}
+        inherited_forwards: {},
+        inherited_initializers: reach
       )
-      @source_index.files_referencing(@target_class).flat_map { |file| analyzer.analyze(file) }
+      reachers = reach.constructs | reach.supers
+      files = ([@target_class] + reachers.to_a).flat_map { |name| @source_index.files_referencing(name) }.uniq
+      files.flat_map { |file| analyzer.analyze(file) }
+    end
+
+    # One per inferrer, so the owner lookups it memoizes are shared.
+    def rbs_definition_resolver
+      @rbs_definition_resolver ||= RbsInfer::Signatures::RbsDefinitionResolver.new
     end
 
     # ─── What the target declares, for matching the call sites ─────────

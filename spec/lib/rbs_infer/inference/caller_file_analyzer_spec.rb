@@ -17,7 +17,8 @@ RSpec.describe RbsInfer::Inference::CallerFileAnalyzer do
         source_index: RbsInfer::Project::SourceIndex.new([]),
         parse_cache: RbsInfer::Project::ParseCache.new
       ),
-      inherited_forwards: {}
+      inherited_forwards: {},
+      inherited_initializers: RbsInfer::Inference::InheritedInitializers::NONE
     )
   end
 

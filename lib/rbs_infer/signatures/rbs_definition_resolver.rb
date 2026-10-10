@@ -268,6 +268,43 @@ module RbsInfer::Signatures
       @method_owners[key] = compute_method_owner(type_str, method_name)
     end
 
+    # Which class or module owns the method a `super` in `class_name`'s own
+    # `method_name` reaches: the next definition up the ancestors, as RBS links
+    # it (`super_method`). Nil when `class_name` does not define the method
+    # itself, so there is no `super` of its own to ask about.
+    def super_method_owner(class_name, method_name)
+      return nil unless rbs_builder
+
+      type_name = build_rbs_type_name(class_name)
+      return nil unless rbs_builder.env.class_decls.key?(type_name)
+
+      method = rbs_builder.build_instance(type_name).methods[method_name.to_sym] or return nil
+      return nil unless method.defined_in == type_name
+
+      method.super_method&.defined_in&.to_s
+    rescue RBS::BaseError, RuntimeError
+      nil
+    end
+
+    # Every class below `class_name`, however deep, each with the class it
+    # directly inherits from: `{ "::Kid" => "::Base", "::Grandkid" => "::Kid" }`.
+    def descendant_parents(class_name)
+      subclasses = SteepEnvironment.direct_subclasses
+      parents = {}
+      queue = [build_rbs_type_name(class_name).to_s]
+      while (name = queue.shift)
+        subclasses.fetch(name, []).each do |child|
+          next if parents.key?(child)
+
+          parents[child] = name
+          queue << child
+        end
+      end
+      parents
+    rescue RuntimeError
+      {}
+    end
+
     # What `class_name` declares that `method_name` ACCEPTS: the parameter list
     # of each of its overloads, rendered the way RBS writes it and with the
     # `::` prefixes dropped the same way every other emitted type has them
