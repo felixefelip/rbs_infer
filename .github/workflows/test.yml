@@ -91,6 +91,23 @@ jobs:
           path: rbs_infer/coverage/
           retention-days: 14
 
+  rubocop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Only RuboCop, at the version the lock pins: the project's bundle needs
+      # the forks checked out beside it.
+      - uses: ruby/setup-ruby@v1
+
+      - name: Install RuboCop
+        run: gem install rubocop --no-document --version "$(sed -n 's/^    rubocop (\(.*\))$/\1/p' Gemfile.lock)"
+
+      - name: Run RuboCop
+        run: rubocop --format github
+
   # A result of its own, next to the suite's: named after the totals, failing
   # when one is below its minimum and, on a pull request, annotating the
   # changed lines no example runs. The suite's own result is left to the

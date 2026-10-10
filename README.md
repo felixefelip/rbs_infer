@@ -291,6 +291,7 @@ make rbs_infer_devise     # rake rbs_infer:devise:all (after rbs_rails_generator
 make rbs_generators_all   # every generator above, in order
 
 make test                 # bundle exec rspec
+make lint                 # bundle exec rubocop (double-quoted strings; debt in .rubocop_todo.yml)
 make steep                # STEEP_ERB_CONVENTION=1 STEEP_MODULE_CONVENTION=1 steep check
 ```
 

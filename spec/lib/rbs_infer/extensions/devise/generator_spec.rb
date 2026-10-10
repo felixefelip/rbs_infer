@@ -92,13 +92,13 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
   end
 
   it "honors singular:" do
-    scopes, = generate('Rails.application.routes.draw { devise_for :users, singular: :member }')
+    scopes, = generate("Rails.application.routes.draw { devise_for :users, singular: :member }")
 
     expect(scopes).to eq([{ scope: "member", class_name: "User" }])
   end
 
   it "honors as: for the scoped path (mirroring Devise::Mapping)" do
-    scopes, = generate('Rails.application.routes.draw { devise_for :users, as: :admins }')
+    scopes, = generate("Rails.application.routes.draw { devise_for :users, as: :admins }")
 
     expect(scopes).to eq([{ scope: "admin", class_name: "User" }])
   end
@@ -122,7 +122,7 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
   end
 
   it "classifies namespaced resources" do
-    scopes, = generate('Rails.application.routes.draw { devise_for :admin_users }')
+    scopes, = generate("Rails.application.routes.draw { devise_for :admin_users }")
 
     expect(scopes).to eq([{ scope: "admin_user", class_name: "AdminUser" }])
   end

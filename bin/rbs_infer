@@ -73,7 +73,7 @@ files = inputs.flat_map do |input|
 end
 
 if files.empty?
-  warn "No .rb files found in: #{inputs.join(', ')}"
+  warn "No .rb files found in: #{inputs.join(", ")}"
   exit 1
 end
 
@@ -110,7 +110,7 @@ end
 steepfile_sources = RbsInfer::Project::SteepfileSources.call(ignores: false)
 if steepfile_sources.nil?
   warn "rbs_infer: no usable Steepfile; resolving call sites only against " \
-       "the paths given (#{inputs.join(', ')}). Types that depend on a call " \
+       "the paths given (#{inputs.join(", ")}). Types that depend on a call " \
        "site elsewhere will be `untyped`."
 end
 
