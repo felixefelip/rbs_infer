@@ -2,13 +2,6 @@ module RbsInfer::Inference
   class NewCallCollector < Prism::Visitor
     attr_reader :usages, :method_call_usages, :method_block_returns
 
-    # Every node that gives a local a new value.
-    LOCAL_WRITES = [
-      Prism::LocalVariableWriteNode, Prism::LocalVariableOperatorWriteNode,
-      Prism::LocalVariableOrWriteNode, Prism::LocalVariableAndWriteNode,
-      Prism::LocalVariableTargetNode
-    ].freeze
-
     # Collect the fully-qualified names of every class/module DEFINED in a
     # parsed file, so `match_class?` can tell a bare `Foo` written inside
     # `Example3` (→ `Example3::Foo`) apart from a same-named class elsewhere
@@ -35,7 +28,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types:, invoker_self_types:, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {}, inherited_forwards:)
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, module_self_types:, invoker_self_types:, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {}, inherited_forwards:, inherited_initializers:)
       @target_class = target_class
       # FQNs of classes/modules defined in the file being scanned; disambiguates
       # a relative receiver from a same-simple-name class elsewhere (see
@@ -74,6 +67,11 @@ module RbsInfer::Inference
       # base's parameter — which reads as an answer rather than failing
       # (docs/engineering/required-threaded-deps.md).
       @inherited_forwards = inherited_forwards
+      # The classes whose `new` or `super` reaches the target's `initialize`
+      # (felixefelip/rbs_infer#412), as `InheritedInitializers::Reach`.
+      # Required for the same reason: forgetting it silently drops those call
+      # sites. A collector whose usages are not `initialize`'s passes `NONE`.
+      @inherited_initializers = inherited_initializers
       @match_bare_calls = match_bare_calls
       # `{ "method_name" => "Self & Self::Validated" }` — refined `self`
       # types per method, from after-validation callback sidecars (see
@@ -133,6 +131,11 @@ module RbsInfer::Inference
       @in_singleton_method = false
       @current_method = nil
       @current_def = nil
+      # Every enclosing class and module, joined: `Admin::Kid` inside `module
+      # Admin`, which `@class_name_stack` (classes only) writes `Kid`.
+      @lexical_names = []
+      # The `def`s written directly in each enclosing class's body.
+      @class_body_defs = []
     end
 
     # A module declaration does not push a name — `@class_name_stack` is about
@@ -140,10 +143,19 @@ module RbsInfer::Inference
     def visit_module_node(node)
       @declaration_kinds.push(:module)
       @module_name_stack.push(module_name_for(node))
+      @lexical_names.push(lexical_name_for(node))
       super
     ensure
       @declaration_kinds.pop
       @module_name_stack.pop
+      @lexical_names.pop
+    end
+
+    def lexical_name_for(node)
+      segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path) or return @lexical_names.last
+      outer = @lexical_names.last
+
+      outer ? "#{outer}::#{segment}" : segment
     end
 
     # A module's FQN, joined with whatever encloses it. Tracked apart from
@@ -169,7 +181,12 @@ module RbsInfer::Inference
           @class_name_stack.empty? ? segment : "#{@class_name_stack.last}::#{segment}"
         end
       @class_name_stack.push(full_name) if full_name
+      @lexical_names.push(lexical_name_for(node))
+      body = node.body.is_a?(Prism::StatementsNode) ? node.body.body : []
+      @class_body_defs.push(body.grep(Prism::DefNode).to_set)
       super
+      @class_body_defs.pop
+      @lexical_names.pop
       @class_name_stack.pop if full_name
       @declaration_kinds.pop
     end
@@ -200,20 +217,12 @@ module RbsInfer::Inference
 
     # A `super` in a subclass's `initialize` is a call site of the
     # `initialize` it reaches (felixefelip/rbs_infer#412): `super(name)` hands
-    # on what a `.new` would, mapped the same way.
+    # on what a `.new` would, mapped the same way. A bare `super` arrives here
+    # written out (`ForwardingSuper`), so it is read the same way too.
     def visit_super_node(node)
       if super_reaches_target_initialize?
         args = extract_keyword_args(node)
         args.merge!(extract_positional_args(node))
-        @usages << args unless args.empty?
-      end
-      super
-    end
-
-    # A bare `super` passes each of the method's parameters where it stands.
-    def visit_forwarding_super_node(node)
-      if super_reaches_target_initialize?
-        args = forwarded_super_args
         @usages << args unless args.empty?
       end
       super
@@ -276,7 +285,7 @@ module RbsInfer::Inference
 
       if node.name == :new && node.receiver
         receiver_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
-        if receiver_name && (match_class?(receiver_name) || inherits_target_initialize?(node.receiver))
+        if receiver_name && (match_class?(receiver_name) || constructs_target?(node.receiver))
           args = extract_keyword_args(node)
           args.merge!(extract_positional_args(node))
           @usages << args unless args.empty?
@@ -523,40 +532,23 @@ module RbsInfer::Inference
     # `Kid.new(...)` where the `initialize` `Kid` runs is the target's: an
     # inherited one is a call site whatever the receiver is called
     # (felixefelip/rbs_infer#412).
-    def inherits_target_initialize?(receiver)
+    def constructs_target?(receiver)
+      return false if @inherited_initializers.constructs.empty?
       return false unless receiver.is_a?(Prism::ConstantReadNode) || receiver.is_a?(Prism::ConstantPathNode)
 
-      resolved = resolve_constant_arg_type(receiver)
-      resolved != "untyped" && reaches_target_method?(resolved, "initialize")
+      resolved = resolve_constant_arg_type(receiver)[/\Asingleton\((.+)\)\z/, 1] or return false
+      @inherited_initializers.constructs.include?(resolved.delete_prefix("::"))
     end
 
-    # Inside an `initialize` of a class, does `super` reach the target's
-    # `initialize`? The RBS links each definition to the one above it.
+    # A `super` written in an `initialize` of a class's own body, in a class
+    # whose `super` reaches the target's. One under `class << self` or in a
+    # block (`Class.new(Other) do`) belongs to some other class.
     def super_reaches_target_initialize?
-      return false unless @current_method == "initialize" && !@in_singleton_method
-      return false unless @declaration_kinds.last == :class
+      return false if @inherited_initializers.supers.empty?
+      return false unless @current_method == "initialize" && @declaration_kinds.last == :class
+      return false unless @class_body_defs.last&.include?(@current_def)
 
-      class_name = @class_name_stack.last or return false
-      owner = rbs_definition_resolver.super_method_owner(class_name, "initialize")
-      !owner.nil? && owner.sub(/\A::/, "") == @target_class.sub(/\A::/, "")
-    end
-
-    # What a bare `super` hands on: each of the method's parameters where it
-    # stands, positionals by position and keywords by name, typed as the
-    # method declares them. One the body reassigns is no longer what the
-    # method was given, so it passes `untyped`.
-    def forwarded_super_args
-      params = @current_def&.parameters or return {}
-
-      declared = rbs_definition_resolver.parameter_types(@class_name_stack.last, "initialize")
-      reassigned = RbsInfer::Analyzer.find_all_nodes(@current_def.body) do |n|
-        LOCAL_WRITES.any? { |kind| n.is_a?(kind) }
-      end.map { |n| n.name.to_s }.to_set
-      type_of = ->(name) { reassigned.include?(name) ? "untyped" : declared.fetch(name, "untyped") }
-
-      args = map_positional_types(@current_def_params.map(&type_of))
-      params.keywords.each { |keyword| args[keyword.name.to_s] = type_of.call(keyword.name.to_s) }
-      args
+      @inherited_initializers.supers.include?(@lexical_names.last)
     end
 
     # Does the handler this receiver would reach belong to the target?
@@ -971,7 +963,10 @@ module RbsInfer::Inference
           next unless elem.is_a?(Prism::AssocNode)
 
           key = extract_symbol_key(elem.key)
-          next unless key
+          # A keyword never binds a positional parameter, even one of the
+          # same name: `Kid.new(name: x)` onto `initialize(name)` passes the
+          # hash, not `x`.
+          next if key.nil? || @init_positional_params.include?(key)
 
           args[key] = argument_type(elem.value)
         end
@@ -981,7 +976,6 @@ module RbsInfer::Inference
     end
 
     def extract_positional_args(call_node)
-      return {} if @init_positional_params.empty?
       return {} unless call_node.arguments
 
       types = []
