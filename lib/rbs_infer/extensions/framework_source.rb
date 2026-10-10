@@ -67,7 +67,7 @@ module RbsInfer
 
       # `source` indented by `depth` levels, blank lines left blank.
       def indent(source, depth)
-        source.lines.map { |line| line.strip.empty? ? "\n" : "#{'  ' * depth}#{line}" }.join
+        source.lines.map { |line| line.strip.empty? ? "\n" : "#{"  " * depth}#{line}" }.join
       end
     end
   end

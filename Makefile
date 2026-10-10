@@ -3,7 +3,7 @@ ROOT_DIR = $(shell pwd)
 RBS_INFER = bundle exec rbs_infer
 OUTPUT_DIR = sig/rbs_infer
 
-.PHONY: rbs rbs-controllers rbs-models rbs-services rbs-rails-custom rbs-erb test steep
+.PHONY: rbs rbs-controllers rbs-models rbs-services rbs-rails-custom rbs-erb test lint steep
 
 ## Gerar RBS para todo o app/ do dummy
 rbs_infer:
@@ -81,6 +81,9 @@ rbs_generators_all:
 ## Rodar testes
 test:
 	bundle exec rspec
+
+lint:
+	bundle exec rubocop
 
 ## Mesma suíte em dois processos concorrentes (~114s -> ~75s).
 ## Não use para regravar snapshots — bin/rspec-parallel recusa UPDATE_* e

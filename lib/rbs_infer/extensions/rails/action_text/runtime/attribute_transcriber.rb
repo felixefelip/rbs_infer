@@ -175,13 +175,13 @@ module RbsInfer
               nesting = MIXED_IN.split("::")
               depth = nesting.size + 1
               indented = body.rstrip.lines
-                             .map { |line| line.strip.empty? ? "\n" : "#{'  ' * depth}#{line}" }.join
+                             .map { |line| line.strip.empty? ? "\n" : "#{"  " * depth}#{line}" }.join
 
-              opens = nesting.each_with_index.map { |segment, i| "#{'  ' * i}module #{segment}" }
-              closes = (0...nesting.size).to_a.reverse.map { |i| "#{'  ' * i}end" }
-              concern = ["#{'  ' * (nesting.size - 1)}  extend ActiveSupport::Concern", "",
-                         "#{'  ' * (nesting.size - 1)}  class_methods do"]
-              block_end = "#{'  ' * (nesting.size - 1)}  end"
+              opens = nesting.each_with_index.map { |segment, i| "#{"  " * i}module #{segment}" }
+              closes = (0...nesting.size).to_a.reverse.map { |i| "#{"  " * i}end" }
+              concern = ["#{"  " * (nesting.size - 1)}  extend ActiveSupport::Concern", "",
+                         "#{"  " * (nesting.size - 1)}  class_methods do"]
+              block_end = "#{"  " * (nesting.size - 1)}  end"
 
               "#{(opens + concern + [indented, block_end] + closes).join("\n")}\n#{include_source}"
             end

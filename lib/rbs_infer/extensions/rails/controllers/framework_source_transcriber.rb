@@ -143,7 +143,7 @@ module RbsInfer
           # `ActionController::Base` → `action_controller/base.rb`, the same
           # gem-shaped layout the transcribed bodies use.
           def host_path(host)
-            "#{host.split('::').map { |segment| underscore(segment) }.join('/')}.rb"
+            "#{host.split("::").map { |segment| underscore(segment) }.join("/")}.rb"
           end
 
           def underscore(segment)
@@ -275,9 +275,9 @@ module RbsInfer
             body = defs.join("\n\n").rstrip
             depth = namespace.size
 
-            lines = namespace.each_with_index.map { |segment, i| "#{'  ' * i}#{keyword_for(namespace[0..i])} #{segment}" }
-            lines << body.lines.map { |l| l.strip.empty? ? l : "#{'  ' * depth}#{l}" }.join
-            lines.concat((0...depth).to_a.reverse.map { |i| "#{'  ' * i}end" })
+            lines = namespace.each_with_index.map { |segment, i| "#{"  " * i}#{keyword_for(namespace[0..i])} #{segment}" }
+            lines << body.lines.map { |l| l.strip.empty? ? l : "#{"  " * depth}#{l}" }.join
+            lines.concat((0...depth).to_a.reverse.map { |i| "#{"  " * i}end" })
             "#{lines.join("\n")}\n"
           end
 

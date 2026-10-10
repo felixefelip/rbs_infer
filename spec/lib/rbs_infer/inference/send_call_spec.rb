@@ -63,7 +63,7 @@ RSpec.describe RbsInfer::Inference::SendCall do
 
   it "declines an ordinary call" do
     expect(desugar('obj.stamp("post")')).to be_nil
-    expect(desugar('obj.resend(:stamp)')).to be_nil
+    expect(desugar("obj.resend(:stamp)")).to be_nil
   end
 
   it "declines a node that is not a call" do

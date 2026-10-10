@@ -95,7 +95,7 @@ module RbsInfer
           end
 
           def relative(abs)
-            prefix = "#{@app_dir.chomp('/')}/"
+            prefix = "#{@app_dir.chomp("/")}/"
             abs.start_with?(prefix) ? abs[prefix.length..] : abs
           end
         end
