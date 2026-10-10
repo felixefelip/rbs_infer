@@ -35,14 +35,19 @@ Metrics/ClassLength:
 Project/ClassLengthCeiling:
   Enabled: true
   CountAsOne: ["array", "hash", "heredoc", "method_call"]
-  Max: 400
+  Max: 300
   Ceilings:
+    "lib/rbs_infer/analyzer.rb": 387
+    "lib/rbs_infer/inference/class_member_collector.rb": 318
+    "lib/rbs_infer/inference/new_call_collector.rb": 392
     "lib/rbs_infer/inference/param_type_inferrer.rb": 457
+    "lib/rbs_infer/inference/type_merger.rb": 375
+    "lib/rbs_infer/signatures/method_type_resolver.rb": 336
     "lib/rbs_infer/signatures/steep_bridge.rb": 401
 
 Metrics/ModuleLength:
   CountAsOne: ["array", "hash", "heredoc", "method_call"]
-  Max: 400
+  Max: 300
 
 Metrics/BlockLength:
   CountAsOne: ["array", "hash", "heredoc", "method_call"]
