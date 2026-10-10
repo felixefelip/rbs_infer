@@ -11,13 +11,13 @@
 # SupportedStyles: Gemfile, gems.rb, gemspec
 Gemspec/DevelopmentDependencies:
   Exclude:
-    - 'rbs_infer.gemspec'
+    - "rbs_infer.gemspec"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 Gemspec/RequireMFA:
   Exclude:
-    - 'rbs_infer.gemspec'
+    - "rbs_infer.gemspec"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
@@ -25,7 +25,7 @@ Gemspec/RequireMFA:
 # SupportedStyles: outdent, indent
 Layout/AccessModifierIndentation:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
+    - "lib/rbs_infer/analyzer.rb"
 
 # Offense count: 11
 # This cop supports safe autocorrection (--autocorrect).
@@ -33,91 +33,91 @@ Layout/AccessModifierIndentation:
 # SupportedStyles: with_first_argument, with_fixed_indentation
 Layout/ArgumentAlignment:
   Exclude:
-    - 'lib/rbs_infer/project/stored_block_replay_expander/collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/resolution.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'spec/lib/rbs_infer/inference/new_call_collector_spec.rb'
+    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/resolution.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowForAlignment, IndentationWidth.
 Layout/CommentIndentation:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
 
 # Offense count: 4
 # This cop supports safe autocorrection (--autocorrect).
 Layout/ElseAlignment:
   Exclude:
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
 
 # Offense count: 119
 # This cop supports safe autocorrection (--autocorrect).
 Layout/EmptyLineAfterGuardClause:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/ast/optional_param_extractor.rb'
-    - 'lib/rbs_infer/extensions/devise/generator.rb'
-    - 'lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/views/template_scanner.rb'
-    - 'lib/rbs_infer/inference/attr_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
-    - 'lib/rbs_infer/inference/intra_class_call_analyzer.rb'
-    - 'lib/rbs_infer/inference/ivar_type_set.rb'
-    - 'lib/rbs_infer/inference/known_return_types_builder.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/markers/predicate_marker_synthesizer.rb'
-    - 'lib/rbs_infer/markers/setter_marker_synthesizer.rb'
-    - 'lib/rbs_infer/project/caller_file_cache.rb'
-    - 'lib/rbs_infer/project/dependency_sorter.rb'
-    - 'lib/rbs_infer/project/mixin_index.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_annotation_parser.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
-    - 'spec/lib/rbs_infer/ast/node_type_inferrer_spec.rb'
-    - 'spec/lib/rbs_infer/inference/new_call_collector_spec.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/ast/optional_param_extractor.rb"
+    - "lib/rbs_infer/extensions/devise/generator.rb"
+    - "lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/views/template_scanner.rb"
+    - "lib/rbs_infer/inference/attr_type_inferrer.rb"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
+    - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
+    - "lib/rbs_infer/inference/ivar_type_set.rb"
+    - "lib/rbs_infer/inference/known_return_types_builder.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/markers/predicate_marker_synthesizer.rb"
+    - "lib/rbs_infer/markers/setter_marker_synthesizer.rb"
+    - "lib/rbs_infer/project/caller_file_cache.rb"
+    - "lib/rbs_infer/project/dependency_sorter.rb"
+    - "lib/rbs_infer/project/mixin_index.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_annotation_parser.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
+    - "spec/lib/rbs_infer/ast/node_type_inferrer_spec.rb"
+    - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
 
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EmptyLineBetweenMethodDefs, EmptyLineBetweenClassDefs, EmptyLineBetweenModuleDefs, DefLikeMacros, AllowAdjacentOneLineDefs, NumberOfEmptyLines.
 Layout/EmptyLineBetweenDefs:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/controllers/runtime_generator.rb'
-    - 'lib/rbs_infer/project/parse_cache.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
+    - "lib/rbs_infer/extensions/rails/controllers/runtime_generator.rb"
+    - "lib/rbs_infer/project/parse_cache.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
 
 # Offense count: 13
 # This cop supports safe autocorrection (--autocorrect).
 Layout/EmptyLines:
   Exclude:
-    - 'bin/rbs_infer'
-    - 'lib/rbs_infer/ast/constant_reference.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/runtime_generator.rb'
-    - 'lib/rbs_infer/project/parse_cache.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'spec/integration/steep_scenarios_spec.rb'
-    - 'spec/lib/rbs_infer/analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/inference/new_call_collector_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb'
+    - "bin/rbs_infer"
+    - "lib/rbs_infer/ast/constant_reference.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/runtime_generator.rb"
+    - "lib/rbs_infer/project/parse_cache.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "spec/integration/steep_scenarios_spec.rb"
+    - "spec/lib/rbs_infer/analyzer_spec.rb"
+    - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 Layout/EmptyLinesAfterModuleInclusion:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/views/erb_source_owner.rb'
+    - "lib/rbs_infer/extensions/rails/views/erb_source_owner.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
@@ -125,7 +125,7 @@ Layout/EmptyLinesAfterModuleInclusion:
 # SupportedStyles: around, only_before
 Layout/EmptyLinesAroundAccessModifier:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/views/erb_source_owner.rb'
+    - "lib/rbs_infer/extensions/rails/views/erb_source_owner.rb"
 
 # Offense count: 8
 # This cop supports safe autocorrection (--autocorrect).
@@ -133,14 +133,14 @@ Layout/EmptyLinesAroundAccessModifier:
 # SupportedStyles: empty_lines, no_empty_lines
 Layout/EmptyLinesAroundBlockBody:
   Exclude:
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'spec/integration/rails_dummy_spec.rb'
-    - 'spec/lib/rbs_infer/analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/ast/target_discovery_spec.rb'
-    - 'spec/lib/rbs_infer/inference/class_member_collector_spec.rb'
-    - 'spec/lib/rbs_infer/inference/new_call_collector_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge/lexical_scope_spec.rb'
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "spec/integration/rails_dummy_spec.rb"
+    - "spec/lib/rbs_infer/analyzer_spec.rb"
+    - "spec/lib/rbs_infer/ast/target_discovery_spec.rb"
+    - "spec/lib/rbs_infer/inference/class_member_collector_spec.rb"
+    - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge/lexical_scope_spec.rb"
 
 # Offense count: 2
 # This cop supports safe autocorrection (--autocorrect).
@@ -148,8 +148,8 @@ Layout/EmptyLinesAroundBlockBody:
 # SupportedStyles: empty_lines, empty_lines_except_namespace, empty_lines_special, no_empty_lines, beginning_only, ending_only
 Layout/EmptyLinesAroundClassBody:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
 
 # Offense count: 5
 # This cop supports safe autocorrection (--autocorrect).
@@ -157,9 +157,9 @@ Layout/EmptyLinesAroundClassBody:
 # SupportedStyles: empty_lines, empty_lines_except_namespace, empty_lines_special, no_empty_lines
 Layout/EmptyLinesAroundModuleBody:
   Exclude:
-    - 'lib/rbs_infer/project/self_class_eval_marker.rb'
-    - 'lib/rbs_infer/project/source_index.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
+    - "lib/rbs_infer/project/self_class_eval_marker.rb"
+    - "lib/rbs_infer/project/source_index.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
 
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
@@ -167,18 +167,18 @@ Layout/EmptyLinesAroundModuleBody:
 # SupportedStylesAlignWith: keyword, variable, start_of_line
 Layout/EndAlignment:
   Exclude:
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
 
 # Offense count: 5
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowForAlignment, AllowBeforeTrailingComments, ForceEqualSignAlignment.
 Layout/ExtraSpacing:
   Exclude:
-    - 'lib/rbs_infer/project/dependency_sorter.rb'
-    - 'spec/lib/rbs_infer/inference/initialize_body_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_builder_spec.rb'
+    - "lib/rbs_infer/project/dependency_sorter.rb"
+    - "spec/lib/rbs_infer/inference/initialize_body_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_builder_spec.rb"
 
 # Offense count: 4
 # This cop supports safe autocorrection (--autocorrect).
@@ -186,8 +186,8 @@ Layout/ExtraSpacing:
 # SupportedStyles: consistent, consistent_relative_to_receiver, special_for_inner_method_call, special_for_inner_method_call_in_parentheses
 Layout/FirstArgumentIndentation:
   Exclude:
-    - 'spec/lib/rbs_infer/inference/block_signature_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb'
+    - "spec/lib/rbs_infer/inference/block_signature_resolver_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb"
 
 # Offense count: 22
 # This cop supports safe autocorrection (--autocorrect).
@@ -202,9 +202,9 @@ Layout/FirstArrayElementIndentation:
 # SupportedStyles: special_inside_parentheses, consistent, align_braces
 Layout/FirstHashElementIndentation:
   Exclude:
-    - 'spec/lib/rbs_infer/ast/target_discovery_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/custom_generator_spec.rb'
-    - 'spec/lib/rbs_infer/inference/intra_class_call_analyzer_spec.rb'
+    - "spec/lib/rbs_infer/ast/target_discovery_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/custom_generator_spec.rb"
+    - "spec/lib/rbs_infer/inference/intra_class_call_analyzer_spec.rb"
 
 # Offense count: 31
 # This cop supports safe autocorrection (--autocorrect).
@@ -214,24 +214,24 @@ Layout/FirstHashElementIndentation:
 # SupportedLastArgumentHashStyles: always_inspect, always_ignore, ignore_implicit, ignore_explicit
 Layout/HashAlignment:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/resolution.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'spec/integration/rails_dummy_spec.rb'
-    - 'spec/lib/rbs_infer/analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb'
-    - 'spec/lib/rbs_infer/inference/new_call_collector_spec.rb'
-    - 'spec/lib/rbs_infer/markers/setter_marker_synthesizer_spec.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/resolution.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
+    - "spec/integration/rails_dummy_spec.rb"
+    - "spec/lib/rbs_infer/analyzer_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb"
+    - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
+    - "spec/lib/rbs_infer/markers/setter_marker_synthesizer_spec.rb"
 
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
 Layout/HeredocIndentation:
   Exclude:
-    - 'spec/lib/rbs_infer/project/block_reopen_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb'
+    - "spec/lib/rbs_infer/project/block_reopen_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb"
 
 # Offense count: 6
 # This cop supports safe autocorrection (--autocorrect).
@@ -239,8 +239,8 @@ Layout/HeredocIndentation:
 # SupportedStyles: normal, indented_internal_methods
 Layout/IndentationConsistency:
   Exclude:
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb'
+    - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
+    - "spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
@@ -248,7 +248,7 @@ Layout/IndentationConsistency:
 # SupportedStyles: spaces, tabs
 Layout/IndentationStyle:
   Exclude:
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
+    - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
 
 # Offense count: 51
 # This cop supports safe autocorrection (--autocorrect).
@@ -256,23 +256,23 @@ Layout/IndentationStyle:
 # SupportedStylesAlignWith: start_of_line, relative_to_receiver
 Layout/IndentationWidth:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/ast/lexical_constant_resolver.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/ast/lexical_constant_resolver.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
 
 # Offense count: 6
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowDoxygenCommentStyle, AllowGemfileRubyComment, AllowRBSInlineAnnotation, AllowSteepAnnotation, AllowYARDCommentBlockSeparator.
 Layout/LeadingCommentSpace:
   Exclude:
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/project/mixin_index.rb'
-    - 'lib/rbs_infer/project/string_eval_macro_expander.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb'
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/project/mixin_index.rb"
+    - "lib/rbs_infer/project/string_eval_macro_expander.rb"
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
 
 # Offense count: 13
 # This cop supports safe autocorrection (--autocorrect).
@@ -280,10 +280,10 @@ Layout/LeadingCommentSpace:
 # SupportedStyles: leading, trailing
 Layout/LineContinuationLeadingSpace:
   Exclude:
-    - 'spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/inference/send_call_site_spec.rb'
-    - 'spec/lib/rbs_infer/project/ruby_runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb'
+    - "spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/inference/send_call_site_spec.rb"
+    - "spec/lib/rbs_infer/project/ruby_runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb"
 
 # Offense count: 6
 # This cop supports safe autocorrection (--autocorrect).
@@ -291,145 +291,145 @@ Layout/LineContinuationLeadingSpace:
 # SupportedStyles: aligned, indented, indented_relative_to_receiver
 Layout/MultilineMethodCallIndentation:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/concern_resolver.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/resolution.rb'
-    - 'spec/integration/rails_dummy_spec.rb'
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/concern_resolver.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/resolution.rb"
+    - "spec/integration/rails_dummy_spec.rb"
 
 # Offense count: 2
 # This cop supports safe autocorrection (--autocorrect).
 Lint/AmbiguousOperatorPrecedence:
   Exclude:
-    - 'spec/integration/steep_dummy_spec.rb'
+    - "spec/integration/steep_dummy_spec.rb"
 
 # Offense count: 2
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Lint/BooleanSymbol:
   Exclude:
-    - 'lib/rbs_infer/signatures/steep_bridge/type_formatter.rb'
+    - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
 
 # Offense count: 36
 # Configuration parameters: AllowedMethods.
 # AllowedMethods: enums
 Lint/ConstantDefinitionInBlock:
   Exclude:
-    - 'spec/integration/steep_scenarios_spec.rb'
-    - 'spec/lib/rbs_infer/ast/class_name_extractor_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/active_job/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/current_attributes_runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb'
-    - 'spec/lib/rbs_infer/inference/constant_arg_type_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/inference/new_call_collector_spec.rb'
-    - 'spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb'
-    - 'spec/lib/rbs_infer/markers/setter_marker_synthesizer_spec.rb'
-    - 'spec/lib/rbs_infer/project/call_graph_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_implements_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/overload_selection_spec.rb'
-    - 'spec/support/steep_baseline_runner_spec.rb'
+    - "spec/integration/steep_scenarios_spec.rb"
+    - "spec/lib/rbs_infer/ast/class_name_extractor_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/active_job/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/current_attributes_runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb"
+    - "spec/lib/rbs_infer/inference/constant_arg_type_resolver_spec.rb"
+    - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
+    - "spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb"
+    - "spec/lib/rbs_infer/markers/setter_marker_synthesizer_spec.rb"
+    - "spec/lib/rbs_infer/project/call_graph_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_implements_spec.rb"
+    - "spec/lib/rbs_infer/signatures/overload_selection_spec.rb"
+    - "spec/support/steep_baseline_runner_spec.rb"
 
 # Offense count: 13
 Lint/DataDefineOverride:
   Exclude:
-    - 'lib/rbs_infer/project/self_class_eval_expander.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shapes.rb'
+    - "lib/rbs_infer/project/self_class_eval_expander.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shapes.rb"
 
 # Offense count: 6
 # Configuration parameters: IgnoreLiteralBranches, IgnoreConstantBranches, IgnoreDuplicateElseBranch.
 Lint/DuplicateBranch:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/extensions/enumerize/generator.rb'
-    - 'lib/rbs_infer/inference/send_call.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/extensions/enumerize/generator.rb"
+    - "lib/rbs_infer/inference/send_call.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
 
 # Offense count: 1
 # Configuration parameters: AllowComments, AllowEmptyLambdas.
 Lint/EmptyBlock:
   Exclude:
-    - 'spec/lib/rbs_infer/signatures/steep_bridge/lexical_scope_spec.rb'
+    - "spec/lib/rbs_infer/signatures/steep_bridge/lexical_scope_spec.rb"
 
 # Offense count: 2
 Lint/HashCompareByIdentity:
   Exclude:
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
 
 # Offense count: 3
 Lint/IneffectiveAccessModifier:
   Exclude:
-    - 'lib/rbs_infer/inference/block_return_collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/corpus.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/declarations.rb'
+    - "lib/rbs_infer/inference/block_return_collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/corpus.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/declarations.rb"
 
 # Offense count: 10
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Lint/InterpolationCheck:
   Exclude:
-    - 'spec/lib/rbs_infer/ast/constant_reference_spec.rb'
-    - 'spec/lib/rbs_infer/ast/node_type_inferrer_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/action_text/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/inference/send_call_site_spec.rb'
-    - 'spec/lib/rbs_infer/inference/send_call_spec.rb'
-    - 'spec/lib/rbs_infer/project/constant_declaration_expander_spec.rb'
+    - "spec/lib/rbs_infer/ast/constant_reference_spec.rb"
+    - "spec/lib/rbs_infer/ast/node_type_inferrer_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/action_text/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/inference/send_call_site_spec.rb"
+    - "spec/lib/rbs_infer/inference/send_call_spec.rb"
+    - "spec/lib/rbs_infer/project/constant_declaration_expander_spec.rb"
 
 # Offense count: 2
 # This cop supports safe autocorrection (--autocorrect).
 Lint/LiteralInInterpolation:
   Exclude:
-    - 'spec/lib/rbs_infer/inference/send_call_site_spec.rb'
+    - "spec/lib/rbs_infer/inference/send_call_site_spec.rb"
 
 # Offense count: 10
 # Configuration parameters: AllowedParentClasses.
 Lint/MissingSuper:
   Exclude:
-    - 'lib/rbs_infer/ast/class_name_extractor.rb'
-    - 'lib/rbs_infer/ast/def_collector.rb'
-    - 'lib/rbs_infer/ast/optional_param_extractor.rb'
-    - 'lib/rbs_infer/ast/target_discovery.rb'
-    - 'lib/rbs_infer/inference/class_body_attr_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
-    - 'lib/rbs_infer/inference/intra_class_call_analyzer.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/project/constant_sources.rb'
+    - "lib/rbs_infer/ast/class_name_extractor.rb"
+    - "lib/rbs_infer/ast/def_collector.rb"
+    - "lib/rbs_infer/ast/optional_param_extractor.rb"
+    - "lib/rbs_infer/ast/target_discovery.rb"
+    - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
+    - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/project/constant_sources.rb"
 
 # Offense count: 1
 Lint/NonLocalExitFromIterator:
   Exclude:
-    - 'lib/rbs_infer/inference/type_merger.rb'
+    - "lib/rbs_infer/inference/type_merger.rb"
 
 # Offense count: 10
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Lint/RedundantDirGlobSort:
   Exclude:
-    - 'lib/rbs_infer/extensions/carrierwave/generator.rb'
-    - 'lib/rbs_infer/extensions/enumerize/generator.rb'
-    - 'lib/rbs_infer/extensions/rails/active_job/runtime_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb'
-    - 'spec/integration/expanded_source_spec.rb'
-    - 'spec/integration/rails_dummy_spec.rb'
+    - "lib/rbs_infer/extensions/carrierwave/generator.rb"
+    - "lib/rbs_infer/extensions/enumerize/generator.rb"
+    - "lib/rbs_infer/extensions/rails/active_job/runtime_generator.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime_generator.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb"
+    - "lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb"
+    - "spec/integration/expanded_source_spec.rb"
+    - "spec/integration/rails_dummy_spec.rb"
 
 # Offense count: 9
 # This cop supports safe autocorrection (--autocorrect).
 Lint/RedundantRequireStatement:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/concern_resolver.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/custom_generator.rb'
-    - 'lib/rbs_infer/project/dependency_sorter.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/corpus.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/declarations.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb'
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/concern_resolver.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/custom_generator.rb"
+    - "lib/rbs_infer/project/dependency_sorter.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/corpus.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/declarations.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb"
 
 # Offense count: 2
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -438,32 +438,32 @@ Lint/RedundantRequireStatement:
 # AdditionalNilMethods: present?, blank?, try, try!
 Lint/RedundantSafeNavigation:
   Exclude:
-    - 'lib/rbs_infer/ast/optional_param_extractor.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
+    - "lib/rbs_infer/ast/optional_param_extractor.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
 
 # Offense count: 2
 Lint/StructNewOverride:
   Exclude:
-    - 'lib/rbs_infer/project/caller_file_cache.rb'
-    - 'spec/spec_helper.rb'
+    - "lib/rbs_infer/project/caller_file_cache.rb"
+    - "spec/spec_helper.rb"
 
 # Offense count: 1
 # Configuration parameters: AllowedPatterns.
 # AllowedPatterns: (?-mix:(exactly|at_least|at_most)\(\d+\)\.times)
 Lint/UnreachableLoop:
   Exclude:
-    - 'lib/rbs_infer/inference/invoker_self_types.rb'
+    - "lib/rbs_infer/inference/invoker_self_types.rb"
 
 # Offense count: 48
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: IgnoreEmptyBlocks, AllowUnusedKeywordArguments.
 Lint/UnusedBlockArgument:
   Exclude:
-    - 'bin/rbs_infer'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
-    - 'spec/lib/rbs_infer/analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/method_type_resolver_spec.rb'
+    - "bin/rbs_infer"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
+    - "spec/lib/rbs_infer/analyzer_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb"
+    - "spec/lib/rbs_infer/signatures/method_type_resolver_spec.rb"
 
 # Offense count: 4
 # This cop supports safe autocorrection (--autocorrect).
@@ -471,530 +471,530 @@ Lint/UnusedBlockArgument:
 # NotImplementedExceptions: NotImplementedError
 Lint/UnusedMethodArgument:
   Exclude:
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'spec/lib/rbs_infer/inference/constant_arg_type_resolver_spec.rb'
-    - 'spec/spec_helper.rb'
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "spec/lib/rbs_infer/inference/constant_arg_type_resolver_spec.rb"
+    - "spec/spec_helper.rb"
 
 # Offense count: 4
 # This cop supports safe autocorrection (--autocorrect).
 Lint/UselessAssignment:
   Exclude:
-    - 'bin/rbs_infer'
-    - 'lib/rbs_infer/extensions/rails/action_text/runtime/attribute_transcriber.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
-    - 'spec/bin/rbs_infer_spec.rb'
+    - "bin/rbs_infer"
+    - "lib/rbs_infer/extensions/rails/action_text/runtime/attribute_transcriber.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
+    - "spec/bin/rbs_infer_spec.rb"
 
 # Offense count: 11
 Lint/UselessConstantScoping:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/project/file_index.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/resolution.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'spec/support/steep_baseline_runner.rb'
+    - "lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber.rb"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/project/file_index.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/resolution.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "spec/support/steep_baseline_runner.rb"
 
 # Offense count: 246
 # Configuration parameters: AllowedMethods, AllowedPatterns, CountRepeatedAttributes, Max.
 Metrics/AbcSize:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/ast/constant_reference.rb'
-    - 'lib/rbs_infer/ast/multi_write_decomposer.rb'
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/ast/optional_param_extractor.rb'
-    - 'lib/rbs_infer/extensions/carrierwave/generator.rb'
-    - 'lib/rbs_infer/extensions/devise/generator.rb'
-    - 'lib/rbs_infer/extensions/enumerize/generator.rb'
-    - 'lib/rbs_infer/extensions/framework_source.rb'
-    - 'lib/rbs_infer/extensions/rails/action_text/runtime/attribute_transcriber.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/custom_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/module_self_type_annotator.rb'
-    - 'lib/rbs_infer/extensions/rails/module_self_type_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/views/template_scanner.rb'
-    - 'lib/rbs_infer/inference/attr_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/block_signature_resolver.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_body_attr_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/block_signature.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
-    - 'lib/rbs_infer/inference/forwarding_super.rb'
-    - 'lib/rbs_infer/inference/inherited_forwards.rb'
-    - 'lib/rbs_infer/inference/inherited_reach.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
-    - 'lib/rbs_infer/inference/intra_class_call_analyzer.rb'
-    - 'lib/rbs_infer/inference/invoker_self_types.rb'
-    - 'lib/rbs_infer/inference/known_return_types_builder.rb'
-    - 'lib/rbs_infer/inference/local_self_paths.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/markers/predicate_marker_synthesizer.rb'
-    - 'lib/rbs_infer/project/block_reopen.rb'
-    - 'lib/rbs_infer/project/caller_file_cache.rb'
-    - 'lib/rbs_infer/project/dependency_sorter.rb'
-    - 'lib/rbs_infer/project/file_index.rb'
-    - 'lib/rbs_infer/project/mixin_index.rb'
-    - 'lib/rbs_infer/project/self_type_annotators.rb'
-    - 'lib/rbs_infer/project/source_index.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/call_graph.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/declarations.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/deferral_reader.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/reader_collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/resolution.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_implements.rb'
-    - 'lib/rbs_infer/project/string_eval_macro_expander.rb'
-    - 'lib/rbs_infer/project/string_eval_sidecar.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/type_formatter.rb'
-    - 'lib/rbs_infer/signatures/steep_environment.rb'
-    - 'spec/integration/rails_dummy_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/custom_generator_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_implements_spec.rb'
-    - 'spec/support/steep_baseline_runner.rb'
-    - 'spec/support/steep_scenario_helper.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/ast/constant_reference.rb"
+    - "lib/rbs_infer/ast/multi_write_decomposer.rb"
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/ast/optional_param_extractor.rb"
+    - "lib/rbs_infer/extensions/carrierwave/generator.rb"
+    - "lib/rbs_infer/extensions/devise/generator.rb"
+    - "lib/rbs_infer/extensions/enumerize/generator.rb"
+    - "lib/rbs_infer/extensions/framework_source.rb"
+    - "lib/rbs_infer/extensions/rails/action_text/runtime/attribute_transcriber.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb"
+    - "lib/rbs_infer/extensions/rails/custom_generator.rb"
+    - "lib/rbs_infer/extensions/rails/module_self_type_annotator.rb"
+    - "lib/rbs_infer/extensions/rails/module_self_type_generator.rb"
+    - "lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/views/template_scanner.rb"
+    - "lib/rbs_infer/inference/attr_type_inferrer.rb"
+    - "lib/rbs_infer/inference/block_signature_resolver.rb"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/class_member_collector/block_signature.rb"
+    - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
+    - "lib/rbs_infer/inference/forwarding_super.rb"
+    - "lib/rbs_infer/inference/inherited_forwards.rb"
+    - "lib/rbs_infer/inference/inherited_reach.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
+    - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
+    - "lib/rbs_infer/inference/invoker_self_types.rb"
+    - "lib/rbs_infer/inference/known_return_types_builder.rb"
+    - "lib/rbs_infer/inference/local_self_paths.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/markers/predicate_marker_synthesizer.rb"
+    - "lib/rbs_infer/project/block_reopen.rb"
+    - "lib/rbs_infer/project/caller_file_cache.rb"
+    - "lib/rbs_infer/project/dependency_sorter.rb"
+    - "lib/rbs_infer/project/file_index.rb"
+    - "lib/rbs_infer/project/mixin_index.rb"
+    - "lib/rbs_infer/project/self_type_annotators.rb"
+    - "lib/rbs_infer/project/source_index.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/call_graph.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/declarations.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/deferral_reader.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/reader_collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/resolution.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
+    - "lib/rbs_infer/project/stored_block_replay_implements.rb"
+    - "lib/rbs_infer/project/string_eval_macro_expander.rb"
+    - "lib/rbs_infer/project/string_eval_sidecar.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
+    - "lib/rbs_infer/signatures/steep_environment.rb"
+    - "spec/integration/rails_dummy_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/custom_generator_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_implements_spec.rb"
+    - "spec/support/steep_baseline_runner.rb"
+    - "spec/support/steep_scenario_helper.rb"
 
 # Offense count: 288
 # Configuration parameters: CountComments, Max, CountAsOne, AllowedMethods, AllowedPatterns.
 # AllowedMethods: refine
 Metrics/BlockLength:
   Exclude:
-    - '**/*.gemspec'
-    - 'bin/rbs_infer'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'spec/bin/rbs_infer_spec.rb'
-    - 'spec/integration/expanded_source_spec.rb'
-    - 'spec/integration/rails_dummy_spec.rb'
-    - 'spec/integration/steep_dummy_spec.rb'
-    - 'spec/integration/steep_scenarios_spec.rb'
-    - 'spec/lib/rbs_infer/analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/ast/class_name_extractor_spec.rb'
-    - 'spec/lib/rbs_infer/ast/constant_reference_spec.rb'
-    - 'spec/lib/rbs_infer/ast/constructor_type_inferrer_spec.rb'
-    - 'spec/lib/rbs_infer/ast/lexical_constant_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/ast/multi_write_decomposer_spec.rb'
-    - 'spec/lib/rbs_infer/ast/node_type_inferrer_spec.rb'
-    - 'spec/lib/rbs_infer/ast/optional_param_extractor_spec.rb'
-    - 'spec/lib/rbs_infer/ast/target_discovery_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/carrierwave/generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/devise/generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/action_text/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/active_job/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/active_support/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/controllers/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/current_attributes_runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/custom_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/on_load_expander_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/views/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/inference/bare_call_universal_ancestor_spec.rb'
-    - 'spec/lib/rbs_infer/inference/block_return_collector_spec.rb'
-    - 'spec/lib/rbs_infer/inference/block_signature_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/inference/caller_file_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/inference/class_body_attr_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/inference/class_member_collector/block_signature_spec.rb'
-    - 'spec/lib/rbs_infer/inference/class_member_collector_spec.rb'
-    - 'spec/lib/rbs_infer/inference/constant_arg_type_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/inference/constant_type_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/inference/extend_call_site_spec.rb'
-    - 'spec/lib/rbs_infer/inference/forwarded_parameters_spec.rb'
-    - 'spec/lib/rbs_infer/inference/forwarding_super_spec.rb'
-    - 'spec/lib/rbs_infer/inference/homonymous_steep_returns_spec.rb'
-    - 'spec/lib/rbs_infer/inference/inherited_forwards_spec.rb'
-    - 'spec/lib/rbs_infer/inference/inherited_reach_spec.rb'
-    - 'spec/lib/rbs_infer/inference/initialize_body_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/inference/intra_class_call_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/inference/invoker_self_types_spec.rb'
-    - 'spec/lib/rbs_infer/inference/ivar_type_set_spec.rb'
-    - 'spec/lib/rbs_infer/inference/nested_module_homonym_spec.rb'
-    - 'spec/lib/rbs_infer/inference/new_call_collector_spec.rb'
-    - 'spec/lib/rbs_infer/inference/nil_default_param_spec.rb'
-    - 'spec/lib/rbs_infer/inference/nilable_reader_through_a_local_spec.rb'
-    - 'spec/lib/rbs_infer/inference/return_type_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/inference/send_call_site_spec.rb'
-    - 'spec/lib/rbs_infer/inference/send_call_spec.rb'
-    - 'spec/lib/rbs_infer/inference/splat_param_inference_spec.rb'
-    - 'spec/lib/rbs_infer/inference/stored_block_self_spec.rb'
-    - 'spec/lib/rbs_infer/inference/type_merger_spec.rb'
-    - 'spec/lib/rbs_infer/inference/underscore_local_spec.rb'
-    - 'spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb'
-    - 'spec/lib/rbs_infer/markers/setter_marker_synthesizer_spec.rb'
-    - 'spec/lib/rbs_infer/project/block_reopen_spec.rb'
-    - 'spec/lib/rbs_infer/project/call_graph_spec.rb'
-    - 'spec/lib/rbs_infer/project/class_eval_expander_spec.rb'
-    - 'spec/lib/rbs_infer/project/constant_declaration_expander_spec.rb'
-    - 'spec/lib/rbs_infer/project/constant_sources_spec.rb'
-    - 'spec/lib/rbs_infer/project/corpus_spec.rb'
-    - 'spec/lib/rbs_infer/project/dependency_sorter_spec.rb'
-    - 'spec/lib/rbs_infer/project/file_index_spec.rb'
-    - 'spec/lib/rbs_infer/project/mixin_index_spec.rb'
-    - 'spec/lib/rbs_infer/project/parse_cache_spec.rb'
-    - 'spec/lib/rbs_infer/project/ruby_runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/project/self_class_eval_expander_spec.rb'
-    - 'spec/lib/rbs_infer/project/self_class_eval_marker_spec.rb'
-    - 'spec/lib/rbs_infer/project/self_type_annotators_spec.rb'
-    - 'spec/lib/rbs_infer/project/shape_reader_spec.rb'
-    - 'spec/lib/rbs_infer/project/source_expanders_spec.rb'
-    - 'spec/lib/rbs_infer/project/source_index_spec.rb'
-    - 'spec/lib/rbs_infer/project/steepfile_sources_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_implements_spec.rb'
-    - 'spec/lib/rbs_infer/project/string_eval_macro_expander_spec.rb'
-    - 'spec/lib/rbs_infer/project/string_eval_sidecar_spec.rb'
-    - 'spec/lib/rbs_infer/project/string_eval_sources_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/method_type_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/overload_selection_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/overloading_marker_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_builder_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_definition_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_type_lookup_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge/block_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge/return_type_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge/type_formatter_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge_spec.rb'
-    - 'spec/support/steep_baseline_runner_spec.rb'
-    - 'spec/support/steep_scenario_helper.rb'
+    - "**/*.gemspec"
+    - "bin/rbs_infer"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "spec/bin/rbs_infer_spec.rb"
+    - "spec/integration/expanded_source_spec.rb"
+    - "spec/integration/rails_dummy_spec.rb"
+    - "spec/integration/steep_dummy_spec.rb"
+    - "spec/integration/steep_scenarios_spec.rb"
+    - "spec/lib/rbs_infer/analyzer_spec.rb"
+    - "spec/lib/rbs_infer/ast/class_name_extractor_spec.rb"
+    - "spec/lib/rbs_infer/ast/constant_reference_spec.rb"
+    - "spec/lib/rbs_infer/ast/constructor_type_inferrer_spec.rb"
+    - "spec/lib/rbs_infer/ast/lexical_constant_resolver_spec.rb"
+    - "spec/lib/rbs_infer/ast/multi_write_decomposer_spec.rb"
+    - "spec/lib/rbs_infer/ast/node_type_inferrer_spec.rb"
+    - "spec/lib/rbs_infer/ast/optional_param_extractor_spec.rb"
+    - "spec/lib/rbs_infer/ast/target_discovery_spec.rb"
+    - "spec/lib/rbs_infer/extensions/carrierwave/generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/devise/generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/action_text/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/active_job/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/active_support/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/controllers/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/current_attributes_runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/custom_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/on_load_expander_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/views/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/inference/bare_call_universal_ancestor_spec.rb"
+    - "spec/lib/rbs_infer/inference/block_return_collector_spec.rb"
+    - "spec/lib/rbs_infer/inference/block_signature_resolver_spec.rb"
+    - "spec/lib/rbs_infer/inference/caller_file_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/inference/class_body_attr_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/inference/class_member_collector/block_signature_spec.rb"
+    - "spec/lib/rbs_infer/inference/class_member_collector_spec.rb"
+    - "spec/lib/rbs_infer/inference/constant_arg_type_resolver_spec.rb"
+    - "spec/lib/rbs_infer/inference/constant_type_resolver_spec.rb"
+    - "spec/lib/rbs_infer/inference/extend_call_site_spec.rb"
+    - "spec/lib/rbs_infer/inference/forwarded_parameters_spec.rb"
+    - "spec/lib/rbs_infer/inference/forwarding_super_spec.rb"
+    - "spec/lib/rbs_infer/inference/homonymous_steep_returns_spec.rb"
+    - "spec/lib/rbs_infer/inference/inherited_forwards_spec.rb"
+    - "spec/lib/rbs_infer/inference/inherited_reach_spec.rb"
+    - "spec/lib/rbs_infer/inference/initialize_body_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/inference/intra_class_call_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/inference/invoker_self_types_spec.rb"
+    - "spec/lib/rbs_infer/inference/ivar_type_set_spec.rb"
+    - "spec/lib/rbs_infer/inference/nested_module_homonym_spec.rb"
+    - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
+    - "spec/lib/rbs_infer/inference/nil_default_param_spec.rb"
+    - "spec/lib/rbs_infer/inference/nilable_reader_through_a_local_spec.rb"
+    - "spec/lib/rbs_infer/inference/return_type_resolver_spec.rb"
+    - "spec/lib/rbs_infer/inference/send_call_site_spec.rb"
+    - "spec/lib/rbs_infer/inference/send_call_spec.rb"
+    - "spec/lib/rbs_infer/inference/splat_param_inference_spec.rb"
+    - "spec/lib/rbs_infer/inference/stored_block_self_spec.rb"
+    - "spec/lib/rbs_infer/inference/type_merger_spec.rb"
+    - "spec/lib/rbs_infer/inference/underscore_local_spec.rb"
+    - "spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb"
+    - "spec/lib/rbs_infer/markers/setter_marker_synthesizer_spec.rb"
+    - "spec/lib/rbs_infer/project/block_reopen_spec.rb"
+    - "spec/lib/rbs_infer/project/call_graph_spec.rb"
+    - "spec/lib/rbs_infer/project/class_eval_expander_spec.rb"
+    - "spec/lib/rbs_infer/project/constant_declaration_expander_spec.rb"
+    - "spec/lib/rbs_infer/project/constant_sources_spec.rb"
+    - "spec/lib/rbs_infer/project/corpus_spec.rb"
+    - "spec/lib/rbs_infer/project/dependency_sorter_spec.rb"
+    - "spec/lib/rbs_infer/project/file_index_spec.rb"
+    - "spec/lib/rbs_infer/project/mixin_index_spec.rb"
+    - "spec/lib/rbs_infer/project/parse_cache_spec.rb"
+    - "spec/lib/rbs_infer/project/ruby_runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/project/self_class_eval_expander_spec.rb"
+    - "spec/lib/rbs_infer/project/self_class_eval_marker_spec.rb"
+    - "spec/lib/rbs_infer/project/self_type_annotators_spec.rb"
+    - "spec/lib/rbs_infer/project/shape_reader_spec.rb"
+    - "spec/lib/rbs_infer/project/source_expanders_spec.rb"
+    - "spec/lib/rbs_infer/project/source_index_spec.rb"
+    - "spec/lib/rbs_infer/project/steepfile_sources_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_implements_spec.rb"
+    - "spec/lib/rbs_infer/project/string_eval_macro_expander_spec.rb"
+    - "spec/lib/rbs_infer/project/string_eval_sidecar_spec.rb"
+    - "spec/lib/rbs_infer/project/string_eval_sources_spec.rb"
+    - "spec/lib/rbs_infer/signatures/method_type_resolver_spec.rb"
+    - "spec/lib/rbs_infer/signatures/overload_selection_spec.rb"
+    - "spec/lib/rbs_infer/signatures/overloading_marker_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_builder_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_definition_resolver_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_type_lookup_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge/block_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge/return_type_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge/type_formatter_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge_spec.rb"
+    - "spec/support/steep_baseline_runner_spec.rb"
+    - "spec/support/steep_scenario_helper.rb"
 
 # Offense count: 9
 # Configuration parameters: CountBlocks, CountModifierForms, Max.
 Metrics/BlockNesting:
   Exclude:
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
 
 # Offense count: 38
 # Configuration parameters: CountComments, Max, CountAsOne.
 Metrics/ClassLength:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/extensions/carrierwave/generator.rb'
-    - 'lib/rbs_infer/extensions/devise/generator.rb'
-    - 'lib/rbs_infer/extensions/enumerize/generator.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/custom_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/inference/attr_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/block_signature_resolver.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_body_attr_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/block_signature.rb'
-    - 'lib/rbs_infer/inference/inherited_forwards.rb'
-    - 'lib/rbs_infer/inference/inherited_reach.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
-    - 'lib/rbs_infer/inference/intra_class_call_analyzer.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/project/dependency_sorter.rb'
-    - 'lib/rbs_infer/project/mixin_index.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/declarations.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/resolution.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/extensions/carrierwave/generator.rb"
+    - "lib/rbs_infer/extensions/devise/generator.rb"
+    - "lib/rbs_infer/extensions/enumerize/generator.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb"
+    - "lib/rbs_infer/extensions/rails/custom_generator.rb"
+    - "lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb"
+    - "lib/rbs_infer/inference/attr_type_inferrer.rb"
+    - "lib/rbs_infer/inference/block_signature_resolver.rb"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/class_member_collector/block_signature.rb"
+    - "lib/rbs_infer/inference/inherited_forwards.rb"
+    - "lib/rbs_infer/inference/inherited_reach.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
+    - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/project/dependency_sorter.rb"
+    - "lib/rbs_infer/project/mixin_index.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/declarations.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/resolution.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
 
 # Offense count: 238
 # Configuration parameters: AllowedMethods, AllowedPatterns, Max.
 Metrics/CyclomaticComplexity:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/ast/constant_reference.rb'
-    - 'lib/rbs_infer/ast/lexical_scope.rb'
-    - 'lib/rbs_infer/ast/multi_write_decomposer.rb'
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/ast/optional_param_extractor.rb'
-    - 'lib/rbs_infer/ast/target_discovery.rb'
-    - 'lib/rbs_infer/extensions/devise/generator.rb'
-    - 'lib/rbs_infer/extensions/enumerize/generator.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/custom_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/module_self_type_annotator.rb'
-    - 'lib/rbs_infer/extensions/rails/module_self_type_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/on_load_expander.rb'
-    - 'lib/rbs_infer/extensions/rails/views/template_scanner.rb'
-    - 'lib/rbs_infer/inference/attr_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/block_signature_resolver.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_body_attr_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/block_signature.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
-    - 'lib/rbs_infer/inference/forwarded_parameters_resolver.rb'
-    - 'lib/rbs_infer/inference/forwarding_super.rb'
-    - 'lib/rbs_infer/inference/inherited_forwards.rb'
-    - 'lib/rbs_infer/inference/inherited_reach.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
-    - 'lib/rbs_infer/inference/intra_class_call_analyzer.rb'
-    - 'lib/rbs_infer/inference/invoker_self_types.rb'
-    - 'lib/rbs_infer/inference/ivar_type_set.rb'
-    - 'lib/rbs_infer/inference/known_return_types_builder.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/markers/predicate_marker_synthesizer.rb'
-    - 'lib/rbs_infer/project/block_body_type.rb'
-    - 'lib/rbs_infer/project/block_reopen.rb'
-    - 'lib/rbs_infer/project/constant_declaration_expander.rb'
-    - 'lib/rbs_infer/project/dependency_sorter.rb'
-    - 'lib/rbs_infer/project/mixin_index.rb'
-    - 'lib/rbs_infer/project/self_type_annotators.rb'
-    - 'lib/rbs_infer/project/source_index.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/call_graph.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/declarations.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/deferral_reader.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/reader_collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/resolution.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb'
-    - 'lib/rbs_infer/project/string_eval_macro_expander.rb'
-    - 'lib/rbs_infer/project/string_eval_sidecar.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/lexical_scope.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/type_formatter.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/ast/constant_reference.rb"
+    - "lib/rbs_infer/ast/lexical_scope.rb"
+    - "lib/rbs_infer/ast/multi_write_decomposer.rb"
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/ast/optional_param_extractor.rb"
+    - "lib/rbs_infer/ast/target_discovery.rb"
+    - "lib/rbs_infer/extensions/devise/generator.rb"
+    - "lib/rbs_infer/extensions/enumerize/generator.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb"
+    - "lib/rbs_infer/extensions/rails/custom_generator.rb"
+    - "lib/rbs_infer/extensions/rails/module_self_type_annotator.rb"
+    - "lib/rbs_infer/extensions/rails/module_self_type_generator.rb"
+    - "lib/rbs_infer/extensions/rails/on_load_expander.rb"
+    - "lib/rbs_infer/extensions/rails/views/template_scanner.rb"
+    - "lib/rbs_infer/inference/attr_type_inferrer.rb"
+    - "lib/rbs_infer/inference/block_signature_resolver.rb"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/class_member_collector/block_signature.rb"
+    - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
+    - "lib/rbs_infer/inference/forwarded_parameters_resolver.rb"
+    - "lib/rbs_infer/inference/forwarding_super.rb"
+    - "lib/rbs_infer/inference/inherited_forwards.rb"
+    - "lib/rbs_infer/inference/inherited_reach.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
+    - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
+    - "lib/rbs_infer/inference/invoker_self_types.rb"
+    - "lib/rbs_infer/inference/ivar_type_set.rb"
+    - "lib/rbs_infer/inference/known_return_types_builder.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/markers/predicate_marker_synthesizer.rb"
+    - "lib/rbs_infer/project/block_body_type.rb"
+    - "lib/rbs_infer/project/block_reopen.rb"
+    - "lib/rbs_infer/project/constant_declaration_expander.rb"
+    - "lib/rbs_infer/project/dependency_sorter.rb"
+    - "lib/rbs_infer/project/mixin_index.rb"
+    - "lib/rbs_infer/project/self_type_annotators.rb"
+    - "lib/rbs_infer/project/source_index.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/call_graph.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/declarations.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/deferral_reader.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/reader_collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/resolution.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
+    - "lib/rbs_infer/project/string_eval_macro_expander.rb"
+    - "lib/rbs_infer/project/string_eval_sidecar.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/lexical_scope.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
 
 # Offense count: 302
 # Configuration parameters: CountComments, Max, CountAsOne, AllowedMethods, AllowedPatterns.
 Metrics/MethodLength:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/ast/optional_param_extractor.rb'
-    - 'lib/rbs_infer/extensions/carrierwave/generator.rb'
-    - 'lib/rbs_infer/extensions/devise/generator.rb'
-    - 'lib/rbs_infer/extensions/enumerize/generator.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/runtime_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/custom_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/module_self_type_annotator.rb'
-    - 'lib/rbs_infer/extensions/rails/module_self_type_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/views/runtime_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/views/template_scanner.rb'
-    - 'lib/rbs_infer/inference/attr_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/block_signature_resolver.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_body_attr_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
-    - 'lib/rbs_infer/inference/forwarding_super.rb'
-    - 'lib/rbs_infer/inference/inherited_forwards.rb'
-    - 'lib/rbs_infer/inference/inherited_reach.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
-    - 'lib/rbs_infer/inference/intra_class_call_analyzer.rb'
-    - 'lib/rbs_infer/inference/invoker_self_types.rb'
-    - 'lib/rbs_infer/inference/ivar_type_set.rb'
-    - 'lib/rbs_infer/inference/known_return_types_builder.rb'
-    - 'lib/rbs_infer/inference/local_self_paths.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/markers/predicate_marker_synthesizer.rb'
-    - 'lib/rbs_infer/markers/setter_marker_synthesizer.rb'
-    - 'lib/rbs_infer/project/block_reopen.rb'
-    - 'lib/rbs_infer/project/caller_file_cache.rb'
-    - 'lib/rbs_infer/project/dependency_sorter.rb'
-    - 'lib/rbs_infer/project/file_index.rb'
-    - 'lib/rbs_infer/project/mixin_index.rb'
-    - 'lib/rbs_infer/project/source_index.rb'
-    - 'lib/rbs_infer/project/steepfile_sources.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/corpus.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/declarations.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/deferral_reader.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/resolution.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb'
-    - 'lib/rbs_infer/project/string_eval_macro_expander.rb'
-    - 'lib/rbs_infer/project/string_eval_sidecar.rb'
-    - 'lib/rbs_infer/project/string_eval_sources.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/type_formatter.rb'
-    - 'lib/rbs_infer/signatures/steep_environment.rb'
-    - 'spec/bin/rbs_infer_spec.rb'
-    - 'spec/integration/rails_dummy_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/custom_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb'
-    - 'spec/lib/rbs_infer/inference/invoker_self_types_spec.rb'
-    - 'spec/lib/rbs_infer/inference/nested_module_homonym_spec.rb'
-    - 'spec/lib/rbs_infer/inference/new_call_collector_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_implements_spec.rb'
-    - 'spec/support/steep_baseline_runner.rb'
-    - 'spec/support/steep_scenario_helper.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/ast/optional_param_extractor.rb"
+    - "lib/rbs_infer/extensions/carrierwave/generator.rb"
+    - "lib/rbs_infer/extensions/devise/generator.rb"
+    - "lib/rbs_infer/extensions/enumerize/generator.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/runtime_generator.rb"
+    - "lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb"
+    - "lib/rbs_infer/extensions/rails/custom_generator.rb"
+    - "lib/rbs_infer/extensions/rails/module_self_type_annotator.rb"
+    - "lib/rbs_infer/extensions/rails/module_self_type_generator.rb"
+    - "lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/views/runtime_generator.rb"
+    - "lib/rbs_infer/extensions/rails/views/template_scanner.rb"
+    - "lib/rbs_infer/inference/attr_type_inferrer.rb"
+    - "lib/rbs_infer/inference/block_signature_resolver.rb"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
+    - "lib/rbs_infer/inference/forwarding_super.rb"
+    - "lib/rbs_infer/inference/inherited_forwards.rb"
+    - "lib/rbs_infer/inference/inherited_reach.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
+    - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
+    - "lib/rbs_infer/inference/invoker_self_types.rb"
+    - "lib/rbs_infer/inference/ivar_type_set.rb"
+    - "lib/rbs_infer/inference/known_return_types_builder.rb"
+    - "lib/rbs_infer/inference/local_self_paths.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/markers/predicate_marker_synthesizer.rb"
+    - "lib/rbs_infer/markers/setter_marker_synthesizer.rb"
+    - "lib/rbs_infer/project/block_reopen.rb"
+    - "lib/rbs_infer/project/caller_file_cache.rb"
+    - "lib/rbs_infer/project/dependency_sorter.rb"
+    - "lib/rbs_infer/project/file_index.rb"
+    - "lib/rbs_infer/project/mixin_index.rb"
+    - "lib/rbs_infer/project/source_index.rb"
+    - "lib/rbs_infer/project/steepfile_sources.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/corpus.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/declarations.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/deferral_reader.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/resolution.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
+    - "lib/rbs_infer/project/string_eval_macro_expander.rb"
+    - "lib/rbs_infer/project/string_eval_sidecar.rb"
+    - "lib/rbs_infer/project/string_eval_sources.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
+    - "lib/rbs_infer/signatures/steep_environment.rb"
+    - "spec/bin/rbs_infer_spec.rb"
+    - "spec/integration/rails_dummy_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/custom_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb"
+    - "spec/lib/rbs_infer/inference/invoker_self_types_spec.rb"
+    - "spec/lib/rbs_infer/inference/nested_module_homonym_spec.rb"
+    - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_implements_spec.rb"
+    - "spec/support/steep_baseline_runner.rb"
+    - "spec/support/steep_scenario_helper.rb"
 
 # Offense count: 5
 # Configuration parameters: CountComments, Max, CountAsOne.
 Metrics/ModuleLength:
   Exclude:
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/module_self_type_annotator.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/module_self_type_annotator.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
 
 # Offense count: 25
 # Configuration parameters: Max, CountKeywordArgs, MaxOptionalParameters.
 Metrics/ParameterLists:
   Exclude:
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/project/block_reopen.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/call_graph.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/collector.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
-    - 'spec/lib/rbs_infer/inference/new_call_collector_spec.rb'
-    - 'spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_builder_spec.rb'
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/project/block_reopen.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/call_graph.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
+    - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
+    - "spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_builder_spec.rb"
 
 # Offense count: 164
 # Configuration parameters: AllowedMethods, AllowedPatterns, Max.
 Metrics/PerceivedComplexity:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/ast/constant_reference.rb'
-    - 'lib/rbs_infer/ast/multi_write_decomposer.rb'
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/ast/optional_param_extractor.rb'
-    - 'lib/rbs_infer/extensions/devise/generator.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/custom_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/on_load_expander.rb'
-    - 'lib/rbs_infer/extensions/rails/views/template_scanner.rb'
-    - 'lib/rbs_infer/inference/attr_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/block_signature_resolver.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_body_attr_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/block_signature.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
-    - 'lib/rbs_infer/inference/forwarding_super.rb'
-    - 'lib/rbs_infer/inference/inherited_forwards.rb'
-    - 'lib/rbs_infer/inference/inherited_reach.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
-    - 'lib/rbs_infer/inference/intra_class_call_analyzer.rb'
-    - 'lib/rbs_infer/inference/invoker_self_types.rb'
-    - 'lib/rbs_infer/inference/ivar_type_set.rb'
-    - 'lib/rbs_infer/inference/known_return_types_builder.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/markers/predicate_marker_synthesizer.rb'
-    - 'lib/rbs_infer/project/block_reopen.rb'
-    - 'lib/rbs_infer/project/dependency_sorter.rb'
-    - 'lib/rbs_infer/project/mixin_index.rb'
-    - 'lib/rbs_infer/project/source_index.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/deferral_reader.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/resolution.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb'
-    - 'lib/rbs_infer/project/string_eval_macro_expander.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/lexical_scope.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/type_formatter.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/ast/constant_reference.rb"
+    - "lib/rbs_infer/ast/multi_write_decomposer.rb"
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/ast/optional_param_extractor.rb"
+    - "lib/rbs_infer/extensions/devise/generator.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb"
+    - "lib/rbs_infer/extensions/rails/custom_generator.rb"
+    - "lib/rbs_infer/extensions/rails/on_load_expander.rb"
+    - "lib/rbs_infer/extensions/rails/views/template_scanner.rb"
+    - "lib/rbs_infer/inference/attr_type_inferrer.rb"
+    - "lib/rbs_infer/inference/block_signature_resolver.rb"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/class_member_collector/block_signature.rb"
+    - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
+    - "lib/rbs_infer/inference/forwarding_super.rb"
+    - "lib/rbs_infer/inference/inherited_forwards.rb"
+    - "lib/rbs_infer/inference/inherited_reach.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
+    - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
+    - "lib/rbs_infer/inference/invoker_self_types.rb"
+    - "lib/rbs_infer/inference/ivar_type_set.rb"
+    - "lib/rbs_infer/inference/known_return_types_builder.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/markers/predicate_marker_synthesizer.rb"
+    - "lib/rbs_infer/project/block_reopen.rb"
+    - "lib/rbs_infer/project/dependency_sorter.rb"
+    - "lib/rbs_infer/project/mixin_index.rb"
+    - "lib/rbs_infer/project/source_index.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/deferral_reader.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/resolution.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
+    - "lib/rbs_infer/project/string_eval_macro_expander.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/lexical_scope.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
 
 # Offense count: 2
 Naming/AccessorMethodName:
   Exclude:
-    - 'lib/rbs_infer/ast/constant_reference.rb'
-    - 'lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb'
+    - "lib/rbs_infer/ast/constant_reference.rb"
+    - "lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb"
 
 # Offense count: 5
 # This cop supports safe autocorrection (--autocorrect).
@@ -1002,9 +1002,9 @@ Naming/AccessorMethodName:
 # SupportedStyles: anonymous, explicit
 Naming/BlockForwarding:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/block_signature.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector/block_signature.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
 
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -1012,15 +1012,15 @@ Naming/BlockForwarding:
 # SupportedStylesForLeadingUnderscores: disallowed, required, optional
 Naming/MemoizedInstanceVariableName:
   Exclude:
-    - 'lib/rbs_infer/ast/class_name_extractor.rb'
+    - "lib/rbs_infer/ast/class_name_extractor.rb"
 
 # Offense count: 3
 # Configuration parameters: MinNameLength, AllowNamesEndingInNumbers, AllowedNames, ForbiddenNames.
 # AllowedNames: as, at, by, cc, db, id, if, in, io, ip, of, on, os, pp, to
 Naming/MethodParameterName:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/markers/setter_marker_synthesizer.rb'
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb"
+    - "lib/rbs_infer/markers/setter_marker_synthesizer.rb"
 
 # Offense count: 3
 # Configuration parameters: Mode, AllowedMethods, AllowedPatterns, AllowBangMethods, WaywardPredicates.
@@ -1028,8 +1028,8 @@ Naming/MethodParameterName:
 # WaywardPredicates: infinite?, nonzero?
 Naming/PredicateMethod:
   Exclude:
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/block_signature.rb'
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/class_member_collector/block_signature.rb"
 
 # Offense count: 6
 # Configuration parameters: NamePrefix, ForbiddenPrefixes, AllowedMethods, MethodDefinitionMacros, UseSorbetSigs.
@@ -1039,17 +1039,17 @@ Naming/PredicateMethod:
 # MethodDefinitionMacros: define_method, define_singleton_method
 Naming/PredicatePrefix:
   Exclude:
-    - 'spec/**/*'
-    - 'lib/rbs_infer/ast/class_name_extractor.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
+    - "spec/**/*"
+    - "lib/rbs_infer/ast/class_name_extractor.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
 
 # Offense count: 2
 Security/Eval:
   Exclude:
-    - 'spec/lib/rbs_infer/project/block_reopen_spec.rb'
+    - "spec/lib/rbs_infer/project/block_reopen_spec.rb"
 
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -1057,7 +1057,7 @@ Security/Eval:
 # SupportedStyles: inline, group
 Style/AccessModifierDeclarations:
   Exclude:
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
 
 # Offense count: 2
 # This cop supports safe autocorrection (--autocorrect).
@@ -1067,13 +1067,13 @@ Style/AccessModifierDeclarations:
 # RedundantBlockArgumentNames: blk, block, proc
 Style/ArgumentsForwarding:
   Exclude:
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
 
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/ArrayIntersect:
   Exclude:
-    - 'lib/rbs_infer/inference/forwarding_super.rb'
+    - "lib/rbs_infer/inference/forwarding_super.rb"
 
 # Offense count: 5
 # This cop supports safe autocorrection (--autocorrect).
@@ -1084,16 +1084,16 @@ Style/ArrayIntersect:
 # AllowedMethods: lambda, proc, it
 Style/BlockDelimiters:
   Exclude:
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
 
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: MinBranchesCount.
 Style/CaseLikeIf:
   Exclude:
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
+    - "lib/rbs_infer/inference/new_call_collector.rb"
 
 # Offense count: 89
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -1103,103 +1103,103 @@ Style/CaseLikeIf:
 # SupportedStylesForModules: ~, nested, compact
 Style/ClassAndModuleChildren:
   Exclude:
-    - 'lib/rbs_infer/ast/class_name_extractor.rb'
-    - 'lib/rbs_infer/ast/comment_index.rb'
-    - 'lib/rbs_infer/ast/constructor_type_inferrer.rb'
-    - 'lib/rbs_infer/ast/def_collector.rb'
-    - 'lib/rbs_infer/ast/lexical_scope.rb'
-    - 'lib/rbs_infer/ast/multi_write_decomposer.rb'
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/ast/optional_param_extractor.rb'
-    - 'lib/rbs_infer/ast/target_discovery.rb'
-    - 'lib/rbs_infer/inference/attr_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/block_return_collector.rb'
-    - 'lib/rbs_infer/inference/block_signature_resolver.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_body_attr_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/block_signature.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
-    - 'lib/rbs_infer/inference/constant_arg_type_resolver.rb'
-    - 'lib/rbs_infer/inference/constant_type_resolver.rb'
-    - 'lib/rbs_infer/inference/forwarded_parameters_resolver.rb'
-    - 'lib/rbs_infer/inference/forwarding_super.rb'
-    - 'lib/rbs_infer/inference/inherited_forwards.rb'
-    - 'lib/rbs_infer/inference/inherited_reach.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
-    - 'lib/rbs_infer/inference/intra_class_call_analyzer.rb'
-    - 'lib/rbs_infer/inference/invoker_self_types.rb'
-    - 'lib/rbs_infer/inference/ivar_type_set.rb'
-    - 'lib/rbs_infer/inference/known_return_types_builder.rb'
-    - 'lib/rbs_infer/inference/local_self_paths.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/self_return_type_context.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/markers/predicate_marker_synthesizer.rb'
-    - 'lib/rbs_infer/markers/setter_marker_synthesizer.rb'
-    - 'lib/rbs_infer/project/base_dir.rb'
-    - 'lib/rbs_infer/project/block_body_type.rb'
-    - 'lib/rbs_infer/project/block_reopen.rb'
-    - 'lib/rbs_infer/project/caller_file_cache.rb'
-    - 'lib/rbs_infer/project/class_eval_expander.rb'
-    - 'lib/rbs_infer/project/constant_declaration_expander.rb'
-    - 'lib/rbs_infer/project/constant_sources.rb'
-    - 'lib/rbs_infer/project/corpus.rb'
-    - 'lib/rbs_infer/project/dependency_sorter.rb'
-    - 'lib/rbs_infer/project/file_index.rb'
-    - 'lib/rbs_infer/project/mixin_index.rb'
-    - 'lib/rbs_infer/project/parse_cache.rb'
-    - 'lib/rbs_infer/project/reopening_call.rb'
-    - 'lib/rbs_infer/project/ruby_runtime_generator.rb'
-    - 'lib/rbs_infer/project/self_class_eval_expander.rb'
-    - 'lib/rbs_infer/project/self_class_eval_marker.rb'
-    - 'lib/rbs_infer/project/self_type_annotators.rb'
-    - 'lib/rbs_infer/project/source_expanders.rb'
-    - 'lib/rbs_infer/project/source_index.rb'
-    - 'lib/rbs_infer/project/source_owners.rb'
-    - 'lib/rbs_infer/project/source_reader.rb'
-    - 'lib/rbs_infer/project/steepfile_sources.rb'
-    - 'lib/rbs_infer/project/stored_block_ivar_decorator.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/call_graph.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/corpus.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/declarations.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/deferral_reader.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/reader_collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/resolution.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shape_set.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shapes.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_implements.rb'
-    - 'lib/rbs_infer/project/string_eval_macro_expander.rb'
-    - 'lib/rbs_infer/project/string_eval_sidecar.rb'
-    - 'lib/rbs_infer/project/string_eval_sources.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_annotation_parser.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/lexical_scope.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/type_formatter.rb'
-    - 'lib/rbs_infer/signatures/steep_environment.rb'
+    - "lib/rbs_infer/ast/class_name_extractor.rb"
+    - "lib/rbs_infer/ast/comment_index.rb"
+    - "lib/rbs_infer/ast/constructor_type_inferrer.rb"
+    - "lib/rbs_infer/ast/def_collector.rb"
+    - "lib/rbs_infer/ast/lexical_scope.rb"
+    - "lib/rbs_infer/ast/multi_write_decomposer.rb"
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/ast/optional_param_extractor.rb"
+    - "lib/rbs_infer/ast/target_discovery.rb"
+    - "lib/rbs_infer/inference/attr_type_inferrer.rb"
+    - "lib/rbs_infer/inference/block_return_collector.rb"
+    - "lib/rbs_infer/inference/block_signature_resolver.rb"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/class_member_collector/block_signature.rb"
+    - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
+    - "lib/rbs_infer/inference/constant_arg_type_resolver.rb"
+    - "lib/rbs_infer/inference/constant_type_resolver.rb"
+    - "lib/rbs_infer/inference/forwarded_parameters_resolver.rb"
+    - "lib/rbs_infer/inference/forwarding_super.rb"
+    - "lib/rbs_infer/inference/inherited_forwards.rb"
+    - "lib/rbs_infer/inference/inherited_reach.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
+    - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
+    - "lib/rbs_infer/inference/invoker_self_types.rb"
+    - "lib/rbs_infer/inference/ivar_type_set.rb"
+    - "lib/rbs_infer/inference/known_return_types_builder.rb"
+    - "lib/rbs_infer/inference/local_self_paths.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/self_return_type_context.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/markers/predicate_marker_synthesizer.rb"
+    - "lib/rbs_infer/markers/setter_marker_synthesizer.rb"
+    - "lib/rbs_infer/project/base_dir.rb"
+    - "lib/rbs_infer/project/block_body_type.rb"
+    - "lib/rbs_infer/project/block_reopen.rb"
+    - "lib/rbs_infer/project/caller_file_cache.rb"
+    - "lib/rbs_infer/project/class_eval_expander.rb"
+    - "lib/rbs_infer/project/constant_declaration_expander.rb"
+    - "lib/rbs_infer/project/constant_sources.rb"
+    - "lib/rbs_infer/project/corpus.rb"
+    - "lib/rbs_infer/project/dependency_sorter.rb"
+    - "lib/rbs_infer/project/file_index.rb"
+    - "lib/rbs_infer/project/mixin_index.rb"
+    - "lib/rbs_infer/project/parse_cache.rb"
+    - "lib/rbs_infer/project/reopening_call.rb"
+    - "lib/rbs_infer/project/ruby_runtime_generator.rb"
+    - "lib/rbs_infer/project/self_class_eval_expander.rb"
+    - "lib/rbs_infer/project/self_class_eval_marker.rb"
+    - "lib/rbs_infer/project/self_type_annotators.rb"
+    - "lib/rbs_infer/project/source_expanders.rb"
+    - "lib/rbs_infer/project/source_index.rb"
+    - "lib/rbs_infer/project/source_owners.rb"
+    - "lib/rbs_infer/project/source_reader.rb"
+    - "lib/rbs_infer/project/steepfile_sources.rb"
+    - "lib/rbs_infer/project/stored_block_ivar_decorator.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/call_graph.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/corpus.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/declarations.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/deferral_reader.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/reader_collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/resolution.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shape_set.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shapes.rb"
+    - "lib/rbs_infer/project/stored_block_replay_implements.rb"
+    - "lib/rbs_infer/project/string_eval_macro_expander.rb"
+    - "lib/rbs_infer/project/string_eval_sidecar.rb"
+    - "lib/rbs_infer/project/string_eval_sources.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_annotation_parser.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/lexical_scope.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
+    - "lib/rbs_infer/signatures/steep_environment.rb"
 
 # Offense count: 7
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/CombinableLoops:
   Exclude:
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/project/dependency_sorter.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/project/dependency_sorter.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
@@ -1207,12 +1207,12 @@ Style/CombinableLoops:
 # SupportedStyles: assign_to_condition, assign_inside_condition
 Style/ConditionalAssignment:
   Exclude:
-    - 'lib/rbs_infer/extensions/enumerize/generator.rb'
+    - "lib/rbs_infer/extensions/enumerize/generator.rb"
 
 # Offense count: 1
 Style/DocumentDynamicEvalDefinition:
   Exclude:
-    - 'spec/lib/rbs_infer/project/block_reopen_spec.rb'
+    - "spec/lib/rbs_infer/project/block_reopen_spec.rb"
 
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
@@ -1220,8 +1220,8 @@ Style/DocumentDynamicEvalDefinition:
 # SupportedStyles: empty, nil, both
 Style/EmptyElse:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/extensions/enumerize/generator.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/extensions/enumerize/generator.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
@@ -1229,20 +1229,20 @@ Style/EmptyElse:
 # SupportedStyles: trailing_conditional, ternary
 Style/EmptyStringInsideInterpolation:
   Exclude:
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 Style/EvalWithLocation:
   Exclude:
-    - 'spec/lib/rbs_infer/project/block_reopen_spec.rb'
+    - "spec/lib/rbs_infer/project/block_reopen_spec.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowedVariables, DefaultToNil.
 Style/FetchEnvVar:
   Exclude:
-    - 'spec/spec_helper.rb'
+    - "spec/spec_helper.rb"
 
 # Offense count: 92
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -1250,108 +1250,108 @@ Style/FetchEnvVar:
 # SupportedStyles: always, always_true, never
 Style/FrozenStringLiteralComment:
   Exclude:
-    - '**/*.arb'
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/ast/class_name_extractor.rb'
-    - 'lib/rbs_infer/ast/comment_index.rb'
-    - 'lib/rbs_infer/ast/def_collector.rb'
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/ast/optional_param_extractor.rb'
-    - 'lib/rbs_infer/extensions/rails/module_self_type_annotator.rb'
-    - 'lib/rbs_infer/inference/block_return_collector.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_body_attr_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/block_signature.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
-    - 'lib/rbs_infer/inference/constant_arg_type_resolver.rb'
-    - 'lib/rbs_infer/inference/constant_type_resolver.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
-    - 'lib/rbs_infer/inference/intra_class_call_analyzer.rb'
-    - 'lib/rbs_infer/inference/ivar_type_set.rb'
-    - 'lib/rbs_infer/inference/known_return_types_builder.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/self_return_type_context.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/markers/predicate_marker_synthesizer.rb'
-    - 'lib/rbs_infer/markers/setter_marker_synthesizer.rb'
-    - 'lib/rbs_infer/project/caller_file_cache.rb'
-    - 'lib/rbs_infer/project/corpus.rb'
-    - 'lib/rbs_infer/project/dependency_sorter.rb'
-    - 'lib/rbs_infer/project/file_index.rb'
-    - 'lib/rbs_infer/project/mixin_index.rb'
-    - 'lib/rbs_infer/project/parse_cache.rb'
-    - 'lib/rbs_infer/project/source_index.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_annotation_parser.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/lexical_scope.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/type_formatter.rb'
-    - 'lib/rbs_infer/signatures/steep_environment.rb'
-    - 'spec/bin/rbs_infer_spec.rb'
-    - 'spec/lib/rbs_infer/analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/ast/class_name_extractor_spec.rb'
-    - 'spec/lib/rbs_infer/ast/constructor_type_inferrer_spec.rb'
-    - 'spec/lib/rbs_infer/ast/multi_write_decomposer_spec.rb'
-    - 'spec/lib/rbs_infer/ast/node_type_inferrer_spec.rb'
-    - 'spec/lib/rbs_infer/ast/optional_param_extractor_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb'
-    - 'spec/lib/rbs_infer/inference/block_return_collector_spec.rb'
-    - 'spec/lib/rbs_infer/inference/caller_file_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/inference/class_body_attr_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/inference/class_member_collector/block_signature_spec.rb'
-    - 'spec/lib/rbs_infer/inference/class_member_collector_spec.rb'
-    - 'spec/lib/rbs_infer/inference/constant_arg_type_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/inference/constant_type_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/inference/initialize_body_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/inference/intra_class_call_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/inference/ivar_type_set_spec.rb'
-    - 'spec/lib/rbs_infer/inference/new_call_collector_spec.rb'
-    - 'spec/lib/rbs_infer/inference/type_merger_spec.rb'
-    - 'spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb'
-    - 'spec/lib/rbs_infer/markers/setter_marker_synthesizer_spec.rb'
-    - 'spec/lib/rbs_infer/project/corpus_spec.rb'
-    - 'spec/lib/rbs_infer/project/dependency_sorter_spec.rb'
-    - 'spec/lib/rbs_infer/project/file_index_spec.rb'
-    - 'spec/lib/rbs_infer/project/mixin_index_spec.rb'
-    - 'spec/lib/rbs_infer/project/parse_cache_spec.rb'
-    - 'spec/lib/rbs_infer/project/source_index_spec.rb'
-    - 'spec/lib/rbs_infer/project/steepfile_sources_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/method_type_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_builder_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_definition_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_type_lookup_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge/block_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge/lexical_scope_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge/return_type_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge/type_formatter_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_environment_spec.rb'
-    - 'spec/support/temp_file_helpers.rb'
+    - "**/*.arb"
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/ast/class_name_extractor.rb"
+    - "lib/rbs_infer/ast/comment_index.rb"
+    - "lib/rbs_infer/ast/def_collector.rb"
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/ast/optional_param_extractor.rb"
+    - "lib/rbs_infer/extensions/rails/module_self_type_annotator.rb"
+    - "lib/rbs_infer/inference/block_return_collector.rb"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/class_member_collector/block_signature.rb"
+    - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
+    - "lib/rbs_infer/inference/constant_arg_type_resolver.rb"
+    - "lib/rbs_infer/inference/constant_type_resolver.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
+    - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
+    - "lib/rbs_infer/inference/ivar_type_set.rb"
+    - "lib/rbs_infer/inference/known_return_types_builder.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/self_return_type_context.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/markers/predicate_marker_synthesizer.rb"
+    - "lib/rbs_infer/markers/setter_marker_synthesizer.rb"
+    - "lib/rbs_infer/project/caller_file_cache.rb"
+    - "lib/rbs_infer/project/corpus.rb"
+    - "lib/rbs_infer/project/dependency_sorter.rb"
+    - "lib/rbs_infer/project/file_index.rb"
+    - "lib/rbs_infer/project/mixin_index.rb"
+    - "lib/rbs_infer/project/parse_cache.rb"
+    - "lib/rbs_infer/project/source_index.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_annotation_parser.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/lexical_scope.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
+    - "lib/rbs_infer/signatures/steep_environment.rb"
+    - "spec/bin/rbs_infer_spec.rb"
+    - "spec/lib/rbs_infer/analyzer_spec.rb"
+    - "spec/lib/rbs_infer/ast/class_name_extractor_spec.rb"
+    - "spec/lib/rbs_infer/ast/constructor_type_inferrer_spec.rb"
+    - "spec/lib/rbs_infer/ast/multi_write_decomposer_spec.rb"
+    - "spec/lib/rbs_infer/ast/node_type_inferrer_spec.rb"
+    - "spec/lib/rbs_infer/ast/optional_param_extractor_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb"
+    - "spec/lib/rbs_infer/inference/block_return_collector_spec.rb"
+    - "spec/lib/rbs_infer/inference/caller_file_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/inference/class_body_attr_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/inference/class_member_collector/block_signature_spec.rb"
+    - "spec/lib/rbs_infer/inference/class_member_collector_spec.rb"
+    - "spec/lib/rbs_infer/inference/constant_arg_type_resolver_spec.rb"
+    - "spec/lib/rbs_infer/inference/constant_type_resolver_spec.rb"
+    - "spec/lib/rbs_infer/inference/initialize_body_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/inference/intra_class_call_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/inference/ivar_type_set_spec.rb"
+    - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
+    - "spec/lib/rbs_infer/inference/type_merger_spec.rb"
+    - "spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb"
+    - "spec/lib/rbs_infer/markers/setter_marker_synthesizer_spec.rb"
+    - "spec/lib/rbs_infer/project/corpus_spec.rb"
+    - "spec/lib/rbs_infer/project/dependency_sorter_spec.rb"
+    - "spec/lib/rbs_infer/project/file_index_spec.rb"
+    - "spec/lib/rbs_infer/project/mixin_index_spec.rb"
+    - "spec/lib/rbs_infer/project/parse_cache_spec.rb"
+    - "spec/lib/rbs_infer/project/source_index_spec.rb"
+    - "spec/lib/rbs_infer/project/steepfile_sources_spec.rb"
+    - "spec/lib/rbs_infer/signatures/method_type_resolver_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_builder_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_definition_resolver_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_type_lookup_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge/block_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge/lexical_scope_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge/return_type_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge/type_formatter_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_environment_spec.rb"
+    - "spec/support/temp_file_helpers.rb"
 
 # Offense count: 4
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: MinBodyLength, AllowConsecutiveConditionals.
 Style/GuardClause:
   Exclude:
-    - 'lib/rbs_infer/inference/class_body_attr_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
+    - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
 
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -1359,14 +1359,14 @@ Style/GuardClause:
 # AllowedReceivers: Thread.current
 Style/HashEachMethods:
   Exclude:
-    - 'lib/rbs_infer/project/dependency_sorter.rb'
+    - "lib/rbs_infer/project/dependency_sorter.rb"
 
 # Offense count: 2
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/HashExcept:
   Exclude:
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
 
 # Offense count: 9
 # This cop supports safe autocorrection (--autocorrect).
@@ -1375,88 +1375,88 @@ Style/HashExcept:
 # SupportedShorthandSyntax: always, never, either, consistent, either_consistent
 Style/HashSyntax:
   Exclude:
-    - 'spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb'
+    - "spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb"
 
 # Offense count: 50
 # This cop supports safe autocorrection (--autocorrect).
 Style/IfUnlessModifier:
   Exclude:
-    - 'lib/rbs_infer/ast/optional_param_extractor.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_body_attr_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/inherited_reach.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
-    - 'lib/rbs_infer/inference/known_return_types_builder.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/reader_collector.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_environment.rb'
-    - 'spec/integration/rails_dummy_spec.rb'
-    - 'spec/integration/steep_dummy_spec.rb'
+    - "lib/rbs_infer/ast/optional_param_extractor.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/inherited_reach.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
+    - "lib/rbs_infer/inference/known_return_types_builder.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/reader_collector.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_environment.rb"
+    - "spec/integration/rails_dummy_spec.rb"
+    - "spec/integration/steep_dummy_spec.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 Style/IfUnlessModifierOfIfUnless:
   Exclude:
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
+    - "lib/rbs_infer/inference/class_member_collector.rb"
 
 # Offense count: 1
 Style/ItAssignment:
   Exclude:
-    - 'lib/rbs_infer/project/stored_block_replay_expander/call_graph.rb'
+    - "lib/rbs_infer/project/stored_block_replay_expander/call_graph.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 Style/KeywordArgumentsMerging:
   Exclude:
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
 
 # Offense count: 15
 # This cop supports safe autocorrection (--autocorrect).
 Style/KeywordParametersOrder:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'spec/integration/rails_dummy_spec.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "spec/integration/rails_dummy_spec.rb"
 
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/MapIntoArray:
   Exclude:
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
 
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/MapJoin:
   Exclude:
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
 
 # Offense count: 14
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/MapToSet:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
-    - 'lib/rbs_infer/inference/attr_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/block_signature_resolver.rb'
-    - 'lib/rbs_infer/inference/inherited_forwards.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/markers/predicate_marker_synthesizer.rb'
-    - 'lib/rbs_infer/markers/setter_marker_synthesizer.rb'
-    - 'lib/rbs_infer/project/mixin_index.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
+    - "lib/rbs_infer/inference/attr_type_inferrer.rb"
+    - "lib/rbs_infer/inference/block_signature_resolver.rb"
+    - "lib/rbs_infer/inference/inherited_forwards.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/markers/predicate_marker_synthesizer.rb"
+    - "lib/rbs_infer/markers/setter_marker_synthesizer.rb"
+    - "lib/rbs_infer/project/mixin_index.rb"
 
 # Offense count: 2
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -1464,44 +1464,44 @@ Style/MapToSet:
 # SupportedStyles: module_function, extend_self, forbidden
 Style/ModuleFunction:
   Exclude:
-    - 'lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb'
+    - "lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
 
 # Offense count: 8
 Style/MultilineBlockChain:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/extensions/rails/action_text/runtime/attribute_transcriber.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/module_self_type_generator.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/extensions/rails/action_text/runtime/attribute_transcriber.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/module_self_type_generator.rb"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
 
 # Offense count: 16
 # This cop supports safe autocorrection (--autocorrect).
 Style/MultilineIfModifier:
   Exclude:
-    - 'lib/rbs_infer/ast/optional_param_extractor.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
-    - 'lib/rbs_infer/inference/initialize_body_analyzer.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
+    - "lib/rbs_infer/ast/optional_param_extractor.rb"
+    - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
+    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
 
 # Offense count: 13
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowMethodComparison, ComparisonsThreshold.
 Style/MultipleComparison:
   Exclude:
-    - 'lib/rbs_infer/inference/local_self_paths.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/project/source_index.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb'
+    - "lib/rbs_infer/inference/local_self_paths.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/project/source_index.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/forwarding_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
 
 # Offense count: 24
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -1509,14 +1509,14 @@ Style/MultipleComparison:
 # SupportedStyles: literals, strict
 Style/MutableConstant:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/module_self_type_annotator.rb'
-    - 'lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'spec/lib/rbs_infer/ast/class_name_extractor_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb'
-    - 'spec/lib/rbs_infer/inference/new_call_collector_spec.rb'
+    - "lib/rbs_infer/extensions/rails/module_self_type_annotator.rb"
+    - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "spec/lib/rbs_infer/ast/class_name_extractor_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb"
+    - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
@@ -1524,19 +1524,19 @@ Style/MutableConstant:
 # SupportedStyles: both, prefix, postfix
 Style/NegatedIf:
   Exclude:
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
+    - "lib/rbs_infer/inference/class_member_collector.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 Style/NestedFileDirname:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/action_text/runtime/attribute_transcriber.rb'
+    - "lib/rbs_infer/extensions/rails/action_text/runtime/attribute_transcriber.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 Style/NestedModifier:
   Exclude:
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
+    - "lib/rbs_infer/inference/class_member_collector.rb"
 
 # Offense count: 5
 # This cop supports safe autocorrection (--autocorrect).
@@ -1544,10 +1544,10 @@ Style/NestedModifier:
 # SupportedStyles: skip_modifier_ifs, always
 Style/Next:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
 
 # Offense count: 2
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -1555,112 +1555,112 @@ Style/Next:
 # SupportedStyles: predicate, comparison
 Style/NumericPredicate:
   Exclude:
-    - 'spec/**/*'
-    - 'lib/rbs_infer/extensions/carrierwave/generator.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
+    - "spec/**/*"
+    - "lib/rbs_infer/extensions/carrierwave/generator.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
 
 # Offense count: 1
 # Configuration parameters: AllowedMethods.
 # AllowedMethods: respond_to_missing?
 Style/OptionalBooleanParameter:
   Exclude:
-    - 'lib/rbs_infer/project/string_eval_macro_expander.rb'
+    - "lib/rbs_infer/project/string_eval_macro_expander.rb"
 
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
 Style/ParallelAssignment:
   Exclude:
-    - 'lib/rbs_infer/inference/block_return_collector.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
+    - "lib/rbs_infer/inference/block_return_collector.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
 
 # Offense count: 30
 # This cop supports safe autocorrection (--autocorrect).
 Style/PerlBackrefs:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/known_return_types_builder.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/type_formatter.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/known_return_types_builder.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
 
 # Offense count: 8
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/PredicateWithKind:
   Exclude:
-    - 'lib/rbs_infer/ast/multi_write_decomposer.rb'
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb'
+    - "lib/rbs_infer/ast/multi_write_decomposer.rb"
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb"
 
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
 Style/RedundantAssignment:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/active_support/runtime/delegation_transcriber.rb'
-    - 'lib/rbs_infer/markers/setter_marker_synthesizer.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
+    - "lib/rbs_infer/extensions/rails/active_support/runtime/delegation_transcriber.rb"
+    - "lib/rbs_infer/markers/setter_marker_synthesizer.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 Style/RedundantDoubleSplatHashBraces:
   Exclude:
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
 
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/RedundantEach:
   Exclude:
-    - 'lib/rbs_infer/inference/invoker_self_types.rb'
+    - "lib/rbs_infer/inference/invoker_self_types.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 Style/RedundantParentheses:
   Exclude:
-    - 'lib/rbs_infer/project/string_eval_sidecar.rb'
+    - "lib/rbs_infer/project/string_eval_sidecar.rb"
 
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
 Style/RedundantRegexpArgument:
   Exclude:
-    - 'spec/integration/rails_dummy_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb'
+    - "spec/integration/rails_dummy_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb"
 
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
 Style/RedundantRegexpEscape:
   Exclude:
-    - 'lib/rbs_infer/signatures/rbs_definition_resolver.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/type_formatter.rb'
+    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
 
 # Offense count: 2
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowMultipleReturnValues.
 Style/RedundantReturn:
   Exclude:
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
 
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
 Style/RescueModifier:
   Exclude:
-    - 'bin/rbs_infer'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/type_formatter.rb'
+    - "bin/rbs_infer"
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
 
 # Offense count: 4
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: AllowedMethods, AllowedPatterns.
 Style/ReturnNilInPredicateMethodDefinition:
   Exclude:
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
 
 # Offense count: 2
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -1668,85 +1668,85 @@ Style/ReturnNilInPredicateMethodDefinition:
 # AllowedMethods: present?, blank?, presence, try, try!
 Style/SafeNavigation:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/extensions/rails/module_self_type_annotator.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/extensions/rails/module_self_type_annotator.rb"
 
 # Offense count: 6
 # Configuration parameters: Max.
 Style/SafeNavigationChainLength:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb'
-    - 'lib/rbs_infer/inference/block_return_collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb'
+    - "lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb"
+    - "lib/rbs_infer/inference/block_return_collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
 
 # Offense count: 4
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/SelectByKind:
   Exclude:
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/intra_class_call_analyzer.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb'
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/node_reading.rb"
 
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 Style/SelfAssignment:
   Exclude:
-    - 'lib/rbs_infer/inference/forwarding_super.rb'
+    - "lib/rbs_infer/inference/forwarding_super.rb"
 
 # Offense count: 9
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowAsExpressionSeparator.
 Style/Semicolon:
   Exclude:
-    - 'lib/rbs_infer/inference/class_member_collector/block_signature.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/project/mixin_index.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge.rb'
-    - 'spec/lib/rbs_infer/inference/bare_call_universal_ancestor_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/overloading_marker_spec.rb'
+    - "lib/rbs_infer/inference/class_member_collector/block_signature.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/project/mixin_index.rb"
+    - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "spec/lib/rbs_infer/inference/bare_call_universal_ancestor_spec.rb"
+    - "spec/lib/rbs_infer/signatures/overloading_marker_spec.rb"
 
 # Offense count: 6
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowModifier.
 Style/SoleNestedConditional:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/custom_generator.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
+    - "lib/rbs_infer/extensions/rails/custom_generator.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
 
 # Offense count: 22
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: Mode.
 Style/StringConcatenation:
   Exclude:
-    - 'lib/rbs_infer/extensions/devise/generator.rb'
-    - 'lib/rbs_infer/extensions/rails/active_support/runtime/delegation_transcriber.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/custom_generator.rb'
-    - 'lib/rbs_infer/extensions/rails/views/path_naming.rb'
-    - 'lib/rbs_infer/project/string_eval_sources.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'spec/integration/steep_dummy_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/on_load_expander_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb'
-    - 'spec/support/steep_scenario_helper.rb'
+    - "lib/rbs_infer/extensions/devise/generator.rb"
+    - "lib/rbs_infer/extensions/rails/active_support/runtime/delegation_transcriber.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/custom_generator.rb"
+    - "lib/rbs_infer/extensions/rails/views/path_naming.rb"
+    - "lib/rbs_infer/project/string_eval_sources.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "spec/integration/steep_dummy_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/on_load_expander_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb"
+    - "spec/support/steep_scenario_helper.rb"
 
 # Offense count: 4
 # This cop supports safe autocorrection (--autocorrect).
 Style/SuperArguments:
   Exclude:
-    - 'lib/rbs_infer/project/constant_declaration_expander.rb'
-    - 'lib/rbs_infer/project/mixin_index.rb'
-    - 'lib/rbs_infer/project/self_class_eval_expander.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/reader_collector.rb'
+    - "lib/rbs_infer/project/constant_declaration_expander.rb"
+    - "lib/rbs_infer/project/mixin_index.rb"
+    - "lib/rbs_infer/project/self_class_eval_expander.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/reader_collector.rb"
 
 # Offense count: 20
 # This cop supports safe autocorrection (--autocorrect).
@@ -1762,7 +1762,7 @@ Style/SymbolArray:
 # SupportedStyles: require_parentheses, require_no_parentheses, require_parentheses_when_complex
 Style/TernaryParentheses:
   Exclude:
-    - 'lib/rbs_infer/inference/invoker_self_types.rb'
+    - "lib/rbs_infer/inference/invoker_self_types.rb"
 
 # Offense count: 2
 # This cop supports safe autocorrection (--autocorrect).
@@ -1770,8 +1770,8 @@ Style/TernaryParentheses:
 # SupportedStylesForMultiline: comma, consistent_comma, diff_comma, no_comma
 Style/TrailingCommaInArguments:
   Exclude:
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'spec/integration/rails_dummy_spec.rb'
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "spec/integration/rails_dummy_spec.rb"
 
 # Offense count: 21
 # This cop supports safe autocorrection (--autocorrect).
@@ -1779,14 +1779,14 @@ Style/TrailingCommaInArguments:
 # SupportedStylesForMultiline: comma, consistent_comma, diff_comma, no_comma
 Style/TrailingCommaInArrayLiteral:
   Exclude:
-    - 'bin/profile'
-    - 'lib/rbs_infer/extensions/devise/generator.rb'
-    - 'lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
-    - 'spec/lib/rbs_infer/ast/target_discovery_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/controllers/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/inference/type_merger_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb'
+    - "bin/profile"
+    - "lib/rbs_infer/extensions/devise/generator.rb"
+    - "lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
+    - "spec/lib/rbs_infer/ast/target_discovery_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/controllers/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/inference/type_merger_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb"
 
 # Offense count: 14
 # This cop supports safe autocorrection (--autocorrect).
@@ -1794,14 +1794,14 @@ Style/TrailingCommaInArrayLiteral:
 # SupportedStylesForMultiline: comma, consistent_comma, diff_comma, no_comma
 Style/TrailingCommaInHashLiteral:
   Exclude:
-    - 'lib/rbs_infer/extensions/devise/generator.rb'
-    - 'lib/rbs_infer/extensions/rails/on_load_expander.rb'
-    - 'lib/rbs_infer/project/class_eval_expander.rb'
-    - 'lib/rbs_infer/signatures/rbs_type_lookup.rb'
-    - 'lib/rbs_infer/signatures/steep_environment.rb'
-    - 'spec/lib/rbs_infer/ast/target_discovery_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/custom_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/on_load_expander_spec.rb'
+    - "lib/rbs_infer/extensions/devise/generator.rb"
+    - "lib/rbs_infer/extensions/rails/on_load_expander.rb"
+    - "lib/rbs_infer/project/class_eval_expander.rb"
+    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
+    - "lib/rbs_infer/signatures/steep_environment.rb"
+    - "spec/lib/rbs_infer/ast/target_discovery_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/custom_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/on_load_expander_spec.rb"
 
 # Offense count: 20
 # This cop supports safe autocorrection (--autocorrect).
@@ -1809,26 +1809,26 @@ Style/TrailingCommaInHashLiteral:
 # SupportedStyles: percent, brackets
 Style/WordArray:
   Exclude:
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb'
-    - 'spec/lib/rbs_infer/ast/multi_write_decomposer_spec.rb'
-    - 'spec/lib/rbs_infer/ast/target_discovery_spec.rb'
-    - 'spec/lib/rbs_infer/inference/block_return_collector_spec.rb'
-    - 'spec/lib/rbs_infer/inference/class_member_collector_spec.rb'
-    - 'spec/lib/rbs_infer/inference/inherited_forwards_spec.rb'
-    - 'spec/lib/rbs_infer/inference/type_merger_spec.rb'
-    - 'spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb'
-    - 'spec/lib/rbs_infer/markers/setter_marker_synthesizer_spec.rb'
-    - 'spec/lib/rbs_infer/project/call_graph_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_definition_resolver_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb'
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb"
+    - "spec/lib/rbs_infer/ast/multi_write_decomposer_spec.rb"
+    - "spec/lib/rbs_infer/ast/target_discovery_spec.rb"
+    - "spec/lib/rbs_infer/inference/block_return_collector_spec.rb"
+    - "spec/lib/rbs_infer/inference/class_member_collector_spec.rb"
+    - "spec/lib/rbs_infer/inference/inherited_forwards_spec.rb"
+    - "spec/lib/rbs_infer/inference/type_merger_spec.rb"
+    - "spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb"
+    - "spec/lib/rbs_infer/markers/setter_marker_synthesizer_spec.rb"
+    - "spec/lib/rbs_infer/project/call_graph_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_definition_resolver_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb"
 
 # Offense count: 2
 # This cop supports safe autocorrection (--autocorrect).
 Style/YAMLFileRead:
   Exclude:
-    - 'spec/bin/rbs_infer_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb'
+    - "spec/bin/rbs_infer_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb"
 
 # Offense count: 198
 # This cop supports safe autocorrection (--autocorrect).
@@ -1836,55 +1836,55 @@ Style/YAMLFileRead:
 # URISchemes: http, https
 Layout/LineLength:
   Exclude:
-    - 'lib/rbs_infer/analyzer.rb'
-    - 'lib/rbs_infer/ast/node_type_inferrer.rb'
-    - 'lib/rbs_infer/extensions/carrierwave/tasks/rbs_infer_carrierwave.rake'
-    - 'lib/rbs_infer/extensions/devise/tasks/rbs_infer_devise.rake'
-    - 'lib/rbs_infer/extensions/framework_source.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb'
-    - 'lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb'
-    - 'lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber.rb'
-    - 'lib/rbs_infer/extensions/rails/tasks/rbs_infer_controller_runtime.rake'
-    - 'lib/rbs_infer/inference/caller_file_analyzer.rb'
-    - 'lib/rbs_infer/inference/class_member_collector.rb'
-    - 'lib/rbs_infer/inference/inherited_reach.rb'
-    - 'lib/rbs_infer/inference/intra_class_call_analyzer.rb'
-    - 'lib/rbs_infer/inference/new_call_collector.rb'
-    - 'lib/rbs_infer/inference/param_type_inferrer.rb'
-    - 'lib/rbs_infer/inference/return_type_resolver.rb'
-    - 'lib/rbs_infer/inference/type_merger.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/reader_collector.rb'
-    - 'lib/rbs_infer/project/stored_block_replay_expander/resolution.rb'
-    - 'lib/rbs_infer/signatures/method_type_resolver.rb'
-    - 'lib/rbs_infer/signatures/rbs_builder.rb'
-    - 'lib/rbs_infer/signatures/rbs_parser_util.rb'
-    - 'lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb'
-    - 'lib/rbs_infer/signatures/steep_environment.rb'
-    - 'spec/integration/rails_dummy_spec.rb'
-    - 'spec/integration/steep_dummy_spec.rb'
-    - 'spec/lib/rbs_infer/analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/ast/node_type_inferrer_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/controllers/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb'
-    - 'spec/lib/rbs_infer/extensions/rails/views/runtime_generator_spec.rb'
-    - 'spec/lib/rbs_infer/inference/bare_call_universal_ancestor_spec.rb'
-    - 'spec/lib/rbs_infer/inference/block_return_collector_spec.rb'
-    - 'spec/lib/rbs_infer/inference/class_body_attr_analyzer_spec.rb'
-    - 'spec/lib/rbs_infer/inference/homonymous_steep_returns_spec.rb'
-    - 'spec/lib/rbs_infer/inference/inherited_reach_spec.rb'
-    - 'spec/lib/rbs_infer/inference/new_call_collector_spec.rb'
-    - 'spec/lib/rbs_infer/inference/nil_default_param_spec.rb'
-    - 'spec/lib/rbs_infer/inference/nilable_reader_through_a_local_spec.rb'
-    - 'spec/lib/rbs_infer/inference/splat_param_inference_spec.rb'
-    - 'spec/lib/rbs_infer/inference/type_merger_spec.rb'
-    - 'spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb'
-    - 'spec/lib/rbs_infer/project/block_reopen_spec.rb'
-    - 'spec/lib/rbs_infer/project/self_type_annotators_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb'
-    - 'spec/lib/rbs_infer/project/stored_block_replay_implements_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_builder_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_bridge/type_formatter_spec.rb'
-    - 'spec/lib/rbs_infer/signatures/steep_environment_spec.rb'
+    - "lib/rbs_infer/analyzer.rb"
+    - "lib/rbs_infer/ast/node_type_inferrer.rb"
+    - "lib/rbs_infer/extensions/carrierwave/tasks/rbs_infer_carrierwave.rake"
+    - "lib/rbs_infer/extensions/devise/tasks/rbs_infer_devise.rake"
+    - "lib/rbs_infer/extensions/framework_source.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb"
+    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
+    - "lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber.rb"
+    - "lib/rbs_infer/extensions/rails/tasks/rbs_infer_controller_runtime.rake"
+    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
+    - "lib/rbs_infer/inference/class_member_collector.rb"
+    - "lib/rbs_infer/inference/inherited_reach.rb"
+    - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
+    - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/param_type_inferrer.rb"
+    - "lib/rbs_infer/inference/return_type_resolver.rb"
+    - "lib/rbs_infer/inference/type_merger.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/reader_collector.rb"
+    - "lib/rbs_infer/project/stored_block_replay_expander/resolution.rb"
+    - "lib/rbs_infer/signatures/method_type_resolver.rb"
+    - "lib/rbs_infer/signatures/rbs_builder.rb"
+    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
+    - "lib/rbs_infer/signatures/steep_environment.rb"
+    - "spec/integration/rails_dummy_spec.rb"
+    - "spec/integration/steep_dummy_spec.rb"
+    - "spec/lib/rbs_infer/analyzer_spec.rb"
+    - "spec/lib/rbs_infer/ast/node_type_inferrer_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/controllers/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb"
+    - "spec/lib/rbs_infer/extensions/rails/views/runtime_generator_spec.rb"
+    - "spec/lib/rbs_infer/inference/bare_call_universal_ancestor_spec.rb"
+    - "spec/lib/rbs_infer/inference/block_return_collector_spec.rb"
+    - "spec/lib/rbs_infer/inference/class_body_attr_analyzer_spec.rb"
+    - "spec/lib/rbs_infer/inference/homonymous_steep_returns_spec.rb"
+    - "spec/lib/rbs_infer/inference/inherited_reach_spec.rb"
+    - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
+    - "spec/lib/rbs_infer/inference/nil_default_param_spec.rb"
+    - "spec/lib/rbs_infer/inference/nilable_reader_through_a_local_spec.rb"
+    - "spec/lib/rbs_infer/inference/splat_param_inference_spec.rb"
+    - "spec/lib/rbs_infer/inference/type_merger_spec.rb"
+    - "spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb"
+    - "spec/lib/rbs_infer/project/block_reopen_spec.rb"
+    - "spec/lib/rbs_infer/project/self_type_annotators_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_expander_spec.rb"
+    - "spec/lib/rbs_infer/project/stored_block_replay_implements_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_builder_spec.rb"
+    - "spec/lib/rbs_infer/signatures/rbs_parser_util_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_bridge/type_formatter_spec.rb"
+    - "spec/lib/rbs_infer/signatures/steep_environment_spec.rb"
