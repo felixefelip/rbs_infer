@@ -113,10 +113,12 @@ call_sites:
   app/models/example83.rb:56:2:
   - source: def comments; :stored; end
     target: "::Example83"
-  app/models/example84.rb:42:2:
-  -
-  app/models/example84.rb:43:2:
-  -
+  app/models/example84.rb:45:2:
+  - source: def articles; :renamed; end
+    target: "::Example84"
+  app/models/example84.rb:46:2:
+  - source: def replies; :renamed; end
+    target: "::Example84"
   app/models/example85.rb:57:2:
   -
   app/models/example85.rb:58:2:

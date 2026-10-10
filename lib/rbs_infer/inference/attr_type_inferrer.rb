@@ -3,8 +3,8 @@
 module RbsInfer::Inference
   # What each `attr_reader`/`attr_writer`/`attr_accessor` of a class holds.
   #
-  # One map, assembled from four sources that have to be consulted in order,
-  # because each one only fills what the previous left empty:
+  # One map, assembled from sources that have to be consulted in order. The
+  # first three only fill what the previous left empty:
   #
   #   1. `initialize` — `self.x = param`, typed by the param's own call sites;
   #   2. the rest of the class body — `self.x = Foo.new` anywhere, plus the
@@ -12,10 +12,12 @@ module RbsInfer::Inference
   #   3. the writes from OUTSIDE — `receiver.x = value`, which only the
   #      cross-class pass can see, and which therefore cannot be asked for until
   #      the method parameter types exist;
-  #   4. the definite-initialization rule, which needs the finished map.
+  #   4. the ivar writes of every other method, which widen the type rather
+  #      than fill it, since any of them may be the last;
+  #   5. the definite-initialization rule, which needs the finished map.
   #
   # The split into `infer` and `finalize` is that dependency, not a preference:
-  # steps 3-4 need `method_param_types`, whose own inference reads the attr types
+  # steps 3-5 need `method_param_types`, whose own inference reads the attr types
   # from steps 1-2. Between the two the Analyzer runs the parameter pass.
   #
   # Reading `initialize` also answers a question about the CONSTRUCTOR rather
@@ -49,7 +51,7 @@ module RbsInfer::Inference
       attr_types
     end
 
-    # Steps 3-4, once `method_param_types` exists.
+    # Steps 3-5, once `method_param_types` exists.
     #
     # One call rather than two on purpose: the setter step deliberately does NOT
     # decide nilability, precisely because the rule below applies it uniformly to
@@ -59,6 +61,7 @@ module RbsInfer::Inference
     # `initialize`) wrongly stayed non-nil (felixefelip/rbs_infer#71, follow-up).
     def finalize(attr_types, members, method_param_types:)
       apply_external_setter_types(attr_types, members, method_param_types)
+      apply_writes_outside_initialize(attr_types, members)
       apply_definite_init_nilability(attr_types, members)
     end
 
@@ -159,6 +162,24 @@ module RbsInfer::Inference
         next unless inferred
 
         attr_types[m.name] = inferred
+      end
+    end
+
+    # A getter answers the last value written to its ivar, and a method other
+    # than `initialize` may write it last: `rename(to)` leaves `to` in `@name`.
+    def apply_writes_outside_initialize(attr_types, members)
+      getters = members.select { |m| %i[attr_reader attr_accessor].include?(m.kind) && !m.singleton && !m.owner }
+      return if getters.empty?
+
+      writes = @ivar_type_inferrer.writes_per_method(@parsed_target).except("initialize")
+      getters.each do |m|
+        current = attr_types[m.name]
+        written = writes.values.filter_map { |ivars| ivars[m.name] }
+        next if current.nil? || current == "untyped" || written.empty?
+
+        types = IvarTypeSet.new
+        [current, *written].each { |type| types.add(type) }
+        attr_types[m.name] = types.emit
       end
     end
 

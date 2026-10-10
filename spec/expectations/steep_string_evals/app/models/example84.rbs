@@ -1,0 +1,4 @@
+class Example84
+  def articles: () -> :renamed
+  def replies: () -> :renamed
+end
