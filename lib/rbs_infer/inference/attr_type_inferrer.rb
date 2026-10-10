@@ -29,12 +29,12 @@ module RbsInfer::Inference
     # `constant_arg_resolver`, which carries the target file's own constants) —
     # `self.x = SOME_CONSTANT` in `initialize` resolves against it, and the
     # env-only variant answers nothing for a constant the target itself declares.
-    def initialize(target_class:, parsed_target:, method_type_resolver:, constant_resolver:, return_type_resolver:)
+    def initialize(target_class:, parsed_target:, method_type_resolver:, constant_resolver:, ivar_type_inferrer:)
       @target_class = target_class
       @parsed_target = parsed_target
       @method_type_resolver = method_type_resolver
       @constant_resolver = constant_resolver
-      @return_type_resolver = return_type_resolver
+      @ivar_type_inferrer = ivar_type_inferrer
     end
 
     # Steps 1-2: everything the class's own body says.
@@ -175,7 +175,7 @@ module RbsInfer::Inference
       getters = members.select { |m| %i[attr_reader attr_accessor].include?(m.kind) }
       return if getters.empty?
 
-      initialized = @return_type_resolver.collect_prism_initialized_ivars(@parsed_target.tree)
+      initialized = @ivar_type_inferrer.collect_prism_initialized_ivars(@parsed_target.tree)
 
       getters.each do |m|
         next if initialized.include?(m.name)
