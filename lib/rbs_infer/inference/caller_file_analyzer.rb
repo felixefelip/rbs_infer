@@ -308,7 +308,7 @@ module RbsInfer::Inference
         # Try the `@`-prefixed key first (set by `ErbCallerResolver`
         # to disambiguate ivar/local with the same basename); fall
         # back to the unprefixed form for callers that still store
-        # ivars under their bare name (e.g., `NewCallCollector#collect_class_ivar_types`).
+        # ivars under their bare name (e.g., `NewCallCollector::AssignedTypes#from_class`).
         full = receiver.name.to_s
         local_var_types[full] || local_var_types[full.sub(/\A@/, "")]
       when Prism::LocalVariableReadNode

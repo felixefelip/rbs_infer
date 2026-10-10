@@ -225,6 +225,9 @@ Metrics/AbcSize:
     - "lib/rbs_infer/inference/known_return_types_builder.rb"
     - "lib/rbs_infer/inference/local_self_paths.rb"
     - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/new_call_collector/assigned_types.rb"
+    - "lib/rbs_infer/inference/new_call_collector/call_arguments.rb"
+    - "lib/rbs_infer/inference/new_call_collector/receiver_matcher.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
     - "lib/rbs_infer/inference/return_type_resolver.rb"
     - "lib/rbs_infer/inference/type_merger.rb"
@@ -274,7 +277,6 @@ Metrics/AbcSize:
 Metrics/BlockLength:
   Exclude:
     - "bin/rbs_infer"
-    - "lib/rbs_infer/inference/new_call_collector.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
     - "lib/rbs_infer/inference/type_merger.rb"
     - "lib/rbs_infer/signatures/method_type_resolver.rb"
@@ -284,7 +286,6 @@ Metrics/BlockLength:
 Metrics/BlockNesting:
   Exclude:
     - "lib/rbs_infer/inference/ivar_type_inferrer.rb"
-    - "lib/rbs_infer/inference/new_call_collector.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
     - "lib/rbs_infer/inference/type_merger.rb"
     - "lib/rbs_infer/signatures/method_type_resolver.rb"
@@ -329,6 +330,8 @@ Metrics/CyclomaticComplexity:
     - "lib/rbs_infer/inference/ivar_type_set.rb"
     - "lib/rbs_infer/inference/known_return_types_builder.rb"
     - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/new_call_collector/assigned_types.rb"
+    - "lib/rbs_infer/inference/new_call_collector/receiver_matcher.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
     - "lib/rbs_infer/inference/return_type_resolver.rb"
     - "lib/rbs_infer/inference/type_merger.rb"
@@ -396,6 +399,8 @@ Metrics/PerceivedComplexity:
     - "lib/rbs_infer/inference/ivar_type_set.rb"
     - "lib/rbs_infer/inference/known_return_types_builder.rb"
     - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/new_call_collector/assigned_types.rb"
+    - "lib/rbs_infer/inference/new_call_collector/receiver_matcher.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
     - "lib/rbs_infer/inference/return_type_resolver.rb"
     - "lib/rbs_infer/inference/type_merger.rb"
@@ -492,7 +497,6 @@ Style/ArrayIntersect:
 # Configuration parameters: MinBranchesCount.
 Style/CaseLikeIf:
   Exclude:
-    - "lib/rbs_infer/inference/new_call_collector.rb"
 
 # Offense count: 90
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -533,6 +537,9 @@ Style/ClassAndModuleChildren:
     - "lib/rbs_infer/inference/known_return_types_builder.rb"
     - "lib/rbs_infer/inference/local_self_paths.rb"
     - "lib/rbs_infer/inference/new_call_collector.rb"
+    - "lib/rbs_infer/inference/new_call_collector/assigned_types.rb"
+    - "lib/rbs_infer/inference/new_call_collector/call_arguments.rb"
+    - "lib/rbs_infer/inference/new_call_collector/receiver_matcher.rb"
     - "lib/rbs_infer/inference/param_type_inferrer.rb"
     - "lib/rbs_infer/inference/return_type_resolver.rb"
     - "lib/rbs_infer/inference/self_return_type_context.rb"
@@ -778,7 +785,6 @@ Style/MultilineBlockChain:
     - "lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb"
     - "lib/rbs_infer/extensions/rails/module_self_type_generator.rb"
     - "lib/rbs_infer/inference/caller_file_analyzer.rb"
-    - "lib/rbs_infer/inference/new_call_collector.rb"
     - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
     - "lib/rbs_infer/signatures/rbs_builder.rb"
 

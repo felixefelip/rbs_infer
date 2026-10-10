@@ -116,7 +116,7 @@ module RbsInfer::Project
     # names a model), but it is not ERB-specific: any file reaching the target through
     # an ivar, a local, or a CurrentAttributes reader is invisible the same way.
     #
-    # This is a CANDIDATE filter, not a match: `NewCallCollector#match_class?` still
+    # This is a CANDIDATE filter, not a match: `NewCallCollector::ReceiverMatcher#match_class?` still
     # has to resolve the receiver's type to the target before the call site counts.
     # Callers only ask about methods that TAKE parameters, which keeps the query off
     # the high-cardinality accessor names (`name`, `id`, `to_s`).
