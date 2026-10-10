@@ -288,15 +288,6 @@ Metrics/BlockNesting:
     - "lib/rbs_infer/inference/type_merger.rb"
     - "lib/rbs_infer/signatures/method_type_resolver.rb"
 
-# Offense count: 4
-# Configuration parameters: CountComments, Max, CountAsOne.
-Metrics/ClassLength:
-  Exclude:
-    - "lib/rbs_infer/inference/new_call_collector.rb"
-    - "lib/rbs_infer/inference/param_type_inferrer.rb"
-    - "lib/rbs_infer/inference/return_type_resolver.rb"
-    - "lib/rbs_infer/signatures/steep_bridge.rb"
-
 # Offense count: 235
 # Configuration parameters: AllowedMethods, AllowedPatterns, Max.
 Metrics/CyclomaticComplexity:

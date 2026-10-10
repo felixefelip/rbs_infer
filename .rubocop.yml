@@ -1,5 +1,8 @@
 inherit_from: .rubocop_todo.yml
 
+require:
+  - ./.rubocop/class_length_ceiling.rb
+
 AllCops:
   TargetRubyVersion: 3.3
   NewCops: enable
@@ -24,9 +27,20 @@ Metrics/MethodLength:
   CountAsOne: ["array", "hash", "heredoc", "method_call"]
   Max: 20
 
+# Replaced by Project/ClassLengthCeiling, which takes the same settings plus a
+# per-file ceiling.
 Metrics/ClassLength:
+  Enabled: false
+
+Project/ClassLengthCeiling:
+  Enabled: true
   CountAsOne: ["array", "hash", "heredoc", "method_call"]
   Max: 400
+  Ceilings:
+    "lib/rbs_infer/inference/new_call_collector.rb": 740
+    "lib/rbs_infer/inference/return_type_resolver.rb": 488
+    "lib/rbs_infer/inference/param_type_inferrer.rb": 457
+    "lib/rbs_infer/signatures/steep_bridge.rb": 401
 
 Metrics/ModuleLength:
   CountAsOne: ["array", "hash", "heredoc", "method_call"]
