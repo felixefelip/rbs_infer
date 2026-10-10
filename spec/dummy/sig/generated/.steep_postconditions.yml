@@ -1467,11 +1467,19 @@ postconditions:
     - "@name"
 - class: Example84::Reflection
   method: initialize
+  unconditional:
+    ivars:
+      "@name": "(:posts | :comments)"
+    self: "::Example84::Reflection & ::Example84::Reflection::AfterInitialize"
   effects:
     may_write:
     - "@name"
 - class: Example84::Reflection
   method: rename
+  unconditional:
+    ivars:
+      "@name": "(:articles | :replies)"
+    self: "::Example84::Reflection & ::Example84::Reflection::AfterRename"
   effects:
     may_write:
     - "@name"

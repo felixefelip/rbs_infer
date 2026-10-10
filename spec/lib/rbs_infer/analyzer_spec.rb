@@ -1042,6 +1042,40 @@ RSpec.describe RbsInfer::Analyzer do
       end
     end
 
+    it "types a getter by every write to its ivar, not only initialize's" do
+      files = {
+        "holder.rb" => <<~RUBY
+          class Holder
+            attr_reader :name, :label
+
+            def initialize(name)
+              @name = name
+              @label = :draft
+            end
+
+            def clear
+              @name = nil
+            end
+
+            def relabel
+              @label = "custom"
+            end
+
+            def self.build = Holder.new(:posts)
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |_dir, paths|
+        rbs = described_class.new(target_file: paths.first, source_files: paths).generate_rbs
+
+        aggregate_failures do
+          expect(rbs).to include("attr_reader name: (:posts)?")
+          expect(rbs).to include("attr_reader label: :draft | String")
+        end
+      end
+    end
+
     it "não corrompe return type de método com bloco ao resolver tipos" do
       helper_src = <<~RUBY
         module MyHelper

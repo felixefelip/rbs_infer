@@ -5,13 +5,16 @@
 # handing it on. What `define_stored` has to read is the name the object holds
 # AFTER `rename`, and each call site renames to a different literal.
 #
-# The checker already carries a state change across a call: `unconditional.ivars`
-# for a call on `self`, a marker for any other receiver. Both are one fact per
-# method, though: `rename` gets a single postcondition, typed `:articles |
-# :replies` from both callers together, and `reflection` is not `self`. So
-# `articles` and `replies` are never defined. Closing it needs exit facts per
-# `(method, parameter, literal)`, the shape entry facts already have, applied to
-# the state stage 1 tracks (example83).
+# `@name` is not fixed for good the way example83's is: `rename` writes it.
+# The object is followed instead through `reflection`, the one local that owns
+# it: built here, and only ever the receiver of a call or an argument handed to
+# one. `rename(to)` binds `@name` to its argument, so past `reflection.rename(as)`
+# the object holds `as`, per call site. Handing it to `define_stored` is the
+# last thing done with it, and the writer reads `reflection.name` as that
+# literal: `articles` and `replies` are defined.
+#
+# A postcondition alone could not say it: `rename` gets one marker for both
+# callers, `name: :articles | :replies`.
 #
 # Nothing here states a type.
 class Example84

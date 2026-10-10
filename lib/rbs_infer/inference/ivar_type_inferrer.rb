@@ -26,6 +26,13 @@ module RbsInfer::Inference
       @steep_bridge = steep_bridge
     end
 
+    # The type each method writes to each ivar of the class, by method name.
+    def writes_per_method(parsed_target)
+      return {} unless @steep_bridge && parsed_target&.source
+
+      @steep_bridge.ivar_write_types_per_method(parsed_target.source, target_class: @target_class)
+    end
+
     def infer_ivar_types(members, attr_types, parsed_target: nil, method_param_types: {}) # rubocop:todo Metrics/MethodLength
       return IvarInference.new({}, {}, {}) unless parsed_target
 
