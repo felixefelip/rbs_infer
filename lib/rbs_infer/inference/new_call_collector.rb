@@ -366,7 +366,8 @@ module RbsInfer::Inference
       # felixefelip/rbs_infer#155: what the block passed HERE returns. Not gated
       # on `node.arguments` like the branches above — `with_token do |t| … end`
       # passes no arguments at all, and the block is the whole point.
-      if !@block_methods.empty? && node.block.is_a?(Prism::BlockNode) && @block_methods.include?(node.name.to_s) && node.receiver.nil? ? @match_bare_calls : block_receiver_matches?(node)
+      if !@block_methods.empty? && node.block.is_a?(Prism::BlockNode) && @block_methods.include?(node.name.to_s) &&
+         (node.receiver.nil? ? @match_bare_calls : block_receiver_matches?(node))
         type = BlockReturnCollector.block_return_type(node.block, @expression_types)
         @method_block_returns[node.name.to_s] << type if type
       end

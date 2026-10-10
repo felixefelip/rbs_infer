@@ -80,7 +80,7 @@ module RbsInfer::Inference
     def visit_module_node(node)
       segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
       with_scope(:module, segment) do
-        if capture_metadata_here? && capture_metadata_here? && !@superclass_name
+        if capture_metadata_here? && !@superclass_name
           @is_module = true
         end
         # A nested module is emitted from the OWNER its members carry, so one
