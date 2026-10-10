@@ -138,6 +138,7 @@ module RbsInfer::Inference
     # e substitui pelo tipo do attr se a última expressão do método
     # for uma chamada implícita a um attr conhecido.
 
+    # rubocop:todo-next Metrics/MethodLength
     def resolve_method_return_types_from_attrs(members, attr_types, method_type_resolver: nil, parsed_target: nil,
                                                method_param_types: {}, ivar_types: {})
       return unless parsed_target
@@ -256,7 +257,6 @@ module RbsInfer::Inference
 
       # Atualizar signatures de métodos que retornam attrs/métodos conhecidos
       members.each do |member|
-        # rubocop:todo-next Metrics/MethodLength
         next unless %i[method class_method].include?(member.kind)
         next unless member.signature.end_with?("-> untyped")
 
