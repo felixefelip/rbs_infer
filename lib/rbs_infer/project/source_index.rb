@@ -51,7 +51,7 @@ module RbsInfer::Project
       )
     /x
 
-    def initialize(source_files)
+    def initialize(source_files) # rubocop:todo Metrics/MethodLength
       @source_files = source_files
       @index = Hash.new { |h, k| h[k] = [] }
       @call_index = Hash.new { |h, k| h[k] = [] }

@@ -129,7 +129,7 @@ module RbsInfer::Inference
       current == target || current.start_with?("#{target}::")
     end
 
-    def collect_element_types_from_call(node)
+    def collect_element_types_from_call(node) # rubocop:todo Metrics/MethodLength
       method_name = node.name
       return unless ELEMENT_ADD_METHODS.include?(method_name) || method_name == :insert || method_name == :concat
 

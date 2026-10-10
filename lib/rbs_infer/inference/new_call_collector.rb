@@ -29,6 +29,7 @@ module RbsInfer::Inference
       names
     end
 
+    # rubocop:todo-next Metrics/MethodLength
     def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, module_self_types:, invoker_self_types:, inherited_forwards:, inherited_initializers:, inherited_supers:,
                    local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
       @target_class = target_class
@@ -299,7 +300,7 @@ module RbsInfer::Inference
       nil
     end
 
-    def visit_call_node(node)
+    def visit_call_node(node) # rubocop:todo Metrics/MethodLength
       # felixefelip/rbs_infer#205. A literal-name `send` IS a call to that method, so read
       # the call it stands for and let every branch below run unchanged — the positional
       # mapping, the keyword args, the splat folding and the established-ivar narrowing all
@@ -878,7 +879,7 @@ module RbsInfer::Inference
     # nesting so generics aren't split: "Caderneta & Caderneta::Validated"
     # → ["Caderneta", "Caderneta::Validated"]. A non-intersection type
     # returns itself. Outer enveloping parens are stripped first.
-    def intersection_components(type_str)
+    def intersection_components(type_str) # rubocop:todo Metrics/MethodLength
       inner = strip_enveloping_parens(type_str.strip)
       components = []
       depth = 0
@@ -917,7 +918,7 @@ module RbsInfer::Inference
       str[1..-2].strip
     end
 
-    def collect_local_assignments(defn)
+    def collect_local_assignments(defn) # rubocop:todo Metrics/MethodLength
       # Resolver tipos dos parâmetros do método via call-sites
       collect_param_types(defn)
 
@@ -1089,7 +1090,7 @@ module RbsInfer::Inference
       @local_var_read_types[[node.location.start_line, node.location.start_character_column]]
     end
 
-    def resolve_value_type(node)
+    def resolve_value_type(node) # rubocop:todo Metrics/MethodLength
       # A hash literal is handled here, ahead of the generic literal inferrer, so its VALUES
       # resolve with what this collector knows — ivars, locals, method returns. The generic
       # inferrer builds the same record shape but sees none of that, so `{ post: @post }`
@@ -1264,7 +1265,7 @@ module RbsInfer::Inference
     end
 
     # Extrair tipos de args de chamadas cross-class: receiver.method(arg1, arg2)
-    def extract_cross_class_args(call_node, param_names)
+    def extract_cross_class_args(call_node, param_names) # rubocop:todo Metrics/MethodLength
       args = {}
       return args unless call_node.arguments
 

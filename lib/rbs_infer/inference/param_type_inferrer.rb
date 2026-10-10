@@ -97,7 +97,7 @@ module RbsInfer::Inference
 
     private
 
-    def infer_from_intra_class(attr_types, parsed_target)
+    def infer_from_intra_class(attr_types, parsed_target) # rubocop:todo Metrics/MethodLength
       return {} unless parsed_target
 
       # Pré-coletar parâmetros posicionais de todos os métodos
@@ -457,7 +457,7 @@ module RbsInfer::Inference
     end
 
     # Detecta métodos que fazem Klass.new(param:, param:) com parâmetros forwarded
-    def detect_forwarding_methods(parse_result, target_class_filter: nil)
+    def detect_forwarding_methods(parse_result, target_class_filter: nil) # rubocop:todo Metrics/MethodLength
       forwarding = {}
       collector = RbsInfer::AST::DefCollector.new
       parse_result.value.accept(collector)
@@ -523,7 +523,7 @@ module RbsInfer::Inference
     end
 
     # Infere tipos dos parâmetros de um método via seus call-sites nos source_files
-    def infer_wrapper_method_param_types(method_name, param_names)
+    def infer_wrapper_method_param_types(method_name, param_names) # rubocop:todo Metrics/MethodLength
       usages = []
 
       @source_files.each do |file|
@@ -595,7 +595,7 @@ module RbsInfer::Inference
     end
 
     # Resolve o tipo de um valor de argumento
-    def resolve_arg_value_type(node, local_var_types, method_return_types)
+    def resolve_arg_value_type(node, local_var_types, method_return_types) # rubocop:todo Metrics/MethodLength
       literal = RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(node,
                                                                         constant_resolver: @constant_arg_resolver, context_class: @constant_namespace)
       return literal if literal
@@ -628,6 +628,7 @@ module RbsInfer::Inference
     end
 
     # Coleta tipos de variáveis locais no escopo do nó
+    # rubocop:todo-next Metrics/MethodLength
     def collect_local_var_types_for_scope(target_node, parse_result, method_return_types, caller_class_name,
                                           source_code: nil)
       local_var_types = {}
@@ -690,6 +691,7 @@ module RbsInfer::Inference
     end
 
     # Resolve tipos de assignments locais
+    # rubocop:todo-next Metrics/MethodLength
     def resolve_local_assignments(all_assignments, local_var_types, method_return_types, caller_class_name)
       all_assignments.each do |assign|
         var_name = assign.name.to_s
@@ -725,6 +727,7 @@ module RbsInfer::Inference
     end
 
     # Resolve tipos de parâmetros de blocos iteradores (collection.each do |item|)
+    # rubocop:todo-next Metrics/MethodLength
     def resolve_block_param_types(enclosing_def, target_node, local_var_types, method_return_types)
       block_calls = RbsInfer::Analyzer.find_all_nodes(enclosing_def) do |n|
         n.is_a?(Prism::CallNode) && n.block.is_a?(Prism::BlockNode) &&

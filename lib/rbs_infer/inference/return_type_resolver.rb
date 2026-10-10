@@ -31,7 +31,7 @@ module RbsInfer::Inference
       @steep_bridge = steep_bridge
     end
 
-    def improve_method_return_types(members, attr_types, parsed_target: nil)
+    def improve_method_return_types(members, attr_types, parsed_target: nil) # rubocop:todo Metrics/MethodLength
       return unless parsed_target
 
       # Métodos com return type untyped — inclui `:method` (instance) e
@@ -451,6 +451,7 @@ module RbsInfer::Inference
       # written in `def self.x` (a distinct `self.@x` slot). Only a singleton
       # attr (`class << self; attr_accessor :x`) covers that one
       # (felixefelip/rbs_infer#86).
+      # rubocop:todo-next Metrics/MethodLength
       attrs = members.select { |m| %i[attr_accessor attr_reader attr_writer].include?(m.kind) }
       # Every non-singleton attr, wherever it is declared: one in a nested module
       # the class includes still types the class's `@x`, so it still means "don't
@@ -743,6 +744,7 @@ module RbsInfer::Inference
     # Stops at any `def`/`class << self`/nested class/module: writes past those
     # boundaries are a method's instance ivars, a singleton class's own ivars,
     # or another class's — none of them THIS class's class-instance variables.
+    # rubocop:todo-next Metrics/MethodLength
     def collect_body_level_ivar_writes(node, known_return_types, type_sets, attr_names, result)
       return unless node.is_a?(Prism::Node)
 
@@ -896,6 +898,7 @@ module RbsInfer::Inference
       CONDITIONAL_TAIL_NODES.none? { |klass| tail.is_a?(klass) }
     end
 
+    # rubocop:todo-next Metrics/MethodLength
     def collect_ivar_writes(node, known_return_types, type_sets, attr_names, param_types: {})
       queue = [node]
       while (current = queue.shift)
@@ -940,7 +943,7 @@ module RbsInfer::Inference
     # or a class body (outside any method). Mirrors
     # `SteepBridge#collect_initialized_ivars` for the Prism path. Used by
     # the definite-initialization rule (felixefelip/rbs_infer#4).
-    def walk_prism_init_targets(node, in_init:, in_class_body:, result:)
+    def walk_prism_init_targets(node, in_init:, in_class_body:, result:) # rubocop:todo Metrics/MethodLength
       return unless node
 
       case node

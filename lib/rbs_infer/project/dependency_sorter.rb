@@ -75,7 +75,7 @@ module RbsInfer::Project
 
     # Phase 1: For each file, extract the class it defines and the constant
     # names it references.
-    def scan_files
+    def scan_files # rubocop:todo Metrics/MethodLength
       @file_class = {}
       @file_refs = {} # file → Set of referenced constant short names
 
@@ -135,7 +135,7 @@ module RbsInfer::Project
 
     # Phase 3: Kahn's algorithm for topological sort, returning
     # files grouped by level (depth from root).
-    def topological_levels
+    def topological_levels # rubocop:todo Metrics/MethodLength
       in_degree = Hash.new(0)
       @files.each { |f| in_degree[f] = 0 }
       @file_deps.each do |_file, deps|

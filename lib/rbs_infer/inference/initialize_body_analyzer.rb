@@ -103,7 +103,7 @@ module RbsInfer::Inference
       end
     end
 
-    def resolve_assignment_value(node)
+    def resolve_assignment_value(node) # rubocop:todo Metrics/MethodLength
       case node
       when Prism::LocalVariableReadNode
         name = node.name.to_s

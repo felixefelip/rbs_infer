@@ -241,7 +241,7 @@ module RbsInfer
               [ClassMethodsModule.new(name: "#{module_name}::ClassMethods")]
             end
 
-            def entries_for(stmt)
+            def entries_for(stmt) # rubocop:todo Metrics/MethodLength
               return [] unless stmt.is_a?(Prism::CallNode) && stmt.receiver.nil? && stmt.arguments
 
               case stmt.name

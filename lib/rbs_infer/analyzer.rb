@@ -208,7 +208,7 @@ module RbsInfer
                                nested_modules: [])
     end
 
-    def build_single_target_rbs
+    def build_single_target_rbs # rubocop:todo Metrics/MethodLength
       # Parsear o arquivo-alvo para extrair todos os membros da classe
       target_members = parse_target_class
       confirm_overloading!(target_members)
@@ -475,7 +475,7 @@ module RbsInfer
     # is `T` and the ivar was inferred as `T?`, widen the param to `T?` —
     # assigning nil is valid (the ivar may hold nil).
 
-    def widen_assigned_param_types(method_param_types, ivar_types)
+    def widen_assigned_param_types(method_param_types, ivar_types) # rubocop:todo Metrics/MethodLength
       return if method_param_types.empty? || ivar_types.empty? || @parsed_target.nil?
 
       collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
@@ -851,7 +851,7 @@ module RbsInfer
 
     # ─── Resolver quais namespaces da classe-alvo são class (não module) ──
 
-    def resolve_namespace_classes(class_name = @target_class)
+    def resolve_namespace_classes(class_name = @target_class) # rubocop:todo Metrics/MethodLength
       parts = class_name.split("::")
       parts.pop
 

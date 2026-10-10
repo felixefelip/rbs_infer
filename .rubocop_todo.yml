@@ -369,43 +369,6 @@ Metrics/CyclomaticComplexity:
     - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
     - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
 
-# Offense count: 67
-# Configuration parameters: CountComments, Max, CountAsOne, AllowedMethods, AllowedPatterns.
-Metrics/MethodLength:
-  Exclude:
-    - "lib/rbs_infer/analyzer.rb"
-    - "lib/rbs_infer/ast/node_type_inferrer.rb"
-    - "lib/rbs_infer/extensions/devise/generator.rb"
-    - "lib/rbs_infer/extensions/enumerize/generator.rb"
-    - "lib/rbs_infer/extensions/rails/active_record/runtime/pseudo_code_builder.rb"
-    - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
-    - "lib/rbs_infer/extensions/rails/custom_generator.rb"
-    - "lib/rbs_infer/extensions/rails/views/template_scanner.rb"
-    - "lib/rbs_infer/inference/attr_type_inferrer.rb"
-    - "lib/rbs_infer/inference/caller_file_analyzer.rb"
-    - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
-    - "lib/rbs_infer/inference/forwarding_super.rb"
-    - "lib/rbs_infer/inference/initialize_body_analyzer.rb"
-    - "lib/rbs_infer/inference/intra_class_call_analyzer.rb"
-    - "lib/rbs_infer/inference/known_return_types_builder.rb"
-    - "lib/rbs_infer/inference/new_call_collector.rb"
-    - "lib/rbs_infer/inference/param_type_inferrer.rb"
-    - "lib/rbs_infer/inference/return_type_resolver.rb"
-    - "lib/rbs_infer/inference/type_merger.rb"
-    - "lib/rbs_infer/project/dependency_sorter.rb"
-    - "lib/rbs_infer/project/mixin_index.rb"
-    - "lib/rbs_infer/project/source_index.rb"
-    - "lib/rbs_infer/project/stored_block_replay_expander/collector.rb"
-    - "lib/rbs_infer/signatures/method_type_resolver.rb"
-    - "lib/rbs_infer/signatures/rbs_builder.rb"
-    - "lib/rbs_infer/signatures/rbs_definition_resolver.rb"
-    - "lib/rbs_infer/signatures/rbs_parser_util.rb"
-    - "lib/rbs_infer/signatures/rbs_type_lookup.rb"
-    - "lib/rbs_infer/signatures/steep_bridge/block_analyzer.rb"
-    - "lib/rbs_infer/signatures/steep_bridge/ivar_write_analyzer.rb"
-    - "lib/rbs_infer/signatures/steep_bridge/return_type_analyzer.rb"
-    - "lib/rbs_infer/signatures/steep_bridge/type_formatter.rb"
-
 # Offense count: 25
 # Configuration parameters: Max, CountKeywordArgs, MaxOptionalParameters.
 Metrics/ParameterLists:

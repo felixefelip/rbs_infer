@@ -24,6 +24,7 @@ module RbsInfer::Signatures
     # members to be found through. Required, because a caller that forgets it
     # silently drops those declarations rather than failing
     # (docs/engineering/required-threaded-deps.md).
+    # rubocop:todo-next Metrics/MethodLength
     def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types:,
               singleton_ivar_types:, module_ivar_types:, markers:, nested_modules:)
       members = reconcile_attrs_with_explicit_defs(members)
@@ -331,6 +332,7 @@ module RbsInfer::Signatures
     # parsed `include X` is emitted separately as a direct member, so the
     # module declaration here gives that include a real target — no
     # dangling mixin (felixefelip/rbs_infer#22).
+    # rubocop:todo-next Metrics/MethodLength
     def emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types, module_ivar_types,
                                    nested_modules)
       by_owner = members.reject { |m| m.owner.nil? }.group_by(&:owner)

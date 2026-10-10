@@ -102,7 +102,7 @@ module RbsInfer::Inference
       end
     end
 
-    def assigned_type(expr_info, init_arg_types, default_types, nil_defaults)
+    def assigned_type(expr_info, init_arg_types, default_types, nil_defaults) # rubocop:todo Metrics/MethodLength
       case expr_info[:kind]
       when :param
         # self.x = x → the type comes from the call sites, or from the default

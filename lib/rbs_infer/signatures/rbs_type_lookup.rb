@@ -118,7 +118,7 @@ module RbsInfer::Signatures
     #
     # Precedence is still the filename-matching file's: `||=` means first writer wins, and
     # phase 1 runs first. Phase 2 only ADDS what no earlier file declared.
-    def lookup_rbs_types(class_name)
+    def lookup_rbs_types(class_name) # rubocop:todo Metrics/MethodLength
       types = {}
       superclass = nil
       all_includes = []
@@ -208,7 +208,7 @@ module RbsInfer::Signatures
     end
 
     # Resolve tipos herdados percorrendo a cadeia de superclasses via RBS
-    def lookup_inherited_types(superclass_name, visited = Set.new)
+    def lookup_inherited_types(superclass_name, visited = Set.new) # rubocop:todo Metrics/MethodLength
       return {} unless superclass_name
 
       normalized = superclass_name.sub(/\A::/, "")
@@ -315,7 +315,7 @@ module RbsInfer::Signatures
     end
 
     # Busca classe em .gem_rbs_collection/
-    def lookup_gem_rbs_collection_class(class_name)
+    def lookup_gem_rbs_collection_class(class_name) # rubocop:todo Metrics/MethodLength
       types = {}
       superclass = nil
       normalized = class_name.sub(/\A::/, "")

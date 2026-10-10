@@ -1,7 +1,7 @@
 class RbsInfer::Signatures::SteepBridge
   class TypeFormatter
     class << self
-      def format_type(steep_type)
+      def format_type(steep_type) # rubocop:todo Metrics/MethodLength
         # `Steep::AST::Types::Logic::*` are internal types Steep uses for
         # predicate-narrowing flow analysis (e.g., the body of
         # `def x?; !@y.nil?; end` types as `Logic::Not`). They have no
@@ -95,7 +95,7 @@ class RbsInfer::Signatures::SteepBridge
         )
       end
 
-      def intrinsic_type_of(node, typing)
+      def intrinsic_type_of(node, typing) # rubocop:todo Metrics/MethodLength
         case node.type
         when :nil
           Steep::AST::Builtin.nil_type

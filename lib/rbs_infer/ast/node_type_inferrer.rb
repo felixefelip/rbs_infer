@@ -21,7 +21,7 @@ module RbsInfer::AST
             "#{self.class} must declare #constant_resolver (a ConstantArgTypeResolver, or nil if it never types value-position constants)"
     end
 
-    def infer_node_type(node, context_class: nil, known_types: {})
+    def infer_node_type(node, context_class: nil, known_types: {}) # rubocop:todo Metrics/MethodLength
       literal = NodeTypeInferrer.infer_literal_node_type(node, constant_resolver: constant_resolver,
                                                                known_types: known_types, context_class: context_class)
       return literal if literal
@@ -163,6 +163,7 @@ module RbsInfer::AST
       end
     end
 
+    # rubocop:todo-next Metrics/MethodLength
     def self.infer_value_type(node, constant_resolver:, known_types: {}, context_class: nil)
       literal = infer_literal_node_type(node, constant_resolver: constant_resolver, known_types: known_types,
                                               context_class: context_class)
