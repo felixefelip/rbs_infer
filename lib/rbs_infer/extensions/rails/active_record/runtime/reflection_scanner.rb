@@ -165,15 +165,29 @@ module RbsInfer
               result = Prism.parse(source)
               return [] unless result.success?
 
-              RbsInfer::Analyzer.find_all_nodes(result.value) do |n|
-                n.is_a?(Prism::ClassNode) || n.is_a?(Prism::ModuleNode)
-              end.filter_map { |node| reflections_for(path, node) }
+              found = []
+              each_scope(result.value, []) { |node, class_name| found << reflections_for(path, node, class_name) }
+              found.compact
             end
 
-            def reflections_for(path, node)
-              class_name = RbsInfer::Analyzer.extract_constant_path(node.constant_path)&.delete_prefix("::")
-              return nil unless class_name
+            # Each class and module with the name it defines from where it is
+            # written: `class Post` inside `module Blog` is `Blog::Post`, not
+            # the app's `Post`.
+            def each_scope(node, namespace, &block)
+              return unless node.is_a?(Prism::Node)
 
+              unless node.is_a?(Prism::ClassNode) || node.is_a?(Prism::ModuleNode)
+                node.compact_child_nodes.each { |child| each_scope(child, namespace, &block) }
+                return
+              end
+
+              path = RbsInfer::Analyzer.extract_constant_path(node.constant_path) or return
+              name = path.start_with?("::") ? path.delete_prefix("::") : [*namespace, path].join("::")
+              yield node, name
+              each_scope(node.body, name.split("::"), &block)
+            end
+
+            def reflections_for(path, node, class_name)
               is_class = node.is_a?(Prism::ClassNode)
               body = is_class ? class_body(node) : concern_body(node, class_name)
 

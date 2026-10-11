@@ -1,0 +1,6 @@
+module Example88
+  class Post
+    def comment_ids: () -> Array[untyped]
+    def category_ids: () -> Array[untyped]
+  end
+end

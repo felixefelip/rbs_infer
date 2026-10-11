@@ -606,6 +606,14 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example87", target_file: "app/models/example87.rb")
   end
 
+  # Rules a module's body writes, read by a macro another class's body calls —
+  # the `has_many` shape (felixefelip/steep#246). The state the module's body
+  # leaves is known to the bodies that run after it, so `comment_ids` and
+  # `category_ids` are defined on `Post`.
+  it "example88 (a class's state read from a later body) matches expected RBS" do
+    assert_snapshot("models/example88", target_file: "app/models/example88.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
