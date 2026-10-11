@@ -13,14 +13,17 @@
 # The order is load-bearing: tried in the order written, "categories" would
 # lose its "s" first and come out "categorie".
 #
-# Today `@singulars` is an array the checker knows only by element type, so
-# the walk has no passes to check one by one. The block is widened before it is
-# entered (felixefelip/steep#214), `singularize` is `String`, and `post_ids` and
-# `category_ids` are never defined. Closing it needs the list's contents
-# carried in the object's state, the object identified by where it was built
-# (felixefelip/steep#216), and the state fixed once the class body has run.
+# The class body is followed statement by statement, as Ruby runs it. The
+# memo builds the one `Rules` the class holds (felixefelip/steep#240); each
+# `singular` call is checked under what that object holds and leaves
+# `@singulars` one rule longer (felixefelip/steep#242); `has_many_like`, and the
+# `singularize` it calls, are checked under the rules as they stand there; and
+# the walk is run one rule at a time, stopping at the first that matches
+# (felixefelip/steep#239). So `post_ids` and `category_ids` are defined, per
+# call site. A caller that runs before the rules are written does not get
+# "post": the answer belongs to the state, not to the argument.
 #
-# Also pinned as it stands: `singular`'s parameters read `untyped`, though both
+# Still pinned as it stands: `singular`'s parameters read `untyped`, though both
 # call sites in the class body pass a `Regexp` and a `String`.
 #
 # Nothing here states a type.

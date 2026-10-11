@@ -119,10 +119,10 @@ call_sites:
   app/models/example84.rb:46:2:
   - source: def replies; :renamed; end
     target: "::Example84"
-  app/models/example85.rb:57:2:
-  -
-  app/models/example85.rb:58:2:
-  -
+  app/models/example85.rb:60:2:
+  - def post_ids; []; end
+  app/models/example85.rb:61:2:
+  - def category_ids; []; end
   app/models/example86.rb:49:2:
   - def published; :stamped; end
   app/models/example87.rb:59:2:
