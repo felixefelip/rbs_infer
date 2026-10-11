@@ -586,6 +586,21 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
     end
   end
 
+  describe "a class named like a model inside a module" do
+    it "is its own class, not a reopen of the model" do
+      in_app(
+        "app/models/user.rb" => "class User < ApplicationRecord\n  has_many :posts\nend\n",
+        "app/models/post.rb" => "class Post < ApplicationRecord\n  belongs_to :user\nend\n",
+        "app/models/blog.rb" => "module Blog\n  class Base\n  end\n\n  class Post < Base\n  end\nend\n"
+      ) do |dir|
+        scanned = RbsInfer::Extensions::Rails::ActiveRecord::Runtime::ReflectionScanner
+                  .scan(path: "app/models/blog.rb", source: File.read(File.join(dir, "app/models/blog.rb")))
+        expect(scanned.map(&:class_name)).to eq(%w[Blog::Base Blog::Post])
+        expect(source_of(described_class.new(app_dir: dir).build, "user_post.rb")).to include("record.user = owner")
+      end
+    end
+  end
+
   describe "proxy reopen (construction flow)" do
     it "captures the owner and reopens with build/new/create/create!" do
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
