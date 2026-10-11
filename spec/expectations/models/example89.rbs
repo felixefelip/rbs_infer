@@ -1,0 +1,22 @@
+module Example89
+  class Base
+    self.@generated_methods: Module?
+
+    def self.generated_methods: () -> Module
+    def self.define_reader: ((:size | :weight) name) -> untyped
+    def self.define_reader_on_self: ((:color | :shape) name) -> untyped
+  end
+end
+
+module Example89
+  class Widget < Base
+  end
+end
+
+module Example89
+  class Use
+    def self.size: () -> untyped
+    def self.weight: () -> untyped
+    def self.color: () -> 1
+  end
+end

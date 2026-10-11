@@ -135,6 +135,10 @@ call_sites:
   - def comment_ids; []; end
   app/models/example88.rb:51:4:
   - def category_ids; []; end
+  app/models/example89.rb:39:4:
+  - def color; 1; end
+  app/models/example89.rb:40:4:
+  - def shape; 1; end
   app/models/post.rb:31:2:
   - source: def user_email(...);  _ = user;  _.email(...);rescue NoMethodError =>
       e;  if _.nil? && e.name == :email;    raise ::ActiveSupport::DelegationError.nil_target(:user_email,
