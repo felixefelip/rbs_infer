@@ -1525,6 +1525,11 @@ postconditions:
   effects:
     may_write:
     - "@singulars"
+- class: Example89::Base
+  method: generated_methods
+  effects:
+    may_write:
+    - "@generated_methods"
 - class: Example9
   method: run_age
   unconditional:

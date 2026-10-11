@@ -614,6 +614,15 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example88", target_file: "app/models/example88.rb")
   end
 
+  # A string `class_eval` on a module the class builds with
+  # `const_set(:GeneratedMethods, Module.new)` and includes — the shape Active
+  # Record defines association readers with (felixefelip/steep#208). The
+  # receiver is typed `Module`, so `size`/`weight` are not placed; the control
+  # evaluated on `self` defines `color`/`shape`.
+  it "example89 (a string eval on a generated, included module) matches expected RBS" do
+    assert_snapshot("models/example89", target_file: "app/models/example89.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
