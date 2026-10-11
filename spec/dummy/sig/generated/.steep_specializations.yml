@@ -50,9 +50,6 @@ methods:
   Example8#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
-  Example84::Reflection#rename:
-    "(:articles)": ":articles"
-    "(:replies)": ":replies"
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -64,3 +61,5 @@ methods:
     ("value"): '"value"'
   Notification::GeneratedStoreAccessors#channel=:
     ("none"): '"none"'
+  SendDispatch#stamp:
+    ("post"): '"stamped: post"'

@@ -4,7 +4,7 @@ class Example85
   def self.rules: () -> Example85::Rules
   def self.singularize: (String word) -> String
   def self.has_many_like: ((:posts | :categories) name) -> untyped
-  def self.summary: () -> Array[untyped]
+  def self.summary: () -> Array[Array[untyped]]
 end
 
 class Example85
