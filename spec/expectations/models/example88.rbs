@@ -1,0 +1,29 @@
+module Example88
+  self.@rules: Rules?
+
+  module Inflector
+    def self.rules: () -> Example88::Rules
+    def self.singularize: (String word) -> String
+  end
+end
+
+module Example88
+  class Rules
+    attr_reader singulars: Array[untyped]
+
+    def initialize: () -> Array[untyped]
+    def singular: (untyped rule, untyped replacement) -> Array[untyped]
+  end
+end
+
+module Example88
+  class Base
+    def self.has_many_like: ((:comments | :categories) name) -> untyped
+  end
+end
+
+module Example88
+  class Post < Base
+    def self.summary: () -> Array[untyped]
+  end
+end

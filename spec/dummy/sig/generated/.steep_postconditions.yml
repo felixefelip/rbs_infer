@@ -1520,6 +1520,11 @@ postconditions:
     may_write:
     - "@name"
     - "@options"
+- class: Example88::Rules
+  method: initialize
+  effects:
+    may_write:
+    - "@singulars"
 - class: Example9
   method: run_age
   unconditional:
