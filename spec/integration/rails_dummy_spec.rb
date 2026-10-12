@@ -616,9 +616,9 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
   # A string `class_eval` on a module the class builds with
   # `const_set(:GeneratedMethods, Module.new)` and includes — the shape Active
-  # Record defines association readers with (felixefelip/steep#208). The
-  # receiver is typed `Module`, so `size`/`weight` are not placed; the control
-  # evaluated on `self` defines `color`/`shape`.
+  # Record defines association readers with (felixefelip/steep#208). The module,
+  # the include and `size`/`weight` are placed per call site, beside the
+  # control's `color`/`shape`.
   it "example89 (a string eval on a generated, included module) matches expected RBS" do
     assert_snapshot("models/example89", target_file: "app/models/example89.rb")
   end

@@ -7,6 +7,14 @@
 # placed in the class that made the call, so the checker reads the bodies.
 
 class Example89::Widget
+  module GeneratedMethods
+  end
+  include ::Example89::Widget::GeneratedMethods
   def color; 1; end
   def shape; 1; end
+end
+
+module Example89::Widget::GeneratedMethods
+  def size; 1; end
+  def weight; 1; end
 end

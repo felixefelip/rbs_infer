@@ -85,23 +85,22 @@ module RbsInfer::Project
       name = path.delete_prefix("::")
       qualified = absolute ? name : (namespace + [name]).join("::")
 
-      expansions_for(node, file, sidecar, qualified).each do |target, bodies|
-        # A chunk that names its own class is reopened as a CLASS whatever this
-        # node is: the target is a class the eval named, not the one being
-        # walked, and nothing here knows how that one was declared. Only the
-        # lexical case can follow the node, and it does.
+      expansions_for(node, file, sidecar, qualified).each do |(target, kind), bodies|
+        # A chunk that names its own class is reopened with the keyword the
+        # sidecar gives it: the target is a class the eval named, not the one
+        # being walked. Only the lexical case can follow the node, and it does.
         reopens << if target == qualified
                      reopen(qualified, bodies.join("\n"), node)
                    else
-                     reopen(target, bodies.join("\n"), nil)
+                     reopen(target, bodies.join("\n"), nil, kind: kind)
                    end
       end
 
       walk(node.body, absolute ? [name] : namespace + [name], file, sidecar, reopens)
     end
 
-    # `{ class name => [body, …] }` for the macro calls in this body, in the
-    # order they are written.
+    # `{ [class name, kind] => [body, …] }` for the macro calls in this body, in
+    # the order they are written.
     #
     # A chunk with no target lands on the class whose body holds the call, which
     # is the only answer version 1 of the sidecar could give and the right one
@@ -123,7 +122,8 @@ module RbsInfer::Project
         next if in_block && chunks.any? { |chunk| chunk.target.nil? }
 
         chunks.each do |chunk|
-          (grouped[chunk.target || qualified] ||= []) << dedent(chunk.source)
+          target = chunk.target || qualified
+          (grouped[[target, target == qualified ? nil : chunk.kind]] ||= []) << dedent(chunk.source)
         end
       end
 
@@ -179,8 +179,8 @@ module RbsInfer::Project
     # `class` for a class and `module` for a module, so the reopen matches what
     # it reopens — a mismatch is a TypeError at load in Ruby, and a wrong owner
     # here.
-    def reopen(name, body, node)
-      keyword = node.nil? || node.is_a?(Prism::ClassNode) ? "class" : "module"
+    def reopen(name, body, node, kind: nil)
+      keyword = node.is_a?(Prism::ModuleNode) || kind == "module" ? "module" : "class"
       indented = body.rstrip.lines.map { |line| line.strip.empty? ? line : "  #{line}" }.join
 
       "#{keyword} #{name}\n#{indented}\nend\n"

@@ -40,14 +40,17 @@ module RbsInfer::Project
     # the consumer to work out — which it can only do for an eval written on the
     # caller's own self. 2 lets a chunk NAME its class, which is what a receiver
     # like `Target.class_eval "…"` knows and the lexical rule cannot
-    # (felixefelip/steep#175). Both are read: a bare string is a chunk with no
-    # target, which is exactly what 1 meant.
-    SCHEMA_VERSIONS = [1, 2].freeze
+    # (felixefelip/steep#175). 3 adds `kind: module` to a target declared as a
+    # module, which a reopen has to spell as one (felixefelip/steep#208). All
+    # are read: a bare string is a chunk with no target, which is exactly what 1
+    # meant.
+    SCHEMA_VERSIONS = [1, 2, 3].freeze
     SCHEMA_VERSION = SCHEMA_VERSIONS.last
 
     # One thing a call site defines. `target` is the class it lands on, or nil
-    # for the class whose body holds the call.
-    Chunk = Struct.new(:source, :target, keyword_init: true)
+    # for the class whose body holds the call, and `kind` is `"module"` when the
+    # target is a module.
+    Chunk = Struct.new(:source, :target, :kind, keyword_init: true)
 
     class << self
       def load(base_dir)
@@ -110,8 +113,12 @@ module RbsInfer::Project
         return nil unless source.is_a?(String)
         return nil unless target.nil? || (target.is_a?(String) && !target.strip.empty?)
 
-        Chunk.new(source: source, target: target&.strip&.delete_prefix("::"))
+        Chunk.new(source: source, target: target&.strip&.delete_prefix("::"), kind: kind_for(entry))
       end
+    end
+
+    def kind_for(entry)
+      "module" if entry["kind"] == "module"
     end
 
     # The sidecar spells its paths relative to the Steep project, and a caller
