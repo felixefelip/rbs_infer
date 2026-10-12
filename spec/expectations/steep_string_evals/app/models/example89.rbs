@@ -1,6 +1,17 @@
 module Example89
   class Widget
+    include ::Example89::Widget::GeneratedMethods
+
     def color: () -> 1
     def shape: () -> 1
+  end
+end
+
+module Example89
+  class Widget
+    module GeneratedMethods
+      def size: () -> 1
+      def weight: () -> 1
+    end
   end
 end

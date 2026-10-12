@@ -7,11 +7,14 @@
 # `define_reader` evaluates its string on that module; `define_reader_on_self`
 # evaluates the same string on `self`, as the control.
 #
-# Today the module is typed `Module`, which names no place to put the code: the
-# two `define_reader` call sites are not recorded in `.steep_string_evals.yml`,
-# `size` and `weight` are never defined, and `generated_methods` reads
-# `() -> Module`. The two `define_reader_on_self` call sites fold and are
-# placed, so `color` and `shape` are defined on `Widget`.
+# What `define_reader :size` does in `Widget` includes what `generated_methods`
+# does there, on the same `self`: `const_set` declares `Widget::GeneratedMethods`
+# and `include` puts it among `Widget`'s ancestors. Once declared, the module is
+# what `generated_methods` answers on `Widget`, so the eval lands in it, and
+# `size`/`weight` are defined there, beside the control's `color`/`shape`.
+#
+# Still pinned as it stands: `generated_methods` reads `() -> Module`, since what
+# it answers on one class is not a fact a declaration can state.
 #
 # Nothing here states a type.
 module Example89

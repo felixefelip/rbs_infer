@@ -238,6 +238,39 @@ RSpec.describe RbsInfer::Project::StringEvalMacroExpander do
       .to eq("class Post\n  def user_updated_at(...); user.updated_at(...); end\nend\n")
   end
 
+  it "reopens a target the sidecar says is a module as a module, writing a repeated chunk once" do
+    source = <<~RUBY
+      class Widget < Base
+        define_reader :size
+        define_reader :weight
+      end
+    RUBY
+    chunks = lambda do |name|
+      [
+        "module GeneratedMethods\nend",
+        "include ::Widget::GeneratedMethods",
+        { "source" => "def #{name}; 1; end", "target" => "::Widget::GeneratedMethods", "kind" => "module" }
+      ]
+    end
+    call_sites = {
+      "app/models/widget.rb:2:2" => chunks.call("size"),
+      "app/models/widget.rb:3:2" => chunks.call("weight")
+    }
+
+    expect(reopens(source, call_sites, path: "app/models/widget.rb")).to eq(<<~RUBY)
+      class Widget
+        module GeneratedMethods
+        end
+        include ::Widget::GeneratedMethods
+      end
+
+      module Widget::GeneratedMethods
+        def size; 1; end
+        def weight; 1; end
+      end
+    RUBY
+  end
+
   it "returns nil for a file it cannot parse" do
     expect(reopens("class Article", { "app/models/article.rb:1:0" => ["def content; end"] })).to be_nil
   end

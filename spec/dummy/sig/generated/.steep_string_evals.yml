@@ -1,5 +1,5 @@
 ---
-version: 2
+version: 3
 call_sites:
   app/models/article.rb:12:2:
   - |2
@@ -42,6 +42,7 @@ call_sites:
   app/models/example60/labels.rb:17:2:
   - source: def human_name(...);  (self.class).human_name(...);end
     target: "::Example60::Labels"
+    kind: module
   app/models/example71.rb:108:4:
   - def from_mixin; :mixed; end
   app/models/example71.rb:50:4:
@@ -135,9 +136,30 @@ call_sites:
   - def comment_ids; []; end
   app/models/example88.rb:51:4:
   - def category_ids; []; end
-  app/models/example89.rb:39:4:
-  - def color; 1; end
+  app/models/example89.rb:31:6:
+  - |-
+    module GeneratedMethods
+    end
+  -
   app/models/example89.rb:40:4:
+  - |-
+    module GeneratedMethods
+    end
+  - include ::Example89::Widget::GeneratedMethods
+  - source: def size; 1; end
+    target: "::Example89::Widget::GeneratedMethods"
+    kind: module
+  app/models/example89.rb:41:4:
+  - |-
+    module GeneratedMethods
+    end
+  - include ::Example89::Widget::GeneratedMethods
+  - source: def weight; 1; end
+    target: "::Example89::Widget::GeneratedMethods"
+    kind: module
+  app/models/example89.rb:42:4:
+  - def color; 1; end
+  app/models/example89.rb:43:4:
   - def shape; 1; end
   app/models/post.rb:31:2:
   - source: def user_email(...);  _ = user;  _.email(...);rescue NoMethodError =>

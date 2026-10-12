@@ -15,8 +15,8 @@ end
 
 module Example89
   class Use
-    def self.size: () -> untyped
-    def self.weight: () -> untyped
+    def self.size: () -> 1
+    def self.weight: () -> 1
     def self.color: () -> 1
   end
 end

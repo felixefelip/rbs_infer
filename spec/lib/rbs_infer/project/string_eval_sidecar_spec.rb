@@ -114,6 +114,24 @@ RSpec.describe RbsInfer::Project::StringEvalSidecar do
     end
   end
 
+  it "reads when the class a chunk names is a module" do
+    with_sidecar(<<~YAML) do |sidecar|
+      ---
+      version: 3
+      call_sites:
+        app/models/widget.rb:2:2:
+        - source: "def size; 1; end"
+          target: "::Widget::GeneratedMethods"
+          kind: module
+        - source: "def elsewhere; end"
+          target: "::Outer::Target"
+    YAML
+      chunks = sidecar.sources_for(path: "app/models/widget.rb", line: 2, column: 2)
+
+      expect(chunks.map(&:kind)).to eq(["module", nil])
+    end
+  end
+
   it "declines a chunk whose target it cannot read" do
     with_sidecar(<<~YAML) do |sidecar|
       ---
