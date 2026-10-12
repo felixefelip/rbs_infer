@@ -123,11 +123,7 @@ module RbsInfer::Project
 
         chunks.each do |chunk|
           target = chunk.target || qualified
-          bodies = (grouped[[target, target == qualified ? nil : chunk.kind]] ||= [])
-          # The same text twice defines the same thing twice: two calls of a
-          # macro that builds its module once both report building it.
-          body = dedent(chunk.source)
-          bodies << body unless bodies.include?(body)
+          (grouped[[target, target == qualified ? nil : chunk.kind]] ||= []) << dedent(chunk.source)
         end
       end
 

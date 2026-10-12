@@ -137,9 +137,7 @@ call_sites:
   app/models/example88.rb:51:4:
   - def category_ids; []; end
   app/models/example89.rb:31:6:
-  - |-
-    module GeneratedMethods
-    end
+  -
   -
   app/models/example89.rb:40:4:
   - |-
@@ -150,10 +148,6 @@ call_sites:
     target: "::Example89::Widget::GeneratedMethods"
     kind: module
   app/models/example89.rb:41:4:
-  - |-
-    module GeneratedMethods
-    end
-  - include ::Example89::Widget::GeneratedMethods
   - source: def weight; 1; end
     target: "::Example89::Widget::GeneratedMethods"
     kind: module
