@@ -543,6 +543,11 @@ app/models/example71.rb:
   - anchor: Writes
     annotations:
     - "# @type instance: singleton(Example71::Mixed)"
+app/models/example90.rb:
+  modules:
+  - anchor: ClassMethods
+    annotations:
+    - "# @type instance: singleton(Example90::Base)"
 app/models/included_hook.rb:
   modules:
   - anchor: Homespun
@@ -738,3 +743,8 @@ sig/generated/steep_string_evals/app/models/example89.rb:
   - anchor: GeneratedMethods
     annotations:
     - "# @type instance: Example89::Widget & Example89::Widget::GeneratedMethods"
+sig/generated/steep_string_evals/app/models/example90.rb:
+  modules:
+  - anchor: GeneratedAssociationMethods
+    annotations:
+    - "# @type instance: Example90::Post & Example90::Post::GeneratedAssociationMethods"
