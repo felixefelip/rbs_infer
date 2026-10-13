@@ -172,6 +172,28 @@ call_sites:
   - source: def tags; 1; end
     target: "::Example90::Post::GeneratedAssociationMethods"
     kind: module
+  app/models/example91.rb:26:8:
+  -
+  -
+  app/models/example91.rb:30:16:
+  -
+  -
+  app/models/example91.rb:49:4:
+  - source: |-
+      module GeneratedAssociationMethods
+      end
+    target: "::Example91::Post"
+  - source: include ::Example91::Post::GeneratedAssociationMethods
+    target: "::Example91::Post"
+  - source: def comments; 1; end
+    target: "::Example91::Post::GeneratedAssociationMethods"
+    kind: module
+  app/models/example91.rb:50:4:
+  -
+  -
+  - source: def tags; 1; end
+    target: "::Example91::Post::GeneratedAssociationMethods"
+    kind: module
   app/models/post.rb:31:2:
   - source: def user_email(...);  _ = user;  _.email(...);rescue NoMethodError =>
       e;  if _.nil? && e.name == :email;    raise ::ActiveSupport::DelegationError.nil_target(:user_email,
