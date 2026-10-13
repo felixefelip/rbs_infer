@@ -1,0 +1,28 @@
+module Example90
+  module Core
+  end
+
+  module Core::ClassMethods
+    def generated_association_methods: () -> untyped
+  end
+end
+
+module Example90
+  class Base
+    extend Core::ClassMethods
+
+    def self.has_reader: ((:comments | :tags) name) -> untyped
+  end
+end
+
+module Example90
+  class Post < Base
+  end
+end
+
+module Example90
+  class Use
+    def self.comments: () -> 1
+    def self.tags: () -> 1
+  end
+end

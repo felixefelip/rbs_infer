@@ -155,6 +155,23 @@ call_sites:
   - def color; 1; end
   app/models/example89.rb:43:4:
   - def shape; 1; end
+  app/models/example90.rb:28:6:
+  -
+  -
+  app/models/example90.rb:33:4:
+  - |-
+    module GeneratedAssociationMethods
+    end
+  - include ::Example90::Post::GeneratedAssociationMethods
+  - source: def comments; 1; end
+    target: "::Example90::Post::GeneratedAssociationMethods"
+    kind: module
+  app/models/example90.rb:34:4:
+  -
+  -
+  - source: def tags; 1; end
+    target: "::Example90::Post::GeneratedAssociationMethods"
+    kind: module
   app/models/post.rb:31:2:
   - source: def user_email(...);  _ = user;  _.email(...);rescue NoMethodError =>
       e;  if _.nil? && e.name == :email;    raise ::ActiveSupport::DelegationError.nil_target(:user_email,
