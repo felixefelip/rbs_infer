@@ -1570,6 +1570,20 @@ postconditions:
   effects:
     may_write:
     - "@singulars"
+- class: Example93::Inflector
+  method: configure
+  when_true:
+    block_truthy: true
+- class: Example93::Inflector
+  method: rule_set
+  effects:
+    may_write:
+    - "@rule_set"
+- class: Example93::Rules
+  method: initialize
+  effects:
+    may_write:
+    - "@singulars"
 - class: Example9::Age
   method: value
   effects:
