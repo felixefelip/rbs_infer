@@ -1600,7 +1600,10 @@ RSpec.describe RbsInfer::Analyzer do
     around do |ex|
       Dir.mktmpdir { |dir| Dir.chdir(dir) { ex.run } }
     end
-    before { RbsInfer::Signatures::RbsTypeLookup.reset! }
+    before do
+      RbsInfer::Signatures::RbsTypeLookup.reset!
+      RbsInfer::Project::Corpus.reset!
+    end
 
     def write(path, content)
       FileUtils.mkdir_p(File.dirname(path))
