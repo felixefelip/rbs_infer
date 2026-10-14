@@ -77,7 +77,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       end
 
       if (splat = splat_name(param_names[index])) && !rest_types.empty?
-        args[splat] = RbsInfer::Inference::TypeMerger.union_types(rest_types.compact)
+        args[splat] = RbsInfer::Inference::TypeUnion.of(rest_types.compact)
       end
       args
     end

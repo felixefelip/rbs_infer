@@ -105,7 +105,7 @@ module RbsInfer::AST
     #
     # EVERY element has to type for the answer to hold, because the elements
     # COEXIST: one `untyped` among them and the element type is unknown, not the
-    # union of the rest. That is the opposite of `TypeMerger.union_types`, which
+    # union of the rest. That is the opposite of `TypeUnion.of`, which
     # prefers a resolved type over `untyped` — right when the members are
     # competing observations of ONE value, wrong when they are different values
     # all present at once. Hence the guard BEFORE the union rather than a
@@ -126,7 +126,7 @@ module RbsInfer::AST
       end
       return "Array[untyped]" if types.any? { |type| type == "untyped" }
 
-      "Array[#{RbsInfer::Inference::TypeMerger.union_types(types)}]"
+      "Array[#{RbsInfer::Inference::TypeUnion.of(types)}]"
     end
 
     def self.infer_hash_type(node, constant_resolver:, known_types: {}, context_class: nil)

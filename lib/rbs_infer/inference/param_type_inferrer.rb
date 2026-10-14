@@ -63,7 +63,7 @@ module RbsInfer::Inference
           existing = inferred[method_name][param_name]
           inferred[method_name][param_name] =
             if existing && existing != "untyped"
-              TypeMerger.union_types([existing, type])
+              TypeUnion.of([existing, type])
             else
               type
             end

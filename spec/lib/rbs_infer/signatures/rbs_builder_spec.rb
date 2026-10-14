@@ -21,9 +21,10 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
   # (docs/engineering/required-threaded-deps.md). This helper supplies the
   # test-only empty defaults so examples state only what they exercise.
   def build_rbs(builder, members, init_arg_types = {}, attr_types = {}, *rest, ivar_types: {},
-                singleton_ivar_types: {}, module_ivar_types: {}, markers: [], nested_modules: [])
+                singleton_ivar_types: {}, module_ivar_types: {}, module_singleton_ivar_types: {}, markers: [], nested_modules: [])
     builder.build(members, init_arg_types, attr_types, *rest, ivar_types: ivar_types,
-                                                              singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types, markers: markers, nested_modules: nested_modules)
+                                                              singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types,
+                                                              module_singleton_ivar_types: module_singleton_ivar_types, markers: markers, nested_modules: nested_modules)
   end
 
   describe "#build com namespaces" do
@@ -399,6 +400,15 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
       result = build_rbs(builder, [owned_method("configure", "Generated")],
                          module_ivar_types: { "Generated" => { "setting" => "Integer?" } })
 
+      expect { RBS::Parser.parse_signature(result) }.not_to raise_error
+    end
+
+    it "declares a module's class-instance variables inside that module" do
+      result = build_rbs(builder, [owned_method("configure", "Generated")],
+                         module_singleton_ivar_types: { "Generated" => { "rules" => "Rules?" } })
+
+      expect(result).to match(/module Generated\n\s+self\.@rules: Rules\?/)
+      expect(result).not_to match(/^  self\.@rules:/)
       expect { RBS::Parser.parse_signature(result) }.not_to raise_error
     end
   end

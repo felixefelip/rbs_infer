@@ -23,9 +23,6 @@
 # call site. A caller that runs before the rules are written does not get
 # "post": the answer belongs to the state, not to the argument.
 #
-# Still pinned as it stands: `singular`'s parameters read `untyped`, though both
-# call sites in the class body pass a `Regexp` and a `String`.
-#
 # Nothing here states a type.
 class Example85
   class Rules

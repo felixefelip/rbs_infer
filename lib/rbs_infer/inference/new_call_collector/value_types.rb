@@ -6,8 +6,9 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
   # when unknown).
   class ValueTypes
     def initialize(scope:, method_return_types:, local_var_read_types:, method_type_resolver:, constant_arg_resolver:,
-                   self_types_by_method:, module_self_types:, invoker_self_types:)
+                   self_types_by_method:, module_self_types:, invoker_self_types:, expression_types:)
       @scope = scope
+      @expression_types = expression_types
       @method_return_types = method_return_types
       @local_var_read_types = local_var_read_types
       @method_type_resolver = method_type_resolver
@@ -64,7 +65,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
           # callback-refined method, resolve against the refined self so a
           # `self.<association>` picks up the marker-decorated reader instead
           # of the base nilable one.
-          refined_self_method_type(node.name.to_s) || @method_return_types[node.name.to_s]
+          refined_self_method_type(node.name.to_s) || @method_return_types[node.name.to_s] || checked_type(node)
         elsif node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
         else
@@ -115,6 +116,10 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
     end
 
     private
+
+    def checked_type(node)
+      @expression_types[RbsInfer::Signatures::SteepBridge.prism_expression_key(node.location)]&.delete_prefix("::")
+    end
 
     def symbol_key(node)
       node.unescaped if node.is_a?(Prism::SymbolNode)

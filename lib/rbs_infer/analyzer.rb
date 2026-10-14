@@ -204,7 +204,7 @@ module RbsInfer
         namespace_classes: resolve_namespace_classes(receiver),
         is_module: false,
         type_params: method_type_resolver.type_param_string(receiver)
-      ).build(members, {}, {}, ivar_types: {}, singleton_ivar_types: {}, module_ivar_types: {}, markers: [],
+      ).build(members, {}, {}, ivar_types: {}, singleton_ivar_types: {}, module_ivar_types: {}, module_singleton_ivar_types: {}, markers: [],
                                nested_modules: [])
     end
 
@@ -334,7 +334,8 @@ module RbsInfer
       rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name,
                                                          namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class))
       rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types,
-                        ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types, markers: markers, nested_modules: @nested_modules)
+                        ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types,
+                        module_singleton_ivar_types: ivar_inference.singleton_by_module, markers: markers, nested_modules: @nested_modules)
     end
 
     # Builds the marker class list to inject into the generated RBS.
@@ -968,6 +969,7 @@ require_relative "inference/rest_param_marker"
 require_relative "inference/method_key"
 require_relative "inference/invoker_self_types"
 require_relative "inference/send_call"
+require_relative "inference/type_union"
 require_relative "inference/type_merger"
 require_relative "inference/ivar_type_set"
 require_relative "inference/return_type_resolver"

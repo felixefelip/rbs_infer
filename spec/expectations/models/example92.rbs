@@ -1,5 +1,7 @@
 module Example92
   module Inflector
+    self.@inflections: Example92::Rules?
+
     def self.inflections: () -> Example92::Rules
     def self.singularize: (String word) -> String
   end
@@ -11,13 +13,13 @@ module Example92
 
     def initialize: () -> Array[untyped]
     def singular: (Regexp rule, ("" | "y") replacement) -> Array[untyped]
-    def apply: (untyped word) -> String
+    def apply: (String word) -> String
   end
 end
 
 module Example92
   class Post
     def self.has_many_like: ((:posts | :categories) name) -> untyped
-    def self.summary: () -> Array[untyped]
+    def self.summary: () -> Array[Array[untyped]]
   end
 end

@@ -118,7 +118,7 @@ module RbsInfer::Inference
       result = Hash.new { |h, k| h[k] = {} }
       @param_type_candidates.each do |method_name, params|
         params.each do |param_name, types|
-          result[method_name][param_name] = TypeMerger.union_types(types)
+          result[method_name][param_name] = TypeUnion.of(types)
         end
       end
       result

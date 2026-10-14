@@ -8,9 +8,6 @@
 # rules as they stand there, and `singularize` under them in turn. So
 # `comment_ids` and `category_ids` are defined, per call site.
 #
-# Still pinned as it stands: `Inflector`'s `self.@rules` is declared on
-# `Example88` (felixefelip/rbs_infer#431).
-#
 # Nothing here states a type.
 module Example88
   class Rules
