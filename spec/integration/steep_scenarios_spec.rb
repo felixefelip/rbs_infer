@@ -276,8 +276,6 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
       end
     RUBY
 
-    # Note the `(Board | nil)?` — rbs_infer doesn't normalize `(T | nil)?` to
-    # `T?`; the inline snapshot pins that faithfully.
     expected_rbs = <<~RBS
       class Board
         attr_reader user_name: "Jo"
@@ -286,7 +284,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
       end
 
       class Column
-        attr_accessor board: (Board | nil)?
+        attr_accessor board: Board?
 
         def initialize: () -> untyped
       end

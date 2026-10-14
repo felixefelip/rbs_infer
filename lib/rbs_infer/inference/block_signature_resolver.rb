@@ -93,7 +93,7 @@ module RbsInfer::Inference
       types = keys.filter_map { |key| expression_types[key] }.uniq
       return nil if types.empty?
 
-      RbsInfer::Inference::TypeMerger.union_types(types)
+      RbsInfer::Inference::TypeUnion.of(types)
     end
 
     # A method that forwards its block cannot say on its own whether one is
@@ -161,7 +161,7 @@ module RbsInfer::Inference
         next if observed.nil? || observed.empty?
 
         member.signature = RbsInfer::Signatures::RbsParserUtil.replace_block_return_type(
-          member.signature, RbsInfer::Inference::TypeMerger.union_types(observed)
+          member.signature, RbsInfer::Inference::TypeUnion.of(observed)
         )
       end
     end

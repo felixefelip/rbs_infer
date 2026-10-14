@@ -6,8 +6,9 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
   # when unknown).
   class ValueTypes
     def initialize(scope:, method_return_types:, local_var_read_types:, method_type_resolver:, constant_arg_resolver:,
-                   self_types_by_method:, module_self_types:, invoker_self_types:)
+                   self_types_by_method:, module_self_types:, invoker_self_types:, expression_types:)
       @scope = scope
+      @expression_types = expression_types
       @method_return_types = method_return_types
       @local_var_read_types = local_var_read_types
       @method_type_resolver = method_type_resolver
@@ -64,7 +65,8 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
           # callback-refined method, resolve against the refined self so a
           # `self.<association>` picks up the marker-decorated reader instead
           # of the base nilable one.
-          refined_self_method_type(node.name.to_s) || @method_return_types[node.name.to_s]
+          refined_self_method_type(node.name.to_s) || @method_return_types[node.name.to_s] ||
+            expression_type(node)&.delete_prefix("::")
         elsif node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
         else
@@ -112,6 +114,19 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       return "Hash[Symbol, untyped]" if pairs.empty?
 
       "{ #{pairs.join(", ")} }"
+    end
+
+    def expression_type(node)
+      # Keyed by the node's whole range: a receiver starts where its call does,
+      # so a start position alone would let `ticket` answer for `ticket.holder`
+      # (felixefelip/rbs_infer#168).
+      type = @expression_types[RbsInfer::Signatures::SteepBridge.prism_expression_key(node.location)]
+
+      # `self` is a real RBS type, but it means "the receiver of THIS method" —
+      # so carrying it into ANOTHER method's parameter says the argument is a
+      # Token when it is a controller. The checker answers `self` for a `self`
+      # node; here that answer is unusable.
+      type unless type == "self"
     end
 
     private

@@ -8,9 +8,8 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
   # `value_types` types one argument node in the collector's current scope; the
   # checker's `expression_types` refine it (`argument_type`).
   class CallArguments
-    def initialize(value_types:, expression_types:, init_positional_params:)
+    def initialize(value_types:, init_positional_params:)
       @value_types = value_types
-      @expression_types = expression_types
       @init_positional_params = init_positional_params
     end
 
@@ -77,7 +76,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       end
 
       if (splat = splat_name(param_names[index])) && !rest_types.empty?
-        args[splat] = RbsInfer::Inference::TypeMerger.union_types(rest_types.compact)
+        args[splat] = RbsInfer::Inference::TypeUnion.of(rest_types.compact)
       end
       args
     end
@@ -115,7 +114,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
     # (felixefelip/rbs_infer#186).
     def argument_type(arg)
       resolved = @value_types.value_type(arg)
-      checker = expression_type(arg)
+      checker = @value_types.expression_type(arg)
 
       return checker if narrowed_from?(resolved, checker)
       return resolved unless resolved.nil? || resolved == "untyped"
@@ -131,19 +130,6 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       return false unless declared && checked
 
       declared == RbsInfer::Signatures::RbsParserUtil.nilablize(checked)
-    end
-
-    def expression_type(node)
-      # Keyed by the node's whole range: a receiver starts where its call does,
-      # so a start position alone would let `ticket` answer for `ticket.holder`
-      # (felixefelip/rbs_infer#168).
-      type = @expression_types[RbsInfer::Signatures::SteepBridge.prism_expression_key(node.location)]
-
-      # `self` is a real RBS type, but it means "the receiver of THIS method" —
-      # so carrying it into ANOTHER method's parameter says the argument is a
-      # Token when it is a controller. The checker answers `self` for a `self`
-      # node; here that answer is unusable.
-      type unless type == "self"
     end
 
     def splat_name(param_name) = RbsInfer::Inference::RestParamMarker.unmark(param_name)

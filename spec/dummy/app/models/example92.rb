@@ -6,17 +6,8 @@
 #   - the rules are walked by `Rules#apply`, inside the object that holds them;
 #   - the macro that asks for a singular is another class's.
 #
-# The checker folds this shape (felixefelip/steep#247): with the signatures it
-# needs, `has_many_like :posts` and `has_many_like :categories` define
-# `post_ids` and `category_ids`. Two of those signatures are still missing here,
-# so both calls record a hole and `summary` reports `post_ids`/`category_ids` as
-# undefined:
-#
-#   - `Rules#apply`'s parameter reads `untyped`: its one call site has the memo
-#     as receiver, `inflections.apply(word)`, and a call site's receiver is not
-#     resolved when it is a call with none of its own (#439);
-#   - `self.@inflections` is not declared: a memo whose value is a call with a
-#     block declares no ivar (#440).
+# The checker folds this shape (felixefelip/steep#247), so `has_many_like :posts`
+# and `has_many_like :categories` define `post_ids` and `category_ids`.
 #
 # Nothing here states a type.
 module Example92

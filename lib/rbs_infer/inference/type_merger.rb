@@ -19,100 +19,6 @@ module RbsInfer::Inference
 
     # ─── Unificar tipos de múltiplos call-sites ────────────────────────
 
-    # Unions a list of types (from distinct call-sites) into a single RBS
-    # string. `untyped` is dropped when at least one resolved type exists.
-    # Pre-existing unions (`(String | Symbol)`) are flattened via the RBS
-    # parser, so combining partial results (intra-class + cross-class) is
-    # associative and idempotent — no nested parens, no duplicate members.
-    def self.union_types(types)
-      flat = types.flat_map { |t| flatten_union(t) }
-
-      # Prefer resolved types over untyped
-      resolved = flat.reject { |t| t == "untyped" }
-      resolved = flat if resolved.empty?
-
-      # Dedup by the canonical form, keeping the original spelling of the first
-      # occurrence — a single type is emitted verbatim, so absolute names
-      # (`::MyApp::Entity`) stay intact.
-      seen = {}
-      unique = []
-      resolved.each do |type|
-        key = canonical_key(type)
-        next if seen[key]
-
-        seen[key] = true
-        unique << type
-      end
-      unique = collapse_subsumed(unique)
-      unique.size == 1 ? unique.first : "(#{unique.join(" | ")})"
-    end
-
-    # Drops members another member already covers — which de-duplication can't
-    # catch, because the two are genuinely different types that happen to nest:
-    # `bool` contains both constants, `true | false` spans all of it, and a
-    # literal is a subtype of its own class, so `String | ""` IS `String`.
-    #
-    # All three shapes come from a call on a nilable receiver, whose two branches
-    # answer with opposite constants: `ActiveRecord::Core#present?: () -> true`
-    # against `NilClass#present?: () -> false`, `Object#present?: () -> bool`
-    # against that same `false`, `Integer#to_s: () -> String` against
-    # `NilClass#to_s: () -> ""`. Left alone they'd emit a union where the plain
-    # type is both shorter and exactly as precise.
-    def self.collapse_subsumed(members)
-      return members if members.size < 2
-
-      keys = members.to_h { |m| [m, canonical_key(m)] }
-
-      if keys.value?("bool")
-        members = members.reject { |m| %w[true false].include?(keys[m]) }
-      elsif keys.value?("true") && keys.value?("false")
-        members = members.map { |m| keys[m] == "true" ? "bool" : m }.reject { |m| keys[m] == "false" }
-      end
-
-      covered = members.map { |m| canonical_key(m) }.to_set
-      members.reject { |m| (cls = literal_class_name(m)) && covered.include?(cls) }
-    end
-
-    # The class a literal type is an instance of ("String" for `""`), or nil
-    # when the type isn't a literal. `true`/`false` are literals too, but they
-    # are handled by the `bool` rule above — TrueClass/FalseClass are not how
-    # RBS spells that union.
-    def self.literal_class_name(type)
-      parsed = RBS::Parser.parse_type(type)
-      return nil unless parsed.is_a?(RBS::Types::Literal)
-
-      case parsed.literal
-      when ::String then "String"
-      when ::Symbol then "Symbol"
-      when ::Integer then "Integer"
-      end
-    rescue RBS::ParsingError, RBS::BaseError
-      nil
-    end
-
-    # The identity of a type for dedup purposes, so two SPELLINGS of one type collapse.
-    # A textual key does not: the same intersection reaches the merger as
-    # `(Post & Post::Validated)` when read back from an RBS declaration and as
-    # `Post & Post::Validated` from Steep, and unioning them yielded
-    # `((Post & Post::Validated) | Post & Post::Validated)`. The RBS parser already
-    # canonicalizes redundant parens; the `::` strip stays because it is a naming
-    # convention (cross-class output omits the prefix), not something the parser touches.
-    def self.canonical_key(type)
-      RBS::Parser.parse_type(type).to_s.sub(/\A::/, "")
-    rescue RBS::ParsingError, RBS::BaseError
-      type.sub(/\A::/, "")
-    end
-
-    # Flattens a type into its set of top-level union members.
-    # `(String | Symbol)` → `["String", "Symbol"]`; non-union types (incl.
-    # generics like `Array[A | B]`) are left intact.
-    def self.flatten_union(type_str)
-      parsed = RBS::Parser.parse_type(type_str)
-      parsed.is_a?(RBS::Types::Union) ? parsed.types.map(&:to_s) : [type_str]
-    rescue RBS::ParsingError, RBS::BaseError
-      [type_str]
-    end
-
     def merge_argument_types(usages)
       all_types = Hash.new { |h, k| h[k] = [] }
 
@@ -127,7 +33,7 @@ module RbsInfer::Inference
         # Cross-class convention: emit names without the absolute `::` prefix,
         # so `::Shared::Cpf` and `Shared::Cpf` collapse into one.
         normalized = types.map { |t| t.sub(/\A::/, "") }
-        merged[arg_name] = self.class.union_types(normalized)
+        merged[arg_name] = TypeUnion.of(normalized)
       end
 
       merged

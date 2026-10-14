@@ -600,7 +600,7 @@ module RbsInfer::Inference
       early = early_return_types(defn)
       return nil if early.nil?
 
-      type = RbsInfer::Inference::TypeMerger.union_types([type, *early]) unless early.empty?
+      type = RbsInfer::Inference::TypeUnion.of([type, *early]) unless early.empty?
 
       # Se há return nil no corpo, tornar nilable
       if has_nil_return?(defn)

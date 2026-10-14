@@ -376,7 +376,7 @@ module RbsInfer::Signatures
         # A block's parameter list is unambiguous — `(String | Integer, Integer)`
         # is two parameters, not one — so a union needs none of the wrapping a
         # RETURN type does (there a bare `|` is an overload separator). Types
-        # arrive pre-wrapped from `TypeMerger.union_types`, and keeping that
+        # arrive pre-wrapped from `TypeUnion.of`, and keeping that
         # would emit `((String | Integer))`.
         filled = types.map { |type| usable_type?(type) ? unparenthesized(type) : "untyped" }
         "#{match[:open]}#{filled.join(", ")}#{match[:close]}"

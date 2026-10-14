@@ -1520,6 +1520,11 @@ postconditions:
     may_write:
     - "@name"
     - "@options"
+- class: Example88::Inflector
+  method: rules
+  effects:
+    may_write:
+    - "@rules"
 - class: Example88::Rules
   method: initialize
   effects:
@@ -1555,6 +1560,11 @@ postconditions:
   effects:
     may_write:
     - "@generated_association_methods"
+- class: Example92::Inflector
+  method: inflections
+  effects:
+    may_write:
+    - "@inflections"
 - class: Example92::Rules
   method: initialize
   effects:

@@ -12,7 +12,7 @@ class Current
     @viewer_name: String?
 
     def user: () -> ((User & User::Validated) | User | nil)
-    def user=: (((User & User::Validated) | User?) value) -> ((User & User::Validated) | User | nil)
+    def user=: (((User & User::Validated) | User)? value) -> ((User & User::Validated) | User | nil)
     def author_name: () -> String?
     def author_name=: (String? value) -> String?
     def account: () -> (Account & Account::Validated)?
@@ -24,7 +24,7 @@ class Current
   include GeneratedAttributeMethods
 
   def self.user: () -> ((User & User::Validated) | User)?
-  def self.user=: (((User & User::Validated) | User?) value) -> ((User & User::Validated) | User | nil)
+  def self.user=: (((User & User::Validated) | User)? value) -> ((User & User::Validated) | User | nil)
   def self.author_name: () -> String?
   def self.author_name=: (String? value) -> String?
   def self.account: () -> (Account & Account::Validated)?
@@ -33,5 +33,5 @@ class Current
   def self.viewer_name=: (String? value) -> String?
   def self.__rbs_infer_instance: () -> Current
   def self.set: (?user: ((User & User::Validated) | User)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: String?) ?{ () -> untyped } -> untyped
-  def self.with: (?user: (User & User::Validated)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: String?) ?{ () -> untyped } -> untyped
+  def self.with: (?user: (User & User::Validated)?, ?author_name: String?, ?account: (Account & Account::Validated)?, ?viewer_name: String?) ?{ () -> String? } -> String?
 end

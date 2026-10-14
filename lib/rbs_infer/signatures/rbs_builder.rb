@@ -26,7 +26,7 @@ module RbsInfer::Signatures
     # (docs/engineering/required-threaded-deps.md).
     # rubocop:todo-next Metrics/MethodLength
     def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types:,
-              singleton_ivar_types:, module_ivar_types:, markers:, nested_modules:)
+              singleton_ivar_types:, module_ivar_types:, module_singleton_ivar_types:, markers:, nested_modules:)
       members = reconcile_attrs_with_explicit_defs(members)
       parts = @target_class.split("::")
       class_name = parts.pop
@@ -72,7 +72,7 @@ module RbsInfer::Signatures
       # (felixefelip/rbs_infer#19, #22).
       nested = []
       emit_parsed_nested_modules(nested, members, member_indent, attr_types, method_param_types, module_ivar_types,
-                                 nested_modules)
+                                 module_singleton_ivar_types, nested_modules)
       add_group(lines, body_start, nested)
 
       # Mixins: extend (e.g. ActiveSupport::Concern) + include (concerns),
@@ -334,7 +334,7 @@ module RbsInfer::Signatures
     # dangling mixin (felixefelip/rbs_infer#22).
     # rubocop:todo-next Metrics/MethodLength
     def emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types, module_ivar_types,
-                                   nested_modules)
+                                   module_singleton_ivar_types, nested_modules)
       by_owner = members.reject { |m| m.owner.nil? }.group_by(&:owner)
       # Declaration order first, so the RBS reads in the order the file does.
       # The union is what admits an EMPTY module: it declares one and carries no
@@ -358,6 +358,10 @@ module RbsInfer::Signatures
         # members. Emitting the lines flat made a nested module the one place in
         # the file where everything touched.
         body_start = lines.size
+
+        add_group(lines, body_start, (module_singleton_ivar_types[owner] || {}).map do |name, type|
+          "#{inner_indent}self.@#{name}: #{type}"
+        end)
 
         # The module's own instance variables. A method here writes them on
         # whatever includes or extends the module, never on the enclosing class,

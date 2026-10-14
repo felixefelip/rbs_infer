@@ -1,7 +1,7 @@
 module Example88
-  self.@rules: Rules?
-
   module Inflector
+    self.@rules: Example88::Rules?
+
     def self.rules: () -> Example88::Rules
     def self.singularize: (String word) -> String
   end
@@ -12,7 +12,7 @@ module Example88
     attr_reader singulars: Array[untyped]
 
     def initialize: () -> Array[untyped]
-    def singular: (untyped rule, untyped replacement) -> Array[untyped]
+    def singular: (Regexp rule, ("" | "y") replacement) -> Array[untyped]
   end
 end
 

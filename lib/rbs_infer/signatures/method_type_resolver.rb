@@ -168,7 +168,7 @@ module RbsInfer::Signatures
       # expressible in what this method returns; keep the base's answer.
       return base_result if self_relative?(base_result) || self_relative?(nil_result)
 
-      RbsInfer::Inference::TypeMerger.union_types([base_result, nil_result])
+      RbsInfer::Inference::TypeUnion.of([base_result, nil_result])
     end
 
     # `NilClass`'s own surface, memoized: every nilable receiver in the project

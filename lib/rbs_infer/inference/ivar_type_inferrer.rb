@@ -15,8 +15,10 @@ module RbsInfer::Inference
     # { ivar name → type }` for the ivars a NESTED module writes, which are the
     # module's and not the class's. The builder emits them inside that module's
     # own block, where the method that writes them will look for them
-    # (felixefelip/rbs_infer#249).
-    IvarInference = Struct.new(:instance, :singleton, :by_module)
+    # (felixefelip/rbs_infer#249). `singleton_by_module` is the same split of
+    # the `self.@x` slot: a nested module's `def self.x` writes the module's
+    # class-instance variable, not the enclosing class's.
+    IvarInference = Struct.new(:instance, :singleton, :by_module, :singleton_by_module)
 
     def initialize(target_class:, method_type_resolver:, constant_resolver:, instance_types:, steep_bridge:)
       @target_class = target_class
@@ -34,7 +36,7 @@ module RbsInfer::Inference
     end
 
     def infer_ivar_types(members, attr_types, parsed_target: nil, method_param_types: {}) # rubocop:todo Metrics/MethodLength
-      return IvarInference.new({}, {}, {}) unless parsed_target
+      return IvarInference.new({}, {}, {}, {}) unless parsed_target
 
       # Attr names already declared → the ivar they back is typed by the attr,
       # so we skip re-emitting it. Split by receiver scope: an instance attr
@@ -52,7 +54,9 @@ module RbsInfer::Inference
       # The same coverage question asked of one module: its own attrs cover its
       # own ivars, and a sibling module's do not.
       module_attr_names = Hash.new { |h, k| h[k] = Set.new }
-      attrs.reject(&:singleton).select(&:owner).each { |a| module_attr_names[a.owner] << a.name }
+      module_singleton_attr_names = Hash.new { |h, k| h[k] = Set.new }
+      attrs.select(&:owner).each { |a| (a.singleton ? module_singleton_attr_names : module_attr_names)[a.owner] << a.name }
+      owners = members.filter_map(&:owner).uniq
 
       ivar_types = {}
 
@@ -68,6 +72,7 @@ module RbsInfer::Inference
       # nilability and the fallback adds the call-sites' nominal types.
       steep_nil_only = Set.new
       module_ivar_types = Hash.new { |h, k| h[k] = {} }
+      module_singleton_ivar_types = Hash.new { |h, k| h[k] = {} }
       # The `self.@x` slot, answered by the same machinery as the instance one.
       # It used to have only the Prism fallback below, which reads literals and
       # little else — so `@block = block` in a `def self.store` produced no
@@ -93,13 +98,20 @@ module RbsInfer::Inference
         # as one — `ivar_write_types` already takes the scope to answer for, and
         # since felixefelip/rbs_infer#249 it answers for that scope EXACTLY
         # rather than sweeping nested modules into their enclosing class.
-        members.filter_map(&:owner).uniq.each do |owner|
+        owners.each do |owner|
           @steep_bridge.ivar_write_types(parsed_target.source, target_class: "#{@target_class}::#{owner}",
                                                                singleton: false)
                        .each do |name, type|
             next if module_attr_names[owner].include?(name) || type == "nil"
 
             module_ivar_types[owner][name] = type
+          end
+          @steep_bridge.ivar_write_types(parsed_target.source, target_class: "#{@target_class}::#{owner}",
+                                                               singleton: true)
+                       .each do |name, type|
+            next if module_singleton_attr_names[owner].include?(name)
+
+            module_singleton_ivar_types[owner][name] = type
           end
         end
       end
@@ -125,6 +137,7 @@ module RbsInfer::Inference
       # than pooling into the class's — the same division the Steep pass above
       # makes by asking per scope (felixefelip/rbs_infer#249).
       module_type_sets = Hash.new { |h, k| h[k] = Hash.new { |i, j| i[j] = IvarTypeSet.new } }
+      module_singleton_type_sets = Hash.new { |h, k| h[k] = Hash.new { |i, j| i[j] = IvarTypeSet.new } }
 
       collector.defs.each do |defn|
         singleton = collector.class_method?(defn)
@@ -137,14 +150,18 @@ module RbsInfer::Inference
           owner: RbsInfer::Inference::MethodKey.qualify_owner(@target_class, owner),
           kind: singleton ? :class_method : :method
         ) || {}
-        target = if singleton
+        target = if singleton && owner
+                   module_singleton_type_sets[owner]
+                 elsif singleton
                    singleton_type_sets
                  elsif owner
                    module_type_sets[owner]
                  else
                    fallback_type_sets
                  end
-        skip_names = if singleton
+        skip_names = if singleton && owner
+                       module_singleton_attr_names[owner]
+                     elsif singleton
                        singleton_attr_names
                      elsif owner
                        module_attr_names[owner]
@@ -161,7 +178,11 @@ module RbsInfer::Inference
       # set of names that are non-nilable (felixefelip/rbs_infer#86).
       class_instance_initialized =
         collect_class_body_ivar_writes(parsed_target.tree, known_return_types, singleton_type_sets,
-                                       singleton_attr_names)
+                                       singleton_attr_names, class_name: @target_class)
+      module_class_instance_initialized = owners.to_h do |owner|
+        [owner, collect_class_body_ivar_writes(parsed_target.tree, known_return_types, module_singleton_type_sets[owner],
+                                               module_singleton_attr_names[owner], class_name: "#{@target_class}::#{owner}")]
+      end
 
       fallback_type_sets.each do |name, type_set|
         next if ivar_types.key?(name)
@@ -201,7 +222,18 @@ module RbsInfer::Inference
         end
       end
 
-      IvarInference.new(ivar_types, singleton_ivar_types, module_ivar_types.reject { |_, ivars| ivars.empty? })
+      module_singleton_type_sets.each do |owner, type_sets|
+        type_sets.each do |name, type_set|
+          next if module_singleton_ivar_types[owner].key?(name)
+
+          force_nilable = !module_class_instance_initialized.fetch(owner, Set.new).include?(name)
+          emitted = type_set.emit(force_nilable: force_nilable)
+          module_singleton_ivar_types[owner][name] = emitted if emitted
+        end
+      end
+
+      IvarInference.new(ivar_types, singleton_ivar_types, module_ivar_types.reject { |_, ivars| ivars.empty? },
+                        module_singleton_ivar_types.reject { |_, ivars| ivars.empty? })
     end
 
     # Returns Set[String] of ivar names (without `@`) definitely initialized in
@@ -227,7 +259,7 @@ module RbsInfer::Inference
       result = Set.new
       method_defs = {}
       bodies = []
-      each_target_class_body(tree, class_path: []) do |body|
+      each_class_body(tree, @target_class, class_path: []) do |body|
         bodies << body
         collect_instance_method_defs(body, method_defs)
       end
@@ -310,25 +342,25 @@ module RbsInfer::Inference
     #
     # Scoped to `@target_class`: a sibling class in the same file must not
     # contribute here (the cross-class pooling of felixefelip/rbs_infer#38).
-    def collect_class_body_ivar_writes(tree, known_return_types, type_sets, attr_names)
+    def collect_class_body_ivar_writes(tree, known_return_types, type_sets, attr_names, class_name:)
       result = Set.new
-      each_target_class_body(tree, class_path: []) do |body|
+      each_class_body(tree, class_name, class_path: []) do |body|
         collect_body_level_ivar_writes(body, known_return_types, type_sets, attr_names, result)
       end
       result
     end
 
     # Yields the body node of every `class`/`module` in the file whose fully
-    # qualified path equals `@target_class` (reopens included).
-    def each_target_class_body(node, class_path:, &blk)
+    # qualified path equals `class_name` (reopens included).
+    def each_class_body(node, class_name, class_path:, &blk)
       return unless node.is_a?(Prism::Node)
 
       if node.is_a?(Prism::ClassNode) || node.is_a?(Prism::ModuleNode)
         inner = class_path + [RbsInfer::Analyzer.extract_constant_path(node.constant_path)]
-        blk.call(node.body) if node.body && inner.join("::") == @target_class
-        each_target_class_body(node.body, class_path: inner, &blk) if node.body
+        blk.call(node.body) if node.body && inner.join("::") == class_name
+        each_class_body(node.body, class_name, class_path: inner, &blk) if node.body
       else
-        node.compact_child_nodes.each { |c| each_target_class_body(c, class_path: class_path, &blk) }
+        node.compact_child_nodes.each { |c| each_class_body(c, class_name, class_path: class_path, &blk) }
       end
     end
 
