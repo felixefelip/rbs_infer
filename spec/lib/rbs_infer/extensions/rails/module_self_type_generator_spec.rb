@@ -102,11 +102,9 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
       table = described_class.new(app_dir: dir).build_table
 
       expect(table["app/models/concerns/notifiable.rb"]["modules"].first["annotations"])
-        .to eq(["# @type self: singleton(Event) & singleton(Notifiable)",
-                "# @type instance: Event & Notifiable"])
+        .to eq(["# @type instance: Event & Notifiable"])
       expect(table["app/models/user/notifiable.rb"]["modules"].first["annotations"])
-        .to eq(["# @type self: singleton(User) & singleton(User::Notifiable)",
-                "# @type instance: User & User::Notifiable"])
+        .to eq(["# @type instance: User & User::Notifiable"])
     end
   end
 
@@ -141,7 +139,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
   end
 
   it "produces a `blocks`-only entry when the file has no self-type annotations" do
-    # A top-level concern (no namespace) gets no `@type self:` entry, but its
+    # A concern nobody includes gets no self-type entry, but its
     # `class_methods do` must still be recorded so Steep can check it.
     in_app(
       "app/models/concerns/greetable.rb" => <<~RUBY

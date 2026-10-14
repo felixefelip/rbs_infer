@@ -22,12 +22,9 @@ Without context, `id` and `title` are `untyped`. Steep needs a hint:
 With that annotation, Steep knows `self` has both `Post` and `Post::Notifiable` as its type,
 and can resolve `id → Integer` and `title → String` from the `Post` RBS definition.
 
-For concerns that also have `class_methods` or `included do` blocks, Steep also needs to know
-the singleton context:
-
-```ruby
-# @type self: singleton(Post) & singleton(Post::Notifiable)
-```
+A concern's `included do` and `class_methods do` blocks need no annotation of their own: they
+are read through the transcribed `active_support/concern.rb`, which replays each block onto the
+class that includes the concern.
 
 ---
 
@@ -114,16 +111,12 @@ respects it at parse time.
 
 | File | Injected annotations |
 |---|---|
-| `app/models/` concern (`extend ActiveSupport::Concern`) | `# @type self: singleton(Post) & singleton(Post::Notifiable)` + `# @type instance: Post & Post::Notifiable` |
-| `app/models/` plain module | `# @type instance: Post & Post::Taggable` only |
-| `app/helpers/` plain module | `# @type instance: ApplicationController & PostsHelper` only |
-| `app/helpers/` concern | `# @type self: singleton(ApplicationController) & singleton(PostsHelper)` + `# @type instance: ApplicationController & PostsHelper` |
+| `app/models/` module or concern | `# @type instance: Post & Post::Notifiable` |
+| `app/helpers/` module | `# @type instance: ApplicationController & PostsHelper` |
 
-**Why no `@type self:` for plain modules?**
-In a concern, `included do` and `class_methods do` blocks run in the singleton context of the
-including class. Steep needs `@type self:` to resolve class-level calls inside them. In a
-plain module, `self` inside instance methods is always the including instance — `@type instance:`
-covers it completely.
+A concern gets the same annotation as any other module. What `ActiveSupport::Concern` adds
+(`included do`, `class_methods do`) is read off its transcribed source, not off a rule that
+recognises the concern.
 
 **Why `ApplicationController` as including class for helpers?**
 Rails helpers are mixed into the view context, but `ApplicationController` is the most useful

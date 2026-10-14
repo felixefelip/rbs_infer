@@ -3,7 +3,9 @@ module Example90
   end
 
   module Core::ClassMethods
-    def generated_association_methods: () -> untyped
+    @generated_association_methods: Module?
+
+    def generated_association_methods: () -> Module
   end
 end
 

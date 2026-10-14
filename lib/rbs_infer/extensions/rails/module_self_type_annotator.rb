@@ -3,15 +3,15 @@ require_relative "../../project/self_type_annotators"
 module RbsInfer
   module Extensions
     module Rails
-      # Computes the `# @type self:` / `# @type instance:` annotation for a
-      # concern/module, to be injected by Steep's generic
-      # `Steep::Source::ModuleSelfTypes.inject` (felixefelip/rbs_infer#52).
+      # Computes the `# @type instance:` annotation for a module, to be
+      # injected by Steep's generic `Steep::Source::ModuleSelfTypes.inject`
+      # (felixefelip/rbs_infer#52).
       #
       # This is the Rails-aware half that used to live inside Steep: it knows
-      # the path conventions (models / helpers / controller concerns), how a
-      # module's hosts are resolved, and concern detection. Unlike the old Steep code
-      # it does NOT camelize the file path to get the module name — the caller
-      # passes the real name from the AST (`Analyzer#target_class`), so acronyms
+      # the path conventions (models / helpers / controller concerns) and how
+      # a module's hosts are resolved. Unlike the old Steep code it does NOT
+      # camelize the file path to get the module name — the caller passes the
+      # real name from the AST (`Analyzer#target_class`), so acronyms
       # (`SQLite`, `OAuth`) keep their declared casing.
       #
       # Registers on `RbsInfer::Project::SelfTypeAnnotators` so the core injects
@@ -31,7 +31,7 @@ module RbsInfer
 
         # @param path [String] source path (e.g. "app/models/search/record/sqlite.rb")
         # @param module_name [String] the real FQN from the AST (e.g. "Search::Record::SQLite")
-        # @param source [String] the file's source (for concern detection)
+        # @param source [String] the file's source (for the per-method narrowing)
         # @param mixin_index [MixinIndex, nil] the `include`s written in the sources
         # @param invoker_self_types [InvokerSelfTypes, nil] narrows the module-wide
         #   answer to the hosts that call each method; omitted, no `defs` is emitted
@@ -46,10 +46,9 @@ module RbsInfer
           return nil if hosts.empty? && extenders.empty?
 
           anchor = module_name.split("::").last
-          is_concern = source.include?("extend ActiveSupport::Concern")
           instance = instance_type(module_name, hosts, extenders)
 
-          entry = { "anchor" => anchor, "annotations" => annotations(instance, module_name, hosts, is_concern) }
+          entry = { "anchor" => anchor, "annotations" => ["# @type instance: #{instance}"] }
           defs = narrowed_defs(anchor, source, instance, invoker_self_types)
           entry["defs"] = defs if defs.any?
           paths = declared_paths(anchor, source, instance, invoker_self_types)
@@ -247,21 +246,6 @@ module RbsInfer
         def instance_type(module_name, hosts, extenders)
           union(hosts.map { |host| "#{host} & #{module_name}" } +
                 extenders.map { |extender| "singleton(#{extender})" })
-        end
-
-        def annotations(instance_type, module_name, hosts, is_concern)
-          instance = "# @type instance: #{instance_type}"
-          return [instance] unless is_concern
-
-          # Only the `include` hosts: the `self` of a module's SINGLETON methods
-          # when the module is extended would be `singleton(singleton(Bar))`,
-          # which RBS cannot spell. A concern is included anyway — that is what
-          # `ActiveSupport::Concern` is for — so this list is empty exactly when
-          # there is nothing to say.
-          selves = hosts.map { |host| "singleton(#{host}) & singleton(#{module_name})" }
-          return [instance] if selves.empty?
-
-          ["# @type self: #{union(selves)}", instance]
         end
 
         # Two hosts mean two possible `self`s — one at a time, which is a UNION.

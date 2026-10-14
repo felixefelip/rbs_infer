@@ -2,30 +2,30 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
-  CONCERN_SRC = "module X\n  extend ActiveSupport::Concern\nend\n"
   PLAIN_SRC = "module X\nend\n"
 
   # A model concern's host comes from the `include` that names it, so these pass
   # an index (felixefelip/rbs_infer#163). The conventions below cover only what
   # no source shows.
+  def module_source(name)
+    "module #{name}\nend\n"
+  end
+
   def index_answering(hosts, extenders: [])
     instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts, extenders_of: extenders)
   end
 
   describe ".entry_for" do
-    it "builds both annotations for a model concern, with the AST-cased name" do
+    it "builds the instance annotation with the AST-cased name" do
       entry = described_class.entry_for(
         path: "app/models/search/record/sqlite.rb",
         module_name: "Search::Record::SQLite",
-        source: CONCERN_SRC,
+        source: module_source("SQLite"),
         mixin_index: index_answering(["Search::Record"])
       )
 
       expect(entry["anchor"]).to eq("SQLite")
-      expect(entry["annotations"]).to eq([
-                                           "# @type self: singleton(Search::Record) & singleton(Search::Record::SQLite)",
-                                           "# @type instance: Search::Record & Search::Record::SQLite"
-                                         ])
+      expect(entry["annotations"]).to eq(["# @type instance: Search::Record & Search::Record::SQLite"])
     end
 
     it "builds only the instance annotation for a plain model module" do
@@ -201,13 +201,10 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       entry = described_class.entry_for(
         path: "app/controllers/concerns/filter_configuration.rb",
         module_name: "FilterConfiguration",
-        source: CONCERN_SRC
+        source: module_source("FilterConfiguration")
       )
 
-      expect(entry["annotations"]).to include(
-        "# @type self: singleton(ApplicationController) & singleton(FilterConfiguration)",
-        "# @type instance: ApplicationController & FilterConfiguration"
-      )
+      expect(entry["annotations"]).to eq(["# @type instance: ApplicationController & FilterConfiguration"])
     end
 
     it "returns nil for a file outside the covered roots" do
@@ -260,20 +257,6 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
 
       expect(entry["annotations"])
         .to eq(["# @type instance: (ERBPostsIndex & PostsHelper) | (ERBPostsShow & PostsHelper)"])
-    end
-
-    it "carries the same hosts into the singleton annotation" do
-      entry = described_class.entry_for(
-        path: "app/models/eventable.rb",
-        module_name: "Eventable",
-        source: CONCERN_SRC,
-        mixin_index: index_answering(%w[Card Comment])
-      )
-
-      expect(entry["annotations"]).to eq([
-                                           "# @type self: (singleton(Card) & singleton(Eventable)) | (singleton(Comment) & singleton(Eventable))",
-                                           "# @type instance: (Card & Eventable) | (Comment & Eventable)"
-                                         ])
     end
 
     # A top-level concern has no namespace to guess from, so before the index it
@@ -329,20 +312,6 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       )
 
       expect(entry["annotations"]).to eq(["# @type instance: singleton(ERBPostsIndex)"])
-    end
-
-    # A concern is INCLUDED — that is what `ActiveSupport::Concern` is for — and
-    # the `self` of a module's singleton methods when the module is extended
-    # would be `singleton(singleton(Bar))`, which RBS cannot spell.
-    it "omits the singleton annotation when only extenders answer" do
-      entry = described_class.entry_for(
-        path: "app/models/foo.rb",
-        module_name: "Foo",
-        source: CONCERN_SRC,
-        mixin_index: index_answering([], extenders: ["Bar"])
-      )
-
-      expect(entry["annotations"]).to eq(["# @type instance: singleton(Bar)"])
     end
 
     it "falls back to the convention when nobody includes the module" do

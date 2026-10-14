@@ -3,7 +3,9 @@ module Example91
   end
 
   module Core::ClassMethods
-    def generated_association_methods: () -> untyped
+    @generated_association_methods: Module?
+
+    def generated_association_methods: () -> Module
   end
 
   module Builder
@@ -15,7 +17,7 @@ module Example91
     class HasReader
       def self.build: (singleton(Base) model, (:comments | :tags) name) -> untyped
       def self.define_accessors: (singleton(Example91::Base) model, (:comments | :tags) name) -> untyped
-      def self.define_readers: (untyped mixin, (:comments | :tags) name) -> untyped
+      def self.define_readers: (Module mixin, (:comments | :tags) name) -> untyped
     end
   end
 end
