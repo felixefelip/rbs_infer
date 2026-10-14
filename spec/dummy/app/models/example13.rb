@@ -329,7 +329,7 @@ class Example13Viewer
   # The nilable source. Mirrors the `find_by` a real app populates a
   # CurrentAttributes slot from — the reason the slot is nilable at all.
   def self.find(name)
-    name.empty? ? nil : Example13Viewer.new(name: name)
+    ENV.key?(name) ? Example13Viewer.new(name: name) : nil
   end
 end
 
