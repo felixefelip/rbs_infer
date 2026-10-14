@@ -74,6 +74,17 @@ RSpec.describe RbsInfer::Project::SelfTypeAnnotators do
       expect(result).to eq(target_source)
     end
 
+    it "asks for every module the detect source declares, the target first" do
+      seen = []
+      described_class.register(fake_annotator(seen: seen, entries: []))
+
+      described_class.apply(
+        target_source, detect_source: "module Foo\n  module Bar\n  end\nend\n", path: "x.rb", module_name: "Foo"
+      )
+
+      expect(seen.map { |call| call[:module_name] }).to eq(%w[Foo Foo::Bar])
+    end
+
     it "is a no-op (and never calls annotators) when module_name is blank" do
       seen = []
       described_class.register(fake_annotator(seen: seen,

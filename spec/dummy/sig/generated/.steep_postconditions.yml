@@ -1540,6 +1540,21 @@ postconditions:
   unconditional:
     consts:
       Example9::Foo.name: '"John Doe"'
+- class: Example90::Base
+  method: has_reader
+  effects:
+    may_write:
+    - "@generated_association_methods"
+- class: Example90::Core::ClassMethods
+  method: generated_association_methods
+  effects:
+    may_write:
+    - "@generated_association_methods"
+- class: Example91::Core::ClassMethods
+  method: generated_association_methods
+  effects:
+    may_write:
+    - "@generated_association_methods"
 - class: Example9::Age
   method: value
   effects:

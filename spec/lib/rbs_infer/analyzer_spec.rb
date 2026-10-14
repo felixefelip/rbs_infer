@@ -1177,6 +1177,43 @@ RSpec.describe RbsInfer::Analyzer do
     end
   end
 
+  describe "#generate_rbs with a nested module another class of the file extends" do
+    around do |ex|
+      Dir.mktmpdir { |dir| Dir.chdir(dir) { ex.run } }
+    end
+    before do
+      RbsInfer::Signatures::RbsTypeLookup.reset!
+      RbsInfer::Signatures::SteepEnvironment.reset!
+    end
+
+    def write(path, content)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, content)
+      path
+    end
+
+    it "reads the module's methods under the self type its extender gives them" do
+      write("sig/outer/outer.rbs", "module Outer\n  module Memo\n  end\n\n  class Host\n    extend Memo\n  end\nend\n")
+      source = write("app/outer.rb", <<~RUBY)
+        module Outer
+          module Memo
+            def built
+              @built ||= const_set(:Built, Module.new)
+            end
+          end
+
+          class Host
+            extend Memo
+          end
+        end
+      RUBY
+
+      rbs = described_class.new(target_class: "Outer", target_file: source, source_files: [source]).generate_rbs
+
+      expect(rbs).to match(/module Memo\n\s+@built: Module\?\n\n\s+def built: \(\) -> Module/)
+    end
+  end
+
   # ─── resolve_namespace_classes ─────────────────────────────────
 
   describe "#resolve_namespace_classes (via generate_rbs)" do

@@ -167,8 +167,6 @@ call_sites:
     target: "::Example90::Post::GeneratedAssociationMethods"
     kind: module
   app/models/example90.rb:34:4:
-  -
-  -
   - source: def tags; 1; end
     target: "::Example90::Post::GeneratedAssociationMethods"
     kind: module
@@ -189,8 +187,6 @@ call_sites:
     target: "::Example91::Post::GeneratedAssociationMethods"
     kind: module
   app/models/example91.rb:50:4:
-  -
-  -
   - source: def tags; 1; end
     target: "::Example91::Post::GeneratedAssociationMethods"
     kind: module

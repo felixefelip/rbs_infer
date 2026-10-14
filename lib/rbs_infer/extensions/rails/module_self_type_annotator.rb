@@ -46,7 +46,7 @@ module RbsInfer
           return nil if hosts.empty? && extenders.empty?
 
           anchor = module_name.split("::").last
-          is_concern = source.include?("extend ActiveSupport::Concern")
+          is_concern = concern?(anchor, source)
           instance = instance_type(module_name, hosts, extenders)
 
           entry = { "anchor" => anchor, "annotations" => annotations(instance, module_name, hosts, is_concern) }
@@ -181,6 +181,20 @@ module RbsInfer
           params.requireds.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:requireds)
           params.optionals.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:optionals)
           names
+        end
+
+        # Whether the module itself extends `ActiveSupport::Concern`: a file
+        # declaring several modules may hold one concern among plain ones.
+        def concern?(anchor, source)
+          return false unless source.include?("ActiveSupport::Concern")
+
+          body = find_scope(Prism.parse(source).value, anchor)&.body
+          body.is_a?(Prism::StatementsNode) && body.body.any? { |stmt| extends_concern?(stmt) }
+        end
+
+        def extends_concern?(stmt)
+          stmt.is_a?(Prism::CallNode) && stmt.name == :extend && stmt.receiver.nil? &&
+            (stmt.arguments&.arguments || []).any? { |arg| arg.slice.delete_prefix("::") == "ActiveSupport::Concern" }
         end
 
         def find_scope(node, anchor)

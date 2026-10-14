@@ -52,8 +52,8 @@ module RbsInfer::Project
     def apply(target_source, detect_source:, path:, module_name:, mixin_index: nil)
       return target_source if module_name.nil? || module_name.empty?
 
-      @annotators.each do |annotator|
-        entries_from(annotator, path: path, module_name: module_name,
+      [module_name, *declared_modules(detect_source)].uniq.product(@annotators).each do |name, annotator|
+        entries_from(annotator, path: path, module_name: name,
                                 source: detect_source, mixin_index: mixin_index).each do |entry|
           target_source = Steep::Source::ModuleSelfTypes.inject(
             target_source, annotations: entry["annotations"], anchor: entry["anchor"]
@@ -61,6 +61,12 @@ module RbsInfer::Project
         end
       end
       target_source
+    end
+
+    # Every module the file declares, as `steep check` annotates them: a nested
+    # one is emitted inside its target's block, never as a target of its own.
+    def declared_modules(source)
+      RbsInfer::Inference::NewCallCollector.collect_defined_class_names(Prism.parse(source).value).sort
     end
 
     INSTANCE_ANNOTATION = /\A#\s*@type\s+instance:\s*(?<type>.+?)\s*\z/

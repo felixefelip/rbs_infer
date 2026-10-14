@@ -2,12 +2,15 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
-  CONCERN_SRC = "module X\n  extend ActiveSupport::Concern\nend\n"
   PLAIN_SRC = "module X\nend\n"
 
   # A model concern's host comes from the `include` that names it, so these pass
   # an index (felixefelip/rbs_infer#163). The conventions below cover only what
   # no source shows.
+  def concern_source(name)
+    "module #{name}\n  extend ActiveSupport::Concern\nend\n"
+  end
+
   def index_answering(hosts, extenders: [])
     instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts, extenders_of: extenders)
   end
@@ -17,7 +20,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       entry = described_class.entry_for(
         path: "app/models/search/record/sqlite.rb",
         module_name: "Search::Record::SQLite",
-        source: CONCERN_SRC,
+        source: concern_source("SQLite"),
         mixin_index: index_answering(["Search::Record"])
       )
 
@@ -26,6 +29,24 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
                                            "# @type self: singleton(Search::Record) & singleton(Search::Record::SQLite)",
                                            "# @type instance: Search::Record & Search::Record::SQLite"
                                          ])
+    end
+
+    it "reads whether the module is a concern off the module, not off the file" do
+      source = <<~RUBY
+        class Post
+          module Taggable
+          end
+
+          module Archivable
+            extend ActiveSupport::Concern
+          end
+        end
+      RUBY
+      entry = described_class.entry_for(
+        path: "app/models/post.rb", module_name: "Post::Taggable", source: source, mixin_index: index_answering(["Post"])
+      )
+
+      expect(entry["annotations"]).to eq(["# @type instance: Post & Post::Taggable"])
     end
 
     it "builds only the instance annotation for a plain model module" do
@@ -201,7 +222,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       entry = described_class.entry_for(
         path: "app/controllers/concerns/filter_configuration.rb",
         module_name: "FilterConfiguration",
-        source: CONCERN_SRC
+        source: concern_source("FilterConfiguration")
       )
 
       expect(entry["annotations"]).to include(
@@ -266,7 +287,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       entry = described_class.entry_for(
         path: "app/models/eventable.rb",
         module_name: "Eventable",
-        source: CONCERN_SRC,
+        source: concern_source("Eventable"),
         mixin_index: index_answering(%w[Card Comment])
       )
 
@@ -338,7 +359,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       entry = described_class.entry_for(
         path: "app/models/foo.rb",
         module_name: "Foo",
-        source: CONCERN_SRC,
+        source: concern_source("Foo"),
         mixin_index: index_answering([], extenders: ["Bar"])
       )
 
