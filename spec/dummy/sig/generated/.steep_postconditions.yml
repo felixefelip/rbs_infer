@@ -1555,6 +1555,11 @@ postconditions:
   effects:
     may_write:
     - "@generated_association_methods"
+- class: Example92::Rules
+  method: initialize
+  effects:
+    may_write:
+    - "@singulars"
 - class: Example9::Age
   method: value
   effects:

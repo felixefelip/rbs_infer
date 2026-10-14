@@ -190,6 +190,10 @@ call_sites:
   - source: def tags; 1; end
     target: "::Example91::Post::GeneratedAssociationMethods"
     kind: module
+  app/models/example92.rb:57:4:
+  -
+  app/models/example92.rb:58:4:
+  -
   app/models/post.rb:31:2:
   - source: def user_email(...);  _ = user;  _.email(...);rescue NoMethodError =>
       e;  if _.nil? && e.name == :email;    raise ::ActiveSupport::DelegationError.nil_target(:user_email,

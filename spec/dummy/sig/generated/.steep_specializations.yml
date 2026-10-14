@@ -50,6 +50,9 @@ methods:
   Example8#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
+  Example92::Rules#apply:
+    ("categories"): "::String"
+    ("posts"): "::String"
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
