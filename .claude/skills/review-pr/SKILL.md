@@ -6,17 +6,9 @@ description: Review a pull request in one of the three fork repos (rbs_infer, st
 # Review a PR for hacks and missed reuse
 
 The argument is a PR URL or `<repo>#<number>`. The repos are `felixefelip/rbs_infer`,
-`felixefelip/steep` (checkout at `../steep`), `felixefelip/rbs_rails` (`../rbs_rails`).
-Always pass `--repo felixefelip/<repo>` to `gh`.
+`felixefelip/steep` (checkout at `../steep`) and `felixefelip/rbs_rails` (`../rbs_rails`).
 
-## 1. Read the change
-
-```bash
-gh pr view <n> --repo felixefelip/<repo> --json title,body,headRefName,baseRefName,files,commits
-gh pr diff <n> --repo felixefelip/<repo>
-```
-
-## 2. Look for what already exists
+## 1. Look for what already exists
 
 For every new module, walker, constant, table or special case, search the target repo for
 the infrastructure it might duplicate before judging it:
@@ -42,35 +34,16 @@ Hacks to flag:
 - comments that justify the change instead of explaining hard code
   (`docs/engineering/comments-only-when-code-is-hard.md`).
 
-## 3. Confirm with a probe
+## 2. Confirm with a probe
 
-A suspected gap is only a finding once it has been reproduced. Check out the PR head in a
-worktree in the scratchpad (never switch `../steep`'s own checkout; the dummy bundle follows
-it), write a throwaway test next to the PR's test, run only that file, then remove the
-worktree:
+A suspected gap is only a finding once it has been reproduced: write a throwaway test next
+to the PR's test and run only that file. Don't run the steep full suite or `steep check` on
+Fizzy.
 
-```bash
-git -C ../steep fetch -q origin <head-branch>
-git -C ../steep worktree add -q <scratchpad>/pr<n> FETCH_HEAD
-# ... bundle exec ruby -Ilib -Itest test/<probe>_test.rb -n test_probe
-git -C ../steep worktree remove --force <scratchpad>/pr<n>
-```
-
-Don't run the steep full suite or `steep check` on Fizzy.
-
-## 4. Report
+## 3. Report
 
 First answer in the chat, in Portuguese. For each finding, give the file:line, the existing
 resource it should reuse, and the probe result if there is one. End with a recommendation.
 
-When asked to post it, send one review via the API, in English, with inline comments on the
-diff lines and a summary body. Use `"event": "COMMENT"`, because GitHub rejects
-`REQUEST_CHANGES` on your own PR:
-
-```bash
-gh api -X POST repos/felixefelip/<repo>/pulls/<n>/reviews --input review.json --jq .html_url
-# review.json: { "commit_id", "event": "COMMENT", "body", "comments": [{ "path", "line", "side": "RIGHT", "body" }] }
-```
-
-`commit_id` must be the full 40-char SHA of the PR head (`git rev-parse`), or the API answers 422.
-Inline `line`s must be lines of the diff at that commit (`git show <sha>:<path> | grep -n`).
+When asked to post it, post one review in English, with inline comments on the diff lines
+and a summary body, as a plain comment: GitHub rejects requesting changes on your own PR.
