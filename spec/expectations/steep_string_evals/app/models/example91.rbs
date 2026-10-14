@@ -1,0 +1,14 @@
+module Example91
+  class Post
+    include ::Example91::Post::GeneratedAssociationMethods
+  end
+end
+
+module Example91
+  class Post
+    module GeneratedAssociationMethods
+      def comments: () -> 1
+      def tags: () -> 1
+    end
+  end
+end

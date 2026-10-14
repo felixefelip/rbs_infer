@@ -1,0 +1,41 @@
+module Example91
+  module Core
+  end
+
+  module Core::ClassMethods
+    def generated_association_methods: () -> untyped
+  end
+
+  module Builder
+  end
+end
+
+module Example91
+  module Builder
+    class HasReader
+      def self.build: (singleton(Base) model, (:comments | :tags) name) -> untyped
+      def self.define_accessors: (singleton(Example91::Base) model, (:comments | :tags) name) -> untyped
+      def self.define_readers: (untyped mixin, (:comments | :tags) name) -> untyped
+    end
+  end
+end
+
+module Example91
+  class Base
+    extend Core::ClassMethods
+
+    def self.has_reader: ((:comments | :tags) name) -> untyped
+  end
+end
+
+module Example91
+  class Post < Base
+  end
+end
+
+module Example91
+  class Use
+    def self.comments: () -> 1
+    def self.tags: () -> 1
+  end
+end
