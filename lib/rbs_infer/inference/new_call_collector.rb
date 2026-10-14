@@ -37,7 +37,7 @@ module RbsInfer::Inference
                               method_type_resolver: method_type_resolver, constant_arg_resolver: constant_arg_resolver,
                               self_types_by_method: self_types_by_method, module_self_types: module_self_types, invoker_self_types: invoker_self_types,
                               expression_types: expression_types)
-      @arguments = CallArguments.new(value_types: @types, expression_types: expression_types, init_positional_params: init_positional_params)
+      @arguments = CallArguments.new(value_types: @types, init_positional_params: init_positional_params)
       @local_var_types_by_method = local_var_types_by_method
       @method_scoped_var_names = local_var_types_by_method.each_value.flat_map(&:keys).to_set
       @assigned_types = AssignedTypes.new(method_return_types: method_return_types, method_type_resolver: method_type_resolver, caller_class_name: caller_class_name)
