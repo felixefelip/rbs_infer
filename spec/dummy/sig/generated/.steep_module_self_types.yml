@@ -3,7 +3,6 @@ app/controllers/concerns/filter_configuration.rb:
   modules:
   - anchor: FilterConfiguration
     annotations:
-    - "# @type self: singleton(PostsController) & singleton(FilterConfiguration)"
     - "# @type instance: PostsController & FilterConfiguration"
 app/helpers/application_helper.rb:
   modules:
@@ -20,7 +19,6 @@ app/models/concerns/commentable.rb:
   modules:
   - anchor: Commentable
     annotations:
-    - "# @type self: singleton(Post) & singleton(Commentable)"
     - "# @type instance: Post & Commentable"
   blocks:
   - call: included
@@ -30,7 +28,6 @@ app/models/concerns/test/filtrable.rb:
   modules:
   - anchor: Filtrable
     annotations:
-    - "# @type self: singleton(Post) & singleton(Test::Filtrable)"
     - "# @type instance: Post & Test::Filtrable"
   blocks:
   - call: included
@@ -45,7 +42,6 @@ app/models/eventable.rb:
   modules:
   - anchor: Eventable
     annotations:
-    - "# @type self: singleton(Widget) & singleton(Eventable)"
     - "# @type instance: Widget & Eventable"
 app/models/example13.rb:
   modules:
@@ -452,7 +448,6 @@ app/models/example57/fields.rb:
   modules:
   - anchor: Fields
     annotations:
-    - "# @type self: singleton(Example57) & singleton(Example57::Fields)"
     - "# @type instance: Example57 & Example57::Fields"
   blocks:
   - call: included
@@ -462,7 +457,6 @@ app/models/example57_windowed.rb:
   modules:
   - anchor: Example57Windowed
     annotations:
-    - "# @type self: singleton(Example57::Inner) & singleton(Example57Windowed)"
     - "# @type instance: Example57::Inner & Example57Windowed"
   blocks:
   - call: included
@@ -472,7 +466,6 @@ app/models/example58/defaults.rb:
   modules:
   - anchor: Defaults
     annotations:
-    - "# @type self: singleton(Example58) & singleton(Example58::Defaults)"
     - "# @type instance: Example58 & Example58::Defaults"
   blocks:
   - call: class_methods
@@ -483,7 +476,6 @@ app/models/example59/naming.rb:
   modules:
   - anchor: Naming
     annotations:
-    - "# @type self: singleton(Example59) & singleton(Example59::Naming)"
     - "# @type instance: Example59 & Example59::Naming"
   blocks:
   - call: class_methods
@@ -494,7 +486,6 @@ app/models/example60/labels.rb:
   modules:
   - anchor: Labels
     annotations:
-    - "# @type self: singleton(Example60) & singleton(Example60::Labels)"
     - "# @type instance: Example60 & Example60::Labels"
   blocks:
   - call: class_methods
@@ -527,7 +518,6 @@ app/models/example66_override.rb:
   modules:
   - anchor: Example66Override
     annotations:
-    - "# @type self: singleton(Example66) & singleton(Example66Override)"
     - "# @type instance: Example66 & Example66Override"
   blocks:
   - call: included
@@ -563,7 +553,6 @@ app/models/included_hook.rb:
     - "# @type instance: IncludedHook & IncludedHook::Hookable"
   - anchor: Sugared
     annotations:
-    - "# @type self: singleton(IncludedHook) & singleton(IncludedHook::Sugared)"
     - "# @type instance: IncludedHook & IncludedHook::Sugared"
   blocks:
   - call: class_eval
@@ -603,19 +592,16 @@ app/models/post/commentable.rb:
   modules:
   - anchor: Commentable
     annotations:
-    - "# @type self: singleton(Post) & singleton(Post::Commentable)"
     - "# @type instance: Post & Post::Commentable"
 app/models/post/exportable.rb:
   modules:
   - anchor: Exportable
     annotations:
-    - "# @type self: singleton(Post) & singleton(Post::Exportable)"
     - "# @type instance: Post & Post::Exportable"
 app/models/post/notifiable.rb:
   modules:
   - anchor: Notifiable
     annotations:
-    - "# @type self: singleton(Post) & singleton(Post::Notifiable)"
     - "# @type instance: Post & Post::Notifiable"
   blocks:
   - call: included
@@ -625,7 +611,6 @@ app/models/post/taggable.rb:
   modules:
   - anchor: Taggable
     annotations:
-    - "# @type self: singleton(Post) & singleton(Post::Taggable)"
     - "# @type instance: Post & Post::Taggable"
   blocks:
   - call: included
@@ -639,13 +624,11 @@ app/models/user/displayable.rb:
   modules:
   - anchor: Displayable
     annotations:
-    - "# @type self: singleton(User) & singleton(User::Displayable)"
     - "# @type instance: User & User::Displayable"
 app/models/user/notifiable.rb:
   modules:
   - anchor: Notifiable
     annotations:
-    - "# @type self: singleton(User) & singleton(User::Notifiable)"
     - "# @type instance: User & User::Notifiable"
   blocks:
   - call: included
@@ -655,7 +638,6 @@ app/models/user/recoverable.rb:
   modules:
   - anchor: Recoverable
     annotations:
-    - "# @type self: singleton(User) & singleton(User::Recoverable)"
     - "# @type instance: User & User::Recoverable"
   blocks:
   - call: included
@@ -665,7 +647,6 @@ app/models/vault/totaled.rb:
   modules:
   - anchor: Totaled
     annotations:
-    - "# @type self: singleton(Example64) & singleton(Vault::Totaled)"
     - "# @type instance: Example64 & Vault::Totaled"
   blocks:
   - call: class_methods
@@ -676,19 +657,16 @@ app/models/widget/closeable.rb:
   modules:
   - anchor: Closeable
     annotations:
-    - "# @type self: singleton(Widget) & singleton(Widget::Closeable)"
     - "# @type instance: Widget & Widget::Closeable"
 app/models/widget/publishable.rb:
   modules:
   - anchor: Publishable
     annotations:
-    - "# @type self: singleton(Widget) & singleton(Widget::Publishable)"
     - "# @type instance: Widget & Widget::Publishable"
 sig/generated/steep_actiontext_runtime/attribute.rb:
   modules:
   - anchor: Attribute
     annotations:
-    - "# @type self: singleton(ActiveRecord::Base) & singleton(ActionText::Attribute)"
     - "# @type instance: ActiveRecord::Base & ActionText::Attribute"
   blocks:
   - call: class_methods
