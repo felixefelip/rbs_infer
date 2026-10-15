@@ -682,6 +682,31 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     end
   end
 
+  describe "a receiver typed by its read (felixefelip/steep#263)" do
+    it "resolves a block parameter outside any def from the type Steep gave its read" do
+      source = <<~'RUBY'
+        module Inflector
+          configure do |inflect|
+            inflect.singular(/s\z/, "")
+          end
+        end
+      RUBY
+      result = Prism.parse(source)
+      visitor = build_collector(
+        target_class: "Rules",
+        method_return_types: {},
+        local_var_types: {},
+        local_var_read_types: { read_position(result.value, "inflect") => "Rules" },
+        constant_arg_resolver: null_constant_resolver,
+        target_methods: { "singular" => %w[rule replacement] },
+        defined_class_names: described_class.collect_defined_class_names(result.value)
+      )
+      result.value.accept(visitor)
+
+      expect(visitor.method_call_usages["singular"]).to eq([{ "rule" => "Regexp", "replacement" => '""' }])
+    end
+  end
+
   describe "same-simple-name classes are not conflated (cross-class leak)" do
     def collect_method_usages(source, target_class:, target_methods:, local_var_types: {})
       result = Prism.parse(source)
