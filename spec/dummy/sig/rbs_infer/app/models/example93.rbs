@@ -1,0 +1,26 @@
+module Example93
+  module Inflector
+    self.@rule_set: Example93::Rules?
+
+    def self.rule_set: () -> Example93::Rules
+    def self.configure: () ?{ (Example93::Rules) -> Array[untyped] } -> Array[untyped]?
+    def self.singularize: (String word) -> String
+  end
+end
+
+module Example93
+  class Rules
+    attr_reader singulars: Array[untyped]
+
+    def initialize: () -> Array[untyped]
+    def singular: (untyped rule, untyped replacement) -> Array[untyped]
+    def apply: (String word) -> String
+  end
+end
+
+module Example93
+  class Post
+    def self.has_many_like: ((:posts | :categories) name) -> untyped
+    def self.summary: () -> Array[Array[untyped]]
+  end
+end

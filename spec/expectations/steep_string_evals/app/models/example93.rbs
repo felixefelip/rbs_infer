@@ -1,0 +1,6 @@
+module Example93
+  class Post
+    def post_ids: () -> Array[untyped]
+    def category_ids: () -> Array[untyped]
+  end
+end

@@ -194,6 +194,10 @@ call_sites:
   - def post_ids; []; end
   app/models/example92.rb:49:4:
   - def category_ids; []; end
+  app/models/example93.rb:58:4:
+  - def post_ids; []; end
+  app/models/example93.rb:59:4:
+  - def category_ids; []; end
   app/models/post.rb:31:2:
   - source: def user_email(...);  _ = user;  _.email(...);rescue NoMethodError =>
       e;  if _.nil? && e.name == :email;    raise ::ActiveSupport::DelegationError.nil_target(:user_email,
