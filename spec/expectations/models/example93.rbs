@@ -13,7 +13,7 @@ module Example93
     attr_reader singulars: Array[untyped]
 
     def initialize: () -> Array[untyped]
-    def singular: (untyped rule, untyped replacement) -> Array[untyped]
+    def singular: (Regexp rule, ("" | "y") replacement) -> Array[untyped]
     def apply: (String word) -> String
   end
 end

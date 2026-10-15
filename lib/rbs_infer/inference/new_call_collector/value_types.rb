@@ -56,7 +56,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
     def receiver_type(node)
       case node
       when Prism::LocalVariableReadNode
-        @scope.local_var_types[node.name.to_s]
+        lvar_read_type(node) || @scope.local_var_types[node.name.to_s]
       when Prism::InstanceVariableReadNode
         ivar_type(node)
       when Prism::CallNode
