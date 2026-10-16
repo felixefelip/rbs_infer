@@ -847,7 +847,8 @@ module RbsInfer
 
     def steep_bridge
       @steep_bridge ||= RbsInfer::Signatures::SteepBridge.new(
-        literal_method_registry: @corpus.literal_method_registry
+        literal_method_registry: @corpus.literal_method_registry,
+        constructor_bindings: @corpus.constructor_bindings
       )
     end
 
@@ -985,6 +986,7 @@ require_relative "signatures/steep_environment"
 require_relative "signatures/steep_bridge"
 require_relative "signatures/steep_bridge/lexical_scope"
 require_relative "signatures/steep_bridge/type_formatter"
+require_relative "signatures/steep_bridge/hash_element_writes"
 require_relative "signatures/steep_bridge/ivar_write_analyzer"
 require_relative "signatures/steep_bridge/block_analyzer"
 require_relative "signatures/steep_bridge/forwarding_analyzer"

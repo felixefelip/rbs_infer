@@ -95,5 +95,11 @@ module RbsInfer::Project
     def literal_method_registry
       @literal_method_registry ||= Steep::Project::LiteralMethodRegistry.from_paths(@source_files)
     end
+
+    # Where the project uses each class memo, for what Steep proves about the
+    # hash a memo holds (`Steep::HashMutation.confined?`).
+    def constructor_bindings
+      @constructor_bindings ||= Steep::Project::ConstructorBindingRegistry.from_paths(@source_files)
+    end
   end
 end

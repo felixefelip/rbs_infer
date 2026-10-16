@@ -2,7 +2,10 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app do
-  let(:bridge) { RbsInfer::Signatures::SteepBridge.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new) }
+  let(:bridge) do
+    RbsInfer::Signatures::SteepBridge.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new,
+                                          constructor_bindings: Steep::Project::ConstructorBindingRegistry.new)
+  end
 
   describe "#ivar_write_types" do
     # Cobertura da regra introduzida em felixefelip/rbs_infer#4:
@@ -230,6 +233,100 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
       # Only `nil` was observed; nilable, no concrete type. The emitter
       # returns "nil" which is a valid RBS type.
       expect(result["x"]).to eq("nil")
+    end
+  end
+
+  describe "#ivar_write_types of a hash memo" do
+    def hash_types(code, *elsewhere, singleton: true)
+      bindings = Steep::Project::ConstructorBindingRegistry.new
+      [code, *elsewhere].each_with_index { |source, index| bindings.ingest_source(source, path_name: "#{index}.rb") }
+      bridge = RbsInfer::Signatures::SteepBridge.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new,
+                                                     constructor_bindings: bindings)
+      bridge.ivar_write_types(code, target_class: "Registry", singleton: singleton)
+    end
+
+    def registry(stores)
+      <<~RUBY
+        class Registry
+          def self.entries
+            @entries ||= {}
+          end
+
+          def self.add
+            entries[:a] = 1
+            #{stores}
+          end
+        end
+      RUBY
+    end
+
+    it "types the elements of an empty hash by the stores made through its memo" do
+      expect(hash_types(registry('entries.store("b", 2.0)'))["entries"])
+        .to eq("Hash[Symbol | String, Integer | Float]?")
+    end
+
+    it "types them by a store made on the ivar itself" do
+      expect(hash_types(registry("@entries[:b] = 2.0"))["entries"]).to eq("Hash[Symbol, Integer | Float]?")
+    end
+
+    it "leaves an empty hash nothing stores into untyped" do
+      code = <<~RUBY
+        class Registry
+          def initialize
+            @entries = {}
+          end
+        end
+      RUBY
+
+      expect(hash_types(code, singleton: false)["entries"]).to eq("Hash[untyped, untyped]")
+    end
+
+    it "leaves a hash the project does not track untyped" do
+      code = <<~RUBY
+        class Registry
+          def initialize
+            @entries = {}
+          end
+
+          def add
+            @entries[:a] = 1
+          end
+        end
+      RUBY
+
+      expect(hash_types(code, singleton: false)["entries"]).to eq("Hash[untyped, untyped]")
+    end
+
+    [
+      'entries[:b] ||= "s"',
+      "entries[:b] += 2.0",
+      '@entries[:b] ||= "s"',
+      'entries.merge!(b: "s")',
+      'h = entries; h[:b] = "s"'
+    ].each do |store|
+      it "leaves the hash untyped past `#{store}`" do
+        expect(hash_types(registry(store))["entries"]).to eq("Hash[untyped, untyped]?")
+      end
+    end
+
+    it "leaves the hash untyped past a store a subclass makes in its own file" do
+      subclass = <<~RUBY
+        class Sub < Registry
+          entries[:c] = "s"
+        end
+      RUBY
+
+      expect(hash_types(registry(""), subclass)["entries"]).to eq("Hash[untyped, untyped]?")
+    end
+
+    it "leaves the hash untyped past a store another class makes" do
+      other = <<~RUBY
+        class Loader
+          def self.load = Registry.entries[:d] = 2.0
+        end
+      RUBY
+
+      expect(hash_types(registry(""), other)["entries"]).to eq("Hash[untyped, untyped]?")
     end
   end
 
