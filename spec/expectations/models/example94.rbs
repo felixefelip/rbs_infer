@@ -1,0 +1,43 @@
+module Example94
+  class Wheel
+  end
+end
+
+module Example94
+  class Seat
+  end
+end
+
+module Example94
+  class Bench
+  end
+end
+
+module Example94
+  class Door
+  end
+end
+
+module Example94
+  class Base
+    self.@registry: Hash[untyped, untyped]?
+
+    def self.registry: () -> Hash[untyped, untyped]
+    def self.register: ((:wheel | :seat | :door) name, (Wheel | Seat | Bench | Door) value) -> (Wheel | Seat | Bench | Door)
+    def self.lookup: (untyped name) -> untyped
+  end
+end
+
+module Example94
+  class Car < Base
+    def wheel: () -> untyped
+    def seat: () -> untyped
+  end
+end
+
+module Example94
+  class Truck < Base
+    def seat: () -> untyped
+    def door: () -> untyped
+  end
+end
