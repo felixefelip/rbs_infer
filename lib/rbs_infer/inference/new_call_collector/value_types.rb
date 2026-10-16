@@ -70,7 +70,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
         elsif node.name == :new && node.receiver
           RbsInfer::Analyzer.extract_constant_path(node.receiver)
         else
-          method_chain_type(node)
+          expression_type(node)&.delete_prefix("::") || method_chain_type(node)
         end
       when Prism::SelfNode
         # self → tipo da classe léxica (instância ou singleton); nil quando
