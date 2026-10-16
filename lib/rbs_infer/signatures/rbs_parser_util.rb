@@ -330,6 +330,15 @@ module RbsInfer::Signatures
       method_sig[(arrow + 2)..]&.strip
     end
 
+    # The signature with its own return type, the one `return_type_of` reads,
+    # replaced by `type`.
+    def with_return_type(method_sig, type)
+      arrow = last_top_level_arrow_index(method_sig)
+      return method_sig unless arrow
+
+      "#{method_sig[0...arrow].rstrip} -> #{type}"
+    end
+
     # Index of the last `->` sitting at bracket depth 0, or nil. Used to
     # locate the real return arrow past nested proc/block arrows.
     def last_top_level_arrow_index(str)

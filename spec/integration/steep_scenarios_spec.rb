@@ -286,7 +286,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
       class Column
         attr_accessor board: Board?
 
-        def initialize: () -> untyped
+        def initialize: () -> void
       end
 
       class Runner

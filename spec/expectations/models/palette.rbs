@@ -4,6 +4,6 @@ class Palette
   WEIGHTS: [ 1, 2, 3 ]
   COLORS: Array[Palette]
 
-  def initialize: (untyped name, untyped value) -> untyped
+  def initialize: (untyped name, untyped value) -> void
   def max_weight: () -> 8
 end

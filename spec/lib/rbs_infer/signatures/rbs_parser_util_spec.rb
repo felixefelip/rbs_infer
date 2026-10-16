@@ -608,6 +608,14 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
   # reading the declared return. A leftmost-matching `/->\s*(.+)$/` reads a
   # block clause's arrow instead, so every one of them silently skipped any
   # method taking a block (felixefelip/rbs_infer#252).
+  describe ".with_return_type" do
+    it "replaces the method's own return type, past a block's arrow" do
+      sig = "initialize: (untyped x) ?{ () -> Integer } -> Array[untyped]"
+
+      expect(described_class.with_return_type(sig, "void")).to eq("initialize: (untyped x) ?{ () -> Integer } -> void")
+    end
+  end
+
   describe ".return_type_of" do
     it "reads past a block clause's own arrow" do
       sig = "bazingado: (?singleton(Bar)? base) ?{ (*untyped) [self: singleton(Bar)] -> Symbol } -> " \

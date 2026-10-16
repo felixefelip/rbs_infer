@@ -9,5 +9,5 @@ class SingletonIvarProbe
   def self.build: () -> "classe"
   def self.label: () -> "singleton"
 
-  def initialize: () -> "instancia"
+  def initialize: () -> void
 end
