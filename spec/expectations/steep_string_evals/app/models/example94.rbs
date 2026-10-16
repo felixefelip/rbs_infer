@@ -1,0 +1,12 @@
+module Example94
+  class Car
+    def wheel_label: () -> :spoked
+    def seat_label: () -> :cushioned
+  end
+end
+
+module Example94
+  class Truck
+    def seat_label: () -> :bench
+  end
+end
