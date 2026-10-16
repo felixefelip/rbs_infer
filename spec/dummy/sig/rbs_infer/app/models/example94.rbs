@@ -24,7 +24,7 @@ module Example94
 
     def self.registry: () -> Hash[untyped, untyped]
     def self.register: ((:wheel | :seat | :door) name, (Wheel | Seat | Bench | Door) value) -> (Wheel | Seat | Bench | Door)
-    def self.lookup: (untyped name) -> untyped
+    def self.lookup: ((:wheel | :seat | :door) name) -> untyped
   end
 end
 

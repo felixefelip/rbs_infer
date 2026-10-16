@@ -4,12 +4,12 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Inference::NewCallCollector::ValueTypes do
-  def value_types(local_var_types: {}, local_var_read_types: {})
+  def value_types(local_var_types: {}, local_var_read_types: {}, expression_types: {})
     scope = RbsInfer::Inference::NewCallCollector::Scope.new(local_var_types: local_var_types, caller_class_name: nil)
     described_class.new(
       scope: scope, method_return_types: {}, local_var_read_types: local_var_read_types,
       method_type_resolver: nil, constant_arg_resolver: nil, self_types_by_method: {},
-      module_self_types: {}, invoker_self_types: nil, expression_types: {}
+      module_self_types: {}, invoker_self_types: nil, expression_types: expression_types
     )
   end
 
@@ -52,6 +52,19 @@ RSpec.describe RbsInfer::Inference::NewCallCollector::ValueTypes do
       read = read_of("session = find\nsession.touch\n", "session")
 
       expect(value_types(local_var_types: { "session" => "Session" }).receiver_type(read)).to eq("Session")
+    end
+  end
+
+  describe "#receiver_type of a call made on a receiver" do
+    def class_call(source)
+      Prism.parse(source).value.statements.body.first.receiver
+    end
+
+    it "is the type Steep gave the call" do
+      call = class_call("self.class.lookup(:wheel)\n")
+      key = RbsInfer::Signatures::SteepBridge.prism_expression_key(call.location)
+
+      expect(value_types(expression_types: { key => "singleton(::Car)" }).receiver_type(call)).to eq("singleton(::Car)")
     end
   end
 end
