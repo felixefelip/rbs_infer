@@ -233,6 +233,56 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
     end
   end
 
+  describe "#ivar_write_types of a hash memo" do
+    it "types the elements of an empty hash by the stores made through its memo" do
+      code = <<~RUBY
+        class Registry
+          def self.entries
+            @entries ||= {}
+          end
+
+          def self.add
+            entries[:a] = 1
+            entries.store("b", 2.0)
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code, target_class: "Registry", singleton: true)
+      expect(result["entries"]).to eq("Hash[Symbol | String, Integer | Float]?")
+    end
+
+    it "types them by a store made on the ivar itself" do
+      code = <<~RUBY
+        class Registry
+          def initialize
+            @entries = {}
+          end
+
+          def add
+            @entries[:a] = 1
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code, target_class: "Registry", singleton: false)
+      expect(result["entries"]).to eq("Hash[Symbol, Integer]")
+    end
+
+    it "leaves an empty hash nothing stores into untyped" do
+      code = <<~RUBY
+        class Registry
+          def initialize
+            @entries = {}
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code, target_class: "Registry", singleton: false)
+      expect(result["entries"]).to eq("Hash[untyped, untyped]")
+    end
+  end
+
   describe "#ivar_write_types_per_method" do
     # Per-method narrowing primitive — drives per-action ivar typing in
     # the ERB convention generator. Each method's contribution is kept

@@ -664,4 +664,23 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
       ].each { |sig| expect(described_class.require_block(sig, ["String"])).to eq(sig) }
     end
   end
+
+  describe ".fills_untyped_holes?" do
+    it "accepts a type that fills the holes of the same shape" do
+      expect(described_class.fills_untyped_holes?("Hash[untyped, untyped]", "Hash[(:a | :b), (A | B)]")).to be(true)
+    end
+
+    it "matches record fields by key, whatever their order" do
+      expect(described_class.fills_untyped_holes?("Array[{ to: untyped, at: untyped }]", "Array[{ at: Time, to: String? }]")).to be(true)
+    end
+
+    it "rejects a type that differs outside the holes" do
+      expect(described_class.fills_untyped_holes?("Hash[Symbol, untyped]", "Hash[String, Integer]")).to be(false)
+    end
+
+    it "rejects another shape" do
+      expect(described_class.fills_untyped_holes?("Array[untyped]", "Hash[Symbol, Integer]")).to be(false)
+      expect(described_class.fills_untyped_holes?("{ a: untyped }", "{ a: String, b: Integer }")).to be(false)
+    end
+  end
 end

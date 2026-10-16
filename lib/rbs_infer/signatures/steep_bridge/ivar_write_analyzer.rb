@@ -50,8 +50,10 @@ class RbsInfer::Signatures::SteepBridge
       # like `initialize` — pool into each other (felixefelip/rbs_infer#38).
       # `each_typing` enumerates the whole file, so we filter it by node
       # identity against the set of writes that belong to `target_class`.
-      in_scope = collect_scoped_write_node_ids(source_node, attr_writer_to_ivar, target_class, singleton)
+      elements = HashElementWrites.new(source_node, target_class: target_class, singleton: singleton)
+      in_scope = collect_scoped_write_node_ids(source_node, attr_writer_to_ivar, target_class, singleton, elements: elements)
       masgn_values = collect_masgn_target_values(source_node)
+      empty_hashes = Set.new
 
       typing.each_typing do |node, _type|
         next unless in_scope.include?(node.object_id)
@@ -62,11 +64,15 @@ class RbsInfer::Signatures::SteepBridge
           next unless parts
 
           var_name, rhs = parts
+          next empty_hashes << var_name if rhs.type == :hash && rhs.children.empty?
+
           rhs_type = RbsInfer::Signatures::SteepBridge::TypeFormatter.intrinsic_type_of(rhs, typing)
           next unless rhs_type
 
           type_sets[var_name].add(RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(rhs_type))
         when :send
+          next elements.record(node, typing) if elements.store?(node)
+
           receiver, method_name, *args = node.children
           next unless attr_writer_to_ivar.key?(method_name)
           next unless receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self)
@@ -80,6 +86,8 @@ class RbsInfer::Signatures::SteepBridge
           type_sets[ivar].add(RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(arg_type))
         end
       end
+
+      empty_hashes.each { |name| type_sets[name].add(elements.hash_type(name)) }
 
       result = {}
       type_sets.each do |name, type_set|
@@ -329,13 +337,13 @@ class RbsInfer::Signatures::SteepBridge
     # all and the proc type it holds lost its `[self:]` binding
     # (felixefelip/rbs_infer#252).
     # rubocop:todo-next Metrics/MethodLength
-    def collect_scoped_write_node_ids(node, attr_writer_to_ivar, target_class, singleton, namespace: [],
+    def collect_scoped_write_node_ids(node, attr_writer_to_ivar, target_class, singleton, elements:, namespace: [],
                                       in_sclass: false, on_singleton: true, result: Set.new)
       return result unless node.is_a?(::Parser::AST::Node)
 
       collect = lambda do |child, **overrides|
         collect_scoped_write_node_ids(child, attr_writer_to_ivar, target_class, singleton,
-                                      namespace: namespace, in_sclass: in_sclass, on_singleton: on_singleton,
+                                      elements: elements, namespace: namespace, in_sclass: in_sclass, on_singleton: on_singleton,
                                       result: result, **overrides)
       end
       # A write belongs to the caller's question when the `self` it runs against
@@ -379,6 +387,7 @@ class RbsInfer::Signatures::SteepBridge
            (receiver.nil? || (receiver.respond_to?(:type) && receiver.type == :self))
           result << node.object_id
         end
+        result << node.object_id if in_scope && elements.store?(node)
         node.children.each { |c| collect.call(c) }
       else
         node.children.each { |c| collect.call(c) }

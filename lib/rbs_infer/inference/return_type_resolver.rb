@@ -218,6 +218,7 @@ module RbsInfer::Inference
       correct_block_generics(members, steep_returns)
       narrow_proven_non_nil(members, steep_returns, parsed_target)
       refine_untyped_records(members, steep_returns, parsed_target)
+      refine_untyped_holes(members, steep_returns, parsed_target)
       refine_to_self(members, steep_returns)
       refine_literals(members, steep_returns, parsed_target)
       correct_contradicted_declarations(members, steep_returns, parsed_target)
@@ -301,6 +302,22 @@ module RbsInfer::Inference
         next if current_type == steep_type
 
         steep_type = "self" if self_return?(m, steep_type, self_types)
+        rewrite_return(m, current_type, with_early_nil_return(m, steep_type, parsed_target))
+      end
+    end
+
+    # A declaration with `untyped` holes takes Steep's type for the body where
+    # that type has the same shape with the holes filled (`Hash[untyped,
+    # untyped]` for a memoized `{}` whose elements the ivar declares).
+    def refine_untyped_holes(members, steep_returns, parsed_target)
+      revisable_members(members).each do |m|
+        current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
+        next unless current_type&.include?("untyped") && current_type != "untyped"
+
+        steep_type = steep_answer(m, steep_returns) or next
+        next if current_type == steep_type
+        next unless RbsInfer::Signatures::RbsParserUtil.fills_untyped_holes?(current_type, steep_type)
+
         rewrite_return(m, current_type, with_early_nil_return(m, steep_type, parsed_target))
       end
     end

@@ -503,6 +503,37 @@ module RbsInfer::Signatures
       "#{parenthesize_before_optional(type_str)}?"
     end
 
+    # Whether `filled` is `holed` with some of its `untyped` replaced: the same
+    # shape everywhere else.
+    def fills_untyped_holes?(holed, filled)
+      untyped_holes_filled?(RBS::Parser.parse_type(holed), RBS::Parser.parse_type(filled))
+    rescue RBS::ParsingError
+      false
+    end
+
+    def untyped_holes_filled?(holed, filled)
+      return true if holed.is_a?(RBS::Types::Bases::Any)
+      return record_holes_filled?(holed, filled) if holed.is_a?(RBS::Types::Record)
+      return holed == filled unless holed.respond_to?(:map_type) && filled.respond_to?(:map_type)
+      return false unless untyped_shape(holed) == untyped_shape(filled)
+
+      holed.each_type.zip(filled.each_type).all? { |hole, value| untyped_holes_filled?(hole, value) }
+    end
+
+    def record_holes_filled?(holed, filled)
+      return false unless filled.is_a?(RBS::Types::Record)
+
+      %i[fields optional_fields].all? do |kind|
+        holes = holed.public_send(kind)
+        values = filled.public_send(kind)
+        holes.keys.sort == values.keys.sort && holes.all? { |key, hole| untyped_holes_filled?(hole, values[key]) }
+      end
+    end
+
+    def untyped_shape(type)
+      type.map_type { RBS::Types::Bases::Any.new(location: nil) }.to_s
+    end
+
     # True when the first `(` closes only at the last character —
     # i.e. the whole string is wrapped by one outer pair. `(A) | (B)`
     # is NOT outer-parenthesized.
