@@ -27,6 +27,19 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
                                                               module_singleton_ivar_types: module_singleton_ivar_types, markers: markers, nested_modules: nested_modules)
   end
 
+  describe "initialize" do
+    it "is rendered -> void whatever its body ended with, and a class method of that name is not" do
+      members = [
+        RbsInfer::Inference::Member.new(kind: :method, name: "initialize", signature: "initialize: () -> Array[untyped]", visibility: :public),
+        RbsInfer::Inference::Member.new(kind: :class_method, name: "initialize", signature: "initialize: () -> 0", visibility: :public)
+      ]
+
+      result = build_rbs(make_builder(target_class: "Rules", superclass_name: nil), members)
+
+      expect(result).to include("  def initialize: () -> void\n").and include("  def self.initialize: () -> 0\n")
+    end
+  end
+
   describe "#build com namespaces" do
     it "usa 'module' para namespace que é módulo (sintaxe compacta)" do
       builder = make_builder(

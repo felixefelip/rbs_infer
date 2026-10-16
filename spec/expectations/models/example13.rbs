@@ -27,7 +27,7 @@ class Example13
     @name: "John Doe"
     @halted: false | true
 
-    def initialize: (name: "John Doe") -> false
+    def initialize: (name: "John Doe") -> void
     def current_user: () -> Example13Viewer?
     def halt: () -> true
     def with_format: () ?{ (:html) -> true } -> true?

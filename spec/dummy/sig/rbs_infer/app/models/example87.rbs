@@ -21,7 +21,7 @@ class Example87
   class AssociationReflection < MacroReflection
     @collection: false
 
-    def initialize: ((:posts | :comments) name, Hash[untyped, untyped] options) -> false
+    def initialize: ((:posts | :comments) name, Hash[untyped, untyped] options) -> void
   end
 end
 

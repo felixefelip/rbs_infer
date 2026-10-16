@@ -11,7 +11,7 @@ module Example88
   class Rules
     attr_reader singulars: Array[untyped]
 
-    def initialize: () -> Array[untyped]
+    def initialize: () -> void
     def singular: (Regexp rule, ("" | "y") replacement) -> Array[untyped]
   end
 end

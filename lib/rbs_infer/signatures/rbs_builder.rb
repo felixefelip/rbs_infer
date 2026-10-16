@@ -319,6 +319,8 @@ module RbsInfer::Signatures
         elsif (inferred = inferred_param_types(member, method_param_types))
           sig = apply_inferred_param_types(sig, inferred)
         end
+        # `new` discards what `initialize` returns; its body's tail is no type.
+        sig = RbsInfer::Signatures::RbsParserUtil.with_return_type(sig, "void") if member.name == "initialize"
         "#{indent}def #{overloadable(sig, member)}"
       when :attr_accessor, :attr_reader, :attr_writer
         sig = member.signature
@@ -464,7 +466,7 @@ module RbsInfer::Signatures
     end
 
     # Substitui tipos de parâmetros do initialize preservando posicional vs keyword
-    # Ex: "initialize: (untyped post, ?notifier: untyped) -> untyped" com {post: "Post"}
+    # Ex: "initialize: (untyped post, ?notifier: untyped) -> void" com {post: "Post"}
     #   → "initialize: (Post post, ?notifier: untyped) -> void"
     def apply_inferred_init_types(signature, init_arg_types, _optional_params)
       init_arg_types.each do |param_name, type|
@@ -473,8 +475,7 @@ module RbsInfer::Signatures
         # Positional: untyped param_name → Type param_name
         signature = signature.gsub(/\buntyped\s+#{Regexp.escape(param_name)}\b/, "#{type} #{param_name}")
       end
-      # Normalizar return type do initialize para void
-      signature.sub(/->\s*untyped\s*$/, "-> void")
+      signature
     end
 
     # Whether the included module carries a nested `ClassMethods` — the shape
