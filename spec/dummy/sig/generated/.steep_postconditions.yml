@@ -1584,6 +1584,11 @@ postconditions:
   effects:
     may_write:
     - "@singulars"
+- class: Example94::Base
+  method: registry
+  effects:
+    may_write:
+    - "@registry"
 - class: Example9::Age
   method: value
   effects:
