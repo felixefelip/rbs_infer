@@ -1,7 +1,9 @@
 class RbsInfer::Signatures::SteepBridge
   class IvarWriteAnalyzer
-    def initialize(steep_bridge:)
+    def initialize(steep_bridge:, constructor_bindings:, literal_methods:)
       @steep_bridge = steep_bridge
+      @constructor_bindings = constructor_bindings
+      @literal_methods = literal_methods
     end
 
     # Returns { "var_name" => "Type" } for instance variable writes
@@ -50,7 +52,9 @@ class RbsInfer::Signatures::SteepBridge
       # like `initialize` — pool into each other (felixefelip/rbs_infer#38).
       # `each_typing` enumerates the whole file, so we filter it by node
       # identity against the set of writes that belong to `target_class`.
-      elements = HashElementWrites.new(source_node, target_class: target_class, singleton: singleton)
+      elements = HashElementWrites.new(source_node, target_class: target_class, singleton: singleton,
+                                                    constructor_bindings: @constructor_bindings,
+                                                    literal_methods: @literal_methods)
       in_scope = collect_scoped_write_node_ids(source_node, attr_writer_to_ivar, target_class, singleton, elements: elements)
       masgn_values = collect_masgn_target_values(source_node)
       empty_hashes = Set.new

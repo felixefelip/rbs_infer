@@ -2,7 +2,10 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Signatures::SteepBridge::BlockAnalyzer, :dummy_app do
-  subject(:bridge) { RbsInfer::Signatures::SteepBridge.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new) }
+  subject(:bridge) do
+    RbsInfer::Signatures::SteepBridge.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new,
+                                          constructor_bindings: Steep::Project::ConstructorBindingRegistry.new)
+  end
 
   # A method that only hands its block to someone else says nothing about it on
   # its own, so the CALLEE's declaration is the evidence (felixefelip/rbs_infer#149).

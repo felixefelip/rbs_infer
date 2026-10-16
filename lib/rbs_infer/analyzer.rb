@@ -847,7 +847,8 @@ module RbsInfer
 
     def steep_bridge
       @steep_bridge ||= RbsInfer::Signatures::SteepBridge.new(
-        literal_method_registry: @corpus.literal_method_registry
+        literal_method_registry: @corpus.literal_method_registry,
+        constructor_bindings: @corpus.constructor_bindings
       )
     end
 

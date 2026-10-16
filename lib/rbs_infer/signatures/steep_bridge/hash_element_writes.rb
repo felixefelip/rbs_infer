@@ -5,13 +5,18 @@ module RbsInfer
     class SteepBridge
       # The element types of the empty `{}` an ivar is given, from the stores made
       # into that object: on the ivar itself, or through a method of the class
-      # whose body answers it (`@x ||= {}`, `@x`).
+      # whose body answers it (`@x ||= {}`, `@x`). Only for a hash the project
+      # only reads or stores into (`Steep::HashMutation.confined?`), and whose
+      # every store is one made here.
       class HashElementWrites
         STORES = %i[[]= store].freeze
 
-        def initialize(source_node, target_class:, singleton:)
+        def initialize(source_node, target_class:, singleton:, constructor_bindings:, literal_methods:)
+          @constructor_bindings = constructor_bindings
+          @literal_methods = literal_methods
           @holders = holders(source_node, target_class, singleton)
           @elements = Hash.new { |h, k| h[k] = [RbsInfer::Inference::IvarTypeSet.new, RbsInfer::Inference::IvarTypeSet.new] }
+          @stores = Hash.new(0)
         end
 
         def store?(node)
@@ -23,18 +28,30 @@ module RbsInfer
           return if store_on_another_class?(node, typing)
 
           receiver, _, *args = node.children
-          args.zip(@elements[held_ivar(receiver)]).each do |arg, set|
+          ivar = held_ivar(receiver)
+          @stores[ivar] += 1
+          args.zip(@elements[ivar]).each do |arg, set|
             type = TypeFormatter.intrinsic_type_of(arg, typing)
             set.add(TypeFormatter.format_type(type)) if type
           end
         end
 
         def hash_type(ivar)
-          key, value = @elements[ivar].map { |set| set.emit || "untyped" }
+          key, value = confined?(ivar) ? @elements[ivar].map { |set| set.emit || "untyped" } : %w[untyped untyped]
           "Hash[#{key}, #{value}]"
         end
 
         private
+
+        def confined?(ivar)
+          names = [:"@#{ivar}", *@holders.filter_map { |name, held| name if held == ivar }]
+          Steep::HashMutation.confined?(@constructor_bindings, @literal_methods, names) &&
+            stores_seen(names) == @stores[ivar]
+        end
+
+        def stores_seen(names)
+          names.sum { |name| @constructor_bindings.uses_of(name).count { |use| STORES.include?(use.called) } }
+        end
 
         def holders(source_node, target_class, singleton)
           return {} unless target_class

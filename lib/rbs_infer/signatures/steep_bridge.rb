@@ -16,12 +16,14 @@ module RbsInfer::Signatures
   # - Attr inference via initialize
   # - RBS generation
   class SteepBridge
-    def initialize(literal_method_registry:)
+    def initialize(literal_method_registry:, constructor_bindings:)
       # The corpus registry is a project-wide snapshot. Each bridge augments it
       # with its expanded in-memory source, so it needs a private copy: a parse
       # failure or generated reopen in one target must not taint every target
       # analysed after it.
       @literal_method_registry = literal_method_registry.dup
+      @ivar_write_analyzer = IvarWriteAnalyzer.new(steep_bridge: self, constructor_bindings: constructor_bindings,
+                                                   literal_methods: @literal_method_registry)
     end
 
     # Returns { "var_name" => "Type" } for all local variable assignments
@@ -290,11 +292,11 @@ module RbsInfer::Signatures
     end
 
     def ivar_write_types(source_code, target_class:, singleton:)
-      steep_bridge_ivar_write_analyzer.ivar_write_types(source_code, target_class: target_class, singleton: singleton)
+      @ivar_write_analyzer.ivar_write_types(source_code, target_class: target_class, singleton: singleton)
     end
 
     def ivar_write_types_per_method(source_code, target_class:)
-      steep_bridge_ivar_write_analyzer.ivar_write_types_per_method(source_code, target_class: target_class)
+      @ivar_write_analyzer.ivar_write_types_per_method(source_code, target_class: target_class)
     end
 
     # Byte ranges of the branches Steep proved cannot run in `source_code`.
@@ -672,10 +674,6 @@ module RbsInfer::Signatures
       return char_offset if source.ascii_only?
 
       source[0, char_offset].to_s.bytesize
-    end
-
-    def steep_bridge_ivar_write_analyzer
-      @steep_bridge_ivar_write_analyzer ||= IvarWriteAnalyzer.new(steep_bridge: self)
     end
 
     def return_type_analyzer

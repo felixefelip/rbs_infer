@@ -52,9 +52,7 @@ methods:
     "(:name)": '"JOHN DOE"'
   Example94::Base.register:
     "(:door, ::Example94::Door)": "::Example94::Door"
-    "(:seat, ::Example94::Bench)": "::Example94::Bench"
     "(:seat, ::Example94::Seat)": "::Example94::Seat"
-    "(:wheel, ::Example94::Wheel)": "::Example94::Wheel"
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'

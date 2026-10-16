@@ -2,7 +2,10 @@ require "spec_helper"
 require "rbs_infer"
 
 RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app do
-  subject(:bridge) { RbsInfer::Signatures::SteepBridge.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new) }
+  subject(:bridge) do
+    RbsInfer::Signatures::SteepBridge.new(literal_method_registry: Steep::Project::LiteralMethodRegistry.new,
+                                          constructor_bindings: Steep::Project::ConstructorBindingRegistry.new)
+  end
 
   describe "#method_return_types" do
     it "resolves method return types from body expressions" do
