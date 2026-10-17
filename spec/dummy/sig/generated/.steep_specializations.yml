@@ -26,6 +26,41 @@ methods:
     ("denied"): '"denied"'
   Example20#record:
     ("denied"): '"denied"'
+  Example26::Foo#bazinga:
+    "(singleton(::Example26::Baz)) on singleton(::Example26::Bar)": nil
+  Example32::Foo#bazinga:
+    "(singleton(::Example32::Baz)) on singleton(::Example32::Bar)": "(::Symbol | nil)"
+  Example32::Foo#bazingado:
+    "(self) on singleton(::Example32::Baz)": "(::Symbol | nil)"
+    "(singleton(::Example32::Bar)) on singleton(::Example32::Baz)": "(::Symbol | nil)"
+  Example33::Foo#bazinga:
+    "(singleton(::Example33::Baz)) on singleton(::Example33::Bar)": "(::Symbol | nil)"
+    "(singleton(::Example33::BazOther)) on singleton(::Example33::BarOther)": "(::Symbol
+      | nil)"
+  Example33::Foo#bazingado:
+    "(self) on singleton(::Example33::Baz)": "(::Symbol | nil)"
+    "(self) on singleton(::Example33::BazOther)": "(::Symbol | nil)"
+  Example34::Foo#included:
+    "(self) on singleton(::Example34::Baz)": "(::Symbol | nil)"
+    "(singleton(::Example34::Bar)) on singleton(::Example34::Baz)": "(::Symbol | nil)"
+  Example35::Foo.bazinga:
+    "(singleton(::Example35::Baz)) on singleton(::Example35::Bar)": "(::Symbol | nil)"
+  Example35::Foo.bazingado:
+    "(self) on singleton(::Example35::Baz)": "(::Symbol | nil)"
+    "(singleton(::Example35::Bar)) on singleton(::Example35::Baz)": "(::Symbol | nil)"
+  Example36::Foo.bazingado:
+    "(self) on singleton(::Example36::Baz)": "(::Symbol | nil)"
+    "(singleton(::Example36::Bar)) on singleton(::Example36::Baz)": "(::Symbol | nil)"
+  Example37::Foo#bazingado:
+    "(self) on singleton(::Example37::Baz)": "(::Symbol | nil)"
+    "(singleton(::Example37::Bar)) on singleton(::Example37::Baz)": "(::Symbol | nil)"
+  Example42::Foo#bazingado:
+    "(self) on singleton(::Example42::Baz)": "(::Symbol | nil)"
+  Example43::Foo#bazinga:
+    "(singleton(::Example43::Baz)) on singleton(::Example43::Bar)": "::Array[singleton(::Example43::Baz)]"
+    "(singleton(::Example43::Baz)) on singleton(::Example43::BarOther)": "::Array[singleton(::Example43::Baz)]"
+  Example43::Foo#bazingado:
+    "(self) on singleton(::Example43::Baz)": "(::Symbol | nil)"
   Example4::Foo.name=:
     ("John Doe"): '"John Doe"'
   Example61.normalize:
@@ -33,6 +68,12 @@ methods:
     "(:indexed_by)": '"indexed_by"'
   Example62::Slots#hallmark=:
     ("value"): '"value"'
+  Example65::Dispatcher.dispatch:
+    ("/tmp/x.csv") on singleton(::Example65CsvReporter): "::Example65CsvReporter"
+    '("ada", greeting: "hello") on singleton(::Example65Greeter)': "::Example65Greeter"
+    "(1, step: 2) on singleton(::Example65Adder)": "::Example65Adder"
+  Example65::Rival.dispatch:
+    "(true, mode: :fast) on singleton(::Example65Impostor)": "::Example65Impostor"
   Example69::Foo#call:
     "(flag_name: false)": '"delete"'
     "(flag_name: true)": '"name_delete"'
@@ -50,9 +91,22 @@ methods:
   Example8#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
+  Example89::Base.generated_methods:
+    "() on singleton(::Example89::Widget)": singleton(::Example89::Widget::GeneratedMethods)
+  Example90::Core::ClassMethods#generated_association_methods:
+    "() on singleton(::Example90::Post)": singleton(::Example90::Post::GeneratedAssociationMethods)
+  Example91::Core::ClassMethods#generated_association_methods:
+    "() on singleton(::Example91::Post)": singleton(::Example91::Post::GeneratedAssociationMethods)
+  Example94::Base.lookup:
+    "(:door) on singleton(::Example94::Truck)": "::Example94::Door"
+    "(:seat) on singleton(::Example94::Car)": "::Example94::Seat"
+    "(:seat) on singleton(::Example94::Truck)": "::Example94::Bench"
+    "(:wheel) on singleton(::Example94::Car)": "::Example94::Wheel"
   Example94::Base.register:
     "(:door, ::Example94::Door)": "::Example94::Door"
+    "(:door, ::Example94::Door) on singleton(::Example94::Truck)": "::Example94::Door"
     "(:seat, ::Example94::Seat)": "::Example94::Seat"
+    "(:seat, ::Example94::Seat) on singleton(::Example94::Car)": "::Example94::Seat"
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'

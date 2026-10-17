@@ -728,6 +728,29 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
     end
   end
 
+  describe "#union_refinement?" do
+    it "answers true where the body returns some of the alternatives the union lists" do
+      expect(bridge.union_refinement?("(String | Integer | Symbol)", "String")).to be(true)
+      expect(bridge.union_refinement?("(String | Integer | Symbol)", "(String | Symbol)")).to be(true)
+      expect(bridge.union_refinement?("(String | Integer)?", "String?")).to be(true)
+    end
+
+    it "answers false where the body differs from the declaration by nil" do
+      expect(bridge.union_refinement?("(String | Integer)?", "String")).to be(false)
+      expect(bridge.union_refinement?("(String | Integer)", "String?")).to be(false)
+    end
+
+    it "answers false for a type the union does not list as one of its alternatives" do
+      expect(bridge.union_refinement?("(Numeric | String)", "Integer")).to be(false)
+      expect(bridge.union_refinement?("(String | Integer)", "(String | Integer)")).to be(false)
+      expect(bridge.union_refinement?("String", "String")).to be(false)
+    end
+
+    it "answers nil for a type it cannot compare" do
+      expect(bridge.union_refinement?("(self | String)", "String")).to be_nil
+    end
+  end
+
   # felixefelip/rbs_infer#286. Steep decides reachability while typing the `if`;
   # this reads that verdict back so the return-type widening can follow the
   # checker instead of the parser.

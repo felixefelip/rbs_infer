@@ -7,7 +7,7 @@ end
 class Example60
   module Labels
     module ClassMethods
-      def human_name: ("all" index) -> String
+      def human_name: ("all" index) -> "ALL"
     end
   end
 end
