@@ -1,7 +1,7 @@
 class IncludedHook
   module HomeMade
-    @included_block: (^(*untyped) [self: Module] -> Symbol)?
+    @included_block: (^(*untyped) [self: Module] -> (:badge | :stamp))?
 
-    def included: (?Module? base) ?{ (*untyped) [self: Module] -> Symbol } -> nil
+    def included: (?Module? base) ?{ (*untyped) [self: Module] -> (:badge | :stamp) } -> nil
   end
 end

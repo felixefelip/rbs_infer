@@ -1,12 +1,12 @@
 class Example43
   module Foo
-    @_bazingado_block: ((^(*untyped) [self: singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2)] -> Symbol & ::RbsInfer::Body["def age\n        31\n      end"]) | (^(*untyped) [self: singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2)] -> Symbol & ::RbsInfer::Body["def name\n        \"John Doe\"\n      end"]))?
+    @_bazingado_block: ((^(*untyped) [self: singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2)] -> (:age | :name) & ::RbsInfer::Body["def age\n        31\n      end"]) | (^(*untyped) [self: singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2)] -> (:age | :name) & ::RbsInfer::Body["def name\n        \"John Doe\"\n      end"]))?
 
     def bazinga: (*(singleton(::Example43::Baz) | singleton(::Example43::BazOther)) modules) -> Array[(singleton(Example43::Baz) | singleton(Example43::BazOther))]
 
     private
 
-    def bazingado: (?(singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2))? base) ?{ (*untyped) [self: (singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2))] -> Symbol } -> (^(*untyped) [self: (singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2))] -> Symbol | nil | Symbol)
+    def bazingado: (?(singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2))? base) ?{ (*untyped) [self: (singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2))] -> (:age | :name) } -> (^(*untyped) [self: (singleton(Example43::Bar) | singleton(Example43::BarOther) | singleton(Example43::BarOther2))] -> (:age | :name) | nil | :age | :name)
   end
 end
 

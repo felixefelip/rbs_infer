@@ -1,10 +1,10 @@
 module Example39
   module Foo
-    @_bananed_block: (^(*untyped) [self: Module] -> Symbol)?
+    @_bananed_block: (^(*untyped) [self: Module] -> :age)?
 
     private
 
-    def bananed: (?untyped base) ?{ (*untyped) [self: Module] -> Symbol } -> (^(*untyped) [self: Module] -> Symbol | nil | Symbol)
+    def bananed: (?untyped base) ?{ (*untyped) [self: Module] -> :age } -> (^(*untyped) [self: Module] -> :age | nil | :age)
   end
 
   module Baz
