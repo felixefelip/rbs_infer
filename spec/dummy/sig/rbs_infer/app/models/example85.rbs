@@ -3,7 +3,7 @@ class Example85
 
   def self.rules: () -> Example85::Rules
   def self.singularize: (String word) -> String
-  def self.has_many_like: ((:posts | :categories) name) -> untyped
+  def self.has_many_like: ((:posts | :categories) name) -> (:post_ids | :category_ids)
   def self.summary: () -> Array[Array[untyped]]
 end
 
@@ -12,6 +12,6 @@ class Example85
     attr_reader singulars: Array[untyped]
 
     def initialize: () -> void
-    def singular: (Regexp rule, ("" | "y") replacement) -> Array[untyped]
+    def singular: (Regexp rule, ("" | "y") replacement) -> ([ [ Regexp, "" ] ] | [ [ Regexp, "y" ], [ Regexp, "" ] ])
   end
 end

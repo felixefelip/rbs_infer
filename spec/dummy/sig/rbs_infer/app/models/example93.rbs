@@ -3,7 +3,7 @@ module Example93
     self.@rule_set: Example93::Rules?
 
     def self.rule_set: () -> Example93::Rules
-    def self.configure: () ?{ (Example93::Rules) -> Array[untyped] } -> Array[untyped]?
+    def self.configure: () ?{ (Example93::Rules) -> Array[untyped] } -> Array[untyped]
     def self.singularize: (("posts" | "categories") word) -> String
   end
 end
@@ -20,7 +20,7 @@ end
 
 module Example93
   class Post
-    def self.has_many_like: ((:posts | :categories) name) -> untyped
+    def self.has_many_like: ((:posts | :categories) name) -> (:post_ids | :category_ids)
     def self.summary: () -> Array[Array[untyped]]
   end
 end

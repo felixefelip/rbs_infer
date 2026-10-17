@@ -10,7 +10,7 @@ module Example74
     def reserved_name: () -> false
     def spelled_out: () -> true
     def frozen_list: () -> "class;self"
-    def guarded: ((:user | :class) to) -> ("  (self.user).x(...)" | "  (self.class).x(...)" | "  (user).x(...)" | "  (class).x(...)")
+    def guarded: ((:user | :class) to) -> ("  (user).x(...)" | "  (self.class).x(...)")
     def call_guarded: () -> "  (user).x(...)"
     def call_guarded_reserved: () -> "  (self.class).x(...)"
     def written_twice: () -> bool

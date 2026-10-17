@@ -9,7 +9,7 @@ class Example20
   def show: () -> "Hi, TOKEN!"
   def call: () -> "Hi, TOKEN!"?
   def halt: () -> true
-  def record: ("denied"? message) -> "denied"?
+  def record: ("denied"? message) -> "denied"
 
   private
 

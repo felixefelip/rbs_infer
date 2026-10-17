@@ -13,7 +13,7 @@ module Example90
   class Base
     extend Core::ClassMethods
 
-    def self.has_reader: ((:comments | :tags) name) -> untyped
+    def self.has_reader: ((:comments | :tags) name) -> (:comments | :tags)
   end
 end
 

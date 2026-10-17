@@ -12,14 +12,14 @@ module Example92
     attr_reader singulars: Array[untyped]
 
     def initialize: () -> void
-    def singular: (Regexp rule, ("" | "y") replacement) -> Array[untyped]
+    def singular: (Regexp rule, ("" | "y") replacement) -> ([ [ Regexp, "" ] ] | [ [ Regexp, "y" ], [ Regexp, "" ] ])
     def apply: (("posts" | "categories") word) -> String
   end
 end
 
 module Example92
   class Post
-    def self.has_many_like: ((:posts | :categories) name) -> untyped
+    def self.has_many_like: ((:posts | :categories) name) -> (:post_ids | :category_ids)
     def self.summary: () -> Array[Array[untyped]]
   end
 end

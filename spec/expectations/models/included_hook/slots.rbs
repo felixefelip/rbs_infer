@@ -5,10 +5,10 @@ class IncludedHook
     @stamp: "value"?
 
     def slot: () -> "value"?
-    def slot=: ("value"? value) -> "value"?
+    def slot=: ("value"? value) -> "value"
     def badge: () -> "value"?
-    def badge=: ("value"? value) -> "value"?
+    def badge=: ("value"? value) -> "value"
     def stamp: () -> "value"?
-    def stamp=: ("value"? value) -> "value"?
+    def stamp=: ("value"? value) -> "value"
   end
 end

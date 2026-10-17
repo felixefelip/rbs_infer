@@ -3,7 +3,7 @@ class Notification
     @__store_settings_channel: "none"?
 
     def channel: () -> "none"?
-    def channel=: ("none"? value) -> "none"?
+    def channel=: ("none"? value) -> "none"
     def theme: () -> untyped
     def theme=: (untyped value) -> untyped
     def settings_digest: () -> untyped

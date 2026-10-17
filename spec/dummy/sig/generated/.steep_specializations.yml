@@ -151,3 +151,37 @@ methods:
     ("none"): '"none"'
   SendDispatch#stamp:
     ("post"): '"stamped: post"'
+declarations:
+  ActiveJob::Base.perform_later: "(::AuthorDigestJob | ::AvatarThumbnailJob)"
+  EvalReopen::Slots#slot=: '"value"'
+  EventTracker#track_event: ({ :action => :reported } | { :action => "created" })
+  Eventable#track_event: ({ :action => :closed, :particulars => ::Hash[::Symbol, untyped]
+    } | { :action => :reopened, :particulars => ::Hash[::Symbol, untyped] } | { :action
+    => :published, :particulars => ::Hash[::Symbol, untyped] } | { :action => "renamed",
+    :particulars => ::Hash[::Symbol, untyped] })
+  Example19#record: '"denied"'
+  Example20#record: '"denied"'
+  Example32::Foo#bazinga: "(:age | nil)"
+  Example33::Foo#bazinga: "(:age | :name_upcase | nil)"
+  Example35::Foo.bazinga: "(:age | nil)"
+  Example61.normalize: '"indexed_by"'
+  Example62::Slots#hallmark=: '"value"'
+  Example65::Dispatcher.dispatch: "(::Example65Greeter | ::Example65Adder | ::Example65CsvReporter)"
+  Example65::Rival.dispatch: "::Example65Impostor"
+  Example72::Foo#spread: '"x;y"'
+  Example74::Foo#guarded: ("  (user).x(...)" | "  (self.class).x(...)")
+  Example75::Peel.banana_delegate: "(:email | :human_name)"
+  Example85.has_many_like: "(:post_ids | :category_ids)"
+  Example85::Rules#singular: ([[::Regexp, ""]] | [[::Regexp, "y"], [::Regexp, ""]])
+  Example88::Base.has_many_like: "(:comment_ids | :category_ids)"
+  Example88::Rules#singular: ([[::Regexp, ""]] | [[::Regexp, "y"], [::Regexp, ""]])
+  Example89::Base.define_reader: "(:size | :weight)"
+  Example90::Base.has_reader: "(:comments | :tags)"
+  Example92::Post.has_many_like: "(:post_ids | :category_ids)"
+  Example92::Rules#singular: ([[::Regexp, ""]] | [[::Regexp, "y"], [::Regexp, ""]])
+  Example93::Inflector.configure: "::Array[untyped]"
+  Example93::Post.has_many_like: "(:post_ids | :category_ids)"
+  IncludedHook::Slots#badge=: '"value"'
+  IncludedHook::Slots#slot=: '"value"'
+  IncludedHook::Slots#stamp=: '"value"'
+  Notification::GeneratedStoreAccessors#channel=: '"none"'
