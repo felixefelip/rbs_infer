@@ -24,11 +24,11 @@ class Current
   include GeneratedAttributeMethods
 
   def self.user: () -> ((User & User::Validated) | User)?
-  def self.user=: (((User & User::Validated) | User)? value) -> ((User & User::Validated) | User | nil)
+  def self.user=: (((User & User::Validated) | User)? value) -> (User & User::Validated)
   def self.author_name: () -> String?
   def self.author_name=: (String? value) -> String?
   def self.account: () -> (Account & Account::Validated)?
-  def self.account=: ((Account & Account::Validated)? value) -> (Account & Account::Validated)?
+  def self.account=: ((Account & Account::Validated)? value) -> (Account & Account::Validated)
   def self.viewer_name: () -> String?
   def self.viewer_name=: (String? value) -> String?
   def self.__rbs_infer_instance: () -> Current
