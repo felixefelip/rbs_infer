@@ -123,8 +123,10 @@ methods:
   Example91::Core::ClassMethods#generated_association_methods:
     "() on singleton(::Example91::Post)": singleton(::Example91::Post::GeneratedAssociationMethods)
   Example94::Base.describe:
+    "(:seat)": ":seat_label"
     "(:seat) on singleton(::Example94::Car)": ":seat_label"
     "(:seat) on singleton(::Example94::Truck)": ":seat_label"
+    "(:wheel)": ":wheel_label"
     "(:wheel) on singleton(::Example94::Car)": ":wheel_label"
   Example94::Base.lookup:
     "(:door) on singleton(::Example94::Truck)": "::Example94::Door"

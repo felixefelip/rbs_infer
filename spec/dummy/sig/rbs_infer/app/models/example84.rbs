@@ -1,9 +1,9 @@
 class Example84
   module Writer
-    def self.define_stored: (singleton(Example84) model, (Example84::Reflection & Example84::Reflection::AfterRename) reflection) -> untyped
+    def self.define_stored: (singleton(Example84) model, (Example84::Reflection & Example84::Reflection::AfterRename) reflection) -> (:articles | :replies)
   end
 
-  def self.has_renamed: ((:posts | :comments) name, (:articles | :replies) as) -> untyped
+  def self.has_renamed: ((:posts | :comments) name, (:articles | :replies) as) -> (:articles | :replies)
   def self.summary: () -> [ :renamed, :renamed ]
 end
 

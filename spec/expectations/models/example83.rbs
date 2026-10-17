@@ -1,11 +1,11 @@
 class Example83
   module Writer
-    def self.define_direct: (singleton(Example83) model, (:tags | :labels) name) -> untyped
-    def self.define_stored: (singleton(Example83) model, Reflection reflection) -> untyped
+    def self.define_direct: (singleton(Example83) model, (:tags | :labels) name) -> (:tags | :labels)
+    def self.define_stored: (singleton(Example83) model, Reflection reflection) -> (:posts | :comments)
   end
 
-  def self.has_direct: ((:tags | :labels) name) -> untyped
-  def self.has_stored: ((:posts | :comments) name) -> untyped
+  def self.has_direct: ((:tags | :labels) name) -> (:tags | :labels)
+  def self.has_stored: ((:posts | :comments) name) -> (:posts | :comments)
   def self.summary: () -> [ :direct, :direct, :stored, :stored ]
 end
 
