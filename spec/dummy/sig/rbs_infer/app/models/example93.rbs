@@ -4,7 +4,7 @@ module Example93
 
     def self.rule_set: () -> Example93::Rules
     def self.configure: () ?{ (Example93::Rules) -> Array[untyped] } -> Array[untyped]?
-    def self.singularize: (String word) -> String
+    def self.singularize: (("posts" | "categories") word) -> String
   end
 end
 
@@ -14,7 +14,7 @@ module Example93
 
     def initialize: () -> void
     def singular: (Regexp rule, ("" | "y") replacement) -> Array[untyped]
-    def apply: (String word) -> String
+    def apply: (("posts" | "categories") word) -> String
   end
 end
 

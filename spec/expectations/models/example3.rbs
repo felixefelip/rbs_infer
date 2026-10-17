@@ -1,8 +1,8 @@
 class Example3
   def self.run: () -> nil
-  def self.gap_alias_write: () -> String
-  def self.gap_conditional: (untyped cond) -> String
-  def self.gap_callee_mutation: () -> String
+  def self.gap_alias_write: () -> ("JOHN DOE" | "X")
+  def self.gap_conditional: (untyped cond) -> ("JOHN DOE" | "X")
+  def self.gap_callee_mutation: () -> ("JOHN DOE" | "X")
   def self.gap_alias_read: () -> untyped
 end
 

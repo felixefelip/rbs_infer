@@ -1,8 +1,8 @@
 class Example16
   @halted: true?
 
-  def show: () -> String
-  def call: () -> String?
+  def show: () -> ("Hi, COOKIE!" | "Hi, TOKEN!")
+  def call: () -> ("Hi, COOKIE!" | "Hi, TOKEN!")?
 
   private
 

@@ -3,7 +3,7 @@ module Example92
     self.@inflections: Example92::Rules?
 
     def self.inflections: () -> Example92::Rules
-    def self.singularize: (String word) -> String
+    def self.singularize: (("posts" | "categories") word) -> String
   end
 end
 
@@ -13,7 +13,7 @@ module Example92
 
     def initialize: () -> void
     def singular: (Regexp rule, ("" | "y") replacement) -> Array[untyped]
-    def apply: (String word) -> String
+    def apply: (("posts" | "categories") word) -> String
   end
 end
 
