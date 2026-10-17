@@ -1077,7 +1077,7 @@ postconditions:
   method: bazingado
   unconditional:
     ivars:
-      "@bazingado_block": "(^(*untyped) -> ::Symbol | nil)"
+      "@bazingado_block": "(^(*untyped) -> :age_after_a_decade | nil)"
     self: "::Example28::Foo & ::Example28::Foo::AfterBazingado"
   effects:
     may_write:
@@ -1086,7 +1086,8 @@ postconditions:
   method: bazingado
   unconditional:
     ivars:
-      "@bazingado_block": "(^(*untyped) -> ::Symbol | nil)"
+      "@bazingado_block": "(^(*untyped) -> (:age_after_a_decade | :name_upcase) |
+        nil)"
     self: "::Example29::Foo & ::Example29::Foo::AfterBazingado"
   effects:
     may_write:
@@ -1145,7 +1146,7 @@ postconditions:
   method: bazingado
   unconditional:
     ivars:
-      "@bazingado_block": "(^(*untyped) -> ::Symbol | nil)"
+      "@bazingado_block": "(^(*untyped) -> :age | nil)"
     self: "::Example31::Foo & ::Example31::Foo::AfterBazingado"
   effects:
     may_write:

@@ -1,11 +1,11 @@
 class Example62
   module Deferring
-    @kept: (^(*untyped) [self: Module] -> Symbol & ::RbsInfer::Body["def hallmark\n        super || \"shared\"\n      end"])?
+    @kept: (^(*untyped) [self: Module] -> :hallmark & ::RbsInfer::Body["def hallmark\n        super || \"shared\"\n      end"])?
 
     def self.extended: (Object base) -> Array[untyped]
 
-    def keep: () ?{ (*untyped) [self: Module] -> Symbol } -> (^(*untyped) [self: Module] -> Symbol)?
-    def append_features: (Module base) -> Symbol?
+    def keep: () ?{ (*untyped) [self: Module] -> :hallmark } -> (^(*untyped) [self: Module] -> :hallmark)?
+    def append_features: (Module base) -> (:hallmark)?
   end
 
   module Shared

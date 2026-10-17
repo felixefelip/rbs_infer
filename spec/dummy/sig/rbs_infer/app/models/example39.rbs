@@ -1,10 +1,10 @@
 module Example39
   module Foo
-    @_bananed_block: (^(*untyped) [self: Module] -> Symbol & ::RbsInfer::Body["def age\n        31\n      end"])?
+    @_bananed_block: (^(*untyped) [self: Module] -> :age & ::RbsInfer::Body["def age\n        31\n      end"])?
 
     private
 
-    def bananed: (?Module? base) ?{ (*untyped) [self: Module] -> Symbol } -> (^(*untyped) [self: Module] -> Symbol | nil | Symbol)
+    def bananed: (?Module? base) ?{ (*untyped) [self: Module] -> :age } -> (^(*untyped) [self: Module] -> :age | nil | :age)
   end
 
   module Baz
