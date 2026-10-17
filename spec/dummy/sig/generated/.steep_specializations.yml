@@ -29,38 +29,39 @@ methods:
   Example26::Foo#bazinga:
     "(singleton(::Example26::Baz)) on singleton(::Example26::Bar)": nil
   Example32::Foo#bazinga:
-    "(singleton(::Example32::Baz)) on singleton(::Example32::Bar)": "(::Symbol | nil)"
+    "(singleton(::Example32::Baz)) on singleton(::Example32::Bar)": "(:age | nil)"
   Example32::Foo#bazingado:
-    "(self) on singleton(::Example32::Baz)": "(::Symbol | nil)"
-    "(singleton(::Example32::Bar)) on singleton(::Example32::Baz)": "(::Symbol | nil)"
+    "(self) on singleton(::Example32::Baz)": "(:age | nil)"
+    "(singleton(::Example32::Bar)) on singleton(::Example32::Baz)": "(:age | nil)"
   Example33::Foo#bazinga:
-    "(singleton(::Example33::Baz)) on singleton(::Example33::Bar)": "(::Symbol | nil)"
-    "(singleton(::Example33::BazOther)) on singleton(::Example33::BarOther)": "(::Symbol
+    "(singleton(::Example33::Baz)) on singleton(::Example33::Bar)": "(:age | :name_upcase
       | nil)"
+    "(singleton(::Example33::BazOther)) on singleton(::Example33::BarOther)": "(:age
+      | :name_upcase | nil)"
   Example33::Foo#bazingado:
-    "(self) on singleton(::Example33::Baz)": "(::Symbol | nil)"
-    "(self) on singleton(::Example33::BazOther)": "(::Symbol | nil)"
+    "(self) on singleton(::Example33::Baz)": "(:age | :name_upcase | nil)"
+    "(self) on singleton(::Example33::BazOther)": "(:age | :name_upcase | nil)"
   Example34::Foo#included:
-    "(self) on singleton(::Example34::Baz)": "(::Symbol | nil)"
-    "(singleton(::Example34::Bar)) on singleton(::Example34::Baz)": "(::Symbol | nil)"
+    "(self) on singleton(::Example34::Baz)": "(:age | nil)"
+    "(singleton(::Example34::Bar)) on singleton(::Example34::Baz)": "(:age | nil)"
   Example35::Foo.bazinga:
-    "(singleton(::Example35::Baz)) on singleton(::Example35::Bar)": "(::Symbol | nil)"
+    "(singleton(::Example35::Baz)) on singleton(::Example35::Bar)": "(:age | nil)"
   Example35::Foo.bazingado:
-    "(self) on singleton(::Example35::Baz)": "(::Symbol | nil)"
-    "(singleton(::Example35::Bar)) on singleton(::Example35::Baz)": "(::Symbol | nil)"
+    "(self) on singleton(::Example35::Baz)": "(:age | nil)"
+    "(singleton(::Example35::Bar)) on singleton(::Example35::Baz)": "(:age | nil)"
   Example36::Foo.bazingado:
-    "(self) on singleton(::Example36::Baz)": "(::Symbol | nil)"
-    "(singleton(::Example36::Bar)) on singleton(::Example36::Baz)": "(::Symbol | nil)"
+    "(self) on singleton(::Example36::Baz)": "(:age | nil)"
+    "(singleton(::Example36::Bar)) on singleton(::Example36::Baz)": "(:age | nil)"
   Example37::Foo#bazingado:
-    "(self) on singleton(::Example37::Baz)": "(::Symbol | nil)"
-    "(singleton(::Example37::Bar)) on singleton(::Example37::Baz)": "(::Symbol | nil)"
+    "(self) on singleton(::Example37::Baz)": "(:age | nil)"
+    "(singleton(::Example37::Bar)) on singleton(::Example37::Baz)": "(:age | nil)"
   Example42::Foo#bazingado:
-    "(self) on singleton(::Example42::Baz)": "(::Symbol | nil)"
+    "(self) on singleton(::Example42::Baz)": "(:age | nil)"
   Example43::Foo#bazinga:
     "(singleton(::Example43::Baz)) on singleton(::Example43::Bar)": "::Array[singleton(::Example43::Baz)]"
     "(singleton(::Example43::Baz)) on singleton(::Example43::BarOther)": "::Array[singleton(::Example43::Baz)]"
   Example43::Foo#bazingado:
-    "(self) on singleton(::Example43::Baz)": "(::Symbol | nil)"
+    "(self) on singleton(::Example43::Baz)": "(:age | :name | nil)"
   Example4::Foo.name=:
     ("John Doe"): '"John Doe"'
   Example61.normalize:

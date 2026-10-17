@@ -1,9 +1,9 @@
 class Example37
   module Foo
-    @_bazingado_block: (^(*untyped) [self: singleton(Example37::Bar)] -> Symbol & ::RbsInfer::Body["def age\n        31\n      end"])?
+    @_bazingado_block: (^(*untyped) [self: singleton(Example37::Bar)] -> :age & ::RbsInfer::Body["def age\n        31\n      end"])?
 
     def bazinga: (*singleton(::Example37::Baz) modules) -> Array[singleton(Example37::Baz)]
-    def bazingado: (?singleton(Example37::Bar)? base) ?{ (*untyped) [self: singleton(Example37::Bar)] -> Symbol } -> (^(*untyped) [self: singleton(Example37::Bar)] -> Symbol | nil | Symbol)
+    def bazingado: (?singleton(Example37::Bar)? base) ?{ (*untyped) [self: singleton(Example37::Bar)] -> :age } -> (^(*untyped) [self: singleton(Example37::Bar)] -> :age | nil | :age)
   end
 end
 

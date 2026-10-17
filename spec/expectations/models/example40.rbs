@@ -6,15 +6,15 @@ class Example40
 
     private
 
-    def bazingado: (?singleton(Example40::Bar)? base) ?{ (*untyped) -> Symbol } -> (^(*untyped) -> Symbol)?
+    def bazingado: (?singleton(Example40::Bar)? base) ?{ (*untyped) -> (:age | :name) } -> (^(*untyped) -> (:age | :name) | nil)
   end
 end
 
 class Example40
   class Bazinga
-    @_bazingado_block: ((^(*untyped) -> Symbol & ::RbsInfer::Body["def age\n        31\n      end"]) | (^(*untyped) -> Symbol & ::RbsInfer::Body["def name\n        \"John Doe\"\n      end"]))?
+    @_bazingado_block: ((^(*untyped) -> (:age | :name) & ::RbsInfer::Body["def age\n        31\n      end"]) | (^(*untyped) -> (:age | :name) & ::RbsInfer::Body["def name\n        \"John Doe\"\n      end"]))?
 
-    def bazingado: (?untyped base) ?{ (*untyped) -> Symbol } -> (^(*untyped) -> Symbol)?
+    def bazingado: (?untyped base) ?{ (*untyped) -> (:age | :name) } -> (^(*untyped) -> (:age | :name) | nil)
   end
 end
 

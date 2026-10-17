@@ -1,6 +1,6 @@
 class Example53
   module Foo
-    def banana_class_method: () { (Module) -> Symbol } -> Symbol
+    def banana_class_method: () { (Module) -> :age } -> :age
     def included: (Module base) -> Module?
   end
 
