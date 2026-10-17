@@ -9,7 +9,7 @@ module Example75
     RESERVED: Array[("class" | "def" | "end")]
 
     def self.human_name: () -> "Peel"
-    def self.banana_delegate: ((:email | :human_name) method, to: (:user | :class)) -> untyped
+    def self.banana_delegate: ((:email | :human_name) method, to: (:user | :class)) -> (:email | :human_name)
 
     def user: () -> Skin
   end

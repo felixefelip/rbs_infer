@@ -3,7 +3,7 @@ module Example89
     self.@generated_methods: Module?
 
     def self.generated_methods: () -> Module
-    def self.define_reader: ((:size | :weight) name) -> untyped
+    def self.define_reader: ((:size | :weight) name) -> (:size | :weight)
     def self.define_reader_on_self: ((:color | :shape) name) -> (:color | :shape)
   end
 end

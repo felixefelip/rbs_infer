@@ -12,13 +12,13 @@ module Example88
     attr_reader singulars: Array[untyped]
 
     def initialize: () -> void
-    def singular: (Regexp rule, ("" | "y") replacement) -> Array[untyped]
+    def singular: (Regexp rule, ("" | "y") replacement) -> ([ [ Regexp, "" ] ] | [ [ Regexp, "y" ], [ Regexp, "" ] ])
   end
 end
 
 module Example88
   class Base
-    def self.has_many_like: ((:comments | :categories) name) -> untyped
+    def self.has_many_like: ((:comments | :categories) name) -> (:comment_ids | :category_ids)
   end
 end
 

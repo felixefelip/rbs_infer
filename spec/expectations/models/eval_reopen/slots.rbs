@@ -3,6 +3,6 @@ class EvalReopen
     @slot: "value"?
 
     def slot: () -> "value"?
-    def slot=: ("value"? value) -> "value"?
+    def slot=: ("value"? value) -> "value"
   end
 end

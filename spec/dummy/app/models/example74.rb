@@ -7,9 +7,9 @@
 #     receiver = "self.#{receiver}" if RESERVED_METHOD_NAMES.include?(receiver)
 #
 # Undecided, `receiver` widens to a union of literals that the interpolation
-# keeps, but apart from the guard's answer: the declaration of `guarded` below,
-# that line with nothing else in it, reads four strings where two run. Each call
-# site, which decides the guard, reads the one it runs.
+# keeps. Checked alone, that line reads four strings where two run; the
+# declaration of `guarded` below reads the two, as the union of what its call
+# sites returned. Each call site, which decides the guard, reads the one it runs.
 #
 # The four that must NOT answer are the point. A constant is written once by
 # convention, not by enforcement, and a value read from a name the file changed

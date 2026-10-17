@@ -3,6 +3,6 @@ class Example62
     @hallmark: "value"?
 
     def hallmark: () -> "value"?
-    def hallmark=: ("value"? value) -> "value"?
+    def hallmark=: ("value"? value) -> "value"
   end
 end

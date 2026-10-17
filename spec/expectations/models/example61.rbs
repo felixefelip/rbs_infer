@@ -1,5 +1,5 @@
 class Example61
-  def self.normalize: ((:indexed_by | "indexed_by") key) -> String
+  def self.normalize: ((:indexed_by | "indexed_by") key) -> "indexed_by"
 
   def normalized_key: () -> "indexed_by"
 end
