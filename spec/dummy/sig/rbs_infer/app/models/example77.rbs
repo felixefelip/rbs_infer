@@ -1,13 +1,13 @@
 module Example77
   module Writer
-    def self.generate: (singleton(Peel) owner, (:human_name | :nick) method) -> untyped
+    def self.generate: (singleton(Peel) owner, (:human_name | :nick) method) -> (:human_name | :nick)
   end
 end
 
 module Example77
   class Peel
     def self.human_name: ("all" index) -> "ALL"
-    def self.banana_delegate: ((:human_name | :nick) method) -> untyped
+    def self.banana_delegate: ((:human_name | :nick) method) -> (:human_name | :nick)
   end
 end
 

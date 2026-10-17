@@ -3,7 +3,7 @@ module Example88
     self.@rules: Example88::Rules?
 
     def self.rules: () -> Example88::Rules
-    def self.singularize: (("comments" | "categories") word) -> String
+    def self.singularize: (("comments" | "categories") word) -> ("comment" | "category")
   end
 end
 

@@ -22,6 +22,12 @@ methods:
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
+  Example13::Registry.tenant=:
+    "(::Example13Tenant) on singleton(::Example13::Registry)": "::Example13Tenant"
+    "(nil) on singleton(::Example13::Registry)": nil
+  Example13::Registry.user=:
+    "(::Example13Viewer) on singleton(::Example13::Registry)": "::Example13Viewer"
+    "(nil) on singleton(::Example13::Registry)": nil
   Example19#record:
     ("denied"): '"denied"'
   Example20#record:
@@ -55,6 +61,9 @@ methods:
   Example37::Foo#bazingado:
     "(self) on singleton(::Example37::Baz)": "(:age | nil)"
     "(singleton(::Example37::Bar)) on singleton(::Example37::Baz)": "(:age | nil)"
+  Example3::Foo.user=:
+    "(::Example3::User) on singleton(::Example3::Foo)": "::Example3::User"
+    "(nil) on singleton(::Example3::Foo)": nil
   Example42::Foo#bazingado:
     "(self) on singleton(::Example42::Baz)": "(:age | nil)"
   Example43::Foo#bazinga:
@@ -64,6 +73,8 @@ methods:
     "(self) on singleton(::Example43::Baz)": "(:age | :name | nil)"
   Example4::Foo.name=:
     ("John Doe"): '"John Doe"'
+    ("John Doe") on singleton(::Example4::Foo): '"John Doe"'
+    "(nil) on singleton(::Example4::Foo)": nil
   Example61.normalize:
     ("indexed_by"): '"indexed_by"'
     "(:indexed_by)": '"indexed_by"'
@@ -88,12 +99,17 @@ methods:
     "(:user)": '"  (user).x(...)"'
   Example75::Peel.banana_delegate:
     "(:email, to: :user)": ":email"
+    "(:email, to: :user) on singleton(::Example75::Peel)": ":email"
     "(:human_name, to: :class)": ":human_name"
+    "(:human_name, to: :class) on singleton(::Example75::Peel)": ":human_name"
   Example76::Peel.banana_delegate:
     "(:human_name)": ":human_name"
+    "(:human_name) on singleton(::Example76::Peel)": ":human_name"
   Example77::Peel.banana_delegate:
+    "(:human_name) on singleton(::Example77::Peel)": ":human_name"
     "(:nick) on singleton(::Example77::Rind)": ":nick"
   Example77::Writer.generate:
+    "(singleton(::Example77::Peel), :human_name)": ":human_name"
     "(singleton(::Example77::Rind), :nick)": ":nick"
   Example7::Dispatcher#show:
     "(:age)": '42'
@@ -103,10 +119,14 @@ methods:
     "(:name)": '"JOHN DOE"'
   Example83.has_direct:
     "(:labels)": ":labels"
+    "(:labels) on singleton(::Example83)": ":labels"
     "(:tags)": ":tags"
+    "(:tags) on singleton(::Example83)": ":tags"
   Example83::Writer.define_direct:
     "(self, :labels)": ":labels"
     "(self, :tags)": ":tags"
+    "(singleton(::Example83), :labels)": ":labels"
+    "(singleton(::Example83), :tags)": ":tags"
   Example89::Base.define_reader:
     "(:weight) on singleton(::Example89::Widget)": ":weight"
   Example89::Base.define_reader_on_self:
@@ -117,6 +137,7 @@ methods:
   Example89::Base.generated_methods:
     "() on singleton(::Example89::Widget)": singleton(::Example89::Widget::GeneratedMethods)
   Example90::Base.has_reader:
+    "(:tags)": ":tags"
     "(:tags) on singleton(::Example90::Post)": ":tags"
   Example90::Core::ClassMethods#generated_association_methods:
     "() on singleton(::Example90::Post)": singleton(::Example90::Post::GeneratedAssociationMethods)
@@ -153,6 +174,8 @@ methods:
     ("post"): '"stamped: post"'
 declarations:
   ActiveJob::Base.perform_later: "(::AuthorDigestJob | ::AvatarThumbnailJob)"
+  Current.account=: "(::Account & ::Account::Validated)"
+  Current.user=: "(::User & ::User::Validated)"
   EvalReopen::Slots#slot=: '"value"'
   EventTracker#track_event: ({ :action => :reported } | { :action => "created" })
   Eventable#track_event: ({ :action => :closed, :particulars => ::Hash[::Symbol, untyped]
@@ -171,16 +194,19 @@ declarations:
   Example72::Foo#spread: '"x;y"'
   Example74::Foo#guarded: ("  (user).x(...)" | "  (self.class).x(...)")
   Example75::Peel.banana_delegate: "(:email | :human_name)"
-  Example85.has_many_like: "(:post_ids | :category_ids)"
+  Example77::Writer.generate: "(:human_name | :nick)"
+  Example85.singularize: ("post" | "category")
   Example85::Rules#singular: ([[::Regexp, ""]] | [[::Regexp, "y"], [::Regexp, ""]])
-  Example88::Base.has_many_like: "(:comment_ids | :category_ids)"
+  Example88::Inflector.singularize: ("comment" | "category")
   Example88::Rules#singular: ([[::Regexp, ""]] | [[::Regexp, "y"], [::Regexp, ""]])
   Example89::Base.define_reader: "(:size | :weight)"
-  Example90::Base.has_reader: "(:comments | :tags)"
-  Example92::Post.has_many_like: "(:post_ids | :category_ids)"
+  Example89::Base.generated_methods: singleton(::Example89::Widget::GeneratedMethods)
+  Example90::Core::ClassMethods#generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)
+  Example91::Core::ClassMethods#generated_association_methods: singleton(::Example91::Post::GeneratedAssociationMethods)
+  Example92::Rules#apply: ("post" | "category")
   Example92::Rules#singular: ([[::Regexp, ""]] | [[::Regexp, "y"], [::Regexp, ""]])
   Example93::Inflector.configure: "::Array[untyped]"
-  Example93::Post.has_many_like: "(:post_ids | :category_ids)"
+  Example93::Rules#apply: ("post" | "category")
   IncludedHook::Slots#badge=: '"value"'
   IncludedHook::Slots#slot=: '"value"'
   IncludedHook::Slots#stamp=: '"value"'

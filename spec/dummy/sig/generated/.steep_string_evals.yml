@@ -173,8 +173,11 @@ call_sites:
   app/models/example91.rb:26:8:
   -
   -
+  -
   app/models/example91.rb:30:16:
   -
+  -
+  app/models/example91.rb:31:8:
   -
   app/models/example91.rb:49:4:
   - source: |-

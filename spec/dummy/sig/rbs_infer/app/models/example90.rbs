@@ -5,7 +5,7 @@ module Example90
   module Core::ClassMethods
     @generated_association_methods: Module?
 
-    def generated_association_methods: () -> Module
+    def generated_association_methods: () -> singleton(Example90::Post::GeneratedAssociationMethods)
   end
 end
 
