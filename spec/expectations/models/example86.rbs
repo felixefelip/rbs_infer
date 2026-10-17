@@ -1,7 +1,7 @@
 class Example86
   def self.fresh: () -> Box
   def self.publish: (Example86::Box box) -> :published
-  def self.has_stamp: (:draft name) -> untyped
+  def self.has_stamp: (:draft name) -> :published
   def self.summary: () -> :stamped
 end
 

@@ -44,12 +44,28 @@ methods:
   Example74::Foo#guarded:
     "(:class)": '"  (self.class).x(...)"'
     "(:user)": '"  (user).x(...)"'
+  Example75::Peel.banana_delegate:
+    "(:email, to: :user)": ":email"
+    "(:human_name, to: :class)": ":human_name"
+  Example76::Peel.banana_delegate:
+    "(:human_name)": ":human_name"
+  Example77::Writer.generate:
+    "(singleton(::Example77::Rind), :nick)": ":nick"
   Example7::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
   Example8#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
+  Example83.has_direct:
+    "(:labels)": ":labels"
+    "(:tags)": ":tags"
+  Example83::Writer.define_direct:
+    "(self, :labels)": ":labels"
+    "(self, :tags)": ":tags"
+  Example89::Base.define_reader_on_self:
+    "(:color)": ":color"
+    "(:shape)": ":shape"
   Example94::Base.register:
     "(:door, ::Example94::Door)": "::Example94::Door"
     "(:seat, ::Example94::Seat)": "::Example94::Seat"
