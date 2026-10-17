@@ -92,6 +92,10 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
 
     def lexical_name = @lexical_names.last
 
+    # Where a relative constant is looked up from: every enclosing `class` and
+    # `module`, as Ruby nests them, unlike `lexical_class_name`.
+    def constant_scope = lexical_name || lexical_class_name
+
     # The module being visited, joined with whatever encloses it, or the name
     # the file stands for outside one.
     def module_name

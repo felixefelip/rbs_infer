@@ -8,9 +8,10 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
   # `value_types` types one argument node in the collector's current scope; the
   # checker's `expression_types` refine it (`argument_type`).
   class CallArguments
-    def initialize(value_types:, init_positional_params:)
+    def initialize(value_types:, init_positional_params:, steep_bridge:)
       @value_types = value_types
       @init_positional_params = init_positional_params
+      @steep_bridge = steep_bridge
     end
 
     def for_initialize(call_node)
@@ -116,7 +117,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       resolved = @value_types.value_type(arg)
       checker = @value_types.expression_type(arg)
 
-      return checker if narrowed_from?(resolved, checker)
+      return checker if narrowed_from?(resolved, checker) || checker_fixes_the_literal?(resolved, checker)
       return resolved unless resolved.nil? || resolved == "untyped"
 
       checker || resolved
@@ -130,6 +131,12 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       return false unless declared && checked
 
       declared == RbsInfer::Signatures::RbsParserUtil.nilablize(checked)
+    end
+
+    def checker_fixes_the_literal?(declared, checked)
+      return false unless declared && checked && @steep_bridge
+
+      @steep_bridge.literal_refinement?(declared, checked) == true
     end
 
     def splat_name(param_name) = RbsInfer::Inference::RestParamMarker.unmark(param_name)

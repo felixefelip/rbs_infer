@@ -362,7 +362,9 @@ module RbsInfer::Signatures
           # `ParamTypeInferrer#find_new_calls`'s (felixefelip/rbs_infer#412).
           inherited_initializers: RbsInfer::Inference::InheritedReach::NONE,
           # `.new` call sites only: no method call is collected here.
-          inherited_supers: {}
+          inherited_supers: {},
+          # No checker answers here (`expression_types` is empty), so none to refine.
+          steep_bridge: nil
         )
         entry.result.value.accept(visitor)
         all_usages.concat(visitor.usages)
@@ -595,7 +597,9 @@ module RbsInfer::Signatures
           # `ParamTypeInferrer#find_new_calls`'s (felixefelip/rbs_infer#412).
           inherited_initializers: RbsInfer::Inference::InheritedReach::NONE,
           # `.new` call sites only: no method call is collected here.
-          inherited_supers: {}
+          inherited_supers: {},
+          # No checker answers here (`expression_types` is empty), so none to refine.
+          steep_bridge: nil
         )
         entry.result.value.accept(visitor)
 

@@ -40,7 +40,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
   # not narrow" — and it stays honest if the class changes.
   def build_collector(**kwargs)
     described_class.new(module_self_types: {}, invoker_self_types: null_invoker_self_types, inherited_forwards: {},
-                        inherited_initializers: RbsInfer::Inference::InheritedReach::NONE, inherited_supers: {}, **kwargs)
+                        inherited_initializers: RbsInfer::Inference::InheritedReach::NONE, inherited_supers: {}, steep_bridge: nil, **kwargs)
   end
 
   def null_invoker_self_types
@@ -682,6 +682,49 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
     end
   end
 
+  describe "the checker's literal over the declaration's class" do
+    def collect_with_checker(source, steep_bridge:)
+      result = Prism.parse(source)
+      argument = result.value.statements.body.last.arguments.arguments.first
+      visitor = build_collector(
+        target_class: "Inflector",
+        method_return_types: {},
+        local_var_types: { "word" => "String" },
+        constant_arg_resolver: null_constant_resolver,
+        target_methods: { "singularize" => ["word"] },
+        defined_class_names: [],
+        steep_bridge: steep_bridge,
+        expression_types: { RbsInfer::Signatures::SteepBridge.prism_expression_key(argument.location) => '("posts" | "categories")' }
+      )
+      result.value.accept(visitor)
+      visitor.method_call_usages
+    end
+
+    let(:source) do
+      <<~RUBY
+        word = build_word
+        Inflector.singularize(word)
+      RUBY
+    end
+
+    it "takes the checker's answer where it fixes the literals of the structural one" do
+      bridge = instance_double(RbsInfer::Signatures::SteepBridge)
+      allow(bridge).to receive(:literal_refinement?).with("String", '("posts" | "categories")').and_return(true)
+
+      usages = collect_with_checker(source, steep_bridge: bridge)
+
+      expect(usages["singularize"]).to eq([{ "word" => '("posts" | "categories")' }])
+    end
+
+    it "keeps the structural answer where the checker's is not a refinement of it" do
+      bridge = instance_double(RbsInfer::Signatures::SteepBridge, literal_refinement?: false)
+
+      usages = collect_with_checker(source, steep_bridge: bridge)
+
+      expect(usages["singularize"]).to eq([{ "word" => "String" }])
+    end
+  end
+
   describe "same-simple-name classes are not conflated (cross-class leak)" do
     def collect_method_usages(source, target_class:, target_methods:, local_var_types: {})
       result = Prism.parse(source)
@@ -730,6 +773,26 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
         target_methods: { "user=" => ["value"] }
       )
       expect(usages["user="]).to eq([{ "value" => "nil" }])
+    end
+
+    it "resolves the spelling through an enclosing module, not only enclosing classes" do
+      source = <<~RUBY
+        module Example88
+          module Inflector
+            def self.singularize(word) = word
+          end
+
+          class Base
+            def self.has_many_like(name)
+              Inflector.singularize("posts")
+            end
+          end
+        end
+      RUBY
+
+      usages = collect_method_usages(source, target_class: "Example93::Inflector", target_methods: { "singularize" => ["word"] })
+
+      expect(usages["singularize"]).to be_empty
     end
   end
 
