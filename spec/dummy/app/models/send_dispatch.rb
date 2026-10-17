@@ -12,7 +12,7 @@
 #
 # - **Steep resolves it now** (felixefelip/steep#137). A literal-name `send` is read as a
 #   call to that method, so the arguments are checked and the return type is taken. That is
-#   why the snapshot below reads `String` where it used to read `untyped`, with no rbs_infer
+#   why the snapshot below reads `stamp`'s return where it used to read `untyped`, with no rbs_infer
 #   change at all: `SteepBridge` uses the checker as the return-type oracle, so the win
 #   arrives through the existing pipeline.
 # - **rbs_infer reads the call site now** (rbs_infer#205). `SourceIndex` indexed the file
@@ -56,7 +56,7 @@ end
 # that types a parameter from its callers.
 class SendDispatchCaller
   # The checker criterion, now MET: `send` with a literal symbol IS a call to that method,
-  # so this is `String` — in the snapshot, without rbs_infer knowing anything about `send`,
+  # so this is what `stamp` returns — in the snapshot, without rbs_infer knowing anything about `send`,
   # because `SteepBridge` asks the checker for the return type.
   def stamped
     SendDispatch.new.send(:stamp, "post")

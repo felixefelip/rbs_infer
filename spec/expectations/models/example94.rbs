@@ -29,7 +29,7 @@ module Example94
     def self.registry: () -> Hash[:wheel | :seat | :door, Example94::Wheel | Example94::Seat | Example94::Bench | Example94::Door]
     def self.register: ((:wheel | :seat | :door) name, (Wheel | Seat | Bench | Door) value) -> (Wheel | Seat | Bench | Door)
     def self.lookup: ((:wheel | :seat | :door) name) -> (Example94::Wheel | Example94::Seat | Example94::Bench | Example94::Door)
-    def self.describe: ((:wheel | :seat) name) -> untyped
+    def self.describe: ((:wheel | :seat) name) -> (:wheel_label | :seat_label)
   end
 end
 

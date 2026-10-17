@@ -4,7 +4,7 @@ module Example89
 
     def self.generated_methods: () -> Module
     def self.define_reader: ((:size | :weight) name) -> untyped
-    def self.define_reader_on_self: ((:color | :shape) name) -> untyped
+    def self.define_reader_on_self: ((:color | :shape) name) -> (:color | :shape)
   end
 end
 

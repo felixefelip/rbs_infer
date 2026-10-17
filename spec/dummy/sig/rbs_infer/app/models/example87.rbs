@@ -1,9 +1,9 @@
 class Example87
   module Writer
-    def self.define_accessors: (singleton(Example87) model, HasManyReflection reflection) -> untyped
+    def self.define_accessors: (singleton(Example87) model, HasManyReflection reflection) -> (:posts | :comments)
   end
 
-  def self.has_association: ((:posts | :comments) name, ?Hash[untyped, untyped] options) -> untyped
+  def self.has_association: ((:posts | :comments) name, ?Hash[untyped, untyped] options) -> (:posts | :comments)
   def self.summary: () -> [ :many, :many ]
 end
 
