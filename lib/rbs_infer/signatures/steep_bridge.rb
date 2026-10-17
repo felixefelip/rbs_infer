@@ -1,6 +1,7 @@
 require "steep"
 require_relative "../inference/ivar_type_set"
 require_relative "../project/base_dir"
+require_relative "steep_bridge/type_relations"
 
 module RbsInfer::Signatures
   # Bridge to Steep's TypeConstruction for resolving expression types.
@@ -16,12 +17,15 @@ module RbsInfer::Signatures
   # - Attr inference via initialize
   # - RBS generation
   class SteepBridge
+    include TypeRelations
+
     def initialize(literal_method_registry:, constructor_bindings:)
       # The corpus registry is a project-wide snapshot. Each bridge augments it
       # with its expanded in-memory source, so it needs a private copy: a parse
       # failure or generated reopen in one target must not taint every target
       # analysed after it.
       @literal_method_registry = literal_method_registry.dup
+      @constructor_bindings = constructor_bindings
       @ivar_write_analyzer = IvarWriteAnalyzer.new(steep_bridge: self, constructor_bindings: constructor_bindings,
                                                    literal_methods: @literal_method_registry)
     end
@@ -113,50 +117,6 @@ module RbsInfer::Signatures
 
     def method_return_types_by_kind(source_code)
       return_type_analyzer.method_return_types_by_kind(source_code)
-    end
-
-    # Whether a body typed `value` satisfies a declaration of `declared` —
-    # exactly the relation `Ruby::MethodBodyTypeMismatch` reports on, asked of
-    # Steep's own subtyping check so the answer cannot drift from the error.
-    #
-    # Three-valued on purpose: `nil` is "cannot decide" — no environment, an
-    # unparsable type, or a type whose meaning depends on a context this check
-    # does not have (`self`/`instance`/`class`, whose referent is the enclosing
-    # definition). A caller that corrects a signature on `false` must not
-    # correct on `nil`, so the two are never collapsed here.
-    def accepts?(declared, value)
-      subtyping = steep_subtyping
-      return nil unless subtyping
-
-      declared_type = context_free_type(declared, subtyping)
-      value_type = context_free_type(value, subtyping)
-      return nil unless declared_type && value_type
-
-      subtype?(value_type, declared_type, subtyping)
-    end
-
-    # Whether `declared` and `value` are the same type up to how exactly it is
-    # said, with `value` the strictly more precise of the two:
-    # `("name_delete" | "delete")` against `String`, `"name_delete"` against
-    # `("name_delete" | "delete")`, `Array["a"]` against `Array[String]`,
-    # `["a", "b"]` against `Array[String]`, `false` against `bool`.
-    #
-    # Three-valued like `accepts?`.
-    def literal_refinement?(declared, value)
-      subtyping = steep_subtyping
-      return nil unless subtyping
-
-      declared_type = context_free_type(declared, subtyping)
-      value_type = context_free_type(value, subtyping)
-      return nil unless declared_type && value_type
-      return false unless literal_bearing?(value_type)
-      return false unless subtype?(value_type, declared_type, subtyping)
-      return false if subtype?(declared_type, value_type, subtyping)
-
-      widened_declared = widen_shape(widen_booleans(widen_literals(declared_type)))
-      widened_value = widen_shape(widen_booleans(widen_literals(value_type)))
-      subtype?(widened_value, widened_declared, subtyping) &&
-        subtype?(widened_declared, widened_value, subtyping)
     end
 
     # Returns { "CONSTANT_NAME" => "Type" } for every `NAME = expr` /
@@ -564,110 +524,6 @@ module RbsInfer::Signatures
       SteepEnvironment.steep_context&.fetch(:constant_resolver)
     end
 
-    # A signature's type string as a Steep type, or nil when it is not one this
-    # check can compare.
-    #
-    # Names are absolutized before the factory sees them: a signature writes
-    # `Filter`, and the definition every subtyping question ends at is filed
-    # under `::Filter`. A relative name resolves to nothing, which the rescue
-    # would report as "cannot decide" for every type in the project.
-    def context_free_type(string, subtyping)
-      parsed = RBS::Parser.parse_type(string)
-      return nil if context_dependent?(parsed)
-
-      absolute = parsed.map_type_name { |name, _, _| name.absolute! }
-      return nil unless known_type_names?(absolute)
-
-      subtyping.factory.type(absolute)
-    rescue RBS::ParsingError, RBS::BaseError
-      nil
-    end
-
-    def subtype?(sub_type, super_type, subtyping)
-      subtyping.check(
-        Steep::Subtyping::Relation.new(sub_type: sub_type, super_type: super_type),
-        self_type: nil, instance_type: nil, class_type: nil,
-        constraints: Steep::Subtyping::Constraints.empty
-      ).success?
-    end
-
-    def literal_bearing?(type)
-      return true if type.is_a?(Steep::AST::Types::Literal)
-
-      type.each_child.any? { |child| literal_bearing?(child) }
-    end
-
-    def widen_literals(type)
-      return type.back_type if type.is_a?(Steep::AST::Types::Literal)
-
-      type.map_type { |child| widen_literals(child) }
-    end
-
-    # A tuple as the array it widens to. The equality in `literal_refinement?`
-    # asks whether two types describe the same VALUES and differ only in how
-    # exactly they say so, and a tuple differs from `Array[Elem]` in exactly
-    # that way: it adds how many elements there are and which is which, and
-    # takes nothing away. Widening only the literals leaves `["a", "b"]` and
-    # `Array[String]` failing that test in the one direction a tuple can never
-    # satisfy, so a body strictly more exact than its declaration would be
-    # declined as a different type rather than taken as the better answer.
-    # A boolean literal as `bool`. `widen_literals` answers with a literal's
-    # CLASS, and the class of `false` is `FalseClass` — one arm of `bool`, not
-    # `bool` — so the equality below fails in one direction for a pair that is
-    # the same type said two ways. `bool` IS `(true | false)` by definition, so
-    # widening a boolean to it is what widening means here.
-    #
-    # Only in `literal_refinement?`. `Specializations.widen_literals` is Steep's
-    # and keys specialization on the class, where the class is the answer.
-    def widen_booleans(type)
-      return Steep::AST::Types::Boolean.new if boolean_class?(type)
-
-      type.map_type { |child| widen_booleans(child) }
-    end
-
-    def boolean_class?(type)
-      type.is_a?(Steep::AST::Types::Name::Instance) &&
-        ["::TrueClass", "::FalseClass"].include?(type.name.to_s)
-    end
-
-    def widen_shape(type)
-      if type.is_a?(Steep::AST::Types::Tuple)
-        elements = type.types.map { |element| widen_shape(element) }
-        return Steep::AST::Builtin::Array.instance_type(
-          Steep::AST::Types::Union.build(types: elements)
-        )
-      end
-
-      type.map_type { |child| widen_shape(child) }
-    end
-
-    # Whether the environment defines every name in `type`. A name it does not
-    # know has no definition to compare against, and an unknown ALIAS makes the
-    # subtyping check raise (`RBS::DefinitionBuilder#expand_alias2`), so this is
-    # asked up front instead of rescued after.
-    def known_type_names?(type)
-      env = SteepEnvironment.definition_builder&.env
-      return true unless env
-
-      names = [] # : Array[RBS::TypeName]
-      type.map_type_name do |name, _, _|
-        names << name
-        name
-      end
-      names.all? { |name| env.type_name?(name) }
-    end
-
-    # `self`, `instance` and `class` name whatever definition encloses them, and
-    # this check has no enclosing definition — comparing them against a concrete
-    # type would answer about a type neither side wrote.
-    def context_dependent?(type)
-      return true if type.is_a?(RBS::Types::Bases::Self) ||
-                     type.is_a?(RBS::Types::Bases::Instance) ||
-                     type.is_a?(RBS::Types::Bases::Class)
-
-      type.each_type.any? { |t| context_dependent?(t) }
-    end
-
     # A character offset into `source` as a byte offset. Identical for an
     # ASCII-only file, which is the common case and worth not scanning for.
     def byte_offset(source, char_offset)
@@ -696,7 +552,7 @@ module RbsInfer::Signatures
         specializations: specializations_store,
         literal_method_registry: @literal_method_registry,
         delegation_registry: delegation_registry_store,
-        constructor_bindings: constructor_bindings_store,
+        constructor_bindings: @constructor_bindings,
         return_forwarding: return_forwarding_store,
         return_alias: return_alias_store
       )
@@ -711,10 +567,6 @@ module RbsInfer::Signatures
     # we wouldn't be able to populate here anyway.
     def delegation_registry_store
       @delegation_registry_store ||= Steep::Project::DelegationRegistry.new
-    end
-
-    def constructor_bindings_store
-      @constructor_bindings_store ||= Steep::Project::ConstructorBindingRegistry.new
     end
 
     def return_forwarding_store

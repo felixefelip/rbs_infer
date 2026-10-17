@@ -26,6 +26,42 @@ methods:
     ("denied"): '"denied"'
   Example20#record:
     ("denied"): '"denied"'
+  Example26::Foo#bazinga:
+    "(singleton(::Example26::Baz)) on singleton(::Example26::Bar)": nil
+  Example32::Foo#bazinga:
+    "(singleton(::Example32::Baz)) on singleton(::Example32::Bar)": "(:age | nil)"
+  Example32::Foo#bazingado:
+    "(self) on singleton(::Example32::Baz)": "(:age | nil)"
+    "(singleton(::Example32::Bar)) on singleton(::Example32::Baz)": "(:age | nil)"
+  Example33::Foo#bazinga:
+    "(singleton(::Example33::Baz)) on singleton(::Example33::Bar)": "(:age | :name_upcase
+      | nil)"
+    "(singleton(::Example33::BazOther)) on singleton(::Example33::BarOther)": "(:age
+      | :name_upcase | nil)"
+  Example33::Foo#bazingado:
+    "(self) on singleton(::Example33::Baz)": "(:age | :name_upcase | nil)"
+    "(self) on singleton(::Example33::BazOther)": "(:age | :name_upcase | nil)"
+  Example34::Foo#included:
+    "(self) on singleton(::Example34::Baz)": "(:age | nil)"
+    "(singleton(::Example34::Bar)) on singleton(::Example34::Baz)": "(:age | nil)"
+  Example35::Foo.bazinga:
+    "(singleton(::Example35::Baz)) on singleton(::Example35::Bar)": "(:age | nil)"
+  Example35::Foo.bazingado:
+    "(self) on singleton(::Example35::Baz)": "(:age | nil)"
+    "(singleton(::Example35::Bar)) on singleton(::Example35::Baz)": "(:age | nil)"
+  Example36::Foo.bazingado:
+    "(self) on singleton(::Example36::Baz)": "(:age | nil)"
+    "(singleton(::Example36::Bar)) on singleton(::Example36::Baz)": "(:age | nil)"
+  Example37::Foo#bazingado:
+    "(self) on singleton(::Example37::Baz)": "(:age | nil)"
+    "(singleton(::Example37::Bar)) on singleton(::Example37::Baz)": "(:age | nil)"
+  Example42::Foo#bazingado:
+    "(self) on singleton(::Example42::Baz)": "(:age | nil)"
+  Example43::Foo#bazinga:
+    "(singleton(::Example43::Baz)) on singleton(::Example43::Bar)": "::Array[singleton(::Example43::Baz)]"
+    "(singleton(::Example43::Baz)) on singleton(::Example43::BarOther)": "::Array[singleton(::Example43::Baz)]"
+  Example43::Foo#bazingado:
+    "(self) on singleton(::Example43::Baz)": "(:age | :name | nil)"
   Example4::Foo.name=:
     ("John Doe"): '"John Doe"'
   Example61.normalize:
@@ -33,6 +69,12 @@ methods:
     "(:indexed_by)": '"indexed_by"'
   Example62::Slots#hallmark=:
     ("value"): '"value"'
+  Example65::Dispatcher.dispatch:
+    ("/tmp/x.csv") on singleton(::Example65CsvReporter): "::Example65CsvReporter"
+    '("ada", greeting: "hello") on singleton(::Example65Greeter)': "::Example65Greeter"
+    "(1, step: 2) on singleton(::Example65Adder)": "::Example65Adder"
+  Example65::Rival.dispatch:
+    "(true, mode: :fast) on singleton(::Example65Impostor)": "::Example65Impostor"
   Example69::Foo#call:
     "(flag_name: false)": '"delete"'
     "(flag_name: true)": '"name_delete"'
@@ -49,6 +91,8 @@ methods:
     "(:human_name, to: :class)": ":human_name"
   Example76::Peel.banana_delegate:
     "(:human_name)": ":human_name"
+  Example77::Peel.banana_delegate:
+    "(:nick) on singleton(::Example77::Rind)": ":nick"
   Example77::Writer.generate:
     "(singleton(::Example77::Rind), :nick)": ":nick"
   Example7::Dispatcher#show:
@@ -63,12 +107,35 @@ methods:
   Example83::Writer.define_direct:
     "(self, :labels)": ":labels"
     "(self, :tags)": ":tags"
+  Example89::Base.define_reader:
+    "(:weight) on singleton(::Example89::Widget)": ":weight"
   Example89::Base.define_reader_on_self:
     "(:color)": ":color"
+    "(:color) on singleton(::Example89::Widget)": ":color"
     "(:shape)": ":shape"
+    "(:shape) on singleton(::Example89::Widget)": ":shape"
+  Example89::Base.generated_methods:
+    "() on singleton(::Example89::Widget)": singleton(::Example89::Widget::GeneratedMethods)
+  Example90::Base.has_reader:
+    "(:tags) on singleton(::Example90::Post)": ":tags"
+  Example90::Core::ClassMethods#generated_association_methods:
+    "() on singleton(::Example90::Post)": singleton(::Example90::Post::GeneratedAssociationMethods)
+  Example91::Core::ClassMethods#generated_association_methods:
+    "() on singleton(::Example91::Post)": singleton(::Example91::Post::GeneratedAssociationMethods)
+  Example94::Base.describe:
+    "(:seat) on singleton(::Example94::Car)": ":seat_label"
+    "(:seat) on singleton(::Example94::Truck)": ":seat_label"
+    "(:wheel) on singleton(::Example94::Car)": ":wheel_label"
+  Example94::Base.lookup:
+    "(:door) on singleton(::Example94::Truck)": "::Example94::Door"
+    "(:seat) on singleton(::Example94::Car)": "::Example94::Seat"
+    "(:seat) on singleton(::Example94::Truck)": "::Example94::Bench"
+    "(:wheel) on singleton(::Example94::Car)": "::Example94::Wheel"
   Example94::Base.register:
     "(:door, ::Example94::Door)": "::Example94::Door"
+    "(:door, ::Example94::Door) on singleton(::Example94::Truck)": "::Example94::Door"
     "(:seat, ::Example94::Seat)": "::Example94::Seat"
+    "(:seat, ::Example94::Seat) on singleton(::Example94::Car)": "::Example94::Seat"
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'

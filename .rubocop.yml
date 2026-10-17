@@ -42,7 +42,7 @@ Project/ClassLengthCeiling:
     "lib/rbs_infer/inference/param_type_inferrer.rb": 457
     "lib/rbs_infer/inference/type_merger.rb": 327
     "lib/rbs_infer/signatures/method_type_resolver.rb": 336
-    "lib/rbs_infer/signatures/steep_bridge.rb": 399
+    "lib/rbs_infer/signatures/steep_bridge.rb": 325
 
 Metrics/ModuleLength:
   CountAsOne: ["array", "hash", "heredoc", "method_call"]

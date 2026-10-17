@@ -842,6 +842,7 @@ Style/RedundantEach:
 Style/ReturnNilInPredicateMethodDefinition:
   Exclude:
     - "lib/rbs_infer/signatures/steep_bridge.rb"
+    - "lib/rbs_infer/signatures/steep_bridge/type_relations.rb"
 
 # Offense count: 2
 # This cop supports unsafe autocorrection (--autocorrect-all).

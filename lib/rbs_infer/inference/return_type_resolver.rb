@@ -52,16 +52,7 @@ module RbsInfer::Inference
     def defines_own_body?(member, parsed_target)
       return false unless parsed_target
 
-      return false unless def_map(parsed_target).key?(member.name)
-
-      # …and the file writes exactly ONE body under that name and kind. Steep's
-      # map is keyed by name (kind-split, never owner-split), so two classes
-      # declared in one file with a same-named method share one entry and the
-      # answer belongs to whichever the typing recorded last — which is how
-      # `Example65::Dispatcher.dispatch` reads `Example65::Rival`, the defect
-      # example65's own comment records. Where the map cannot say WHOSE body it
-      # typed, the declaration is still the better answer.
-      file_def_counts(parsed_target)[[member.name, member.kind == :class_method]] == 1
+      def_map(parsed_target).key?(member.name)
     end
 
     # Whether Steep's type for this body is one the declaration cannot accept —
@@ -92,18 +83,6 @@ module RbsInfer::Inference
     # name+singleton? => how many defs the WHOLE file writes under it. Flat on
     # purpose (no `target_class`): the collision that matters is the one in
     # Steep's map, which is built from the whole source.
-    def file_def_counts(parsed_target)
-      @file_def_counts ||= begin
-        collector = RbsInfer::AST::DefCollector.new
-        parsed_target.tree.accept(collector)
-        collector.defs.each_with_object(Hash.new(0)) do |d, counts|
-          next unless d.is_a?(Prism::DefNode)
-
-          counts[[d.name.to_s, collector.class_method?(d)]] += 1
-        end
-      end
-    end
-
     def apply_return_type(member, type)
       member.signature = member.signature.sub(
         /-> untyped$/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(type)}"
@@ -221,6 +200,7 @@ module RbsInfer::Inference
       refine_untyped_holes(members, steep_returns, parsed_target)
       refine_to_self(members, steep_returns)
       refine_literals(members, steep_returns, parsed_target)
+      refine_union_alternatives(members, steep_returns, parsed_target)
       correct_contradicted_declarations(members, steep_returns, parsed_target)
     end
 
@@ -363,6 +343,24 @@ module RbsInfer::Inference
         next unless @steep_bridge.literal_refinement?(current_type, steep_type)
 
         steep_type = with_early_nil_return(m, steep_type, parsed_target)
+        rewrite_return(m, current_type, RbsInfer::Signatures::RbsParserUtil.parenthesize_union(steep_type))
+      end
+    end
+
+    # A sixth: the declaration lists the alternatives the method may return
+    # anywhere, and the body is checked where it returns fewer of them —
+    # `self.class.lookup(:wheel)` reads only what its class stored
+    # (felixefelip/steep#279).
+    def refine_union_alternatives(members, steep_returns, parsed_target)
+      revisable_members(members).each do |m|
+        next unless defines_own_body?(m, parsed_target)
+
+        current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
+        next unless current_type && current_type != "untyped"
+
+        steep_type = steep_answer(m, steep_returns) or next
+        next unless @steep_bridge.union_refinement?(current_type, steep_type)
+
         rewrite_return(m, current_type, RbsInfer::Signatures::RbsParserUtil.parenthesize_union(steep_type))
       end
     end
