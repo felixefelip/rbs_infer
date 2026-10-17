@@ -29,7 +29,7 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, module_self_types:, invoker_self_types:, inherited_forwards:, inherited_initializers:, inherited_supers:,
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, module_self_types:, invoker_self_types:, inherited_forwards:, inherited_initializers:, inherited_supers:, steep_bridge:,
                    local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
       @receivers = ReceiverMatcher.new(target_class: target_class, method_owners: method_owners, defined_class_names: defined_class_names)
       @scope = Scope.new(local_var_types: local_var_types, caller_class_name: caller_class_name)
@@ -37,7 +37,7 @@ module RbsInfer::Inference
                               method_type_resolver: method_type_resolver, constant_arg_resolver: constant_arg_resolver,
                               self_types_by_method: self_types_by_method, module_self_types: module_self_types, invoker_self_types: invoker_self_types,
                               expression_types: expression_types)
-      @arguments = CallArguments.new(value_types: @types, init_positional_params: init_positional_params)
+      @arguments = CallArguments.new(value_types: @types, init_positional_params: init_positional_params, steep_bridge: steep_bridge)
       @local_var_types_by_method = local_var_types_by_method
       @method_scoped_var_names = local_var_types_by_method.each_value.flat_map(&:keys).to_set
       @assigned_types = AssignedTypes.new(method_return_types: method_return_types, method_type_resolver: method_type_resolver, caller_class_name: caller_class_name)
@@ -144,7 +144,7 @@ module RbsInfer::Inference
         method_name = node.name.to_s
         if @target_methods.key?(method_name)
           receiver_type = @types.receiver_type(node.receiver)
-          @receivers.keys_by_branch(receiver_type, method_name, namespace: @scope.lexical_class_name).each do |key, branches|
+          @receivers.keys_by_branch(receiver_type, method_name, namespace: @scope.constant_scope).each do |key, branches|
             args = extract_cross_class_args_for(node, method_name, branches)
             @method_call_usages[key] << args unless args.empty?
           end
@@ -196,7 +196,7 @@ module RbsInfer::Inference
     private
 
     def match_class?(name)
-      @receivers.match_class?(name, namespace: @scope.lexical_class_name)
+      @receivers.match_class?(name, namespace: @scope.constant_scope)
     end
 
     def block_receiver_matches?(node)

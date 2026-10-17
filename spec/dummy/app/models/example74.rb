@@ -6,10 +6,10 @@
 #
 #     receiver = "self.#{receiver}" if RESERVED_METHOD_NAMES.include?(receiver)
 #
-# Undecided, `receiver` widens to a union of two literals — and a union of
-# literals collapses to `String` on the next interpolation, so the generated
-# chunk is not a literal and the call site is declined for EVERY receiver, not
-# only the reserved ones. `guarded` below is that line with nothing else in it.
+# Undecided, `receiver` widens to a union of literals that the interpolation
+# keeps, but apart from the guard's answer: the declaration of `guarded` below,
+# that line with nothing else in it, reads four strings where two run. Each call
+# site, which decides the guard, reads the one it runs.
 #
 # The four that must NOT answer are the point. A constant is written once by
 # convention, not by enforcement, and a value read from a name the file changed

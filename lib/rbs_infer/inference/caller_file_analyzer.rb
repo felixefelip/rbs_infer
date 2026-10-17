@@ -182,6 +182,7 @@ module RbsInfer::Inference
 
       visitor = NewCallCollector.new(
         target_class: @target_class,
+        steep_bridge: @steep_bridge,
         method_return_types: method_return_types,
         local_var_types: local_var_types,
         local_var_read_types: local_var_read_types,
@@ -240,6 +241,7 @@ module RbsInfer::Inference
 
       visitor = NewCallCollector.new(
         target_class: @target_class,
+        steep_bridge: @steep_bridge,
         method_return_types: {},
         local_var_types: local_var_types,
         method_type_resolver: @method_type_resolver,
