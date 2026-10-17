@@ -86,18 +86,46 @@ methods:
   Example74::Foo#guarded:
     "(:class)": '"  (self.class).x(...)"'
     "(:user)": '"  (user).x(...)"'
+  Example75::Peel.banana_delegate:
+    "(:email, to: :user)": ":email"
+    "(:human_name, to: :class)": ":human_name"
+  Example76::Peel.banana_delegate:
+    "(:human_name)": ":human_name"
+  Example77::Peel.banana_delegate:
+    "(:nick) on singleton(::Example77::Rind)": ":nick"
+  Example77::Writer.generate:
+    "(singleton(::Example77::Rind), :nick)": ":nick"
   Example7::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
   Example8#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
+  Example83.has_direct:
+    "(:labels)": ":labels"
+    "(:tags)": ":tags"
+  Example83::Writer.define_direct:
+    "(self, :labels)": ":labels"
+    "(self, :tags)": ":tags"
+  Example89::Base.define_reader:
+    "(:weight) on singleton(::Example89::Widget)": ":weight"
+  Example89::Base.define_reader_on_self:
+    "(:color)": ":color"
+    "(:color) on singleton(::Example89::Widget)": ":color"
+    "(:shape)": ":shape"
+    "(:shape) on singleton(::Example89::Widget)": ":shape"
   Example89::Base.generated_methods:
     "() on singleton(::Example89::Widget)": singleton(::Example89::Widget::GeneratedMethods)
+  Example90::Base.has_reader:
+    "(:tags) on singleton(::Example90::Post)": ":tags"
   Example90::Core::ClassMethods#generated_association_methods:
     "() on singleton(::Example90::Post)": singleton(::Example90::Post::GeneratedAssociationMethods)
   Example91::Core::ClassMethods#generated_association_methods:
     "() on singleton(::Example91::Post)": singleton(::Example91::Post::GeneratedAssociationMethods)
+  Example94::Base.describe:
+    "(:seat) on singleton(::Example94::Car)": ":seat_label"
+    "(:seat) on singleton(::Example94::Truck)": ":seat_label"
+    "(:wheel) on singleton(::Example94::Car)": ":wheel_label"
   Example94::Base.lookup:
     "(:door) on singleton(::Example94::Truck)": "::Example94::Door"
     "(:seat) on singleton(::Example94::Car)": "::Example94::Seat"

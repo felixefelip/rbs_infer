@@ -1,6 +1,6 @@
 module Example71
   module Writes
-    def writes_mixed: (:from_mixin name) -> untyped
+    def writes_mixed: (:from_mixin name) -> :from_mixin
   end
 end
 
@@ -11,16 +11,16 @@ end
 
 module Example71
   class Host
-    def self.writes_on_self: (:from_self name) -> untyped
-    def self.writes_on_constant: (:from_constant name) -> untyped
-    def self.writes_on_local: (:from_local name) -> untyped
-    def self.writes_fix_string: () -> untyped
+    def self.writes_on_self: (:from_self name) -> :from_self
+    def self.writes_on_constant: (:from_constant name) -> :from_constant
+    def self.writes_on_local: (:from_local name) -> :from_local
+    def self.writes_fix_string: () -> :from_fix_string
   end
 end
 
 module Example71
   class Base
-    def self.writes: (:from_inherited name) -> untyped
+    def self.writes: (:from_inherited name) -> :from_inherited
   end
 end
 
