@@ -520,12 +520,24 @@ declarations:
   IncludedHook::Slots#stamp=: '"value"'
   Notification::GeneratedStoreAccessors#channel=: '"none"'
 receivers:
+  app/controllers/application_controller.rb:28:74:
+  - "(::User & ::User::Validated)"
   app/controllers/application_controller.rb:29:49:
   - singleton(::Current)
+  app/controllers/posts_controller.rb:63:24:
+  - "(::User & ::User::Validated)"
+  app/helpers/posts_helper.rb:50:31:
+  - "(::Comment & ::Comment::Validated)"
+  app/jobs/avatar_thumbnail_job.rb:15:20:
+  - "(::User & ::User::Validated)"
   app/models/assignment.rb:38:51:
   - "::User"
   app/models/comment.rb:20:9:
   - "::User"
+  app/models/comment.rb:49:9:
+  - "(::Post & ::Post::Validated)"
+  app/models/current.rb:26:31:
+  - "((::User & ::User::Validated) | ::User)"
   app/models/example.rb:35:17:
   - "::Board"
   app/models/example.rb:9:27:
@@ -547,8 +559,7 @@ receivers:
   app/models/example13.rb:301:20:
   - "::Example13Viewer"
   app/models/example14.rb:15:17:
-  - "::Example14::User"
-  - "::NilClass"
+  - "(::Example14::User | nil)"
   app/models/example15.rb:25:25:
   - "::Example15::User"
   app/models/example16.rb:39:25:
@@ -559,11 +570,12 @@ receivers:
   - "::Example19::User"
   app/models/example2.rb:17:21:
   - "::Example2::User"
+  app/models/example2.rb:28:6:
+  - "(::Example2::Foo & ::Example2::Foo::AfterUser)"
   app/models/example20.rb:71:25:
   - "::Example20::User"
   app/models/example21.rb:105:31:
-  - "::Example21::Holder"
-  - "::NilClass"
+  - "(::Example21::Holder | nil)"
   app/models/example3.rb:101:13:
   - "::Example3::User"
   app/models/example3.rb:111:13:
@@ -571,10 +583,11 @@ receivers:
   app/models/example3.rb:121:12:
   - singleton(::Example3::Foo)
   app/models/example3.rb:122:11:
-  - "::Example3::User"
-  - "::NilClass"
+  - "(::Example3::User | nil)"
   app/models/example3.rb:31:19:
   - "::Example3::Foo"
+  app/models/example3.rb:47:25:
+  - "(::Example3::User | nil)"
   app/models/example3.rb:56:13:
   - "::Example3::User"
   app/models/example3.rb:57:26:
@@ -588,11 +601,9 @@ receivers:
   app/models/example3.rb:59:8:
   - singleton(::Example3::Foo)
   app/models/example3.rb:63:13:
-  - "::Example3::User"
-  - "::NilClass"
+  - "(::Example3::User | nil)"
   app/models/example3.rb:64:26:
-  - "::Example3::User"
-  - "::NilClass"
+  - "(::Example3::User | nil)"
   app/models/example3.rb:64:8:
   - singleton(::Example3::Foo)
   app/models/example3.rb:65:21:
@@ -635,18 +646,28 @@ receivers:
   - "::Example60Printer"
   app/models/example67.rb:45:20:
   - "::Example67Window"
+  app/models/example68.rb:102:11:
+  - "(::Example68Entry | nil)"
   app/models/example68.rb:102:44:
   - "::Example68Entry"
+  app/models/example68.rb:113:12:
+  - "(::Example68Entry | nil)"
   app/models/example68.rb:113:56:
   - "::Example68Entry"
   app/models/example68.rb:121:57:
   - "::Example68Entry"
   app/models/example68.rb:77:21:
   - "::Example68Entry"
+  app/models/example68.rb:83:12:
+  - "(::Example68Entry | nil)"
   app/models/example68.rb:83:28:
   - "::Example68Entry"
+  app/models/example68.rb:90:11:
+  - "(::Example68Entry | nil)"
   app/models/example68.rb:90:26:
   - "::Example68Entry"
+  app/models/example68.rb:95:12:
+  - "(::Example68Entry | nil)"
   app/models/example68.rb:95:46:
   - "::Example68Entry"
   app/models/example7.rb:31:22:
@@ -658,11 +679,13 @@ receivers:
   app/models/example7.rb:35:22:
   - singleton(::Example7::Age)
   app/models/example74.rb:102:11:
-  - "::Array"
+  - '::Array["a"]'
   app/models/example83.rb:41:41:
   - "::Example83::Reflection"
   app/models/example83.rb:60:40:
   - "::Example83"
+  app/models/example84.rb:35:41:
+  - "(::Example84::Reflection & ::Example84::Reflection::AfterRename)"
   app/models/example85.rb:49:10:
   - "::Example85::Rules"
   app/models/example86.rb:46:26:
@@ -680,16 +703,27 @@ receivers:
   app/models/example9.rb:48:22:
   - singleton(::Example9::Age)
   app/models/example94.rb:48:54:
-  - "::Example94::Bench"
-  - "::Example94::Door"
-  - "::Example94::Seat"
-  - "::Example94::Wheel"
+  - "(::Example94::Wheel | ::Example94::Seat | ::Example94::Bench | ::Example94::Door)"
   app/models/example96.rb:78:46:
   - "::Post::EnumerizeStatusAttribute"
   app/models/included_hook.rb:154:21:
   - "::IncludedHook"
+  app/models/post.rb:119:15:
+  - "(::Tag & ::Tag::Validated)"
   app/models/post.rb:141:16:
   - "::Post::EnumerizeStatusAttribute"
+  app/models/post/tag_digest.rb:25:29:
+  - untyped
+  app/services/post_filtering.rb:29:10:
+  - "((::User & ::User::Validated) | ::User)"
+  app/services/tag_destroy.rb:126:10:
+  - "(::User & ::User::Validated)"
+  app/services/tag_destroy.rb:32:9:
+  - "(::User & ::User::Validated)"
+  app/services/tag_destroy.rb:36:18:
+  - "(::Tag & ::Tag::Validated)"
+  app/services/tag_destroy.rb:44:16:
+  - "(::Tag & ::Tag::Validated)"
   sig/generated/steep_activesupport_runtime/delegation.rb:65:16:
   - "::Module"
   sig/generated/steep_activesupport_runtime/delegation.rb:69:47:
@@ -701,20 +735,24 @@ receivers:
   sig/generated/steep_string_evals/app/models/example60.rb:10:45:
   - "::Example60Printer"
   sig/generated/steep_string_evals/app/models/example60.rb:10:99:
-  - "::NoMethodError"
+  - "::NoMethodError[untyped]"
   sig/generated/steep_string_evals/app/models/example80.rb:10:45:
   - "::Example80::Person"
+  sig/generated/steep_string_evals/app/models/example80.rb:14:28:
+  - "::Example80::Person"
   sig/generated/steep_string_evals/app/models/example81.rb:10:96:
-  - "::NoMethodError"
+  - "::NoMethodError[untyped]"
   sig/generated/steep_string_evals/app/models/example81.rb:11:102:
-  - "::NoMethodError"
+  - "::NoMethodError[untyped]"
   sig/generated/steep_string_evals/app/models/example81.rb:12:106:
-  - "::NoMethodError"
+  - "::NoMethodError[untyped]"
   sig/generated/steep_string_evals/app/models/post.rb:10:91:
-  - "::NoMethodError"
+  - "::NoMethodError[untyped]"
   sig/generated/steep_string_evals/app/models/post.rb:11:94:
-  - "::NoMethodError"
+  - "::NoMethodError[untyped]"
   sig/generated/steep_string_evals/app/models/post.rb:12:101:
-  - "::NoMethodError"
+  - "::NoMethodError[untyped]"
+  sig/generated/steep_string_evals/app/models/post.rb:13:71:
+  - untyped
   sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:101:
-  - "::NoMethodError"
+  - "::NoMethodError[untyped]"
