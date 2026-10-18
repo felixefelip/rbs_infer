@@ -251,7 +251,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example46", target_file: "app/models/example46.rb")
   end
 
-  it "example47 (`const_get(:X).module_eval(&block)`, the gap #268 still has open) matches expected RBS" do
+  it "example47 (`const_get(:X).module_eval(&block)`, returning what the block returns) matches expected RBS" do
     assert_snapshot("models/example47", target_file: "app/models/example47.rb")
   end
 
