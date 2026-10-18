@@ -1,5 +1,5 @@
 class Example56
-  def self.call: () -> Integer
+  def self.call: () -> 4
 end
 
 class Example56

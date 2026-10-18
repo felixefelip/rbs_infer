@@ -159,6 +159,10 @@ methods:
     "(:door, ::Example94::Door) on singleton(::Example94::Truck)": "::Example94::Door"
     "(:seat, ::Example94::Seat)": "::Example94::Seat"
     "(:seat, ::Example94::Seat) on singleton(::Example94::Car)": "::Example94::Seat"
+  Example95::Reflection.association_class:
+    "({  })": singleton(::Example95::PlainAssociation)
+    "({ :dependent => :destroy })": singleton(::Example95::PlainAssociation)
+    "({ :through => :posts })": singleton(::Example95::ThroughAssociation)
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'

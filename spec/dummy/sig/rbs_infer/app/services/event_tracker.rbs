@@ -1,4 +1,4 @@
 class EventTracker
   def track_event: (action: ("created" | :reported)) -> { action: ("created" | :reported) }
-  def track_created: () -> { action: untyped }
+  def track_created: () -> { action: "created" }
 end

@@ -402,8 +402,8 @@ RSpec.describe RbsInfer::Analyzer do
         analyzer = described_class.new(target_file: paths.first, source_files: paths)
         rbs = analyzer.generate_rbs
 
-        expect(rbs).to include("def normalize: () -> String")
-        # Without the fix this would inherit the instance method's String.
+        expect(rbs).to include('def normalize: () -> "instance-result"')
+        # Without the fix this would inherit the instance method's literal.
         expect(rbs).to include("def self.normalize: (untyped value) -> untyped")
       end
     end

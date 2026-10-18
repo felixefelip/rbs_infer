@@ -24,6 +24,6 @@ end
 
 module Example88
   class Post < Base
-    def self.summary: () -> Array[untyped]
+    def self.summary: () -> Array[Array[untyped]]
   end
 end

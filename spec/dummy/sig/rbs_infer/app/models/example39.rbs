@@ -16,7 +16,7 @@ module Example39
   class Bar
     extend ::Example39::Foo
 
-    def call_age: () -> Integer
+    def call_age: () -> 41
     def age: () -> 31
   end
 end

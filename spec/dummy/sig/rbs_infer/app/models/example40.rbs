@@ -34,7 +34,7 @@ class Example40
   class Bar
     extend ::Example40::Foo
 
-    def call_age: () -> Integer
+    def call_age: () -> 41
     def age: () -> 31
     def name: () -> "John Doe"
   end
