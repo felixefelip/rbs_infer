@@ -1590,6 +1590,18 @@ postconditions:
   effects:
     may_write:
     - "@registry"
+- class: Example96::NormalizedReflection
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
+    - "@options"
+- class: Example96::Reflection
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
+    - "@options"
 - class: Example9::Age
   method: value
   effects:
@@ -2474,6 +2486,10 @@ method_entry_facts:
   method: name
   consts:
     Example6::Foo.name: '"John Doe"'
+- class: Example96::NormalizedReflection
+  method: without_counter_cache
+  ivars:
+    "@name": "(:posts | :taggings)"
 - class: FilterConfiguration
   method: configure_filter
   self_methods:
