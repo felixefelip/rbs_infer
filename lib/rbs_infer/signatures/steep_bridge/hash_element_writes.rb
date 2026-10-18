@@ -45,8 +45,8 @@ module RbsInfer
 
         def confined?(ivar)
           names = [:"@#{ivar}", *@holders.filter_map { |name, held| name if held == ivar }]
-          Steep::HashMutation.confined?(@literal_methods, names.flat_map { |name| @constructor_bindings.uses_of(name) }) &&
-            stores_seen(names) == @stores[ivar]
+          uses = names.flat_map { |name| @constructor_bindings.uses_of(name) }
+          Steep::HashMutation.confined?(@literal_methods, uses) && stores_seen(names) == @stores[ivar]
         end
 
         def stores_seen(names)
