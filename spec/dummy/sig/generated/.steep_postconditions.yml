@@ -1595,13 +1595,13 @@ postconditions:
   effects:
     may_write:
     - "@name"
-    - "@reflection_options"
+    - "@options"
 - class: Example96::Reflection
   method: initialize
   effects:
     may_write:
     - "@name"
-    - "@reflection_options"
+    - "@options"
 - class: Example9::Age
   method: value
   effects:
