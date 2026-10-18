@@ -187,6 +187,8 @@ declarations:
   Example32::Foo#bazinga: "(:age | nil)"
   Example33::Foo#bazinga: "(:age | :name_upcase | nil)"
   Example35::Foo.bazinga: "(:age | nil)"
+  Example47::Foo#banana_class_method: ":age"
+  Example50::Foo#banana_class_method: ":age"
   Example61.normalize: '"indexed_by"'
   Example62::Slots#hallmark=: '"value"'
   Example65::Dispatcher.dispatch: "(::Example65Greeter | ::Example65Adder | ::Example65CsvReporter)"

@@ -1,6 +1,6 @@
 class Example50
   module Foo
-    def banana_class_method: () ?{ (*untyped) -> :age } -> untyped
+    def banana_class_method: () ?{ (*untyped) -> :age } -> :age
   end
 
   module Baz
