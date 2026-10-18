@@ -118,47 +118,266 @@ methods:
     "(:labels) on singleton(::Example83)": ":labels"
     "(:tags)": ":tags"
     "(:tags) on singleton(::Example83)": ":tags"
+  Example83.has_stored:
+    "(:comments)": ":comments"
+    "(:posts)": ":posts"
+    "(:posts) on singleton(::Example83)": ":posts"
   Example83::Writer.define_direct:
     "(self, :labels)": ":labels"
     "(self, :tags)": ":tags"
     "(singleton(::Example83), :labels)": ":labels"
     "(singleton(::Example83), :tags)": ":tags"
+  Example83::Writer.define_stored:
+    "(self, ::Example83::Reflection{@name: :comments})": ":comments"
+    "(self, ::Example83::Reflection{@name: :posts})": ":posts"
+    "(singleton(::Example83), ::Example83::Reflection{@name: :posts})": ":posts"
+  Example84::Reflection#rename:
+    "(:articles) with {@name: :posts}": ":articles"
+    "(:replies) with {@name: :comments}": ":replies"
+  Example85.has_many_like:
+    '(:categories) on singleton(::Example85) with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': ":category_ids"
+    '(:categories) with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': ":category_ids"
+    '(:posts) on singleton(::Example85) with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': ":post_ids"
+    '(:posts) with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': ":post_ids"
+  Example85.rules:
+    '() on singleton(::Example85) with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
+      class: "::Example85::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    '() on singleton(::Example85) with {@rules: ::Example85::Rules{@singulars: [[/s\z/, ""]]}}':
+      class: "::Example85::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, ""]]'
+    '() with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
+      class: "::Example85::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    '() with {@rules: ::Example85::Rules{@singulars: [[/s\z/, ""]]}}':
+      class: "::Example85::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, ""]]'
+  Example85.singularize:
+    '("categories") on singleton(::Example85) with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': '"category"'
+    '("categories") with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': '"category"'
+    '("posts") on singleton(::Example85) with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': '"post"'
+    '("posts") with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': '"post"'
+  Example85::Rules#singular:
+    '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}': '[[::Regexp, "y"], [::Regexp,
+      ""]]'
+    '(/s\z/, "") with {@singulars: []}': '[[::Regexp, ""]]'
+  Example87.has_association:
+    "(:comments)": ":comments"
+    "(:posts)": ":posts"
+  Example87::Writer.define_accessors:
+    "(self, ::Example87::HasManyReflection{@name: :comments})": ":comments"
+    "(self, ::Example87::HasManyReflection{@name: :posts})": ":posts"
+  Example88::Base.has_many_like:
+    ? '(:categories) on singleton(::Example88::Post) with {::Example88::Inflector{@rules:
+      ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}}'
+    : ":category_ids"
+    '(:categories) with {::Example88::Inflector{@rules: ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}}': ":category_ids"
+    ? '(:comments) on singleton(::Example88::Post) with {::Example88::Inflector{@rules:
+      ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}}'
+    : ":comment_ids"
+    '(:comments) with {::Example88::Inflector{@rules: ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}}': ":comment_ids"
+  Example88::Inflector.rules:
+    '() on singleton(::Example88::Inflector) with {@rules: ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
+      class: "::Example88::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    '() on singleton(::Example88::Inflector) with {@rules: ::Example88::Rules{@singulars: [[/s\z/, ""]]}}':
+      class: "::Example88::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, ""]]'
+    '() with {@rules: ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
+      class: "::Example88::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    '() with {@rules: ::Example88::Rules{@singulars: [[/s\z/, ""]]}}':
+      class: "::Example88::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, ""]]'
+  Example88::Inflector.singularize:
+    '("categories") on singleton(::Example88::Inflector) with {@rules: ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': '"category"'
+    '("categories") with {@rules: ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': '"category"'
+    '("comments") on singleton(::Example88::Inflector) with {@rules: ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': '"comment"'
+    '("comments") with {@rules: ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': '"comment"'
+  Example88::Rules#singular:
+    '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}': '[[::Regexp, "y"], [::Regexp,
+      ""]]'
+    '(/s\z/, "") with {@singulars: []}': '[[::Regexp, ""]]'
   Example89::Base.define_reader:
+    "(:size) on singleton(::Example89::Widget) with {@generated_methods: nil}": ":size"
     "(:weight) on singleton(::Example89::Widget)": ":weight"
+    "(:weight) on singleton(::Example89::Widget) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}": ":weight"
+    "(:weight) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}": ":weight"
   Example89::Base.define_reader_on_self:
     "(:color)": ":color"
     "(:color) on singleton(::Example89::Widget)": ":color"
+    "(:color) on singleton(::Example89::Widget) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}": ":color"
+    "(:color) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}": ":color"
     "(:shape)": ":shape"
     "(:shape) on singleton(::Example89::Widget)": ":shape"
+    "(:shape) on singleton(::Example89::Widget) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}": ":shape"
+    "(:shape) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}": ":shape"
   Example89::Base.generated_methods:
     "() on singleton(::Example89::Widget)": singleton(::Example89::Widget::GeneratedMethods)
+    "() on singleton(::Example89::Widget) with {@generated_methods: nil}": singleton(::Example89::Widget::GeneratedMethods)
+    "() on singleton(::Example89::Widget) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}": singleton(::Example89::Widget::GeneratedMethods)
+    "() with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}": singleton(::Example89::Widget::GeneratedMethods)
   Example90::Base.has_reader:
+    "(:comments) on singleton(::Example90::Post) with {@generated_association_methods: nil}": ":comments"
+    "(:comments) with {@generated_association_methods: nil}": ":comments"
     "(:tags)": ":tags"
     "(:tags) on singleton(::Example90::Post)": ":tags"
+    ? "(:tags) on singleton(::Example90::Post) with {@generated_association_methods:
+      singleton(::Example90::Post::GeneratedAssociationMethods)}"
+    : ":tags"
+    "(:tags) with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}": ":tags"
   Example90::Core::ClassMethods#generated_association_methods:
     "() on singleton(::Example90::Post)": singleton(::Example90::Post::GeneratedAssociationMethods)
+    "() on singleton(::Example90::Post) with {@generated_association_methods: nil}": singleton(::Example90::Post::GeneratedAssociationMethods)
+    ? "() on singleton(::Example90::Post) with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}"
+    : singleton(::Example90::Post::GeneratedAssociationMethods)
+    "() with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}": singleton(::Example90::Post::GeneratedAssociationMethods)
   Example91::Core::ClassMethods#generated_association_methods:
     "() on singleton(::Example91::Post)": singleton(::Example91::Post::GeneratedAssociationMethods)
+    "() on singleton(::Example91::Post) with {@generated_association_methods: nil}": singleton(::Example91::Post::GeneratedAssociationMethods)
+    ? "() on singleton(::Example91::Post) with {@generated_association_methods: singleton(::Example91::Post::GeneratedAssociationMethods)}"
+    : singleton(::Example91::Post::GeneratedAssociationMethods)
+    "() with {@generated_association_methods: singleton(::Example91::Post::GeneratedAssociationMethods)}": singleton(::Example91::Post::GeneratedAssociationMethods)
+  Example92::Inflector.inflections:
+    "() on singleton(::Example92::Inflector)":
+      class: "::Example92::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    "() on singleton(::Example92::Inflector) with {@inflections: nil}":
+      class: "::Example92::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    "() with {@inflections: nil}":
+      class: "::Example92::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+  Example92::Inflector.singularize:
+    '("categories") on singleton(::Example92::Inflector) with {@inflections: nil}': '"category"'
+    '("categories") with {@inflections: nil}': '"category"'
+    '("posts") on singleton(::Example92::Inflector) with {@inflections: nil}': '"post"'
+    '("posts") with {@inflections: nil}': '"post"'
+  Example92::Post.has_many_like:
+    "(:categories) on singleton(::Example92::Post) with {::Example92::Inflector{@inflections: nil}}": ":category_ids"
+    "(:categories) with {::Example92::Inflector{@inflections: nil}}": ":category_ids"
+    "(:posts) on singleton(::Example92::Post) with {::Example92::Inflector{@inflections: nil}}": ":post_ids"
+    "(:posts) with {::Example92::Inflector{@inflections: nil}}": ":post_ids"
+  Example92::Rules#apply:
+    '("categories") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}': '"category"'
+    '("posts") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}': '"post"'
+  Example92::Rules#singular:
+    '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}': '[[::Regexp, "y"], [::Regexp,
+      ""]]'
+    '(/s\z/, "") with {@singulars: []}': '[[::Regexp, ""]]'
+  Example93::Inflector.rule_set:
+    '() on singleton(::Example93::Inflector) with {@rule_set: ::Example93::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
+      class: "::Example93::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    '() with {@rule_set: ::Example93::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
+      class: "::Example93::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+  Example93::Inflector.singularize:
+    ? '("categories") on singleton(::Example93::Inflector) with {@rule_set: ::Example93::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]}}'
+    : '"category"'
+    '("categories") with {@rule_set: ::Example93::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': '"category"'
+    '("posts") on singleton(::Example93::Inflector) with {@rule_set: ::Example93::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': '"post"'
+    '("posts") with {@rule_set: ::Example93::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': '"post"'
+  Example93::Post.has_many_like:
+    ? '(:categories) on singleton(::Example93::Post) with {::Example93::Inflector{@rule_set:
+      ::Example93::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}}'
+    : ":category_ids"
+    '(:categories) with {::Example93::Inflector{@rule_set: ::Example93::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}}': ":category_ids"
+    ? '(:posts) on singleton(::Example93::Post) with {::Example93::Inflector{@rule_set:
+      ::Example93::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}}'
+    : ":post_ids"
+    '(:posts) with {::Example93::Inflector{@rule_set: ::Example93::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}}': ":post_ids"
+  Example93::Rules#apply:
+    '("categories") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}': '"category"'
+    '("posts") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}': '"post"'
   Example94::Base.describe:
     "(:seat)": ":seat_label"
     "(:seat) on singleton(::Example94::Car)": ":seat_label"
+    "(:seat) on singleton(::Example94::Car) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}": ":seat_label"
     "(:seat) on singleton(::Example94::Truck)": ":seat_label"
+    "(:seat) on singleton(::Example94::Truck) with {@registry: { :door => ::Example94::Door, :seat => ::Example94::Bench }}": ":seat_label"
+    "(:seat) with {@registry: { :door => ::Example94::Door, :seat => ::Example94::Bench }}": ":seat_label"
+    "(:seat) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}": ":seat_label"
     "(:wheel)": ":wheel_label"
     "(:wheel) on singleton(::Example94::Car)": ":wheel_label"
+    "(:wheel) on singleton(::Example94::Car) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}": ":wheel_label"
+    "(:wheel) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}": ":wheel_label"
   Example94::Base.lookup:
     "(:door) on singleton(::Example94::Truck)": "::Example94::Door"
     "(:seat) on singleton(::Example94::Car)": "::Example94::Seat"
+    "(:seat) on singleton(::Example94::Car) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}": "::Example94::Seat"
     "(:seat) on singleton(::Example94::Truck)": "::Example94::Bench"
+    "(:seat) on singleton(::Example94::Truck) with {@registry: { :door => ::Example94::Door, :seat => ::Example94::Bench }}": "::Example94::Bench"
+    "(:seat) with {@registry: { :door => ::Example94::Door, :seat => ::Example94::Bench }}": "::Example94::Bench"
+    "(:seat) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}": "::Example94::Seat"
     "(:wheel) on singleton(::Example94::Car)": "::Example94::Wheel"
+    "(:wheel) on singleton(::Example94::Car) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}": "::Example94::Wheel"
+    "(:wheel) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}": "::Example94::Wheel"
   Example94::Base.register:
     "(:door, ::Example94::Door)": "::Example94::Door"
     "(:door, ::Example94::Door) on singleton(::Example94::Truck)": "::Example94::Door"
+    "(:door, ::Example94::Door) on singleton(::Example94::Truck) with {@registry: { :seat => ::Example94::Bench }}": "::Example94::Door"
+    "(:door, ::Example94::Door) with {@registry: { :seat => ::Example94::Bench }}": "::Example94::Door"
+    "(:seat, ::Example94::Bench) on singleton(::Example94::Truck) with {@registry: nil}": "::Example94::Bench"
+    "(:seat, ::Example94::Bench) with {@registry: nil}": "::Example94::Bench"
     "(:seat, ::Example94::Seat)": "::Example94::Seat"
     "(:seat, ::Example94::Seat) on singleton(::Example94::Car)": "::Example94::Seat"
+    "(:seat, ::Example94::Seat) on singleton(::Example94::Car) with {@registry: { :wheel => ::Example94::Wheel }}": "::Example94::Seat"
+    "(:seat, ::Example94::Seat) with {@registry: { :wheel => ::Example94::Wheel }}": "::Example94::Seat"
+    "(:wheel, ::Example94::Wheel) on singleton(::Example94::Car) with {@registry: nil}": "::Example94::Wheel"
+    "(:wheel, ::Example94::Wheel) with {@registry: nil}": "::Example94::Wheel"
   Example95::Reflection.association_class:
     "({  })": singleton(::Example95::PlainAssociation)
     "({ :dependent => :destroy })": singleton(::Example95::PlainAssociation)
     "({ :through => :posts })": singleton(::Example95::ThroughAssociation)
+  Example96::Builder.normalized:
+    "(:posts, **{ :through => :taggings })":
+      class: "::Example96::NormalizedReflection"
+      ivars:
+        "@name": ":posts"
+    "(:taggings, **{ :counter_cache => bool })":
+      class: "::Example96::NormalizedReflection"
+      ivars:
+        "@name": ":taggings"
+  Example96::Builder.stored:
+    "(:posts, { :through => :taggings })":
+      class: "::Example96::Reflection"
+      ivars:
+        "@name": ":posts"
+        "@reflection_options": "{ :through => :taggings }"
+    "(:taggings, {  })":
+      class: "::Example96::Reflection"
+      ivars:
+        "@name": ":taggings"
+        "@reflection_options": "{  }"
+  Example96::Builder.with_keywords:
+    "(:posts, **{ :through => :taggings })":
+      class: "::Example96::Reflection"
+      ivars:
+        "@name": ":posts"
+        "@reflection_options": "{ :through => :taggings }"
+    "(:taggings, **{  })":
+      class: "::Example96::Reflection"
+      ivars:
+        "@name": ":taggings"
+        "@reflection_options": "{  }"
+  Example96::Reflection#association_kind:
+    "() with {@name: :posts, @reflection_options: { :through => :taggings }}": singleton(::Example96::Through)
+    "() with {@name: :taggings, @reflection_options: {  }}": singleton(::Example96::Plain)
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'

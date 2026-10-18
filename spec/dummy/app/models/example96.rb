@@ -1,19 +1,22 @@
 # The path Active Record's options take from `has_many` to `association_class`
 # (felixefelip/rbs_infer#392, item 6), one step per pair of callers:
 #
-#   - Stored: the options are kept in the reflection (`@options`) and read back
-#     through its reader, the way `HasManyReflection#association_class` reads
-#     `options[:through]`.
+#   - Stored: the options are kept in the reflection (`@reflection_options`)
+#     and read back through its reader, the way
+#     `HasManyReflection#association_class` reads `options[:through]`.
 #   - Keywords: the macro takes them as `**options`, so the hash is built by
 #     the call's keywords, not written as a literal.
 #   - Normalized: the constructor passes them through a method that deletes a
 #     key before storing them, like `normalize_options` deletes `:counter_cache`.
 #
-# In each pair, the caller passing `through:` should be a `Through` class and
-# the other a `Plain` class. All six are still the union: the hash is not kept
-# in the object's state (felixefelip/steep#298), and keywords collected by
-# `**options` are not a record in the specialized body (felixefelip/steep#297).
-# example95 is the step that folds: the hash written straight at the call.
+# In each pair, the caller passing `through:` is a `Through` class and the
+# other a `Plain` class, for the stored and keyword pairs. The normalized pair
+# is still the union: a hash written before it is stored leaves the object's
+# state (felixefelip/steep#301).
+#
+# The reader is not called `options`, as Active Record calls it: a reader's
+# uses are attributed by spelling, and `Post.status.options` elsewhere in the
+# dummy would keep the hash out of the state (felixefelip/steep#300).
 #
 # Nothing here states a type.
 module Example96
@@ -21,28 +24,28 @@ module Example96
   class Through; end
 
   class Reflection
-    attr_reader :name, :options
+    attr_reader :name, :reflection_options
 
     def initialize(name, options)
       @name = name
-      @options = options
+      @reflection_options = options
     end
 
     def association_kind
-      options[:through] ? Through : Plain
+      reflection_options[:through] ? Through : Plain
     end
   end
 
   class NormalizedReflection
-    attr_reader :name, :options
+    attr_reader :name, :reflection_options
 
     def initialize(name, options)
       @name = name
-      @options = without_counter_cache(options)
+      @reflection_options = without_counter_cache(options)
     end
 
     def association_kind
-      options[:through] ? Through : Plain
+      reflection_options[:through] ? Through : Plain
     end
 
     private
