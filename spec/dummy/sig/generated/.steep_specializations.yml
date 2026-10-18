@@ -82,6 +82,21 @@ methods:
     "(1, **{ :step => 2 }) on singleton(::Example65Adder)": "::Example65Adder"
   Example65::Rival.dispatch:
     "(true, **{ :mode => :fast }) on singleton(::Example65Impostor)": "::Example65Impostor"
+  Example67Window.new:
+    "(30)":
+      class: "::Example67Window"
+      ivars:
+        "@size": '30'
+  Example68Entry.new:
+    ("opened", 1):
+      class: "::Example68Entry"
+      ivars:
+        "@stamp": '1'
+    "(nil, 0)":
+      class: "::Example68Entry"
+      ivars:
+        "@label": nil
+        "@stamp": '0'
   Example69::Foo#call:
     "(flag_name: false)": '"delete"'
     "(flag_name: true)": '"name_delete"'
@@ -122,6 +137,15 @@ methods:
     "(:comments)": ":comments"
     "(:posts)": ":posts"
     "(:posts) on singleton(::Example83)": ":posts"
+  Example83::Reflection.new:
+    "(:comments)":
+      class: "::Example83::Reflection"
+      ivars:
+        "@name": ":comments"
+    "(:posts)":
+      class: "::Example83::Reflection"
+      ivars:
+        "@name": ":posts"
   Example83::Writer.define_direct:
     "(self, :labels)": ":labels"
     "(self, :tags)": ":tags"
@@ -165,9 +189,15 @@ methods:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}': '[[::Regexp, "y"], [::Regexp,
       ""]]'
     '(/s\z/, "") with {@singulars: []}': '[[::Regexp, ""]]'
-  Example87.has_association:
-    "(:comments)": ":comments"
-    "(:posts)": ":posts"
+  Example87::AssociationReflection.new:
+    "(:comments, ::Hash[untyped, untyped])":
+      class: "::Example87::AssociationReflection"
+      ivars:
+        "@collection": 'false'
+    "(:posts, ::Hash[untyped, untyped])":
+      class: "::Example87::AssociationReflection"
+      ivars:
+        "@collection": 'false'
   Example87::Writer.define_accessors:
     "(self, ::Example87::HasManyReflection{@name: :comments})": ":comments"
     "(self, ::Example87::HasManyReflection{@name: :posts})": ":posts"
@@ -348,11 +378,13 @@ methods:
     "(:posts, **{ :through => :taggings })":
       class: "::Example96::NormalizedReflection"
       ivars:
-        "@name": ":posts"
+        "@name": "::Symbol"
+        "@reflection_options": "{ :through => ::Symbol }"
     "(:taggings, **{ :counter_cache => bool })":
       class: "::Example96::NormalizedReflection"
       ivars:
-        "@name": ":taggings"
+        "@name": "::Symbol"
+        "@reflection_options": "{  }"
   Example96::Builder.stored:
     "(:posts, { :through => :taggings })":
       class: "::Example96::Reflection"
@@ -375,9 +407,37 @@ methods:
       ivars:
         "@name": ":taggings"
         "@reflection_options": "{  }"
+  Example96::NormalizedReflection#association_kind:
+    "() with {@reflection_options: {  }}": singleton(::Example96::Plain)
+    "() with {@reflection_options: { :through => ::Symbol }}": singleton(::Example96::Through)
+  Example96::NormalizedReflection#without_counter_cache:
+    "({ :counter_cache => bool })": "{  }"
+    "({ :through => :taggings })": "{ :through => :taggings }"
+  Example96::NormalizedReflection.new:
+    "(:posts, { :through => :taggings })":
+      class: "::Example96::NormalizedReflection"
+      ivars:
+        "@name": "::Symbol"
+        "@reflection_options": "{ :through => ::Symbol }"
+    "(:taggings, { :counter_cache => bool })":
+      class: "::Example96::NormalizedReflection"
+      ivars:
+        "@name": "::Symbol"
+        "@reflection_options": "{  }"
   Example96::Reflection#association_kind:
     "() with {@name: :posts, @reflection_options: { :through => :taggings }}": singleton(::Example96::Through)
     "() with {@name: :taggings, @reflection_options: {  }}": singleton(::Example96::Plain)
+  Example96::Reflection.new:
+    "(:posts, { :through => :taggings })":
+      class: "::Example96::Reflection"
+      ivars:
+        "@name": ":posts"
+        "@reflection_options": "{ :through => :taggings }"
+    "(:taggings, {  })":
+      class: "::Example96::Reflection"
+      ivars:
+        "@name": ":taggings"
+        "@reflection_options": "{  }"
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
