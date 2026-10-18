@@ -28,7 +28,7 @@ class Example29
     def age: () -> 42
     def call_test: () -> "Hello, world!"
     def greet: () -> "Hello, world!"
-    def age_after_a_decade: () -> Integer
+    def age_after_a_decade: () -> 52
   end
 end
 
@@ -37,7 +37,7 @@ class Example29
     extend ::Example29::Foo
 
     def name: () -> "John Doe"
-    def call_name_upcase: () -> String
-    def name_upcase: () -> String
+    def call_name_upcase: () -> "JOHN DOE"
+    def name_upcase: () -> "JOHN DOE"
   end
 end

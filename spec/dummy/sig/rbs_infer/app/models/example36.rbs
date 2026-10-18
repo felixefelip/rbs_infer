@@ -14,7 +14,7 @@ end
 
 class Example36
   class Bar < Baz
-    def call_age: () -> Integer
+    def call_age: () -> 41
     def age: () -> 31
   end
 end

@@ -24,6 +24,6 @@ class Example28
     def age: () -> 42
     def call_test: () -> "Hello, world!"
     def greet: () -> "Hello, world!"
-    def age_after_a_decade: () -> Integer
+    def age_after_a_decade: () -> 52
   end
 end

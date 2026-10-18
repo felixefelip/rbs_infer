@@ -20,7 +20,7 @@ module RbsInfer::Inference
       # `:class_method` (singleton, `def self.X`) porque o steep_bridge
       # devolve tipos pra ambos via `typing.each_typing` sem distinguir.
       untyped_methods = members.select { |m| method_member?(m) && m.signature =~ /->\ s*untyped$/ }
-      return if untyped_methods.empty?
+      return if members.none? { |m| method_member?(m) }
 
       # Kind-split so a `def self.x` reads Steep's singleton-method type, not a
       # homonymous `def x`'s (felixefelip/rbs_infer#33). Read HERE, before the
@@ -400,6 +400,7 @@ module RbsInfer::Inference
         steep_type = "self" if self_return?(m, steep_type, self_types)
         steep_type = with_early_nil_return(m, steep_type, parsed_target)
         next if steep_type == current_type
+        next if @steep_bridge.literal_refinement?(steep_type, current_type)
         # Compared against the declared type WIDENED BY NIL, so a body that
         # differs from it only by nilability is left alone. That axis is the
         # one where the rest of the pipeline knows more than Steep does

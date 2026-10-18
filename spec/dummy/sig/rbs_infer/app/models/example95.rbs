@@ -1,0 +1,23 @@
+module Example95
+  class PlainAssociation
+  end
+end
+
+module Example95
+  class ThroughAssociation
+  end
+end
+
+module Example95
+  class Reflection
+    def self.association_class: (({ through: :posts } | Hash[untyped, untyped] | { dependent: :destroy }) options) -> (singleton(Example95::ThroughAssociation) | singleton(Example95::PlainAssociation))
+  end
+end
+
+module Example95
+  class Comments
+    def self.through: () -> singleton(Example95::ThroughAssociation)
+    def self.plain: () -> singleton(Example95::PlainAssociation)
+    def self.dependent: () -> singleton(Example95::PlainAssociation)
+  end
+end

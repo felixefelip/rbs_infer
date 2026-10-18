@@ -1,7 +1,7 @@
 class Example57
   include Fields
 
-  def window_size: () -> Integer
+  def window_size: () -> 8
   def creation_window: () -> 7
 end
 
@@ -9,7 +9,7 @@ class Example57
   class Inner
     include Example57Windowed
 
-    def doubled: () -> Integer
+    def doubled: () -> 60
     def window_days: () -> 30
   end
 end

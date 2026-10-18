@@ -28,7 +28,7 @@ class Example33
     extend ::Example33::Foo
 
     def name: () -> "John Doe"
-    def call_name_upcase: () -> String
-    def name_upcase: () -> String
+    def call_name_upcase: () -> "JOHN DOE"
+    def name_upcase: () -> "JOHN DOE"
   end
 end

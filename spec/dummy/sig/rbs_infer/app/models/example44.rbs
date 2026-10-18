@@ -15,7 +15,7 @@ class Example44
     extend ::Example44::Foo
     include ::Example44::Baz
 
-    def call_age: () -> Integer
+    def call_age: () -> 41
     def age: () -> 31
   end
 end
@@ -25,7 +25,7 @@ class Example44
     extend ::Example44::Foo
     include ::Example44::Baz
 
-    def call_age: () -> Integer
+    def call_age: () -> 51
     def age: () -> 31
   end
 end

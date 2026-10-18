@@ -26,7 +26,7 @@ class Example43
   class Bar
     extend ::Example43::Foo
 
-    def call_age: () -> Integer
+    def call_age: () -> 41
     def age: () -> 31
   end
 end
@@ -35,7 +35,7 @@ class Example43
   class BarOther
     extend ::Example43::Foo
 
-    def call_age: () -> Integer
+    def call_age: () -> 51
     def age: () -> 31
   end
 end
@@ -44,8 +44,8 @@ class Example43
   class BarOther2
     extend ::Example43::Foo
 
-    def call_age: () -> Integer
-    def call_name: () -> String
+    def call_age: () -> 51
+    def call_name: () -> "JOHN DOE"
     def age: () -> 31
     def name: () -> "John Doe"
   end

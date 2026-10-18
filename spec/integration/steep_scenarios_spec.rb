@@ -328,7 +328,7 @@ RSpec.describe "rbs_infer -> Steep precondition scenarios" do
 
     expected_rbs = <<~RBS
       class Holder
-        def self.run: () -> String
+        def self.run: () -> "JO"
       end
 
       class Holder
