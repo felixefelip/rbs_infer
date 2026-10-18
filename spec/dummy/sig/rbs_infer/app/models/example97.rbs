@@ -1,0 +1,20 @@
+module Example97
+  class Foo
+    attr_reader my_hash: Hash[untyped, untyped]
+
+    def initialize: (Hash[untyped, untyped] my_hash) -> void
+  end
+end
+
+module Example97
+  class Runner
+    attr_reader foo: (Foo | Example97::Foo)?
+
+    def run: () -> untyped
+    def run_bar: () -> untyped
+
+    class AfterRun
+      attr_reader foo: Example97::Foo
+    end
+  end
+end
