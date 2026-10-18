@@ -3,7 +3,7 @@ module Example99
     attr_reader my_hash: Hash[untyped, untyped]
 
     def initialize: (Hash[untyped, untyped] my_hash) -> void
-    def my_hash_sum_num: () -> untyped
+    def my_hash_sum_num: () -> Integer
   end
 end
 
@@ -11,11 +11,11 @@ module Example99
   class Runner
     attr_reader foo: (Foo | Example99::Foo)?
 
-    def run: () -> untyped
+    def run: () -> String
     def build_my_hash: () -> Hash[Symbol, Integer]
-    def call_num1: () -> untyped
-    def call_num2: () -> untyped
-    def change_num2: () -> untyped
+    def call_num1: () -> Integer
+    def call_num2: () -> Integer
+    def change_num2: () -> Integer
 
     class AfterRun
       attr_reader foo: Example99::Foo
