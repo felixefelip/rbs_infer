@@ -18,6 +18,11 @@ methods:
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
+  Example13::Guarded.new:
+    '(name: "John Doe")':
+      class: "::Example13::Guarded"
+      ivars:
+        "@halted": 'false'
   Example13::Registry.tenant=:
     "(::Example13Tenant) on singleton(::Example13::Registry)": "::Example13Tenant"
     "(nil) on singleton(::Example13::Registry)": nil
@@ -158,6 +163,15 @@ methods:
   Example84::Reflection#rename:
     "(:articles) with {@name: :posts}": ":articles"
     "(:replies) with {@name: :comments}": ":replies"
+  Example84::Reflection.new:
+    "(:comments)":
+      class: "::Example84::Reflection"
+      ivars:
+        "@name": ":comments"
+    "(:posts)":
+      class: "::Example84::Reflection"
+      ivars:
+        "@name": ":posts"
   Example85.has_many_like:
     '(:categories) on singleton(::Example85) with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': ":category_ids"
     '(:categories) with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}': ":category_ids"
@@ -189,6 +203,15 @@ methods:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}': '[[::Regexp, "y"], [::Regexp,
       ""]]'
     '(/s\z/, "") with {@singulars: []}': '[[::Regexp, ""]]'
+  Example86::Box.new:
+    "(:draft)":
+      class: "::Example86::Box"
+      ivars:
+        "@value": ":draft"
+    "(:published)":
+      class: "::Example86::Box"
+      ivars:
+        "@value": ":published"
   Example87::AssociationReflection.new:
     "(:comments, ::Hash[untyped, untyped])":
       class: "::Example87::AssociationReflection"
@@ -374,6 +397,9 @@ methods:
     "({  })": singleton(::Example95::PlainAssociation)
     "({ :dependent => :destroy })": singleton(::Example95::PlainAssociation)
     "({ :through => :posts })": singleton(::Example95::ThroughAssociation)
+  Example96::Builder.autosaved_kind:
+    "(:posts, **{ :through => :taggings })": singleton(::Example96::Through)
+    "(:taggings, **{ :counter_cache => bool })": singleton(::Example96::Plain)
   Example96::Builder.normalized:
     "(:posts, **{ :through => :taggings })":
       class: "::Example96::NormalizedReflection"
@@ -408,6 +434,8 @@ methods:
         "@name": ":taggings"
         "@reflection_options": "{  }"
   Example96::NormalizedReflection#association_kind:
+    "() with {@name: :posts, @reflection_options: { :autosave => true, :through => ::Symbol }}": singleton(::Example96::Through)
+    "() with {@name: :taggings, @reflection_options: { :autosave => true }}": singleton(::Example96::Plain)
     "() with {@reflection_options: {  }}": singleton(::Example96::Plain)
     "() with {@reflection_options: { :through => ::Symbol }}": singleton(::Example96::Through)
   Example96::NormalizedReflection#without_counter_cache:

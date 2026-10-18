@@ -8,6 +8,8 @@
 #     the call's keywords, not written as a literal.
 #   - Normalized: the constructor passes them through a method that deletes a
 #     key before storing them, like `normalize_options` deletes `:counter_cache`.
+#   - Autosaved: a method of the reflection writes a key once they are stored,
+#     like `autosave=` writes `@options[:autosave]`, and is called on it.
 #
 # In each pair, the caller passing `through:` is a `Through` class and the
 # other a `Plain` class.
@@ -54,10 +56,22 @@ module Example96
     end
   end
 
+  class AutosavedReflection < NormalizedReflection
+    def autosave=(autosave)
+      @reflection_options[:autosave] = autosave
+    end
+  end
+
   class Builder
     def self.stored(name, options) = Reflection.new(name, options)
     def self.with_keywords(name, **options) = Reflection.new(name, options)
     def self.normalized(name, **options) = NormalizedReflection.new(name, options)
+
+    def self.autosaved_kind(name, **options)
+      reflection = AutosavedReflection.new(name, options)
+      reflection.autosave = true
+      reflection.association_kind
+    end
   end
 
   class Tags
@@ -69,5 +83,8 @@ module Example96
 
     def self.normalized_through = Builder.normalized(:posts, through: :taggings).association_kind
     def self.normalized_plain = Builder.normalized(:taggings, counter_cache: true).association_kind
+
+    def self.autosaved_through = Builder.autosaved_kind(:posts, through: :taggings)
+    def self.autosaved_plain = Builder.autosaved_kind(:taggings, counter_cache: true)
   end
 end

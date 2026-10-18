@@ -33,10 +33,17 @@ module Example96
 end
 
 module Example96
+  class AutosavedReflection < NormalizedReflection
+    def autosave=: (true autosave) -> true
+  end
+end
+
+module Example96
   class Builder
     def self.stored: ((:posts | :taggings) name, ({ through: :taggings } | Hash[untyped, untyped]) options) -> Reflection
     def self.with_keywords: ((:posts | :taggings) name, **untyped) -> Reflection
     def self.normalized: ((:posts | :taggings) name, **untyped) -> NormalizedReflection
+    def self.autosaved_kind: ((:posts | :taggings) name, **untyped) -> (singleton(Example96::Through) | singleton(Example96::Plain))
   end
 end
 
@@ -48,5 +55,7 @@ module Example96
     def self.keywords_plain: () -> singleton(Example96::Plain)
     def self.normalized_through: () -> singleton(Example96::Through)
     def self.normalized_plain: () -> singleton(Example96::Plain)
+    def self.autosaved_through: () -> singleton(Example96::Through)
+    def self.autosaved_plain: () -> singleton(Example96::Plain)
   end
 end
