@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
 require "rbs_infer"
 require "fileutils"
 require "yaml"
@@ -51,6 +53,8 @@ if inputs.empty?
   puts parser
   exit 1
 end
+
+loaded_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
 # What each `class_eval` of a string defines, written as checked Ruby under
 # `sig/generated/steep_string_evals/` from the sidecar the last `steep check`
@@ -326,3 +330,23 @@ if output
     FileUtils.rm_f(declaration)
   end
 end
+
+# Same shape as RSpec's summary. On stderr, because without `--output` stdout is
+# the RBS itself and is meant to be redirected.
+pluralize = ->(count, word) { "#{count} #{word}#{"s" unless count == 1}" }
+pluralize_es = ->(count, word) { "#{count} #{word}#{"es" unless count == 1}" }
+
+format_duration = lambda do |seconds|
+  return format("%<seconds>.2f seconds", seconds: seconds) if seconds < 60
+
+  minutes, rest = seconds.divmod(60)
+  "#{pluralize.call(minutes.to_i, "minute")} #{format("%<rest>.2f seconds", rest: rest)}"
+end
+
+finished_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+summary = "Finished in #{format_duration.call(finished_at - loaded_at)} " \
+          "(files took #{format_duration.call(loaded_at - started_at)} to load)"
+counts = [pluralize.call(files.size, "file")]
+counts << pluralize_es.call(pass, "pass") if output
+warn "\n#{summary}"
+warn counts.join(", ")
