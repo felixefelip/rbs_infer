@@ -46,7 +46,7 @@ module Example96
     def self.stored_plain: () -> singleton(Example96::Plain)
     def self.keywords_through: () -> singleton(Example96::Through)
     def self.keywords_plain: () -> singleton(Example96::Plain)
-    def self.normalized_through: () -> (singleton(Example96::Through) | singleton(Example96::Plain))
-    def self.normalized_plain: () -> (singleton(Example96::Through) | singleton(Example96::Plain))
+    def self.normalized_through: () -> singleton(Example96::Through)
+    def self.normalized_plain: () -> singleton(Example96::Plain)
   end
 end

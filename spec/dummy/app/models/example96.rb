@@ -10,9 +10,7 @@
 #     key before storing them, like `normalize_options` deletes `:counter_cache`.
 #
 # In each pair, the caller passing `through:` is a `Through` class and the
-# other a `Plain` class, for the stored and keyword pairs. The normalized pair
-# is still the union: a hash written before it is stored leaves the object's
-# state (felixefelip/steep#301).
+# other a `Plain` class.
 #
 # The reader is not called `options`, as Active Record calls it: a reader's
 # uses are attributed by spelling, and `Post.status.options` elsewhere in the
