@@ -11,7 +11,7 @@ end
 module Example96
   class Reflection
     attr_reader name: (:posts | :taggings)
-    attr_reader reflection_options: ({ through: :taggings } | Hash[untyped, untyped] | Hash[Symbol, untyped])
+    attr_reader options: ({ through: :taggings } | Hash[untyped, untyped] | Hash[Symbol, untyped])
 
     def initialize: ((:posts | :taggings) name, ({ through: :taggings } | Hash[untyped, untyped] | Hash[Symbol, untyped]) options) -> void
     def association_kind: () -> (singleton(Example96::Through) | singleton(Example96::Plain))
@@ -21,7 +21,7 @@ end
 module Example96
   class NormalizedReflection
     attr_reader name: (:posts | :taggings)
-    attr_reader reflection_options: Hash[Symbol, untyped]
+    attr_reader options: Hash[Symbol, untyped]
 
     def initialize: ((:posts | :taggings) name, Hash[Symbol, untyped] options) -> void
     def association_kind: () -> (singleton(Example96::Through) | singleton(Example96::Plain))
@@ -44,6 +44,12 @@ module Example96
     def self.with_keywords: ((:posts | :taggings) name, **untyped) -> Reflection
     def self.normalized: ((:posts | :taggings) name, **untyped) -> NormalizedReflection
     def self.autosaved_kind: ((:posts | :taggings) name, **untyped) -> (singleton(Example96::Through) | singleton(Example96::Plain))
+  end
+end
+
+module Example96
+  class Statuses
+    def self.listed: () -> nil
   end
 end
 
