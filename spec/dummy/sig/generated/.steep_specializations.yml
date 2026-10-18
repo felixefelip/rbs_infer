@@ -11,14 +11,10 @@ methods:
     '(action: "created")': '{ :action => "created" }'
     "(action: :reported)": "{ :action => :reported }"
   Eventable#track_event:
-    ("renamed"): '{ :action => "renamed", :particulars => ::Hash[::Symbol, untyped]
-      }'
-    "(:closed)": "{ :action => :closed, :particulars => ::Hash[::Symbol, untyped]
-      }"
-    "(:published)": "{ :action => :published, :particulars => ::Hash[::Symbol, untyped]
-      }"
-    "(:reopened)": "{ :action => :reopened, :particulars => ::Hash[::Symbol, untyped]
-      }"
+    ("renamed", **{  }): '{ :action => "renamed", :particulars => {  } }'
+    "(:closed, **{  })": "{ :action => :closed, :particulars => {  } }"
+    "(:published, **{  })": "{ :action => :published, :particulars => {  } }"
+    "(:reopened, **{  })": "{ :action => :reopened, :particulars => {  } }"
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -81,11 +77,11 @@ methods:
   Example62::Slots#hallmark=:
     ("value"): '"value"'
   Example65::Dispatcher.dispatch:
-    ("/tmp/x.csv") on singleton(::Example65CsvReporter): "::Example65CsvReporter"
-    '("ada", greeting: "hello") on singleton(::Example65Greeter)': "::Example65Greeter"
-    "(1, step: 2) on singleton(::Example65Adder)": "::Example65Adder"
+    ("/tmp/x.csv", **{  }) on singleton(::Example65CsvReporter): "::Example65CsvReporter"
+    ("ada", **{ :greeting => "hello" }) on singleton(::Example65Greeter): "::Example65Greeter"
+    "(1, **{ :step => 2 }) on singleton(::Example65Adder)": "::Example65Adder"
   Example65::Rival.dispatch:
-    "(true, mode: :fast) on singleton(::Example65Impostor)": "::Example65Impostor"
+    "(true, **{ :mode => :fast }) on singleton(::Example65Impostor)": "::Example65Impostor"
   Example69::Foo#call:
     "(flag_name: false)": '"delete"'
     "(flag_name: true)": '"name_delete"'
@@ -182,10 +178,9 @@ declarations:
   Current.user=: "(::User & ::User::Validated)"
   EvalReopen::Slots#slot=: '"value"'
   EventTracker#track_event: ({ :action => :reported } | { :action => "created" })
-  Eventable#track_event: ({ :action => :closed, :particulars => ::Hash[::Symbol, untyped]
-    } | { :action => :reopened, :particulars => ::Hash[::Symbol, untyped] } | { :action
-    => :published, :particulars => ::Hash[::Symbol, untyped] } | { :action => "renamed",
-    :particulars => ::Hash[::Symbol, untyped] })
+  Eventable#track_event: ({ :action => :closed, :particulars => {  } } | { :action
+    => :reopened, :particulars => {  } } | { :action => :published, :particulars =>
+    {  } } | { :action => "renamed", :particulars => {  } })
   Example19#record: '"denied"'
   Example20#record: '"denied"'
   Example32::Foo#bazinga: "(:age | nil)"
