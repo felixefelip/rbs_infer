@@ -1,0 +1,24 @@
+module Example99
+  class Foo
+    attr_reader my_hash: Hash[untyped, untyped]
+
+    def initialize: (Hash[untyped, untyped] my_hash) -> void
+    def my_hash_sum_num: () -> untyped
+  end
+end
+
+module Example99
+  class Runner
+    attr_reader foo: (Foo | Example99::Foo)?
+
+    def run: () -> untyped
+    def build_my_hash: () -> Hash[Symbol, Integer]
+    def call_num1: () -> untyped
+    def call_num2: () -> untyped
+    def change_num2: () -> untyped
+
+    class AfterRun
+      attr_reader foo: Example99::Foo
+    end
+  end
+end

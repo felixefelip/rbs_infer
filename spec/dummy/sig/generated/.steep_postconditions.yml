@@ -1602,6 +1602,34 @@ postconditions:
     may_write:
     - "@name"
     - "@options"
+- class: Example97::Foo
+  method: initialize
+  effects:
+    may_write:
+    - "@my_hash"
+- class: Example97::Runner
+  method: run
+  unconditional:
+    ivars:
+      "@foo": "::Example97::Foo"
+    self: "::Example97::Runner & ::Example97::Runner::AfterRun"
+  effects:
+    may_write:
+    - "@foo"
+- class: Example99::Foo
+  method: initialize
+  effects:
+    may_write:
+    - "@my_hash"
+- class: Example99::Runner
+  method: run
+  unconditional:
+    ivars:
+      "@foo": "::Example99::Foo"
+    self: "::Example99::Runner & ::Example99::Runner::AfterRun"
+  effects:
+    may_write:
+    - "@foo"
 - class: Example9::Age
   method: value
   effects:
@@ -2490,6 +2518,26 @@ method_entry_facts:
   method: without_counter_cache
   ivars:
     "@name": "(:posts | :taggings)"
+- class: Example97::Runner
+  method: run_bar
+  ivars:
+    "@foo": "::Example97::Foo"
+- class: Example99::Runner
+  method: build_my_hash
+  ivars:
+    "@foo": "::Example99::Foo"
+- class: Example99::Runner
+  method: call_num1
+  ivars:
+    "@foo": "::Example99::Foo"
+- class: Example99::Runner
+  method: call_num2
+  ivars:
+    "@foo": "::Example99::Foo"
+- class: Example99::Runner
+  method: change_num2
+  ivars:
+    "@foo": "::Example99::Foo"
 - class: FilterConfiguration
   method: configure_filter
   self_methods:
