@@ -70,6 +70,26 @@ RSpec.describe "bin/rbs_infer" do
     RUBY
   end
 
+  describe "resumo de tempo" do
+    it "informa a duração em stderr, deixando o RBS sozinho em stdout" do
+      setup_project
+      stdout, stderr, status = run_rbs_infer("app/models/user.rb", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stderr).to match(/Finished in \d+\.\d{2} seconds \(files took \d+\.\d{2} seconds to load\)/)
+      expect(stderr).to include("1 file\n")
+      expect(stdout).not_to include("Finished in")
+    end
+
+    it "conta arquivos e passes com --output" do
+      setup_project
+      _stdout, stderr, status = run_rbs_infer("--output", "app/models", dir: @tmpdir)
+
+      expect(status).to be_success
+      expect(stderr).to match(/^2 files, \d+ pass(es)?$/)
+    end
+  end
+
   # ─── Arquivo individual ──────────────────────────────────────────
 
   describe "com arquivo individual" do
