@@ -15,6 +15,86 @@ methods:
     "(:closed, **{  })": "{ :action => :closed, :particulars => {  } }"
     "(:published, **{  })": "{ :action => :published, :particulars => {  } }"
     "(:reopened, **{  })": "{ :action => :reopened, :particulars => {  } }"
+  Example100::Base.associate:
+    "(:comments, **{  })":
+      class: "::Example100::Reflection"
+      ivars:
+        "@options": "{ ?:autosave => untyped }"
+    "(:comments, **{  }) on singleton(::Example100::Article)":
+      class: "::Example100::Reflection"
+      ivars:
+        "@options": "{ ?:autosave => untyped }"
+    ? "(:comments, **{  }) on singleton(::Example100::Article) with {@association_reflections:
+      { :tags => ::Example100::Reflection{@options: { ?:autosave => untyped, :through
+      => :taggings }} }}"
+    : class: "::Example100::Reflection"
+      ivars:
+        "@options": "{ ?:autosave => untyped }"
+    ? "(:comments, **{  }) with {@association_reflections: { :tags => ::Example100::Reflection{@options:
+      { ?:autosave => untyped, :through => :taggings }} }}"
+    : class: "::Example100::Reflection"
+      ivars:
+        "@options": "{ ?:autosave => untyped }"
+    "(:tags, **{ :through => :taggings }) on singleton(::Example100::Article) with {@association_reflections: nil}":
+      class: "::Example100::Reflection"
+      ivars:
+        "@options": "{ ?:autosave => untyped, :through => :taggings }"
+    "(:tags, **{ :through => :taggings }) with {@association_reflections: nil}":
+      class: "::Example100::Reflection"
+      ivars:
+        "@options": "{ ?:autosave => untyped, :through => :taggings }"
+  Example100::Base.association_reflections:
+    ? "() on singleton(::Example100::Article) with {@association_reflections: { :comments
+      => ::Example100::Reflection{@options: { ?:autosave => untyped }}, :tags => ::Example100::Reflection{@options:
+      { ?:autosave => untyped, :through => :taggings }} }}"
+    : "{ :comments => ::Example100::Reflection, :tags => ::Example100::Reflection
+      }"
+    ? "() on singleton(::Example100::Article) with {@association_reflections: { :tags
+      => ::Example100::Reflection{@options: { ?:autosave => untyped, :through => :taggings
+      }} }}"
+    : "{ :tags => ::Example100::Reflection }"
+    ? "() with {@association_reflections: { :comments => ::Example100::Reflection{@options:
+      { ?:autosave => untyped }}, :tags => ::Example100::Reflection{@options: { ?:autosave
+      => untyped, :through => :taggings }} }}"
+    : "{ :comments => ::Example100::Reflection, :tags => ::Example100::Reflection
+      }"
+    ? "() with {@association_reflections: { :tags => ::Example100::Reflection{@options:
+      { ?:autosave => untyped, :through => :taggings }} }}"
+    : "{ :tags => ::Example100::Reflection }"
+  Example100::Base.reflect_on:
+    "(:comments) on singleton(::Example100::Article)":
+      class: "::Example100::Reflection"
+      ivars:
+        "@options": "{ ?:autosave => untyped }"
+    "(:tags) on singleton(::Example100::Article)":
+      class: "::Example100::Reflection"
+      ivars:
+        "@options": "{ ?:autosave => untyped, :through => :taggings }"
+    ? "(:tags) on singleton(::Example100::Article) with {@association_reflections:
+      { :comments => ::Example100::Reflection{@options: { ?:autosave => untyped }},
+      :tags => ::Example100::Reflection{@options: { ?:autosave => untyped, :through
+      => :taggings }} }}"
+    : class: "::Example100::Reflection"
+      ivars:
+        "@options": "{ ?:autosave => untyped, :through => :taggings }"
+    ? "(:tags) with {@association_reflections: { :comments => ::Example100::Reflection{@options:
+      { ?:autosave => untyped }}, :tags => ::Example100::Reflection{@options: { ?:autosave
+      => untyped, :through => :taggings }} }}"
+    : class: "::Example100::Reflection"
+      ivars:
+        "@options": "{ ?:autosave => untyped, :through => :taggings }"
+  Example100::Reflection#association_kind:
+    "() with {@options: { ?:autosave => untyped }}": singleton(::Example100::Plain)
+    "() with {@options: { ?:autosave => untyped, :through => :taggings }}": singleton(::Example100::Through)
+  Example100::Reflection.new:
+    "({  })":
+      class: "::Example100::Reflection"
+      ivars:
+        "@options": "{  }"
+    "({ :through => :taggings })":
+      class: "::Example100::Reflection"
+      ivars:
+        "@options": "{ :through => :taggings }"
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -393,6 +473,23 @@ methods:
     "(:seat, ::Example94::Seat) with {@registry: { :wheel => ::Example94::Wheel }}": "::Example94::Seat"
     "(:wheel, ::Example94::Wheel) on singleton(::Example94::Car) with {@registry: nil}": "::Example94::Wheel"
     "(:wheel, ::Example94::Wheel) with {@registry: nil}": "::Example94::Wheel"
+  Example94::Base.registry:
+    "() on singleton(::Example94::Car) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}": "{
+      :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }"
+    "() on singleton(::Example94::Car) with {@registry: { :wheel => ::Example94::Wheel }}": "{
+      :wheel => ::Example94::Wheel }"
+    "() on singleton(::Example94::Truck) with {@registry: { :door => ::Example94::Door, :seat => ::Example94::Bench }}": "{
+      :door => ::Example94::Door, :seat => ::Example94::Bench }"
+    "() on singleton(::Example94::Truck) with {@registry: { :seat => ::Example94::Bench }}": "{
+      :seat => ::Example94::Bench }"
+    "() with {@registry: { :door => ::Example94::Door, :seat => ::Example94::Bench }}": "{
+      :door => ::Example94::Door, :seat => ::Example94::Bench }"
+    "() with {@registry: { :seat => ::Example94::Bench }}": "{ :seat => ::Example94::Bench
+      }"
+    "() with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}": "{
+      :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }"
+    "() with {@registry: { :wheel => ::Example94::Wheel }}": "{ :wheel => ::Example94::Wheel
+      }"
   Example95::Reflection.association_class:
     "({  })": singleton(::Example95::PlainAssociation)
     "({ :dependent => :destroy })": singleton(::Example95::PlainAssociation)
@@ -573,6 +670,8 @@ receivers:
   - "::Board"
   app/models/example10.rb:28:21:
   - singleton(::Example10::Foo)
+  app/models/example100.rb:58:51:
+  - "::Example100::Reflection"
   app/models/example13.rb:104:20:
   - "::Example13Viewer"
   app/models/example13.rb:138:20:
@@ -804,6 +903,87 @@ receivers:
   sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:101:
   - "::NoMethodError[untyped]"
 exits:
+  Example100::Base.accept_nested:
+    ? "(:tags) on singleton(::Example100::Article) with {@association_reflections:
+      { :comments => ::Example100::Reflection{@options: { ?:autosave => untyped }},
+      :tags => ::Example100::Reflection{@options: { ?:autosave => untyped, :through
+      => :taggings }} }}"
+    : ivars:
+        "@association_reflections": "{ :comments => ::Example100::Reflection, :tags
+          => ::Example100::Reflection }"
+    ? "(:tags) with {@association_reflections: { :comments => ::Example100::Reflection{@options:
+      { ?:autosave => untyped }}, :tags => ::Example100::Reflection{@options: { ?:autosave
+      => untyped, :through => :taggings }} }}"
+    : ivars:
+        "@association_reflections": "{ :comments => ::Example100::Reflection, :tags
+          => ::Example100::Reflection }"
+  Example100::Base.associate:
+    ? "(:comments, **{  }) on singleton(::Example100::Article) with {@association_reflections:
+      { :tags => ::Example100::Reflection{@options: { ?:autosave => untyped, :through
+      => :taggings }} }}"
+    : ivars:
+        "@association_reflections": "{ :comments => ::Example100::Reflection, :tags
+          => ::Example100::Reflection }"
+    ? "(:comments, **{  }) with {@association_reflections: { :tags => ::Example100::Reflection{@options:
+      { ?:autosave => untyped, :through => :taggings }} }}"
+    : ivars:
+        "@association_reflections": "{ :comments => ::Example100::Reflection, :tags
+          => ::Example100::Reflection }"
+    "(:tags, **{ :through => :taggings }) on singleton(::Example100::Article) with {@association_reflections: nil}":
+      ivars:
+        "@association_reflections": "{ :tags => ::Example100::Reflection }"
+    "(:tags, **{ :through => :taggings }) with {@association_reflections: nil}":
+      ivars:
+        "@association_reflections": "{ :tags => ::Example100::Reflection }"
+  Example100::Base.association_reflections:
+    "() on singleton(::Example100::Article) with {@association_reflections: nil}":
+      ivars: {}
+    ? "() on singleton(::Example100::Article) with {@association_reflections: { :comments
+      => ::Example100::Reflection{@options: { ?:autosave => untyped }}, :tags => ::Example100::Reflection{@options:
+      { ?:autosave => untyped, :through => :taggings }} }}"
+    : ivars:
+        "@association_reflections": "{ :comments => ::Example100::Reflection, :tags
+          => ::Example100::Reflection }"
+    ? "() on singleton(::Example100::Article) with {@association_reflections: { :tags
+      => ::Example100::Reflection{@options: { ?:autosave => untyped, :through => :taggings
+      }} }}"
+    : ivars:
+        "@association_reflections": "{ :tags => ::Example100::Reflection }"
+    "() with {@association_reflections: nil}":
+      ivars: {}
+    ? "() with {@association_reflections: { :comments => ::Example100::Reflection{@options:
+      { ?:autosave => untyped }}, :tags => ::Example100::Reflection{@options: { ?:autosave
+      => untyped, :through => :taggings }} }}"
+    : ivars:
+        "@association_reflections": "{ :comments => ::Example100::Reflection, :tags
+          => ::Example100::Reflection }"
+    ? "() with {@association_reflections: { :tags => ::Example100::Reflection{@options:
+      { ?:autosave => untyped, :through => :taggings }} }}"
+    : ivars:
+        "@association_reflections": "{ :tags => ::Example100::Reflection }"
+  Example100::Base.reflect_on:
+    ? "(:tags) on singleton(::Example100::Article) with {@association_reflections:
+      { :comments => ::Example100::Reflection{@options: { ?:autosave => untyped }},
+      :tags => ::Example100::Reflection{@options: { ?:autosave => untyped, :through
+      => :taggings }} }}"
+    : ivars:
+        "@association_reflections": "{ :comments => ::Example100::Reflection, :tags
+          => ::Example100::Reflection }"
+    ? "(:tags) with {@association_reflections: { :comments => ::Example100::Reflection{@options:
+      { ?:autosave => untyped }}, :tags => ::Example100::Reflection{@options: { ?:autosave
+      => untyped, :through => :taggings }} }}"
+    : ivars:
+        "@association_reflections": "{ :comments => ::Example100::Reflection, :tags
+          => ::Example100::Reflection }"
+  Example100::Reflection#association_kind:
+    "() with {@options: { ?:autosave => untyped }}":
+      ivars: {}
+    "() with {@options: { ?:autosave => untyped, :through => :taggings }}":
+      ivars: {}
+  Example100::Reflection#autosave=:
+    "(true) with {@options: { ?:autosave => untyped, :through => :taggings }}":
+      ivars:
+        "@options": "{ :autosave => true, :through => :taggings }"
   Example84::Reflection#rename:
     "((:articles | :replies)) with {@name: (:posts | :comments)}":
       ivars:
@@ -1318,17 +1498,23 @@ exits:
         "@registry": "{ :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }"
   Example94::Base.lookup:
     "(:seat) on singleton(::Example94::Car) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }"
     "(:seat) on singleton(::Example94::Truck) with {@registry: { :door => ::Example94::Door, :seat => ::Example94::Bench }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :door => ::Example94::Door, :seat => ::Example94::Bench }"
     "(:seat) with {@registry: { :door => ::Example94::Door, :seat => ::Example94::Bench }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :door => ::Example94::Door, :seat => ::Example94::Bench }"
     "(:seat) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }"
     "(:wheel) on singleton(::Example94::Car) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }"
     "(:wheel) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }"
   Example94::Base.register:
     "(:door, ::Example94::Door) on singleton(::Example94::Truck) with {@registry: { :seat => ::Example94::Bench }}":
       ivars:
@@ -1358,25 +1544,33 @@ exits:
     "() on singleton(::Example94::Car) with {@registry: nil}":
       ivars: {}
     "() on singleton(::Example94::Car) with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }"
     "() on singleton(::Example94::Car) with {@registry: { :wheel => ::Example94::Wheel }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :wheel => ::Example94::Wheel }"
     "() on singleton(::Example94::Truck) with {@registry: nil}":
       ivars: {}
     "() on singleton(::Example94::Truck) with {@registry: { :door => ::Example94::Door, :seat => ::Example94::Bench }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :door => ::Example94::Door, :seat => ::Example94::Bench }"
     "() on singleton(::Example94::Truck) with {@registry: { :seat => ::Example94::Bench }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :seat => ::Example94::Bench }"
     "() with {@registry: nil}":
       ivars: {}
     "() with {@registry: { :door => ::Example94::Door, :seat => ::Example94::Bench }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :door => ::Example94::Door, :seat => ::Example94::Bench }"
     "() with {@registry: { :seat => ::Example94::Bench }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :seat => ::Example94::Bench }"
     "() with {@registry: { :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :seat => ::Example94::Seat, :wheel => ::Example94::Wheel }"
     "() with {@registry: { :wheel => ::Example94::Wheel }}":
-      ivars: {}
+      ivars:
+        "@registry": "{ :wheel => ::Example94::Wheel }"
   Example96::AutosavedReflection#autosave=:
     "(true) with {@name: (:posts | :taggings)}":
       ivars:
@@ -1433,6 +1627,9 @@ exits:
     "() with {@my_hash: { :bar => { :num1 => 5, :num2 => 30 } }}":
       ivars:
         "@my_hash": "{ :bar => { :num1 => 5, :num2 => 30 } }"
+    "() with {@my_hash: { ?:bar => untyped }}":
+      ivars:
+        "@my_hash": "{ ?:bar => untyped }"
   Example99::Runner#build_my_hash:
     "() with {@foo: ::Example99::Foo{@my_hash: {  }}}":
       ivars:
@@ -1447,6 +1644,12 @@ exits:
           class: "::Example99::Foo"
           ivars:
             "@my_hash": "{ :bar => { :num1 => 5, :num2 => 10 } }"
+    "() with {@foo: ::Example99::Foo{@my_hash: { ?:bar => untyped }}}":
+      ivars:
+        "@foo":
+          class: "::Example99::Foo"
+          ivars:
+            "@my_hash": "{ ?:bar => untyped }"
   Example99::Runner#call_num2:
     "() with {@foo: ::Example99::Foo{@my_hash: { :bar => { :num1 => 5, :num2 => 10 } }}}":
       ivars:
@@ -1454,6 +1657,12 @@ exits:
           class: "::Example99::Foo"
           ivars:
             "@my_hash": "{ :bar => { :num1 => 5, :num2 => 10 } }"
+    "() with {@foo: ::Example99::Foo{@my_hash: { ?:bar => untyped }}}":
+      ivars:
+        "@foo":
+          class: "::Example99::Foo"
+          ivars:
+            "@my_hash": "{ ?:bar => untyped }"
   Example99::Runner#change_num2:
     "() with {@foo: ::Example99::Foo{@my_hash: { :bar => { :num1 => 5, :num2 => 10 } }}}":
       ivars:
@@ -1461,6 +1670,12 @@ exits:
           class: "::Example99::Foo"
           ivars:
             "@my_hash": "{ :bar => { :num1 => 5, :num2 => 30 } }"
+    "() with {@foo: ::Example99::Foo{@my_hash: { ?:bar => untyped }}}":
+      ivars:
+        "@foo":
+          class: "::Example99::Foo"
+          ivars:
+            "@my_hash": "{ ?:bar => untyped }"
   Module#include:
     "(singleton(::Current::GeneratedAttributeMethods)) on singleton(::Current) with {@__rbs_infer_instance: nil}":
       ivars:

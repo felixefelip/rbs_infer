@@ -476,6 +476,16 @@ postconditions:
     consts:
       Example10::Foo.name: '"John Doe"'
       Example10::Sink.last: '"JOHN DOE"'
+- class: Example100::Base
+  method: association_reflections
+  effects:
+    may_write:
+    - "@association_reflections"
+- class: Example100::Reflection
+  method: initialize
+  effects:
+    may_write:
+    - "@options"
 - class: Example10::Foo
   method: name
   effects:
