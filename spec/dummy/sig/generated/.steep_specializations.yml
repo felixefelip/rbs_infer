@@ -474,18 +474,21 @@ methods:
   Example97::Runner#run_bar:
     "() with {@foo: ::Example97::Foo{@my_hash: { :bar => 10 }}}": '"10"'
   Example99::Foo#my_hash_sum_num:
-    "() with {@my_hash: { :bar => ::Hash[::Symbol, ::Integer] }}": "::Integer"
+    "() with {@my_hash: { :bar => { :num1 => 5, :num2 => 30 } }}": '35'
   Example99::Foo.new:
     "({  })":
       class: "::Example99::Foo"
       ivars:
         "@my_hash": "{  }"
+  Example99::Runner#build_my_hash:
+    "() with {@foo: ::Example99::Foo{@my_hash: {  }}}": "{ :num1 => 5, :num2 => 10
+      }"
   Example99::Runner#call_num1:
-    "() with {@foo: ::Example99::Foo{@my_hash: { :bar => ::Hash[::Symbol, ::Integer] }}}": "::Integer"
+    "() with {@foo: ::Example99::Foo{@my_hash: { :bar => { :num1 => 5, :num2 => 10 } }}}": '5'
   Example99::Runner#call_num2:
-    "() with {@foo: ::Example99::Foo{@my_hash: { :bar => ::Hash[::Symbol, ::Integer] }}}": "::Integer"
+    "() with {@foo: ::Example99::Foo{@my_hash: { :bar => { :num1 => 5, :num2 => 10 } }}}": '10'
   Example99::Runner#change_num2:
-    "() with {@foo: ::Example99::Foo{@my_hash: { :bar => ::Hash[::Symbol, ::Integer] }}}": "::Integer"
+    "() with {@foo: ::Example99::Foo{@my_hash: { :bar => { :num1 => 5, :num2 => 10 } }}}": '30'
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -536,10 +539,11 @@ declarations:
   Example93::Inflector.configure: "::Array[untyped]"
   Example93::Rules#apply: ("post" | "category")
   Example97::Runner#run_bar: '"10"'
-  Example99::Foo#my_hash_sum_num: "::Integer"
-  Example99::Runner#call_num1: "::Integer"
-  Example99::Runner#call_num2: "::Integer"
-  Example99::Runner#change_num2: "::Integer"
+  Example99::Foo#my_hash_sum_num: '35'
+  Example99::Runner#build_my_hash: "{ :num1 => 5, :num2 => 10 }"
+  Example99::Runner#call_num1: '5'
+  Example99::Runner#call_num2: '10'
+  Example99::Runner#change_num2: '30'
   IncludedHook::Slots#badge=: '"value"'
   IncludedHook::Slots#slot=: '"value"'
   IncludedHook::Slots#stamp=: '"value"'
@@ -1426,37 +1430,37 @@ exits:
           ivars:
             "@my_hash": "{ :bar => 10 }"
   Example99::Foo#my_hash_sum_num:
-    "() with {@my_hash: { :bar => ::Hash[::Symbol, ::Integer] }}":
+    "() with {@my_hash: { :bar => { :num1 => 5, :num2 => 30 } }}":
       ivars:
-        "@my_hash": "{ :bar => ::Hash[::Symbol, ::Integer] }"
+        "@my_hash": "{ :bar => { :num1 => 5, :num2 => 30 } }"
   Example99::Runner#build_my_hash:
     "() with {@foo: ::Example99::Foo{@my_hash: {  }}}":
       ivars:
         "@foo":
           class: "::Example99::Foo"
           ivars:
-            "@my_hash": "{ :bar => ::Hash[::Symbol, ::Integer] }"
+            "@my_hash": "{ :bar => { :num1 => 5, :num2 => 10 } }"
   Example99::Runner#call_num1:
-    "() with {@foo: ::Example99::Foo{@my_hash: { :bar => ::Hash[::Symbol, ::Integer] }}}":
+    "() with {@foo: ::Example99::Foo{@my_hash: { :bar => { :num1 => 5, :num2 => 10 } }}}":
       ivars:
         "@foo":
           class: "::Example99::Foo"
           ivars:
-            "@my_hash": "{ :bar => ::Hash[::Symbol, ::Integer] }"
+            "@my_hash": "{ :bar => { :num1 => 5, :num2 => 10 } }"
   Example99::Runner#call_num2:
-    "() with {@foo: ::Example99::Foo{@my_hash: { :bar => ::Hash[::Symbol, ::Integer] }}}":
+    "() with {@foo: ::Example99::Foo{@my_hash: { :bar => { :num1 => 5, :num2 => 10 } }}}":
       ivars:
         "@foo":
           class: "::Example99::Foo"
           ivars:
-            "@my_hash": "{ :bar => ::Hash[::Symbol, ::Integer] }"
+            "@my_hash": "{ :bar => { :num1 => 5, :num2 => 10 } }"
   Example99::Runner#change_num2:
-    "() with {@foo: ::Example99::Foo{@my_hash: { :bar => ::Hash[::Symbol, ::Integer] }}}":
+    "() with {@foo: ::Example99::Foo{@my_hash: { :bar => { :num1 => 5, :num2 => 10 } }}}":
       ivars:
         "@foo":
           class: "::Example99::Foo"
           ivars:
-            "@my_hash": "{ :bar => ::Hash[::Symbol, ::Integer] }"
+            "@my_hash": "{ :bar => { :num1 => 5, :num2 => 30 } }"
   Module#include:
     "(singleton(::Current::GeneratedAttributeMethods)) on singleton(::Current) with {@__rbs_infer_instance: nil}":
       ivars:
