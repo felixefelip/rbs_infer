@@ -7,6 +7,8 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
   # `namespace` is the lexically enclosing class at the call, against which a
   # relative receiver spelling is resolved (`relative_receiver_matches_target?`).
   class ReceiverMatcher
+    CONSTANT_PATH = /\A(?:::)?[A-Z]\w*(?:::[A-Z]\w*)*\z/
+
     def initialize(target_class:, method_owners:, defined_class_names:)
       @target_class = target_class.sub(/\A::/, "")
       # felixefelip/rbs_infer#159: `{ "deny" => "Example19::Responder" }` — the
@@ -46,7 +48,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
           if match_class_branch?(component, namespace)
             method_name
           else
-            owner_match_key(component, method_name, namespace) || ancestry_match_key(component, method_name)
+            owner_match_key(component, method_name, namespace) || ancestry_match_key(component, method_name, namespace)
           end
         next unless key
 
@@ -208,14 +210,31 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
     # `module_included.bazingado(self)` with `module_included` a
     # `singleton(Example24::Baz)`, and `Baz` extends `Foo`
     # (felixefelip/rbs_infer#229).
-    def ancestry_match_key(component, method_name)
-      owner = method_owner_on_either_side(component, method_name) or return nil
+    def ancestry_match_key(component, method_name, namespace)
+      owner = method_owner_on_either_side(lexical_receiver(component, namespace), method_name) or return nil
 
       normalized_owner = owner.sub(/\A::/, "")
       return method_name if normalized_owner == @target_class
 
       entry = nested_owner_entry(normalized_owner, method_name) or return nil
       RbsInfer::Inference::MethodKey.for(method_name, owner: entry[0], kind: entry[1])
+    end
+
+    # The class a constant receiver names where the call is written: a constant
+    # receiver is typed by its spelling, and `Builder::HasMany` written inside
+    # `ActiveRecord::Associations` is `ActiveRecord::Associations::Builder::HasMany`.
+    # A spelling no candidate declares is left as written.
+    def lexical_receiver(component, namespace)
+      singleton = singleton_receiver(component)
+      name = singleton || component
+      return component unless name.match?(CONSTANT_PATH)
+
+      resolved = RbsInfer::AST::LexicalConstantResolver.resolve(name: name, enclosing: namespace) do |candidate|
+        rbs_definition_resolver.class_declared?(candidate)
+      end
+      return component unless resolved
+
+      singleton ? "singleton(::#{resolved})" : "::#{resolved}"
     end
 
     # The owner of `method_name` as reached from `component`, asking the
