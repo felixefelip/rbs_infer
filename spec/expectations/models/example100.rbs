@@ -1,0 +1,38 @@
+module Example100
+  class Plain
+  end
+end
+
+module Example100
+  class Through
+  end
+end
+
+module Example100
+  class Reflection
+    attr_reader options: Hash[Symbol, untyped]
+
+    def initialize: (Hash[Symbol, untyped] options) -> void
+    def autosave=: (true autosave) -> true
+    def association_kind: () -> (singleton(Example100::Through) | singleton(Example100::Plain))
+  end
+end
+
+module Example100
+  class Base
+    self.@association_reflections: Hash[:tags | :comments, Example100::Reflection]?
+
+    def self.association_reflections: () -> Hash[:tags | :comments, Example100::Reflection]
+    def self.associate: ((:tags | :comments) name, **untyped) -> Reflection
+    def self.accept_nested: (:tags name) -> true
+    def self.reflect_on: ((:tags | :comments) name) -> Example100::Reflection
+  end
+end
+
+module Example100
+  class Article < Base
+    def tags_kind: () -> singleton(Example100::Through)
+    def comments_kind: () -> singleton(Example100::Plain)
+    def tags_source: () -> :taggings
+  end
+end
