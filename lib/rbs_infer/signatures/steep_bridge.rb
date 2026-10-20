@@ -99,8 +99,9 @@ module RbsInfer::Signatures
       result
     end
 
-    def forwarded_block_requirements(source_code)
-      RbsInfer::Signatures::SteepBridge::BlockAnalyzer.new(steep_bridge: self).forwarded_block_requirements(source_code)
+    def forwarded_block_requirements(source_code, open_signatures:)
+      RbsInfer::Signatures::SteepBridge::BlockAnalyzer.new(steep_bridge: self)
+                                                      .forwarded_block_requirements(source_code, open_signatures:)
     end
 
     def forwarded_call_targets(source_code)
