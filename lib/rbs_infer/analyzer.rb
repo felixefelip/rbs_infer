@@ -551,7 +551,9 @@ module RbsInfer
       # a name is reassigned (same owner), keep only the last node and drop
       # the earlier members so the builder emits a single line.
       keep = {}
-      constants.each { |m| keep[[m.owner, m.name]] = m }
+      # A constant another signature declares is left out: RBS has no overloading
+      # form for one, and a second declaration takes down the whole environment.
+      constants.each { |m| keep[[m.owner, m.name]] = m unless foreign_constant?(m) }
       target_members.reject! { |m| m.kind == :constant && !keep[[m.owner, m.name]].equal?(m) }
 
       steep_types = @parsed_target&.source ? steep_bridge.constant_types(@parsed_target.source) : {}
@@ -629,19 +631,19 @@ module RbsInfer
     # BUILDS the class, so a collision nothing references yet sits in the environment
     # unexercised. `ActiveSupport::Concern` is a nested module in exactly that position.
     def confirm_overloading!(members)
-      marked = members.select(&:overloading)
-      return if marked.empty?
-
-      own_output_suffix = @target_file&.sub(/\.rb\z/, ".rbs")
-
-      marked.each do |member|
-        owner = member.owner ? "#{@target_class}::#{member.owner}" : @target_class
+      members.select(&:overloading).each do |member|
         confirmed = rbs_definition_resolver.foreign_plain_declaration?(
-          owner, member.name, singleton: member.kind == :class_method, excluding_suffix: own_output_suffix
+          member_owner(member), member.name, singleton: member.kind == :class_method, excluding_suffix: own_output_suffix
         )
         member.overloading = false unless confirmed
       end
     end
+
+    def member_owner(member) = member.owner ? "#{@target_class}::#{member.owner}" : @target_class
+
+    def own_output_suffix = @target_file&.sub(/\.rb\z/, ".rbs")
+
+    def foreign_constant?(constant) = rbs_definition_resolver.foreign_constant_declaration?("#{member_owner(constant)}::#{constant.name}", excluding_suffix: own_output_suffix)
 
     def rbs_definition_resolver
       @rbs_definition_resolver ||= RbsInfer::Signatures::RbsDefinitionResolver.new
