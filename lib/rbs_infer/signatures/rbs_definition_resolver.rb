@@ -271,6 +271,15 @@ module RbsInfer::Signatures
       @method_owners[key] = compute_method_owner(type_str, method_name)
     end
 
+    # Whether the environment declares `class_name` as a class or module.
+    def class_declared?(class_name)
+      return false unless rbs_builder
+
+      rbs_builder.env.class_decls.key?(build_rbs_type_name(class_name))
+    rescue RBS::ParsingError, RBS::BaseError
+      false
+    end
+
     # Which class or module owns the method a `super` in `class_name`'s own
     # `method_name` reaches: the next definition up the ancestors, as RBS links
     # it (`super_method`). `kind` is the side, as in `method_owner`: `:instance`
