@@ -109,9 +109,10 @@ module RbsInfer::Project
     # `names` in its ancestry, instance or singleton: the hosts and extenders
     # the sources write, and the ancestry the RBS environment links — which
     # knows what the sources do not say, a superclass declared only in RBS
-    # among it. Names the sources do not declare as a module are skipped.
+    # among it. Names neither the sources nor RBS declare as a module are
+    # skipped.
     def files_inheriting(names)
-      targets = names.map { |name| unqualified(name) }.select { |name| @module_declarations.include?(name) }.to_set
+      targets = names.map { |name| unqualified(name) }.select { |name| module_declared?(name) }.to_set
       return EMPTY_ARRAY if targets.empty?
 
       written = targets.flat_map { |target| hosts_of(target) | extenders_of(target) }.to_set
@@ -211,6 +212,13 @@ module RbsInfer::Project
 
       reset_ancestor_memos(builder) unless @ancestor_builder.equal?(builder)
       @declared_ancestry[name] ||= compute_declared_ancestry(builder, name)
+    end
+
+    def module_declared?(name)
+      return true if @module_declarations.include?(name)
+
+      builder = RbsInfer::Signatures::SteepEnvironment.definition_builder or return false
+      builder.env.class_decls[RBS::TypeName.parse("::#{name}")].is_a?(RBS::Environment::ModuleEntry)
     end
 
     def reset_ancestor_memos(builder)

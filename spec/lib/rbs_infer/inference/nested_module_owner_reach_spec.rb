@@ -35,6 +35,18 @@ RSpec.describe "a bare call reaching a method of a module nested in the target" 
     RUBY
   end
 
+  def write_macros_rbs
+    write("sig/generated/lib/macros.rbs", <<~RBS)
+      module X
+        module Assoc
+          module ClassMethods
+            def declare: (untyped name) -> untyped
+          end
+        end
+      end
+    RBS
+  end
+
   def declare_signature
     rbs = RbsInfer::Analyzer.new(target_file: "lib/macros.rb", source_files: Dir["{lib,app}/*.rb"]).generate_rbs
     rbs[/def declare: .*/]
@@ -82,17 +94,40 @@ RSpec.describe "a bare call reaching a method of a module nested in the target" 
       class Post < Base
       end
     RBS
-    write("sig/generated/lib/macros.rbs", <<~RBS)
-      module X
-        module Assoc
-          module ClassMethods
-            def declare: (untyped name) -> untyped
-          end
-        end
-      end
-    RBS
+    write_macros_rbs
 
     expect(declare_signature).to start_with("def declare: (:comments name)")
+  end
+
+  it "is read from a class whose signature extends the module an include brought in" do
+    write_macros
+    write("app/post.rb", <<~RUBY)
+      class Post
+        include X::Assoc
+        declare :comments
+      end
+    RUBY
+    write("sig/generated/app/post.rbs", <<~RBS)
+      class Post
+        extend X::Assoc::ClassMethods
+        include X::Assoc
+      end
+    RBS
+    write_macros_rbs
+
+    expect(declare_signature).to start_with("def declare: (:comments name)")
+  end
+
+  it "is not read from a class that only includes the enclosing module" do
+    write_macros
+    write("app/post.rb", <<~RUBY)
+      class Post
+        include X::Assoc
+        declare :comments
+      end
+    RUBY
+
+    expect(declare_signature).to start_with("def declare: (untyped name)")
   end
 
   it "is not read from a class the module never reaches" do
