@@ -271,6 +271,18 @@ module RbsInfer::Signatures
       @method_owners[key] = compute_method_owner(type_str, method_name)
     end
 
+    # Whether a signature other than the one ending in `excluding_suffix`
+    # declares the constant `constant_name`.
+    def foreign_constant_declaration?(constant_name, excluding_suffix:)
+      return false unless rbs_builder
+
+      entry = rbs_builder.env.constant_decls[build_rbs_type_name(constant_name)] or return false
+      path = entry.decl.location&.buffer&.name.to_s
+      !(excluding_suffix && path.end_with?(excluding_suffix))
+    rescue RBS::ParsingError, RBS::BaseError
+      false
+    end
+
     # Whether the environment declares `class_name` as a class or module.
     def class_declared?(class_name)
       return false unless rbs_builder
