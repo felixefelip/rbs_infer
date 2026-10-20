@@ -109,14 +109,10 @@ module RbsInfer::Inference
         caller_constant_types: caller_constant_types
       )
 
-      # Enable bare call matching when the file includes the target module/concern.
-      # e.g. PostsController includes FilterConfiguration → configure_filter("posts")
-      # is a bare call that would otherwise be invisible to cross-class analysis.
-      #
       # `force_bare` is set by the caller for files the mixin graph already
       # proved can reach the target's methods (the host and its sibling
       # concerns), which never name the concern themselves (#64).
-      short_name = @target_class.split("::").last
+      #
       # A file that REOPENS the target class reaches its methods with a bare call too —
       # `render :new` inside `class PostsController` is a self-call, wherever that reopen
       # lives. Without this only the `include` shape counted, so a class split across files
@@ -128,8 +124,7 @@ module RbsInfer::Inference
       owned_by_target = RbsInfer::Project::SourceOwners.owner_class(file) == target_name
       reopens_target = (caller_visitor.class_name == target_name || owned_by_target) &&
                        File.expand_path(file.to_s) != File.expand_path(@target_file.to_s)
-      match_bare = force_bare || reopens_target ||
-                   source.match?(/\binclude\b.*\b#{Regexp.escape(short_name)}\b/)
+      match_bare = force_bare || reopens_target
 
       # After-validation callback narrowing: inside e.g. an `after_create`
       # handler, `self` is the validated record, so `Foo.new(self)` should

@@ -1,0 +1,6 @@
+module Example101
+  class Post
+    extend ::Example101::Assoc::ClassMethods
+    include Assoc
+  end
+end

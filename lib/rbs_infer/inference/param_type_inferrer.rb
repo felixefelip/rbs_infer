@@ -196,7 +196,8 @@ module RbsInfer::Inference
         invoker_self_types: @invoker_self_types
       )
 
-      caller_files(target_methods, is_module: is_module, inherited_supers: inherited_supers) do |file, force_bare|
+      caller_files(target_methods, is_module: is_module, inherited_supers: inherited_supers,
+                                   modules: [@target_class, *nested_method_owners(members).values.flatten(1).map(&:first)]) do |file, force_bare|
         analyzer.analyze(file, force_bare: force_bare)
       end
 
@@ -227,7 +228,7 @@ module RbsInfer::Inference
     # Who may be calling the target, by five routes no single index covers. Yields
     # each file along with whether it matches RECEIVERLESS calls — which only the
     # two routes that proved reachability earn.
-    def caller_files(target_methods, is_module:, inherited_supers:)
+    def caller_files(target_methods, is_module:, inherited_supers:, modules:)
       referencing = @source_index.files_referencing(@target_class)
 
       # A subclass whose own method hands on to the target's with `super`
@@ -239,7 +240,7 @@ module RbsInfer::Inference
       # the host's sibling concerns — files that never name the concern, so the
       # constant-reference index misses them. For a module target, fold in the
       # mixin graph and force bare-call matching on those files (#64).
-      reaching = is_module ? @mixin_index.files_reaching(@target_class).to_set : Set.new
+      reaching = (is_module ? @mixin_index.files_reaching(@target_class) : []).to_set | @mixin_index.files_inheriting(modules)
 
       # A caller that reaches the target through a VALUE — an ivar, a local, a
       # `Current.<attr>` — never spells the class name, so the constant index above

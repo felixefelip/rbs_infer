@@ -1,0 +1,19 @@
+# A concern's class method, called bare in the body of a class that includes
+# it (felixefelip/rbs_infer#480), in `example101/post.rb`. `include Assoc`
+# alone gives `Post` no `declare`; `ActiveSupport::Concern#append_features`
+# does, by extending `Post` with `Assoc::ClassMethods`. That extend is what
+# makes `declare :comments` a call site of `declare`, so its `name` is
+# `:comments`.
+#
+# Nothing here states a type.
+module Example101
+  module Assoc
+    extend ActiveSupport::Concern
+
+    class_methods do
+      def declare(name)
+        name
+      end
+    end
+  end
+end

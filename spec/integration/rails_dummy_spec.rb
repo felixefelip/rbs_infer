@@ -672,6 +672,11 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example100", target_file: "app/models/example100.rb")
   end
 
+  it "example101 (a concern's class method called bare in the body of its host) matches expected RBS" do
+    assert_snapshot("models/example101", target_file: "app/models/example101.rb")
+    assert_snapshot("models/example101/post", target_file: "app/models/example101/post.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that

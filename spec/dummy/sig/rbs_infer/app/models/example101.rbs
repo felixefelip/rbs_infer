@@ -1,0 +1,13 @@
+module Example101
+  module Assoc
+    extend ActiveSupport::Concern
+  end
+end
+
+module Example101
+  module Assoc
+    module ClassMethods
+      def declare: (:comments name) -> :comments
+    end
+  end
+end
