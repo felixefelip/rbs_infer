@@ -42,6 +42,8 @@ module RbsInfer::Project
       @extenders_of_cache = {}                                # target FQN → resolved extenders
       @ancestor_builder = nil                                 # RBS env the memo below belongs to
       @ancestor_shorts = {}                                   # written name → Set[ancestor short]
+      @declared_by_file = {}                                  # file → Set[declared class/module FQN]
+      @declared_ancestry = {}                                 # declared FQN → Set[ancestor FQN], both sides
       build(source_files)
     end
 
@@ -101,6 +103,21 @@ module RbsInfer::Project
     # so `singleton(C)` is one of the target's selves.
     def extenders_of(module_name)
       @extenders_of_cache[unqualified(module_name)] ||= resolve_extenders(module_name, Set.new)
+    end
+
+    # Files declaring a class or module that has one of the modules among
+    # `names` in its ancestry, instance or singleton: the hosts and extenders
+    # the sources write, and the ancestry the RBS environment links — which
+    # knows what the sources do not say, a superclass declared only in RBS
+    # among it. Names the sources do not declare as a module are skipped.
+    def files_inheriting(names)
+      targets = names.map { |name| unqualified(name) }.select { |name| @module_declarations.include?(name) }.to_set
+      return EMPTY_ARRAY if targets.empty?
+
+      written = targets.flat_map { |target| hosts_of(target) | extenders_of(target) }.to_set
+      @declared_by_file.filter_map do |file, declared|
+        file if declared.intersect?(written) || declared.any? { |name| declared_ancestry(name).intersect?(targets) }
+      end
     end
 
     private
@@ -184,12 +201,31 @@ module RbsInfer::Project
       builder = RbsInfer::Signatures::SteepEnvironment.definition_builder
       return EMPTY unless builder
 
-      unless @ancestor_builder.equal?(builder)
-        @ancestor_builder = builder
-        @ancestor_shorts = {}
-      end
-
+      reset_ancestor_memos(builder) unless @ancestor_builder.equal?(builder)
       @ancestor_shorts[name] ||= compute_ancestor_shorts(builder, name)
+    end
+
+    def declared_ancestry(name)
+      builder = RbsInfer::Signatures::SteepEnvironment.definition_builder
+      return EMPTY unless builder
+
+      reset_ancestor_memos(builder) unless @ancestor_builder.equal?(builder)
+      @declared_ancestry[name] ||= compute_declared_ancestry(builder, name)
+    end
+
+    def reset_ancestor_memos(builder)
+      @ancestor_builder = builder
+      @ancestor_shorts = {}
+      @declared_ancestry = {}
+    end
+
+    def compute_declared_ancestry(builder, name)
+      type_name = RBS::TypeName.parse("::#{name}")
+      ancestors = builder.ancestor_builder.instance_ancestors(type_name).ancestors +
+                  builder.ancestor_builder.singleton_ancestors(type_name).ancestors
+      ancestors.filter_map { |a| a.name.to_s.delete_prefix("::") if a.respond_to?(:name) }.to_set
+    rescue StandardError
+      EMPTY
     end
 
     def compute_ancestor_shorts(builder, name)
@@ -239,6 +275,7 @@ module RbsInfer::Project
         @module_declarations << class_name if extractor.is_module
         @module_declarations.merge(mixins.module_declarations)
         @files_defining[class_name.split("::").last] << file
+        @declared_by_file[file] = mixins.declarations
         # Reachability keys on the FILE, so the union over its declarations is
         # the right granularity: a bare call anywhere in the file can reach
         # anything anything in it mixes in.
@@ -347,7 +384,7 @@ module RbsInfer::Project
       # a module extending ITSELF names no other host.
       EXTEND_CALLS = %i[extend].freeze
 
-      attr_reader :includes, :extends, :module_declarations
+      attr_reader :includes, :extends, :module_declarations, :declarations
 
       def self.collect(root)
         new.tap { |writer| root.accept(writer) }
@@ -359,6 +396,7 @@ module RbsInfer::Project
         @includes = Hash.new { |h, k| h[k] = Set.new }
         @extends = Hash.new { |h, k| h[k] = Set.new }
         @module_declarations = Set.new
+        @declarations = Set.new
         super
       end
 
@@ -417,6 +455,7 @@ module RbsInfer::Project
           else "#{@stack.last}::#{name}"
           end
 
+        @declarations << fqn if fqn
         @stack.push(fqn) if fqn
         yield fqn
       ensure
