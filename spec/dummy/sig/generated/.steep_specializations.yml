@@ -984,6 +984,13 @@ exits:
     "(true) with {@options: { ?:autosave => untyped, :through => :taggings }}":
       ivars:
         "@options": "{ :autosave => true, :through => :taggings }"
+  Example100::Reflection.new:
+    "({  })":
+      ivars:
+        "@options": "{  }"
+    "({ :through => :taggings })":
+      ivars:
+        "@options": "{ :through => :taggings }"
   Example84::Reflection#rename:
     "((:articles | :replies)) with {@name: (:posts | :comments)}":
       ivars:
@@ -1571,6 +1578,19 @@ exits:
     "() with {@registry: { :wheel => ::Example94::Wheel }}":
       ivars:
         "@registry": "{ :wheel => ::Example94::Wheel }"
+  Example95::Reflection.association_class:
+    "({  })":
+      ivars: {}
+      params:
+        '0': "{  }"
+    "({ :dependent => :destroy })":
+      ivars: {}
+      params:
+        '0': "{ :dependent => :destroy }"
+    "({ :through => :posts })":
+      ivars: {}
+      params:
+        '0': "{ :through => :posts }"
   Example96::AutosavedReflection#autosave=:
     "(true) with {@name: (:posts | :taggings)}":
       ivars:
@@ -1609,6 +1629,15 @@ exits:
       ivars: {}
     "() with {@options: { :through => ::Symbol }}":
       ivars: {}
+  Example96::NormalizedReflection.new:
+    "(:posts, { :through => :taggings })":
+      ivars:
+        "@name": ":posts"
+        "@options": "{ :through => :taggings }"
+    "(:taggings, { :counter_cache => bool })":
+      ivars:
+        "@name": ":taggings"
+        "@options": "{  }"
   Example96::Reflection#association_kind:
     "() with {@name: :posts, @options: { :through => :taggings }}":
       ivars:
@@ -1616,6 +1645,19 @@ exits:
     "() with {@name: :taggings, @options: {  }}":
       ivars:
         "@name": ":taggings"
+  Example96::Reflection.new:
+    "(:posts, { :through => :taggings })":
+      ivars:
+        "@name": ":posts"
+        "@options": "{ :through => :taggings }"
+    "(:taggings, {  })":
+      ivars:
+        "@name": ":taggings"
+        "@options": "{  }"
+  Example97::Foo.new:
+    "({  })":
+      ivars:
+        "@my_hash": "{  }"
   Example97::Runner#run_bar:
     "() with {@foo: ::Example97::Foo{@my_hash: { :bar => 10 }}}":
       ivars:
@@ -1623,6 +1665,21 @@ exits:
           class: "::Example97::Foo"
           ivars:
             "@my_hash": "{ :bar => 10 }"
+  Example98::Foo#call_num1:
+    "({ :bar => { :num1 => 5, :num2 => 10 } })":
+      ivars: {}
+      params:
+        '0': "{ :bar => { :num1 => 5, :num2 => 10 } }"
+  Example98::Foo#call_num2:
+    "({ :bar => { :num1 => 5, :num2 => 10 } })":
+      ivars: {}
+      params:
+        '0': "{ :bar => { :num1 => 5, :num2 => 10 } }"
+  Example98::Foo#change_num2:
+    "({ :bar => { :num1 => 5, :num2 => 10 } })":
+      ivars: {}
+      params:
+        '0': "{ :bar => { :num1 => 5, :num2 => 30 } }"
   Example99::Foo#my_hash_sum_num:
     "() with {@my_hash: { :bar => { :num1 => 5, :num2 => 30 } }}":
       ivars:
@@ -1630,6 +1687,10 @@ exits:
     "() with {@my_hash: { ?:bar => untyped }}":
       ivars:
         "@my_hash": "{ ?:bar => untyped }"
+  Example99::Foo.new:
+    "({  })":
+      ivars:
+        "@my_hash": "{  }"
   Example99::Runner#build_my_hash:
     "() with {@foo: ::Example99::Foo{@my_hash: {  }}}":
       ivars:
