@@ -220,6 +220,7 @@ methods:
     "(:tags) on singleton(::Example83)": ":tags"
   Example83.has_stored:
     "(:comments)": ":comments"
+    "(:comments) on singleton(::Example83)": ":comments"
     "(:posts)": ":posts"
     "(:posts) on singleton(::Example83)": ":posts"
   Example83::Reflection.new:
@@ -239,6 +240,7 @@ methods:
   Example83::Writer.define_stored:
     "(self, ::Example83::Reflection{@name: :comments})": ":comments"
     "(self, ::Example83::Reflection{@name: :posts})": ":posts"
+    "(singleton(::Example83), ::Example83::Reflection{@name: :comments})": ":comments"
     "(singleton(::Example83), ::Example83::Reflection{@name: :posts})": ":posts"
   Example84::Reflection#rename:
     "(:articles) with {@name: :posts}": ":articles"
@@ -304,6 +306,8 @@ methods:
   Example87::Writer.define_accessors:
     "(self, ::Example87::HasManyReflection{@name: :comments})": ":comments"
     "(self, ::Example87::HasManyReflection{@name: :posts})": ":posts"
+    "(singleton(::Example87), ::Example87::HasManyReflection{@name: :comments})": ":comments"
+    "(singleton(::Example87), ::Example87::HasManyReflection{@name: :posts})": ":posts"
   Example88::Base.has_many_like:
     ? '(:categories) on singleton(::Example88::Post) with {::Example88::Inflector{@rules:
       ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}}'
@@ -373,6 +377,27 @@ methods:
     ? "() on singleton(::Example90::Post) with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}"
     : singleton(::Example90::Post::GeneratedAssociationMethods)
     "() with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}": singleton(::Example90::Post::GeneratedAssociationMethods)
+  Example91::Base.has_reader:
+    "(:comments) on singleton(::Example91::Post) with {@generated_association_methods: nil}": ":comments"
+    "(:tags) on singleton(::Example91::Post)": ":tags"
+    ? "(:tags) on singleton(::Example91::Post) with {@generated_association_methods:
+      singleton(::Example91::Post::GeneratedAssociationMethods)}"
+    : ":tags"
+  Example91::Builder::HasReader.build:
+    "(singleton(::Example91::Post), :comments) with {::Example91::Post{@generated_association_methods: nil}}": ":comments"
+    "(singleton(::Example91::Post), :tags)": ":tags"
+    ? "(singleton(::Example91::Post), :tags) with {::Example91::Post{@generated_association_methods:
+      singleton(::Example91::Post::GeneratedAssociationMethods)}}"
+    : ":tags"
+  Example91::Builder::HasReader.define_accessors:
+    "(singleton(::Example91::Post), :comments) with {::Example91::Post{@generated_association_methods: nil}}": ":comments"
+    "(singleton(::Example91::Post), :tags)": ":tags"
+    ? "(singleton(::Example91::Post), :tags) with {::Example91::Post{@generated_association_methods:
+      singleton(::Example91::Post::GeneratedAssociationMethods)}}"
+    : ":tags"
+  Example91::Builder::HasReader.define_readers:
+    "(singleton(::Example91::Post::GeneratedAssociationMethods), :comments)": ":comments"
+    "(singleton(::Example91::Post::GeneratedAssociationMethods), :tags)": ":tags"
   Example91::Core::ClassMethods#generated_association_methods:
     "() on singleton(::Example91::Post)": singleton(::Example91::Post::GeneratedAssociationMethods)
     "() on singleton(::Example91::Post) with {@generated_association_methods: nil}": singleton(::Example91::Post::GeneratedAssociationMethods)
