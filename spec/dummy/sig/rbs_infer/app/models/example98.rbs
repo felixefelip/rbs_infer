@@ -1,8 +1,8 @@
 module Example98
   class Foo
-    def run: () -> untyped
-    def call_num1: (Hash[untyped, untyped] my_hash) -> untyped
-    def call_num2: (Hash[untyped, untyped] my_hash) -> untyped
-    def change_num2: (Hash[untyped, untyped] my_hash) -> untyped
+    def run: () -> "30"
+    def call_num1: ({ bar: { num1: 5, num2: 10 } } my_hash) -> 5
+    def call_num2: ({ bar: { num1: 5, num2: 10 } } my_hash) -> 10
+    def change_num2: ({ bar: { num1: 5, num2: 10 } } my_hash) -> 30
   end
 end
