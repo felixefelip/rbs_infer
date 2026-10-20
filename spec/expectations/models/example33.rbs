@@ -3,7 +3,7 @@ class Example33
     @_bazingado_block: ((^(*untyped) [self: singleton(Example33::Bar) | singleton(Example33::BarOther)] -> (:age | :name_upcase) & ::RbsInfer::Body["def age\n        31\n      end"]) | (^(*untyped) [self: singleton(Example33::Bar) | singleton(Example33::BarOther)] -> (:age | :name_upcase) & ::RbsInfer::Body["def name_upcase\n        name.upcase\n      end"]))?
 
     def bazinga: ((singleton(::Example33::Baz) | singleton(::Example33::BazOther)) module_included) -> (:age | :name_upcase | nil)
-    def bazingado: (?(singleton(Example33::Bar) | singleton(Example33::BarOther))? base) ?{ (*untyped) [self: (singleton(Example33::Bar) | singleton(Example33::BarOther))] -> (:age | :name_upcase) } -> (^(*untyped) [self: (singleton(Example33::Bar) | singleton(Example33::BarOther))] -> (:age | :name_upcase) | nil | :age | :name_upcase)
+    def bazingado: (?(singleton(Example33::Bar) | singleton(Example33::BarOther))? base) ?{ (*untyped) [self: (singleton(Example33::Bar) | singleton(Example33::BarOther))] -> (:age | :name_upcase) } -> (:age | :name_upcase | nil | ^(*untyped) [self: (singleton(Example33::Bar) | singleton(Example33::BarOther))] -> (:age | :name_upcase))
   end
 
   module Baz

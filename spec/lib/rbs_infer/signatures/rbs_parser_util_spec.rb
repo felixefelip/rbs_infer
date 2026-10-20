@@ -633,6 +633,11 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
         .to eq("(^(*untyped) [self: singleton(Bar)] -> Symbol)?")
     end
 
+    it "reads a returned proc that is not parenthesized as a whole" do
+      expect(described_class.return_type_of("m: () ?{ (*untyped) -> :age } -> ^(*untyped) -> :age"))
+        .to eq("^(*untyped) -> :age")
+    end
+
     it "reads a plain return" do
       expect(described_class.return_type_of("m: (String name) -> Integer")).to eq("Integer")
     end
