@@ -4,7 +4,7 @@ module Example39
 
     private
 
-    def bananed: (?untyped base) ?{ (*untyped) [self: Module] -> :age } -> (^(*untyped) [self: Module] -> :age | nil | :age)
+    def bananed: (?untyped base) ?{ (*untyped) [self: Module] -> :age } -> (^(*untyped) [self: Module] -> :age | :age | nil)
   end
 
   module Baz

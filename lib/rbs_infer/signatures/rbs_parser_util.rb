@@ -301,7 +301,7 @@ module RbsInfer::Signatures
     # merely contain `|` (`Array[A | B]`), already-parenthesized unions, and
     # nilable unions (`(A | B)?`) are left untouched by `parenthesize_compound`.
     def parenthesize_return_type(method_sig)
-      arrow = last_top_level_arrow_index(method_sig)
+      arrow = return_arrow_index(method_sig)
       return method_sig unless arrow
 
       ret = method_sig[(arrow + 2)..].strip
@@ -311,7 +311,7 @@ module RbsInfer::Signatures
       "#{method_sig[0...arrow].rstrip} -> #{wrapped}"
     end
 
-    # The method's OWN return type: the text past the LAST top-level `->`,
+    # The method's OWN return type: the text past the first top-level `->`,
     # or nil when the signature has no return arrow.
     #
     # A block clause carries an arrow of its own (`?{ () -> Symbol } -> T`),
@@ -324,7 +324,7 @@ module RbsInfer::Signatures
     # that (felixefelip/rbs_infer#191) never got a parseable type to test
     # (felixefelip/rbs_infer#252).
     def return_type_of(method_sig)
-      arrow = last_top_level_arrow_index(method_sig)
+      arrow = return_arrow_index(method_sig)
       return nil unless arrow
 
       method_sig[(arrow + 2)..]&.strip
@@ -333,35 +333,31 @@ module RbsInfer::Signatures
     # The signature with its own return type, the one `return_type_of` reads,
     # replaced by `type`.
     def with_return_type(method_sig, type)
-      arrow = last_top_level_arrow_index(method_sig)
+      arrow = return_arrow_index(method_sig)
       return method_sig unless arrow
 
       "#{method_sig[0...arrow].rstrip} -> #{type}"
     end
 
-    # Index of the last `->` sitting at bracket depth 0, or nil. Used to
-    # locate the real return arrow past nested proc/block arrows.
-    def last_top_level_arrow_index(str)
+    # Index of the method's return arrow: the first `->` at bracket depth 0, or
+    # nil. The parameters and the block clause are bracketed, and every arrow
+    # past it belongs to the return type (`-> ^(*untyped) -> :age`).
+    def return_arrow_index(str)
       return nil unless str
 
       openers = { "(" => ")", "[" => "]", "{" => "}" }
       closers = openers.values.to_set
       depth = 0
-      found = nil
-      i = 0
-      while i < str.length
-        char = str[i]
+      str.each_char.with_index do |char, i|
         if openers.key?(char)
           depth += 1
         elsif closers.include?(char)
           depth -= 1 if depth > 0
         elsif depth.zero? && char == "-" && str[i + 1] == ">"
-          found = i
-          i += 1
+          return i
         end
-        i += 1
       end
-      found
+      nil
     end
 
     # Fills in a block's parameter types on a whole method signature

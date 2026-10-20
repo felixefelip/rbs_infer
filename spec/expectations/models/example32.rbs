@@ -3,7 +3,7 @@ class Example32
     @_bazingado_block: (^(*untyped) [self: singleton(Example32::Bar)] -> :age & ::RbsInfer::Body["def age\n        31\n      end"])?
 
     def bazinga: (singleton(::Example32::Baz) module_included) -> (:age)?
-    def bazingado: (?singleton(Example32::Bar)? base) ?{ (*untyped) [self: singleton(Example32::Bar)] -> :age } -> (^(*untyped) [self: singleton(Example32::Bar)] -> :age | nil | :age)
+    def bazingado: (?singleton(Example32::Bar)? base) ?{ (*untyped) [self: singleton(Example32::Bar)] -> :age } -> (:age | nil | ^(*untyped) [self: singleton(Example32::Bar)] -> :age)
   end
 
   module Baz

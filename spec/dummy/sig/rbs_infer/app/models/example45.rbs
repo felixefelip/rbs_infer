@@ -2,7 +2,7 @@ class Example45
   module Foo
     @_banana_block: (^(*untyped) [self: Class] -> :age & ::RbsInfer::Body["def age\n        31\n      end"])?
 
-    def banana_class_method: () ?{ (*untyped) [self: Class] -> :age } -> (^(*untyped) [self: Class] -> :age)?
+    def banana_class_method: () ?{ (*untyped) [self: Class] -> :age } -> ^(*untyped) [self: Class] -> :age
     def included: (Module base) -> (:age)?
   end
 

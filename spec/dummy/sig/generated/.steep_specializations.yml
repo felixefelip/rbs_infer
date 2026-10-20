@@ -610,12 +610,30 @@ declarations:
     {  } } | { :action => "renamed", :particulars => {  } })
   Example19#record: '"denied"'
   Example20#record: '"denied"'
+  Example28::Foo#bazingado: "^(*untyped) -> :age_after_a_decade"
+  Example29::Foo#bazingado: "^(*untyped) -> (:age_after_a_decade | :name_upcase)"
+  Example31::Foo#bazingado: "^(*untyped) -> :age"
   Example32::Foo#bazinga: "(:age | nil)"
+  Example32::Foo#bazingado: "(:age | nil | ^(*untyped) [self: singleton(::Example32::Bar)]
+    -> :age)"
   Example33::Foo#bazinga: "(:age | :name_upcase | nil)"
+  Example33::Foo#bazingado: "(:age | :name_upcase | nil | ^(*untyped) [self: (singleton(::Example33::Bar)
+    | singleton(::Example33::BarOther))] -> (:age | :name_upcase))"
   Example35::Foo.bazinga: "(:age | nil)"
+  Example35::Foo.bazingado: "(:age | nil | ^(*untyped) [self: singleton(::Example35::Foo)]
+    -> :age)"
+  Example36::Foo.bazingado: "(:age | nil | ^(*untyped) [self: singleton(::Example36::Foo)]
+    -> :age)"
+  Example37::Foo#bazingado: "(:age | nil | ^(*untyped) [self: singleton(::Example37::Bar)]
+    -> :age)"
+  Example39::Foo#bananed: "(^(*untyped) [self: ::Module] -> :age | :age | nil)"
+  Example42::Foo#bazingado: "(:age | nil | ^(*untyped) [self: (singleton(::Example42::Bar)
+    | singleton(::Example42::BarOther))] -> :age)"
+  Example45::Foo#banana_class_method: "^(*untyped) [self: ::Class] -> :age"
   Example47::Foo#banana_class_method: ":age"
   Example50::Foo#banana_class_method: ":age"
   Example61.normalize: '"indexed_by"'
+  Example62::Deferring#keep: "^(*untyped) [self: ::Module] -> :hallmark"
   Example62::Slots#hallmark=: '"value"'
   Example65::Dispatcher.dispatch: "(::Example65Greeter | ::Example65Adder | ::Example65CsvReporter)"
   Example65::Rival.dispatch: "::Example65Impostor"

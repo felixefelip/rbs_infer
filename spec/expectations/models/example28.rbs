@@ -3,7 +3,7 @@ class Example28
     attr_reader bazingado_block: untyped
 
     def bazinga: (singleton(::Example28::Baz) module_included) -> untyped
-    def bazingado: () ?{ (*untyped) -> :age_after_a_decade } -> (^(*untyped) -> :age_after_a_decade)?
+    def bazingado: () ?{ (*untyped) -> :age_after_a_decade } -> ^(*untyped) -> :age_after_a_decade
   end
 
   module Baz

@@ -4,7 +4,7 @@ class Example62
 
     def self.extended: (Object base) -> Array[untyped]
 
-    def keep: () ?{ (*untyped) [self: Module] -> :hallmark } -> (^(*untyped) [self: Module] -> :hallmark)?
+    def keep: () ?{ (*untyped) [self: Module] -> :hallmark } -> ^(*untyped) [self: Module] -> :hallmark
     def append_features: (Module base) -> (:hallmark)?
   end
 

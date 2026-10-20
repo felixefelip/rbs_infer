@@ -6,7 +6,7 @@ class Example42
 
     private
 
-    def bazingado: (?(singleton(Example42::Bar) | singleton(Example42::BarOther))? base) ?{ (*untyped) [self: (singleton(Example42::Bar) | singleton(Example42::BarOther))] -> :age } -> (^(*untyped) [self: (singleton(Example42::Bar) | singleton(Example42::BarOther))] -> :age | nil | :age)
+    def bazingado: (?(singleton(Example42::Bar) | singleton(Example42::BarOther))? base) ?{ (*untyped) [self: (singleton(Example42::Bar) | singleton(Example42::BarOther))] -> :age } -> (:age | nil | ^(*untyped) [self: (singleton(Example42::Bar) | singleton(Example42::BarOther))] -> :age)
   end
 end
 
