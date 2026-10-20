@@ -19,8 +19,14 @@ class RbsInfer::Signatures::SteepBridge
     #
     # Keys are `name` for instance methods and `self.name` for singletons, so a
     # class method never answers for its instance namesake.
-    def forwarded_block_requirements(source_code)
-      typing = @steep_bridge.type_check(source_code)
+    #
+    # `open_signatures` (`{ "self.build" => "build: (untyped) ?{ (*untyped) -> untyped } -> untyped" }`)
+    # is each forwarder's signature with the block left open. Its body is checked
+    # under it, not under its declaration: an earlier run's output that says the
+    # block is required would type the forwarded proc as non-nil, and the callee
+    # would then be asked the wrong question (felixefelip/rbs_infer#487).
+    def forwarded_block_requirements(source_code, open_signatures:)
+      typing = @steep_bridge.type_check(with_open_signatures(source_code, open_signatures))
       return {} unless typing
 
       sites = Hash.new { |hash, key| hash[key] = [] }
@@ -98,6 +104,30 @@ class RbsInfer::Signatures::SteepBridge
     # an `lvar` one. Reading only the `lvar` shape left those methods with the
     # callee's requirement unasked — `?{ (*untyped) }` where the callee makes it
     # `{ (String) }` (felixefelip/rbs_infer#174).
+    def with_open_signatures(source_code, open_signatures)
+      return source_code if open_signatures.empty?
+
+      lines = source_code.lines
+      annotations = annotated_defs(Prism.parse(source_code).value, false, open_signatures)
+      annotations.sort_by { |line, _| -line }.each do |line, annotation|
+        indent = lines[line - 1][/\A\s*/]
+        lines.insert(line - 1, "#{indent}# @type method #{annotation}\n")
+      end
+      lines.join
+    end
+
+    def annotated_defs(node, singleton, open_signatures)
+      return [] unless node.is_a?(Prism::Node)
+
+      nested = node.compact_child_nodes.flat_map do |child|
+        annotated_defs(child, singleton || node.is_a?(Prism::SingletonClassNode), open_signatures)
+      end
+      return nested unless node.is_a?(Prism::DefNode)
+
+      key = singleton || node.receiver.is_a?(Prism::SelfNode) ? "self.#{node.name}" : node.name.to_s
+      open_signatures.key?(key) ? [[node.location.start_line, open_signatures[key]], *nested] : nested
+    end
+
     def each_forwarded_block(typing, &)
       walk_forwarded_blocks(typing.source.node, nil, false, &)
     end

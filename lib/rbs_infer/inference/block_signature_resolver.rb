@@ -107,7 +107,9 @@ module RbsInfer::Inference
       selected = members.select { |m| %i[method class_method].include?(m.kind) && m.block_open_forward }
       return if selected.empty?
 
-      requirements = @steep_bridge.forwarded_block_requirements(@parsed_target.source)
+      requirements = @steep_bridge.forwarded_block_requirements(
+        @parsed_target.source, open_signatures: selected.to_h { |member| [method_key(member), member.signature] }
+      )
       return if requirements.empty?
 
       selected.each do |member|
