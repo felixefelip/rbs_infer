@@ -651,7 +651,7 @@ declarations:
     -> :age)"
   Example37::Foo#bazingado: "(:age | nil | ^(*untyped) [self: singleton(::Example37::Bar)]
     -> :age)"
-  Example39::Foo#bananed: "(^(*untyped) [self: ::Module] -> :age | :age | nil)"
+  Example39::Foo#bananed: "^(*untyped) [self: ::Module] -> :age"
   Example42::Foo#bazingado: "(:age | nil | ^(*untyped) [self: (singleton(::Example42::Bar)
     | singleton(::Example42::BarOther))] -> :age)"
   Example45::Foo#banana_class_method: "^(*untyped) [self: ::Class] -> :age"
