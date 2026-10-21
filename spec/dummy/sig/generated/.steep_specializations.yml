@@ -1781,6 +1781,21 @@ exits:
           ivars:
             "@my_hash": "{ ?:bar => untyped }"
   Module#include:
+    "(::Module) with {@generated_association_methods: nil}":
+      ivars:
+        "@generated_association_methods": nil
+    "(::Module) with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}":
+      ivars:
+        "@generated_association_methods": singleton(::Example90::Post::GeneratedAssociationMethods)
+    "(::Module) with {@generated_association_methods: singleton(::Example91::Post::GeneratedAssociationMethods)}":
+      ivars:
+        "@generated_association_methods": singleton(::Example91::Post::GeneratedAssociationMethods)
+    "(::Module) with {@generated_methods: nil}":
+      ivars:
+        "@generated_methods": nil
+    "(::Module) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}":
+      ivars:
+        "@generated_methods": singleton(::Example89::Widget::GeneratedMethods)
     "(singleton(::Current::GeneratedAttributeMethods)) on singleton(::Current) with {@__rbs_infer_instance: nil}":
       ivars:
         "@__rbs_infer_instance": nil
@@ -1802,20 +1817,43 @@ exits:
     "(singleton(::Example89::Widget::GeneratedMethods)) on singleton(::Example89::Widget) with {@generated_methods: nil}":
       ivars:
         "@generated_methods": nil
+    ? "(singleton(::Example89::Widget::GeneratedMethods)) on singleton(::Example89::Widget)
+      with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}"
+    : ivars:
+        "@generated_methods": singleton(::Example89::Widget::GeneratedMethods)
     "(singleton(::Example89::Widget::GeneratedMethods)) with {@generated_methods: nil}":
       ivars:
         "@generated_methods": nil
+    "(singleton(::Example89::Widget::GeneratedMethods)) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}":
+      ivars:
+        "@generated_methods": singleton(::Example89::Widget::GeneratedMethods)
     ? "(singleton(::Example90::Post::GeneratedAssociationMethods)) on singleton(::Example90::Post)
       with {@generated_association_methods: nil}"
     : ivars:
         "@generated_association_methods": nil
+    ? "(singleton(::Example90::Post::GeneratedAssociationMethods)) on singleton(::Example90::Post)
+      with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}"
+    : ivars:
+        "@generated_association_methods": singleton(::Example90::Post::GeneratedAssociationMethods)
     "(singleton(::Example90::Post::GeneratedAssociationMethods)) with {@generated_association_methods: nil}":
       ivars:
         "@generated_association_methods": nil
+    ? "(singleton(::Example90::Post::GeneratedAssociationMethods)) with {@generated_association_methods:
+      singleton(::Example90::Post::GeneratedAssociationMethods)}"
+    : ivars:
+        "@generated_association_methods": singleton(::Example90::Post::GeneratedAssociationMethods)
     ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) on singleton(::Example91::Post)
       with {@generated_association_methods: nil}"
     : ivars:
         "@generated_association_methods": nil
+    ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) on singleton(::Example91::Post)
+      with {@generated_association_methods: singleton(::Example91::Post::GeneratedAssociationMethods)}"
+    : ivars:
+        "@generated_association_methods": singleton(::Example91::Post::GeneratedAssociationMethods)
     "(singleton(::Example91::Post::GeneratedAssociationMethods)) with {@generated_association_methods: nil}":
       ivars:
         "@generated_association_methods": nil
+    ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) with {@generated_association_methods:
+      singleton(::Example91::Post::GeneratedAssociationMethods)}"
+    : ivars:
+        "@generated_association_methods": singleton(::Example91::Post::GeneratedAssociationMethods)
