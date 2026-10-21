@@ -217,9 +217,25 @@ module RbsInfer::Signatures
     end
 
     def render_members(members, indent, init_arg_types, attr_types, method_param_types, optional_params)
-      members.filter_map do |m|
+      overloaded_attr_ivars(members, indent, attr_types) + members.filter_map do |m|
         render_value_member(m, indent, init_arg_types, attr_types, method_param_types, optional_params)
       end
+    end
+
+    # An attr written as overloading `def`s no longer declares its ivar, so the
+    # ivar is declared here, with the attr's type — unless a plain half of the
+    # same attr is left to declare it.
+    def overloaded_attr_ivars(members, indent, attr_types)
+      attrs = members.select { |m| ATTR_KINDS.include?(m.kind) && !m.no_signature }
+      plain = attrs.reject(&:overloading).to_set(&:name)
+      attrs.select(&:overloading).reject { |m| plain.include?(m.name) }.uniq(&:name).map do |m|
+        "#{indent}@#{attr_signature(m, attr_types)}"
+      end
+    end
+
+    def attr_signature(member, attr_types)
+      sig = member.signature
+      sig.end_with?(": untyped") && attr_types[member.name] ? "#{member.name}: #{attr_types[member.name]}" : sig
     end
 
     # `attr_accessor :x` declares `x` and `x=`; `attr_reader`/`attr_writer`
@@ -290,7 +306,7 @@ module RbsInfer::Signatures
     # it: this signature goes AHEAD of the ones something else already declares for
     # the same method, instead of colliding with them. Requested by `# @rbs_infer |...`
     # above the def and confirmed against the environment before it gets here — see
-    # `ClassMemberCollector#find_overloading_marker` and `Analyzer#confirm_overloading!`.
+    # `ClassMemberCollector#find_overloading_marker` and `ForeignDeclarations#confirm_overloading!`.
     #
     # Here rather than at each `def` site because there are three of them — instance,
     # top-level singleton, nested-module singleton — and only the instance one honoured
@@ -301,6 +317,11 @@ module RbsInfer::Signatures
     def overloadable(sig, member)
       rendered = RbsInfer::Signatures::RbsParserUtil.parenthesize_return_type(sig)
       member.overloading ? "#{rendered} | ..." : rendered
+    end
+
+    def attr_method_signature(member, sig)
+      type = sig.delete_prefix("#{member.name}: ")
+      member.kind == :attr_writer ? "#{member.name}=: (#{type}) -> #{type}" : "#{member.name}: () -> #{type}"
     end
 
     # Renders a single value member (method / attr_*) as one RBS line, or
@@ -323,9 +344,8 @@ module RbsInfer::Signatures
         sig = RbsInfer::Signatures::RbsParserUtil.with_return_type(sig, "void") if member.name == "initialize"
         "#{indent}def #{overloadable(sig, member)}"
       when :attr_accessor, :attr_reader, :attr_writer
-        sig = member.signature
-        sig = "#{member.name}: #{attr_types[member.name]}" if sig.end_with?(": untyped") && attr_types[member.name]
-        "#{indent}#{member.kind} #{sig}"
+        sig = attr_signature(member, attr_types)
+        member.overloading ? "#{indent}def #{overloadable(attr_method_signature(member, sig), member)}" : "#{indent}#{member.kind} #{sig}"
       end
     end
 
