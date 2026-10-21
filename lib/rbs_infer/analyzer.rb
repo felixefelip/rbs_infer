@@ -211,7 +211,8 @@ module RbsInfer
     def build_single_target_rbs # rubocop:todo Metrics/MethodLength
       # Parsear o arquivo-alvo para extrair todos os membros da classe
       target_members = parse_target_class
-      confirm_overloading!(target_members)
+      RbsInfer::Signatures::ForeignDeclarations.new(resolver: rbs_definition_resolver, owner_of: method(:member_owner),
+                                                    excluding_suffix: own_output_suffix).reconcile!(target_members)
       # Extrair classes da anotação @type instance (para concerns)
       @instance_types = extract_instance_types
 
@@ -612,33 +613,6 @@ module RbsInfer
       end
     end
 
-    # `# @rbs_infer |...` above a def asks for RBS's overloading form (`... | ...`), which
-    # puts our signature AHEAD of one something else already declares instead of colliding
-    # with it. The marker states intent; this confirms it, because `| ...` with nothing to
-    # overload is an `InvalidOverloadMethodError` — the same class of hard failure, poisoning
-    # the whole environment, that it exists to avoid. A marker on a method nobody else
-    # declares silently emits the plain form rather than breaking the run.
-    #
-    # Our own previous output is excluded: it already declares the method, and confirming
-    # against it would be circular — a method only we declare would gain `| ...` and then
-    # have nothing left to overload.
-    #
-    # Asked of the member's OWNER, not of the target. A member in a module nested inside
-    # the target belongs to `Target::Owner` (the same `#{@target_class}::#{owner}` join the
-    # rest of the analyzer uses), and asking under the target's own name finds nothing —
-    # which drops the marker and emits the plain form, i.e. the duplicate declaration the
-    # marker is there to avoid. It fails that way silently: RBS only raises when something
-    # BUILDS the class, so a collision nothing references yet sits in the environment
-    # unexercised. `ActiveSupport::Concern` is a nested module in exactly that position.
-    def confirm_overloading!(members)
-      members.select(&:overloading).each do |member|
-        confirmed = rbs_definition_resolver.foreign_plain_declaration?(
-          member_owner(member), member.name, singleton: member.kind == :class_method, excluding_suffix: own_output_suffix
-        )
-        member.overloading = false unless confirmed
-      end
-    end
-
     def member_owner(member) = member.owner ? "#{@target_class}::#{member.owner}" : @target_class
 
     def own_output_suffix = @target_file&.sub(/\.rb\z/, ".rbs")
@@ -965,6 +939,7 @@ require_relative "inference/local_self_paths"
 require_relative "signatures/method_type_resolver"
 require_relative "inference/caller_file_analyzer"
 require_relative "signatures/rbs_builder"
+require_relative "signatures/foreign_declarations"
 require_relative "inference/constant_type_resolver"
 require_relative "inference/constant_arg_type_resolver"
 require_relative "inference/self_return_type_context"

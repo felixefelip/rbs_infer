@@ -537,7 +537,7 @@ module RbsInfer::Inference
     # The marker states INTENT and is not trusted on its own: `| ...` requires a prior
     # definition, so claiming it where there is none is `InvalidOverloadMethodError`,
     # the same class of hard failure it exists to avoid. The analyzer confirms against
-    # the environment before emitting (see `Analyzer#confirm_overloading!`).
+    # the environment before emitting (see `ForeignDeclarations#confirm_overloading!`).
     def find_overloading_marker(comments, lines, def_line)
       # `|...`, `| ...` and a trailing `...` alone all read as the same request.
       marker?(comments, lines, def_line, /@rbs_infer\s+\|?\s*\.\.\./)

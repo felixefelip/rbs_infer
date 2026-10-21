@@ -239,7 +239,7 @@ module RbsInfer::Signatures
       return false if singleton
 
       ancestor_type_names(type_name).any? do |ancestor|
-        plain_declaration?(ancestor, method_name, excluding_suffix: excluding_suffix, instance_only: true)
+        plain_declaration?(ancestor, method_name, excluding_suffix: excluding_suffix, kind: :instance)
       end
     rescue RBS::BaseError
       false
@@ -269,6 +269,18 @@ module RbsInfer::Signatures
       return @method_owners[key] if @method_owners.key?(key)
 
       @method_owners[key] = compute_method_owner(type_str, method_name)
+    end
+
+    # Whether a signature other than the one ending in `excluding_suffix` declares
+    # `method_name` on `class_name` itself, on the same side, in a form a second
+    # plain declaration would collide with.
+    def foreign_own_declaration?(class_name, method_name, singleton:, excluding_suffix:)
+      type_name = rbs_builder && build_rbs_type_name(class_name) or return false
+
+      plain_declaration?(type_name, method_name, excluding_suffix: excluding_suffix,
+                                                 kind: singleton ? :singleton : :instance)
+    rescue RBS::BaseError
+      false
     end
 
     # Whether a signature other than the one ending in `excluding_suffix`
@@ -463,11 +475,11 @@ module RbsInfer::Signatures
     # The plain-member scan of ONE type's own declarations — the question
     # `foreign_plain_declaration?` asks, of the type and then of each ancestor.
     #
-    # `instance_only` is for the ancestor pass alone, and pairs with the `singleton`
+    # `kind: :instance` is for the ancestor pass, and pairs with the `singleton`
     # gate above: that pass runs for instance members, so it must read instance
     # declarations. The same-type scan ignores `kind` and always has — left as it is,
     # because widening it is a separate question from this one.
-    def plain_declaration?(type_name, method_name, excluding_suffix:, instance_only: false)
+    def plain_declaration?(type_name, method_name, excluding_suffix:, kind: nil)
       entry = rbs_builder.env.class_decls[type_name]
       return false unless entry
 
@@ -476,11 +488,19 @@ module RbsInfer::Signatures
         next false if excluding_suffix && path.end_with?(excluding_suffix)
 
         decl.members.any? do |member|
-          member.is_a?(RBS::AST::Members::MethodDefinition) &&
-            member.name.to_s == method_name.to_s &&
-            !member.overloading? &&
-            (!instance_only || member.kind == :instance)
+          declared_method_names(member).include?(method_name.to_s) && (!kind || member.kind == kind)
         end
+      end
+    end
+
+    def declared_method_names(member)
+      case member
+      when RBS::AST::Members::MethodDefinition then member.overloading? ? [] : [member.name.to_s]
+      when RBS::AST::Members::AttrReader then [member.name.to_s]
+      when RBS::AST::Members::AttrWriter then ["#{member.name}="]
+      when RBS::AST::Members::AttrAccessor then [member.name.to_s, "#{member.name}="]
+      when RBS::AST::Members::Alias then [member.new_name.to_s]
+      else []
       end
     end
 
