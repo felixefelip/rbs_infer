@@ -22,6 +22,14 @@ RSpec.describe RbsInfer::Signatures::RbsDefinitionResolver do
     end
   end
 
+  describe "#infer_type_vars_from_block" do
+    it "infers nothing from a block whose parameters are untyped (`(?) -> T`)" do
+      method_type = RBS::Parser.parse_method_type("[T] () { (?) -> T } -> ^(?) -> T")
+
+      expect(resolver.send(:infer_type_vars_from_block, method_type)).to eq({})
+    end
+  end
+
   describe "#parse_intersection_components" do
     it "splits `A & B` into components" do
       expect(resolver.parse_intersection_components("Order & Order::Validated"))

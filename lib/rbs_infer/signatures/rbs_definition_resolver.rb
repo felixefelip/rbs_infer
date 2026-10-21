@@ -535,7 +535,7 @@ module RbsInfer::Signatures
       end
 
       # Fallback: inferir a partir do tipo do parâmetro do bloco
-      first_param = block.type.required_positionals.first
+      first_param = block.type.is_a?(RBS::Types::Function) && block.type.required_positionals.first
       return {} unless first_param
 
       param_type = format_rbs_return_type(first_param.type)

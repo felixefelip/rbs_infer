@@ -19,7 +19,7 @@ module RbsInfer::Inference
       # Métodos com return type untyped — inclui `:method` (instance) e
       # `:class_method` (singleton, `def self.X`) porque o steep_bridge
       # devolve tipos pra ambos via `typing.each_typing` sem distinguir.
-      untyped_methods = members.select { |m| method_member?(m) && m.signature =~ /->\ s*untyped$/ }
+      untyped_methods = members.select { |m| method_member?(m) && untyped_return?(m) }
       return if members.none? { |m| method_member?(m) }
 
       # Kind-split so a `def self.x` reads Steep's singleton-method type, not a
@@ -38,7 +38,7 @@ module RbsInfer::Inference
       # to take). Deferring can then cost nothing: the member ends where it would
       # have started.
       deferred_to_body.each do |m, resolved|
-        next unless m.signature =~ /->\s*untyped$/
+        next unless untyped_return?(m)
 
         apply_return_type(m, resolved)
       end
@@ -84,9 +84,7 @@ module RbsInfer::Inference
     # purpose (no `target_class`): the collision that matters is the one in
     # Steep's map, which is built from the whole source.
     def apply_return_type(member, type)
-      member.signature = member.signature.sub(
-        /-> untyped$/, "-> #{RbsInfer::Signatures::RbsParserUtil.parenthesize_union(type)}"
-      )
+      rewrite_return(member, "untyped", RbsInfer::Signatures::RbsParserUtil.parenthesize_union(type))
     end
 
     # A bare `return` (or `return nil`) yields nil, so nil belongs in the return union
@@ -206,7 +204,7 @@ module RbsInfer::Inference
 
     def fill_untyped_from_steep(members, steep_returns, parsed_target)
       revisable_members(members).each do |m|
-        next unless m.signature =~ /->\s*untyped$/
+        next unless untyped_return?(m)
 
         # `nil` is a genuine inference, not a fallback: the env is built with
         # `implicitly_returns_nil: false`, so Steep types a body as `nil` only
@@ -236,7 +234,7 @@ module RbsInfer::Inference
     # (existing RBS had wrong type from previous generation)
     def correct_block_generics(members, steep_returns)
       revisable_members(members).each do |m|
-        next if m.signature =~ /->\s*untyped$/
+        next if untyped_return?(m)
 
         steep_type = steep_answer(m, steep_returns) or next
         current_type = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
@@ -444,7 +442,13 @@ module RbsInfer::Inference
     end
 
     def rewrite_return(member, from, to)
-      member.signature = member.signature.sub(/-> #{Regexp.escape(from)}$/, "-> #{to}")
+      return unless RbsInfer::Signatures::RbsParserUtil.return_type_of(member.signature) == from
+
+      member.signature = RbsInfer::Signatures::RbsParserUtil.with_return_type(member.signature, to)
+    end
+
+    def untyped_return?(member)
+      RbsInfer::Signatures::RbsParserUtil.return_type_of(member.signature) == "untyped"
     end
 
     # `user=`-style writer (not `==`/`<=`/`[]=` operators).
