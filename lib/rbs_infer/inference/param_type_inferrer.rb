@@ -549,9 +549,8 @@ module RbsInfer::Inference
         analysis.members.each do |m|
           case m.kind
           when :method
-            if m.signature =~ /.*->\s*(.+)$/
-              method_return_types[m.name] = ::Regexp.last_match(1).strip
-            end
+            returned = RbsInfer::Signatures::RbsParserUtil.return_type_of(m.signature)
+            method_return_types[m.name] = returned if returned
           when :attr_accessor, :attr_reader
             if m.signature =~ /\w+:\s*(.+)/
               type = ::Regexp.last_match(1).strip

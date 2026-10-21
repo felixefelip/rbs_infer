@@ -321,9 +321,8 @@ module RbsInfer::Signatures
         analysis.members.each do |m|
           case m.kind
           when :method
-            if m.signature =~ /.*->\s*(.+)$/
-              mrt[m.name] = ::Regexp.last_match(1).strip
-            end
+            returned = RbsParserUtil.return_type_of(m.signature)
+            mrt[m.name] = returned if returned
           when :attr_accessor, :attr_reader
             if m.signature =~ /\w+:\s*(.+)/
               type = ::Regexp.last_match(1).strip
@@ -409,18 +408,16 @@ module RbsInfer::Signatures
           collector.members.each do |member|
             case member.kind
             when :method
-              if member.signature =~ /.*->\s*(.+)$/
-                type = ::Regexp.last_match(1).strip
-                # `untyped` is not an answer, it is the absence of one — recording
-                # it OCCUPIES the slot, and every later source here fills with
-                # `||=`, so the RBS lookup at step 6 never got to speak. That is
-                # how `Example21#ticket` read `untyped` in this map while
-                # `#resolve` — which asks RBS first — answered
-                # `Example21::Ticket?` for the same method
-                # (felixefelip/rbs_infer#168). The attr branch below has always
-                # skipped it; the method branch had not.
-                types[member.name] = type unless type == "untyped"
-              end
+              type = RbsParserUtil.return_type_of(member.signature)
+              # `untyped` is not an answer, it is the absence of one — recording
+              # it OCCUPIES the slot, and every later source here fills with
+              # `||=`, so the RBS lookup at step 6 never got to speak. That is
+              # how `Example21#ticket` read `untyped` in this map while
+              # `#resolve` — which asks RBS first — answered
+              # `Example21::Ticket?` for the same method
+              # (felixefelip/rbs_infer#168). The attr branch below has always
+              # skipped it; the method branch had not.
+              types[member.name] = type unless [nil, "untyped"].include?(type)
             when :attr_accessor, :attr_reader
               attr_names.add(member.name)
               if member.signature =~ /\w+:\s*(.+)/
