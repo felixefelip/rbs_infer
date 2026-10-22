@@ -5,6 +5,14 @@ methods:
     ((::User | nil), "post_notification"): '{ :body => "post_notification", :from
       => ::String, :sent_at => ::ActiveSupport::TimeWithZone, :to => (::String | nil)
       }'
+    '((::User | nil), "post_notification") with {@delivery_method: :smtp}': '{ :body
+      => "post_notification", :from => ::String, :sent_at => ::ActiveSupport::TimeWithZone,
+      :to => (::String | nil) }'
+  EmailNotifier.new:
+    "()":
+      class: "::EmailNotifier"
+      ivars:
+        "@delivery_method": ":smtp"
   EvalReopen::Slots#slot=:
     ("value"): '"value"'
   EventTracker#track_event:
@@ -285,6 +293,11 @@ methods:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}': '[[::Regexp, "y"], [::Regexp,
       ""]]'
     '(/s\z/, "") with {@singulars: []}': '[[::Regexp, ""]]'
+  Example85::Rules.new:
+    "()":
+      class: "::Example85::Rules"
+      ivars:
+        "@singulars": "[]"
   Example86::Box.new:
     "(:draft)":
       class: "::Example86::Box"
@@ -343,6 +356,11 @@ methods:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}': '[[::Regexp, "y"], [::Regexp,
       ""]]'
     '(/s\z/, "") with {@singulars: []}': '[[::Regexp, ""]]'
+  Example88::Rules.new:
+    "()":
+      class: "::Example88::Rules"
+      ivars:
+        "@singulars": "[]"
   Example89::Base.define_reader:
     "(:size) on singleton(::Example89::Widget) with {@generated_methods: nil}": ":size"
     "(:weight) on singleton(::Example89::Widget)": ":weight"
@@ -434,6 +452,11 @@ methods:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}': '[[::Regexp, "y"], [::Regexp,
       ""]]'
     '(/s\z/, "") with {@singulars: []}': '[[::Regexp, ""]]'
+  Example92::Rules.new:
+    "()":
+      class: "::Example92::Rules"
+      ivars:
+        "@singulars": "[]"
   Example93::Inflector.rule_set:
     '() on singleton(::Example93::Inflector) with {@rule_set: ::Example93::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
       class: "::Example93::Rules"
@@ -462,6 +485,11 @@ methods:
   Example93::Rules#apply:
     '("categories") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}': '"category"'
     '("posts") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}': '"post"'
+  Example93::Rules.new:
+    "()":
+      class: "::Example93::Rules"
+      ivars:
+        "@singulars": "[]"
   Example94::Base.describe:
     "(:seat)": ":seat_label"
     "(:seat) on singleton(::Example94::Car)": ":seat_label"
@@ -946,6 +974,10 @@ receivers:
   sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:101:
   - "::NoMethodError[untyped]"
 exits:
+  EmailNotifier#notify:
+    '((::User | nil), "post_notification") with {@delivery_method: :smtp}':
+      ivars:
+        "@delivery_method": ":smtp"
   Example100::Base.accept_nested:
     ? "(:tags) on singleton(::Example100::Article) with {@association_reflections:
       { :comments => ::Example100::Reflection{@options: { ?:autosave => untyped }},
