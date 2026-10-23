@@ -741,6 +741,12 @@ receivers:
   - "::Board"
   app/models/example10.rb:28:21:
   - singleton(::Example10::Foo)
+  app/models/example100.rb:56:31:
+  - singleton(::Example100::Article)
+  app/models/example100.rb:57:35:
+  - singleton(::Example100::Article)
+  app/models/example100.rb:58:33:
+  - singleton(::Example100::Article)
   app/models/example100.rb:58:51:
   - "::Example100::Reflection"
   app/models/example13.rb:104:20:
@@ -903,6 +909,14 @@ receivers:
   - singleton(::Example9::Age)
   app/models/example94.rb:48:54:
   - "(::Example94::Wheel | ::Example94::Seat | ::Example94::Bench | ::Example94::Door)"
+  app/models/example94.rb:58:27:
+  - singleton(::Example94::Car)
+  app/models/example94.rb:59:26:
+  - singleton(::Example94::Car)
+  app/models/example94.rb:67:26:
+  - singleton(::Example94::Truck)
+  app/models/example94.rb:68:26:
+  - singleton(::Example94::Truck)
   app/models/example96.rb:78:46:
   - "::Post::EnumerizeStatusAttribute"
   app/models/example97.rb:23:10:
