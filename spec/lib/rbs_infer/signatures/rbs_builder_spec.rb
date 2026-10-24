@@ -5,10 +5,11 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
   # RbsBuilder's kwargs are all required (see its initialize). This helper
   # supplies test-only defaults so each example states only what it cares
   # about — keeping the production API strict while specs stay terse.
-  def make_builder(target_class:, superclass_name:, namespace_classes: Set.new, is_module: false, type_params: "")
+  def make_builder(target_class:, superclass_name:, superclass_args: "", namespace_classes: Set.new, is_module: false, type_params: "")
     described_class.new(
       target_class: target_class,
       superclass_name: superclass_name,
+      superclass_args: superclass_args,
       namespace_classes: namespace_classes,
       is_module: is_module,
       type_params: type_params
@@ -37,6 +38,14 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
       result = build_rbs(make_builder(target_class: "Rules", superclass_name: nil), members)
 
       expect(result).to include("  def initialize: () -> void\n").and include("  def self.initialize: () -> 0\n")
+    end
+  end
+
+  describe "#build com superclasse genérica" do
+    it "escreve os argumentos que a superclasse recebe" do
+      builder = make_builder(target_class: "Chains", superclass_name: "Hash", superclass_args: "[untyped, untyped]")
+
+      expect(build_rbs(builder, [], {}, {})).to include("class Chains < Hash[untyped, untyped]")
     end
   end
 
