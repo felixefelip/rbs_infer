@@ -297,10 +297,14 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
       expect(hash_types(code, singleton: false)["entries"]).to eq("Hash[untyped, untyped]")
     end
 
+    ['entries[:b] ||= "s"', '@entries[:b] ||= "s"'].each do |store|
+      it "reads the element a store `#{store}` makes" do
+        expect(hash_types(registry(store))["entries"]).to eq("Hash[Symbol, Integer | String]?")
+      end
+    end
+
     [
-      'entries[:b] ||= "s"',
       "entries[:b] += 2.0",
-      '@entries[:b] ||= "s"',
       'entries.merge!(b: "s")',
       'h = entries; h[:b] = "s"'
     ].each do |store|

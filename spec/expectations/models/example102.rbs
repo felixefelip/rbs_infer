@@ -1,0 +1,41 @@
+module Example102
+  module Locales
+    self.@fallback_chains: Example102::FallbackChains?
+
+    def self.fallback_chains: () -> Example102::FallbackChains
+  end
+end
+
+module Example102
+  class Rules
+    attr_reader singulars: Array[untyped]
+
+    def initialize: () -> void
+    def singular: (Regexp rule, ("" | "y") replacement) -> Array[untyped]
+    def apply: (String word) -> ("post" | "category")
+  end
+end
+
+module Example102
+  class FallbackChains < Hash[untyped, untyped]
+    @default: Symbol
+
+    def initialize: () -> void
+    def []: (:en locale) -> [ :en, :en ]
+    def compute: (:en locale) -> [ :en, :en ]
+  end
+end
+
+module Example102
+  class Inflector
+    self.@locale_rule_sets: Hash[:en, Example102::Rules]?
+
+    def self.locale_rule_sets: () -> Hash[:en, Example102::Rules]
+    def self.rule_set_for: (:en locale) -> Example102::Rules
+    def self.with_rules: (:en locale) ?{ (Example102::Rules) -> Array[untyped] } -> Array[untyped]
+    def self.rules_or_fallback: (:en locale) -> Example102::Rules
+    def self.singularize: (String word) -> ("post" | "category")
+    def self.has_many_like: ((:posts | :categories) name) -> (:post_ids | :category_ids)
+    def self.summary: () -> Array[Array[untyped]]
+  end
+end

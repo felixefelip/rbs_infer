@@ -103,6 +103,95 @@ methods:
       class: "::Example100::Reflection"
       ivars:
         "@options": "{ :through => :taggings }"
+  Example102::FallbackChains#[]:
+    "(:en)": "[:en, :en]"
+    "(:en) with {@default: :en}": "[:en, :en]"
+  Example102::FallbackChains#compute:
+    "(:en) with {@default: :en}": "[:en, :en]"
+  Example102::FallbackChains.new:
+    "()":
+      class: "::Example102::FallbackChains"
+      ivars:
+        "@default": ":en"
+  Example102::Inflector.has_many_like:
+    ? '(:categories) on singleton(::Example102::Inflector) with {@locale_rule_sets:
+      { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains:
+      nil}}'
+    : ":category_ids"
+    ? '(:categories) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains: nil}}'
+    : ":category_ids"
+    ? '(:posts) on singleton(::Example102::Inflector) with {@locale_rule_sets: { :en
+      => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains:
+      nil}}'
+    : ":post_ids"
+    ? '(:posts) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains: nil}}'
+    : ":post_ids"
+  Example102::Inflector.locale_rule_sets:
+    ? '() on singleton(::Example102::Inflector) with {@locale_rule_sets: { :en =>
+      ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
+    : "{ :en => ::Example102::Rules }"
+    '() with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}': "{
+      :en => ::Example102::Rules }"
+  Example102::Inflector.rule_set_for:
+    ? '(:en) on singleton(::Example102::Inflector) with {@locale_rule_sets: { :en
+      => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
+    : class: "::Example102::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    '(:en) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}':
+      class: "::Example102::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+  Example102::Inflector.rules_or_fallback:
+    ? '(:en) on singleton(::Example102::Inflector) with {@locale_rule_sets: { :en
+      => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains:
+      nil}}'
+    : class: "::Example102::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    ? '(:en) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/,
+      "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains: nil}}'
+    : class: "::Example102::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+  Example102::Inflector.singularize:
+    ? '("categories") on singleton(::Example102::Inflector) with {@locale_rule_sets:
+      { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains:
+      nil}}'
+    : '"category"'
+    ? '("categories") with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains: nil}}'
+    : '"category"'
+    ? '("posts") on singleton(::Example102::Inflector) with {@locale_rule_sets: {
+      :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains:
+      nil}}'
+    : '"post"'
+    ? '("posts") with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains: nil}}'
+    : '"post"'
+  Example102::Locales.fallback_chains:
+    "() on singleton(::Example102::Locales)":
+      class: "::Example102::FallbackChains"
+      ivars:
+        "@default": ":en"
+    "() on singleton(::Example102::Locales) with {@fallback_chains: nil}":
+      class: "::Example102::FallbackChains"
+      ivars:
+        "@default": ":en"
+    "() with {@fallback_chains: nil}":
+      class: "::Example102::FallbackChains"
+      ivars:
+        "@default": ":en"
+  Example102::Rules#apply:
+    '("categories") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}': '"category"'
+    '("posts") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}': '"post"'
+  Example102::Rules.new:
+    "()":
+      class: "::Example102::Rules"
+      ivars:
+        "@singulars": "[]"
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -661,6 +750,10 @@ declarations:
   Eventable#track_event: ({ :action => :closed, :particulars => {  } } | { :action
     => :reopened, :particulars => {  } } | { :action => :published, :particulars =>
     {  } } | { :action => "renamed", :particulars => {  } })
+  Example102::FallbackChains#[]: "[:en, :en]"
+  Example102::FallbackChains#compute: "[:en, :en]"
+  Example102::Inflector.with_rules: "::Array[untyped]"
+  Example102::Rules#apply: ("post" | "category")
   Example19#record: '"denied"'
   Example20#record: '"denied"'
   Example28::Foo#bazingado: "^(*untyped) -> :age_after_a_decade"
@@ -717,30 +810,118 @@ declarations:
   IncludedHook::Slots#stamp=: '"value"'
   Notification::GeneratedStoreAccessors#channel=: '"none"'
 receivers:
+  app/controllers/application_controller.rb:13:28:
+  - untyped
+  app/controllers/application_controller.rb:28:38:
+  - singleton(::Current)
+  app/controllers/application_controller.rb:28:69:
+  - singleton(::Current)
   app/controllers/application_controller.rb:28:74:
   - "(::User & ::User::Validated)"
   app/controllers/application_controller.rb:29:49:
   - singleton(::Current)
+  app/controllers/application_controller.rb:33:12:
+  - singleton(::Current)
+  app/controllers/concerns/filter_configuration.rb:15:31:
+  - singleton(::ActiveModel::Type::Boolean)
+  app/controllers/concerns/filter_configuration.rb:15:46:
+  - "::ActionController::Parameters"
+  app/controllers/posts/assignments_controller.rb:15:24:
+  - "(::Post & ::Post::Validated)"
+  app/controllers/posts/assignments_controller.rb:15:36:
+  - "::Post_Assignment::ActiveRecord_Associations_CollectionProxy"
+  app/controllers/posts/assignments_controller.rb:22:17:
+  - singleton(::Post)
+  app/controllers/posts/assignments_controller.rb:22:28:
+  - "::ActionController::Parameters"
+  app/controllers/posts_controller.rb:14:22:
+  - "(::Post & ::Post::Validated)"
+  app/controllers/posts_controller.rb:18:17:
+  - singleton(::Post)
+  app/controllers/posts_controller.rb:22:17:
+  - singleton(::Post)
+  app/controllers/posts_controller.rb:31:13:
+  - "(::Post & ::Post::Validated)"
+  app/controllers/posts_controller.rb:45:25:
+  - "(::Post & ::Post::Validated)"
+  app/controllers/posts_controller.rb:47:30:
+  - singleton(::PostPublisher)
+  app/controllers/posts_controller.rb:49:60:
+  - "(::Post & ::Post::Validated)"
+  app/controllers/posts_controller.rb:59:17:
+  - singleton(::Post)
+  app/controllers/posts_controller.rb:59:28:
+  - "::ActionController::Parameters"
   app/controllers/posts_controller.rb:63:24:
   - "(::User & ::User::Validated)"
+  app/controllers/posts_controller.rb:77:26:
+  - singleton(::Current)
+  app/controllers/posts_controller.rb:79:18:
+  - singleton(::PostFiltering)
+  app/controllers/posts_controller.rb:79:30:
+  - singleton(::Current)
+  app/controllers/users/avatars_controller.rb:20:17:
+  - singleton(::User)
+  app/controllers/users/avatars_controller.rb:20:28:
+  - "::ActionController::Parameters"
+  app/controllers/users/avatars_controller.rb:9:13:
+  - "(::User & ::User::Validated)"
+  app/controllers/users_controller.rb:21:17:
+  - singleton(::Post)
+  app/controllers/users_controller.rb:21:28:
+  - "::ActionController::Parameters"
+  app/controllers/users_controller.rb:22:22:
+  - "(::Post & ::Post::Validated)"
+  app/controllers/users_controller.rb:9:17:
+  - singleton(::User)
+  app/controllers/users_controller.rb:9:28:
+  - "::ActionController::Parameters"
   app/helpers/posts_helper.rb:50:31:
   - "(::Comment & ::Comment::Validated)"
   app/jobs/avatar_thumbnail_job.rb:15:20:
   - "(::User & ::User::Validated)"
+  app/jobs/profile_formatter_job.rb:16:21:
+  - singleton(::ProfileFormatter)
+  app/jobs/profile_formatter_job.rb:17:21:
+  - singleton(::ProfileFormatter)
+  app/jobs/profile_formatter_job.rb:25:23:
+  - singleton(::ProfileFormatter)
+  app/models/assignment.rb:19:60:
+  - untyped
+  app/models/assignment.rb:38:46:
+  - "::Post"
   app/models/assignment.rb:38:51:
   - "::User"
   app/models/comment.rb:20:9:
   - "::User"
+  app/models/comment.rb:28:11:
+  - singleton(::Comment::Create)
+  app/models/comment.rb:28:15:
+  - "::Comment::Create"
   app/models/comment.rb:49:9:
   - "(::Post & ::Post::Validated)"
   app/models/current.rb:26:31:
   - "((::User & ::User::Validated) | ::User)"
+  app/models/eval_reopen.rb:75:24:
+  - singleton(::EvalReopen)
+  app/models/example.rb:29:18:
+  - singleton(::Board)
+  app/models/example.rb:31:20:
+  - singleton(::Column)
   app/models/example.rb:35:17:
   - "::Board"
   app/models/example.rb:9:27:
   - "::Board"
   app/models/example10.rb:28:21:
   - singleton(::Example10::Foo)
+  app/models/example10.rb:54:42:
+  - singleton(::Example10::Bar)
+  app/models/example100.rb:30:34:
+  - "::Hash[::Symbol, untyped]"
+  app/models/example100.rb:39:49:
+  - singleton(::Example100::Reflection)
+  app/models/example100.rb:47:29:
+  - "::Hash[(:tags | :comments), ::Example100::Reflection]"
   app/models/example100.rb:56:31:
   - singleton(::Example100::Article)
   app/models/example100.rb:57:35:
@@ -749,52 +930,158 @@ receivers:
   - singleton(::Example100::Article)
   app/models/example100.rb:58:51:
   - "::Example100::Reflection"
+  app/models/example100.rb:58:58:
+  - "::Hash[::Symbol, untyped]"
+  app/models/example102.rb:53:67:
+  - singleton(::Example102::FallbackChains)
+  app/models/example102.rb:58:53:
+  - "::Hash[:en, ::Example102::Rules]"
+  app/models/example102.rb:58:72:
+  - singleton(::Example102::Rules)
+  app/models/example102.rb:65:14:
+  - singleton(::Example102::Locales)
+  app/models/example102.rb:65:29:
+  - "::Example102::FallbackChains"
+  app/models/example102.rb:66:31:
+  - "::Hash[:en, ::Example102::Rules]"
+  app/models/example11.rb:12:22:
+  - singleton(::Example11::View)
+  app/models/example11.rb:12:48:
+  - singleton(::Example11::Post)
+  app/models/example11.rb:29:25:
+  - singleton(::Example11::Partial)
+  app/models/example13.rb:104:15:
+  - singleton(::Example13::Registry)
   app/models/example13.rb:104:20:
   - "::Example13Viewer"
+  app/models/example13.rb:124:22:
+  - singleton(::Example13::Registry)
+  app/models/example13.rb:138:15:
+  - singleton(::Example13::Registry)
   app/models/example13.rb:138:20:
   - "::Example13Viewer"
+  app/models/example13.rb:151:22:
+  - singleton(::Example13::Registry)
+  app/models/example13.rb:165:15:
+  - singleton(::Example13::Registry)
   app/models/example13.rb:165:20:
   - "::Example13Viewer"
+  app/models/example13.rb:180:41:
+  - singleton(::Example13::Registry)
+  app/models/example13.rb:194:15:
+  - singleton(::Example13::Registry)
   app/models/example13.rb:194:20:
   - "::Example13Viewer"
+  app/models/example13.rb:21:38:
+  - singleton(::Example13::Registry)
   app/models/example13.rb:231:19:
   - "::Example13Viewer"
+  app/models/example13.rb:25:24:
+  - "::Example13::Registry"
   app/models/example13.rb:271:19:
   - "::Example13Viewer"
+  app/models/example13.rb:286:41:
+  - singleton(::Example13::Registry)
+  app/models/example13.rb:301:15:
+  - singleton(::Example13::Registry)
   app/models/example13.rb:301:20:
   - "::Example13Viewer"
+  app/models/example13.rb:309:38:
+  - singleton(::Example13Tenant)
+  app/models/example13.rb:314:12:
+  - singleton(::Example13::Guarded)
+  app/models/example13.rb:332:37:
+  - singleton(::Example13Viewer)
+  app/models/example13.rb:67:22:
+  - singleton(::Example13Viewer)
   app/models/example14.rb:15:17:
   - "(::Example14::User | nil)"
+  app/models/example14.rb:29:17:
+  - singleton(::Example14::User)
+  app/models/example15.rb:25:20:
+  - singleton(::Example15::Registry)
   app/models/example15.rb:25:25:
   - "::Example15::User"
+  app/models/example15.rb:39:25:
+  - singleton(::Example15::User)
+  app/models/example16.rb:39:20:
+  - singleton(::Example16::Registry)
   app/models/example16.rb:39:25:
   - "::Example16::User"
+  app/models/example16.rb:62:27:
+  - singleton(::Example16::User)
+  app/models/example16.rb:69:27:
+  - singleton(::Example16::User)
+  app/models/example18.rb:114:9:
+  - singleton(::Example18::User)
+  app/models/example18.rb:58:20:
+  - singleton(::Example18::Registry)
   app/models/example18.rb:58:25:
   - "::Example18::User"
+  app/models/example19.rb:129:9:
+  - singleton(::Example19::User)
+  app/models/example19.rb:72:20:
+  - singleton(::Example19::Registry)
   app/models/example19.rb:72:25:
   - "::Example19::User"
   app/models/example2.rb:17:21:
   - "::Example2::User"
+  app/models/example2.rb:22:14:
+  - singleton(::Example2::User)
+  app/models/example2.rb:24:12:
+  - singleton(::Example2::Foo)
   app/models/example2.rb:28:6:
   - "(::Example2::Foo & ::Example2::Foo::AfterUser)"
+  app/models/example20.rb:130:9:
+  - singleton(::Example20::User)
+  app/models/example20.rb:71:20:
+  - singleton(::Example20::Registry)
   app/models/example20.rb:71:25:
   - "::Example20::User"
+  app/models/example21.rb:105:24:
+  - singleton(::Example21::Registry)
   app/models/example21.rb:105:31:
   - "(::Example21::Holder | nil)"
+  app/models/example21.rb:52:13:
+  - singleton(::Example21::Holder)
+  app/models/example21.rb:80:18:
+  - singleton(::Example21::Ticket)
+  app/models/example21.rb:96:29:
+  - "(::Example21::Ticket | nil)"
   app/models/example3.rb:101:13:
   - "::Example3::User"
+  app/models/example3.rb:101:8:
+  - singleton(::Example3::Foo)
+  app/models/example3.rb:108:13:
+  - singleton(::Example3::User)
   app/models/example3.rb:111:13:
   - "::Example3::User"
+  app/models/example3.rb:111:8:
+  - singleton(::Example3::Foo)
+  app/models/example3.rb:119:13:
+  - singleton(::Example3::User)
   app/models/example3.rb:121:12:
   - singleton(::Example3::Foo)
   app/models/example3.rb:122:11:
   - "(::Example3::User | nil)"
+  app/models/example3.rb:122:6:
+  - "::Example3::Foo"
+  app/models/example3.rb:19:28:
+  - singleton(::Example3::Foo)
+  app/models/example3.rb:23:19:
+  - "::Example3::Foo"
   app/models/example3.rb:31:19:
   - "::Example3::Foo"
   app/models/example3.rb:47:25:
   - "(::Example3::User | nil)"
+  app/models/example3.rb:52:16:
+  - singleton(::Example3::User)
   app/models/example3.rb:56:13:
   - "::Example3::User"
+  app/models/example3.rb:56:8:
+  - singleton(::Example3::Foo)
+  app/models/example3.rb:57:21:
+  - "::Example3::Foo"
   app/models/example3.rb:57:26:
   - "::Example3::User"
   app/models/example3.rb:57:8:
@@ -807,6 +1094,10 @@ receivers:
   - singleton(::Example3::Foo)
   app/models/example3.rb:63:13:
   - "(::Example3::User | nil)"
+  app/models/example3.rb:63:8:
+  - singleton(::Example3::Foo)
+  app/models/example3.rb:64:21:
+  - "::Example3::Foo"
   app/models/example3.rb:64:26:
   - "(::Example3::User | nil)"
   app/models/example3.rb:64:8:
@@ -817,12 +1108,20 @@ receivers:
   - singleton(::Example3::Foo)
   app/models/example3.rb:66:8:
   - singleton(::Example3::Foo)
+  app/models/example3.rb:86:13:
+  - singleton(::Example3::User)
   app/models/example3.rb:88:13:
   - "::Example3::User"
+  app/models/example3.rb:88:8:
+  - singleton(::Example3::Foo)
   app/models/example3.rb:89:12:
   - singleton(::Example3::Foo)
   app/models/example3.rb:91:13:
   - "::Example3::User"
+  app/models/example3.rb:91:8:
+  - singleton(::Example3::Foo)
+  app/models/example3.rb:98:13:
+  - singleton(::Example3::User)
   app/models/example4.rb:14:20:
   - singleton(::Example4::Foo)
   app/models/example4.rb:18:20:
@@ -831,26 +1130,78 @@ receivers:
   - singleton(::Example4::Foo)
   app/models/example4.rb:27:18:
   - singleton(::Example4::Foo)
+  app/models/example4.rb:29:18:
+  - singleton(::Example4::Bar)
   app/models/example4.rb:32:18:
   - singleton(::Example4::Foo)
+  app/models/example4.rb:36:18:
+  - singleton(::Example4::Bar)
   app/models/example4.rb:40:18:
   - singleton(::Example4::Foo)
+  app/models/example4.rb:41:18:
+  - singleton(::Example4::Bar)
   app/models/example4.rb:45:18:
   - singleton(::Example4::Foo)
+  app/models/example40.rb:15:48:
+  - singleton(::Example40::Bazinga)
+  app/models/example46.rb:3:27:
+  - singleton(::Module)
+  app/models/example46.rb:5:37:
+  - singleton(::Module)
   app/models/example5.rb:17:20:
   - singleton(::Example5::Foo)
   app/models/example5.rb:30:20:
   - singleton(::Example5::Foo)
+  app/models/example5.rb:37:18:
+  - singleton(::Example5::Bar)
+  app/models/example51.rb:4:39:
+  - singleton(::Module)
+  app/models/example52.rb:4:106:
+  - singleton(::Module)
+  app/models/example53.rb:4:106:
+  - singleton(::Module)
+  app/models/example54/baz.rb:4:106:
+  - singleton(::Module)
+  app/models/example55/foo.rb:3:104:
+  - singleton(::Module)
+  app/models/example56.rb:51:11:
+  - singleton(::Example56::Reader)
   app/models/example56.rb:51:15:
   - "::Example56::Reader"
+  app/models/example58/defaults.rb:20:29:
+  - '{ :indexed_by => "all", :sorted_by => "latest" }'
   app/models/example6.rb:16:20:
   - singleton(::Example6::Foo)
   app/models/example6.rb:38:20:
   - singleton(::Example6::Foo)
+  app/models/example6.rb:40:20:
+  - singleton(::Example6::Bar)
+  app/models/example60.rb:12:21:
+  - singleton(::Example60Printer)
   app/models/example60.rb:16:22:
   - "::Example60Printer"
+  app/models/example62.rb:34:51:
+  - singleton(::Array)
+  app/models/example62.rb:86:14:
+  - singleton(::Example62)
+  app/models/example62.rb:90:14:
+  - singleton(::Example62)
+  app/models/example63.rb:17:6:
+  - singleton(::Example63::Foo)
+  app/models/example63.rb:21:6:
+  - singleton(::Example63::Foo)
+  app/models/example63.rb:22:6:
+  - singleton(::Example63::Foo)
+  app/models/example67.rb:45:13:
+  - "::Example67Source"
   app/models/example67.rb:45:20:
   - "::Example67Window"
+  app/models/example67_source.rb:23:20:
+  - singleton(::Example67Window)
+  app/models/example67_source.rb:34:14:
+  - singleton(::Example67)
+  app/models/example67_window.rb:15:20:
+  - singleton(::Example67Window)
   app/models/example68.rb:102:11:
   - "(::Example68Entry | nil)"
   app/models/example68.rb:102:44:
@@ -861,6 +1212,8 @@ receivers:
   - "::Example68Entry"
   app/models/example68.rb:121:57:
   - "::Example68Entry"
+  app/models/example68.rb:65:19:
+  - singleton(::Example68Store)
   app/models/example68.rb:77:21:
   - "::Example68Entry"
   app/models/example68.rb:83:12:
@@ -875,6 +1228,10 @@ receivers:
   - "(::Example68Entry | nil)"
   app/models/example68.rb:95:46:
   - "::Example68Entry"
+  app/models/example68_store.rb:7:20:
+  - singleton(::Example68Entry)
+  app/models/example68_store.rb:7:53:
+  - singleton(::Example68Entry)
   app/models/example7.rb:31:22:
   - singleton(::Example7::Age)
   app/models/example7.rb:32:22:
@@ -883,78 +1240,384 @@ receivers:
   - singleton(::Example7::Foo)
   app/models/example7.rb:35:22:
   - singleton(::Example7::Age)
+  app/models/example7.rb:53:25:
+  - singleton(::Example7::Dispatcher)
+  app/models/example7.rb:58:25:
+  - singleton(::Example7::Dispatcher)
   app/models/example74.rb:102:11:
   - '::Array["a"]'
+  app/models/example75.rb:61:11:
+  - singleton(::Example75::Skin)
+  app/models/example76.rb:66:79:
+  - "::Method::param_types"
+  app/models/example76.rb:66:82:
+  - "([(:req | :opt | :rest | :keyreq | :key | :keyrest | :block), ::Symbol] | [(:rest
+    | :keyrest | :nokey)])"
+  app/models/example76.rb:94:11:
+  - singleton(::Example76::Peel)
+  app/models/example77.rb:35:80:
+  - "::Method::param_types"
+  app/models/example77.rb:35:83:
+  - "([(:req | :opt | :rest | :keyreq | :key | :keyrest | :block), ::Symbol] | [(:rest
+    | :keyrest | :nokey)])"
+  app/models/example77.rb:67:11:
+  - singleton(::Example77::Peel)
+  app/models/example77.rb:71:11:
+  - singleton(::Example77::Rind)
+  app/models/example78.rb:9:79:
+  - "[[:req, :index]]"
+  app/models/example78.rb:9:82:
+  - "[:req, :index]"
+  app/models/example80.rb:56:22:
+  - singleton(::Example80::Person)
+  app/models/example80.rb:62:23:
+  - singleton(::Example80::Person)
+  app/models/example81.rb:24:18:
+  - singleton(::User)
+  app/models/example81.rb:27:20:
+  - singleton(::User)
+  app/models/example82.rb:26:20:
+  - singleton(::User)
+  app/models/example82.rb:27:20:
+  - singleton(::User)
+  app/models/example82.rb:33:21:
+  - singleton(::Example82)
   app/models/example83.rb:41:41:
   - "::Example83::Reflection"
+  app/models/example83.rb:50:42:
+  - singleton(::Example83::Reflection)
+  app/models/example83.rb:60:12:
+  - "::Example83"
   app/models/example83.rb:60:40:
+  - "::Example83"
+  app/models/example83.rb:60:54:
   - "::Example83"
   app/models/example84.rb:35:41:
   - "(::Example84::Reflection & ::Example84::Reflection::AfterRename)"
+  app/models/example84.rb:40:28:
+  - singleton(::Example84::Reflection)
+  app/models/example85.rb:41:21:
+  - singleton(::Example85::Rules)
   app/models/example85.rb:49:10:
   - "::Example85::Rules"
+  app/models/example86.rb:36:8:
+  - singleton(::Example86::Box)
+  app/models/example86.rb:44:14:
+  - singleton(::Example86::Box)
   app/models/example86.rb:46:26:
   - "::Example86::Box"
   app/models/example87.rb:51:41:
   - "::Example87::HasManyReflection"
+  app/models/example87.rb:56:52:
+  - singleton(::Example87::HasManyReflection)
   app/models/example87.rb:64:12:
   - "::Example87"
+  app/models/example87.rb:64:26:
+  - "::Example87"
+  app/models/example88.rb:27:23:
+  - singleton(::Example88::Rules)
   app/models/example88.rb:35:12:
   - "::Example88::Rules"
+  app/models/example89.rb:24:50:
+  - singleton(::Module)
+  app/models/example89.rb:47:27:
+  - singleton(::Example89::Widget)
   app/models/example89.rb:47:31:
   - "::Example89::Widget"
+  app/models/example89.rb:48:29:
+  - singleton(::Example89::Widget)
+  app/models/example89.rb:49:28:
+  - singleton(::Example89::Widget)
   app/models/example9.rb:46:22:
   - singleton(::Example9::Foo)
   app/models/example9.rb:48:22:
   - singleton(::Example9::Age)
+  app/models/example9.rb:55:25:
+  - singleton(::Example9::Dispatcher)
+  app/models/example9.rb:60:25:
+  - singleton(::Example9::Dispatcher)
+  app/models/example90.rb:16:63:
+  - singleton(::Module)
+  app/models/example90.rb:38:29:
+  - singleton(::Example90::Post)
+  app/models/example90.rb:38:33:
+  - "::Example90::Post"
+  app/models/example90.rb:39:25:
+  - singleton(::Example90::Post)
+  app/models/example90.rb:39:29:
+  - "::Example90::Post"
+  app/models/example91.rb:15:63:
+  - singleton(::Module)
+  app/models/example91.rb:54:29:
+  - singleton(::Example91::Post)
+  app/models/example91.rb:54:33:
+  - "::Example91::Post"
+  app/models/example91.rb:55:25:
+  - singleton(::Example91::Post)
+  app/models/example91.rb:55:29:
+  - "::Example91::Post"
+  app/models/example92.rb:34:29:
+  - singleton(::Example92::Rules)
+  app/models/example93.rb:38:26:
+  - singleton(::Example93::Rules)
+  app/models/example94.rb:44:14:
+  - "::Hash[(:wheel | :seat | :door), (::Example94::Wheel | ::Example94::Seat | ::Example94::Bench
+    | ::Example94::Door)]"
   app/models/example94.rb:48:54:
   - "(::Example94::Wheel | ::Example94::Seat | ::Example94::Bench | ::Example94::Door)"
+  app/models/example94.rb:53:27:
+  - singleton(::Example94::Wheel)
+  app/models/example94.rb:54:25:
+  - singleton(::Example94::Seat)
   app/models/example94.rb:58:27:
   - singleton(::Example94::Car)
   app/models/example94.rb:59:26:
   - singleton(::Example94::Car)
+  app/models/example94.rb:63:26:
+  - singleton(::Example94::Bench)
+  app/models/example94.rb:64:25:
+  - singleton(::Example94::Door)
   app/models/example94.rb:67:26:
   - singleton(::Example94::Truck)
   app/models/example94.rb:68:26:
   - singleton(::Example94::Truck)
+  app/models/example95.rb:17:13:
+  - "({ :through => :posts } | ::Hash[untyped, untyped] | { :dependent => :destroy
+    })"
+  app/models/example96.rb:35:13:
+  - "({ :through => :taggings } | ::Hash[untyped, untyped] | ::Hash[::Symbol, untyped])"
+  app/models/example96.rb:48:13:
+  - "::Hash[::Symbol, untyped]"
+  app/models/example96.rb:66:48:
+  - singleton(::Example96::Reflection)
+  app/models/example96.rb:67:57:
+  - singleton(::Example96::Reflection)
+  app/models/example96.rb:68:64:
+  - singleton(::Example96::NormalizedReflection)
+  app/models/example96.rb:71:39:
+  - singleton(::Example96::AutosavedReflection)
   app/models/example96.rb:78:46:
   - "::Post::EnumerizeStatusAttribute"
+  app/models/example96.rb:82:38:
+  - singleton(::Example96::Builder)
+  app/models/example96.rb:83:36:
+  - singleton(::Example96::Builder)
+  app/models/example96.rb:85:40:
+  - singleton(::Example96::Builder)
+  app/models/example96.rb:86:38:
+  - singleton(::Example96::Builder)
+  app/models/example96.rb:88:42:
+  - singleton(::Example96::Builder)
+  app/models/example96.rb:89:40:
+  - singleton(::Example96::Builder)
+  app/models/example97.rb:22:17:
+  - singleton(::Example97::Foo)
   app/models/example97.rb:23:10:
   - "::Example97::Foo"
   app/models/example97.rb:25:10:
   - "::Example97::Foo"
+  app/models/example97.rb:25:17:
+  - "{ :bar => untyped }"
   app/models/example97.rb:29:10:
   - "::Example97::Foo"
+  app/models/example97.rb:29:17:
+  - "::Hash[untyped, untyped]"
+  app/models/example98.rb:17:13:
+  - "::Hash[untyped, untyped]"
+  app/models/example98.rb:17:19:
+  - untyped
+  app/models/example98.rb:21:13:
+  - "{ :bar => { :num1 => 5, :num2 => 10 } }"
+  app/models/example98.rb:21:19:
+  - "{ :num1 => 5, :num2 => 10 }"
+  app/models/example98.rb:25:13:
+  - "{ :bar => { :num1 => 5, :num2 => 10 } }"
+  app/models/example98.rb:25:19:
+  - "{ :num1 => 5, :num2 => 10 }"
+  app/models/example98.rb:29:13:
+  - "{ :bar => { :num1 => 5, :num2 => 10 } }"
+  app/models/example98.rb:29:36:
+  - "{ :bar => { :num1 => 5, :num2 => 10 } }"
+  app/models/example98.rb:29:42:
+  - "{ :num1 => 5, :num2 => 10 }"
+  app/models/example99.rb:20:14:
+  - "::Hash[untyped, untyped]"
+  app/models/example99.rb:20:20:
+  - untyped
+  app/models/example99.rb:20:38:
+  - "::Hash[untyped, untyped]"
+  app/models/example99.rb:20:44:
+  - untyped
+  app/models/example99.rb:28:17:
+  - singleton(::Example99::Foo)
   app/models/example99.rb:34:10:
   - "::Example99::Foo"
+  app/models/example99.rb:34:17:
+  - "::Hash[untyped, untyped]"
+  app/models/example99.rb:34:23:
+  - untyped
   app/models/example99.rb:38:10:
   - "::Example99::Foo"
   app/models/example99.rb:42:10:
   - "::Example99::Foo"
+  app/models/example99.rb:42:17:
+  - "::Hash[untyped, untyped]"
+  app/models/example99.rb:42:23:
+  - untyped
   app/models/example99.rb:46:10:
   - "::Example99::Foo"
+  app/models/example99.rb:46:17:
+  - "::Hash[untyped, untyped]"
+  app/models/example99.rb:46:23:
+  - untyped
   app/models/example99.rb:50:10:
   - "::Example99::Foo"
+  app/models/example99.rb:50:17:
+  - "::Hash[untyped, untyped]"
   app/models/example99.rb:50:37:
   - "::Example99::Foo"
+  app/models/example99.rb:50:44:
+  - "::Hash[untyped, untyped]"
+  app/models/example99.rb:50:50:
+  - untyped
+  app/models/included_hook.rb:127:26:
+  - singleton(::IncludedHook)
+  app/models/included_hook.rb:139:17:
+  - singleton(::IncludedHook)
+  app/models/included_hook.rb:148:17:
+  - singleton(::IncludedHook)
+  app/models/included_hook.rb:154:17:
+  - singleton(::IncludedHook)
   app/models/included_hook.rb:154:21:
   - "::IncludedHook"
+  app/models/included_hook.rb:164:22:
+  - singleton(::IncludedHookFirst)
   app/models/post.rb:119:15:
   - "(::Tag & ::Tag::Validated)"
+  app/models/post.rb:129:13:
+  - singleton(::Post::Archiver)
+  app/models/post.rb:133:13:
+  - singleton(::Post::Archiver)
   app/models/post.rb:141:16:
   - "::Post::EnumerizeStatusAttribute"
+  app/models/post.rb:24:19:
+  - untyped
+  app/models/post.rb:25:21:
+  - untyped
+  app/models/post.rb:75:13:
+  - "::Post_Comment::ActiveRecord_Associations_CollectionProxy"
+  app/models/post/archiver.rb:18:12:
+  - "::Post"
+  app/models/post/notifiable.rb:51:18:
+  - singleton(::EmailNotifier)
   app/models/post/tag_digest.rb:25:29:
   - untyped
+  app/models/post/taggable.rb:42:20:
+  - singleton(::Post::TagDigest)
+  app/models/send_dispatch.rb:107:17:
+  - singleton(::SendDispatch)
+  app/models/send_dispatch.rb:114:17:
+  - singleton(::SendDispatch)
+  app/models/send_dispatch.rb:119:17:
+  - singleton(::SendDispatch)
+  app/models/send_dispatch.rb:131:17:
+  - singleton(::SendDispatch)
+  app/models/send_dispatch.rb:139:26:
+  - singleton(::SendDispatch)
+  app/models/send_dispatch.rb:62:17:
+  - singleton(::SendDispatch)
+  app/models/send_dispatch.rb:66:17:
+  - singleton(::SendDispatch)
+  app/models/send_dispatch.rb:73:17:
+  - singleton(::SendDispatch)
+  app/models/send_dispatch.rb:80:17:
+  - singleton(::SendDispatch)
+  app/models/send_dispatch.rb:88:17:
+  - singleton(::SendDispatch)
+  app/models/send_dispatch.rb:92:17:
+  - singleton(::SendDispatch)
+  app/models/user/displayable.rb:7:27:
+  - "::String"
+  app/models/user/displayable.rb:8:25:
+  - "::String"
+  app/models/user/notifiable.rb:41:18:
+  - "::User_Notification::ActiveRecord_Associations_CollectionProxy"
+  app/models/widget/closeable.rb:22:18:
+  - singleton(::WidgetAuditor)
+  app/services/comment/create.rb:22:20:
+  - singleton(::Comment)
+  app/services/comment/create.rb:27:12:
+  - '{ :baz => 42, :comment => ::Comment, :foo => "bar", :nested => { :a => 1, :b
+    => 2 } }'
+  app/services/comment/create.rb:30:39:
+  - singleton(::Comment)
+  app/services/comment/create.rb:3:20:
+  - singleton(::Comment)
+  app/services/event_reporter.rb:8:17:
+  - singleton(::EventTracker)
   app/services/post_filtering.rb:29:10:
   - "((::User & ::User::Validated) | ::User)"
+  app/services/post_publisher.rb:15:25:
+  - "::Post"
+  app/services/post_publisher.rb:6:47:
+  - singleton(::EmailNotifier)
   app/services/tag_destroy.rb:126:10:
   - "(::User & ::User::Validated)"
+  app/services/tag_destroy.rb:28:17:
+  - singleton(::User)
   app/services/tag_destroy.rb:32:9:
   - "(::User & ::User::Validated)"
   app/services/tag_destroy.rb:36:18:
   - "(::Tag & ::Tag::Validated)"
+  app/services/tag_destroy.rb:36:31:
+  - "((::Post & ::Post::Validated) | nil)"
   app/services/tag_destroy.rb:44:16:
   - "(::Tag & ::Tag::Validated)"
+  app/services/tag_destroy.rb:7:15:
+  - singleton(::Tag)
+  app/services/tag_destroy.rb:82:15:
+  - singleton(::ParseXml)
+  sig/generated/steep_actionview_runtime/dashboard/show.rb:15:33:
+  - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/layouts/application.rb:10:33:
+  - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/_comment.rb:14:33:
+  - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/_form.rb:14:33:
+  - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/_summary.rb:14:33:
+  - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/edit.rb:15:40:
+  - ({ :locals => { :post => (::Post & ::Post::Validated) }, :partial => "posts/form"
+    } | { :locals => { :post => (::Post & ::Post::Validated) }, :partial => "posts/summary"
+    })
+  sig/generated/steep_actionview_runtime/posts/edit.rb:17:47:
+  - singleton(::ERBPartialPostsForm)
+  sig/generated/steep_actionview_runtime/posts/edit.rb:18:53:
+  - singleton(::ERBPartialPostsSummary)
+  sig/generated/steep_actionview_runtime/posts/edit.rb:24:33:
+  - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/index.rb:15:33:
+  - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/new.rb:15:40:
+  - '{ :locals => { :post => ::Post }, :partial => "posts/form" }'
+  sig/generated/steep_actionview_runtime/posts/new.rb:17:47:
+  - singleton(::ERBPartialPostsForm)
+  sig/generated/steep_actionview_runtime/posts/new.rb:23:33:
+  - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/show.rb:16:40:
+  - '{ :locals => { :comment => (::Comment & ::Comment::Validated) }, :partial =>
+    "comment" }'
+  sig/generated/steep_actionview_runtime/posts/show.rb:18:74:
+  - singleton(::ERBPartialPostsComment)
+  sig/generated/steep_actionview_runtime/posts/show.rb:19:53:
+  - singleton(::ERBPartialPostsSummary)
+  sig/generated/steep_actionview_runtime/posts/show.rb:25:33:
+  - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/users/avatars/edit.rb:14:33:
+  - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/users/show.rb:15:33:
+  - singleton(::ActionController::Parameters)
   sig/generated/steep_activesupport_runtime/delegation.rb:65:16:
   - "::Module"
   sig/generated/steep_activesupport_runtime/delegation.rb:69:47:
@@ -963,6 +1626,68 @@ receivers:
   - "::Module"
   sig/generated/steep_activesupport_runtime/delegation.rb:73:18:
   - "::Module"
+  sig/generated/steep_ar_runtime/active_support/concern.rb:18:56:
+  - singleton(::Array)
+  sig/generated/steep_ar_runtime/active_support/concern.rb:51:103:
+  - singleton(::Module)
+  sig/generated/steep_ar_runtime/assignment.rb:22:24:
+  - "::Post"
+  sig/generated/steep_ar_runtime/post.rb:12:63:
+  - singleton(::Post_Assignment::ActiveRecord_Associations_CollectionProxy)
+  sig/generated/steep_ar_runtime/post.rb:16:60:
+  - singleton(::Post_PostTag::ActiveRecord_Associations_CollectionProxy)
+  sig/generated/steep_ar_runtime/post.rb:20:56:
+  - singleton(::Post_Tag::ActiveRecord_Associations_CollectionProxy)
+  sig/generated/steep_ar_runtime/post.rb:8:60:
+  - singleton(::Post_Comment::ActiveRecord_Associations_CollectionProxy)
+  sig/generated/steep_ar_runtime/post_assignment.rb:16:24:
+  - singleton(::Assignment)
+  sig/generated/steep_ar_runtime/post_comment.rb:16:21:
+  - singleton(::Comment)
+  sig/generated/steep_ar_runtime/post_post_tag.rb:16:21:
+  - singleton(::PostTag)
+  sig/generated/steep_ar_runtime/tag.rb:12:56:
+  - singleton(::Tag_Post::ActiveRecord_Associations_CollectionProxy)
+  sig/generated/steep_ar_runtime/tag.rb:8:59:
+  - singleton(::Tag_PostTag::ActiveRecord_Associations_CollectionProxy)
+  sig/generated/steep_ar_runtime/tag_post_tag.rb:16:21:
+  - singleton(::PostTag)
+  sig/generated/steep_ar_runtime/user.rb:10:65:
+  - singleton(::User_Notification::ActiveRecord_Associations_CollectionProxy)
+  sig/generated/steep_ar_runtime/user.rb:14:57:
+  - singleton(::User_Post::ActiveRecord_Associations_CollectionProxy)
+  sig/generated/steep_ar_runtime/user.rb:18:60:
+  - singleton(::User_Comment::ActiveRecord_Associations_CollectionProxy)
+  sig/generated/steep_ar_runtime/user_comment.rb:16:21:
+  - singleton(::Comment)
+  sig/generated/steep_ar_runtime/user_notification.rb:16:26:
+  - singleton(::Notification)
+  sig/generated/steep_ar_runtime/user_post.rb:16:18:
+  - singleton(::Post)
+  sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:31:16:
+  - singleton(::ActionController::HttpAuthentication::Token)
+  sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:51:19:
+  - "(::ActionController::Base & ::ActionController::HttpAuthentication::Token::ControllerMethods)"
+  sig/generated/steep_controller_runtime/dashboard_controller.rb:10:37:
+  - singleton(::ERBDashboardShow)
+  sig/generated/steep_controller_runtime/posts_controller.rb:10:33:
+  - singleton(::ERBPostsEdit)
+  sig/generated/steep_controller_runtime/posts_controller.rb:11:35:
+  - singleton(::ERBPostsIndex)
+  sig/generated/steep_controller_runtime/posts_controller.rb:12:31:
+  - singleton(::ERBPostsNew)
+  sig/generated/steep_controller_runtime/posts_controller.rb:13:33:
+  - singleton(::ERBPostsShow)
+  sig/generated/steep_controller_runtime/users_avatars_controller.rb:10:40:
+  - singleton(::ERBUsersAvatarsEdit)
+  sig/generated/steep_controller_runtime/users_controller.rb:10:33:
+  - singleton(::ERBUsersShow)
+  sig/generated/steep_controller_runtime/users_controller.rb:11:40:
+  - singleton(::ERBPostsShow)
+  sig/generated/steep_current_runtime/current.rb:72:38:
+  - singleton(::Current)
+  sig/generated/steep_devise_runtime/devise_scoped_helpers.rb:18:31:
+  - untyped
   sig/generated/steep_string_evals/app/models/example60.rb:10:45:
   - "::Example60Printer"
   sig/generated/steep_string_evals/app/models/example60.rb:10:99:
@@ -1080,6 +1805,215 @@ exits:
     "({ :through => :taggings })":
       ivars:
         "@options": "{ :through => :taggings }"
+  Example102::FallbackChains#[]:
+    "(:en) with {@default: :en}":
+      ivars:
+        "@default": ":en"
+  Example102::FallbackChains#compute:
+    "(:en) with {@default: :en}":
+      ivars:
+        "@default": ":en"
+  Example102::Inflector.has_many_like:
+    "(:categories) on singleton(::Example102::Inflector) with {::Example102::Locales{@fallback_chains: nil}}":
+      ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    ? '(:categories) on singleton(::Example102::Inflector) with {@locale_rule_sets:
+      { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains:
+      nil}}'
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    "(:categories) with {::Example102::Locales{@fallback_chains: nil}}":
+      ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    ? '(:categories) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains: nil}}'
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    "(:posts) on singleton(::Example102::Inflector) with {::Example102::Locales{@fallback_chains: nil}}":
+      ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    ? '(:posts) on singleton(::Example102::Inflector) with {@locale_rule_sets: { :en
+      => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains:
+      nil}}'
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    "(:posts) with {::Example102::Locales{@fallback_chains: nil}}":
+      ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    ? '(:posts) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains: nil}}'
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+  Example102::Inflector.locale_rule_sets:
+    "() on singleton(::Example102::Inflector) with {@locale_rule_sets: nil}":
+      ivars: {}
+    ? '() on singleton(::Example102::Inflector) with {@locale_rule_sets: { :en =>
+      ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+    "() with {@locale_rule_sets: nil}":
+      ivars: {}
+    '() with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}':
+      ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+  Example102::Inflector.rule_set_for:
+    "(:en) on singleton(::Example102::Inflector) with {@locale_rule_sets: nil}":
+      ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+    ? '(:en) on singleton(::Example102::Inflector) with {@locale_rule_sets: { :en
+      => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+    "(:en) with {@locale_rule_sets: nil}":
+      ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+    '(:en) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}':
+      ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+  Example102::Inflector.rules_or_fallback:
+    "(:en) on singleton(::Example102::Inflector) with {::Example102::Locales{@fallback_chains: nil}}":
+      ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains":
+            class: "::Example102::FallbackChains"
+            ivars:
+              "@default": ":en"
+    ? '(:en) on singleton(::Example102::Inflector) with {@locale_rule_sets: { :en
+      => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains:
+      nil}}'
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains":
+            class: "::Example102::FallbackChains"
+            ivars:
+              "@default": ":en"
+    "(:en) with {::Example102::Locales{@fallback_chains: nil}}":
+      ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains":
+            class: "::Example102::FallbackChains"
+            ivars:
+              "@default": ":en"
+    ? '(:en) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/,
+      "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains: nil}}'
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains":
+            class: "::Example102::FallbackChains"
+            ivars:
+              "@default": ":en"
+  Example102::Inflector.singularize:
+    '("categories") on singleton(::Example102::Inflector) with {::Example102::Locales{@fallback_chains: nil}}':
+      ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    ? '("categories") on singleton(::Example102::Inflector) with {@locale_rule_sets:
+      { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains:
+      nil}}'
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    '("categories") with {::Example102::Locales{@fallback_chains: nil}}':
+      ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    ? '("categories") with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains: nil}}'
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    '("posts") on singleton(::Example102::Inflector) with {::Example102::Locales{@fallback_chains: nil}}':
+      ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    ? '("posts") on singleton(::Example102::Inflector) with {@locale_rule_sets: {
+      :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains:
+      nil}}'
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    '("posts") with {::Example102::Locales{@fallback_chains: nil}}':
+      ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+    ? '("posts") with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]} }, ::Example102::Locales{@fallback_chains: nil}}'
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+  Example102::Inflector.with_rules:
+    "(:en) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example102.rb:2403 with {@locale_rule_sets: nil}":
+      ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example102.rb:2403
+      with {@locale_rule_sets: nil}"
+    : ivars:
+        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+  Example102::Locales.fallback_chains:
+    "() on singleton(::Example102::Locales) with {@fallback_chains: nil}":
+      ivars:
+        "@fallback_chains":
+          class: "::Example102::FallbackChains"
+          ivars:
+            "@default": ":en"
+    "() with {@fallback_chains: nil}":
+      ivars:
+        "@fallback_chains":
+          class: "::Example102::FallbackChains"
+          ivars:
+            "@default": ":en"
+  Example102::Rules#apply:
+    '("categories") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}':
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    '("posts") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}':
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+  Example102::Rules#singular:
+    '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}':
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    '(/s\z/, "") with {@singulars: []}':
+      ivars:
+        "@singulars": '[[::Regexp, ""]]'
   Example84::Reflection#rename:
     "((:articles | :replies)) with {@name: (:posts | :comments)}":
       ivars:

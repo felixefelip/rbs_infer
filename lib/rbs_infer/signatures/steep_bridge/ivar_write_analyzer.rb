@@ -64,6 +64,8 @@ class RbsInfer::Signatures::SteepBridge
 
         case node.type
         when :ivasgn, :or_asgn, :and_asgn
+          next elements.record(node, typing) if elements.store?(node)
+
           parts = ivar_write_name_and_rhs(node, masgn_values: masgn_values)
           next unless parts
 
@@ -382,7 +384,7 @@ class RbsInfer::Signatures::SteepBridge
         # `@x ||= v` / `@x &&= v`: the write `each_typing` will key on is this
         # whole node, not its argument-less inner `:ivasgn`, so collect this
         # id (felixefelip/rbs_infer#85).
-        result << node.object_id if in_scope && node.children[0].type == :ivasgn
+        result << node.object_id if in_scope && (node.children[0].type == :ivasgn || elements.store?(node))
         node.children.each { |c| collect.call(c) }
       when :send
         receiver = node.children[0]

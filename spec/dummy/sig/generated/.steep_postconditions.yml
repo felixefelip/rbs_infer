@@ -486,6 +486,30 @@ postconditions:
   effects:
     may_write:
     - "@options"
+- class: Example102::FallbackChains
+  method: initialize
+  effects:
+    may_write:
+    - "@default"
+- class: Example102::Inflector
+  method: locale_rule_sets
+  effects:
+    may_write:
+    - "@locale_rule_sets"
+- class: Example102::Inflector
+  method: with_rules
+  when_true:
+    block_truthy: true
+- class: Example102::Locales
+  method: fallback_chains
+  effects:
+    may_write:
+    - "@fallback_chains"
+- class: Example102::Rules
+  method: initialize
+  effects:
+    may_write:
+    - "@singulars"
 - class: Example10::Foo
   method: name
   effects:

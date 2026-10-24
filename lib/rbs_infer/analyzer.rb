@@ -201,6 +201,7 @@ module RbsInfer
       RbsInfer::Signatures::RbsBuilder.new(
         target_class: receiver,
         superclass_name: nil,
+        superclass_args: "",
         namespace_classes: resolve_namespace_classes(receiver),
         is_module: false,
         type_params: method_type_resolver.type_param_string(receiver)
@@ -333,6 +334,7 @@ module RbsInfer
 
       namespace_classes = resolve_namespace_classes
       rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name,
+                                                         superclass_args: @superclass_name ? method_type_resolver.type_param_string(@superclass_name, untyped: true) : "",
                                                          namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class))
       rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types,
                         ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types,
