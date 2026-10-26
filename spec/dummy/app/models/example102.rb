@@ -2,8 +2,9 @@
 # written in plain Ruby the way Active Support and i18n write it
 # (felixefelip/steep#354, the fallback walk of felixefelip/steep#265):
 #
-#   - one rules object per locale, in a class-level hash
-#     (`@__instance__[locale] ||= new`, felixefelip/steep#347);
+#   - one rules object per locale, in a hash the class body sets an ivar
+#     to and reads through it (`@__instance__[locale] ||= new`,
+#     felixefelip/steep#347, #364);
 #   - the rules written through a block the inflector yields the locale's
 #     object to (`inflections(:en) { |inflect| … }`, felixefelip/steep#349);
 #   - read back through a walk of the locale's fallback chain that returns
@@ -55,8 +56,9 @@ module Example102
   end
 
   class Inflector
-    def self.locale_rule_sets = @locale_rule_sets ||= {}
-    def self.rule_set_for(locale) = (locale_rule_sets[locale] ||= Rules.new)
+    @locale_rule_sets = {}
+
+    def self.rule_set_for(locale) = (@locale_rule_sets[locale] ||= Rules.new)
 
     def self.with_rules(locale)
       yield rule_set_for(locale) if block_given?
@@ -64,7 +66,7 @@ module Example102
 
     def self.rules_or_fallback(locale)
       Locales.fallback_chains[locale].each do |candidate|
-        return locale_rule_sets[candidate] if locale_rule_sets.key?(candidate)
+        return @locale_rule_sets[candidate] if @locale_rule_sets.key?(candidate)
       end
       rule_set_for(locale)
     end

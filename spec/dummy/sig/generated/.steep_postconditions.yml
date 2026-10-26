@@ -492,11 +492,6 @@ postconditions:
     may_write:
     - "@default"
 - class: Example102::Inflector
-  method: locale_rule_sets
-  effects:
-    may_write:
-    - "@locale_rule_sets"
-- class: Example102::Inflector
   method: with_rules
   when_true:
     block_truthy: true
