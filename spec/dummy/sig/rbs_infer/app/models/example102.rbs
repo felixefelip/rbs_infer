@@ -12,7 +12,7 @@ module Example102
 
     def initialize: () -> void
     def singular: (Regexp rule, ("" | "y") replacement) -> Array[untyped]
-    def apply: (String word) -> ("post" | "category")
+    def apply: (("posts" | "categories") word) -> ("post" | "category")
   end
 end
 
@@ -34,7 +34,12 @@ module Example102
     def self.rule_set_for: (:en locale) -> Example102::Rules
     def self.with_rules: (:en locale) ?{ (Example102::Rules) -> Array[untyped] } -> Array[untyped]
     def self.rules_or_fallback: (:en locale) -> Example102::Rules
-    def self.singularize: (String word) -> ("post" | "category")
+    def self.singularize: (("posts" | "categories") word) -> ("post" | "category")
+  end
+end
+
+module Example102
+  class Post
     def self.has_many_like: ((:posts | :categories) name) -> (:post_ids | :category_ids)
     def self.summary: () -> Array[Array[untyped]]
   end
