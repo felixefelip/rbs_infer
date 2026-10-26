@@ -377,10 +377,12 @@ methods:
       class: "::Example87::AssociationReflection"
       ivars:
         "@collection": 'false'
+        "@name": ":comments"
     "(:posts, ::Hash[untyped, untyped])":
       class: "::Example87::AssociationReflection"
       ivars:
         "@collection": 'false'
+        "@name": ":posts"
   Example87::Writer.define_accessors:
     "(self, ::Example87::HasManyReflection{@name: :comments})": ":comments"
     "(self, ::Example87::HasManyReflection{@name: :posts})": ":posts"
@@ -654,8 +656,9 @@ methods:
     "() with {@options: {  }}": singleton(::Example96::Plain)
     "() with {@options: { :through => ::Symbol }}": singleton(::Example96::Through)
   Example96::NormalizedReflection#without_counter_cache:
-    "({ :counter_cache => bool })": "{  }"
-    "({ :through => :taggings })": "{ :through => :taggings }"
+    "({ :counter_cache => bool }) with {@name: :taggings, @options: nil}": "{  }"
+    "({ :through => :taggings }) with {@name: :posts, @options: nil}": "{ :through
+      => :taggings }"
   Example96::NormalizedReflection.new:
     "(:posts, { :through => :taggings })":
       class: "::Example96::NormalizedReflection"
@@ -1429,7 +1432,7 @@ receivers:
   app/models/example99.rb:34:10:
   - "::Example99::Foo"
   app/models/example99.rb:34:17:
-  - "::Hash[untyped, untyped]"
+  - "{ ?:bar => untyped }"
   app/models/example99.rb:34:23:
   - untyped
   app/models/example99.rb:38:10:
@@ -1969,6 +1972,13 @@ exits:
     '(/s\z/, "") with {@singulars: []}':
       ivars:
         "@singulars": '[[::Regexp, ""]]'
+  Example87::MacroReflection#initialize:
+    "(:comments, ::Hash[untyped, untyped]) with {@collection: nil, @name: nil, @options: nil}":
+      ivars:
+        "@name": ":comments"
+    "(:posts, ::Hash[untyped, untyped]) with {@collection: nil, @name: nil, @options: nil}":
+      ivars:
+        "@name": ":posts"
   Example88::Base.has_many_like:
     ? '(:categories) on singleton(::Example88::Post) with {::Example88::Inflector{@rules:
       ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}}'
@@ -2511,6 +2521,15 @@ exits:
       ivars: {}
     "() with {@options: { :through => ::Symbol }}":
       ivars: {}
+  Example96::NormalizedReflection#without_counter_cache:
+    "({ :counter_cache => bool }) with {@name: :taggings, @options: nil}":
+      ivars:
+        "@name": ":taggings"
+        "@options": nil
+    "({ :through => :taggings }) with {@name: :posts, @options: nil}":
+      ivars:
+        "@name": ":posts"
+        "@options": nil
   Example96::NormalizedReflection.new:
     "(:posts, { :through => :taggings })":
       ivars:
