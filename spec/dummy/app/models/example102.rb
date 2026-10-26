@@ -13,8 +13,9 @@
 #     compute(locale))` (`I18n::Locale::Fallbacks#[]`, felixefelip/steep#354).
 #
 # `has_many_like :posts` and `has_many_like :categories` define `post_ids`
-# and `category_ids`. The macro is the inflector's own: called from another
-# class, the rules object loses its state (felixefelip/steep#362).
+# and `category_ids` on `Post`, a class of its own that reaches the rules
+# through `Inflector.singularize`, as a model reaches Active Support's
+# (felixefelip/steep#362).
 #
 # Nothing here states a type.
 module Example102
@@ -70,13 +71,15 @@ module Example102
 
     def self.singularize(word) = rules_or_fallback(:en).apply(word)
 
-    def self.has_many_like(name)
-      class_eval "def #{singularize(name.to_s)}_ids; []; end"
-    end
-
     with_rules(:en) do |rules|
       rules.singular(/s\z/, "")
       rules.singular(/ies\z/, "y")
+    end
+  end
+
+  class Post
+    def self.has_many_like(name)
+      class_eval "def #{Inflector.singularize(name.to_s)}_ids; []; end"
     end
 
     has_many_like :posts

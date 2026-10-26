@@ -6,7 +6,7 @@
 # What each `class_eval` of a string in app/models/example102.rb defines at run time,
 # placed in the class that made the call, so the checker reads the bodies.
 
-class Example102::Inflector
+class Example102::Post
   def post_ids; []; end
   def category_ids; []; end
 end
