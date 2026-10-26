@@ -28,9 +28,8 @@ end
 
 module Example102
   class Inflector
-    self.@locale_rule_sets: Hash[:en, Example102::Rules]?
+    self.@locale_rule_sets: Hash[:en, Example102::Rules]
 
-    def self.locale_rule_sets: () -> Hash[:en, Example102::Rules]
     def self.rule_set_for: (:en locale) -> Example102::Rules
     def self.with_rules: (:en locale) ?{ (Example102::Rules) -> Array[untyped] } -> Array[untyped]
     def self.rules_or_fallback: (:en locale) -> Example102::Rules
