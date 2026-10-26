@@ -45,8 +45,8 @@ module RbsInfer::Signatures
     # The RBS type-parameter list of an existing class ("[unchecked out
     # Elem]"), or "" — used when reopening a generic class so the emitted
     # declaration matches (felixefelip/rbs_infer#38).
-    def type_param_string(class_name)
-      @rbs_definition_resolver.type_param_string(class_name)
+    def type_param_string(class_name, untyped: false)
+      @rbs_definition_resolver.type_param_string(class_name, untyped: untyped)
     end
 
     # A constant as WRITTEN in source, resolved to the class it actually names.

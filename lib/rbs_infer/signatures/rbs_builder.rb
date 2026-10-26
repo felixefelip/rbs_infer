@@ -6,9 +6,10 @@ module RbsInfer::Signatures
     # missing `is_module`/`namespace_classes` mis-renders the declaration).
     # Per docs/engineering/required-threaded-deps.md, that's "required", not
     # "defaulted".
-    def initialize(target_class:, superclass_name:, namespace_classes:, is_module:, type_params:)
+    def initialize(target_class:, superclass_name:, superclass_args:, namespace_classes:, is_module:, type_params:)
       @target_class = target_class
       @superclass_name = superclass_name
+      @superclass_args = superclass_args
       @namespace_classes = namespace_classes
       @is_module = is_module
       # Generic type-parameter list ("[unchecked out Elem]") for the leaf
@@ -42,7 +43,7 @@ module RbsInfer::Signatures
         lines << "#{"  " * i}#{keyword} #{mod}"
       end
       keyword = @is_module ? "module" : "class"
-      lines << "#{base_indent}#{keyword} #{class_name}#{@type_params}#{" < #{qualify(@superclass_name)}" if !@is_module && @superclass_name}"
+      lines << "#{base_indent}#{keyword} #{class_name}#{@type_params}#{" < #{qualify(@superclass_name)}#{@superclass_args}" if !@is_module && @superclass_name}"
 
       # Each member group is emitted as its own block, separated from the
       # previous one by a single blank line (`add_group`). `body_start` marks

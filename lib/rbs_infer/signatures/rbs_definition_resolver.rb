@@ -451,7 +451,10 @@ module RbsInfer::Signatures
     # GenericParameterMismatchError otherwise — which poisons the whole Steep
     # environment, not just the one file (felixefelip/rbs_infer#38). Emitting
     # the params verbatim from the primary declaration guarantees the match.
-    def type_param_string(class_name)
+    #
+    # `untyped:` writes what a generic class written with no arguments, as
+    # `class Chains < Hash`, takes in RBS: `untyped` for each parameter.
+    def type_param_string(class_name, untyped: false)
       return "" unless rbs_builder
 
       type_name = build_rbs_type_name(class_name)
@@ -463,7 +466,7 @@ module RbsInfer::Signatures
       params = entry.type_params
       return "" if params.empty?
 
-      "[#{params.map(&:to_s).join(", ")}]"
+      "[#{params.map { |param| untyped ? "untyped" : param.to_s }.join(", ")}]"
     rescue StandardError
       # A lookup failure must never break generation — fall back to no params
       # (correct for the overwhelmingly common non-generic case).

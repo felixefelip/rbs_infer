@@ -19,15 +19,17 @@ module RbsInfer
           @stores = Hash.new(0)
         end
 
+        # `hash[key] = value`, `hash.store(key, value)`, or `hash[key] ||= value`.
         def store?(node)
-          receiver, method_name, *args = node.children
+          parts = stored(node) or return false
+          receiver, method_name, *args = parts
           STORES.include?(method_name) && args.size == 2 && !held_ivar(receiver).nil?
         end
 
         def record(node, typing)
-          return if store_on_another_class?(node, typing)
+          receiver, _, *args = stored(node)
+          return if store_on_another_class?(node.type == :or_asgn ? node.children[0] : node, typing)
 
-          receiver, _, *args = node.children
           ivar = held_ivar(receiver)
           @stores[ivar] += 1
           args.zip(@elements[ivar]).each do |arg, set|
@@ -51,6 +53,14 @@ module RbsInfer
 
         def stores_seen(names)
           names.sum { |name| @constructor_bindings.uses_of(name).count { |use| STORES.include?(use.called) } }
+        end
+
+        def stored(node)
+          return node.children if node.type == :send
+          return unless node.type == :or_asgn && node.children[0].type == :send
+
+          receiver, method_name, *keys = node.children[0].children
+          [receiver, :[]=, *keys, node.children[1]] if method_name == :[]
         end
 
         def holders(source_node, target_class, singleton)

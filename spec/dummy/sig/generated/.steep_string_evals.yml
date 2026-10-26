@@ -34,6 +34,10 @@ call_sites:
                 def content=(body)
                   self.content.body = body
                 end
+  app/models/example102.rb:82:4:
+  - def post_ids; []; end
+  app/models/example102.rb:83:4:
+  - def category_ids; []; end
   app/models/example60.rb:9:2:
   - source: def stamp(...);  _ = example60_printer;  _.stamp(...);rescue NoMethodError
       => e;  if _.nil? && e.name == :stamp;    raise ::ActiveSupport::DelegationError.nil_target(:stamp,
