@@ -25,10 +25,11 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayExpander do
   # `eval_anywhere?` is asked of the PROJECT, so the double answers from the
   # declarations it was built with — which is what the real `ConstantSources`
   # computes by scanning the corpus.
-  RUNTIME_ENTRIES = RbsInfer::Project::RubyRuntimeGenerator.new(app_dir: ".").build.to_h do |file|
-    name = file.filename == "object.rb" ? "Object" : "Module"
-    [name, [RbsInfer::Project::ParseCache::Entry.new(source: file.source, result: Prism.parse(file.source))]]
-  end
+  RUNTIME_ENTRIES = RbsInfer::Project::RubyRuntimeGenerator.new(app_dir: ".").build.filter_map do |file|
+    result = Prism.parse(file.source)
+    declared = result.value.statements.body.grep(Prism::ClassNode).first or next
+    [declared.constant_path.full_name, [RbsInfer::Project::ParseCache::Entry.new(source: file.source, result: result)]]
+  end.to_h
 
   def project(**declarations)
     table = declarations.to_h do |name, source|

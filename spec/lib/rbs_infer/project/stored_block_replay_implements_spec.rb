@@ -13,10 +13,11 @@ RSpec.describe RbsInfer::Project::StoredBlockReplayImplements do
 
   # A project of exactly the constants named, as `ConstantSources` answers for
   # them — the same double the expander's own spec uses.
-  RUNTIME_ENTRIES = RbsInfer::Project::RubyRuntimeGenerator.new(app_dir: ".").build.to_h do |file|
-    name = file.filename == "object.rb" ? "Object" : "Module"
-    [name, [RbsInfer::Project::ParseCache::Entry.new(source: file.source, result: Prism.parse(file.source))]]
-  end
+  RUNTIME_ENTRIES = RbsInfer::Project::RubyRuntimeGenerator.new(app_dir: ".").build.filter_map do |file|
+    result = Prism.parse(file.source)
+    declared = result.value.statements.body.grep(Prism::ClassNode).first or next
+    [declared.constant_path.full_name, [RbsInfer::Project::ParseCache::Entry.new(source: file.source, result: result)]]
+  end.to_h
 
   def project(**declarations)
     table = declarations.to_h do |name, source|
