@@ -33,7 +33,8 @@ module RbsInfer::AST
                                                            constant_resolver: constant_resolver)
       when Prism::CallNode
         if node.name == :new && node.receiver
-          RbsInfer::Analyzer.extract_constant_path(node.receiver)
+          NodeTypeInferrer.constructed_class(node.receiver, namespace: context_class,
+                                                            constant_resolver: constant_resolver)
         elsif node.receiver.nil?
           known_types[node.name.to_s]
         end
@@ -46,6 +47,11 @@ module RbsInfer::AST
       when Prism::InstanceVariableReadNode
         known_types[node.name.to_s.sub(/\A@/, "")]
       end
+    end
+
+    def self.constructed_class(receiver, namespace:, constant_resolver:)
+      name = RbsInfer::Analyzer.extract_constant_path(receiver)
+      constant_resolver ? constant_resolver.constructed_class(name: name, namespace: namespace) : name
     end
 
     # Resolves a bare-constant node to its VALUE type via the resolver, or nil
@@ -175,7 +181,7 @@ module RbsInfer::AST
         resolve_constant_value_type(node, namespace: context_class, constant_resolver: constant_resolver) || "untyped"
       when Prism::CallNode
         if node.name == :new && node.receiver
-          RbsInfer::Analyzer.extract_constant_path(node.receiver) || "untyped"
+          constructed_class(node.receiver, namespace: context_class, constant_resolver: constant_resolver) || "untyped"
         elsif node.receiver.nil?
           known_types[node.name.to_s] || "untyped"
         else

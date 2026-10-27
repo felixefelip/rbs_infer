@@ -12,7 +12,8 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
       superclass_args: superclass_args,
       namespace_classes: namespace_classes,
       is_module: is_module,
-      type_params: type_params
+      type_params: type_params,
+      declared: ->(_name) { false }
     )
   end
 

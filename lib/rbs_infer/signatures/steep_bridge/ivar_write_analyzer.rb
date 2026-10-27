@@ -180,6 +180,12 @@ class RbsInfer::Signatures::SteepBridge
       result = Set.new
       walk_ivar_init_targets(node, in_init: false, in_class_body: false, singleton: singleton,
                                    namespace: [], target_class: target_class, result: result)
+      unless singleton
+        InitializeReach.new(node, target_class: target_class).each do |body, namespace|
+          walk_ivar_init_targets(body, in_init: true, in_class_body: false, singleton: false,
+                                       namespace: namespace, target_class: target_class, result: result)
+        end
+      end
       result
     end
 

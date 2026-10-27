@@ -134,17 +134,6 @@ methods:
         receiver:
           kind: self
         method: body
-  Concurrent::Collection::NonConcurrentMapBackend#each_pair:
-    requires:
-    - kind: not_nil
-      expr:
-        kind: send
-        receiver:
-          kind: self
-        method: dupped_backend
-        chain:
-        - each_pair
-    enforced: false
   Example21#promote:
     requires:
     - kind: not_nil

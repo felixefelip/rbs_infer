@@ -2,7 +2,7 @@ module Concurrent
   module Collection
     class NonConcurrentMapBackend
       @default_proc: (^(*untyped) -> untyped)?
-      @backend: Hash[untyped, untyped]?
+      @backend: ::Hash[untyped, untyped]
 
       def initialize: (?untyped options) ?{ (*untyped) -> untyped } -> void | ...
       def []: (untyped key) -> untyped
@@ -14,19 +14,19 @@ module Concurrent
       def compute: (untyped key) { (untyped) -> untyped } -> untyped
       def merge_pair: (untyped key, untyped value) { (untyped) -> untyped } -> untyped
       def get_and_set: (untyped key, untyped value) -> untyped
-      def key?: (untyped key) -> untyped
+      def key?: (untyped key) -> bool
       def delete: (untyped key) -> untyped
       def delete_pair: (untyped key, untyped value) -> bool
       def clear: () -> self
       def each_pair: () { (untyped, untyped) -> untyped } -> self
-      def size: () -> untyped
+      def size: () -> Integer
       def get_or_default: (untyped key, nil default_value) -> untyped
 
       private
 
-      def set_backend: ((^(*untyped) -> untyped)? default_proc) -> Hash[untyped, untyped]
+      def set_backend: ((^(*untyped) -> untyped)? default_proc) -> ::Hash[untyped, untyped]
       def initialize_copy: (untyped other) -> self | ...
-      def dupped_backend: () -> Concurrent::Hash[untyped, untyped]?
+      def dupped_backend: () -> ::Hash[untyped, untyped]
       def pair?: (untyped key, untyped expected_value) -> untyped
       def store_computed_value: (untyped key, untyped new_value) -> untyped
     end
