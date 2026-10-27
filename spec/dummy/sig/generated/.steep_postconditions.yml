@@ -3024,13 +3024,13 @@ argument_entry_facts:
     "@posts": "::User_Post::ActiveRecord_Associations_CollectionProxy"
     "@user": "(::User & ::User::Validated)"
 unreached_definitions:
+- Concurrent::Map#[]
+- Concurrent::Map#initialize
 - Example103::Store#[]
 conditional_definitions:
-- Concurrent::Map#[]
 - Concurrent::Map#each_key
 - Concurrent::Map#each_value
 - Concurrent::Map#empty?
-- Concurrent::Map#initialize
 - Concurrent::Map#key
 - Concurrent::Map#keys
 - Concurrent::Map#put_if_absent

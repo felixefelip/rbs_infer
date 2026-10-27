@@ -58,9 +58,10 @@ class RbsInfer::Signatures::SteepBridge
       in_scope = collect_scoped_write_node_ids(source_node, attr_writer_to_ivar, target_class, singleton, elements: elements)
       masgn_values = collect_masgn_target_values(source_node)
       empty_hashes = Set.new
+      dead = DeadBranches.new(typing)
 
       typing.each_typing do |node, _type|
-        next unless in_scope.include?(node.object_id)
+        next if !in_scope.include?(node.object_id) || dead.cover?(node)
 
         case node.type
         when :ivasgn, :or_asgn, :and_asgn

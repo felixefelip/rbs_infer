@@ -70,6 +70,7 @@ sig/generated/steep_activesupport_runtime/delegation.rb:90:21: [warning] Empty a
 sig/generated/steep_activesupport_runtime/delegation.rb:91:23: [warning] Empty array doesn't have type annotation
 sig/generated/steep_ar_runtime/active_support/concern.rb:53:22: [warning] Cannot pass a value of type `^(?(::Module | nil)) -> untyped` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
 sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:22:8: [error] Type `::Concurrent::Collection::NonConcurrentMapBackend` does not have method `validate_options_hash!`
+sig/generated/steep_concurrent_runtime/concurrent/map.rb:146:8: [error] Cannot find compatible overloading of method `initialize` of type `::Concurrent::Map[K, V]`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:161:84: [error] Cannot pass a value of type `::Object` as an argument of type `nil`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:192:46: [error] Cannot pass a value of type `::Object` as an argument of type `nil`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:19:26: [warning] Cannot find the declaration of constant: `JRubyMapBackend`

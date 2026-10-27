@@ -26,6 +26,26 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
       expect(result["x"]).to eq("String")
     end
 
+    it "ignores a write in a branch the checker proved cannot run" do
+      code = <<~RUBY
+        class Foo
+          def initialize
+            @x = "hello"
+          end
+
+          if false
+            def reset
+              @x = 1
+              @y = 2
+            end
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
+      expect(result).to eq("x" => "String")
+    end
+
     it "adds nil when ivar is written only in a non-initialize method" do
       code = <<~RUBY
         class Foo
