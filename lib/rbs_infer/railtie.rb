@@ -18,6 +18,7 @@ module RbsInfer
       load File.expand_path("extensions/rails/tasks/rbs_infer_actionview_runtime.rake", __dir__)
       load File.expand_path("extensions/rails/tasks/rbs_infer_actiontext_runtime.rake", __dir__)
       load File.expand_path("extensions/rails/tasks/rbs_infer_activesupport_runtime.rake", __dir__)
+      load File.expand_path("extensions/concurrent_ruby/tasks/rbs_infer_concurrent_runtime.rake", __dir__)
     end
   end
 end

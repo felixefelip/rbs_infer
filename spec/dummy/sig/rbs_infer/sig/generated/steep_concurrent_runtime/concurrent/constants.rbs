@@ -1,0 +1,3 @@
+module Concurrent
+  NULL: ::Object
+end

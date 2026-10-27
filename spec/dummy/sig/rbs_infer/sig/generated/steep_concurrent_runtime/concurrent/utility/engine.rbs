@@ -1,0 +1,16 @@
+module Concurrent
+  module Utility
+  end
+
+  module Utility::EngineDetector
+    def on_cruby?: () -> true
+    def on_jruby?: () -> false
+    def on_truffleruby?: () -> false
+    def on_windows?: () -> bool
+    def on_osx?: () -> bool
+    def on_linux?: () -> bool
+    def ruby_version: (?String version) -> bool
+  end
+
+  extend Utility::EngineDetector
+end
