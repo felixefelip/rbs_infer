@@ -505,6 +505,11 @@ postconditions:
   effects:
     may_write:
     - "@singulars"
+- class: Example103::MriBackend
+  method: initialize
+  effects:
+    may_write:
+    - "@entries"
 - class: Example10::Foo
   method: name
   effects:

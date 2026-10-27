@@ -1,0 +1,35 @@
+module Example103
+  class Implementation = Example103::MriBackend
+
+  module Engine
+    def self.cruby?: () -> true
+    def self.jruby?: () -> false
+  end
+end
+
+module Example103
+  class MriBackend
+    @entries: Hash[untyped, untyped]
+
+    def initialize: () -> void
+    def []: (:a key) -> :x
+    def []=: (:a key, :x value) -> :x
+  end
+end
+
+module Example103
+  class JavaBackend
+    def []: (untyped key) -> untyped
+  end
+end
+
+module Example103
+  class Store < Implementation
+  end
+end
+
+module Example103
+  class Use
+    def stored: () -> :x
+  end
+end

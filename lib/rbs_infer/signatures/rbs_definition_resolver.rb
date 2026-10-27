@@ -295,11 +295,11 @@ module RbsInfer::Signatures
       false
     end
 
-    # The class or module the environment declares as `class_name`.
+    # The class or module the environment declares as `class_name`, or the
+    # alias of one.
     def declaration(class_name)
-      return unless rbs_builder
-
-      rbs_builder.env.class_decls[build_rbs_type_name(class_name)]
+      type_name = build_rbs_type_name(class_name)
+      rbs_builder && (rbs_builder.env.class_decls[type_name] || rbs_builder.env.class_alias_decls[type_name])
     rescue RBS::ParsingError, RBS::BaseError
       nil
     end
