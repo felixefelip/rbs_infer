@@ -32,8 +32,10 @@ module RbsInfer::Inference
   # `params_forward` = a lista de parâmetros é só `...`: o método aceita o que a
   # chamada para onde ele encaminha aceita — resolvido no Analyzer, que tem o
   # checker (`ForwardedParametersResolver`).
+  # `block_implicit_forward` = o método não declara bloco, mas um `super` repassa
+  # o dele; o bloco só fica se o método que o `super` alcança declarar um (#510).
   Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name,
-                      :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_nil_defaults, :block_stored_forward, :no_signature, :params_forward, keyword_init: true)
+                      :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_nil_defaults, :block_stored_forward, :no_signature, :params_forward, :block_implicit_forward, keyword_init: true)
 
   # Pelo que eu entendi, essa classe é responsável por gerar o signature inicial
   # de uma class/module, porém depois no analyzer, terá outras classes que irão
@@ -196,6 +198,7 @@ module RbsInfer::Inference
         param_nil_defaults: sig ? nil : extractor.nil_default_params,
         block_arg_positions: sig ? nil : extractor.block_arg_positions,
         block_open_forward: sig ? nil : extractor.block_open_forward?,
+        block_implicit_forward: sig ? nil : extractor.block_implicit_forward?,
         block_stored_forward: sig ? nil : extractor.block_stored_forward?,
         params_forward: sig ? nil : extractor.params_forward?,
         overloading: overloading,

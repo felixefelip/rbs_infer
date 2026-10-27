@@ -1,5 +1,7 @@
 class RbsInfer::Signatures::SteepBridge
   class BlockAnalyzer
+    SUPERS = %i[super zsuper].freeze
+
     def initialize(steep_bridge:)
       @steep_bridge = steep_bridge
     end
@@ -31,16 +33,20 @@ class RbsInfer::Signatures::SteepBridge
 
       sites = Hash.new { |hash, key| hash[key] = [] }
       each_forwarded_block(typing) do |send_node, method_key|
-        block = required_callee_block(typing, send_node)
-        sites[method_key] << block if block
+        sites[method_key] << callee_block(typing, send_node)
       end
 
       # Any site that requires a block makes the method require one — calling it
       # without one would reach that call. The parameters only survive while the
       # sites agree; past that, `nil` widens them back to `*untyped`.
-      sites.transform_values do |found|
-        agreed = found.uniq
-        { required: true, params: agreed.size == 1 && agreed.first != :unknown ? agreed.first : nil }
+      sites.each_with_object({}) do |(method_key, found), requirements|
+        agreed = found.reject { |shape| shape.nil? || shape == :optional }.uniq
+        if agreed.any?
+          params = agreed.first if agreed.size == 1 && agreed.first != :unknown
+          requirements[method_key] = { required: true, params: params }
+        elsif found.include?(:optional)
+          requirements[method_key] = { required: false, params: nil }
+        end
       end
     end
 
@@ -139,17 +145,24 @@ class RbsInfer::Signatures::SteepBridge
       when :def then method_key = singleton ? "self.#{node.children[0]}" : node.children[0].to_s
       when :defs then method_key = "self.#{node.children[1]}"
       when :sclass then singleton = true
-      when :send, :csend
-        forwarded = node.children.any? do |child|
-          next false unless child.is_a?(Parser::AST::Node) && child.type == :block_pass
-
-          inner = child.children[0]
-          inner.nil? || inner.type == :lvar
+      when :block
+        # `super { … }` passes a block of its own, not the method's.
+        if SUPERS.include?(node.children[0].type)
+          return node.children.drop(1).each { |child| walk_forwarded_blocks(child, method_key, singleton, &block) }
         end
-        block.call(node, method_key) if forwarded && method_key
+      when :send, :csend, *SUPERS
+        block.call(node, method_key) if method_key && forwards_own_block?(node)
       end
 
       node.children.each { |child| walk_forwarded_blocks(child, method_key, singleton, &block) }
+    end
+
+    # A `super` given no block passes the method's, the same as a bare `&`.
+    def forwards_own_block?(node)
+      passes = node.children.select { |child| child.is_a?(Parser::AST::Node) && child.type == :block_pass }
+      return SUPERS.include?(node.type) if passes.empty?
+
+      passes.any? { |pass| pass.children[0].nil? || pass.children[0].type == :lvar }
     end
 
     # Both halves of the store in one walk: `@x = block` (which method fills the
@@ -236,20 +249,21 @@ class RbsInfer::Signatures::SteepBridge
       formatted unless %w[untyped bot void].include?(formatted)
     end
 
-    # The block the callee declares, as `[param types]`, or `:unknown` when it
-    # requires one whose shape we can't spell. `nil` when it requires none —
-    # including when the receiver is untyped, where there is no callee to ask.
+    # The block the callee requires, as `[param types]`, or `:unknown` when its
+    # shape can't be spelled. `:optional` when it takes one without requiring
+    # it, and `nil` when it takes none — including when the receiver is untyped,
+    # where there is no callee to ask.
     #
     # Every declaration has to require it: a union receiver whose halves
     # disagree cannot force a block on this method.
-    def required_callee_block(typing, send_node)
-      call = typing.call_of(node: send_node)
-      decls = call.respond_to?(:method_decls) ? call.method_decls.to_a : []
-      return nil if decls.empty?
-      return nil unless decls.all? { |decl| decl.method_type.block&.required }
+    def callee_block(typing, send_node)
+      call = typing.call_of(node: typing.explicit_super_of(node: send_node) || send_node)
+      blocks = (call.respond_to?(:method_decls) ? call.method_decls.to_a : []).map { |decl| decl.method_type.block }
+      return nil if blocks.none?
+      return :optional unless blocks.all? { |block| block&.required }
 
       receiver = receiver_type(typing, send_node)
-      shapes = decls.map { |decl| callee_block_params(decl.method_type.block, receiver) }.uniq
+      shapes = blocks.map { |block| callee_block_params(block, receiver) }.uniq
       shapes.size == 1 ? shapes.first : :unknown
     rescue Steep::Typing::UnknownNodeError
       nil
@@ -257,7 +271,7 @@ class RbsInfer::Signatures::SteepBridge
 
     def receiver_type(typing, send_node)
       node = send_node.children[0]
-      return "self" if node.nil?
+      return "self" if node.nil? || SUPERS.include?(send_node.type)
       return nil unless node.is_a?(Parser::AST::Node)
 
       RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(typing.type_of(node: node))

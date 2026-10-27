@@ -77,9 +77,8 @@ sig/generated/steep_concurrent_runtime/concurrent/map.rb:216:17: [error] Cannot 
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:249:12: [warning] Empty array doesn't have type annotation
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:258:12: [warning] Empty array doesn't have type annotation
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:26:28: [warning] Cannot find the declaration of constant: `TruffleRubyMapBackend`
-sig/generated/steep_concurrent_runtime/concurrent/map.rb:292:6: [error] The method cannot be called without a block
+sig/generated/steep_concurrent_runtime/concurrent/map.rb:292:6: [warning] Cannot pass a value of type `(^(?untyped, ?untyped, *untyped) -> (::Array[untyped] | ::Integer | nil | void) | nil)` as a block-pass-argument of type `^(untyped, untyped) -> untyped`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:29:28: [warning] Cannot find the declaration of constant: `SynchronizedMapBackend`
-sig/generated/steep_concurrent_runtime/concurrent/map.rb:302:39: [error] Type `V` does not have method `==`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:327:10: [warning] Empty hash doesn't have type annotation
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:34:26: [warning] Cannot find the declaration of constant: `SynchronizedMapBackend`
 sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:43:47: [error] The method parameter is incompatible with the declaration `(?::String) -> bool`

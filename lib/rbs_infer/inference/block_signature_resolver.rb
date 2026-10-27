@@ -110,14 +110,17 @@ module RbsInfer::Inference
       requirements = @steep_bridge.forwarded_block_requirements(
         @parsed_target.source, open_signatures: selected.to_h { |member| [method_key(member), member.signature] }
       )
-      return if requirements.empty?
+      selected.each { |member| member.signature = forwarded_block(member, requirements[method_key(member)]) }
+    end
 
-      selected.each do |member|
-        requirement = requirements[method_key(member)]
-        next unless requirement
+    # A method that only passes its block to `super` takes none unless the
+    # method `super` reaches does.
+    def forwarded_block(member, requirement)
+      util = RbsInfer::Signatures::RbsParserUtil
+      return util.require_block(member.signature, requirement[:params]) if requirement&.fetch(:required)
+      return util.drop_open_block(member.signature) if requirement.nil? && member.block_implicit_forward
 
-        member.signature = RbsInfer::Signatures::RbsParserUtil.require_block(member.signature, requirement[:params])
-      end
+      member.signature
     end
 
     # A block kept in an ivar is replayed later, and the replay decides what `self`

@@ -39,6 +39,10 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       block_signature.open_forward?
     end
 
+    def block_implicit_forward?
+      block_signature.implicit_forward?
+    end
+
     # Whether the block is STORED rather than used, which leaves its self
     # binding to whoever replays it (felixefelip/rbs_infer#208).
     def block_stored_forward?
