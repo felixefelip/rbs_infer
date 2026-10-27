@@ -709,6 +709,11 @@ sig/generated/steep_ar_runtime/user/generated_store_accessors.rb:
   - anchor: GeneratedStoreAccessors
     annotations:
     - "# @type instance: User & User::GeneratedStoreAccessors"
+sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:
+  modules:
+  - anchor: EngineDetector
+    annotations:
+    - "# @type instance: singleton(Concurrent)"
 sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:
   modules:
   - anchor: ControllerMethods

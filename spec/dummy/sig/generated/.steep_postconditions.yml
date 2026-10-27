@@ -229,6 +229,37 @@ postconditions:
   effects:
     may_write:
     - "@user_name"
+- class: Concurrent::Collection::MriMapBackend
+  method: initialize
+  effects:
+    may_write:
+    - "@write_lock"
+- class: Concurrent::Collection::NonConcurrentMapBackend
+  method: initialize
+  effects:
+    may_write:
+    - "@backend"
+    - "@default_proc"
+- class: Concurrent::Collection::NonConcurrentMapBackend
+  method: initialize_copy
+  effects:
+    may_write:
+    - "@backend"
+- class: Concurrent::Collection::NonConcurrentMapBackend
+  method: set_backend
+  effects:
+    may_write:
+    - "@backend"
+- class: Concurrent::Map
+  method: initialize
+  effects:
+    may_write:
+    - "@default_proc"
+- class: Concurrent::Map
+  method: marshal_load
+  effects:
+    may_write:
+    - "@default_proc"
 - class: Current
   method: user=
   unconditional:
@@ -2994,3 +3025,14 @@ argument_entry_facts:
     "@user": "(::User & ::User::Validated)"
 unreached_definitions:
 - Example103::Store#[]
+conditional_definitions:
+- Concurrent::Map#[]
+- Concurrent::Map#each_key
+- Concurrent::Map#each_value
+- Concurrent::Map#empty?
+- Concurrent::Map#initialize
+- Concurrent::Map#key
+- Concurrent::Map#keys
+- Concurrent::Map#put_if_absent
+- Concurrent::Map#size
+- Concurrent::Map#values

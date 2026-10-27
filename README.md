@@ -116,6 +116,7 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 | `rake rbs_infer:actionview_runtime:all` | `RbsInfer::Extensions::Rails::Views::RuntimeGenerator` | `sig/generated/steep_actionview_runtime/` |
 | `rake rbs_infer:actiontext_runtime:all` | `RbsInfer::Extensions::Rails::ActionText::RuntimeGenerator` | `sig/generated/steep_actiontext_runtime/` |
 | `rake rbs_infer:activesupport_runtime:all` | `RbsInfer::Extensions::Rails::ActiveSupport::RuntimeGenerator` | `sig/generated/steep_activesupport_runtime/` |
+| `rake rbs_infer:concurrent_runtime:all` | `RbsInfer::Extensions::ConcurrentRuby::RuntimeGenerator` | `sig/generated/steep_concurrent_runtime/` |
 
 **Enumerize generator** — walks `app/models/**/*.rb`, captures `enumerize :attr, in: [...]`, and emits per-attribute `Value` / `Attribute` classes plus instance/class accessors, predicate methods, and scope methods (shallow/deep).
 
@@ -221,6 +222,18 @@ raises adds no value. The one annotation in the file is
 `# @rbs_infer |...` on each macro: the signature inferred from the app's call
 sites goes ahead of gem_rbs_collection's `(*untyped …)`, whose `untyped` would
 otherwise stop the call site's literals from reaching the body.
+
+**concurrent-ruby runtime generator** — writes, verbatim, every file of the
+installed concurrent-ruby that `require "concurrent/map"` loads, measured in a
+fresh interpreter. gem_rbs_collection declares `Concurrent::Map[K, V]` flat, with
+no backend and no bodies, so a memo kept in one (ActiveSupport's inflections)
+could not be followed. `map.rb` picks its backend with
+`case when Concurrent.on_cruby?`, which is why the files are measured rather than
+listed: the checker folds `RUBY_ENGINE` and resolves `Map`'s superclass the same
+way the interpreter did. Each `def` is marked `# @rbs_infer |...`, because
+gem_rbs_collection already declares `Map`'s methods and a second plain
+declaration would take the environment down; the core keeps the mark only where
+another signature declares the method.
 
 **View runtime generator** — emits *pseudo-code* (one plain `.rb` per
 `app/views/**/*.{html,turbo_stream}.erb`) modelling what ActionView does at render time, so
