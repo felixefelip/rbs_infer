@@ -2640,40 +2640,34 @@ exits:
             "@my_hash": "{ ?:bar => untyped }"
   Module#include:
     "(singleton(::Current::GeneratedAttributeMethods)) on singleton(::Current) with {@__rbs_infer_instance: nil}":
-      ivars:
-        "@__rbs_infer_instance": nil
+      ivars: {}
     "(singleton(::Current::GeneratedAttributeMethods)) with {@__rbs_infer_instance: nil}":
       ivars:
         "@__rbs_infer_instance": nil
     "(singleton(::Example13::Registry::GeneratedAttributes)) on singleton(::Example13::Registry) with {@registry_instance: nil}":
-      ivars:
-        "@registry_instance": nil
+      ivars: {}
     "(singleton(::Example13::Registry::GeneratedAttributes)) with {@registry_instance: nil}":
       ivars:
         "@registry_instance": nil
     "(singleton(::Example3::Foo::GeneratedAttributes)) on singleton(::Example3::Foo) with {@foo_instance: nil}":
-      ivars:
-        "@foo_instance": nil
+      ivars: {}
     "(singleton(::Example3::Foo::GeneratedAttributes)) with {@foo_instance: nil}":
       ivars:
         "@foo_instance": nil
     "(singleton(::Example89::Widget::GeneratedMethods)) on singleton(::Example89::Widget) with {@generated_methods: nil}":
-      ivars:
-        "@generated_methods": nil
+      ivars: {}
     "(singleton(::Example89::Widget::GeneratedMethods)) with {@generated_methods: nil}":
       ivars:
         "@generated_methods": nil
     ? "(singleton(::Example90::Post::GeneratedAssociationMethods)) on singleton(::Example90::Post)
       with {@generated_association_methods: nil}"
-    : ivars:
-        "@generated_association_methods": nil
+    : ivars: {}
     "(singleton(::Example90::Post::GeneratedAssociationMethods)) with {@generated_association_methods: nil}":
       ivars:
         "@generated_association_methods": nil
     ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) on singleton(::Example91::Post)
       with {@generated_association_methods: nil}"
-    : ivars:
-        "@generated_association_methods": nil
+    : ivars: {}
     "(singleton(::Example91::Post::GeneratedAssociationMethods)) with {@generated_association_methods: nil}":
       ivars:
         "@generated_association_methods": nil

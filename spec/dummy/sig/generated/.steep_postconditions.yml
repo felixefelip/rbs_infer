@@ -880,6 +880,10 @@ postconditions:
   when_true:
     block_truthy: true
 - class: Example17
+  method: with_either
+  effects:
+    runs_block: once
+- class: Example17
   method: with_optional
   when_true:
     block_truthy: true
@@ -893,6 +897,8 @@ postconditions:
     block_truthy: true
 - class: Example17
   method: with_yield
+  effects:
+    runs_block: once
   when_true:
     block_truthy: true
 - class: Example18
@@ -2060,6 +2066,10 @@ postconditions:
   method: owner
   effects:
     returns_ivar: "@owner"
+- class: Thread::Mutex
+  method: synchronize
+  effects:
+    runs_block: once
 - class: User
   method: session_token=
   effects:

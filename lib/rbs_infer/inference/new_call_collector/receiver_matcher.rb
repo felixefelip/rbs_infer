@@ -230,7 +230,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       return component unless name.match?(CONSTANT_PATH)
 
       resolved = RbsInfer::AST::LexicalConstantResolver.resolve(name: name, enclosing: namespace) do |candidate|
-        rbs_definition_resolver.class_declared?(candidate)
+        rbs_definition_resolver.declaration(candidate)
       end
       return component unless resolved
 

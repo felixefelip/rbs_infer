@@ -1255,6 +1255,15 @@ RSpec.describe RbsInfer::Analyzer do
       end
     end
 
+    it "renders `class` for a namespace only core declares, as core declares it" do
+      with_temp_files({ "thread_mutex.rb" => "class Thread::Mutex\n  def held = locked?\nend\n" }) do |_dir, paths|
+        rbs = described_class.new(target_file: paths.first, source_files: paths).generate_rbs
+
+        expect(rbs).to include("class Thread")
+        expect(rbs).not_to include("module Thread")
+      end
+    end
+
     # ─── Setter marker classes (felixefelip/rbs_infer#11) ──────────
 
     context "setter marker classes" do

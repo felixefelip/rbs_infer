@@ -1,0 +1,4 @@
+class Thread
+  class Mutex
+  end
+end
