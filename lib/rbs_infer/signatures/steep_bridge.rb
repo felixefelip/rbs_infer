@@ -166,9 +166,7 @@ module RbsInfer::Signatures
 
     # True when `name` (resolved from `namespace`) is a class or module in the
     # env — i.e. its bare name is a valid type (`foo(User) -> User`).
-    def class_or_module?(name, namespace:)
-      !class_or_module_name(name, namespace: namespace).nil?
-    end
+    def class_or_module?(name, namespace:) = !class_or_module_name(name, namespace: namespace).nil?
 
     # The same question, answering WHICH class/module — fully qualified, as the env
     # holds it. The caller emits a type from this, and a type has to survive being
@@ -511,6 +509,10 @@ module RbsInfer::Signatures
         @shared
       end
     end
+
+    # `"Class#method"` for each method a class body defines only in a branch
+    # the checker found it never takes (felixefelip/steep#378).
+    def unreached_definitions = postconditions_store&.unreached_definitions || Set[]
 
     private
 

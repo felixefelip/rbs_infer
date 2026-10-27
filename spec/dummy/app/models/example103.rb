@@ -9,7 +9,12 @@
 #   class Map < Collection::MapImplementation
 #
 # `RUBY_ENGINE` is the one fact the language runtime pseudo-code states;
-# which backend `Store` extends follows from it.
+# which backend `Store` extends follows from it. So does which of `Store`'s
+# own methods exist: like `Concurrent::Map`, it defines a reader only where
+# its backend is not the one that already has it (felixefelip/steep#378):
+#
+#   unless defined?(Collection::NonConcurrentMapBackend) and self < Collection::NonConcurrentMapBackend
+#     def [](key) ...
 #
 # Nothing here states a type.
 module Example103
@@ -45,6 +50,11 @@ module Example103
                    end
 
   class Store < Implementation
+    unless defined?(MriBackend) and self < MriBackend
+      def [](key)
+        key
+      end
+    end
   end
 
   class Use

@@ -931,11 +931,11 @@ receivers:
   - "::Example102::FallbackChains"
   app/models/example102.rb:69:32:
   - "::Hash[:en, ::Example102::Rules]"
-  app/models/example103.rb:28:14:
+  app/models/example103.rb:33:14:
   - "::Hash[untyped, untyped]"
-  app/models/example103.rb:52:20:
+  app/models/example103.rb:62:20:
   - singleton(::Example103::Store)
-  app/models/example103.rb:54:11:
+  app/models/example103.rb:64:11:
   - "::Example103::Store"
   app/models/example11.rb:12:22:
   - singleton(::Example11::View)

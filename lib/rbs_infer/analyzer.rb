@@ -214,6 +214,7 @@ module RbsInfer
       target_members = parse_target_class
       RbsInfer::Signatures::ForeignDeclarations.new(resolver: rbs_definition_resolver, owner_of: method(:member_owner),
                                                     excluding_suffix: own_output_suffix).reconcile!(target_members)
+      RbsInfer::Inference::UnreachedMembers.reject!(target_members, unreached: steep_bridge.unreached_definitions, owner_of: method(:member_owner))
       # Extrair classes da anotação @type instance (para concerns)
       @instance_types = extract_instance_types
 
@@ -830,9 +831,7 @@ module RbsInfer
       )
     end
 
-    def mixin_index
-      @corpus.mixin_index
-    end
+    def mixin_index = @corpus.mixin_index
 
     def invoker_self_types
       @corpus.invoker_self_types
@@ -919,6 +918,7 @@ require_relative "ast/class_name_extractor"
 require_relative "ast/target_discovery"
 require_relative "inference/class_body_attr_analyzer"
 require_relative "inference/intra_class_call_analyzer"
+require_relative "inference/unreached_members"
 require_relative "inference/initialize_body_analyzer"
 require_relative "ast/lexical_scope"
 require_relative "ast/comment_index"
