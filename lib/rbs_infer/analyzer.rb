@@ -565,7 +565,7 @@ module RbsInfer
 
       keep.each_value do |member|
         type = resolver.resolve(member.value_node, steep_type: steep_types[member.name])
-        member.signature = "#{member.name}: #{type}"
+        member.signature = RbsInfer::Signatures::ClassAlias.signature(member.name, type, rbs_definition_resolver)
       end
     end
 
@@ -662,7 +662,7 @@ module RbsInfer
       visitor = RbsInfer::Inference::ClassMemberCollector.new(comments: @parsed_target.comments,
                                                               lines: @parsed_target.lines, target_class: @target_class)
       @parsed_target.tree.accept(visitor)
-      @superclass_name = visitor.superclass_name
+      @superclass_name = RbsInfer::Signatures::ClassAlias.superclass(visitor.superclass_name, tree: @parsed_target.tree, namespace: @target_class, resolver: rbs_definition_resolver)
       @is_module = visitor.is_module if @is_module.nil?
       @nested_modules = visitor.nested_modules
       disown_promoted_modules(visitor.members)
@@ -940,6 +940,7 @@ require_relative "signatures/method_type_resolver"
 require_relative "inference/caller_file_analyzer"
 require_relative "signatures/rbs_builder"
 require_relative "signatures/foreign_declarations"
+require_relative "signatures/class_alias"
 require_relative "inference/constant_type_resolver"
 require_relative "inference/constant_arg_type_resolver"
 require_relative "inference/self_return_type_context"

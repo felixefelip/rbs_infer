@@ -168,6 +168,13 @@ methods:
       class: "::Example102::Rules"
       ivars:
         "@singulars": "[]"
+  Example103::MriBackend#[]:
+    "(:a) with {@entries: { :a => :x }}": ":x"
+  Example103::MriBackend.new:
+    "()":
+      class: "::Example103::MriBackend"
+      ivars:
+        "@entries": "{  }"
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -733,6 +740,7 @@ declarations:
   Example102::FallbackChains#compute: "[:en, :en]"
   Example102::Inflector.with_rules: "::Array[untyped]"
   Example102::Rules#apply: ("post" | "category")
+  Example103::MriBackend#[]: ":x"
   Example19#record: '"denied"'
   Example20#record: '"denied"'
   Example28::Foo#bazingado: "^(*untyped) -> :age_after_a_decade"
@@ -923,6 +931,12 @@ receivers:
   - "::Example102::FallbackChains"
   app/models/example102.rb:69:32:
   - "::Hash[:en, ::Example102::Rules]"
+  app/models/example103.rb:28:14:
+  - "::Hash[untyped, untyped]"
+  app/models/example103.rb:52:20:
+  - singleton(::Example103::Store)
+  app/models/example103.rb:54:11:
+  - "::Example103::Store"
   app/models/example11.rb:12:22:
   - singleton(::Example11::View)
   app/models/example11.rb:12:48:
@@ -1876,6 +1890,14 @@ exits:
     '(/s\z/, "") with {@singulars: []}':
       ivars:
         "@singulars": '[[::Regexp, ""]]'
+  Example103::MriBackend#[]:
+    "(:a) with {@entries: { :a => :x }}":
+      ivars:
+        "@entries": "{ :a => :x }"
+  Example103::MriBackend#[]=:
+    "(:a, :x) with {@entries: {  }}":
+      ivars:
+        "@entries": "{ :a => :x }"
   Example84::Reflection#rename:
     "((:articles | :replies)) with {@name: (:posts | :comments)}":
       ivars:
