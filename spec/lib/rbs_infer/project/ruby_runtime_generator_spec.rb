@@ -15,7 +15,7 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     Dir.mktmpdir do |dir|
       files = build_in(dir)
 
-      expect(files.map(&:filename)).to eq(["module.rb", "object.rb"])
+      expect(files.map(&:filename)).to eq(["module.rb", "object.rb", "thread_mutex.rb"])
       expect(files.first.source).to include(
         "class Module\n",
         "  def include(*modules)\n",
@@ -276,6 +276,17 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     end
   end
 
+  it "emits `Thread::Mutex#synchronize`, running its block once between lock and unlock" do
+    Dir.mktmpdir do |dir|
+      expect(source_of(dir, "thread_mutex.rb")).to include(
+        "class Thread::Mutex\n",
+        "  # @rbs_infer no-signature\n  def synchronize\n",
+        "    raise ThreadError, \"must be called with a block\" unless block_given?\n",
+        "    lock\n    begin\n      yield\n    ensure\n      unlock\n    end\n"
+      )
+    end
+  end
+
   describe "#generate" do
     it "writes the sidecar" do
       Dir.mktmpdir do |dir|
@@ -293,7 +304,7 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
 
         described_class.new(app_dir: dir).generate
 
-        expect(Dir.children(sidecar).sort).to eq(["module.rb", "object.rb"])
+        expect(Dir.children(sidecar).sort).to eq(["module.rb", "object.rb", "thread_mutex.rb"])
       end
     end
   end

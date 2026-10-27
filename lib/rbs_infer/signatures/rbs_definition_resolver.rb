@@ -295,13 +295,13 @@ module RbsInfer::Signatures
       false
     end
 
-    # Whether the environment declares `class_name` as a class or module.
-    def class_declared?(class_name)
-      return false unless rbs_builder
+    # The class or module the environment declares as `class_name`.
+    def declaration(class_name)
+      return unless rbs_builder
 
-      rbs_builder.env.class_decls.key?(build_rbs_type_name(class_name))
+      rbs_builder.env.class_decls[build_rbs_type_name(class_name)]
     rescue RBS::ParsingError, RBS::BaseError
-      false
+      nil
     end
 
     # Which class or module owns the method a `super` in `class_name`'s own

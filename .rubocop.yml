@@ -37,7 +37,7 @@ Project/ClassLengthCeiling:
   CountAsOne: ["array", "hash", "heredoc", "method_call"]
   Max: 300
   Ceilings:
-    "lib/rbs_infer/analyzer.rb": 380
+    "lib/rbs_infer/analyzer.rb": 378
     "lib/rbs_infer/inference/class_member_collector.rb": 318
     "lib/rbs_infer/inference/param_type_inferrer.rb": 456
     "lib/rbs_infer/inference/type_merger.rb": 327

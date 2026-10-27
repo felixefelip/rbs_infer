@@ -858,10 +858,7 @@ module RbsInfer
         # `holder.rb`), so the wrapper would render as `module Holder` while
         # `Holder`'s own block says `class` — RBS rejects the file with
         # "Declaration of `::Holder` is duplicated".
-        if own.key?(full_name)
-          classes.add(full_name) unless own[full_name]
-          next
-        end
+        next own[full_name] || classes.add(full_name) if own.key?(full_name)
 
         # Every file whose path ends in the conventional one, not just the first:
         # a suffix is ambiguous, and the file it happens to land on may declare a
@@ -885,6 +882,7 @@ module RbsInfer
           classes.add(full_name) unless visitor.is_module
           break
         end
+        classes.add(full_name) if !classes.include?(full_name) && rbs_definition_resolver.declaration(full_name).is_a?(RBS::Environment::ClassEntry)
       end
 
       classes
