@@ -155,6 +155,34 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector::BlockSignature do
     end
   end
 
+  describe "#implicit_forward?" do
+    def implicit_forward?(source)
+      def_node = Prism.parse(source).value.statements.body.first
+      described_class.new(def_node.parameters, body: def_node.body).implicit_forward?
+    end
+
+    it "is set by a super given no block, bare or with arguments" do
+      expect(implicit_forward?("def m(a); super; end")).to be(true)
+      expect(implicit_forward?("def m(a); [a].each { super(a) }; end")).to be(true)
+    end
+
+    it "is not set by a super given a block of its own" do
+      expect(implicit_forward?("def m(a); super { 1 }; end")).to be(false)
+    end
+
+    it "is not set when the method declares or yields to a block" do
+      expect(implicit_forward?("def m(&block); super; end")).to be(false)
+      expect(implicit_forward?("def m; yield; super; end")).to be(false)
+    end
+
+    it "leaves the block open for the method super reaches to decide" do
+      def_node = Prism.parse("def m(a); super; end").value.statements.body.first
+      signature = described_class.new(def_node.parameters, body: def_node.body)
+
+      expect([signature.call, signature.open_forward?]).to eq(["?{ (*untyped) -> untyped }", true])
+    end
+  end
+
   it "is absent when the method neither takes nor yields a block" do
     expect(signature_for("def m(a, b); a + b; end")).to be_nil
   end

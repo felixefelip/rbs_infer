@@ -62,6 +62,13 @@ RSpec.describe RbsInfer::Inference::BlockReturnCollector do
     expect(collect(source, methods: ["wrap"], expression_types: {})).to be_empty
   end
 
+  it "says nothing about a block whose last statement is void" do
+    source = "def go\n  wrap { puts 1 }\n  wrap { yield 1 }\nend\n"
+
+    expect(collect(source, methods: ["wrap"], expression_types: { "2:9-2:15" => "void", "3:9-3:16" => "void?" }))
+      .to be_empty
+  end
+
   it "ignores a call with no block at all" do
     expect(collect("def go; wrap(1); end", methods: ["wrap"], expression_types: { "1:13" => "Integer" })).to be_empty
   end

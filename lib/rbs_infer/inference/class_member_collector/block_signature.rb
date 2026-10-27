@@ -37,7 +37,7 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
 
     # The RBS fragment, or nil when the method takes no block at all.
     def call
-      return nil unless block_param? || yields?
+      return nil unless block_param? || yields? || implicit_forward?
 
       "#{"?" unless required?}{ (#{block_params}) -> untyped }"
     end
@@ -65,7 +65,14 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
     # optional whatever the callee wants, and a direct call has already answered
     # the question with better evidence than a callee's declaration.
     def open_forward?
-      block_param? && use_sites.empty? && forwards_block? && !guards_block?
+      (block_param? || implicit_forward?) && use_sites.empty? && forwards_block? && !guards_block?
+    end
+
+    # True when the method declares no block and never yields, yet a `super`
+    # passes one on: Ruby hands the method's block to every `super` not given
+    # one of its own, so the method takes whatever block the one it reaches does.
+    def implicit_forward?
+      !block_param? && !yields? && passes_block_to_super?
     end
 
     # True when the body STORES the block in an ivar instead of using it —
@@ -180,6 +187,7 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
     # parameter is forwarded as a bare `&`, which Prism spells as the same
     # `BlockArgumentNode` with no expression.
     def forwards_block?
+      return true if passes_block_to_super?
       return false unless block_param?
 
       name = block_param_name
@@ -188,6 +196,10 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
 
         name ? reads_block?(node.expression, name) : node.expression.nil?
       end
+    end
+
+    def passes_block_to_super?
+      walk_body { |node| (node.is_a?(Prism::SuperNode) || node.is_a?(Prism::ForwardingSuperNode)) && node.block.nil? }
     end
 
     def arguments_of(node)

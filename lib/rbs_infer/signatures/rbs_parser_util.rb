@@ -465,6 +465,10 @@ module RbsInfer::Signatures
       method_sig.sub(OPEN_FORWARD_BLOCK, "{ (#{params&.join(", ") || "*untyped"}) -> untyped }")
     end
 
+    def drop_open_block(method_sig)
+      method_sig&.sub(" #{OPEN_FORWARD_BLOCK}", "")
+    end
+
     # What the collector writes for a parameter list that is `...` alone.
     FORWARDED_PARAMETERS = "(*untyped, **untyped) ?{ (*untyped) -> untyped }"
 

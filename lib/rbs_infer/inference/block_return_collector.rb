@@ -109,7 +109,8 @@ module RbsInfer::Inference
       last = body.is_a?(Prism::StatementsNode) ? body.body.last : body
       return nil unless last
 
-      expression_types[RbsInfer::Signatures::SteepBridge.prism_expression_key(last.location)]
+      type = expression_types[RbsInfer::Signatures::SteepBridge.prism_expression_key(last.location)]
+      type unless type&.match?(/\bvoid\b/)
     end
   end
 end
