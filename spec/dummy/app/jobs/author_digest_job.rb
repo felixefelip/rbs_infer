@@ -2,14 +2,10 @@
 
 # The `perform_later` fixture: a job whose arguments exist ONLY at its enqueue
 # site (`PostsController#publish`), which is the shape the ActiveJob runtime
-# sidecar exists for. A human reads `AuthorDigestJob.perform_later(@post,
-# recipient: @post.user.email)` and knows `post` is a `Post & Post::Validated`
-# and `recipient` a `String`.
-#
-# It does not infer them yet — the sidecar's forward lives on `ActiveJob::Base`,
-# shared by every job, so the evidence lands on that class's `*args` instead of
-# here. The expectation pins the gap; the PR that closes it is the one that
-# changes this file's RBS.
+# sidecar exists for. `perform` is typed from
+# `AuthorDigestJob.perform_later(@post, recipient: @post.user.email)`: the
+# forward on `ActiveJob::Base` is read as a call site of this class's `perform`,
+# keeping the receiver (felixefelip/rbs_infer#331).
 class AuthorDigestJob < ApplicationJob
   def perform(post, recipient:)
     {

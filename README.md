@@ -138,11 +138,13 @@ line for line (`job = job_or_instantiate(...)`, `job.enqueue`, `enqueue_result`)
 between the two ends collapsed. One instantiation, and the job returned is the job that received
 the arguments.
 
-*Known limitation:* this does not type any `perform` yet. Written once on the base class, the
-reopen is shared by every job, so call-site evidence lands on **that** class's `*args` — two jobs
-feed the same parameter and `new.perform` has no way back to the job that was called. Closing it
-needs the call site's receiver to reach the forward: either instantiating this body per subclass,
-or teaching `InvokerSelfTypes` to resolve a call made *on* a receiver (it declines those today).
+Written once on the base class, the reopen is shared by every job, so its own `*args` receives
+every enqueue site in the app. Each job's `perform` takes only its own:
+`RbsInfer::Inference::InheritedForwards` reads a forward the base class makes transparently (rest
+and keyrest, splatted, nothing else) to a method the subclass implements, and counts
+`MyJob.perform_later(...)` as a call site of `MyJob#perform`, keeping the receiver
+(felixefelip/rbs_infer#331). Nothing in it names ActiveJob; `example65` is the same shape in plain
+Ruby.
 
 **ActionText runtime generator** — writes one file: ActionText's own
 `has_rich_text`, sliced from the installed gem. `has_rich_text :content` defines three
