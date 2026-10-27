@@ -2992,3 +2992,5 @@ argument_entry_facts:
   ivars:
     "@posts": "::User_Post::ActiveRecord_Associations_CollectionProxy"
     "@user": "(::User & ::User::Validated)"
+unreached_definitions:
+- Example103::Store#[]
