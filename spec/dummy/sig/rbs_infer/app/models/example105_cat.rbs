@@ -1,0 +1,3 @@
+class Example105Cat < Example105::Animal
+  def speak: (untyped greeting) -> String
+end
