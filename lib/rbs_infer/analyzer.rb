@@ -201,7 +201,7 @@ module RbsInfer
       RbsInfer::Signatures::RbsBuilder.new(
         target_class: receiver,
         superclass_name: nil,
-        superclass_args: "",
+        superclass_args: "", declared: rbs_definition_resolver.method(:declaration),
         namespace_classes: resolve_namespace_classes(receiver),
         is_module: false,
         type_params: method_type_resolver.type_param_string(receiver)
@@ -336,7 +336,7 @@ module RbsInfer
       namespace_classes = resolve_namespace_classes
       rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name,
                                                          superclass_args: @superclass_name ? method_type_resolver.type_param_string(@superclass_name, untyped: true) : "",
-                                                         namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class))
+                                                         namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class), declared: rbs_definition_resolver.method(:declaration))
       rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types,
                         ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types,
                         module_singleton_ivar_types: ivar_inference.singleton_by_module, markers: markers, nested_modules: @nested_modules)
@@ -938,6 +938,7 @@ require_relative "inference/forwarded_parameters_resolver"
 require_relative "inference/local_self_paths"
 require_relative "signatures/method_type_resolver"
 require_relative "inference/caller_file_analyzer"
+require_relative "signatures/type_name_qualifier"
 require_relative "signatures/rbs_builder"
 require_relative "signatures/foreign_declarations"
 require_relative "signatures/class_alias"
@@ -965,6 +966,7 @@ require_relative "signatures/steep_bridge"
 require_relative "signatures/steep_bridge/lexical_scope"
 require_relative "signatures/steep_bridge/type_formatter"
 require_relative "signatures/steep_bridge/hash_element_writes"
+require_relative "signatures/steep_bridge/initialize_reach"
 require_relative "signatures/steep_bridge/ivar_write_analyzer"
 require_relative "signatures/steep_bridge/block_analyzer"
 require_relative "signatures/steep_bridge/forwarding_analyzer"

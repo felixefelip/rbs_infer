@@ -39,6 +39,52 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
       expect(result["x"]).to eq("String?")
     end
 
+    it "counts a write in a method initialize calls, transitively, as initializing" do
+      code = <<~RUBY
+        class Foo
+          def initialize
+            setup
+          end
+
+          def setup
+            set_x
+          end
+
+          def set_x
+            if rand > 0.5
+              @x = "hello"
+            else
+              @x = "world"
+            end
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code, target_class: "Foo", singleton: false)
+      expect(result["x"]).to eq("String")
+    end
+
+    it "does not count a method of another class that initialize happens to share a name with" do
+      code = <<~RUBY
+        class Foo
+          def initialize
+            set_x
+          end
+
+          def set_x = nil
+        end
+
+        class Bar
+          def set_x
+            @x = "hello"
+          end
+        end
+      RUBY
+
+      result = bridge.ivar_write_types(code, target_class: "Bar", singleton: false)
+      expect(result["x"]).to eq("String?")
+    end
+
     # `@x ||= v` / `@x &&= v` are ivar writes too, but their AST parks the
     # name in an argument-less inner `:ivasgn` and the RHS one level up in an
     # `:or_asgn`/`:and_asgn`, so the collector used to walk past them and drop

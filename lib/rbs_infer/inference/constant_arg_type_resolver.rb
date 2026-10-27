@@ -57,5 +57,14 @@ module RbsInfer::Inference
       fqn = @steep_bridge.class_or_module_name(name, namespace: namespace)
       fqn ? "singleton(#{fqn})" : nil
     end
+
+    # The class `name.new` constructs when written inside `namespace`, fully
+    # qualified for the reason `resolve` gives; the written name when the
+    # environment knows no candidate.
+    def constructed_class(name:, namespace:)
+      return nil if name.nil?
+
+      (@steep_bridge&.class_or_module_name(name, namespace: namespace) || name).delete_prefix("::")
+    end
   end
 end

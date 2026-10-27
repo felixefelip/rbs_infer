@@ -6,8 +6,10 @@ module RbsInfer::Signatures
     # missing `is_module`/`namespace_classes` mis-renders the declaration).
     # Per docs/engineering/required-threaded-deps.md, that's "required", not
     # "defaulted".
-    def initialize(target_class:, superclass_name:, superclass_args:, namespace_classes:, is_module:, type_params:)
+    def initialize(target_class:, superclass_name:, superclass_args:, namespace_classes:, is_module:, type_params:,
+                   declared:)
       @target_class = target_class
+      @declared = declared
       @superclass_name = superclass_name
       @superclass_args = superclass_args
       @namespace_classes = namespace_classes
@@ -110,7 +112,7 @@ module RbsInfer::Signatures
         lines << "#{"  " * (modules.size - 1 - i)}end"
       end
 
-      "#{lines.join("\n")}\n"
+      TypeNameQualifier.apply("#{lines.join("\n")}\n", declared: @declared)
     end
 
     private

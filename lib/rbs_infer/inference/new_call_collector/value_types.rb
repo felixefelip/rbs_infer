@@ -37,7 +37,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
         if node.receiver.nil?
           refined_self_method_type(node.name.to_s) || @method_return_types[node.name.to_s] || "untyped"
         elsif node.name == :new && node.receiver
-          RbsInfer::Analyzer.extract_constant_path(node.receiver) || "untyped"
+          constructed_class(node) || "untyped"
         else
           method_chain_type(node) || "untyped"
         end
@@ -68,7 +68,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
           refined_self_method_type(node.name.to_s) || @method_return_types[node.name.to_s] ||
             expression_type(node)&.delete_prefix("::")
         elsif node.name == :new && node.receiver
-          RbsInfer::Analyzer.extract_constant_path(node.receiver)
+          constructed_class(node)
         else
           expression_type(node)&.delete_prefix("::") || method_chain_type(node)
         end
@@ -87,6 +87,11 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
     end
 
     # See ConstantArgTypeResolver (#46).
+    def constructed_class(node)
+      @constant_arg_resolver.constructed_class(name: RbsInfer::Analyzer.extract_constant_path(node.receiver),
+                                               namespace: @scope.lexical_class_name)
+    end
+
     def constant_type(node)
       name = RbsInfer::Analyzer.extract_constant_path(node)
       @constant_arg_resolver.resolve(name: name, namespace: @scope.lexical_class_name) || "untyped"

@@ -27,6 +27,8 @@ module ConstantResolverHelper
     def resolve(name:, namespace:)
       map[name]
     end
+
+    def constructed_class(name:, namespace:) = name&.delete_prefix("::")
   end
 
   def fake_constant_resolver(map = {})
