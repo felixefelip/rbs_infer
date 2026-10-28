@@ -1,0 +1,3 @@
+class Example106Counter < Example106::Visitor
+  def visit_leaf: (Example106::Leaf leaf) -> 1
+end

@@ -701,6 +701,22 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example105_caller", target_file: "app/models/example105_caller.rb")
   end
 
+  it "example106 (a visitor called back by the node it was handed) matches expected RBS" do
+    assert_snapshot("models/example106", target_file: "app/models/example106.rb")
+  end
+
+  it "example106_counter receives the node when it is handed to accept directly" do
+    assert_snapshot("models/example106_counter", target_file: "app/models/example106_counter.rb")
+  end
+
+  it "example106_printer receives the node when it is handed through the inherited visit" do
+    assert_snapshot("models/example106_printer", target_file: "app/models/example106_printer.rb")
+  end
+
+  it "example106_caller (one visitor per path) matches expected RBS" do
+    assert_snapshot("models/example106_caller", target_file: "app/models/example106_caller.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that

@@ -1,0 +1,13 @@
+class Example106
+  class Visitor
+    def visit: (Example106::Leaf node) -> (Example106::Leaf | 1)
+    def visit_leaf: (Example106::Leaf leaf) -> Example106::Leaf
+  end
+end
+
+class Example106
+  class Leaf
+    def accept: ((Example106::Visitor | Example106Counter) visitor) -> (Example106::Leaf | 1)
+    def weight: () -> 1
+  end
+end
