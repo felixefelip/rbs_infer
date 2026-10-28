@@ -1,12 +1,9 @@
 require "spec_helper"
 require "rbs_infer"
 
-RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
+RSpec.describe RbsInfer::Project::ModuleSelfTypeAnnotator do
   PLAIN_SRC = "module X\nend\n"
 
-  # A model concern's host comes from the `include` that names it, so these pass
-  # an index (felixefelip/rbs_infer#163). The conventions below cover only what
-  # no source shows.
   def module_source(name)
     "module #{name}\nend\n"
   end
@@ -18,7 +15,6 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
   describe ".entry_for" do
     it "builds the instance annotation with the AST-cased name" do
       entry = described_class.entry_for(
-        path: "app/models/search/record/sqlite.rb",
         module_name: "Search::Record::SQLite",
         source: module_source("SQLite"),
         mixin_index: index_answering(["Search::Record"])
@@ -30,7 +26,6 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
 
     it "builds only the instance annotation for a plain model module" do
       entry = described_class.entry_for(
-        path: "app/models/post/taggable.rb",
         module_name: "Post::Taggable",
         source: PLAIN_SRC,
         mixin_index: index_answering(["Post"])
@@ -73,7 +68,6 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
 
       def entry_with(narrower)
         described_class.entry_for(
-          path: "app/models/wrap.rb",
           module_name: "Wrap::Foo",
           source: TWO_EXTENDERS,
           mixin_index: index_answering([], extenders: ["Wrap::Bar", "Wrap::Baz"]),
@@ -166,7 +160,6 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       it "does not ask about a singleton method" do
         narrower = narrower_answering({ "stamp" => "singleton(Wrap::Bar)" })
         entry = described_class.entry_for(
-          path: "app/models/wrap.rb",
           module_name: "Wrap::Foo",
           source: "class Wrap\n  module Foo\n    def self.stamp(v)\n      v\n    end\n  end\nend\n",
           mixin_index: index_answering([], extenders: ["Wrap::Bar", "Wrap::Baz"]),
@@ -177,63 +170,33 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
       end
     end
 
-    # There is no convention for a model concern any more: its host is always
-    # written down, and guessing it from the namespace only ever spoke where the
-    # guess was wrong — `Test::Filtrable` got `Test`, a directory, and the
-    # CLASSES under `app/models/` got a namespace they are not an instance of.
     it "returns nil for a model concern nobody includes" do
       expect(
-        described_class.entry_for(path: "app/models/post/taggable.rb", module_name: "Post::Taggable", source: PLAIN_SRC)
+        described_class.entry_for(module_name: "Post::Taggable", source: PLAIN_SRC)
       ).to be_nil
     end
 
-    it "uses ApplicationController as the host for helpers" do
-      entry = described_class.entry_for(
-        path: "app/helpers/posts_helper.rb",
-        module_name: "PostsHelper",
-        source: PLAIN_SRC
-      )
-
-      expect(entry["annotations"]).to eq(["# @type instance: ApplicationController & PostsHelper"])
-    end
-
-    it "uses ApplicationController as the host for controller concerns" do
-      entry = described_class.entry_for(
-        path: "app/controllers/concerns/filter_configuration.rb",
-        module_name: "FilterConfiguration",
-        source: module_source("FilterConfiguration")
-      )
-
-      expect(entry["annotations"]).to eq(["# @type instance: ApplicationController & FilterConfiguration"])
-    end
-
-    it "returns nil for a file outside the covered roots" do
-      expect(described_class.entry_for(path: "lib/foo.rb", module_name: "Foo", source: PLAIN_SRC)).to be_nil
+    it "returns nil without a mixin index" do
+      expect(described_class.entry_for(module_name: "Foo", source: PLAIN_SRC)).to be_nil
     end
 
     it "returns nil for a model module without a namespace (no host to derive)" do
-      expect(described_class.entry_for(path: "app/models/trashable.rb", module_name: "Trashable",
+      expect(described_class.entry_for(module_name: "Trashable",
                                        source: PLAIN_SRC)).to be_nil
     end
 
     it "returns nil for a nil/empty module name" do
-      expect(described_class.entry_for(path: "app/models/x.rb", module_name: nil, source: PLAIN_SRC)).to be_nil
+      expect(described_class.entry_for(module_name: nil, source: PLAIN_SRC)).to be_nil
     end
   end
 
-  # felixefelip/rbs_infer#163. The conventions above are a guess from a file
-  # path; the `include`s written in the sources are what the code says, so they
-  # answer first and the guess is left for what no source shows.
   describe "with a mixin index" do
     def index_answering(hosts, extenders: [])
       instance_double(RbsInfer::Project::MixinIndex, hosts_of: hosts, extenders_of: extenders)
     end
 
-    it "prefers the written include over the path convention" do
-      # The convention reads the namespace, `Test`, which is not a host at all —
-      # it is the directory the concern happens to sit in.
+    it "answers with the written include" do
       entry = described_class.entry_for(
-        path: "app/models/concerns/test/filtrable.rb",
         module_name: "Test::Filtrable",
         source: PLAIN_SRC,
         mixin_index: index_answering(["Post"])
@@ -249,7 +212,6 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
     # usable here.
     it "unions every host when a module is mixed into more than one" do
       entry = described_class.entry_for(
-        path: "app/helpers/posts_helper.rb",
         module_name: "PostsHelper",
         source: PLAIN_SRC,
         mixin_index: index_answering(%w[ERBPostsIndex ERBPostsShow])
@@ -259,11 +221,8 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
         .to eq(["# @type instance: (ERBPostsIndex & PostsHelper) | (ERBPostsShow & PostsHelper)"])
     end
 
-    # A top-level concern has no namespace to guess from, so before the index it
-    # got no annotation at all.
-    it "answers where the convention had nothing to say" do
+    it "answers for a top-level module" do
       entry = described_class.entry_for(
-        path: "app/models/trashable.rb",
         module_name: "Trashable",
         source: PLAIN_SRC,
         mixin_index: index_answering(["Card"])
@@ -277,7 +236,6 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
     # the RBS reopen already writes `extend ::Foo` onto that singleton.
     it "answers with the extender's singleton when the module is extended" do
       entry = described_class.entry_for(
-        path: "app/models/example23.rb",
         module_name: "Example23::Foo",
         source: PLAIN_SRC,
         mixin_index: index_answering([], extenders: ["Example23::Bar"])
@@ -290,7 +248,6 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
     # includer or the class object of an extender, one at a time.
     it "unions include hosts with extenders" do
       entry = described_class.entry_for(
-        path: "app/models/foo.rb",
         module_name: "Foo",
         source: PLAIN_SRC,
         mixin_index: index_answering(["Card"], extenders: %w[Bar Baz])
@@ -300,29 +257,14 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator do
         .to eq(["# @type instance: (Card & Foo) | (singleton(Bar)) | (singleton(Baz))"])
     end
 
-    # The convention answers "which class includes this helper". A module the
-    # sources show being EXTENDED has already been answered by the code, so the
-    # guess must not be added beside it.
-    it "does not fall back to the convention for an extended module" do
+    it "returns nil when nothing includes or extends the module" do
       entry = described_class.entry_for(
-        path: "app/helpers/posts_helper.rb",
-        module_name: "PostsHelper",
-        source: PLAIN_SRC,
-        mixin_index: index_answering([], extenders: ["ERBPostsIndex"])
-      )
-
-      expect(entry["annotations"]).to eq(["# @type instance: singleton(ERBPostsIndex)"])
-    end
-
-    it "falls back to the convention when nobody includes the module" do
-      entry = described_class.entry_for(
-        path: "app/helpers/posts_helper.rb",
         module_name: "PostsHelper",
         source: PLAIN_SRC,
         mixin_index: index_answering([])
       )
 
-      expect(entry["annotations"]).to eq(["# @type instance: ApplicationController & PostsHelper"])
+      expect(entry).to be_nil
     end
   end
 end

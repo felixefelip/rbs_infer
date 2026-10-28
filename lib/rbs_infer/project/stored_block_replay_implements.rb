@@ -25,7 +25,7 @@ module RbsInfer::Project
   # Core, not an extension, for the same reason the expander is: `class_eval` is
   # plain Ruby, so a project gets this whether or not it uses a framework. Only
   # the sidecar's DELIVERY is framework-shaped (a rake task), and that lives in
-  # `Extensions::Rails::ModuleSelfTypeGenerator`, which calls in here.
+  # `ModuleSelfTypeGenerator`, which calls in here.
   module StoredBlockReplayImplements
     module_function
 

@@ -4,11 +4,6 @@ app/controllers/concerns/filter_configuration.rb:
   - anchor: FilterConfiguration
     annotations:
     - "# @type instance: PostsController & FilterConfiguration"
-app/helpers/application_helper.rb:
-  modules:
-  - anchor: ApplicationHelper
-    annotations:
-    - "# @type instance: ApplicationController & ApplicationHelper"
 app/helpers/posts_helper.rb:
   modules:
   - anchor: PostsHelper

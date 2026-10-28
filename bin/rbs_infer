@@ -129,14 +129,14 @@ if rails_project
   # Registers the ERB path -> class convention, so a template is selected as a caller of
   # the class it is the body of (the core reads it as Ruby either way).
   require "rbs_infer/extensions/rails/views/erb_source_owner"
-
-  # Emit the module/concern self-type sidecar up front so that every Steep
-  # type-check during this run (target *and* caller files) sees the
-  # `@type self:`/`@type instance:` annotations (felixefelip/rbs_infer#52).
-  require "rbs_infer/extensions/rails/module_self_type_generator"
-  RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator.new(app_dir: Dir.pwd).generate
-  Steep::Source::ModuleSelfTypes.reset!
 end
+
+# Emit the module/concern self-type sidecar up front so that every Steep
+# type-check during this run (target *and* caller files) sees the
+# `@type self:`/`@type instance:` annotations (felixefelip/rbs_infer#52).
+require "rbs_infer/project/module_self_type_generator"
+RbsInfer::Project::ModuleSelfTypeGenerator.new(app_dir: Dir.pwd).generate
+Steep::Source::ModuleSelfTypes.reset!
 
 generate = lambda do |inputs_to_process, silent: false|
   changed_files = []

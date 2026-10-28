@@ -41,8 +41,8 @@ Lint/ConstantDefinitionInBlock:
     - "spec/lib/rbs_infer/extensions/rails/active_job/runtime_generator_spec.rb"
     - "spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb"
     - "spec/lib/rbs_infer/extensions/rails/current_attributes_runtime_generator_spec.rb"
-    - "spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb"
-    - "spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb"
+    - "spec/lib/rbs_infer/project/module_self_type_annotator_spec.rb"
+    - "spec/lib/rbs_infer/project/module_self_type_generator_spec.rb"
     - "spec/lib/rbs_infer/inference/constant_arg_type_resolver_spec.rb"
     - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
     - "spec/lib/rbs_infer/markers/predicate_marker_synthesizer_spec.rb"
@@ -160,7 +160,7 @@ Lint/UnreachableLoop:
 # Configuration parameters: IgnoreEmptyBlocks, AllowUnusedKeywordArguments.
 Lint/UnusedBlockArgument:
   Exclude:
-    - "spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb"
+    - "spec/lib/rbs_infer/project/module_self_type_annotator_spec.rb"
 
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
@@ -204,8 +204,8 @@ Metrics/AbcSize:
     - "lib/rbs_infer/extensions/rails/controllers/pseudo_code_builder.rb"
     - "lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb"
     - "lib/rbs_infer/extensions/rails/custom_generator.rb"
-    - "lib/rbs_infer/extensions/rails/module_self_type_annotator.rb"
-    - "lib/rbs_infer/extensions/rails/module_self_type_generator.rb"
+    - "lib/rbs_infer/project/module_self_type_annotator.rb"
+    - "lib/rbs_infer/project/module_self_type_generator.rb"
     - "lib/rbs_infer/extensions/rails/views/pseudo_code_builder.rb"
     - "lib/rbs_infer/extensions/rails/views/template_scanner.rb"
     - "lib/rbs_infer/inference/attr_type_inferrer.rb"
@@ -310,8 +310,8 @@ Metrics/CyclomaticComplexity:
     - "lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb"
     - "lib/rbs_infer/extensions/rails/current_attributes_runtime_generator.rb"
     - "lib/rbs_infer/extensions/rails/custom_generator.rb"
-    - "lib/rbs_infer/extensions/rails/module_self_type_annotator.rb"
-    - "lib/rbs_infer/extensions/rails/module_self_type_generator.rb"
+    - "lib/rbs_infer/project/module_self_type_annotator.rb"
+    - "lib/rbs_infer/project/module_self_type_generator.rb"
     - "lib/rbs_infer/extensions/rails/on_load_expander.rb"
     - "lib/rbs_infer/extensions/rails/views/template_scanner.rb"
     - "lib/rbs_infer/inference/attr_type_inferrer.rb"
@@ -631,7 +631,7 @@ Style/FrozenStringLiteralComment:
     - "lib/rbs_infer/ast/def_collector.rb"
     - "lib/rbs_infer/ast/node_type_inferrer.rb"
     - "lib/rbs_infer/ast/optional_param_extractor.rb"
-    - "lib/rbs_infer/extensions/rails/module_self_type_annotator.rb"
+    - "lib/rbs_infer/project/module_self_type_annotator.rb"
     - "lib/rbs_infer/inference/block_return_collector.rb"
     - "lib/rbs_infer/inference/caller_file_analyzer.rb"
     - "lib/rbs_infer/inference/class_body_attr_analyzer.rb"
@@ -681,8 +681,8 @@ Style/FrozenStringLiteralComment:
     - "spec/lib/rbs_infer/ast/optional_param_extractor_spec.rb"
     - "spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb"
     - "spec/lib/rbs_infer/extensions/rails/controllers/framework_source_transcriber_spec.rb"
-    - "spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb"
-    - "spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb"
+    - "spec/lib/rbs_infer/project/module_self_type_annotator_spec.rb"
+    - "spec/lib/rbs_infer/project/module_self_type_generator_spec.rb"
     - "spec/lib/rbs_infer/inference/block_return_collector_spec.rb"
     - "spec/lib/rbs_infer/inference/caller_file_analyzer_spec.rb"
     - "spec/lib/rbs_infer/inference/class_body_attr_analyzer_spec.rb"
@@ -782,7 +782,7 @@ Style/MultilineBlockChain:
     - "lib/rbs_infer/extensions/rails/action_text/runtime/attribute_transcriber.rb"
     - "lib/rbs_infer/extensions/rails/active_record/runtime/reflection_scanner.rb"
     - "lib/rbs_infer/extensions/rails/controllers/callback_chain_scanner.rb"
-    - "lib/rbs_infer/extensions/rails/module_self_type_generator.rb"
+    - "lib/rbs_infer/project/module_self_type_generator.rb"
     - "lib/rbs_infer/inference/caller_file_analyzer.rb"
     - "lib/rbs_infer/project/stored_block_replay_expander/shape_reader.rb"
     - "lib/rbs_infer/signatures/rbs_builder.rb"
@@ -793,13 +793,13 @@ Style/MultilineBlockChain:
 # SupportedStyles: literals, strict
 Style/MutableConstant:
   Exclude:
-    - "lib/rbs_infer/extensions/rails/module_self_type_annotator.rb"
+    - "lib/rbs_infer/project/module_self_type_annotator.rb"
     - "lib/rbs_infer/inference/class_member_collector/extract_params_signature.rb"
     - "lib/rbs_infer/signatures/rbs_parser_util.rb"
     - "spec/lib/rbs_infer/ast/class_name_extractor_spec.rb"
     - "spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb"
-    - "spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb"
-    - "spec/lib/rbs_infer/extensions/rails/module_self_type_generator_spec.rb"
+    - "spec/lib/rbs_infer/project/module_self_type_annotator_spec.rb"
+    - "spec/lib/rbs_infer/project/module_self_type_generator_spec.rb"
     - "spec/lib/rbs_infer/inference/new_call_collector_spec.rb"
 
 # Offense count: 2
@@ -851,7 +851,7 @@ Style/ReturnNilInPredicateMethodDefinition:
 Style/SafeNavigation:
   Exclude:
     - "lib/rbs_infer/analyzer.rb"
-    - "lib/rbs_infer/extensions/rails/module_self_type_annotator.rb"
+    - "lib/rbs_infer/project/module_self_type_annotator.rb"
 
 # Offense count: 6
 # Configuration parameters: Max.
@@ -920,7 +920,7 @@ Layout/LineLength:
     - "spec/lib/rbs_infer/analyzer_spec.rb"
     - "spec/lib/rbs_infer/extensions/rails/active_record/runtime_generator_spec.rb"
     - "spec/lib/rbs_infer/extensions/rails/controllers/runtime_generator_spec.rb"
-    - "spec/lib/rbs_infer/extensions/rails/module_self_type_annotator_spec.rb"
+    - "spec/lib/rbs_infer/project/module_self_type_annotator_spec.rb"
     - "spec/lib/rbs_infer/extensions/rails/views/runtime_generator_spec.rb"
     - "spec/lib/rbs_infer/inference/bare_call_universal_ancestor_spec.rb"
     - "spec/lib/rbs_infer/inference/block_return_collector_spec.rb"

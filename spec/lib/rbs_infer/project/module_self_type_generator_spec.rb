@@ -1,13 +1,13 @@
 require "spec_helper"
 require "rbs_infer"
 require "rbs_infer/project/ruby_runtime_generator"
-require "rbs_infer/extensions/rails/module_self_type_generator"
+require "rbs_infer/project/module_self_type_generator"
 require "rbs_infer/extensions/rails/active_record/runtime_generator"
 require "tmpdir"
 require "fileutils"
 require "yaml"
 
-RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
+RSpec.describe RbsInfer::Project::ModuleSelfTypeGenerator do
   # A Steepfile, because the file list is now exactly what the project tells
   # Steep to check (#165) — and because that is what a real app has.
   STEEPFILE = <<~RUBY
@@ -73,17 +73,14 @@ RSpec.describe RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator do
     ) do |dir|
       table = described_class.new(app_dir: dir).build_table
 
-      # `app/models/post.rb` declares a class nobody includes, and `lib/` is not
-      # scanned at all. The transcribed Concern is covered like any other module
-      # with extenders — the dummy's own sidecar carries the same entry.
+      # `app/models/post.rb` declares a class nobody includes, the helper and the
+      # concern are modules nobody includes, and `lib/` is not scanned at all.
+      # The transcribed Concern is covered like any other module with
+      # extenders — the dummy's own sidecar carries the same entry.
       expect(table.keys).to contain_exactly(
         "app/models/post/taggable.rb",
-        "app/helpers/posts_helper.rb",
-        "app/controllers/concerns/filterable.rb",
         "sig/generated/steep_ar_runtime/active_support/concern.rb"
       )
-      expect(table["app/helpers/posts_helper.rb"]["modules"].first["annotations"].first)
-        .to include("ApplicationController & PostsHelper")
     end
   end
 
