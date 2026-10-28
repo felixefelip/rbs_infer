@@ -9,7 +9,7 @@ RSpec.describe RbsInfer::Inference::NewCallCollector::ValueTypes do
     described_class.new(
       scope: scope, method_return_types: {}, local_var_read_types: local_var_read_types,
       method_type_resolver: nil, constant_arg_resolver: nil, self_types_by_method: {},
-      module_self_types: {}, invoker_self_types: nil, expression_types: expression_types
+      module_self_types: {}, invoker_self_types: nil, inherited_selves: {}, expression_types: expression_types
     )
   end
 

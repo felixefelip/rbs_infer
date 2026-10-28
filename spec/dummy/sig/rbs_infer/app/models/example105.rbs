@@ -1,5 +1,5 @@
 class Example105
   class Animal
-    def introduce: () -> untyped
+    def introduce: () -> ("hello, meow" | "hello, woof")
   end
 end

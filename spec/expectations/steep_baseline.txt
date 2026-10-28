@@ -6,7 +6,6 @@ app/models/eval_reopen.rb:61:6: [warning] Method `::Object#by_instance_eval` is 
 app/models/example103.rb:54:10: [error] Cannot allow method body have type `:a` because declared as type `:x`
 app/models/example104.rb:48:12: [error] Type `::Example104` does not have method `post_ids`
 app/models/example104.rb:48:29: [error] Type `::Example104` does not have method `category_ids`
-app/models/example105.rb:10:6: [error] Type `::Example105::Animal` does not have method `speak`
 app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
 app/models/example21.rb:96:29: [error] Type `(::Example21::Ticket | nil)` does not have method `holder`

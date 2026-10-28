@@ -89,6 +89,19 @@ module RbsInfer::Project
       )
     end
 
+    # Memoized here for the same reason: the answer is per method of the
+    # project, whichever target asks.
+    def inherited_self_types
+      @inherited_self_types ||= RbsInfer::Inference::InheritedSelfTypes.new(
+        source_index: @source_index,
+        parse_cache: @parse_cache,
+        steep_bridge: RbsInfer::Signatures::SteepBridge.new(
+          literal_method_registry: literal_method_registry,
+          constructor_bindings: constructor_bindings
+        )
+      )
+    end
+
     # Project-wide implementation provenance for Steep's literal intrinsics.
     # A Ruby reopen can replace a core method without changing its RBS owner,
     # so this index must see the entire source corpus, not only the target file.

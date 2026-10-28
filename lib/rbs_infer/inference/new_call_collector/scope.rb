@@ -92,6 +92,12 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
 
     def lexical_name = @lexical_names.last
 
+    # `"Zoo::Animal#introduce"` inside an instance method written in a class
+    # body, the key `InheritedSelfTypes#by_def` answers under.
+    def own_instance_method_key
+      "#{lexical_name}##{current_method}" if own_method_side == :instance && lexical_name
+    end
+
     # Where a relative constant is looked up from: every enclosing `class` and
     # `module`, as Ruby nests them, unlike `lexical_class_name`.
     def constant_scope = lexical_name || lexical_class_name

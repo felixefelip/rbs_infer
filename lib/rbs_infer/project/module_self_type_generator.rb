@@ -79,7 +79,7 @@ module RbsInfer
         tree = Prism.parse(source).value
 
         entry = {}
-        modules = self_types_for(source, tree)
+        modules = self_types_for(source, tree) + inherited_self_types.entries_for(tree)
         entry["modules"] = modules if modules.any?
 
         blocks = blocks_table[rel]
@@ -209,6 +209,17 @@ module RbsInfer
         @invoker_self_types ||= RbsInfer::Inference::InvokerSelfTypes.new(
           source_index: RbsInfer::Project::SourceIndex.new(source_files),
           parse_cache: RbsInfer::Project::ParseCache.new
+        )
+      end
+
+      def inherited_self_types
+        @inherited_self_types ||= RbsInfer::Inference::InheritedSelfTypes.new(
+          source_index: RbsInfer::Project::SourceIndex.new(source_files),
+          parse_cache: RbsInfer::Project::ParseCache.new,
+          steep_bridge: RbsInfer::Signatures::SteepBridge.new(
+            literal_method_registry: corpus.literal_method_registry,
+            constructor_bindings: corpus.constructor_bindings
+          )
         )
       end
 

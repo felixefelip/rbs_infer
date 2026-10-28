@@ -27,7 +27,7 @@ module RbsInfer::Inference
     # `extra_caller_sources` may legitimately be nil (not every project registers
     # one), but saying so is the caller's job.
     def initialize(target_file:, target_class:, source_files:, source_index:, method_type_resolver:, type_merger:,
-                   mixin_index:, invoker_self_types:, extra_caller_sources:, steep_bridge: nil, parse_cache: nil,
+                   mixin_index:, invoker_self_types:, inherited_self_types:, extra_caller_sources:, steep_bridge: nil, parse_cache: nil,
                    file_index: nil, caller_file_cache: nil)
       @target_file = target_file
       @target_class = target_class
@@ -37,6 +37,7 @@ module RbsInfer::Inference
       @type_merger = type_merger
       @mixin_index = mixin_index
       @invoker_self_types = invoker_self_types
+      @inherited_self_types = inherited_self_types
       @extra_caller_sources = extra_caller_sources
       @steep_bridge = steep_bridge
       @parse_cache = parse_cache || RbsInfer::Project::ParseCache.new
@@ -177,8 +178,12 @@ module RbsInfer::Inference
         method_type_resolver: @method_type_resolver,
         # felixefelip/rbs_infer#331: the dispatchers the target INHERITS, so a
         # call site that only ever names the dispatcher (`Greeter.dispatch(...)`)
-        # is read as the call site of the handler it runs.
-        inherited_forwards: inherited_forwards_for(target_methods),
+        # is read as the call site of the handler it runs. Built per call rather
+        # than per instance: `target_methods` is settled by the target's parse,
+        # which happens after this object exists.
+        inherited_forwards: InheritedForwards.new(
+          target_class: @target_class, source_index: @source_index, parse_cache: @parse_cache
+        ).for_methods(target_methods.keys),
         # Method call usages only: the `initialize` usages this walk also
         # collects are discarded, so nothing reaching it is needed.
         inherited_initializers: InheritedReach::NONE,
@@ -193,7 +198,8 @@ module RbsInfer::Inference
         block_methods: block_methods,
         method_owners: nested_method_owners(members),
         mixin_index: @mixin_index,
-        invoker_self_types: @invoker_self_types
+        invoker_self_types: @invoker_self_types,
+        inherited_self_types: @inherited_self_types
       )
 
       caller_files(target_methods, is_module: is_module, inherited_supers: inherited_supers,
@@ -213,19 +219,7 @@ module RbsInfer::Inference
       result
     end
 
-    # `{ "dispatch" => "handle" }` for this target, or empty when it inherits no
-    # dispatcher that forwards into one of its own methods. Built per call rather
-    # than per instance: `target_methods` is settled by the target's parse, which
-    # happens after this object exists.
-    def inherited_forwards_for(target_methods)
-      InheritedForwards.new(
-        target_class: @target_class,
-        source_index: @source_index,
-        parse_cache: @parse_cache
-      ).for_methods(target_methods.keys)
-    end
-
-    # Who may be calling the target, by five routes no single index covers. Yields
+    # Who may be calling the target, by six routes no single index covers. Yields
     # each file along with whether it matches RECEIVERLESS calls — which only the
     # two routes that proved reachability earn.
     def caller_files(target_methods, is_module:, inherited_supers:, modules:)
@@ -263,7 +257,12 @@ module RbsInfer::Inference
           Set.new
         end
 
-      (referencing.to_set | reaching | calling | bare_reaching | supering).each do |file|
+      # A bare call in a method a subclass inherits runs on that subclass, from a
+      # file that need not name it. The file is not forced bare: the collector
+      # places each call by the method it is in.
+      inheriting = @inherited_self_types.files_running_on(@target_class, target_methods.keys)
+
+      (referencing.to_set | reaching | calling | bare_reaching | supering | inheriting).each do |file|
         yield file, reaching.include?(file) || bare_reaching.include?(file)
       end
     end
@@ -282,6 +281,7 @@ module RbsInfer::Inference
         steep_bridge: @steep_bridge,
         mixin_index: @mixin_index,
         invoker_self_types: @invoker_self_types,
+        inherited_self_types: @inherited_self_types,
         # This walk keeps the `.new` usages and discards the method-call ones,
         # so an inherited dispatcher has nothing to contribute here and looking
         # for one would only cost a sweep (felixefelip/rbs_infer#331).

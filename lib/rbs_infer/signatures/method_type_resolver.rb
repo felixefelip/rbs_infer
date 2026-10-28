@@ -351,6 +351,7 @@ module RbsInfer::Signatures
           defined_class_names: defined_names,
           module_self_types: module_self_types_for(file, entry, defined_names),
           invoker_self_types: @invoker_self_types,
+          inherited_selves: {},
           # These two walks read `.new` call sites only — they pass no
           # `target_methods`, so no method call is collected here and no
           # inherited dispatcher could be recognized. Empty is the answer, not a
@@ -584,6 +585,7 @@ module RbsInfer::Signatures
           defined_class_names: defined_names,
           module_self_types: module_self_types_for(file, entry, defined_names),
           invoker_self_types: @invoker_self_types,
+          inherited_selves: {},
           # These two walks read `.new` call sites only — they pass no
           # `target_methods`, so no method call is collected here and no
           # inherited dispatcher could be recognized. Empty is the answer, not a
