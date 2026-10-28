@@ -473,6 +473,13 @@ module RbsInfer::Signatures
       ""
     end
 
+    # Superclasses and included modules, nearest first, without the type itself.
+    def ancestor_type_names(type_name)
+      rbs_builder.ancestor_builder.instance_ancestors(type_name).ancestors.filter_map do |ancestor|
+        ancestor.name if ancestor.is_a?(RBS::Definition::Ancestor::Instance) && ancestor.name != type_name
+      end
+    end
+
     private
 
     # The plain-member scan of ONE type's own declarations — the question
@@ -504,13 +511,6 @@ module RbsInfer::Signatures
       when RBS::AST::Members::AttrAccessor then [member.name.to_s, "#{member.name}="]
       when RBS::AST::Members::Alias then [member.new_name.to_s]
       else []
-      end
-    end
-
-    # Superclasses and included modules, nearest first, without the type itself.
-    def ancestor_type_names(type_name)
-      rbs_builder.ancestor_builder.instance_ancestors(type_name).ancestors.filter_map do |ancestor|
-        ancestor.name if ancestor.is_a?(RBS::Definition::Ancestor::Instance) && ancestor.name != type_name
       end
     end
 
