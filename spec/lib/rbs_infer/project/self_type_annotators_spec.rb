@@ -155,7 +155,7 @@ RSpec.describe RbsInfer::Project::SelfTypeAnnotators do
   describe "default registrations" do
     it "registers the Rails self-type annotators at require time" do
       # Outside the around hook's teardown this is the real registration.
-      expect(RbsInfer::Extensions::Rails::ModuleSelfTypeAnnotator).to respond_to(:self_type_entries)
+      expect(RbsInfer::Project::ModuleSelfTypeAnnotator).to respond_to(:self_type_entries)
     end
   end
 end

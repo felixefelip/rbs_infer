@@ -38,6 +38,7 @@ require_relative "rbs_infer/analyzer"
 require_relative "rbs_infer/markers/setter_marker_synthesizer"
 require_relative "rbs_infer/markers/predicate_marker_synthesizer"
 require_relative "rbs_infer/project/dependency_sorter"
+require_relative "rbs_infer/project/module_self_type_annotator"
 
 # Default source expanders (RbsInfer::Project::SourceExpanders plugins). Each one
 # registers itself on require; external gems can register their own
@@ -53,9 +54,5 @@ require_relative "rbs_infer/project/dependency_sorter"
 # into a plain class reopening (felixefelip/rbs_infer#38) — pure Prism,
 # self-gates on the `on_load` substring, so it is always safe to load.
 require_relative "rbs_infer/extensions/rails/on_load_expander"
-# Computes module/concern self-type annotations from the AST (correct
-# acronym casing) + Rails path conventions, for Steep's generic injector
-# (felixefelip/rbs_infer#52). Pure Prism/string logic, safe to always load.
-require_relative "rbs_infer/extensions/rails/module_self_type_annotator"
 
 require_relative "rbs_infer/railtie" if defined?(Rails::Railtie)

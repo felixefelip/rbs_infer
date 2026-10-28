@@ -109,7 +109,7 @@ Loaded automatically when running inside a Rails app via [`RbsInfer::Railtie`](l
 | `rake rbs_infer:enumerize:all` | `RbsInfer::Extensions::Enumerize::Generator` | `sig/rbs_enumerize/` |
 | `rake rbs_infer:devise:all` | `RbsInfer::Extensions::Devise::Generator` | `sig/generated/steep_devise_runtime/` |
 | `rake rbs_infer:rails_custom:all` | `RbsInfer::Extensions::Rails::CustomGenerator` | `sig/rbs_rails_custom/` |
-| `rake rbs_infer:module_self_types:all` | `RbsInfer::Extensions::Rails::ModuleSelfTypeGenerator` | `sig/generated/.steep_module_self_types.yml` |
+| `rake rbs_infer:module_self_types:all` | `RbsInfer::Project::ModuleSelfTypeGenerator` | `sig/generated/.steep_module_self_types.yml` |
 | `rake rbs_infer:controller_runtime:all` | `RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator` | `sig/generated/steep_controller_runtime/` |
 | `rake rbs_infer:current_runtime:all` | `RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator` | `sig/generated/steep_current_runtime/` |
 | `rake rbs_infer:job_runtime:all` | `RbsInfer::Extensions::Rails::ActiveJob::RuntimeGenerator` | `sig/generated/steep_activejob_runtime/` |

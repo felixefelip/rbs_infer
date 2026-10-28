@@ -22,7 +22,7 @@ existing plugin seams so the core stays oblivious:
   `module ClassMethods`. An annotator implements
   `self_type_entries(path:, module_name:, source:) -> [{ "anchor", "annotations" }]`; the core
   places each via Steep's generic `Source::ModuleSelfTypes.inject`, never naming the extension.
-  Examples: `ModuleSelfTypeAnnotator`, `ClassMethodsImplements`.
+  Example: `ModuleSelfTypeAnnotator`, which reads the `include`s and `extend`s the sources write.
 - **Generators** (`enumerize/`, `rails/custom_generator.rb`, `erb_convention_generator.rb`,
   `devise/`, `carrierwave/`) — emit standalone sidecar RBS into a dedicated `sig/` dir via a
   rake task, never touching the core analysis of the source file.
