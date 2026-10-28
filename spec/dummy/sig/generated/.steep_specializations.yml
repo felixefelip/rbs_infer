@@ -937,6 +937,10 @@ receivers:
   - singleton(::Example103::Store)
   app/models/example103.rb:64:11:
   - "::Example103::Store"
+  app/models/example105_caller.rb:5:18:
+  - singleton(::Example105Dog)
+  app/models/example105_caller.rb:9:18:
+  - singleton(::Example105Cat)
   app/models/example11.rb:12:22:
   - singleton(::Example11::View)
   app/models/example11.rb:12:48:
@@ -1866,10 +1870,10 @@ exits:
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
   Example102::Inflector.with_rules:
-    "(:en) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
+    "(:en) &/home/felipefelix/workspaces/rbs_infer-ex105/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example102.rb:2354
+    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/rbs_infer-ex105/spec/dummy/app/models/example102.rb:2354
       with {@locale_rule_sets: {  }}"
     : ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
@@ -2315,13 +2319,13 @@ exits:
       ivars:
         "@singulars": '[[::Regexp, ""]]'
   Example93::Inflector.configure:
-    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
+    "() &/home/felipefelix/workspaces/rbs_infer-ex105/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
       ivars:
         "@rule_set":
           class: "::Example93::Rules"
           ivars:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
-    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example93.rb:1310
+    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/rbs_infer-ex105/spec/dummy/app/models/example93.rb:1310
       with {@rule_set: nil}"
     : ivars:
         "@rule_set":

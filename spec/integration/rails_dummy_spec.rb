@@ -685,6 +685,22 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example103", target_file: "app/models/example103.rb")
   end
 
+  it "example105 (a base class calling on self a method only its subclasses define) matches expected RBS" do
+    assert_snapshot("models/example105", target_file: "app/models/example105.rb")
+  end
+
+  it "example105_dog receives the argument the base class passes on self" do
+    assert_snapshot("models/example105_dog", target_file: "app/models/example105_dog.rb")
+  end
+
+  it "example105_cat receives the same argument through the same inherited body" do
+    assert_snapshot("models/example105_cat", target_file: "app/models/example105_cat.rb")
+  end
+
+  it "example105_caller (the two receivers) matches expected RBS" do
+    assert_snapshot("models/example105_caller", target_file: "app/models/example105_caller.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that

@@ -1,0 +1,5 @@
+class Example105
+  class Animal
+    def introduce: () -> untyped
+  end
+end
