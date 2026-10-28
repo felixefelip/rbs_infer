@@ -559,7 +559,7 @@ module RbsInfer::Signatures
         return_forwarding: return_forwarding_store,
         return_alias: return_alias_store
       )
-    rescue Parser::SyntaxError
+    rescue Parser::SyntaxError, Steep::AnnotationParser::SyntaxError
       nil
     end
 
