@@ -591,6 +591,17 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       result = bridge.all_expression_types("!!!invalid ruby")
       expect(result).to eq({})
     end
+
+    it "returns empty hash for a comment steep check reports as an annotation syntax error" do
+      code = <<~RUBY
+        class Foo
+          # Inject `@type self:` for concerns
+          def bar = 1
+        end
+      RUBY
+
+      expect(bridge.all_expression_types(code)).to eq({})
+    end
   end
 
   # Type-check results and the sidecar stores depend on (source, env, stores) —
