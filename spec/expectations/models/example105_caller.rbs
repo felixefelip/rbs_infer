@@ -1,4 +1,4 @@
 class Example105Caller
-  def dog: () -> ("hello, meow" | "hello, woof")
-  def cat: () -> ("hello, meow" | "hello, woof")
+  def dog: () -> "hello, woof"
+  def cat: () -> "hello, meow"
 end
