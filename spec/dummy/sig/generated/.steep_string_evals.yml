@@ -38,6 +38,10 @@ call_sites:
   - def post_ids; []; end
   app/models/example102.rb:88:4:
   - def category_ids; []; end
+  app/models/example104.rb:43:2:
+  -
+  app/models/example104.rb:44:2:
+  -
   app/models/example60.rb:9:2:
   - source: def stamp(...);  _ = example60_printer;  _.stamp(...);rescue NoMethodError
       => e;  if _.nil? && e.name == :stamp;    raise ::ActiveSupport::DelegationError.nil_target(:stamp,
