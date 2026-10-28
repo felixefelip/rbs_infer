@@ -685,6 +685,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example103", target_file: "app/models/example103.rb")
   end
 
+  it "example104 (rules memoized per locale in a Concurrent::Map) matches expected RBS" do
+    assert_snapshot("models/example104", target_file: "app/models/example104.rb")
+  end
+
   it "example105 (a base class calling on self a method only its subclasses define) matches expected RBS" do
     assert_snapshot("models/example105", target_file: "app/models/example105.rb")
   end
