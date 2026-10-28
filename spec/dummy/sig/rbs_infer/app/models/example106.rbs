@@ -1,6 +1,6 @@
 class Example106
   class Visitor
-    def visit: (Example106::Leaf node) -> ("leaf of weight 1" | 1)
+    def visit: (Example106::Leaf node) -> "leaf of weight 1"
     def visit_leaf: (untyped leaf) -> Example106::Leaf
   end
 end

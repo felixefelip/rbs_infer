@@ -1,4 +1,4 @@
 class Example106Caller
-  def count: () -> ("leaf of weight 1" | 1)
-  def label: () -> ("leaf of weight 1" | 1)
+  def count: () -> 1
+  def label: () -> "leaf of weight 1"
 end

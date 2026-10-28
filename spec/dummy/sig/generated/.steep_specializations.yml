@@ -255,6 +255,14 @@ methods:
       class: "::Example104::Rules"
       ivars:
         "@singulars": "[]"
+  Example105::Animal#introduce:
+    "() on ::Example105Cat": '"hello, meow"'
+    "() on ::Example105Dog": '"hello, woof"'
+  Example106::Leaf#accept:
+    "(::Example106Counter)": '1'
+    "(::Example106Printer)": '"leaf of weight 1"'
+  Example106::Visitor#visit:
+    "(::Example106::Leaf) on ::Example106Printer": '"leaf of weight 1"'
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -264,9 +272,11 @@ methods:
       ivars:
         "@halted": 'false'
   Example13::Registry.tenant=:
+    "(::Example13Tenant)": "::Example13Tenant"
     "(::Example13Tenant) on singleton(::Example13::Registry)": "::Example13Tenant"
     "(nil) on singleton(::Example13::Registry)": nil
   Example13::Registry.user=:
+    "(::Example13Viewer)": "::Example13Viewer"
     "(::Example13Viewer) on singleton(::Example13::Registry)": "::Example13Viewer"
     "(nil) on singleton(::Example13::Registry)": nil
   Example19#record:
@@ -286,8 +296,11 @@ methods:
     "(singleton(::Example33::BazOther)) on singleton(::Example33::BarOther)": "(:age
       | :name_upcase | nil)"
   Example33::Foo#bazingado:
-    "(self) on singleton(::Example33::Baz)": "(:age | :name_upcase | nil)"
     "(self) on singleton(::Example33::BazOther)": "(:age | :name_upcase | nil)"
+    "(singleton(::Example33::Bar)) on singleton(::Example33::Baz)": "(:age | :name_upcase
+      | nil)"
+    "(singleton(::Example33::BarOther)) on singleton(::Example33::BazOther)": "(:age
+      | :name_upcase | nil)"
   Example34::Foo#included:
     "(self) on singleton(::Example34::Baz)": "(:age | nil)"
     "(singleton(::Example34::Bar)) on singleton(::Example34::Baz)": "(:age | nil)"
@@ -302,16 +315,25 @@ methods:
   Example37::Foo#bazingado:
     "(self) on singleton(::Example37::Baz)": "(:age | nil)"
     "(singleton(::Example37::Bar)) on singleton(::Example37::Baz)": "(:age | nil)"
+  Example3::Foo#user=:
+    "(::Example3::User)": ("John Doe" | "x")
   Example3::Foo.user=:
+    "(::Example3::User)": "::Example3::User"
     "(::Example3::User) on singleton(::Example3::Foo)": "::Example3::User"
     "(nil) on singleton(::Example3::Foo)": nil
   Example42::Foo#bazingado:
     "(self) on singleton(::Example42::Baz)": "(:age | nil)"
+    "(singleton(::Example42::Bar)) on singleton(::Example42::Baz)": "(:age | nil)"
+    "(singleton(::Example42::BarOther)) on singleton(::Example42::Baz)": "(:age |
+      nil)"
   Example43::Foo#bazinga:
     "(singleton(::Example43::Baz)) on singleton(::Example43::Bar)": "::Array[singleton(::Example43::Baz)]"
     "(singleton(::Example43::Baz)) on singleton(::Example43::BarOther)": "::Array[singleton(::Example43::Baz)]"
   Example43::Foo#bazingado:
-    "(self) on singleton(::Example43::Baz)": "(:age | :name | nil)"
+    "(singleton(::Example43::Bar)) on singleton(::Example43::Baz)": "(:age | :name
+      | nil)"
+    "(singleton(::Example43::BarOther)) on singleton(::Example43::Baz)": "(:age |
+      :name | nil)"
   Example4::Foo.name=:
     ("John Doe"): '"John Doe"'
     ("John Doe") on singleton(::Example4::Foo): '"John Doe"'
@@ -761,6 +783,10 @@ methods:
     "() with {@name: :posts, @options: { :through => :taggings }}": singleton(::Example96::Through)
     "() with {@name: :taggings, @options: {  }}": singleton(::Example96::Plain)
   Example96::Reflection.new:
+    "((:posts | :taggings), ::Hash[::Symbol, untyped])":
+      class: "::Example96::Reflection"
+      ivars:
+        "@name": "(:posts | :taggings)"
     "(:posts, { :through => :taggings })":
       class: "::Example96::Reflection"
       ivars:
@@ -824,6 +850,8 @@ declarations:
   Example104.rules: "::Example104::Rules"
   Example104.singularize: ("post" | "category")
   Example104::Rules#singular: ([[::Regexp, ""]] | [[::Regexp, "y"], [::Regexp, ""]])
+  Example105::Animal#introduce: ("hello, woof" | "hello, meow")
+  Example106::Visitor#visit: '"leaf of weight 1"'
   Example19#record: '"denied"'
   Example20#record: '"denied"'
   Example28::Foo#bazingado: "^(*untyped) -> :age_after_a_decade"
@@ -1832,12 +1860,30 @@ receivers:
   - "::NoMethodError[untyped]"
 exits:
   Concurrent::Collection::MriMapBackend#[]=:
-    ? '(::Symbol, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars:
-      [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}'
+    ? '(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with
+      {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/,
+      ""]]} }, @default_proc: nil}'
     : ivars:
         "@default_proc": nil
-    '(::Symbol, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
+    ? '(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with
+      {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc:
+      nil}'
+    : ivars:
+        "@default_proc": nil
+    "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}":
       ivars:
+        "@backend": "{ :en => ::Example104::Rules }"
+        "@default_proc": nil
+    ? '(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend:
+      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
+      nil}'
+    : ivars:
+        "@backend": "{ :en => ::Example104::Rules }"
+        "@default_proc": nil
+    ? '(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend:
+      { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}'
+    : ivars:
+        "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
     "(:en, ::Example104::Rules) with {@backend: {  }, @default_proc: nil}":
       ivars:
@@ -1882,12 +1928,30 @@ exits:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
   Concurrent::Collection::NonConcurrentMapBackend#[]=:
-    ? '(::Symbol, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars:
-      [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}'
+    ? '(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with
+      {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/,
+      ""]]} }, @default_proc: nil}'
     : ivars:
         "@default_proc": nil
-    '(::Symbol, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
+    ? '(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with
+      {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc:
+      nil}'
+    : ivars:
+        "@default_proc": nil
+    "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}":
       ivars:
+        "@backend": "{ :en => ::Example104::Rules }"
+        "@default_proc": nil
+    ? '(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend:
+      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
+      nil}'
+    : ivars:
+        "@backend": "{ :en => ::Example104::Rules }"
+        "@default_proc": nil
+    ? '(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend:
+      { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}'
+    : ivars:
+        "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
     "(:en, ::Example104::Rules) with {@backend: {  }, @default_proc: nil}":
       ivars:
