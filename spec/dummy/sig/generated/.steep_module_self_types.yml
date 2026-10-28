@@ -48,6 +48,16 @@ app/models/example101.rb:
     in: "::Example101::Assoc"
     implements: "::Example101::Assoc::ClassMethods"
     self: singleton(::Example101::Post) & ::Example101::Assoc::ClassMethods
+app/models/example105.rb:
+  modules:
+  - anchor: Animal
+    defs:
+      introduce: Example105Cat | Example105Dog
+app/models/example106.rb:
+  modules:
+  - anchor: Visitor
+    defs:
+      visit: Example106Printer
 app/models/example13.rb:
   modules:
   - anchor: GeneratedAttributes

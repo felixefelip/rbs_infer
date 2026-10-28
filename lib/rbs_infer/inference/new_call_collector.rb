@@ -29,14 +29,14 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, module_self_types:, invoker_self_types:, inherited_forwards:, inherited_initializers:, inherited_supers:, steep_bridge:,
+    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, module_self_types:, invoker_self_types:, inherited_selves:, inherited_forwards:, inherited_initializers:, inherited_supers:, steep_bridge:,
                    local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
       @receivers = ReceiverMatcher.new(target_class: target_class, method_owners: method_owners, defined_class_names: defined_class_names)
       @scope = Scope.new(local_var_types: local_var_types, caller_class_name: caller_class_name)
       @types = ValueTypes.new(scope: @scope, method_return_types: method_return_types, local_var_read_types: local_var_read_types,
                               method_type_resolver: method_type_resolver, constant_arg_resolver: constant_arg_resolver,
                               self_types_by_method: self_types_by_method, module_self_types: module_self_types, invoker_self_types: invoker_self_types,
-                              expression_types: expression_types)
+                              inherited_selves: inherited_selves, expression_types: expression_types)
       @arguments = CallArguments.new(value_types: @types, init_positional_params: init_positional_params, steep_bridge: steep_bridge)
       @local_var_types_by_method = local_var_types_by_method
       @method_scoped_var_names = local_var_types_by_method.each_value.flat_map(&:keys).to_set
@@ -46,6 +46,7 @@ module RbsInfer::Inference
       @inherited_initializers = inherited_initializers
       @inherited_supers = inherited_supers
       @match_bare_calls = match_bare_calls
+      @inherited_selves = inherited_selves
       @established_ivars_by_method = established_ivars_by_method
       @argument_partitions_by_method = argument_partitions_by_method
       @block_methods = block_methods
@@ -176,13 +177,13 @@ module RbsInfer::Inference
       end
 
       if !@block_methods.empty? && node.block.is_a?(Prism::BlockNode) && @block_methods.include?(node.name.to_s) &&
-         (node.receiver.nil? ? @match_bare_calls : block_receiver_matches?(node))
+         (node.receiver.nil? ? bare_calls_reach_target? : block_receiver_matches?(node))
         type = BlockReturnCollector.block_return_type(node.block, @expression_types)
         @method_block_returns[node.name.to_s] << type if type
       end
 
       # Bare method calls matching target_methods (for included modules, e.g. helpers in ERB views)
-      if !@target_methods.empty? && node.receiver.nil? && node.arguments && @match_bare_calls
+      if !@target_methods.empty? && node.receiver.nil? && node.arguments && bare_calls_reach_target?
         method_name = node.name.to_s
         if @target_methods.key?(method_name)
           args = @arguments.for_params(node, @target_methods[method_name])
@@ -194,6 +195,15 @@ module RbsInfer::Inference
     end
 
     private
+
+    # A bare call reaches the target in a file that reopens it or mixes into it,
+    # and in an inherited method that runs on it.
+    def bare_calls_reach_target?
+      return true if @match_bare_calls
+
+      self_type = @inherited_selves[@scope.own_instance_method_key] or return false
+      self_type.split(" | ").any? { |name| match_class?(name) }
+    end
 
     def match_class?(name)
       @receivers.match_class?(name, namespace: @scope.constant_scope)

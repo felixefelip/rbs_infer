@@ -12,7 +12,7 @@ module RbsInfer::Inference
     # covered by `IntraClassCallAnalyzer`. Omitting it would double-count every same-file
     # self-call — the two paths resolve the receiver differently, so the parameter widens
     # into a union instead of failing loudly (required-threaded-deps).
-    def initialize(target_class:, method_type_resolver:, target_file:, mixin_index:, invoker_self_types:,
+    def initialize(target_class:, method_type_resolver:, target_file:, mixin_index:, invoker_self_types:, inherited_self_types:,
                    inherited_forwards:, inherited_initializers:, inherited_supers:, init_positional_params: [], target_methods: {}, steep_bridge: nil, block_methods: Set.new, method_owners: {})
       @target_class = target_class
       @target_file = target_file
@@ -39,6 +39,9 @@ module RbsInfer::Inference
       # (felixefelip/rbs_infer#222). Required for the same reason as the index
       # above: forgetting it silently widens a parameter instead of failing.
       @invoker_self_types = invoker_self_types
+      # The subclasses an inherited method runs on, which is what places a bare
+      # call in it and the `self` it passes on. Required for the same reason.
+      @inherited_self_types = inherited_self_types
       # The dispatchers the target inherits, and which of its methods each hands
       # its arguments to (felixefelip/rbs_infer#331). Required for the same
       # reason as the index above: forgetting it silently drops the call sites
@@ -190,6 +193,7 @@ module RbsInfer::Inference
         self_types_by_method: self_types_by_method,
         module_self_types: module_self_types,
         invoker_self_types: @invoker_self_types,
+        inherited_selves: @inherited_self_types.by_def(result.value),
         established_ivars_by_method: established_ivars_by_method,
         argument_partitions_by_method: argument_partitions_by_method,
         constant_arg_resolver: constant_arg_resolver,
@@ -253,7 +257,9 @@ module RbsInfer::Inference
         # A template declares no module either, so there is no module `self` to
         # resolve here — the empty map is the answer, not a missing wire.
         module_self_types: {},
-        invoker_self_types: @invoker_self_types
+        invoker_self_types: @invoker_self_types,
+        # Nor a class, so nothing in it is inherited.
+        inherited_selves: {}
       )
       result.value.accept(visitor)
 

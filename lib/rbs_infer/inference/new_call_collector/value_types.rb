@@ -6,7 +6,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
   # when unknown).
   class ValueTypes
     def initialize(scope:, method_return_types:, local_var_read_types:, method_type_resolver:, constant_arg_resolver:,
-                   self_types_by_method:, module_self_types:, invoker_self_types:, expression_types:)
+                   self_types_by_method:, module_self_types:, invoker_self_types:, inherited_selves:, expression_types:)
       @scope = scope
       @expression_types = expression_types
       @method_return_types = method_return_types
@@ -16,6 +16,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       @self_types_by_method = self_types_by_method
       @module_self_types = module_self_types
       @invoker_self_types = invoker_self_types
+      @inherited_selves = inherited_selves
     end
 
     def value_type(node) # rubocop:todo Metrics/MethodLength
@@ -199,9 +200,18 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       # A `def self.x` in a module is different: there `self` IS the module.
       return module_self_type || "untyped" if !@scope.in_singleton_method? && @scope.in_module?
 
+      inherited = inherited_self_type
+      return inherited if inherited
+
       base = @scope.lexical_class_name or return "untyped"
 
       @scope.in_singleton_method? ? "singleton(#{base})" : base
+    end
+
+    # The subclasses an inherited method runs on (`InheritedSelfTypes`).
+    def inherited_self_type
+      self_type = @inherited_selves[@scope.own_instance_method_key] or return nil
+      self_type.include?(" | ") ? "(#{self_type})" : self_type
     end
 
     # The answer for the module being visited. An unnameable one (a dynamic

@@ -1,3 +1,3 @@
 class Example106Printer < Example106::Visitor
-  def visit_leaf: (untyped leaf) -> String
+  def visit_leaf: (Example106::Leaf leaf) -> "leaf of weight 1"
 end

@@ -170,6 +170,18 @@ module RbsInfer::Inference
       result.reject { |_, by_method| by_method.empty? }
     end
 
+    # The classes below the target on which an instance `method_name` runs the
+    # target's own body: neither they nor any class between defines it.
+    def inheritors(method_name)
+      method_name = method_name.to_s
+      parents.each_key.with_object(Set.new) do |name, found|
+        next if [name, *between(name)].any? { |klass| defines?(klass, :instance, method_name) }
+        next unless @resolver.method_owner(name, method_name) == target
+
+        found << relative(name)
+      end
+    end
+
     # The files that write the body of any of `names`: the only ones a
     # `super` in it can be in.
     def defining_files(names)

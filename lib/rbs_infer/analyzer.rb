@@ -122,9 +122,11 @@ module RbsInfer
       # away (`class_methods do`); the entries are injected into the expanded
       # `source` that the pipeline parses.
       if @target_class
-        source = RbsInfer::Project::SelfTypeAnnotators.apply(
-          source, detect_source: original_source, path: @target_file, module_name: @target_class,
-                  mixin_index: mixin_index
+        source = @corpus.inherited_self_types.inject(
+          RbsInfer::Project::SelfTypeAnnotators.apply(
+            source, detect_source: original_source, path: @target_file, module_name: @target_class,
+                    mixin_index: mixin_index
+          )
         )
       end
 
@@ -820,7 +822,8 @@ module RbsInfer
         parse_cache: @parse_cache,
         file_index: @file_index,
         caller_file_cache: @caller_file_cache,
-        invoker_self_types: invoker_self_types
+        invoker_self_types: invoker_self_types,
+        inherited_self_types: @corpus.inherited_self_types
       )
     end
 
@@ -957,6 +960,7 @@ require_relative "inference/ivar_type_inferrer"
 require_relative "inference/attr_type_inferrer"
 require_relative "inference/inherited_forwards"
 require_relative "inference/inherited_reach"
+require_relative "inference/inherited_self_types"
 require_relative "inference/forwarding_super"
 require_relative "inference/param_type_inferrer"
 require_relative "project/source_index"
