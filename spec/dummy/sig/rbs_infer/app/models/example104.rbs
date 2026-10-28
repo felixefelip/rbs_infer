@@ -1,10 +1,10 @@
 class Example104
   self.@rules_by_locale: Concurrent::Map[untyped, untyped]
 
-  def self.rules: (?Symbol locale) -> untyped
-  def self.singularize: (String word) -> String
-  def self.has_many_like: ((:posts | :categories) name) -> untyped
-  def self.summary: () -> Array[untyped]
+  def self.rules: (?Symbol locale) -> Example104::Rules
+  def self.singularize: (String word) -> ("post" | "category")
+  def self.has_many_like: ((:posts | :categories) name) -> (:post_ids | :category_ids)
+  def self.summary: () -> Array[Array[untyped]]
 end
 
 class Example104
@@ -12,6 +12,6 @@ class Example104
     attr_reader singulars: Array[untyped]
 
     def initialize: () -> void
-    def singular: (untyped rule, untyped replacement) -> Array[untyped]
+    def singular: (Regexp rule, ("" | "y") replacement) -> ([ [ Regexp, "" ] ] | [ [ Regexp, "y" ], [ Regexp, "" ] ])
   end
 end
