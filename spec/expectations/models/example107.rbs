@@ -1,0 +1,24 @@
+class Example107
+  class Shape
+    def paint: (Example107::Canvas canvas) -> 5
+    def area: (5 scale) -> 5
+  end
+end
+
+class Example107
+  class Circle < Shape
+    def area: ((5 | 2) scale) -> (15 | 6)
+  end
+end
+
+class Example107
+  class Square < Shape
+    def area: ((5 | 2) scale) -> (20 | 8)
+  end
+end
+
+class Example107
+  class Canvas
+    def draw: (Example107::Shape shape) -> 5
+  end
+end

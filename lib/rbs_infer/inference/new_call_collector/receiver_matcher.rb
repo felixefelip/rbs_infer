@@ -48,7 +48,9 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
           if match_class_branch?(component, namespace)
             method_name
           else
-            owner_match_key(component, method_name, namespace) || ancestry_match_key(component, method_name, namespace)
+            owner_match_key(component, method_name, namespace) ||
+              ancestry_match_key(component, method_name, namespace) ||
+              override_match_key(component, method_name, namespace)
           end
         next unless key
 
@@ -218,6 +220,20 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
 
       entry = nested_owner_entry(normalized_owner, method_name) or return nil
       RbsInfer::Inference::MethodKey.for(method_name, owner: entry[0], kind: entry[1])
+    end
+
+    # A receiver typed as one of the target's ancestors may hold an instance of
+    # the target, and the call then runs the target's override.
+    def override_match_key(component, method_name, namespace)
+      resolver = rbs_definition_resolver
+      receiver = lexical_receiver(component, namespace)
+      singleton = singleton_receiver(receiver)
+      target = "::#{@target_class}"
+      return nil unless resolver.method_owner(singleton ? "singleton(#{target})" : target, method_name) == target
+      return nil unless resolver.method_owner(receiver, method_name)
+
+      ancestors = resolver.ancestor_type_names(RBS::TypeName.parse(target))
+      method_name if ancestors.include?(RBS::TypeName.parse(singleton || receiver).absolute!)
     end
 
     # The class a constant receiver names where the call is written: a constant

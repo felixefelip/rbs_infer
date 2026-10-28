@@ -263,6 +263,16 @@ methods:
     "(::Example106Printer)": '"leaf of weight 1"'
   Example106::Visitor#visit:
     "(::Example106::Leaf) on ::Example106Printer": '"leaf of weight 1"'
+  Example107::Canvas#draw:
+    "(::Example107::Circle)": "::Integer"
+    "(::Example107::Square)": "::Integer"
+  Example107::Circle#area:
+    "(5)": '15'
+  Example107::Shape#paint:
+    "(::Example107::Canvas) on ::Example107::Circle": "::Integer"
+    "(::Example107::Canvas) on ::Example107::Square": "::Integer"
+  Example107::Square#area:
+    "(5)": '20'
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -1068,6 +1078,18 @@ receivers:
   - singleton(::Example106Printer)
   app/models/example106_caller.rb:9:49:
   - singleton(::Example106::Leaf)
+  app/models/example107_caller.rb:10:32:
+  - singleton(::Example107::Canvas)
+  app/models/example107_caller.rb:12:24:
+  - singleton(::Example107::Shape)
+  app/models/example107_caller.rb:13:25:
+  - singleton(::Example107::Circle)
+  app/models/example107_caller.rb:14:25:
+  - singleton(::Example107::Square)
+  app/models/example107_caller.rb:5:33:
+  - singleton(::Example107::Circle)
+  app/models/example107_caller.rb:5:57:
+  - singleton(::Example107::Square)
   app/models/example11.rb:12:22:
   - singleton(::Example11::View)
   app/models/example11.rb:12:48:

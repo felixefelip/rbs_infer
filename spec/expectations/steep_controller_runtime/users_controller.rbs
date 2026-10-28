@@ -1,7 +1,7 @@
 class UsersController
   @__rbs_infer__performed: true?
 
-  def render: (?(:show | "posts/show")? target, *untyped rest) -> true
+  def render: (?(:show | "posts/show" | { plain: String, status: :unauthorized })? target, *untyped rest) -> true
 
   private
 
