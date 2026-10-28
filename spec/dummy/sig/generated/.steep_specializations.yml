@@ -9,7 +9,8 @@ methods:
         "@default_proc": nil
   Concurrent::Collection::NonConcurrentMapBackend#[]:
     "(:en) with {@backend: {  }, @default_proc: nil}": nil
-    "(:en) with {@backend: { :en => ::Example104::Rules{@singulars: []} }, @default_proc: nil}": "::Example104::Rules"
+    '(:en) with {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}': "::Example104::Rules"
+    '(:en) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}': "::Example104::Rules"
   EmailNotifier#notify:
     ((::User | nil), "post_notification"): '{ :body => "post_notification", :from
       => ::String, :sent_at => ::ActiveSupport::TimeWithZone, :to => (::String | nil)
@@ -184,20 +185,71 @@ methods:
       class: "::Example103::MriBackend"
       ivars:
         "@entries": "{  }"
+  Example104.has_many_like:
+    ? '(:categories) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
+      [/s\z/, ""]]} }, @default_proc: nil}}'
+    : ":category_ids"
+    ? '(:categories) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
+      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
+      nil}}'
+    : ":category_ids"
+    ? '(:posts) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
+      [/s\z/, ""]]} }, @default_proc: nil}}'
+    : ":post_ids"
+    ? '(:posts) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
+      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
+      nil}}'
+    : ":post_ids"
   Example104.rules:
     "() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}": "::Example104::Rules"
-    ? "() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: []} }, @default_proc:
-      nil}}"
+    ? '() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
+      [/s\z/, ""]]} }, @default_proc: nil}}'
     : class: "::Example104::Rules"
       ivars:
-        "@singulars": "[]"
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    ? '() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} },
+      @default_proc: nil}}'
+    : class: "::Example104::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, ""]]'
     "() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}": "::Example104::Rules"
-    ? "() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {
-      :en => ::Example104::Rules{@singulars: []} }, @default_proc: nil}}"
+    ? '() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {
+      :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
+      nil}}'
     : class: "::Example104::Rules"
       ivars:
-        "@singulars": "[]"
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    ? '() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {
+      :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}}'
+    : class: "::Example104::Rules"
+      ivars:
+        "@singulars": '[[::Regexp, ""]]'
+  Example104.singularize:
+    ? '("categories") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
+      [/s\z/, ""]]} }, @default_proc: nil}}'
+    : '"category"'
+    ? '("categories") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
+      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
+      nil}}'
+    : '"category"'
+    ? '("posts") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
+      [/s\z/, ""]]} }, @default_proc: nil}}'
+    : '"post"'
+    ? '("posts") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
+      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
+      nil}}'
+    : '"post"'
+  Example104::Rules#singular:
+    '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}': '[[::Regexp, "y"], [::Regexp,
+      ""]]'
+    '(/ies\z/, "y") with {@singulars: []}': '[[::Regexp, "y"]]'
+    '(/s\z/, "") with {@singulars: []}': '[[::Regexp, ""]]'
   Example104::Rules.new:
     "()":
       class: "::Example104::Rules"
@@ -769,6 +821,9 @@ declarations:
   Example102::Inflector.with_rules: "::Array[untyped]"
   Example102::Rules#apply: ("post" | "category")
   Example103::MriBackend#[]: ":x"
+  Example104.rules: "::Example104::Rules"
+  Example104.singularize: ("post" | "category")
+  Example104::Rules#singular: ([[::Regexp, ""]] | [[::Regexp, "y"], [::Regexp, ""]])
   Example19#record: '"denied"'
   Example20#record: '"denied"'
   Example28::Foo#bazingado: "^(*untyped) -> :age_after_a_decade"
@@ -972,7 +1027,7 @@ receivers:
   app/models/example104.rb:27:39:
   - singleton(::Example104::Rules)
   app/models/example104.rb:35:10:
-  - untyped
+  - "::Example104::Rules"
   app/models/example105_caller.rb:5:18:
   - singleton(::Example105Dog)
   app/models/example105_caller.rb:9:18:
@@ -1777,14 +1832,23 @@ receivers:
   - "::NoMethodError[untyped]"
 exits:
   Concurrent::Collection::MriMapBackend#[]=:
-    "(::Symbol, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: []} }, @default_proc: nil}":
+    ? '(::Symbol, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}'
+    : ivars:
+        "@default_proc": nil
+    '(::Symbol, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
       ivars:
         "@default_proc": nil
     "(:en, ::Example104::Rules) with {@backend: {  }, @default_proc: nil}":
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
-    "(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: []} }, @default_proc: nil}":
+    ? '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}'
+    : ivars:
+        "@backend": "{ :en => ::Example104::Rules }"
+        "@default_proc": nil
+    '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
@@ -1797,7 +1861,11 @@ exits:
   Concurrent::Collection::NonConcurrentMapBackend#[]:
     "(::Symbol) with {@backend: {  }, @default_proc: nil}":
       ivars: {}
-    "(::Symbol) with {@backend: { :en => ::Example104::Rules{@singulars: []} }, @default_proc: nil}":
+    '(::Symbol) with {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}':
+      ivars:
+        "@backend": "{ :en => ::Example104::Rules }"
+        "@default_proc": nil
+    '(::Symbol) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
@@ -1805,19 +1873,32 @@ exits:
       ivars:
         "@backend": "{  }"
         "@default_proc": nil
-    "(:en) with {@backend: { :en => ::Example104::Rules{@singulars: []} }, @default_proc: nil}":
+    '(:en) with {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}':
+      ivars:
+        "@backend": "{ :en => ::Example104::Rules }"
+        "@default_proc": nil
+    '(:en) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
   Concurrent::Collection::NonConcurrentMapBackend#[]=:
-    "(::Symbol, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: []} }, @default_proc: nil}":
+    ? '(::Symbol, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}'
+    : ivars:
+        "@default_proc": nil
+    '(::Symbol, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
       ivars:
         "@default_proc": nil
     "(:en, ::Example104::Rules) with {@backend: {  }, @default_proc: nil}":
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
-    "(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: []} }, @default_proc: nil}":
+    ? '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars:
+      [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}'
+    : ivars:
+        "@backend": "{ :en => ::Example104::Rules }"
+        "@default_proc": nil
+    '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
@@ -2027,19 +2108,48 @@ exits:
       ivars:
         "@entries": "{ :a => :x }"
   Example104.has_many_like:
+    ? '(:categories) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
+      [/s\z/, ""]]} }, @default_proc: nil}}'
+    : ivars:
+        "@rules_by_locale":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{ :en => ::Example104::Rules }"
+            "@default_proc": nil
     "(:categories) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}":
       ivars: {}
+    ? '(:categories) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
+      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
+      nil}}'
+    : ivars:
+        "@rules_by_locale":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{ :en => ::Example104::Rules }"
+            "@default_proc": nil
     "(:categories) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}":
       ivars: {}
-    ? "(:posts) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: []} }, @default_proc:
-      nil}}"
-    : ivars: {}
+    ? '(:posts) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
+      [/s\z/, ""]]} }, @default_proc: nil}}'
+    : ivars:
+        "@rules_by_locale":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{ :en => ::Example104::Rules }"
+            "@default_proc": nil
     "(:posts) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}":
       ivars: {}
-    ? "(:posts) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
-      { :en => ::Example104::Rules{@singulars: []} }, @default_proc: nil}}"
-    : ivars: {}
+    ? '(:posts) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
+      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
+      nil}}'
+    : ivars:
+        "@rules_by_locale":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{ :en => ::Example104::Rules }"
+            "@default_proc": nil
     "(:posts) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}":
       ivars: {}
   Example104.rules:
@@ -2050,9 +2160,18 @@ exits:
           ivars:
             "@backend": "{ :en => ::Example104::Rules }"
             "@default_proc": nil
-    ? "() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: []} }, @default_proc:
-      nil}}"
+    ? '() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
+      [/s\z/, ""]]} }, @default_proc: nil}}'
+    : ivars:
+        "@rules_by_locale":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{ :en => ::Example104::Rules }"
+            "@default_proc": nil
+    ? '() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} },
+      @default_proc: nil}}'
     : ivars:
         "@rules_by_locale":
           class: "::Concurrent::Map[untyped, untyped]"
@@ -2068,8 +2187,17 @@ exits:
           ivars:
             "@backend": "{ :en => ::Example104::Rules }"
             "@default_proc": nil
-    ? "() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {
-      :en => ::Example104::Rules{@singulars: []} }, @default_proc: nil}}"
+    ? '() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {
+      :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
+      nil}}'
+    : ivars:
+        "@rules_by_locale":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{ :en => ::Example104::Rules }"
+            "@default_proc": nil
+    ? '() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {
+      :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}}'
     : ivars:
         "@rules_by_locale":
           class: "::Concurrent::Map[untyped, untyped]"
@@ -2079,13 +2207,31 @@ exits:
     "() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}":
       ivars: {}
   Example104.singularize:
+    ? '("categories") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
+      [/s\z/, ""]]} }, @default_proc: nil}}'
+    : ivars:
+        "@rules_by_locale":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{ :en => ::Example104::Rules }"
+            "@default_proc": nil
     '("categories") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}':
       ivars: {}
+    ? '("categories") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
+      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
+      nil}}'
+    : ivars:
+        "@rules_by_locale":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{ :en => ::Example104::Rules }"
+            "@default_proc": nil
     '("categories") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}':
       ivars: {}
     ? '("posts") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: []} }, @default_proc:
-      nil}}'
+      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
+      [/s\z/, ""]]} }, @default_proc: nil}}'
     : ivars:
         "@rules_by_locale":
           class: "::Concurrent::Map[untyped, untyped]"
@@ -2095,7 +2241,8 @@ exits:
     '("posts") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}':
       ivars: {}
     ? '("posts") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
-      { :en => ::Example104::Rules{@singulars: []} }, @default_proc: nil}}'
+      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
+      nil}}'
     : ivars:
         "@rules_by_locale":
           class: "::Concurrent::Map[untyped, untyped]"
@@ -2104,6 +2251,16 @@ exits:
             "@default_proc": nil
     '("posts") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}':
       ivars: {}
+  Example104::Rules#singular:
+    '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}':
+      ivars:
+        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+    '(/ies\z/, "y") with {@singulars: []}':
+      ivars:
+        "@singulars": '[[::Regexp, "y"]]'
+    '(/s\z/, "") with {@singulars: []}':
+      ivars:
+        "@singulars": '[[::Regexp, ""]]'
   Example84::Reflection#rename:
     "((:articles | :replies)) with {@name: (:posts | :comments)}":
       ivars:
