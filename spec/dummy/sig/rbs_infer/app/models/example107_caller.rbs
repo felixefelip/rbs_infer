@@ -1,4 +1,4 @@
 class Example107Caller
   def total: () -> untyped
-  def painted: () -> [ 5, Integer, Integer ]
+  def painted: () -> [ (5 | 15 | 20), 15, 20 ]
 end

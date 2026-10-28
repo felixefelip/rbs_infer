@@ -264,13 +264,13 @@ methods:
   Example106::Visitor#visit:
     "(::Example106::Leaf) on ::Example106Printer": '"leaf of weight 1"'
   Example107::Canvas#draw:
-    "(::Example107::Circle)": "::Integer"
-    "(::Example107::Square)": "::Integer"
+    "(::Example107::Circle)": '15'
+    "(::Example107::Square)": '20'
   Example107::Circle#area:
     "(5)": '15'
   Example107::Shape#paint:
-    "(::Example107::Canvas) on ::Example107::Circle": "::Integer"
-    "(::Example107::Canvas) on ::Example107::Square": "::Integer"
+    "(::Example107::Canvas) on ::Example107::Circle": '15'
+    "(::Example107::Canvas) on ::Example107::Square": '20'
   Example107::Square#area:
     "(5)": '20'
   Example12#show:
@@ -839,6 +839,9 @@ methods:
     ("value"): '"value"'
   IncludedHook::Slots#stamp=:
     ("value"): '"value"'
+  Module#extend_object:
+    "(singleton(::Example90::Base)) with {::Example90::Base{@generated_association_methods: nil}}": singleton(::Example90::Base)
+    "(singleton(::Example91::Base)) with {::Example91::Base{@generated_association_methods: nil}}": singleton(::Example91::Base)
   Notification::GeneratedStoreAccessors#channel=:
     ("none"): '"none"'
   SendDispatch#stamp:
@@ -3109,6 +3112,15 @@ exits:
           class: "::Example99::Foo"
           ivars:
             "@my_hash": "{ ?:bar => untyped }"
+  Module#extend_object:
+    "(singleton(::Example90::Base)) with {::Example90::Base{@generated_association_methods: nil}}":
+      ivars: {}
+      classes:
+        "::Example90::Base": {}
+    "(singleton(::Example91::Base)) with {::Example91::Base{@generated_association_methods: nil}}":
+      ivars: {}
+      classes:
+        "::Example91::Base": {}
   Module#include:
     "(singleton(::Current::GeneratedAttributeMethods)) on singleton(::Current) with {@__rbs_infer_instance: nil}":
       ivars: {}
@@ -3140,5 +3152,16 @@ exits:
       with {@generated_association_methods: nil}"
     : ivars: {}
     "(singleton(::Example91::Post::GeneratedAssociationMethods)) with {@generated_association_methods: nil}":
+      ivars:
+        "@generated_association_methods": nil
+  Object#extend:
+    "(singleton(::Example90::Core::ClassMethods)) on singleton(::Example90::Base) with {@generated_association_methods: nil}":
+      ivars: {}
+    "(singleton(::Example90::Core::ClassMethods)) with {@generated_association_methods: nil}":
+      ivars:
+        "@generated_association_methods": nil
+    "(singleton(::Example91::Core::ClassMethods)) on singleton(::Example91::Base) with {@generated_association_methods: nil}":
+      ivars: {}
+    "(singleton(::Example91::Core::ClassMethods)) with {@generated_association_methods: nil}":
       ivars:
         "@generated_association_methods": nil
