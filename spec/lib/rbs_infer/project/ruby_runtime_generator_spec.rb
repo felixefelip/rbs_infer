@@ -15,7 +15,7 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     Dir.mktmpdir do |dir|
       files = build_in(dir)
 
-      expect(files.map(&:filename)).to eq(["module.rb", "object.rb", "ruby_engine.rb", "thread_mutex.rb"])
+      expect(files.map(&:filename)).to eq(["module.rb", "object.rb", "ruby_engine.rb", "thread_mutex.rb", "array.rb"])
       expect(files.first.source).to include(
         "class Module\n",
         "  def include(*modules)\n",
@@ -287,6 +287,17 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     end
   end
 
+  it "emits `Array#sum`, adding what the block makes of each element to `init`" do
+    Dir.mktmpdir do |dir|
+      expect(source_of(dir, "array.rb")).to include(
+        "class Array\n",
+        "  # @rbs_infer no-signature\n  def sum(init = 0)\n",
+        "    while index < length\n      element = self[index]\n",
+        "      element = yield(element) if block_given?\n      value += element\n"
+      )
+    end
+  end
+
   it "writes `RUBY_ENGINE` as the interpreter running it, in a file that freezes its strings" do
     Dir.mktmpdir do |dir|
       expect(source_of(dir, "ruby_engine.rb")).to start_with("# frozen_string_literal: true\n")
@@ -311,7 +322,8 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
 
         described_class.new(app_dir: dir).generate
 
-        expect(Dir.children(sidecar).sort).to eq(["module.rb", "object.rb", "ruby_engine.rb", "thread_mutex.rb"])
+        expect(Dir.children(sidecar).sort)
+          .to eq(["array.rb", "module.rb", "object.rb", "ruby_engine.rb", "thread_mutex.rb"])
       end
     end
   end
