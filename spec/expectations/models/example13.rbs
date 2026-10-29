@@ -30,7 +30,7 @@ class Example13
     def initialize: (name: "John Doe") -> void
     def current_user: () -> Example13Viewer?
     def halt: () -> true
-    def with_format: () ?{ (:html) -> true } -> true?
+    def with_format: () ?{ (:html) -> true } -> true
     def guard_supported: () -> Example13Viewer?
     def run_supported: () -> String?
     def act_supported: () -> String
