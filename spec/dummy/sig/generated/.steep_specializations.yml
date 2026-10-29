@@ -260,16 +260,18 @@ methods:
     "() on ::Example105Dog": '"hello, woof"'
   Example106::Leaf#accept:
     "(::Example106Counter)": '1'
-    "(::Example106Printer)": '"leaf of weight 1"'
+    "(::Example106Printer{})": '"leaf of weight 1"'
   Example106::Visitor#visit:
     "(::Example106::Leaf) on ::Example106Printer": '"leaf of weight 1"'
   Example107::Canvas#draw:
-    "(::Example107::Circle)": '15'
-    "(::Example107::Square)": '20'
+    "(::Example107::Circle{})": '15'
+    "(::Example107::Shape{})": '5'
+    "(::Example107::Square{})": '20'
   Example107::Circle#area:
     "(5)": '15'
   Example107::Shape#paint:
     "(::Example107::Canvas) on ::Example107::Circle": '15'
+    "(::Example107::Canvas) on ::Example107::Shape": '5'
     "(::Example107::Canvas) on ::Example107::Square": '20'
   Example107::Square#area:
     "(5)": '20'
@@ -865,6 +867,7 @@ declarations:
   Example104::Rules#singular: ([[::Regexp, ""]] | [[::Regexp, "y"], [::Regexp, ""]])
   Example105::Animal#introduce: ("hello, woof" | "hello, meow")
   Example106::Visitor#visit: '"leaf of weight 1"'
+  Example107::Canvas#draw: "(5 | 15 | 20)"
   Example19#record: '"denied"'
   Example20#record: '"denied"'
   Example28::Foo#bazingado: "^(*untyped) -> :age_after_a_decade"
