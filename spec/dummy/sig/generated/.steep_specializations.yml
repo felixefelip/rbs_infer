@@ -868,12 +868,12 @@ methods:
     "(:posts, **{ :through => :taggings })":
       class: "::Example96::NormalizedReflection"
       ivars:
-        "@name": "::Symbol"
-        "@options": "{ :through => ::Symbol }"
+        "@name": ":posts"
+        "@options": "{ :through => :taggings }"
     "(:taggings, **{ :counter_cache => bool })":
       class: "::Example96::NormalizedReflection"
       ivars:
-        "@name": "::Symbol"
+        "@name": ":taggings"
         "@options": "{  }"
   Example96::Builder.stored:
     "(:posts, { :through => :taggings })":
@@ -898,10 +898,10 @@ methods:
         "@name": ":taggings"
         "@options": "{  }"
   Example96::NormalizedReflection#association_kind:
-    "() with {@name: :posts, @options: { :autosave => true, :through => ::Symbol }}": singleton(::Example96::Through)
+    "() with {@name: :posts, @options: { :autosave => true, :through => :taggings }}": singleton(::Example96::Through)
+    "() with {@name: :posts, @options: { :through => :taggings }}": singleton(::Example96::Through)
+    "() with {@name: :taggings, @options: {  }}": singleton(::Example96::Plain)
     "() with {@name: :taggings, @options: { :autosave => true }}": singleton(::Example96::Plain)
-    "() with {@options: {  }}": singleton(::Example96::Plain)
-    "() with {@options: { :through => ::Symbol }}": singleton(::Example96::Through)
   Example96::NormalizedReflection#without_counter_cache:
     "({ :counter_cache => bool }) with {@name: :taggings, @options: nil}": "{  }"
     "({ :through => :taggings }) with {@name: :posts, @options: nil}": "{ :through
@@ -910,12 +910,12 @@ methods:
     "(:posts, { :through => :taggings })":
       class: "::Example96::NormalizedReflection"
       ivars:
-        "@name": "::Symbol"
-        "@options": "{ :through => ::Symbol }"
+        "@name": ":posts"
+        "@options": "{ :through => :taggings }"
     "(:taggings, { :counter_cache => bool })":
       class: "::Example96::NormalizedReflection"
       ivars:
-        "@name": "::Symbol"
+        "@name": ":taggings"
         "@options": "{  }"
   Example96::Reflection#association_kind:
     "() with {@name: :posts, @options: { :through => :taggings }}": singleton(::Example96::Through)
@@ -3103,10 +3103,10 @@ exits:
     "(true) with {@name: (:posts | :taggings)}":
       ivars:
         "@name": "(:posts | :taggings)"
-    "(true) with {@name: :posts, @options: { :through => ::Symbol }}":
+    "(true) with {@name: :posts, @options: { :through => :taggings }}":
       ivars:
         "@name": ":posts"
-        "@options": "{ :autosave => true, :through => ::Symbol }"
+        "@options": "{ :autosave => true, :through => :taggings }"
     "(true) with {@name: :posts}":
       ivars:
         "@name": ":posts"
@@ -3121,22 +3121,24 @@ exits:
     "() with {@name: (:posts | :taggings)}":
       ivars:
         "@name": "(:posts | :taggings)"
-    "() with {@name: :posts, @options: { :autosave => true, :through => ::Symbol }}":
+    "() with {@name: :posts, @options: { :autosave => true, :through => :taggings }}":
+      ivars:
+        "@name": ":posts"
+    "() with {@name: :posts, @options: { :through => :taggings }}":
       ivars:
         "@name": ":posts"
     "() with {@name: :posts}":
       ivars:
         "@name": ":posts"
+    "() with {@name: :taggings, @options: {  }}":
+      ivars:
+        "@name": ":taggings"
     "() with {@name: :taggings, @options: { :autosave => true }}":
       ivars:
         "@name": ":taggings"
     "() with {@name: :taggings}":
       ivars:
         "@name": ":taggings"
-    "() with {@options: {  }}":
-      ivars: {}
-    "() with {@options: { :through => ::Symbol }}":
-      ivars: {}
   Example96::NormalizedReflection#without_counter_cache:
     "({ :counter_cache => bool }) with {@name: :taggings, @options: nil}":
       ivars:
