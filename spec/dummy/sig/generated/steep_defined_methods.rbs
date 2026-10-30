@@ -3,11 +3,6 @@
 #
 # Methods a body defines with `define_method`, declared so their calls resolve.
 
-module Example108::ClassAttribute
-  def self.__class_attr_plural_names: () -> untyped
-  def self.__class_attr_plural_names=: (untyped new_value) -> untyped
-end
-
 class Example108::Settings
   def self.__class_attr_plural_names: () -> ::TrueClass
   def self.__class_attr_plural_names=: (untyped new_value) -> untyped

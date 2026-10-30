@@ -351,8 +351,6 @@ methods:
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
   Example108::Settings.__class_attr_plural_names:
     "() with {@generated_readers: nil}": "::TrueClass"
-  Example108::Settings.define_setting_reader:
-    "(:size) on singleton(::Example108::Gauge) with {@generated_readers: nil}": ":size"
   Example108::Settings.generated_readers:
     "() on singleton(::Example108::Gauge)": singleton(::Example108::Gauge::GeneratedReaders)
     "() on singleton(::Example108::Gauge) with {@generated_readers: nil}": singleton(::Example108::Gauge::GeneratedReaders)
@@ -1039,7 +1037,6 @@ declarations:
   Example108::ClassAttribute.redefine: '"__class_attr_plural_names="'
   Example108::ClassAttribute.redefine_method: (::Symbol | nil | "__class_attr_plural_names=")
   Example108::Settings.__class_attr_plural_names: "::TrueClass"
-  Example108::Settings.define_setting_reader: ":size"
   Example108::Settings.generated_readers: singleton(::Example108::Gauge::GeneratedReaders)
   Example13::Guarded#with_format: 'true'
   Example19#record: '"denied"'
