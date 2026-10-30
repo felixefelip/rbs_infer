@@ -1,6 +1,6 @@
 module Example77
   module Writer
-    def self.generate: (singleton(Peel) owner, (:human_name | :nick) method) -> (:human_name | :nick)
+    def self.generate: (singleton(Example77::Peel) owner, (:human_name | :nick) method) -> (:human_name | :nick)
   end
 end
 

@@ -1,6 +1,6 @@
 module Example80
   module Forwarder
-    def self.generate: (singleton(Forwarding) owner, Array[(:email | :name)] methods, to: (:user | :buyer), ?allow_nil: true?) -> nil
+    def self.generate: (singleton(Example80::Forwarding) owner, Array[(:email | :name)] methods, to: (:user | :buyer), ?allow_nil: true?) -> nil
   end
 end
 

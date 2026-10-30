@@ -15,7 +15,7 @@ end
 module Example91
   module Builder
     class HasReader
-      def self.build: (singleton(Base) model, (:comments | :tags) name) -> (:comments | :tags)
+      def self.build: (singleton(Example91::Base) model, (:comments | :tags) name) -> (:comments | :tags)
       def self.define_accessors: (singleton(Example91::Base) model, (:comments | :tags) name) -> (:comments | :tags)
       def self.define_readers: (singleton(Example91::Post::GeneratedAssociationMethods) mixin, (:comments | :tags) name) -> (:comments | :tags)
     end

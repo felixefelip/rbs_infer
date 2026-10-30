@@ -587,6 +587,27 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       expect(result["3:4-3:24"]).to eq("String")
     end
 
+    it "types a self handed to a call as the self that call runs on" do
+      code = <<~RUBY
+        class Comment
+          p(self)
+
+          class << self
+            def a = p(self)
+          end
+
+          def self.b = p(self)
+
+          def c = p(self)
+        end
+      RUBY
+
+      result = bridge.all_expression_types(code)
+
+      expect(result.values_at("2:4-2:8", "5:14-5:18", "8:17-8:21", "10:12-10:16"))
+        .to eq(["singleton(Comment)", "singleton(Comment)", "singleton(Comment)", "Comment"])
+    end
+
     it "returns empty hash for unparseable code" do
       result = bridge.all_expression_types("!!!invalid ruby")
       expect(result).to eq({})
