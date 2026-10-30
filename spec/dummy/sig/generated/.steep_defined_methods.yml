@@ -1,0 +1,15 @@
+---
+version: 1
+methods:
+  Example108::ClassAttribute.__class_attr_plural_names:
+    params: "()"
+    returns: untyped
+  Example108::ClassAttribute.__class_attr_plural_names=:
+    params: "(untyped new_value)"
+    returns: untyped
+  Example108::Settings.__class_attr_plural_names:
+    params: "()"
+    returns: "::TrueClass"
+  Example108::Settings.__class_attr_plural_names=:
+    params: "(untyped new_value)"
+    returns: untyped

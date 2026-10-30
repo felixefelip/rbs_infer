@@ -316,6 +316,46 @@ methods:
     "(::Example107::Canvas) on ::Example107::Square": '20'
   Example107::Square#area:
     "(5)": '20'
+  Example108::ClassAttribute.redefine:
+    "(self, :plural_names, :__class_attr_plural_names, untyped)": '"__class_attr_plural_names="'
+    "(self, :plural_names, :__class_attr_plural_names, untyped) on singleton(::Example108::ClassAttribute)": '"__class_attr_plural_names="'
+    "(singleton(::Example108::ClassAttribute), :plural_names, :__class_attr_plural_names, untyped)": '"__class_attr_plural_names="'
+    ? "(singleton(::Example108::ClassAttribute), :plural_names, :__class_attr_plural_names,
+      untyped) on singleton(::Example108::ClassAttribute)"
+    : '"__class_attr_plural_names="'
+    ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
+      true) on singleton(::Example108::ClassAttribute) with {::Example108::Settings{@generated_readers:
+      nil}}"
+    : '"__class_attr_plural_names="'
+    ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
+      true) with {::Example108::Settings{@generated_readers: nil}}"
+    : '"__class_attr_plural_names="'
+  Example108::ClassAttribute.redefine_method:
+    ? "((singleton(::Example108::ClassAttribute) | singleton(::Example108::Settings)),
+      :__class_attr_plural_names, private: true) &-> true"
+    : "::Symbol"
+    "((singleton(::Example108::ClassAttribute) | singleton(::Example108::Settings)), :plural_names) &-> true": nil
+    '(::Class, "__class_attr_plural_names=", private: true) &-> "__class_attr_plural_names="': '"__class_attr_plural_names="'
+    "(::Class, :__class_attr_plural_names, private: true) &-> ::TrueClass": "::Symbol"
+    "(::Class, :__class_attr_plural_names, private: true) &-> true": "::Symbol"
+    "(::Class, :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
+    "(self, :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
+    "(self, :plural_names) &-> untyped": nil
+    "(singleton(::Example108::ClassAttribute), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
+    "(singleton(::Example108::ClassAttribute), :plural_names) &-> untyped": nil
+    "(singleton(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
+    "(singleton(::Example108::Settings), :plural_names) &-> true": nil
+    '(singleton_class(::Example108::ClassAttribute), "__class_attr_plural_names=", private: true) &-> "__class_attr_plural_names="': '"__class_attr_plural_names="'
+    "(singleton_class(::Example108::ClassAttribute), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
+    '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private: true) &-> "__class_attr_plural_names="': '"__class_attr_plural_names="'
+    "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
+  Example108::Settings.__class_attr_plural_names:
+    "() with {@generated_readers: nil}": "::TrueClass"
+  Example108::Settings.define_setting_reader:
+    "(:size) on singleton(::Example108::Gauge) with {@generated_readers: nil}": ":size"
+  Example108::Settings.generated_readers:
+    "() on singleton(::Example108::Gauge)": singleton(::Example108::Gauge::GeneratedReaders)
+    "() on singleton(::Example108::Gauge) with {@generated_readers: nil}": singleton(::Example108::Gauge::GeneratedReaders)
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -996,6 +1036,11 @@ declarations:
   Example105::Animal#introduce: ("hello, woof" | "hello, meow")
   Example106::Visitor#visit: '"leaf of weight 1"'
   Example107::Canvas#draw: "(5 | 15 | 20)"
+  Example108::ClassAttribute.redefine: '"__class_attr_plural_names="'
+  Example108::ClassAttribute.redefine_method: (::Symbol | nil | "__class_attr_plural_names=")
+  Example108::Settings.__class_attr_plural_names: "::TrueClass"
+  Example108::Settings.define_setting_reader: ":size"
+  Example108::Settings.generated_readers: singleton(::Example108::Gauge::GeneratedReaders)
   Example13::Guarded#with_format: 'true'
   Example19#record: '"denied"'
   Example20#record: '"denied"'
@@ -1225,6 +1270,8 @@ receivers:
   - singleton(::Example107::Circle)
   app/models/example107_caller.rb:5:57:
   - singleton(::Example107::Square)
+  app/models/example108.rb:52:50:
+  - singleton(::Module)
   app/models/example11.rb:12:22:
   - singleton(::Example11::View)
   app/models/example11.rb:12:48:
@@ -2488,6 +2535,41 @@ exits:
     '(/s\z/, "") with {@singulars: []}':
       ivars:
         "@singulars": '[[::Regexp, ""]]'
+  Example108::ClassAttribute.redefine:
+    ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
+      true) on singleton(::Example108::ClassAttribute) with {::Example108::Settings{@generated_readers:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example108::Settings": {}
+    ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
+      true) with {::Example108::Settings{@generated_readers: nil}}"
+    : ivars: {}
+      classes:
+        "::Example108::Settings": {}
+  Example108::Settings.__class_attr_plural_names:
+    "() with {@generated_readers: nil}":
+      ivars:
+        "@generated_readers": nil
+  Example108::Settings.define_setting_reader:
+    "(:size) on singleton(::Example108::Gauge) with {@generated_readers: nil}":
+      ivars:
+        "@generated_readers": singleton(::Example108::Gauge::GeneratedReaders)
+    "(:size) with {@generated_readers: nil}":
+      ivars: {}
+  Example108::Settings.generated_readers:
+    "() on singleton(::Example108::Gauge) with {@generated_readers: nil}":
+      ivars:
+        "@generated_readers": singleton(::Example108::Gauge::GeneratedReaders)
+    "() with {@generated_readers: nil}":
+      ivars: {}
+  Example108::Settings.plural_names:
+    "() on singleton(::Example108::Gauge) with {@generated_readers: nil}":
+      ivars:
+        "@generated_readers": nil
+    "() with {@generated_readers: nil}":
+      ivars:
+        "@generated_readers": nil
   Example84::Reflection#rename:
     "((:articles | :replies)) with {@name: (:posts | :comments)}":
       ivars:
@@ -3271,6 +3353,11 @@ exits:
     "(singleton(::Current::GeneratedAttributeMethods)) with {@__rbs_infer_instance: nil}":
       ivars:
         "@__rbs_infer_instance": nil
+    "(singleton(::Example108::Gauge::GeneratedReaders)) on singleton(::Example108::Gauge) with {@generated_readers: nil}":
+      ivars: {}
+    "(singleton(::Example108::Gauge::GeneratedReaders)) with {@generated_readers: nil}":
+      ivars:
+        "@generated_readers": nil
     "(singleton(::Example13::Registry::GeneratedAttributes)) on singleton(::Example13::Registry) with {@registry_instance: nil}":
       ivars: {}
     "(singleton(::Example13::Registry::GeneratedAttributes)) with {@registry_instance: nil}":
