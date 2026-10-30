@@ -287,6 +287,41 @@ RSpec.describe RbsInfer::Inference::NewCallCollector do
       expect(usages.first["caderneta"]).to eq("singleton(Caderneta)")
     end
 
+    describe "with the checker's answer" do
+      def collect_with_checked_self(source, checked_self, module_self_types: {})
+        result = Prism.parse(source)
+        self_node = RbsInfer::Analyzer.find_all_nodes(result.value) { |node| node.is_a?(Prism::SelfNode) }.last
+        visitor = build_collector(
+          target_class: "Reg", method_return_types: {}, local_var_types: {}, target_methods: { "add" => ["owner"] },
+          module_self_types: module_self_types, constant_arg_resolver: null_constant_resolver,
+          defined_class_names: described_class.collect_defined_class_names(result.value),
+          expression_types: { RbsInfer::Signatures::SteepBridge.prism_expression_key(self_node.location) => checked_self }
+        )
+        result.value.accept(visitor)
+        visitor.method_call_usages["add"]
+      end
+
+      it "takes the class object it names for a self in a class body" do
+        usages = collect_with_checked_self("class Base\n  Reg.add(self)\nend\n", "singleton(Base)")
+
+        expect(usages).to eq([{ "owner" => "singleton(Base)" }])
+      end
+
+      it "takes the class object it names for a self in class << self" do
+        source = "class Base\n  class << self\n    def boot = Reg.add(self)\n  end\nend\n"
+
+        expect(collect_with_checked_self(source, "singleton(Base)")).to eq([{ "owner" => "singleton(Base)" }])
+      end
+
+      it "keeps a module's instance-side self to what its includers say" do
+        source = "module Mixin\n  def m = Reg.add(self)\nend\n"
+
+        usages = collect_with_checked_self(source, "(Object & Mixin)", module_self_types: { "Mixin" => "Post" })
+
+        expect(usages).to eq([{ "owner" => "Post" }])
+      end
+    end
+
     it "resolves self to the innermost lexically-enclosing class when nested" do
       source = <<~RUBY
         class Outer

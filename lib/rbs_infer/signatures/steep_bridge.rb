@@ -359,7 +359,7 @@ module RbsInfer::Signatures
         result[key] = type_str
       end
 
-      result
+      result.merge(CallSelves.types(typing))
     end
 
     # Returns `{ "method_name" => "Self & Self::Validated" }` for `class_name`,

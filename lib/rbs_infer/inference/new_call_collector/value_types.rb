@@ -45,7 +45,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         constant_type(node)
       when Prism::SelfNode
-        self_type
+        self_type(node)
       when Prism::ImplicitNode
         value_type(node.value)
       else
@@ -76,7 +76,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       when Prism::SelfNode
         # self → tipo da classe léxica (instância ou singleton); nil quando
         # desconhecido, mantendo a convenção nil-returning deste método.
-        resolved = self_type
+        resolved = self_type(node)
         resolved == "untyped" ? nil : resolved
       when Prism::ConstantReadNode, Prism::ConstantPathNode
         # Constant receiver → singleton method call on the class
@@ -122,7 +122,15 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       "{ #{pairs.join(", ")} }"
     end
 
+    # A `self` node is answered by `self_type` alone, which weighs the
+    # checker's answer against what it cannot know about a module's includer.
     def expression_type(node)
+      checked_type(node) unless node.is_a?(Prism::SelfNode)
+    end
+
+    private
+
+    def checked_type(node)
       # Keyed by the node's whole range: a receiver starts where its call does,
       # so a start position alone would let `ticket` answer for `ticket.holder`
       # (felixefelip/rbs_infer#168).
@@ -130,12 +138,10 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
 
       # `self` is a real RBS type, but it means "the receiver of THIS method" —
       # so carrying it into ANOTHER method's parameter says the argument is a
-      # Token when it is a controller. The checker answers `self` for a `self`
-      # node; here that answer is unusable.
+      # Token when it is a controller. Steep types an expression `self` where it
+      # is the method's own receiver; here that answer is unusable.
       type unless type == "self"
     end
-
-    private
 
     def symbol_key(node)
       node.unescaped if node.is_a?(Prism::SymbolNode)
@@ -166,18 +172,20 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       type if type && type != "untyped"
     end
 
-    # Resolve `self` (passed as an argument or used as a receiver) to the
-    # lexically-enclosing class. Inside an instance method `self` is an
-    # instance of that class (`Caderneta`); inside a singleton method
-    # (`def self.x`) it's the class object itself (`singleton(Caderneta)`),
-    # so we never infer a bogus instance type for it. Falls back to the
-    # caller class (derived from the file path) when no class node is on
-    # the stack, and to `"untyped"` when even that is unknown.
+    # Resolve `self` (passed as an argument or used as a receiver). The
+    # checker says whether it is the class object (`singleton(Caderneta)` in a
+    # class body, `class << self` or `def self.x`) or an instance; on the
+    # instance side the refinements below come first. Without the checker's
+    # answer, the lexically-enclosing class, then the caller class (derived
+    # from the file path), then `"untyped"`.
     #
     # Drives call-site inference like `Cadastrar.new(self)` inside
     # `Caderneta#criar_caderneta_de_vacinacao`, where the positional
     # `initialize(caderneta)` param should infer as `Caderneta`.
-    def self_type
+    def self_type(node)
+      checked = checked_type(node)
+      return checked if checked&.start_with?("singleton(")
+
       # Inside an instance method covered by an after-validation callback,
       # `self` is the validated record — prefer the refined type from the
       # callback sidecar (e.g. `Caderneta & Caderneta::Validated`) over the
@@ -202,6 +210,8 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
 
       inherited = inherited_self_type
       return inherited if inherited
+
+      return checked if checked
 
       base = @scope.lexical_class_name or return "untyped"
 
