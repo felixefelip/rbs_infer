@@ -546,6 +546,11 @@ postconditions:
   effects:
     may_write:
     - "@singulars"
+- class: Example108::Settings
+  method: generated_readers
+  effects:
+    may_write:
+    - "@generated_readers"
 - class: Example10::Foo
   method: name
   effects:

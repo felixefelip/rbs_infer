@@ -1,0 +1,13 @@
+module Example108
+  class Gauge
+    include ::Example108::Gauge::GeneratedReaders
+  end
+end
+
+module Example108
+  class Gauge
+    module GeneratedReaders
+      def size: () -> 1
+    end
+  end
+end

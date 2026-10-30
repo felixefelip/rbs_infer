@@ -42,6 +42,17 @@ call_sites:
   - def post_ids; []; end
   app/models/example104.rb:44:2:
   - def category_ids; []; end
+  app/models/example108.rb:60:6:
+  -
+  -
+  app/models/example108.rb:65:4:
+  - |-
+    module GeneratedReaders
+    end
+  - include ::Example108::Gauge::GeneratedReaders
+  - source: def size; 1; end
+    target: "::Example108::Gauge::GeneratedReaders"
+    kind: module
   app/models/example60.rb:9:2:
   - source: def stamp(...);  _ = example60_printer;  _.stamp(...);rescue NoMethodError
       => e;  if _.nil? && e.name == :stamp;    raise ::ActiveSupport::DelegationError.nil_target(:stamp,
