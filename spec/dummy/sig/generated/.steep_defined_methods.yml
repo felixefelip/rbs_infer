@@ -1,15 +1,11 @@
 ---
 version: 1
 methods:
-  Example108::ClassAttribute.__class_attr_plural_names:
-    params: "()"
-    returns: untyped
-  Example108::ClassAttribute.__class_attr_plural_names=:
-    params: "(untyped new_value)"
-    returns: untyped
   Example108::Settings.__class_attr_plural_names:
     params: "()"
     returns: "::TrueClass"
+    block: app/models/example108.rb:27:8
   Example108::Settings.__class_attr_plural_names=:
     params: "(untyped new_value)"
     returns: untyped
+    block: app/models/example108.rb:29:8

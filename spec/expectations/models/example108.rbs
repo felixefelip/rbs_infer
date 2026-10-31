@@ -10,7 +10,7 @@ module Example108
     self.@generated_readers: Module?
 
     def self.plural_names: () -> ::TrueClass
-    def self.generated_readers: () -> Module
+    def self.generated_readers: () -> singleton(Example108::Gauge::GeneratedReaders)
     def self.define_setting_reader: (:size name) -> :size
   end
 end
