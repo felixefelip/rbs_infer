@@ -27,8 +27,8 @@ class RbsInfer::Signatures::SteepBridge
     # under it, not under its declaration: an earlier run's output that says the
     # block is required would type the forwarded proc as non-nil, and the callee
     # would then be asked the wrong question (felixefelip/rbs_infer#487).
-    def forwarded_block_requirements(source_code, open_signatures:)
-      typing = @steep_bridge.type_check(with_open_signatures(source_code, open_signatures))
+    def forwarded_block_requirements(source_code, file:, open_signatures:)
+      typing = @steep_bridge.type_check(with_open_signatures(source_code, open_signatures), file:)
       return {} unless typing
 
       sites = Hash.new { |hash, key| hash[key] = [] }
@@ -75,8 +75,8 @@ class RbsInfer::Signatures::SteepBridge
     # the block lives in, and the method that stores it and the one that replays
     # it are routinely different (`included` stores, an `append_features` replays).
     # Keys as above: `name`, or `self.name` for singletons.
-    def stored_block_self_types(source_code)
-      typing = @steep_bridge.type_check(source_code)
+    def stored_block_self_types(source_code, file:)
+      typing = @steep_bridge.type_check(source_code, file:)
       return {} unless typing
 
       stores = Hash.new { |hash, key| hash[key] = Set.new } # method key → ivar names it stores into

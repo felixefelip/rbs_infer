@@ -30,8 +30,8 @@ class RbsInfer::Signatures::SteepBridge
     # method_name: "email" }`, and which method that reaches is the one rule
     # every nilable call follows (`MethodTypeResolver#optimistic_receiver`).
     # Nothing here decides it.
-    def forwarded_call_targets(source_code)
-      typing = @steep_bridge.type_check(source_code)
+    def forwarded_call_targets(source_code, file:)
+      typing = @steep_bridge.type_check(source_code, file:)
       return {} unless typing
 
       targets = {}

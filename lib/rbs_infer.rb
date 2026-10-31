@@ -5,7 +5,7 @@ require_relative "rbs_infer/version"
 module RbsInfer
   ITERATOR_METHODS = %i[each map flat_map select reject filter find detect collect each_with_object].to_set
 
-  ParsedFile = Data.define(:result, :source, :comments, :lines) do
+  ParsedFile = Data.define(:result, :source, :comments, :lines, :path) do
     def tree = result.value
   end
 

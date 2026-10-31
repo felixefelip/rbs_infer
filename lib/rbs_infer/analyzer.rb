@@ -135,7 +135,8 @@ module RbsInfer
         result: result,
         source: source,
         comments: result.comments,
-        lines: source.lines
+        lines: source.lines,
+        path: @target_file
       )
     end
 
@@ -376,7 +377,7 @@ module RbsInfer
       # written in. WHERE such a marker should be declared is the same question
       # this PR settles for ivars, one level up, and is not settled here.
       per_method = [@target_class, *target_members.filter_map(&:owner).uniq.map { |o| "#{@target_class}::#{o}" }]
-                   .map { |scope| steep_bridge.ivar_write_types_per_method(@parsed_target.source, target_class: scope) }
+                   .map { |scope| steep_bridge.ivar_write_types_per_method(@parsed_target.source, file: @parsed_target.path, target_class: scope) }
                    .reduce({}) { |all, scoped| all.merge(scoped) { |_, a, b| a.merge(b) } }
       return [] if per_method.empty?
 
@@ -393,7 +394,7 @@ module RbsInfer
     # rbs_infer's predicate-marker generation in lockstep with Steep's
     # `LogicTypeInterpreter`-driven detection.
     def synthesize_predicate_markers(target_members)
-      entries = steep_bridge.postcondition_inferred_entries(@parsed_target.source)
+      entries = steep_bridge.postcondition_inferred_entries(@parsed_target.source, file: @parsed_target.path)
       return [] if entries.empty?
 
       RbsInfer::Markers::PredicateMarkerSynthesizer.synthesize(
@@ -562,7 +563,7 @@ module RbsInfer
       constants.each { |m| keep[[m.owner, m.name]] = m unless foreign_constant?(m) }
       target_members.reject! { |m| m.kind == :constant && !keep[[m.owner, m.name]].equal?(m) }
 
-      steep_types = @parsed_target&.source ? steep_bridge.constant_types(@parsed_target.source) : {}
+      steep_types = @parsed_target&.source ? steep_bridge.constant_types(@parsed_target.source, file: @parsed_target.path) : {}
       resolver = RbsInfer::Inference::ConstantTypeResolver.new(target_class: @target_class,
                                                                constant_resolver: constant_arg_resolver)
 
@@ -585,7 +586,7 @@ module RbsInfer
     def constant_arg_resolver
       @constant_arg_resolver ||= RbsInfer::Inference::ConstantArgTypeResolver.new(
         steep_bridge: steep_bridge,
-        caller_constant_types: @parsed_target&.source ? steep_bridge.constant_types(@parsed_target.source) : {}
+        caller_constant_types: @parsed_target&.source ? steep_bridge.constant_types(@parsed_target.source, file: @parsed_target.path) : {}
       )
     end
 

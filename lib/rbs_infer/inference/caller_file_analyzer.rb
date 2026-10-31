@@ -101,11 +101,11 @@ module RbsInfer::Inference
       local_var_read_types = {}
       local_var_types_by_method = {}
       if @steep_bridge
-        steep_vars = @steep_bridge.local_var_types_per_method(source)
+        steep_vars = @steep_bridge.local_var_types_per_method(source, file: file)
         local_var_types_by_method = steep_vars
         steep_vars.each_value { |vars| local_var_types.merge!(vars) { |_k, old, _new| old } }
-        local_var_read_types = @steep_bridge.local_var_read_types(source)
-        caller_constant_types = @steep_bridge.constant_types(source)
+        local_var_read_types = @steep_bridge.local_var_read_types(source, file: file)
+        caller_constant_types = @steep_bridge.constant_types(source, file: file)
       end
       constant_arg_resolver = ConstantArgTypeResolver.new(
         steep_bridge: @steep_bridge,
@@ -203,7 +203,7 @@ module RbsInfer::Inference
         inherited_forwards: @inherited_forwards,
         inherited_initializers: @inherited_initializers,
         inherited_supers: @inherited_supers,
-        expression_types: @steep_bridge ? @steep_bridge.all_expression_types(source) : {}
+        expression_types: @steep_bridge ? @steep_bridge.all_expression_types(source, file: file) : {}
       )
       result.value.accept(visitor)
 

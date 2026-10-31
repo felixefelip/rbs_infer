@@ -133,7 +133,7 @@ module RbsInfer
         invocations = InvocationCollector.collect(entry.result.value, method_name) or return nil
         received, written = invocations.partition { |invocation| invocation.kind == :receiver }
 
-        on_receivers = receivers_selves(entry.source, received, class_name, method_name, runners) or return nil
+        on_receivers = receivers_selves(entry.source, file, received, class_name, method_name, runners) or return nil
         on_receivers + written_selves(written, class_name, method_name, runners)
       end
 
@@ -147,10 +147,10 @@ module RbsInfer
         end
       end
 
-      def receivers_selves(source, received, class_name, method_name, runners)
+      def receivers_selves(source, file, received, class_name, method_name, runners)
         return [] if received.empty?
 
-        types = @steep_bridge.all_expression_types(source)
+        types = @steep_bridge.all_expression_types(source, file:)
         received.flat_map do |invocation|
           key = RbsInfer::Signatures::SteepBridge.prism_expression_key(invocation.node.location)
           spelled = types[key] or return nil

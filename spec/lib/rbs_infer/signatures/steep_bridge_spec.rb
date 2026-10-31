@@ -14,7 +14,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       registry = Steep::Project::LiteralMethodRegistry.new
       isolated_bridge = new_bridge(registry)
 
-      isolated_bridge.method_return_types("class Broken\n  def")
+      isolated_bridge.method_return_types("class Broken\n  def", file: nil)
 
       expect(registry).to be_empty
     end
@@ -35,10 +35,10 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      expect(bridge.local_var_types_per_method(code)["bar"]["user"])
+      expect(bridge.local_var_types_per_method(code, file: nil)["bar"]["user"])
         .to eq("(User & User::Validated)?")
 
-      reads = bridge.local_var_read_types(code)
+      reads = bridge.local_var_read_types(code, file: nil)
       expect(reads.values).to include("(User & User::Validated)")
       expect(reads.values).not_to include("(User & User::Validated)?")
     end
@@ -53,7 +53,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      reads = bridge.local_var_read_types(code)
+      reads = bridge.local_var_read_types(code, file: nil)
       # `puts user` on line 4, `user` starting at column 9 (0-based).
       expect(reads[[4, 9]]).to eq("(User & User::Validated)?")
     end
@@ -69,7 +69,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.local_var_types_per_method(code)
+      result = bridge.local_var_types_per_method(code, file: nil)
       expect(result["bar"]["comment"]).to eq("(Comment & Comment::Validated)")
     end
 
@@ -82,7 +82,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.local_var_types_per_method(code)
+      result = bridge.local_var_types_per_method(code, file: nil)
       expect(result["bar"]["user"]).to eq("(User & User::Validated)?")
     end
 
@@ -95,7 +95,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.local_var_types_per_method(code)
+      result = bridge.local_var_types_per_method(code, file: nil)
       expect(result["bar"]["result"]).to eq("bool")
     end
 
@@ -112,7 +112,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.local_var_types_per_method(code)
+      result = bridge.local_var_types_per_method(code, file: nil)
       expect(result["bar"]["x"]).to eq("(Comment & Comment::Validated)")
       expect(result["baz"]["y"]).to eq("Integer")
       expect(result["bar"]).not_to have_key("y")
@@ -127,12 +127,12 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.local_var_types_per_method(code)
+      result = bridge.local_var_types_per_method(code, file: nil)
       expect(result["bar"]).not_to have_key("x")
     end
 
     it "returns empty hash for unparseable code" do
-      result = bridge.local_var_types_per_method("!!!invalid ruby")
+      result = bridge.local_var_types_per_method("!!!invalid ruby", file: nil)
       expect(result).to eq({})
     end
 
@@ -147,7 +147,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.local_var_types_per_method(code)
+      result = bridge.local_var_types_per_method(code, file: nil)
       expect(result["bar"]["num"]).to eq("Integer")
     end
 
@@ -162,7 +162,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.local_var_types_per_method(code)
+      result = bridge.local_var_types_per_method(code, file: nil)
       expect(result["bar"]["num"]).to eq("Integer")
       expect(result["bar"]["idx"]).to eq("Integer")
     end
@@ -178,7 +178,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.local_var_types_per_method(code)
+      result = bridge.local_var_types_per_method(code, file: nil)
       expect(result["bar"]["key"]).to eq("Symbol")
       expect(result["bar"]["val"]).to eq("Integer")
     end
@@ -192,7 +192,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.local_var_types_per_method(code)
+      result = bridge.local_var_types_per_method(code, file: nil)
       expect(result["bar"]).not_to have_key("x")
       expect(result["bar"]).not_to have_key("y")
       expect(result["bar"]["z"]).to eq("Integer")
@@ -211,7 +211,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.local_var_types_per_method(code)
+      result = bridge.local_var_types_per_method(code, file: nil)
       expect(result["bar"]["num"]).to eq("Integer")
       expect(result["bar"]["total"]).to eq("Integer")
     end
@@ -249,7 +249,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      types = bridge.method_return_types(code)
+      types = bridge.method_return_types(code, file: nil)
 
       expect(types["flagged"]).to eq("(String | Integer)")
       expect(types["only_a_tail"]).to eq("String")
@@ -269,7 +269,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      types = bridge.method_return_types_by_kind(code)
+      types = bridge.method_return_types_by_kind(code, file: nil)
 
       expect(types[:instance].to_h["empty"]).to eq("nil")
       expect(types[:singleton].to_h["empty_singleton"]).to eq("nil")
@@ -452,7 +452,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.constant_types(code)
+      result = bridge.constant_types(code, file: nil)
       expect(result["MAX"]).to eq("Integer")
       expect(result["DEFAULT_NAME"]).to eq("String")
     end
@@ -464,7 +464,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      expect(bridge.constant_types(code)["WEIGHTS"]).to eq("Array[Integer]")
+      expect(bridge.constant_types(code, file: nil)["WEIGHTS"]).to eq("Array[Integer]")
     end
 
     it "chaveia constantes de path pelo nome puro (casgn)" do
@@ -474,7 +474,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         Foo::LIMIT = 100
       RUBY
 
-      expect(bridge.constant_types(code)["LIMIT"]).to eq("Integer")
+      expect(bridge.constant_types(code, file: nil)["LIMIT"]).to eq("Integer")
     end
 
     it "omite constantes cujo RHS é untyped" do
@@ -484,11 +484,11 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      expect(bridge.constant_types(code)).not_to have_key("UNKNOWN")
+      expect(bridge.constant_types(code, file: nil)).not_to have_key("UNKNOWN")
     end
 
     it "retorna hash vazio para código inválido" do
-      expect(bridge.constant_types("!!!invalid ruby")).to eq({})
+      expect(bridge.constant_types("!!!invalid ruby", file: nil)).to eq({})
     end
   end
 
@@ -559,7 +559,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.all_expression_types(code)
+      result = bridge.all_expression_types(code, file: nil)
       expect(result).not_to be_empty
       # The lvasgn for x is on line 3
       typed_values = result.values
@@ -580,7 +580,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.all_expression_types(code)
+      result = bridge.all_expression_types(code, file: nil)
 
       expect(result["3:4-3:11"]).to eq("singleton(Comment)")
       expect(result["3:4-3:19"]).to eq("(Comment & Comment::Validated)")
@@ -602,14 +602,14 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      result = bridge.all_expression_types(code)
+      result = bridge.all_expression_types(code, file: nil)
 
       expect(result.values_at("2:4-2:8", "5:14-5:18", "8:17-8:21", "10:12-10:16"))
         .to eq(["singleton(Comment)", "singleton(Comment)", "singleton(Comment)", "Comment"])
     end
 
     it "returns empty hash for unparseable code" do
-      result = bridge.all_expression_types("!!!invalid ruby")
+      result = bridge.all_expression_types("!!!invalid ruby", file: nil)
       expect(result).to eq({})
     end
 
@@ -621,7 +621,28 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      expect(bridge.all_expression_types(code)).to eq({})
+      expect(bridge.all_expression_types(code, file: nil)).to eq({})
+    end
+  end
+
+  describe "#type_check" do
+    it "checks a file's own text under the file's path" do
+      Dir.mktmpdir do |dir|
+        file = File.join(dir, "path_probe.rb")
+        File.write(file, "class PathProbe\nend\n")
+
+        expect(new_bridge.type_check(File.read(file), file: file).source.path).to eq(Pathname(file))
+      end
+    end
+
+    it "checks any other text under no path, since its sites are not the file's" do
+      Dir.mktmpdir do |dir|
+        file = File.join(dir, "path_probe.rb")
+        File.write(file, "class PathProbe\nend\n")
+
+        expect(new_bridge.type_check("# @type self: untyped\n#{File.read(file)}", file: file).source.path)
+          .to eq(described_class::CheckedPath::UNFILED)
+      end
     end
   end
 
@@ -638,8 +659,8 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
     it "hands two bridges the same type-check result" do
       source = "class SharedProbe\n  def go = 1\nend\n"
 
-      expect(new_bridge.type_check(source))
-        .to equal(new_bridge.type_check(source))
+      expect(new_bridge.type_check(source, file: nil))
+        .to equal(new_bridge.type_check(source, file: nil))
     end
 
     it "buckets everything under one context, so one key invalidates all of it" do
@@ -799,7 +820,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      ranges = bridge.unreachable_branch_ranges(code)
+      ranges = bridge.unreachable_branch_ranges(code, file: nil)
 
       expect(ranges.size).to eq(1)
       expect(code.byteslice(ranges[0].begin, ranges[0].size)).to eq("return")
@@ -817,7 +838,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      expect(bridge.unreachable_branch_ranges(code)).to be_empty
+      expect(bridge.unreachable_branch_ranges(code, file: nil)).to be_empty
     end
 
     # The consumer reads Prism nodes, which carry BYTE offsets; Steep's parser
@@ -837,7 +858,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
         end
       RUBY
 
-      range = bridge.unreachable_branch_ranges(code).fetch(0)
+      range = bridge.unreachable_branch_ranges(code, file: nil).fetch(0)
 
       expect(code.byteslice(range.begin, range.size)).to eq("return")
       # What a character-indexed range would have pointed at, spelled out so a
