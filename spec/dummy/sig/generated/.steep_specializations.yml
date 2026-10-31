@@ -318,7 +318,6 @@ methods:
     "(5)": '20'
   Example108::ClassAttribute.redefine:
     "(self, :plural_names, :__class_attr_plural_names, untyped)": '"__class_attr_plural_names="'
-    "(self, :plural_names, :__class_attr_plural_names, untyped) on singleton(::Example108::ClassAttribute)": '"__class_attr_plural_names="'
     ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
       true) on singleton(::Example108::ClassAttribute) with {::Example108::Settings{@generated_readers:
       nil}}"
@@ -331,8 +330,6 @@ methods:
     "(::Class, :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
     "(singleton(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
     "(singleton(::Example108::Settings), :plural_names) &-> true": nil
-    '(singleton_class(::Example108::ClassAttribute), "__class_attr_plural_names=", private: true) &-> "__class_attr_plural_names="': '"__class_attr_plural_names="'
-    "(singleton_class(::Example108::ClassAttribute), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
     '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private: true) &-> "__class_attr_plural_names="': '"__class_attr_plural_names="'
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
@@ -383,7 +380,6 @@ methods:
     "() &-> :age": "^(*untyped) [self: singleton(::Example32::Bar)] -> :age"
     "() on singleton(::Example32::Baz) &-> :age": "^(*untyped) [self: singleton(::Example32::Bar)]
       -> :age"
-    "(self) on singleton(::Example32::Baz)": "(:age | nil)"
     "(singleton(::Example32::Bar)) on singleton(::Example32::Baz)": "(:age | nil)"
   Example33::Foo#bazinga:
     "(singleton(::Example33::Baz)) on singleton(::Example33::Bar)": "(:age | :name_upcase
@@ -408,7 +404,6 @@ methods:
       | ::Module)] -> :age"
     "() on singleton(::Example34::Baz) &-> :age": "^(*untyped) [self: (singleton(::Example34::Bar)
       | singleton(::Example34::Baz) | ::Module)] -> :age"
-    "(self) on singleton(::Example34::Baz)": "(:age | nil)"
     "(singleton(::Example34::Bar)) on singleton(::Example34::Baz)": "(:age | nil)"
   Example35::Foo.bazinga:
     "(singleton(::Example35::Baz)) on singleton(::Example35::Bar)": "(:age | nil)"
@@ -416,19 +411,16 @@ methods:
     "() &-> :age": "^(*untyped) [self: singleton(::Example35::Foo)] -> :age"
     "() on singleton(::Example35::Baz) &-> :age": "^(*untyped) [self: singleton(::Example35::Foo)]
       -> :age"
-    "(self) on singleton(::Example35::Baz)": "(:age | nil)"
     "(singleton(::Example35::Bar)) on singleton(::Example35::Baz)": "(:age | nil)"
   Example36::Foo.bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example36::Foo)] -> :age"
     "() on singleton(::Example36::Baz) &-> :age": "^(*untyped) [self: singleton(::Example36::Foo)]
       -> :age"
-    "(self) on singleton(::Example36::Baz)": "(:age | nil)"
     "(singleton(::Example36::Bar)) on singleton(::Example36::Baz)": "(:age | nil)"
   Example37::Foo#bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example37::Bar)] -> :age"
     "() on singleton(::Example37::Baz) &-> :age": "^(*untyped) [self: singleton(::Example37::Bar)]
       -> :age"
-    "(self) on singleton(::Example37::Baz)": "(:age | nil)"
     "(singleton(::Example37::Bar)) on singleton(::Example37::Baz)": "(:age | nil)"
   Example38::Foo#bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example38::Bar)] -> :age"
@@ -456,7 +448,6 @@ methods:
       -> :age"
     "() on singleton(::Example42::Baz) &-> :age": "^(*untyped) [self: (singleton(::Example42::Bar)
       | singleton(::Example42::BarOther))] -> :age"
-    "(self) on singleton(::Example42::Baz)": "(:age | nil)"
     "(singleton(::Example42::Bar)) on singleton(::Example42::Baz)": "(:age | nil)"
     "(singleton(::Example42::BarOther)) on singleton(::Example42::Baz)": "(:age |
       nil)"
