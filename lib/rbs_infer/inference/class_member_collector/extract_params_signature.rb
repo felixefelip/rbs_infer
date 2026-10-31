@@ -10,16 +10,16 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
     # mirroring how `:constant` members defer (felixefelip/rbs_infer#37, #46).
     attr_reader :constant_default_params
 
-    # Optional params defaulting to a literal `nil`, by name. The signature says
-    # `?untyped` for them (see `optional_param_type`), and `untyped` swallows the
-    # nil — but the moment the call sites give the parameter a real type, the
-    # default stops being covered by it: `def included(base = nil)` called once
-    # with a `Module` would read `?Module base`, and calling it the way its own
-    # default invites binds `nil` to a parameter that does not admit one.
+    # The literal each optional param defaults to, by name, as RBS. The default
+    # is the value of every call site that omits the argument, so it joins the
+    # type the call sites give the parameter: `def included(base = nil)` called
+    # once with a `Module` would otherwise read `?Module base`, and calling it
+    # the way its own default invites binds `nil` to a parameter that does not
+    # admit one.
     #
     # Recorded rather than resolved, the same deferral `constant_default_params`
     # makes: the type to widen does not exist yet here.
-    attr_reader :nil_default_params
+    attr_reader :literal_defaults
 
     # Structural: constant defaults are captured into @constant_default_params and
     # emitted as `?untyped` for the Analyzer to fill, so this never resolves a
@@ -56,7 +56,7 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       @body = body
       @parts = []
       @constant_default_params = {}
-      @nil_default_params = Set.new
+      @literal_defaults = {}
     end
 
     def call
@@ -89,7 +89,18 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
         @params.posts.empty? && @params.keywords.empty?
     end
 
+    LITERAL_DEFAULTS = [
+      Prism::NilNode, Prism::TrueNode, Prism::FalseNode, Prism::SymbolNode, Prism::StringNode, Prism::IntegerNode
+    ].freeze
+
     private
+
+    def record_literal_default(param)
+      return unless LITERAL_DEFAULTS.include?(param.value.class)
+
+      @literal_defaults[param.name.to_s] =
+        RbsInfer::AST::NodeTypeInferrer.infer_literal_node_type(param.value, constant_resolver: nil)
+    end
 
     def param_name(param)
       case param
@@ -117,10 +128,11 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
         #
         # What the default DOES say is that nil is a legal value, which matters again
         # once a call site replaces this `untyped` with a real type — see
-        # `nil_default_params`.
-        @nil_default_params << param.name.to_s
+        # `literal_defaults`.
+        record_literal_default(param)
         "untyped"
       else
+        record_literal_default(param)
         # The same reading as `nil` above, for every other literal. A default is
         # what the method gets when nobody passes anything; it does not say which
         # values a caller may pass. `def gravatar_url(size = 80)` typed `?80 size`
@@ -164,7 +176,7 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
           when Prism::RequiredKeywordParameterNode
             @parts << "#{p.name}: untyped"
           when Prism::OptionalKeywordParameterNode
-            @nil_default_params << p.name.to_s if p.value.is_a?(Prism::NilNode)
+            record_literal_default(p)
             @parts << "?#{p.name}: untyped"
           end
         end

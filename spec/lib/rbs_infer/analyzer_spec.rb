@@ -1780,6 +1780,25 @@ RSpec.describe RbsInfer::Analyzer do
       expect(rbs).not_to match(/def handle: \(\(Tag \| /)
     end
 
+    it "adds a keyword's literal default to what the call sites pass" do
+      target = write("app/switch.rb", <<~RUBY)
+        class Switch
+          def run
+            toggle(private: true)
+            toggle
+          end
+
+          def toggle(private: false)
+            private
+          end
+        end
+      RUBY
+
+      rbs = described_class.new(target_class: "Switch", target_file: target, source_files: [target]).generate_rbs
+
+      expect(rbs).to include("def toggle: (?private: bool)")
+    end
+
     it "leaves the parameter untyped when no call site pins it" do
       target = write("app/lonely.rb", <<~RUBY)
         class Lonely

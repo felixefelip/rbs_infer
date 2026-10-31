@@ -25,17 +25,17 @@ module RbsInfer::Inference
   # `block_stored_forward` = o corpo GUARDA o bloco numa ivar (`@x = block`) em
   # vez de usá-lo, então quem decide contra qual `self` ele foi escrito é quem o
   # repassa depois — resolvido no Analyzer (#208).
-  # `param_nil_defaults` = nomes dos params opcionais cujo default é o literal
-  # `nil`. Enquanto o tipo é `untyped` não muda nada; quando os call-sites dão
-  # um tipo de verdade ao param, é o que faz o `?` do nilable aparecer junto —
-  # aplicado no Analyzer, onde o tipo inferido existe (#208).
+  # `param_literal_defaults` = o literal que cada param opcional tem de default,
+  # por nome. Enquanto o tipo é `untyped` não muda nada; quando os call-sites dão
+  # um tipo de verdade ao param, o default entra na união — aplicado no
+  # Analyzer, onde o tipo inferido existe (#208, #550).
   # `params_forward` = a lista de parâmetros é só `...`: o método aceita o que a
   # chamada para onde ele encaminha aceita — resolvido no Analyzer, que tem o
   # checker (`ForwardedParametersResolver`).
   # `block_implicit_forward` = o método não declara bloco, mas um `super` repassa
   # o dele; o bloco só fica se o método que o `super` alcança declarar um (#510).
   Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name,
-                      :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_nil_defaults, :block_stored_forward, :no_signature, :params_forward, :block_implicit_forward, keyword_init: true)
+                      :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_literal_defaults, :block_stored_forward, :no_signature, :params_forward, :block_implicit_forward, keyword_init: true)
 
   # Pelo que eu entendi, essa classe é responsável por gerar o signature inicial
   # de uma class/module, porém depois no analyzer, terá outras classes que irão
@@ -195,7 +195,7 @@ module RbsInfer::Inference
         # Only when we synthesized the signature — an explicit `#:`/`@rbs`
         # annotation is authoritative and must not be overridden.
         param_constant_defaults: sig ? nil : extractor.constant_default_params,
-        param_nil_defaults: sig ? nil : extractor.nil_default_params,
+        param_literal_defaults: sig ? nil : extractor.literal_defaults,
         block_arg_positions: sig ? nil : extractor.block_arg_positions,
         block_open_forward: sig ? nil : extractor.block_open_forward?,
         block_implicit_forward: sig ? nil : extractor.block_implicit_forward?,

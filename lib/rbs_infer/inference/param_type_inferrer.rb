@@ -71,7 +71,7 @@ module RbsInfer::Inference
         end
       end
 
-      nilablize_nil_defaults(members, inferred)
+      widen_by_literal_defaults(members, inferred)
       inferred
     end
 
@@ -402,15 +402,15 @@ module RbsInfer::Inference
       end
     end
 
-    # A param whose default is the literal `nil` accepts nil however many non-nil
-    # arguments the call sites passed — the default is the call site nobody writes
-    # (felixefelip/rbs_infer#208). Applied after the union, and only once a type is
-    # there to widen: while the parameter is `untyped` the nil is already admitted,
-    # and `untyped?` is not a spelling.
-    def nilablize_nil_defaults(members, inferred)
+    # A param with a literal default takes that value however many other
+    # arguments the call sites passed — the default is the call site nobody
+    # writes (felixefelip/rbs_infer#208, #550). Applied after the union, and only
+    # once a type is there to widen: while the parameter is `untyped` the default
+    # is already admitted, and `untyped?` is not a spelling.
+    def widen_by_literal_defaults(members, inferred)
       members.each do |member|
         next unless %i[method class_method].include?(member.kind)
-        next if member.param_nil_defaults.nil? || member.param_nil_defaults.empty?
+        next if member.param_literal_defaults.nil? || member.param_literal_defaults.empty?
 
         # Written through `tables`, not `lookup`: the parameters of one method
         # can be spread across the bare and the qualified entry, and only the
@@ -423,12 +423,12 @@ module RbsInfer::Inference
         )
         next if tables.empty?
 
-        member.param_nil_defaults.each do |param_name|
+        member.param_literal_defaults.each do |param_name, default|
           tables.each do |types|
             current = types[param_name]
             next if current.nil? || current == "untyped"
 
-            types[param_name] = RbsInfer::Signatures::RbsParserUtil.nilablize(current)
+            types[param_name] = TypeUnion.of([current, default])
           end
         end
       end
