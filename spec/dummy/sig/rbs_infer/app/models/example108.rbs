@@ -1,7 +1,7 @@
 module Example108
   module ClassAttribute
     def self.redefine: (singleton(Example108::Settings) owner, :plural_names name, :__class_attr_plural_names namespaced_name, true value) -> "__class_attr_plural_names="
-    def self.redefine_method: ((singleton(Example108::Settings) | Class) owner, (:__class_attr_plural_names | :plural_names | String) name, ?private: true) { (*untyped) -> (true | TrueClass | "__class_attr_plural_names=") } -> interned
+    def self.redefine_method: ((singleton(Example108::Settings) | Class) owner, (:__class_attr_plural_names | :plural_names | String) name, ?private: bool) { (*untyped) -> (true | TrueClass | "__class_attr_plural_names=") } -> interned?
   end
 end
 
