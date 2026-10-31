@@ -32,7 +32,7 @@ module RbsInfer::Inference
     def writes_per_method(parsed_target)
       return {} unless @steep_bridge && parsed_target&.source
 
-      @steep_bridge.ivar_write_types_per_method(parsed_target.source, target_class: @target_class)
+      @steep_bridge.ivar_write_types_per_method(parsed_target.source, file: parsed_target.path, target_class: @target_class)
     end
 
     def infer_ivar_types(members, attr_types, parsed_target: nil, method_param_types: {}) # rubocop:todo Metrics/MethodLength
@@ -80,9 +80,9 @@ module RbsInfer::Inference
       # binding it carries (felixefelip/rbs_infer#252).
       steep_singleton_ivars = {}
       if @steep_bridge && parsed_target.source
-        steep_singleton_ivars = @steep_bridge.ivar_write_types(parsed_target.source, target_class: @target_class,
+        steep_singleton_ivars = @steep_bridge.ivar_write_types(parsed_target.source, file: parsed_target.path, target_class: @target_class,
                                                                                      singleton: true)
-        steep_ivars = @steep_bridge.ivar_write_types(parsed_target.source, target_class: @target_class,
+        steep_ivars = @steep_bridge.ivar_write_types(parsed_target.source, file: parsed_target.path, target_class: @target_class,
                                                                            singleton: false)
         steep_ivars.each do |name, type|
           next if instance_attr_names.include?(name)
@@ -99,14 +99,14 @@ module RbsInfer::Inference
         # since felixefelip/rbs_infer#249 it answers for that scope EXACTLY
         # rather than sweeping nested modules into their enclosing class.
         owners.each do |owner|
-          @steep_bridge.ivar_write_types(parsed_target.source, target_class: "#{@target_class}::#{owner}",
+          @steep_bridge.ivar_write_types(parsed_target.source, file: parsed_target.path, target_class: "#{@target_class}::#{owner}",
                                                                singleton: false)
                        .each do |name, type|
             next if module_attr_names[owner].include?(name) || type == "nil"
 
             module_ivar_types[owner][name] = type
           end
-          @steep_bridge.ivar_write_types(parsed_target.source, target_class: "#{@target_class}::#{owner}",
+          @steep_bridge.ivar_write_types(parsed_target.source, file: parsed_target.path, target_class: "#{@target_class}::#{owner}",
                                                                singleton: true)
                        .each do |name, type|
             next if module_singleton_attr_names[owner].include?(name)

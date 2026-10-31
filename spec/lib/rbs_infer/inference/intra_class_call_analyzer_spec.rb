@@ -4,7 +4,7 @@ require "rbs_infer"
 RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
   def analyze(source, attr_types: {}, method_type_resolver: nil)
     result = Prism.parse(source)
-    visitor = described_class.new(attr_types: attr_types, method_type_resolver: method_type_resolver)
+    visitor = described_class.new(attr_types: attr_types, method_type_resolver: method_type_resolver, file: nil)
     result.value.accept(visitor)
     visitor
   end
@@ -33,6 +33,7 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
     visitor = described_class.new(
       steep_bridge: bridge,
       source_code: source,
+      file: nil,
       method_positional_params: { "publish" => ["user"] }
     )
     result.value.accept(visitor)
@@ -65,6 +66,7 @@ RSpec.describe RbsInfer::Inference::IntraClassCallAnalyzer do
     visitor = described_class.new(
       steep_bridge: bridge,
       source_code: source,
+      file: nil,
       method_positional_params: { "publish" => ["user"] }
     )
     result.value.accept(visitor)

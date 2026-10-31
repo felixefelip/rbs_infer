@@ -7,7 +7,7 @@ module RbsInfer::Inference
   #    `Telefone.new(ddd:, numero:)` → infere `ddd: String, numero: String`
   #    a partir da assinatura de Telefone#initialize
   class IntraClassCallAnalyzer < Prism::Visitor
-    def initialize(attr_types: {}, method_type_resolver: nil, method_positional_params: {}, steep_bridge: nil,
+    def initialize(file:, attr_types: {}, method_type_resolver: nil, method_positional_params: {}, steep_bridge: nil,
                    source_code: nil)
       @attr_types = attr_types
       @method_type_resolver = method_type_resolver
@@ -17,21 +17,21 @@ module RbsInfer::Inference
       @current_method_name = nil
       @current_param_names = Set.new
       @method_positional_params = method_positional_params
-      @steep_local_var_types = steep_bridge && source_code ? steep_bridge.local_var_types_per_method(source_code) : {}
+      @steep_local_var_types = steep_bridge && source_code ? steep_bridge.local_var_types_per_method(source_code, file:) : {}
       # Per-READ types, which carry Steep's narrowing; `@steep_local_var_types`
       # is per-method and cannot (felixefelip/rbs_infer#142).
-      @steep_lvar_read_types = steep_bridge && source_code ? steep_bridge.local_var_read_types(source_code) : {}
+      @steep_lvar_read_types = steep_bridge && source_code ? steep_bridge.local_var_read_types(source_code, file:) : {}
       # Every typed expression in this file, keyed by range. `@attr_types` can
       # only answer for the class's own `attr_*`; an association reader, a
       # delegated method, a plain `def` — anything else the body calls on itself
       # — was not in it and resolved to `untyped`, which drops the call site
       # from the candidates entirely (felixefelip/rbs_infer#298).
-      @steep_expression_types = steep_bridge && source_code ? steep_bridge.all_expression_types(source_code) : {}
+      @steep_expression_types = steep_bridge && source_code ? steep_bridge.all_expression_types(source_code, file:) : {}
       # Constant args resolve to their value type (#46); intra-class
       # constants are in this same source, covered by the same-file tier.
       @constant_arg_resolver = ConstantArgTypeResolver.new(
         steep_bridge: steep_bridge,
-        caller_constant_types: steep_bridge && source_code ? steep_bridge.constant_types(source_code) : {}
+        caller_constant_types: steep_bridge && source_code ? steep_bridge.constant_types(source_code, file:) : {}
       )
     end
 

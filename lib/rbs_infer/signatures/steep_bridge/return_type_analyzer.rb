@@ -72,8 +72,8 @@ class RbsInfer::Signatures::SteepBridge
     # methods (`def self.x`) are excluded — fetch those via
     # `method_return_types_by_kind(...)[:singleton]` so a class method and an
     # instance method sharing a name don't clobber each other's entry.
-    def method_return_types(source_code)
-      method_return_types_by_kind(source_code)[:instance].to_h
+    def method_return_types(source_code, file:)
+      method_return_types_by_kind(source_code, file:)[:instance].to_h
     end
 
     # Return types split by receiver kind: `{ instance: {name=>type},
@@ -86,8 +86,8 @@ class RbsInfer::Signatures::SteepBridge
     # method it was then unreachable, because the reader asks by the member's
     # kind — which is `:class_method` — and every such method stayed `untyped`
     # while Steep had its type all along (felixefelip/rbs_infer#162).
-    def method_return_types_by_kind(source_code) # rubocop:todo Metrics/MethodLength
-      typing = @steep_bridge.type_check(source_code)
+    def method_return_types_by_kind(source_code, file:) # rubocop:todo Metrics/MethodLength
+      typing = @steep_bridge.type_check(source_code, file:)
       return { instance: ReturnTable.new, singleton: ReturnTable.new } unless typing
 
       # Index BlockBodyTypeMismatch errors by block node identity

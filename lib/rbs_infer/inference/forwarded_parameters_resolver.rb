@@ -36,7 +36,7 @@ module RbsInfer::Inference
       selected = members.select { |m| %i[method class_method].include?(m.kind) && m.params_forward }
       return if selected.empty?
 
-      targets = @steep_bridge.forwarded_call_targets(@parsed_target.source)
+      targets = forwarded_call_targets
       return if targets.empty?
 
       selected.each do |member|
@@ -46,6 +46,8 @@ module RbsInfer::Inference
     end
 
     private
+
+    def forwarded_call_targets = @steep_bridge.forwarded_call_targets(@parsed_target.source, file: @parsed_target.path)
 
     # The parameter lists alone, under the return the earlier passes resolved.
     def forward_lists(member, target)

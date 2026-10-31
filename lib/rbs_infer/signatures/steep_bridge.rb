@@ -2,6 +2,7 @@ require "steep"
 require_relative "../inference/ivar_type_set"
 require_relative "../project/base_dir"
 require_relative "steep_bridge/type_relations"
+require_relative "steep_bridge/checked_path"
 
 module RbsInfer::Signatures
   # Bridge to Steep's TypeConstruction for resolving expression types.
@@ -33,8 +34,8 @@ module RbsInfer::Signatures
     # Returns { "var_name" => "Type" } for all local variable assignments
     # in all methods of the given source code.
     # Result is keyed by method name: { "method_name" => { "var" => "Type" } }
-    def local_var_types_per_method(source_code)
-      typing = type_check(source_code)
+    def local_var_types_per_method(source_code, file:)
+      typing = type_check(source_code, file:)
       return {} unless typing
 
       result = Hash.new { |h, k| h[k] = {} }
@@ -81,8 +82,8 @@ module RbsInfer::Signatures
     # Prism counts columns in bytes (`start_column`) and in characters
     # (`start_character_column`), while Parser counts characters — matching on
     # the character column is what keeps a source with multibyte text aligned.
-    def local_var_read_types(source_code)
-      typing = type_check(source_code)
+    def local_var_read_types(source_code, file:)
+      typing = type_check(source_code, file:)
       return {} unless typing
 
       result = {}
@@ -99,25 +100,24 @@ module RbsInfer::Signatures
       result
     end
 
-    def forwarded_block_requirements(source_code, open_signatures:)
-      RbsInfer::Signatures::SteepBridge::BlockAnalyzer.new(steep_bridge: self)
-                                                      .forwarded_block_requirements(source_code, open_signatures:)
+    def forwarded_block_requirements(source_code, file:, open_signatures:)
+      BlockAnalyzer.new(steep_bridge: self).forwarded_block_requirements(source_code, file:, open_signatures:)
     end
 
-    def forwarded_call_targets(source_code)
-      RbsInfer::Signatures::SteepBridge::ForwardingAnalyzer.new(steep_bridge: self).forwarded_call_targets(source_code)
+    def forwarded_call_targets(source_code, file:)
+      ForwardingAnalyzer.new(steep_bridge: self).forwarded_call_targets(source_code, file:)
     end
 
-    def stored_block_self_types(source_code)
-      RbsInfer::Signatures::SteepBridge::BlockAnalyzer.new(steep_bridge: self).stored_block_self_types(source_code)
+    def stored_block_self_types(source_code, file:)
+      BlockAnalyzer.new(steep_bridge: self).stored_block_self_types(source_code, file:)
     end
 
-    def method_return_types(source_code)
-      return_type_analyzer.method_return_types(source_code)
+    def method_return_types(source_code, file:)
+      return_type_analyzer.method_return_types(source_code, file:)
     end
 
-    def method_return_types_by_kind(source_code)
-      return_type_analyzer.method_return_types_by_kind(source_code)
+    def method_return_types_by_kind(source_code, file:)
+      return_type_analyzer.method_return_types_by_kind(source_code, file:)
     end
 
     # Returns { "CONSTANT_NAME" => "Type" } for every `NAME = expr` /
@@ -129,8 +129,8 @@ module RbsInfer::Signatures
     # comparison/arithmetic chains, and — once the class's RBS exists —
     # `new`-bearing collection builders), so rbs_infer#37 doesn't
     # re-implement chain typing.
-    def constant_types(source_code)
-      typing = type_check(source_code)
+    def constant_types(source_code, file:)
+      typing = type_check(source_code, file:)
       return {} unless typing
 
       result = {}
@@ -250,12 +250,12 @@ module RbsInfer::Signatures
       candidates.uniq
     end
 
-    def ivar_write_types(source_code, target_class:, singleton:)
-      @ivar_write_analyzer.ivar_write_types(source_code, target_class: target_class, singleton: singleton)
+    def ivar_write_types(source_code, file:, target_class:, singleton:)
+      @ivar_write_analyzer.ivar_write_types(source_code, file:, target_class: target_class, singleton: singleton)
     end
 
-    def ivar_write_types_per_method(source_code, target_class:)
-      @ivar_write_analyzer.ivar_write_types_per_method(source_code, target_class: target_class)
+    def ivar_write_types_per_method(source_code, file:, target_class:)
+      @ivar_write_analyzer.ivar_write_types_per_method(source_code, file:, target_class: target_class)
     end
 
     # Byte ranges of the branches Steep proved cannot run in `source_code`.
@@ -270,8 +270,8 @@ module RbsInfer::Signatures
     # Answered in BYTE offsets, because the caller reads Prism nodes: Steep's
     # parser indexes its buffer by CHARACTER, so one non-ASCII byte earlier in the
     # file is enough to slide every range onto the wrong node.
-    def unreachable_branch_ranges(source_code)
-      typing = type_check(source_code)
+    def unreachable_branch_ranges(source_code, file:)
+      typing = type_check(source_code, file:)
       return [] unless typing
 
       typing.errors.filter_map do |error|
@@ -295,8 +295,8 @@ module RbsInfer::Signatures
     # the rbs_infer side) keeps the two emitters semantically aligned
     # for free: whenever Steep learns a new predicate shape, rbs_infer
     # picks it up without code change.
-    def postcondition_inferred_entries(source_code)
-      typing = type_check(source_code)
+    def postcondition_inferred_entries(source_code, file:)
+      typing = type_check(source_code, file:)
       return [] unless typing
 
       subtyping = steep_subtyping
@@ -342,8 +342,8 @@ module RbsInfer::Signatures
     # Returns the type of a specific node within the typing result.
     # Useful for resolving argument types in call sites.
     # Returns { expression_key => "Type" } for all typed expressions.
-    def all_expression_types(source_code)
-      typing = type_check(source_code)
+    def all_expression_types(source_code, file:)
+      typing = type_check(source_code, file:)
       return {} unless typing
 
       result = {}
@@ -482,18 +482,19 @@ module RbsInfer::Signatures
     # `steep_context` a different object, and everything hung off the old one
     # is dropped with it. The returned `typing` is only ever read by callers,
     # never mutated.
-    def type_check(source_code)
+    def type_check(source_code, file:)
       context = SteepEnvironment.steep_context or return nil
 
       # Standalone bridge users may not have supplied a project corpus. Scan
       # the current source as a safe minimum; Analyzer supplies the complete
       # corpus registry, which catches overrides living in another file too.
-      @literal_method_registry.ingest_source(source_code, path_name: "(rbs_infer)")
+      @literal_method_registry.ingest_source(source_code, path_name: CheckedPath::UNFILED.to_s)
       registry_key = @literal_method_registry.to_set.freeze
 
+      path = CheckedPath.of(source_code, file)
       cache = self.class.shared(context)[:type_checks]
-      key = [source_code, registry_key]
-      cache.fetch(key) { cache[key] = type_check_uncached(source_code) }
+      key = [source_code, path, registry_key]
+      cache.fetch(key) { cache[key] = type_check_uncached(source_code, path) }
     end
 
     class << self
@@ -539,11 +540,10 @@ module RbsInfer::Signatures
       @return_type_analyzer ||= ReturnTypeAnalyzer.new(steep_bridge: self)
     end
 
-    def type_check_uncached(source_code)
-      subtyping = steep_subtyping
-      return nil unless subtyping
+    def type_check_uncached(source_code, path)
+      subtyping = steep_subtyping or return nil
 
-      source = Steep::Source.parse(source_code, path: Pathname("(rbs_infer)"), factory: subtyping.factory)
+      source = Steep::Source.parse(source_code, path: path, factory: subtyping.factory)
       Steep::Services::TypeCheckService.type_check(
         source: source,
         subtyping: subtyping,

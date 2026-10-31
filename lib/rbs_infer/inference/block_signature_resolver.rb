@@ -76,7 +76,7 @@ module RbsInfer::Inference
       end
       return if selected.empty?
 
-      expression_types = @steep_bridge.all_expression_types(@parsed_target.source)
+      expression_types = @steep_bridge.all_expression_types(@parsed_target.source, file: @parsed_target.path)
       return if expression_types.empty?
 
       selected.each do |member|
@@ -108,7 +108,8 @@ module RbsInfer::Inference
       return if selected.empty?
 
       requirements = @steep_bridge.forwarded_block_requirements(
-        @parsed_target.source, open_signatures: selected.to_h { |member| [method_key(member), member.signature] }
+        @parsed_target.source, file: @parsed_target.path,
+                               open_signatures: selected.to_h { |member| [method_key(member), member.signature] }
       )
       selected.each { |member| member.signature = forwarded_block(member, requirements[method_key(member)]) }
     end
@@ -135,7 +136,7 @@ module RbsInfer::Inference
       selected = members.select { |m| %i[method class_method].include?(m.kind) && m.block_stored_forward }
       return if selected.empty?
 
-      bindings = @steep_bridge.stored_block_self_types(@parsed_target.source)
+      bindings = @steep_bridge.stored_block_self_types(@parsed_target.source, file: @parsed_target.path)
       return if bindings.empty?
 
       selected.each do |member|
@@ -178,7 +179,7 @@ module RbsInfer::Inference
     def collect_returns(method_names, caller_returns)
       collector = RbsInfer::Inference::BlockReturnCollector.new(
         methods: method_names,
-        expression_types: @steep_bridge.all_expression_types(@parsed_target.source)
+        expression_types: @steep_bridge.all_expression_types(@parsed_target.source, file: @parsed_target.path)
       )
       @parsed_target.tree.accept(collector)
 

@@ -129,7 +129,8 @@ module RbsInfer::Inference
         method_type_resolver: @method_type_resolver,
         method_positional_params: positional_params,
         steep_bridge: @steep_bridge,
-        source_code: parsed_target.source
+        source_code: parsed_target.source,
+        file: parsed_target.path
       )
       parsed_target.tree.accept(visitor)
       inferred = visitor.inferred_param_types.dup
@@ -540,7 +541,7 @@ module RbsInfer::Inference
         # Resolver scoped to this caller file's own constants (#46).
         @constant_arg_resolver = ConstantArgTypeResolver.new(
           steep_bridge: @steep_bridge,
-          caller_constant_types: @steep_bridge ? @steep_bridge.constant_types(entry.source) : {}
+          caller_constant_types: @steep_bridge ? @steep_bridge.constant_types(entry.source, file: file) : {}
         )
         @constant_namespace = analysis.class_name
 
@@ -568,7 +569,7 @@ module RbsInfer::Inference
         matching_calls = RbsInfer::Analyzer.find_all_nodes(file_result.value) { |n| n.is_a?(Prism::CallNode) && n.name == method_name.to_sym && n.arguments }
         matching_calls.each do |node|
           local_var_types = collect_local_var_types_for_scope(node, file_result, method_return_types,
-                                                              analysis.class_name, source_code: entry.source)
+                                                              analysis.class_name, source_code: entry.source, file: file)
 
           usage = {}
           node.arguments.arguments.each do |arg|
@@ -630,7 +631,7 @@ module RbsInfer::Inference
     # Coleta tipos de variáveis locais no escopo do nó
     # rubocop:todo-next Metrics/MethodLength
     def collect_local_var_types_for_scope(target_node, parse_result, method_return_types, caller_class_name,
-                                          source_code: nil)
+                                          source_code:, file:)
       local_var_types = {}
 
       # Encontrar o def encapsulante
@@ -647,7 +648,7 @@ module RbsInfer::Inference
       # Use Steep to resolve local var types in the caller file
       if @steep_bridge && source_code
         method_name = enclosing_def.name.to_s
-        steep_vars = @steep_bridge.local_var_types_per_method(source_code)
+        steep_vars = @steep_bridge.local_var_types_per_method(source_code, file:)
         steep_method_vars = steep_vars[method_name]
         local_var_types.merge!(steep_method_vars) if steep_method_vars
       end

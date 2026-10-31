@@ -63,7 +63,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         end
       RUBY
       result = Prism.parse(source)
-      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments,
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, path: nil,
                                                lines: source.lines)
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)
@@ -89,7 +89,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         end
       RUBY
       result = Prism.parse(source)
-      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments,
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, path: nil,
                                                lines: source.lines)
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)
@@ -115,7 +115,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         end
       RUBY
       result = Prism.parse(source)
-      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments,
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, path: nil,
                                                lines: source.lines)
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)
@@ -142,7 +142,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         end
       RUBY
       result = Prism.parse(source)
-      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments,
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, path: nil,
                                                lines: source.lines)
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)
@@ -167,7 +167,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         end
       RUBY
       result = Prism.parse(source)
-      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments,
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, path: nil,
                                                lines: source.lines)
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)
@@ -200,7 +200,7 @@ RSpec.describe RbsInfer::Inference::TypeMerger do
         end
       RUBY
       result = Prism.parse(source)
-      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments,
+      parsed_target = RbsInfer::ParsedFile.new(result: result, source: source, comments: result.comments, path: nil,
                                                lines: source.lines)
       collector = RbsInfer::Inference::ClassMemberCollector.new(comments: result.comments, lines: source.lines)
       result.value.accept(collector)

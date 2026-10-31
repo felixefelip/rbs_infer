@@ -27,7 +27,7 @@ module RbsInfer::Inference
       # declarations are applied, because the loop below has to know whether the
       # body disagrees with the declaration it is about to write.
       steep_returns = if @steep_bridge && parsed_target.source
-                        @steep_bridge.method_return_types_by_kind(parsed_target.source)
+                        @steep_bridge.method_return_types_by_kind(parsed_target.source, file: parsed_target.path)
                       end
 
       deferred_to_body = apply_declared_return_types(untyped_methods, members, attr_types, parsed_target, steep_returns)
@@ -542,7 +542,7 @@ module RbsInfer::Inference
     def dead_ranges(parsed_target)
       @dead_ranges ||=
         if @steep_bridge && parsed_target&.source
-          @steep_bridge.unreachable_branch_ranges(parsed_target.source)
+          @steep_bridge.unreachable_branch_ranges(parsed_target.source, file: parsed_target.path)
         else
           []
         end

@@ -4,8 +4,8 @@ app/models/concerns/test/filtrable.rb:16:13: [error] Type `(::Post & ::Test::Fil
 app/models/concerns/test/filtrable.rb:16:4: [error] Type `(::Post & ::Test::Filtrable)` does not have method `asdasd`
 app/models/eval_reopen.rb:61:6: [warning] Method `::Object#by_instance_eval` is not declared in RBS
 app/models/example103.rb:54:10: [error] Cannot allow method body have type `:a` because declared as type `:x`
-app/models/example108.rb:20:19: [error] Type `(singleton(::Example108::ClassAttribute) | singleton(::Example108::Settings))` does not have method `attached_object`
-app/models/example108.rb:40:34: [warning] Cannot pass a value of type `^(*untyped) -> (true | "__class_attr_plural_names=")` as a block-pass-argument of type `^ [self: top] -> untyped`
+app/models/example108.rb:33:50: [error] Cannot pass a value of type `self` as an argument of type `singleton(::Example108::Settings)`
+app/models/example108.rb:40:34: [warning] Cannot pass a value of type `^(*untyped) -> (true | ::TrueClass | "__class_attr_plural_names=")` as a block-pass-argument of type `^ [self: top] -> untyped`
 app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
 app/models/example21.rb:96:29: [error] Type `(::Example21::Ticket | nil)` does not have method `holder`

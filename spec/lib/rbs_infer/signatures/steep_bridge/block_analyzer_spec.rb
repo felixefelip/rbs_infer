@@ -19,7 +19,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::BlockAnalyzer, :dummy_app do
         end
       RUBY
 
-      expect(bridge.forwarded_block_requirements(code, open_signatures: {})["named"])
+      expect(bridge.forwarded_block_requirements(code, open_signatures: {}, file: nil)["named"])
         .to eq(required: true, params: ['"token"'])
     end
 
@@ -37,7 +37,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::BlockAnalyzer, :dummy_app do
         end
       RUBY
 
-      expect(bridge.forwarded_block_requirements(code, open_signatures: {})["anonymous"])
+      expect(bridge.forwarded_block_requirements(code, open_signatures: {}, file: nil)["anonymous"])
         .to eq(required: true, params: ['"token"'])
     end
 
@@ -53,7 +53,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::BlockAnalyzer, :dummy_app do
         end
       RUBY
 
-      expect(bridge.forwarded_block_requirements(code, open_signatures: {})).to be_empty
+      expect(bridge.forwarded_block_requirements(code, open_signatures: {}, file: nil)).to be_empty
     end
   end
 end

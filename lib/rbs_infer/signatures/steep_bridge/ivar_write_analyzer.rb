@@ -36,8 +36,8 @@ class RbsInfer::Signatures::SteepBridge
     # different slots, so they are different questions — and asking the wrong
     # one silently returns `{}` rather than failing, which is why the argument
     # is required rather than defaulted (felixefelip/rbs_infer#252).
-    def ivar_write_types(source_code, target_class:, singleton:) # rubocop:todo Metrics/MethodLength
-      typing = @steep_bridge.type_check(source_code)
+    def ivar_write_types(source_code, file:, target_class:, singleton:) # rubocop:todo Metrics/MethodLength
+      typing = @steep_bridge.type_check(source_code, file:)
       return {} unless typing
 
       source_node = typing.source.node
@@ -125,8 +125,8 @@ class RbsInfer::Signatures::SteepBridge
     # Top-level `:ivasgn` outside any method (class-instance variable in
     # class body) is intentionally NOT recorded here — there's no method
     # to attribute it to. Use `collect_initialized_ivars` for that case.
-    def ivar_write_types_per_method(source_code, target_class:)
-      typing = @steep_bridge.type_check(source_code)
+    def ivar_write_types_per_method(source_code, file:, target_class:)
+      typing = @steep_bridge.type_check(source_code, file:)
       return {} unless typing
 
       source_node = typing.source.node

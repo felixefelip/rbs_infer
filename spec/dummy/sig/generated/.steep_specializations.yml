@@ -319,10 +319,6 @@ methods:
   Example108::ClassAttribute.redefine:
     "(self, :plural_names, :__class_attr_plural_names, untyped)": '"__class_attr_plural_names="'
     "(self, :plural_names, :__class_attr_plural_names, untyped) on singleton(::Example108::ClassAttribute)": '"__class_attr_plural_names="'
-    "(singleton(::Example108::ClassAttribute), :plural_names, :__class_attr_plural_names, untyped)": '"__class_attr_plural_names="'
-    ? "(singleton(::Example108::ClassAttribute), :plural_names, :__class_attr_plural_names,
-      untyped) on singleton(::Example108::ClassAttribute)"
-    : '"__class_attr_plural_names="'
     ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
       true) on singleton(::Example108::ClassAttribute) with {::Example108::Settings{@generated_readers:
       nil}}"
@@ -331,23 +327,14 @@ methods:
       true) with {::Example108::Settings{@generated_readers: nil}}"
     : '"__class_attr_plural_names="'
   Example108::ClassAttribute.redefine_method:
-    ? "((singleton(::Example108::ClassAttribute) | singleton(::Example108::Settings)),
-      :__class_attr_plural_names, private: true) &-> true"
-    : "::Symbol"
-    "((singleton(::Example108::ClassAttribute) | singleton(::Example108::Settings)), :plural_names) &-> true": nil
     '(::Class, "__class_attr_plural_names=", private: true) &-> "__class_attr_plural_names="': '"__class_attr_plural_names="'
-    "(::Class, :__class_attr_plural_names, private: true) &-> ::TrueClass": "::Symbol"
-    "(::Class, :__class_attr_plural_names, private: true) &-> true": "::Symbol"
     "(::Class, :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
-    "(self, :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
-    "(self, :plural_names) &-> untyped": nil
-    "(singleton(::Example108::ClassAttribute), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
-    "(singleton(::Example108::ClassAttribute), :plural_names) &-> untyped": nil
     "(singleton(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
     "(singleton(::Example108::Settings), :plural_names) &-> true": nil
     '(singleton_class(::Example108::ClassAttribute), "__class_attr_plural_names=", private: true) &-> "__class_attr_plural_names="': '"__class_attr_plural_names="'
     "(singleton_class(::Example108::ClassAttribute), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
     '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private: true) &-> "__class_attr_plural_names="': '"__class_attr_plural_names="'
+    "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
   Example108::Settings.__class_attr_plural_names:
     "() with {@generated_readers: nil}": "::TrueClass"
@@ -378,6 +365,7 @@ methods:
     ("denied"): '"denied"'
   Example26::Foo#bazinga:
     "(singleton(::Example26::Baz)) on singleton(::Example26::Bar)": nil
+    "(singleton(::Example26::BazOther)) on singleton(::Example26::BarOther)": '"bazingado"'
   Example28::Foo#bazingado:
     "() &-> :age_after_a_decade": "^(*untyped) -> :age_after_a_decade"
     "() on singleton(::Example28::Baz) &-> :age_after_a_decade": "^(*untyped) -> :age_after_a_decade"
@@ -411,7 +399,6 @@ methods:
       | singleton(::Example33::BarOther))] -> :age"
     "() on singleton(::Example33::BazOther) &-> :name_upcase": "^(*untyped) [self:
       (singleton(::Example33::Bar) | singleton(::Example33::BarOther))] -> :name_upcase"
-    "(self) on singleton(::Example33::BazOther)": "(:age | :name_upcase | nil)"
     "(singleton(::Example33::Bar)) on singleton(::Example33::Baz)": "(:age | :name_upcase
       | nil)"
     "(singleton(::Example33::BarOther)) on singleton(::Example33::BazOther)": "(:age
@@ -1035,7 +1022,6 @@ declarations:
   Example106::Visitor#visit: '"leaf of weight 1"'
   Example107::Canvas#draw: "(5 | 15 | 20)"
   Example108::ClassAttribute.redefine: '"__class_attr_plural_names="'
-  Example108::ClassAttribute.redefine_method: (::Symbol | nil | "__class_attr_plural_names=")
   Example108::Settings.__class_attr_plural_names: "::TrueClass"
   Example108::Settings.generated_readers: singleton(::Example108::Gauge::GeneratedReaders)
   Example13::Guarded#with_format: 'true'

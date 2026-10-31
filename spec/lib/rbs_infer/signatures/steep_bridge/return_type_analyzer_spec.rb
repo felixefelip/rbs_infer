@@ -17,7 +17,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
         end
       RUBY
 
-      result = bridge.method_return_types(code)
+      result = bridge.method_return_types(code, file: nil)
       expect(result["bar"]).to eq("bool")
     end
 
@@ -30,7 +30,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
         end
       RUBY
 
-      result = bridge.method_return_types(code)
+      result = bridge.method_return_types(code, file: nil)
       expect(result["bar"]).to eq("(User & User::Validated)?")
     end
 
@@ -43,7 +43,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
         end
       RUBY
 
-      result = bridge.method_return_types(code)
+      result = bridge.method_return_types(code, file: nil)
       expect(result["bar"]).to eq("nil")
     end
 
@@ -58,7 +58,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
         end
       RUBY
 
-      result = bridge.method_return_types(code)
+      result = bridge.method_return_types(code, file: nil)
       ret = result["verify_multiples_returns_with_void_and_rescue"]
       expect(ret).to match(/"error"\??/)
       expect(ret).not_to include("void")
@@ -91,7 +91,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
           end
         RUBY
 
-        result = bridge.method_return_types(code)
+        result = bridge.method_return_types(code, file: nil)
         expect(result["age_in_years"]).to eq("Float")
       end
 
@@ -104,7 +104,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
           end
         RUBY
 
-        result = bridge.method_return_types(code)
+        result = bridge.method_return_types(code, file: nil)
         # The essential guarantee is that it is no longer `untyped`
         # (absent from the result). `Float#truncate(ndigits)` is declared
         # to return `(Integer | Float)` because the type system can't see
@@ -115,7 +115,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
     end
 
     it "returns empty hash for unparseable code" do
-      result = bridge.method_return_types("!!!invalid ruby")
+      result = bridge.method_return_types("!!!invalid ruby", file: nil)
       expect(result).to eq({})
     end
 
@@ -134,11 +134,11 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
         end
       RUBY
 
-      by_kind = bridge.method_return_types_by_kind(code)
+      by_kind = bridge.method_return_types_by_kind(code, file: nil)
       expect(by_kind[:singleton].to_h["tally"]).to eq("String")
       expect(by_kind[:instance].to_h["tally"]).to eq("Integer")
       # The name-keyed accessor returns instance methods only.
-      expect(bridge.method_return_types(code)["tally"]).to eq("Integer")
+      expect(bridge.method_return_types(code, file: nil)["tally"]).to eq("Integer")
     end
 
     # felixefelip/rbs_infer#162. The third spelling of a class method, and the
@@ -160,7 +160,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
         end
       RUBY
 
-      by_kind = bridge.method_return_types_by_kind(code)
+      by_kind = bridge.method_return_types_by_kind(code, file: nil)
       expect(by_kind[:singleton].to_h["tally"]).to eq("String")
       expect(by_kind[:instance].to_h["tally"]).to eq("Integer")
     end
@@ -180,7 +180,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
         end
       RUBY
 
-      expect(bridge.method_return_types_by_kind(code)[:singleton].to_h).not_to have_key("tally")
+      expect(bridge.method_return_types_by_kind(code, file: nil)[:singleton].to_h).not_to have_key("tally")
     end
 
     # A class body inside the singleton class is out of it again.
@@ -197,7 +197,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
         end
       RUBY
 
-      by_kind = bridge.method_return_types_by_kind(code)
+      by_kind = bridge.method_return_types_by_kind(code, file: nil)
       expect(by_kind[:instance].to_h["tally"]).to eq("Integer")
       expect(by_kind[:singleton].to_h).not_to have_key("tally")
     end
@@ -225,14 +225,14 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
     end
 
     it "keeps each class's own type" do
-      table = bridge.method_return_types_by_kind(code)[:instance]
+      table = bridge.method_return_types_by_kind(code, file: nil)[:instance]
 
       expect(table.lookup("Dog", "name")).to eq("String")
       expect(table.lookup("Pets::Cat", "name")).to eq("nil")
     end
 
     it "answers no other owner by name alone" do
-      table = bridge.method_return_types_by_kind(code)[:instance]
+      table = bridge.method_return_types_by_kind(code, file: nil)[:instance]
 
       expect(table.lookup("Elsewhere", "name")).to be_nil
       expect(table.to_h).not_to have_key("name")
@@ -240,7 +240,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
 
     # A body Steep could not type still makes the name ambiguous.
     it "does not hand an untyped body the other owner's type" do
-      table = bridge.method_return_types_by_kind(<<~RUBY)[:instance]
+      table = bridge.method_return_types_by_kind(<<~RUBY, file: nil)[:instance]
         class Dog
           def name
             unknown_thing.name
@@ -259,10 +259,10 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
     end
 
     it "reads a name one owner defines by name alone" do
-      table = bridge.method_return_types_by_kind(code)[:instance]
+      table = bridge.method_return_types_by_kind(code, file: nil)[:instance]
 
       expect(table.to_h).to eq({})
-      expect(bridge.method_return_types_by_kind("class Dog\n  def bark\n    1\n  end\nend\n")[:instance]
+      expect(bridge.method_return_types_by_kind("class Dog\n  def bark\n    1\n  end\nend\n", file: nil)[:instance]
                .lookup("Somewhere", "bark")).to eq("Integer")
     end
   end
@@ -270,19 +270,19 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
   describe "#method_return_types block generic resolution" do
     it "resolves .map block body type when Steep returns Array[untyped]" do
       code = File.read(File.join(__dir__, "../../../../dummy/app/services/tag_destroy.rb"))
-      result = bridge.method_return_types(code)
+      result = bridge.method_return_types(code, file: nil)
       expect(result["parse_xml_as_hash_with_parse"]).to eq("Array[{ order: Nokogiri::XML::Node? }]")
     end
 
     it "resolves .map block with self method call" do
       code = File.read(File.join(__dir__, "../../../../dummy/app/services/tag_destroy.rb"))
-      result = bridge.method_return_types(code)
+      result = bridge.method_return_types(code, file: nil)
       expect(result["parse_xml_as_hash"]).to eq("Array[{ date: Nokogiri::XML::Node?, order: Nokogiri::XML::Node }]")
     end
 
     it "does not modify non-map block calls" do
       code = File.read(File.join(__dir__, "../../../../dummy/app/services/tag_destroy.rb"))
-      result = bridge.method_return_types(code)
+      result = bridge.method_return_types(code, file: nil)
       expect(result["parse_xml"]).to eq("Array[Nokogiri::XML::Node]")
     end
   end
