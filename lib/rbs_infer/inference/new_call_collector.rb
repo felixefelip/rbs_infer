@@ -133,12 +133,9 @@ module RbsInfer::Inference
 
       apply_established_ivars(node)
 
-      if node.name == :new && node.receiver
-        receiver_name = RbsInfer::Analyzer.extract_constant_path(node.receiver)
-        if receiver_name && (match_class?(receiver_name) || constructs_target?(node.receiver))
-          args = @arguments.for_initialize(node)
-          @usages << args unless args.empty?
-        end
+      if node.name == :new && node.receiver && constructs?(node.receiver)
+        args = @arguments.for_initialize(node)
+        @usages << args unless args.empty?
       end
 
       # Cross-class method calls: receiver.method(args) onde receiver é do tipo target_class
@@ -285,13 +282,26 @@ module RbsInfer::Inference
     # `Kid.new(...)` where the `initialize` `Kid` runs is the target's: an
     # inherited one is a call site whatever the receiver is called
     # (felixefelip/rbs_infer#412).
-    def constructs_target?(receiver)
-      return false if @inherited_initializers.constructs.empty?
-      return false unless receiver.is_a?(Prism::ConstantReadNode) || receiver.is_a?(Prism::ConstantPathNode)
+    # Whether `receiver.new` may build the target, or a class whose `new`
+    # reaches the target's `initialize`: by the constant it is written as, or
+    # by the class objects it is typed as (`reflection_class_for(macro).new`).
+    def constructs?(receiver)
+      if (spelling = RbsInfer::Analyzer.extract_constant_path(receiver))
+        return match_class?(spelling) || constructs_target?(@types.constant_type(receiver))
+      end
 
-      resolved = @types.constant_type(receiver)[/\Asingleton\((.+)\)\z/, 1] or return false
-      @inherited_initializers.constructs.include?(resolved.delete_prefix("::"))
+      members = RbsInfer::Inference::TypeUnion.flatten_union(@types.receiver_type(receiver) || "untyped")
+      members.all? { |member| member.start_with?("singleton(") } &&
+        members.any? { |member| match_class?(singleton_class_name(member)) || constructs_target?(member) }
     end
+
+    def constructs_target?(type)
+      return false if @inherited_initializers.constructs.empty?
+
+      @inherited_initializers.constructs.include?(singleton_class_name(type))
+    end
+
+    def singleton_class_name(type) = type[/\Asingleton\((.+)\)\z/, 1]&.delete_prefix("::")
 
     # A `super` written in an `initialize` of a class's own body, in a class
     # whose `super` reaches the target's.

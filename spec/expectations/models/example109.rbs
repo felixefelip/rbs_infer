@@ -32,17 +32,22 @@ end
 module Example109
   module Reflection
     class MacroReflection < AbstractReflection
-      attr_reader name: untyped
-      attr_reader scope: untyped
+      attr_reader name: :comments
+      attr_reader scope: Proc
       attr_reader options: untyped
-      attr_reader active_record: untyped
+      attr_reader active_record: singleton(Example109::Base)
       attr_reader plural_name: untyped
 
-      def initialize: (untyped name, untyped scope, untyped options, untyped active_record) -> void
+      def initialize: (:comments name, Proc scope, Hash[Symbol, untyped] options, singleton(Example109::Base) active_record) -> void
 
       private
 
-      def normalize_options: (untyped options) -> untyped
+      def normalize_options: (Hash[Symbol, untyped] options) -> Hash[Symbol, untyped]
+
+      class AfterInitialize
+        attr_reader options: Hash[Symbol, untyped]
+        attr_reader plural_name: String
+      end
     end
   end
 end
@@ -65,7 +70,7 @@ module Example109
       attr_reader type: untyped
       attr_reader foreign_type: untyped
 
-      def initialize: (untyped name, untyped scope, untyped options, untyped active_record) -> void
+      def initialize: (:comments name, Proc scope, Hash[Symbol, untyped] options, singleton(Example109::Base) active_record) -> void
 
       private
 

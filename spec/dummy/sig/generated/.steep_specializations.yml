@@ -344,6 +344,7 @@ methods:
     "(:comments, ::Proc, ({ :extend => ::Array[::Module] } | {  }), singleton(::Example109::Post))":
       class: "::Example109::Reflection::AssociationReflection"
       ivars:
+        "@active_record": singleton(::Example109::Base)
         "@association_foreign_key": nil
         "@association_primary_key": nil
         "@class_name": nil
@@ -358,6 +359,7 @@ methods:
       with {::Example109::Post{@generated_relation_methods: nil}}"
     : class: "::Example109::Reflection::AssociationReflection"
       ivars:
+        "@active_record": singleton(::Example109::Base)
         "@association_foreign_key": nil
         "@association_primary_key": nil
         "@class_name": nil
@@ -371,6 +373,7 @@ methods:
     "(:comments, ::Proc, ::Hash[::Symbol, untyped], singleton(::Example109::Base))":
       class: "::Example109::Reflection::AssociationReflection"
       ivars:
+        "@active_record": singleton(::Example109::Base)
         "@association_foreign_key": nil
         "@association_primary_key": nil
         "@class_name": nil
@@ -384,6 +387,7 @@ methods:
     "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))":
       class: "::Example109::Reflection::AssociationReflection"
       ivars:
+        "@active_record": singleton(::Example109::Base)
         "@association_foreign_key": nil
         "@association_primary_key": nil
         "@class_name": nil
@@ -398,6 +402,7 @@ methods:
       with {::Example109::Post{@generated_relation_methods: nil}}"
     : class: "::Example109::Reflection::AssociationReflection"
       ivars:
+        "@active_record": singleton(::Example109::Base)
         "@association_foreign_key": nil
         "@association_primary_key": nil
         "@class_name": nil
@@ -1338,21 +1343,21 @@ receivers:
   app/models/example108.rb:52:50:
   - singleton(::Module)
   app/models/example109.rb:102:19:
-  - untyped
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:117:25:
-  - untyped
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:117:60:
-  - untyped
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:117:84:
-  - untyped
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:118:33:
-  - untyped
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:118:84:
-  - untyped
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:124:18:
-  - untyped
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:125:17:
-  - untyped
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:133:20:
   - untyped
   app/models/example109.rb:133:44:
@@ -1390,7 +1395,7 @@ receivers:
   app/models/example109.rb:35:46:
   - singleton(::Example109::Reflection::ThroughReflection)
   app/models/example109.rb:82:32:
-  - untyped
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:99:36:
   - "::Hash[untyped, untyped]"
   app/models/example109/core.rb:6:60:
@@ -2387,13 +2392,13 @@ exits:
     "(:en) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    "(:en) &/home/felipefelix/workspaces/rbs_infer-555/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
+    "(:en) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
     "(:en) on singleton(::Example102::Inflector) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/rbs_infer-555/spec/dummy/app/models/example102.rb:2354
+    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example102.rb:2354
       with {@locale_rule_sets: {  }}"
     : ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
@@ -2624,6 +2629,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
+        "@active_record": singleton(::Example109::Base)
         "@join_table": nil
         "@foreign_key": nil
         "@association_foreign_key": nil
@@ -2640,6 +2646,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
+        "@active_record": singleton(::Example109::Base)
         "@join_table": nil
         "@foreign_key": nil
         "@association_foreign_key": nil
@@ -2654,6 +2661,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
+        "@active_record": singleton(::Example109::Base)
         "@join_table": nil
         "@foreign_key": nil
         "@association_foreign_key": nil
@@ -2669,6 +2677,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
+        "@active_record": singleton(::Example109::Base)
         "@join_table": nil
         "@foreign_key": nil
         "@association_foreign_key": nil
@@ -2751,9 +2760,9 @@ exits:
         "@name": ":comments"
         "@active_record": singleton(::Example109::Post)
   Example109::Reflection::MacroReflection#normalize_options:
-    ? "(({ :extend => ::Array[::Module] } | {  })) with {@class_name: nil, @counter_cache_column:
-      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
-      false, @name: :comments}"
+    ? "(({ :extend => ::Array[::Module] } | {  })) with {@active_record: singleton(::Example109::Base),
+      @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
     : ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@class_name": nil
@@ -2761,9 +2770,10 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
-    ? "(::Hash[::Symbol, untyped]) with {@class_name: nil, @counter_cache_column:
-      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
-      false, @name: :comments}"
+        "@active_record": singleton(::Example109::Base)
+    ? "(::Hash[::Symbol, untyped]) with {@active_record: singleton(::Example109::Base),
+      @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
     : ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@class_name": nil
@@ -2771,9 +2781,10 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
-    ? "(::Hash[untyped, untyped]) with {@class_name: nil, @counter_cache_column: nil,
-      @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
-      false, @name: :comments}"
+        "@active_record": singleton(::Example109::Base)
+    ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Base),
+      @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
     : ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@class_name": nil
@@ -2781,6 +2792,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
+        "@active_record": singleton(::Example109::Base)
   Example84::Reflection#rename:
     "((:articles | :replies)) with {@name: (:posts | :comments)}":
       ivars:
@@ -3178,7 +3190,7 @@ exits:
   Example93::Inflector.configure:
     "() &-> ::Array[untyped] with {@rule_set: nil}":
       ivars: {}
-    "() &/home/felipefelix/workspaces/rbs_infer-555/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
       ivars:
         "@rule_set":
           class: "::Example93::Rules"
@@ -3186,7 +3198,7 @@ exits:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
     "() on singleton(::Example93::Inflector) &-> ::Array[untyped] with {@rule_set: nil}":
       ivars: {}
-    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/rbs_infer-555/spec/dummy/app/models/example93.rb:1310
+    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example93.rb:1310
       with {@rule_set: nil}"
     : ivars:
         "@rule_set":
