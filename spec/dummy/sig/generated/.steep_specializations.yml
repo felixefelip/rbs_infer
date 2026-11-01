@@ -1182,8 +1182,12 @@ receivers:
   - singleton(::Example10::Foo)
   app/models/example10.rb:54:42:
   - singleton(::Example10::Bar)
+  app/models/example100.rb:27:14:
+  - "::Hash[::Symbol, untyped]"
   app/models/example100.rb:30:34:
   - "::Hash[::Symbol, untyped]"
+  app/models/example100.rb:39:29:
+  - "::Hash[(:tags | :comments), ::Example100::Reflection]"
   app/models/example100.rb:39:49:
   - singleton(::Example100::Reflection)
   app/models/example100.rb:47:29:
@@ -1210,10 +1214,16 @@ receivers:
   - "::Example102::FallbackChains"
   app/models/example102.rb:69:32:
   - "::Hash[:en, ::Example102::Rules]"
+  app/models/example102.rb:84:34:
+  - singleton(::Example102::Inflector)
   app/models/example103.rb:33:14:
+  - "::Hash[untyped, untyped]"
+  app/models/example103.rb:37:14:
   - "::Hash[untyped, untyped]"
   app/models/example103.rb:62:20:
   - singleton(::Example103::Store)
+  app/models/example103.rb:63:11:
+  - "::Example103::Store"
   app/models/example103.rb:64:11:
   - "::Example103::Store"
   app/models/example104.rb:24:37:
@@ -1252,6 +1262,8 @@ receivers:
   - singleton(::Module)
   app/models/example109.rb:101:36:
   - "::Hash[untyped, untyped]"
+  app/models/example109.rb:104:19:
+  - untyped
   app/models/example109.rb:119:25:
   - untyped
   app/models/example109.rb:119:60:
@@ -1264,14 +1276,22 @@ receivers:
   - untyped
   app/models/example109.rb:126:18:
   - untyped
+  app/models/example109.rb:127:17:
+  - untyped
   app/models/example109.rb:135:20:
   - untyped
   app/models/example109.rb:135:44:
   - untyped
+  app/models/example109.rb:174:25:
+  - singleton(::Example109::Associations::Builder::HasMany)
+  app/models/example109.rb:213:17:
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:213:38:
   - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:217:21:
   - singleton(::Example109::Reflection)
+  app/models/example109.rb:237:22:
+  - untyped
   app/models/example109.rb:243:28:
   - "(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::AggregateReflection
     | ::Example109::Reflection::HasManyReflection | ::Example109::Reflection::HasOneReflection
@@ -1287,6 +1307,10 @@ receivers:
   app/models/example109.rb:290:31:
   - singleton(::Module)
   app/models/example109.rb:298:41:
+  - untyped
+  app/models/example109.rb:324:28:
+  - untyped
+  app/models/example109.rb:334:28:
   - untyped
   app/models/example109.rb:361:39:
   - singleton(::Example109::Associations::HasManyAssociation)
@@ -1664,6 +1688,8 @@ receivers:
   - "::Example86::Box"
   app/models/example87.rb:51:41:
   - "::Example87::HasManyReflection"
+  app/models/example87.rb:56:11:
+  - singleton(::Example87::Writer)
   app/models/example87.rb:56:52:
   - singleton(::Example87::HasManyReflection)
   app/models/example87.rb:64:12:
@@ -1674,6 +1700,8 @@ receivers:
   - singleton(::Example88::Rules)
   app/models/example88.rb:35:12:
   - "::Example88::Rules"
+  app/models/example88.rb:42:34:
+  - singleton(::Example88::Inflector)
   app/models/example89.rb:24:50:
   - singleton(::Module)
   app/models/example89.rb:47:27:
@@ -1704,6 +1732,8 @@ receivers:
   - "::Example90::Post"
   app/models/example91.rb:15:63:
   - singleton(::Module)
+  app/models/example91.rb:44:25:
+  - singleton(::Example91::Builder::HasReader)
   app/models/example91.rb:54:29:
   - singleton(::Example91::Post)
   app/models/example91.rb:54:33:
@@ -1714,8 +1744,15 @@ receivers:
   - "::Example91::Post"
   app/models/example92.rb:34:29:
   - singleton(::Example92::Rules)
+  app/models/example92.rb:45:34:
+  - singleton(::Example92::Inflector)
   app/models/example93.rb:38:26:
   - singleton(::Example93::Rules)
+  app/models/example93.rb:55:34:
+  - singleton(::Example93::Inflector)
+  app/models/example94.rb:40:14:
+  - "::Hash[(:wheel | :seat | :door), (::Example94::Wheel | ::Example94::Seat | ::Example94::Bench
+    | ::Example94::Door)]"
   app/models/example94.rb:44:14:
   - "::Hash[(:wheel | :seat | :door), (::Example94::Wheel | ::Example94::Seat | ::Example94::Bench
     | ::Example94::Door)]"
@@ -1744,6 +1781,8 @@ receivers:
   - "({ :through => :taggings } | ::Hash[untyped, untyped] | ::Hash[::Symbol, untyped])"
   app/models/example96.rb:48:13:
   - "::Hash[::Symbol, untyped]"
+  app/models/example96.rb:61:14:
+  - "::Hash[::Symbol, untyped]"
   app/models/example96.rb:66:48:
   - singleton(::Example96::Reflection)
   app/models/example96.rb:67:57:
@@ -1770,6 +1809,8 @@ receivers:
   - singleton(::Example97::Foo)
   app/models/example97.rb:23:10:
   - "::Example97::Foo"
+  app/models/example97.rb:23:17:
+  - "{  }"
   app/models/example97.rb:25:10:
   - "::Example97::Foo"
   app/models/example97.rb:25:17:
@@ -1778,6 +1819,8 @@ receivers:
   - "::Example97::Foo"
   app/models/example97.rb:29:17:
   - "::Hash[untyped, untyped]"
+  app/models/example98.rb:13:13:
+  - "{  }"
   app/models/example98.rb:17:13:
   - "::Hash[untyped, untyped]"
   app/models/example98.rb:17:19:
@@ -1792,6 +1835,8 @@ receivers:
   - "{ :num1 => 5, :num2 => 10 }"
   app/models/example98.rb:29:13:
   - "{ :bar => { :num1 => 5, :num2 => 10 } }"
+  app/models/example98.rb:29:19:
+  - "{ :num1 => 5, :num2 => 10 }"
   app/models/example98.rb:29:36:
   - "{ :bar => { :num1 => 5, :num2 => 10 } }"
   app/models/example98.rb:29:42:
@@ -1814,6 +1859,8 @@ receivers:
   - untyped
   app/models/example99.rb:38:10:
   - "::Example99::Foo"
+  app/models/example99.rb:38:17:
+  - "::Hash[untyped, untyped]"
   app/models/example99.rb:42:10:
   - "::Example99::Foo"
   app/models/example99.rb:42:17:
@@ -1830,6 +1877,8 @@ receivers:
   - "::Example99::Foo"
   app/models/example99.rb:50:17:
   - "::Hash[untyped, untyped]"
+  app/models/example99.rb:50:23:
+  - untyped
   app/models/example99.rb:50:37:
   - "::Example99::Foo"
   app/models/example99.rb:50:44:
@@ -1903,6 +1952,9 @@ receivers:
   app/services/comment/create.rb:22:20:
   - singleton(::Comment)
   app/services/comment/create.rb:27:12:
+  - '{ :baz => 42, :comment => ::Comment, :foo => "bar", :nested => { :a => 1, :b
+    => 2 } }'
+  app/services/comment/create.rb:30:12:
   - '{ :baz => 42, :comment => ::Comment, :foo => "bar", :nested => { :a => 1, :b
     => 2 } }'
   app/services/comment/create.rb:30:39:
@@ -2026,10 +2078,26 @@ receivers:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:141:28:
   - singleton(::Hash)
+  sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:170:18:
+  - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:29:16:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:34:16:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:42:18:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:49:18:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:59:18:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:79:18:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:88:16:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/constants.rb:11:18:
   - singleton(::Object)
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:328:26:
+  - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:51:
   - "::String"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:368:36:
@@ -2044,6 +2112,8 @@ receivers:
   - "::Hash[::String, ::String]"
   sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:31:16:
   - singleton(::ActionController::HttpAuthentication::Token)
+  sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:50:26:
+  - untyped
   sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:51:19:
   - "(::ActionController::Base & ::ActionController::HttpAuthentication::Token::ControllerMethods)"
   sig/generated/steep_controller_runtime/dashboard_controller.rb:10:37:
