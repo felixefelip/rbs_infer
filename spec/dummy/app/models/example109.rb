@@ -23,8 +23,8 @@
 #     `HasManyReflection`, and the `name` of a `ThroughReflection` is one of
 #     the methods it delegates by a computed list;
 #   - `@active_record` holds `singleton(Base)` where `Post` builds the reflection;
-#   - `name` reaches `define_readers` `untyped`, so its `singularize` may be
-#     example102's and example104's own, which drop the memos they fold through.
+#   - `name` reaches `define_readers` `untyped`, so the strings that
+#     interpolate it, `name.to_s.singularize` included, do not fold.
 #
 # Nothing here states a type.
 module Example109
