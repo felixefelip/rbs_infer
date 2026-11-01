@@ -53,25 +53,45 @@ call_sites:
   - source: def size; 1; end
     target: "::Example108::Gauge::GeneratedReaders"
     kind: module
-  app/models/example109.rb:200:10:
+  app/models/example109.rb:197:10:
   -
   -
+  - source: |2
+                  def comments
+                    association(:comments).reader
+                  end
+    target: "::Example109::Post::GeneratedRelationMethods"
+    kind: module
+  - source: |2
+                  def comments=(value)
+                    association(:comments).writer(value)
+                  end
+    target: "::Example109::Post::GeneratedRelationMethods"
+    kind: module
+  app/models/example109.rb:237:18:
   -
   -
-  app/models/example109.rb:240:18:
+  app/models/example109.rb:239:10:
+  - source: |2
+                  def comments
+                    association(:comments).reader
+                  end
+    target: "::Example109::Post::GeneratedRelationMethods"
+    kind: module
   -
+  app/models/example109.rb:240:10:
+  - source: |2
+                  def comments=(value)
+                    association(:comments).writer(value)
+                  end
+    target: "::Example109::Post::GeneratedRelationMethods"
+    kind: module
   -
-  app/models/example109.rb:242:10:
+  app/models/example109.rb:278:12:
   -
+  app/models/example109.rb:299:12:
   -
-  app/models/example109.rb:243:10:
-  -
-  -
-  app/models/example109.rb:281:12:
-  -
-  app/models/example109.rb:302:12:
-  -
-  app/models/example109.rb:364:4:
+  app/models/example109.rb:361:4:
   - source: |-
       module GeneratedRelationMethods
       end

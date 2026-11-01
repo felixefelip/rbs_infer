@@ -6,5 +6,5 @@ module ActiveSupport
 end
 
 class Class
-  def class_attribute: (*(String | :plural_labels) attrs, ?instance_accessor: bool, ?instance_reader: untyped, ?instance_writer: false, ?instance_predicate: bool, ?default: true?) -> untyped | ...
+  def class_attribute: (*("before_add_for_comments" | "after_add_for_comments" | "before_remove_for_comments" | "after_remove_for_comments" | :plural_labels) attrs, ?instance_accessor: bool, ?instance_reader: untyped, ?instance_writer: false, ?instance_predicate: bool, ?default: true?) -> untyped | ...
 end

@@ -20,10 +20,7 @@
 #
 #   - `comment_ids` and `comment_ids=`: `name.to_s.singularize` needs Active
 #     Support's inflector, which is not in the program;
-#   - `create_reflection` and `build` are still declared to answer
-#     `ThroughReflection` beside `HasManyReflection`, though each of their
-#     specialized calls answers `HasManyReflection` alone;
-#   - `association(:comments).reader` is a stub here, so `comments` answers
+#   -`association(:comments).reader` is a stub here, so `comments` answers
 #     `nil`; the records would come from the rest of Active Record's path.
 #
 # Nothing here states a type.

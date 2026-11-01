@@ -5,12 +5,9 @@ app/models/concerns/test/filtrable.rb:16:4: [error] Type `(::Post & ::Test::Filt
 app/models/eval_reopen.rb:61:6: [warning] Method `::Object#by_instance_eval` is not declared in RBS
 app/models/example103.rb:54:10: [error] Cannot allow method body have type `:a` because declared as type `:x`
 app/models/example108.rb:40:34: [warning] Cannot pass a value of type `^(*untyped) -> (true | ::TrueClass | ::interned | nil)` as a block-pass-argument of type `^ [self: top] -> untyped`
-app/models/example109.rb:210:39: [warning] The method cannot be called with a block
-app/models/example109.rb:220:33: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^ [self: self] -> U(_)`
-app/models/example109.rb:241:28: [error] Type `(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::HasManyReflection)` does not have method `name`
-app/models/example109.rb:278:31: [error] Type `(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::HasManyReflection)` does not have method `name`
-app/models/example109.rb:279:31: [error] Type `(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::HasManyReflection)` does not have method `options`
-app/models/example109.rb:288:35: [warning] Cannot pass a value of type `^(*untyped) -> untyped` as a block-pass-argument of type `(^(::Module) [self: ::Module] -> void | nil)`
+app/models/example109.rb:207:39: [warning] The method cannot be called with a block
+app/models/example109.rb:217:33: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^ [self: self] -> U(_)`
+app/models/example109.rb:285:35: [warning] Cannot pass a value of type `^(*untyped) -> untyped` as a block-pass-argument of type `(^(::Module) [self: ::Module] -> void | nil)`
 app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
 app/models/example21.rb:96:29: [error] Type `(::Example21::Ticket | nil)` does not have method `holder`
