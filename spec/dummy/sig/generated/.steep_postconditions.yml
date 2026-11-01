@@ -551,6 +551,54 @@ postconditions:
   effects:
     may_write:
     - "@generated_readers"
+- class: Example109::Associations::Builder::Association
+  method: extensions=
+  effects:
+    may_write:
+    - "@extensions"
+- class: Example109::Associations::HasManyAssociation
+  method: initialize
+  effects:
+    may_write:
+    - "@owner"
+- class: Example109::Core::ClassMethods
+  method: generated_relation_methods
+  effects:
+    may_write:
+    - "@generated_relation_methods"
+- class: Example109::Reflection::AbstractReflection
+  method: initialize
+  effects:
+    may_write:
+    - "@class_name"
+    - "@counter_cache_column"
+    - "@inverse_of"
+    - "@inverse_which_updates_counter_cache"
+    - "@inverse_which_updates_counter_cache_defined"
+- class: Example109::Reflection::AssociationReflection
+  method: initialize
+  effects:
+    may_write:
+    - "@association_foreign_key"
+    - "@association_primary_key"
+    - "@foreign_key"
+    - "@foreign_type"
+    - "@join_table"
+    - "@type"
+- class: Example109::Reflection::MacroReflection
+  method: initialize
+  effects:
+    may_write:
+    - "@active_record"
+    - "@name"
+    - "@options"
+    - "@plural_name"
+    - "@scope"
+- class: Example109::Reflection::ThroughReflection
+  method: initialize
+  effects:
+    may_write:
+    - "@delegate_reflection"
 - class: Example10::Foo
   method: name
   effects:

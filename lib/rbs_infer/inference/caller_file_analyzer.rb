@@ -66,6 +66,7 @@ module RbsInfer::Inference
       result = Prism.parse(source)
       comments = result.comments
       method_return_types = extract_method_return_types(source, comments, result.value)
+      owned_method_return_types = owned_method_return_types(source, comments, result.value)
 
       # Incluir tipos de attr_reader/attr_accessor como retorno de métodos
       # (em Ruby, attr_reader :foo gera um método foo)
@@ -182,6 +183,7 @@ module RbsInfer::Inference
         target_class: @target_class,
         steep_bridge: @steep_bridge,
         method_return_types: method_return_types,
+        owned_method_return_types: owned_method_return_types,
         local_var_types: local_var_types,
         local_var_read_types: local_var_read_types,
         local_var_types_by_method: local_var_types_by_method,
@@ -242,6 +244,7 @@ module RbsInfer::Inference
         target_class: @target_class,
         steep_bridge: @steep_bridge,
         method_return_types: {},
+        owned_method_return_types: {},
         local_var_types: local_var_types,
         method_type_resolver: @method_type_resolver,
         init_positional_params: @init_positional_params,
@@ -393,6 +396,33 @@ module RbsInfer::Inference
       end
 
       types
+    end
+
+    # `extract_method_return_types` by the method each `def` defines
+    # (`MethodKey`), nil where its return is unknown.
+    def owned_method_return_types(source, comments, tree)
+      lines = source.lines
+      comments = RbsInfer::AST::CommentIndex.new(comments)
+      types = {}
+      each_owned_def(tree) do |defn, owner, singleton|
+        key = MethodKey.for(defn.name, owner: owner, kind: singleton ? :class_method : :method)
+        types[key] = find_rbs_return_type(comments, lines, defn.location.start_line) || infer_return_type_from_body(defn)
+      end
+      types
+    end
+
+    def each_owned_def(node, nesting = [], singleton: false, &block)
+      case node
+      when Prism::ClassNode, Prism::ModuleNode
+        name = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
+        each_owned_def(node.body, [*nesting, name], &block) if node.body && name
+      when Prism::SingletonClassNode
+        each_owned_def(node.body, nesting, singleton: node.expression.is_a?(Prism::SelfNode), &block) if node.body
+      when Prism::DefNode
+        yield node, nesting.join("::"), singleton || node.receiver.is_a?(Prism::SelfNode)
+      when Prism::Node
+        node.compact_child_nodes.each { |child| each_owned_def(child, nesting, singleton: singleton, &block) }
+      end
     end
 
     def find_rbs_return_type(comments, lines, def_line)

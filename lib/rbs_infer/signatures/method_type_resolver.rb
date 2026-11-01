@@ -342,6 +342,7 @@ module RbsInfer::Signatures
         visitor = RbsInfer::Inference::NewCallCollector.new(
           target_class: class_name,
           method_return_types: mrt,
+          owned_method_return_types: {},
           local_var_types: local_var_types,
           method_type_resolver: self,
           caller_class_name: caller_class_name,
@@ -576,6 +577,7 @@ module RbsInfer::Signatures
         visitor = RbsInfer::Inference::NewCallCollector.new(
           target_class: class_name,
           method_return_types: method_return_types,
+          owned_method_return_types: {},
           local_var_types: local_var_types,
           method_type_resolver: self,
           caller_class_name: caller_class_name,

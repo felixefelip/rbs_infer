@@ -58,6 +58,20 @@ app/models/example106.rb:
   - anchor: Visitor
     defs:
       visit: Example106Printer
+app/models/example109.rb:
+  modules:
+  - anchor: ClassMethods
+    annotations:
+    - "# @type instance: singleton(Example109::Base)"
+  - anchor: MacroReflection
+    defs:
+      initialize: Example109::Reflection::AssociationReflection
+      normalize_options: Example109::Reflection::AssociationReflection
+app/models/example109/core.rb:
+  modules:
+  - anchor: ClassMethods
+    annotations:
+    - "# @type instance: singleton(Example109::Base)"
 app/models/example13.rb:
   modules:
   - anchor: GeneratedAttributes
