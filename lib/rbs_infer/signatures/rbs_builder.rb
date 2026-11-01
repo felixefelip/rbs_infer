@@ -236,9 +236,12 @@ module RbsInfer::Signatures
       end
     end
 
+    # `attr_types` answers for the instances' ivars, so not for an attr of the
+    # class object itself.
     def attr_signature(member, attr_types)
       sig = member.signature
-      sig.end_with?(": untyped") && attr_types[member.name] ? "#{member.name}: #{attr_types[member.name]}" : sig
+      inferred = attr_types[member.name] unless member.singleton
+      sig.end_with?(": untyped") && inferred ? "#{member.name}: #{inferred}" : sig
     end
 
     # `attr_accessor :x` declares `x` and `x=`; `attr_reader`/`attr_writer`
@@ -255,12 +258,12 @@ module RbsInfer::Signatures
     # as ordinary inheritance, not a duplicate — those must NOT reconcile.
     def reconcile_attrs_with_explicit_defs(members)
       defs_by_owner = Hash.new { |h, k| h[k] = Set.new }
-      members.each { |m| defs_by_owner[m.owner] << m.name if m.kind == :method }
+      members.each { |m| defs_by_owner[[m.owner, m.kind == :class_method]] << m.name if %i[method class_method].include?(m.kind) }
 
       members.flat_map do |m|
         next [m] unless ATTR_KINDS.include?(m.kind)
 
-        kind = surviving_attr_kind(m, defs_by_owner[m.owner])
+        kind = surviving_attr_kind(m, defs_by_owner[[m.owner, !!m.singleton]])
         if kind.nil?
           []
         elsif kind == m.kind
@@ -324,7 +327,8 @@ module RbsInfer::Signatures
 
     def attr_method_signature(member, sig)
       type = sig.delete_prefix("#{member.name}: ")
-      member.kind == :attr_writer ? "#{member.name}=: (#{type}) -> #{type}" : "#{member.name}: () -> #{type}"
+      name = member.singleton ? "self.#{member.name}" : member.name
+      member.kind == :attr_writer ? "#{name}=: (#{type}) -> #{type}" : "#{name}: () -> #{type}"
     end
 
     # Renders a single value member (method / attr_*) as one RBS line, or
@@ -348,7 +352,7 @@ module RbsInfer::Signatures
         "#{indent}def #{overloadable(sig, member)}"
       when :attr_accessor, :attr_reader, :attr_writer
         sig = attr_signature(member, attr_types)
-        member.overloading ? "#{indent}def #{overloadable(attr_method_signature(member, sig), member)}" : "#{indent}#{member.kind} #{sig}"
+        member.overloading ? "#{indent}def #{overloadable(attr_method_signature(member, sig), member)}" : "#{indent}#{member.kind} #{"self." if member.singleton}#{sig}"
       end
     end
 

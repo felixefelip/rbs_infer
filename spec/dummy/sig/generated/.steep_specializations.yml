@@ -1337,62 +1337,62 @@ receivers:
   - singleton(::Example107::Square)
   app/models/example108.rb:52:50:
   - singleton(::Module)
-  app/models/example109.rb:101:36:
-  - "::Hash[untyped, untyped]"
-  app/models/example109.rb:104:19:
+  app/models/example109.rb:102:19:
   - untyped
-  app/models/example109.rb:119:25:
+  app/models/example109.rb:117:25:
   - untyped
-  app/models/example109.rb:119:60:
+  app/models/example109.rb:117:60:
   - untyped
-  app/models/example109.rb:119:84:
+  app/models/example109.rb:117:84:
   - untyped
-  app/models/example109.rb:120:33:
+  app/models/example109.rb:118:33:
   - untyped
-  app/models/example109.rb:120:84:
+  app/models/example109.rb:118:84:
   - untyped
-  app/models/example109.rb:126:18:
+  app/models/example109.rb:124:18:
   - untyped
-  app/models/example109.rb:127:17:
+  app/models/example109.rb:125:17:
   - untyped
-  app/models/example109.rb:135:20:
+  app/models/example109.rb:133:20:
   - untyped
-  app/models/example109.rb:135:44:
+  app/models/example109.rb:133:44:
   - untyped
-  app/models/example109.rb:174:25:
+  app/models/example109.rb:172:25:
   - singleton(::Example109::Associations::Builder::HasMany)
-  app/models/example109.rb:213:17:
+  app/models/example109.rb:211:17:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:213:38:
+  app/models/example109.rb:211:38:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:217:21:
+  app/models/example109.rb:215:21:
   - singleton(::Example109::Reflection)
-  app/models/example109.rb:237:22:
+  app/models/example109.rb:235:22:
   - untyped
-  app/models/example109.rb:243:28:
+  app/models/example109.rb:241:28:
   - "(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::HasManyReflection)"
-  app/models/example109.rb:280:31:
+  app/models/example109.rb:278:31:
   - "(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::HasManyReflection)"
-  app/models/example109.rb:281:31:
+  app/models/example109.rb:279:31:
   - "(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::HasManyReflection)"
-  app/models/example109.rb:290:31:
+  app/models/example109.rb:288:31:
   - singleton(::Module)
-  app/models/example109.rb:298:41:
+  app/models/example109.rb:296:41:
   - untyped
-  app/models/example109.rb:324:28:
+  app/models/example109.rb:322:28:
   - untyped
-  app/models/example109.rb:334:28:
+  app/models/example109.rb:332:28:
   - untyped
-  app/models/example109.rb:361:39:
-  - singleton(::Example109::Associations::HasManyAssociation)
-  app/models/example109.rb:36:49:
+  app/models/example109.rb:34:49:
   - singleton(::Example109::Reflection::HasManyReflection)
-  app/models/example109.rb:37:15:
+  app/models/example109.rb:359:39:
+  - singleton(::Example109::Associations::HasManyAssociation)
+  app/models/example109.rb:35:15:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:37:46:
+  app/models/example109.rb:35:46:
   - singleton(::Example109::Reflection::ThroughReflection)
-  app/models/example109.rb:84:32:
+  app/models/example109.rb:82:32:
   - untyped
+  app/models/example109.rb:99:36:
+  - "::Hash[untyped, untyped]"
   app/models/example109/core.rb:6:60:
   - singleton(::Module)
   app/models/example11.rb:12:22:
@@ -2387,13 +2387,13 @@ exits:
     "(:en) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    "(:en) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
+    "(:en) &/home/felipefelix/workspaces/rbs_infer-555/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
     "(:en) on singleton(::Example102::Inflector) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example102.rb:2354
+    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/rbs_infer-555/spec/dummy/app/models/example102.rb:2354
       with {@locale_rule_sets: {  }}"
     : ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
@@ -3178,7 +3178,7 @@ exits:
   Example93::Inflector.configure:
     "() &-> ::Array[untyped] with {@rule_set: nil}":
       ivars: {}
-    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
+    "() &/home/felipefelix/workspaces/rbs_infer-555/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
       ivars:
         "@rule_set":
           class: "::Example93::Rules"
@@ -3186,7 +3186,7 @@ exits:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
     "() on singleton(::Example93::Inflector) &-> ::Array[untyped] with {@rule_set: nil}":
       ivars: {}
-    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example93.rb:1310
+    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/rbs_infer-555/spec/dummy/app/models/example93.rb:1310
       with {@rule_set: nil}"
     : ivars:
         "@rule_set":

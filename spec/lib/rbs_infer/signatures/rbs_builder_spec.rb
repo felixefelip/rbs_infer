@@ -349,6 +349,36 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
 
       expect(result).to include("attr_accessor x: untyped")
     end
+
+    it "reconciles an attr of class << self with the class's own defs, not the instances'" do
+      singleton = attr(:attr_accessor, "x").tap { |member| member.singleton = true }
+      class_writer = RbsInfer::Inference::Member.new(kind: :class_method, name: "x=", signature: "x=: (untyped v) -> untyped",
+                                                     visibility: :public)
+
+      expect(build_rbs(builder, [singleton, meth("x=")], {}, {})).to include("attr_accessor self.x: untyped")
+      expect(build_rbs(builder, [singleton, class_writer], {}, {})).to include("attr_reader self.x: untyped")
+    end
+  end
+
+  describe "#build with an attr of class << self" do
+    let(:builder) { make_builder(target_class: "Foo", superclass_name: nil) }
+
+    def singleton_attr(kind, overloading: false)
+      RbsInfer::Inference::Member.new(kind: kind, name: "x", signature: "x: untyped", visibility: :public, singleton: true,
+                                      overloading: overloading)
+    end
+
+    it "declares it on the class object" do
+      expect(build_rbs(builder, [singleton_attr(:attr_accessor)], {}, {})).to include("  attr_accessor self.x: untyped\n")
+    end
+
+    it "declares it on the class object where it overloads a declaration elsewhere" do
+      expect(build_rbs(builder, [singleton_attr(:attr_reader, overloading: true)], {}, {})).to include("  def self.x: () -> untyped | ...\n")
+    end
+
+    it "does not take the type of the instances' ivar of its name" do
+      expect(build_rbs(builder, [singleton_attr(:attr_reader)], {}, { "x" => "String" })).to include("attr_reader self.x: untyped")
+    end
   end
 
   # Class-instance variables (`@x` in `def self.x`/class body) are declared on
