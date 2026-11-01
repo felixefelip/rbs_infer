@@ -3001,6 +3001,8 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
         "@active_record": singleton(::Example109::Base)
+      params:
+        '0': "{  }"
   Example84::Reflection#rename:
     "((:articles | :replies)) with {@name: (:posts | :comments)}":
       ivars:
@@ -3653,14 +3655,26 @@ exits:
       ivars:
         "@name": ":taggings"
   Example96::NormalizedReflection#without_counter_cache:
+    "({ :counter_cache => bool })":
+      ivars: {}
+      params:
+        '0': "{  }"
     "({ :counter_cache => bool }) with {@name: :taggings, @options: nil}":
       ivars:
         "@name": ":taggings"
         "@options": nil
+      params:
+        '0': "{  }"
+    "({ :through => :taggings })":
+      ivars: {}
+      params:
+        '0': "{ :through => :taggings }"
     "({ :through => :taggings }) with {@name: :posts, @options: nil}":
       ivars:
         "@name": ":posts"
         "@options": nil
+      params:
+        '0': "{ :through => :taggings }"
   Example96::NormalizedReflection.new:
     "(:posts, { :through => :taggings })":
       ivars:
