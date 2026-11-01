@@ -11,3 +11,13 @@ class Example109::Post
   end
   include ::Example109::Post::GeneratedRelationMethods
 end
+
+module Example109::Post::GeneratedRelationMethods
+  def comments
+    association(:comments).reader
+  end
+
+  def comments=(value)
+    association(:comments).writer(value)
+  end
+end

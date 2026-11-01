@@ -74,9 +74,19 @@ call_sites:
     target: "::Example109::Post"
   - source: include ::Example109::Post::GeneratedRelationMethods
     target: "::Example109::Post"
+  - source: |2
+                  def comments
+                    association(:comments).reader
+                  end
+    target: "::Example109::Post::GeneratedRelationMethods"
+    kind: module
   -
-  -
-  -
+  - source: |2
+                  def comments=(value)
+                    association(:comments).writer(value)
+                  end
+    target: "::Example109::Post::GeneratedRelationMethods"
+    kind: module
   -
   app/models/example60.rb:9:2:
   - source: def stamp(...);  _ = example60_printer;  _.stamp(...);rescue NoMethodError

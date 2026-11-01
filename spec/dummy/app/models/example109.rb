@@ -15,16 +15,16 @@
 # in the gem), and defines `comments`, `comments=`, `comment_ids` and
 # `comment_ids=` in it.
 #
-# `Post::GeneratedRelationMethods` is built and included, but none of the
-# four is defined yet: each of their `class_eval`s is a hole. What stops it:
+# `Post::GeneratedRelationMethods` is built and included, and `comments` and
+# `comments=` are defined in it. What is still missing:
 #
-#   - `options[:through]` is not read as nil once `.new` has taken `options`,
-#     so `Reflection.create` answers `ThroughReflection` beside
-#     `HasManyReflection`, and the `name` of a `ThroughReflection` is one of
-#     the methods it delegates by a computed list;
-#   - `@active_record` holds `singleton(Base)` where `Post` builds the reflection;
-#   - `name` reaches `define_readers` `untyped`, so the strings that
-#     interpolate it, `name.to_s.singularize` included, do not fold.
+#   - `comment_ids` and `comment_ids=`: `name.to_s.singularize` needs Active
+#     Support's inflector, which is not in the program;
+#   - `create_reflection` and `build` are still declared to answer
+#     `ThroughReflection` beside `HasManyReflection`, though each of their
+#     specialized calls answers `HasManyReflection` alone;
+#   - the methods written into the module are checked without `Post` as their
+#     `self`, so `association` is not found.
 #
 # Nothing here states a type.
 module Example109
