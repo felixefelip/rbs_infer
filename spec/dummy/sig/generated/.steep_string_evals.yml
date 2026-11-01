@@ -53,13 +53,13 @@ call_sites:
   - source: def size; 1; end
     target: "::Example108::Gauge::GeneratedReaders"
     kind: module
-  app/models/example109.rb:202:10:
+  app/models/example109.rb:200:10:
   -
   -
-  app/models/example109.rb:242:18:
+  app/models/example109.rb:240:18:
   -
   -
-  app/models/example109.rb:366:4:
+  app/models/example109.rb:364:4:
   -
   -
   app/models/example60.rb:9:2:

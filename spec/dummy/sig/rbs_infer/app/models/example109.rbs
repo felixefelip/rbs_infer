@@ -141,7 +141,7 @@ module Example109
         def self.define_validations: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection) reflection) -> nil
         def self.define_change_tracking_methods: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection) reflection) -> nil
 
-        attr_accessor extensions: untyped
+        attr_accessor self.extensions: untyped
       end
     end
   end
