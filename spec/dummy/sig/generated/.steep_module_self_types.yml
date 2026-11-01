@@ -753,6 +753,11 @@ sig/generated/steep_string_evals/app/models/example108.rb:
   - anchor: GeneratedReaders
     annotations:
     - "# @type instance: Example108::Gauge & Example108::Gauge::GeneratedReaders"
+sig/generated/steep_string_evals/app/models/example109.rb:
+  modules:
+  - anchor: GeneratedRelationMethods
+    annotations:
+    - "# @type instance: Example109::Post & Example109::Post::GeneratedRelationMethods"
 sig/generated/steep_string_evals/app/models/example60/labels.rb:
   modules:
   - anchor: Labels

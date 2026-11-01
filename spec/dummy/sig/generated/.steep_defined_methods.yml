@@ -11,7 +11,7 @@ methods:
     block: app/models/example108.rb:29:8
   Example109::Base.__class_attr_pluralize_table_names:
     params: "()"
-    returns: untyped
+    returns: "::TrueClass"
     block: app/models/example108.rb:27:8
   Example109::Base.__class_attr_pluralize_table_names=:
     params: "(untyped new_value)"

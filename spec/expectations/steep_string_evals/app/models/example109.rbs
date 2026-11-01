@@ -1,0 +1,8 @@
+module Example109
+  class Post
+    module GeneratedRelationMethods
+    end
+
+    include ::Example109::Post::GeneratedRelationMethods
+  end
+end

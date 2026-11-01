@@ -3,7 +3,7 @@ module Example109
     module ClassMethods
       @generated_relation_methods: Module?
 
-      def generated_relation_methods: () -> Module
+      def generated_relation_methods: () -> singleton(Example109::Post::GeneratedRelationMethods)
     end
   end
 end

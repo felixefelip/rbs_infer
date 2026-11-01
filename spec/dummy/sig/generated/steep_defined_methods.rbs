@@ -9,6 +9,6 @@ class Example108::Settings
 end
 
 class Example109::Base
-  def self.__class_attr_pluralize_table_names: () -> untyped
+  def self.__class_attr_pluralize_table_names: () -> ::TrueClass
   def self.__class_attr_pluralize_table_names=: (untyped new_value) -> untyped
 end

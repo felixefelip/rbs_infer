@@ -41,6 +41,14 @@ methods:
         "@default_proc": nil
   Concurrent::Collection::NonConcurrentMapBackend#[]:
     "(:en) with {@backend: {  }, @default_proc: nil}": nil
+  Concurrent::Collection::NonConcurrentMapBackend#[]=:
+    "(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped]": "::Example104::Rules"
+    "(:en, ::Example104::Rules)": "::Example104::Rules"
+    "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped]": "::Example104::Rules"
+    "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}": "::Example104::Rules"
+    "(:en, ::Example104::Rules) with {@backend: {  }, @default_proc: nil}": "::Example104::Rules"
+  Concurrent::Collection::NonConcurrentMapBackend#initialize:
+    "(nil) with {@backend: nil, @default_proc: nil, @write_lock: nil}": nil
   Concurrent::Map#each_pair:
     "() &-> (nil | void)": self
     "() &-> ::Array[untyped]": self
@@ -265,6 +273,11 @@ methods:
   Example109::Associations::ClassMethods#has_records:
     "(:comments, **{  }) on singleton(::Example109::Post) with {@generated_relation_methods: nil}": "(::Example109::Reflection::ThroughReflection
       | ::Example109::Reflection::HasManyReflection)"
+  Example109::Base.__class_attr_pluralize_table_names:
+    "() with {@generated_relation_methods: nil}": "::TrueClass"
+  Example109::Core::ClassMethods#generated_relation_methods:
+    "() on singleton(::Example109::Post)": singleton(::Example109::Post::GeneratedRelationMethods)
+    "() on singleton(::Example109::Post) with {@generated_relation_methods: nil}": singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Reflection.create:
     ? "(:has_many, :comments, ::Proc, ({ :extend => ::Array[::Module] } | {  }), singleton(::Example109::Post))
       on singleton(::Example109::Reflection) with {::Example109::Post{@generated_relation_methods:
@@ -410,6 +423,15 @@ methods:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@join_table": nil
         "@name": ":comments"
+  Example109::Reflection::MacroReflection#normalize_options:
+    ? "(({ :extend => ::Array[::Module] } | {  })) with {@active_record: singleton(::Example109::Base),
+      @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
+    : "({ :extend => ::Array[::Module] } | {  })"
+    ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Base),
+      @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
+    : "::Hash[untyped, untyped]"
   Example109::Reflection::ThroughReflection.new:
     "(::Example109::Reflection::HasManyReflection{@name: :comments})":
       class: "::Example109::Reflection::ThroughReflection"
@@ -1097,6 +1119,8 @@ declarations:
   Example107::Canvas#draw: "(5 | 15 | 20)"
   Example108::Settings.__class_attr_plural_names: "::TrueClass"
   Example108::Settings.generated_readers: singleton(::Example108::Gauge::GeneratedReaders)
+  Example109::Base.__class_attr_pluralize_table_names: "::TrueClass"
+  Example109::Core::ClassMethods#generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Reflection.reflection_class_for: singleton(::Example109::Reflection::HasManyReflection)
   Example13::Guarded#with_format: 'true'
   Example19#record: '"denied"'
@@ -2538,7 +2562,8 @@ exits:
       with {::Example109::Post{@generated_relation_methods: nil}}"
     : ivars: {}
       classes:
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": nil
     "(singleton(::Example109::Post), :comments, nil, {  }) with {::Example109::Post{@generated_relation_methods: nil}}":
       ivars: {}
       classes:
@@ -2547,7 +2572,136 @@ exits:
       with {::Example109::Post{@generated_relation_methods: nil}}"
     : ivars: {}
       classes:
+        "::Example109::Post":
+          "@generated_relation_methods": nil
+  Example109::Associations::Builder::Association.define_accessors:
+    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection
+      | ::Example109::Reflection::HasManyReflection)) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection{@delegate_reflection:
+      ::Example109::Reflection::HasManyReflection{@association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      ::FalseClass, @join_table: nil, @name: ::Symbol}} | ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @join_table: nil})) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection{@delegate_reflection:
+      ::Example109::Reflection::HasManyReflection{@association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      ::FalseClass, @join_table: nil, @name: ::Symbol}} | ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @join_table: nil})) with {::Example109::Post{@generated_relation_methods:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+  Example109::Associations::Builder::Association.define_callbacks:
+    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection
+      | ::Example109::Reflection::HasManyReflection)) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection{@delegate_reflection:
+      ::Example109::Reflection::HasManyReflection{@association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      ::FalseClass, @join_table: nil, @name: ::Symbol}} | ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @join_table: nil})) on singleton(::Example109::Associations::Builder::CollectionAssociation)
+      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection{@delegate_reflection:
+      ::Example109::Reflection::HasManyReflection{@association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      ::FalseClass, @join_table: nil, @name: ::Symbol}} | ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @join_table: nil})) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection{@delegate_reflection:
+      ::Example109::Reflection::HasManyReflection{@association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      ::FalseClass, @join_table: nil, @name: ::Symbol}} | ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @join_table: nil})) with {::Example109::Post{@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+  Example109::Associations::Builder::CollectionAssociation.define_callback:
+    ? "(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
+      | :after_remove), untyped, untyped) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
         "::Example109::Post": {}
+    ? "(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
+      | :after_remove), untyped, untyped) with {::Example109::Post{@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post": {}
+  Example109::Associations::Builder::CollectionAssociation.define_callbacks:
+    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection
+      | ::Example109::Reflection::HasManyReflection)) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection{@delegate_reflection:
+      ::Example109::Reflection::HasManyReflection{@association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      ::FalseClass, @join_table: nil, @name: ::Symbol}} | ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @join_table: nil})) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection{@delegate_reflection:
+      ::Example109::Reflection::HasManyReflection{@association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      ::FalseClass, @join_table: nil, @name: ::Symbol}} | ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @join_table: nil})) with {::Example109::Post{@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Associations::Builder::CollectionAssociation.define_extensions:
     ? "(singleton(::Example109::Post), :comments) on singleton(::Example109::Associations::Builder::HasMany)
       with {::Example109::Post{@generated_relation_methods: nil}}"
@@ -2566,8 +2720,22 @@ exits:
     "(:comments, **{  }) with {@generated_relation_methods: nil}":
       ivars:
         "@generated_relation_methods": nil
+  Example109::Base.__class_attr_pluralize_table_names:
+    "() with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
   Example109::Base.pluralize_table_names:
     "() on singleton(::Example109::Post) with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
+    "() with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
+  Example109::Core::ClassMethods#generated_relation_methods:
+    "() on singleton(::Example109::Post) with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    "() with {@generated_relation_methods: nil}":
       ivars: {}
   Example109::Reflection.create:
     ? "(:has_many, :comments, ::Proc, ({ :extend => ::Array[::Module] } | {  }), singleton(::Example109::Post))
@@ -2575,21 +2743,25 @@ exits:
       nil}}"
     : ivars: {}
       classes:
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": nil
     ? "(:has_many, :comments, ::Proc, ({ :extend => ::Array[::Module] } | {  }), singleton(::Example109::Post))
       with {::Example109::Post{@generated_relation_methods: nil}}"
     : ivars: {}
       classes:
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": nil
     ? "(:has_many, :comments, ::Proc, {  }, singleton(::Example109::Post)) on singleton(::Example109::Reflection)
       with {::Example109::Post{@generated_relation_methods: nil}}"
     : ivars: {}
       classes:
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": nil
     "(:has_many, :comments, ::Proc, {  }, singleton(::Example109::Post)) with {::Example109::Post{@generated_relation_methods: nil}}":
       ivars: {}
       classes:
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": nil
   Example109::Reflection::AbstractReflection#initialize:
     ? "() with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
       nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
@@ -2662,7 +2834,8 @@ exits:
         "@association_foreign_key": nil
         "@association_primary_key": nil
       classes:
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": nil
     "(:comments, ::Proc, {  }, singleton(::Example109::Post))":
       ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
@@ -2690,7 +2863,8 @@ exits:
         "@association_foreign_key": nil
         "@association_primary_key": nil
       classes:
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": nil
   Example109::Reflection::MacroReflection#initialize:
     ? "(:comments, ::Proc, ({ :extend => ::Array[::Module] } | {  }), singleton(::Example109::Post))
       with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
@@ -2707,7 +2881,8 @@ exits:
         "@name": ":comments"
         "@active_record": singleton(::Example109::Post)
       classes:
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": nil
     ? "(:comments, ::Proc, ({ :extend => ::Array[::Module] } | {  }), singleton(::Example109::Post))
       with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
       nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
@@ -2737,6 +2912,12 @@ exits:
         "@name": ":comments"
         "@active_record": singleton(::Example109::Base)
     ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
+      with {::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": nil
+    ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
       with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
       nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
       nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
@@ -2751,7 +2932,8 @@ exits:
         "@name": ":comments"
         "@active_record": singleton(::Example109::Post)
       classes:
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": nil
     ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
       with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
       nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
@@ -3592,6 +3774,12 @@ exits:
     "(singleton(::Example108::Gauge::GeneratedReaders)) with {@generated_readers: nil}":
       ivars:
         "@generated_readers": nil
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods)) on singleton(::Example109::Post)
+      with {@generated_relation_methods: nil}"
+    : ivars: {}
+    "(singleton(::Example109::Post::GeneratedRelationMethods)) with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
     "(singleton(::Example13::Registry::GeneratedAttributes)) on singleton(::Example13::Registry) with {@registry_instance: nil}":
       ivars: {}
     "(singleton(::Example13::Registry::GeneratedAttributes)) with {@registry_instance: nil}":
