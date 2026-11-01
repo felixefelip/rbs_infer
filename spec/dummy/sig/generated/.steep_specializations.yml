@@ -428,10 +428,10 @@ methods:
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
     : "({ :extend => ::Array[::Module] } | {  })"
-    ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Base),
-      @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+    ? "({  }) with {@active_record: singleton(::Example109::Base), @class_name: nil,
+      @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
-    : "::Hash[untyped, untyped]"
+    : "{  }"
   Example109::Reflection::ThroughReflection.new:
     "(::Example109::Reflection::HasManyReflection{@name: :comments})":
       class: "::Example109::Reflection::ThroughReflection"
@@ -2805,6 +2805,24 @@ exits:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
+        "@active_record": singleton(::Example109::Base)
+        "@join_table": nil
+        "@foreign_key": nil
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+      keeps_self: true
+    ? "(:class_name) with {@active_record: singleton(::Example109::Post), @association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @name: :comments}"
     : ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
@@ -2911,16 +2929,15 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
         "@active_record": singleton(::Example109::Base)
-    ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
-      with {::Example109::Post{@generated_relation_methods: nil}}"
-    : ivars: {}
+    "(:comments, ::Proc, {  }, singleton(::Example109::Post)) with {::Example109::Post{@generated_relation_methods: nil}}":
+      ivars: {}
       classes:
         "::Example109::Post":
           "@generated_relation_methods": nil
-    ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
-      with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
-      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
-      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+    ? "(:comments, ::Proc, {  }, singleton(::Example109::Post)) with {@active_record:
+      nil, @association_foreign_key: nil, @association_primary_key: nil, @class_name:
+      nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
       nil, @join_table: nil, @name: nil, @options: nil, @plural_name: nil, @scope:
       nil, @type: nil, ::Example109::Post{@generated_relation_methods: nil}}"
     : ivars:
@@ -2930,14 +2947,15 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
+        "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
       classes:
         "::Example109::Post":
           "@generated_relation_methods": nil
-    ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
-      with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
-      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
-      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+    ? "(:comments, ::Proc, {  }, singleton(::Example109::Post)) with {@active_record:
+      nil, @association_foreign_key: nil, @association_primary_key: nil, @class_name:
+      nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
       nil, @join_table: nil, @name: nil, @options: nil, @plural_name: nil, @scope:
       nil, @type: nil}"
     : ivars:
@@ -2947,6 +2965,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
+        "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
   Example109::Reflection::MacroReflection#normalize_options:
     ? "(({ :extend => ::Array[::Module] } | {  })) with {@active_record: singleton(::Example109::Base),
@@ -2971,8 +2990,8 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
         "@active_record": singleton(::Example109::Base)
-    ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Base),
-      @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+    ? "({  }) with {@active_record: singleton(::Example109::Base), @class_name: nil,
+      @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
     : ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
