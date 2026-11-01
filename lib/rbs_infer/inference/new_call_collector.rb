@@ -29,11 +29,12 @@ module RbsInfer::Inference
       names
     end
 
-    def initialize(target_class:, method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, module_self_types:, invoker_self_types:, inherited_selves:, inherited_forwards:, inherited_initializers:, inherited_supers:, steep_bridge:,
+    def initialize(target_class:, method_return_types:, owned_method_return_types:, local_var_types:, constant_arg_resolver:, defined_class_names:, module_self_types:, invoker_self_types:, inherited_selves:, inherited_forwards:, inherited_initializers:, inherited_supers:, steep_bridge:,
                    local_var_read_types: {}, local_var_types_by_method: {}, method_type_resolver: nil, caller_class_name: nil, init_positional_params: [], target_methods: {}, match_bare_calls: false, self_types_by_method: {}, established_ivars_by_method: {}, argument_partitions_by_method: {}, block_methods: Set.new, expression_types: {}, method_owners: {})
       @receivers = ReceiverMatcher.new(target_class: target_class, method_owners: method_owners, defined_class_names: defined_class_names)
       @scope = Scope.new(local_var_types: local_var_types, caller_class_name: caller_class_name)
-      @types = ValueTypes.new(scope: @scope, method_return_types: method_return_types, local_var_read_types: local_var_read_types,
+      @types = ValueTypes.new(scope: @scope, method_return_types: method_return_types, owned_method_return_types: owned_method_return_types,
+                              local_var_read_types: local_var_read_types,
                               method_type_resolver: method_type_resolver, constant_arg_resolver: constant_arg_resolver,
                               self_types_by_method: self_types_by_method, module_self_types: module_self_types, invoker_self_types: invoker_self_types,
                               inherited_selves: inherited_selves, expression_types: expression_types)

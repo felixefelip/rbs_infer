@@ -1,14 +1,14 @@
 module Example109
   module Reflection
-    def self.create: (:belongs_to macro, :comments name, Proc scope, Hash[Symbol, untyped] options, singleton(Example109::Base) ar) -> (Example109::Reflection::ThroughReflection | Example109::Reflection::BelongsToReflection)
-    def self.reflection_class_for: (:belongs_to macro) -> singleton(Example109::Reflection::BelongsToReflection)
+    def self.create: (untyped macro, :comments name, Proc scope, Hash[Symbol, untyped] options, singleton(Example109::Base) ar) -> (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection)
+    def self.reflection_class_for: (untyped macro) -> singleton(Example109::Reflection::HasManyReflection)
   end
 
   module Associations
   end
 
   module Associations::ClassMethods
-    def has_records: (:comments name, ?untyped scope, **untyped) ?{ (*untyped) -> untyped } -> (Example109::Reflection::ThroughReflection | Example109::Reflection::AggregateReflection | Example109::Reflection::HasManyReflection | Example109::Reflection::HasOneReflection | Example109::Reflection::BelongsToReflection)
+    def has_records: (:comments name, ?untyped scope, **untyped) ?{ (*untyped) -> untyped } -> (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection)
   end
 
   module Associations::Builder
@@ -102,11 +102,11 @@ end
 module Example109
   module Reflection
     class ThroughReflection < AbstractReflection
-      def initialize: (Example109::Reflection::BelongsToReflection delegate_reflection) -> void
+      def initialize: (Example109::Reflection::HasManyReflection delegate_reflection) -> void
 
       private
 
-      attr_reader delegate_reflection: Example109::Reflection::BelongsToReflection
+      attr_reader delegate_reflection: Example109::Reflection::HasManyReflection
     end
   end
 end
@@ -129,17 +129,17 @@ module Example109
   module Associations
     module Builder
       class Association
-        def self.build: ((singleton(Example109::Base)) model, :comments name, untyped scope, Hash[Symbol, untyped] options) ?{ (*untyped) -> untyped } -> (Example109::Reflection::ThroughReflection | Example109::Reflection::AggregateReflection | Example109::Reflection::HasManyReflection | Example109::Reflection::HasOneReflection | Example109::Reflection::BelongsToReflection)
-        def self.create_reflection: (singleton(Example109::Base) model, :comments name, untyped scope, Hash[Symbol, untyped] options) ?{ (*untyped) -> untyped } -> (Example109::Reflection::ThroughReflection | Example109::Reflection::AggregateReflection | Example109::Reflection::HasManyReflection | Example109::Reflection::HasOneReflection | Example109::Reflection::BelongsToReflection)
+        def self.build: ((singleton(Example109::Base)) model, :comments name, untyped scope, Hash[Symbol, untyped] options) ?{ (*untyped) -> untyped } -> (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection)
+        def self.create_reflection: (singleton(Example109::Base) model, :comments name, untyped scope, Hash[Symbol, untyped] options) ?{ (*untyped) -> untyped } -> (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection)
         def self.build_scope: (Proc scope) -> Proc
         def self.macro: () -> untyped
         def self.define_extensions: (singleton(Example109::Base) model, :comments name) -> nil
-        def self.define_callbacks: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::AggregateReflection | Example109::Reflection::HasManyReflection | Example109::Reflection::HasOneReflection | Example109::Reflection::BelongsToReflection) reflection) -> untyped
-        def self.define_accessors: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::AggregateReflection | Example109::Reflection::HasManyReflection | Example109::Reflection::HasOneReflection | Example109::Reflection::BelongsToReflection) reflection) -> untyped
+        def self.define_callbacks: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection) reflection) -> untyped
+        def self.define_accessors: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection) reflection) -> untyped
         def self.define_readers: (Module mixin, untyped name) -> untyped
         def self.define_writers: (Module mixin, untyped name) -> untyped
-        def self.define_validations: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::AggregateReflection | Example109::Reflection::HasManyReflection | Example109::Reflection::HasOneReflection | Example109::Reflection::BelongsToReflection) reflection) -> nil
-        def self.define_change_tracking_methods: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::AggregateReflection | Example109::Reflection::HasManyReflection | Example109::Reflection::HasOneReflection | Example109::Reflection::BelongsToReflection) reflection) -> nil
+        def self.define_validations: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection) reflection) -> nil
+        def self.define_change_tracking_methods: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection) reflection) -> nil
 
         attr_accessor extensions: untyped
       end
@@ -153,7 +153,7 @@ module Example109
       class CollectionAssociation < Association
         CALLBACKS: Array[(:before_add | :after_add | :before_remove | :after_remove)]
 
-        def self.define_callbacks: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::AggregateReflection | Example109::Reflection::HasManyReflection | Example109::Reflection::HasOneReflection | Example109::Reflection::BelongsToReflection) reflection) -> Array[(:before_add | :after_add | :before_remove | :after_remove)]
+        def self.define_callbacks: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection) reflection) -> Array[(:before_add | :after_add | :before_remove | :after_remove)]
         def self.define_extensions: (singleton(Example109::Base) model, :comments name) ?{ (*untyped) -> untyped } -> Module?
         def self.define_callback: (singleton(Example109::Base) model, (:before_add | :after_add | :before_remove | :after_remove) callback_name, untyped name, untyped options) -> untyped
         def self.define_readers: (Module mixin, untyped name) -> untyped

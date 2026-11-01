@@ -17,16 +17,16 @@
 #
 # None of the four is defined yet: each `class_eval` is a hole. What stops it:
 #
-#   - `macro`, called bare in `create_reflection`, is not read as
-#     `HasMany.macro` where `HasMany` runs it, so `Reflection.create` answers
-#     every reflection class, `ThroughReflection` among them, whose `name` is
-#     one of the methods it delegates by a computed list;
+#   - `options[:through]` is not read as nil, so `Reflection.create` answers
+#     `ThroughReflection` beside `HasManyReflection`, and the `name` of a
+#     `ThroughReflection` is one of the methods it delegates by a computed list;
+#   - `MacroReflection#initialize` reads each of its parameters `untyped`;
 #   - `extensions`, an `attr_accessor` of `class << self`, is declared on the
 #     instances;
-#   - `pluralize_table_names` reads `untyped` once a second class calls
-#     example108's `ClassAttribute.redefine`;
-#   - `name.to_s.singularize` counts as a call of example102's and example104's
-#     own `singularize`, which then drop the memos they fold through.
+#   - `pluralize_table_names` reads `untyped`, where example108's store reads
+#     `TrueClass`;
+#   - `name` reaches `define_readers` `untyped`, so its `singularize` may be
+#     example102's and example104's own, which drop the memos they fold through.
 #
 # Nothing here states a type.
 module Example109
