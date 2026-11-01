@@ -1,0 +1,13 @@
+module Example110
+  class Options
+    self.@generated_option_readers: Module?
+
+    def self.generated_option_readers: () -> Module
+    def self.define_option_reader: (:size name) -> untyped
+  end
+end
+
+module Example110
+  class Dial < Options
+  end
+end

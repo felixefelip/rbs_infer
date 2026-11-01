@@ -11,15 +11,22 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveSupport::RuntimeGenerator do
   end
 
   def source
-    files.first[:source]
+    files.find { |file| file[:filename] == "delegation.rb" }[:source]
+  end
+
+  def class_attribute_source
+    files.find { |file| file[:filename] == "class_attribute.rb" }[:source]
   end
 
   # The whole extension: put the gem's macro where the pipeline can read it.
   # What it writes at each call site is folded by the checker and placed by
   # `Project::StringEvalMacroExpander`, which knows no framework.
   describe "the file it writes" do
-    it "emits one file, holding `delegate` and the writer it hands its arguments to" do
-      expect(files.map { |file| file[:filename] }).to eq(["delegation.rb"])
+    it "emits one file per macro" do
+      expect(files.map { |file| file[:filename] }).to eq(["delegation.rb", "class_attribute.rb"])
+    end
+
+    it "holds `delegate` and the writer it hands its arguments to" do
       expect(source).to include("def delegate(*methods, to: nil")
       expect(source).to include("def delegate_missing_to(target")
       expect(source).to include("def generate(owner, methods")
@@ -49,6 +56,28 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveSupport::RuntimeGenerator do
     end
   end
 
+  describe "the class_attribute file" do
+    it "reopens Class for the macro, marked ahead of the gem's signature" do
+      expect(class_attribute_source).to match(/^class Class\n  # @rbs_infer \|\.\.\.\n  def class_attribute\(\*attrs/)
+    end
+
+    it "keeps the store's module whole, unmarked" do
+      expect(class_attribute_source).to include("module ActiveSupport\n  module ClassAttribute")
+      expect(class_attribute_source).to include("def redefine(owner, name, namespaced_name, value)")
+      expect(class_attribute_source).to include("def redefine_method(owner, name, private: false, &block)")
+      expect(class_attribute_source.scan("# @rbs_infer |...").size).to eq(1)
+    end
+
+    it "keeps the string the macro evaluates" do
+      expect(class_attribute_source).to include('["class << self", *class_methods, "end", *methods].join(";")')
+    end
+
+    it "states no type" do
+      expect(class_attribute_source).not_to match(/^\s*#:/)
+      expect(class_attribute_source).not_to include("@type")
+    end
+  end
+
   describe "what it does not say" do
     # The rule every transcription follows. The one annotation is `|...`,
     # which says the signature is the app's call sites', ADDED to the gem's —
@@ -71,6 +100,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveSupport::RuntimeGenerator do
 
         expect(path).to eq(File.join(dir, described_class::SIDECAR_DIR))
         expect(File.read(File.join(path, "delegation.rb"))).to include("def delegate(")
+        expect(File.read(File.join(path, "class_attribute.rb"))).to include("def class_attribute(")
       end
     end
   end

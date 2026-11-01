@@ -1,6 +1,23 @@
 ---
 version: 1
 methods:
+  ActiveSupport::ClassAttribute.redefine:
+    "(self, :plural_labels, :__class_attr_plural_labels, true)": '"__class_attr_plural_labels="'
+    "(singleton(::Example109::Base), ::Symbol, ::Symbol, nil) on singleton(::ActiveSupport::ClassAttribute)": "::String"
+    "(singleton(::Example109::Post), ::Symbol, ::Symbol, nil) on singleton(::ActiveSupport::ClassAttribute)": "::String"
+    "(singleton(::Example110::Options), :plural_labels, :__class_attr_plural_labels, true)": '"__class_attr_plural_labels="'
+    ? "(singleton(::Example110::Options), :plural_labels, :__class_attr_plural_labels,
+      true) on singleton(::ActiveSupport::ClassAttribute)"
+    : '"__class_attr_plural_labels="'
+  ActiveSupport::ClassAttribute.redefine_method:
+    "((singleton(::Example110::Options) | ::Class), ::Symbol) &-> untyped": nil
+    "((singleton(::Example110::Options) | ::Class), ::Symbol, private: true) &-> untyped": "::Symbol"
+    '(::Class, "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
+    "(::Class, ::String, private: true) &-> ::String": "::String"
+    "(::Class, ::Symbol, private: true) &-> untyped": "::Symbol"
+    "(singleton_class(::Example109::Base), ::String, private: true) &-> ::String": "::String"
+    "(singleton_class(::Example109::Post), ::String, private: true) &-> ::String": "::String"
+    '(singleton_class(::Example110::Options), "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
   ActiveSupport::Concern#class_methods:
     "() &-> :declare": ":declare"
     "() &-> :default_values": ":default_values"
@@ -1658,6 +1675,8 @@ receivers:
   - singleton(::Example11::Post)
   app/models/example11.rb:29:25:
   - singleton(::Example11::Partial)
+  app/models/example110.rb:18:56:
+  - singleton(::Module)
   app/models/example13.rb:104:15:
   - singleton(::Example13::Registry)
   app/models/example13.rb:104:20:
@@ -3482,6 +3501,16 @@ exits:
         "@active_record": singleton(::Example109::Base)
       params:
         '0': "{  }"
+  Example110::Options.define_option_reader:
+    "(:size) on singleton(::Example110::Dial) with {@generated_option_readers: nil}":
+      ivars: {}
+    "(:size) with {@generated_option_readers: nil}":
+      ivars: {}
+  Example110::Options.plural_labels:
+    "() on singleton(::Example110::Dial) with {@generated_option_readers: nil}":
+      ivars: {}
+    "() with {@generated_option_readers: nil}":
+      ivars: {}
   Example84::Reflection#rename:
     "((:articles | :replies)) with {@name: (:posts | :comments)}":
       ivars:

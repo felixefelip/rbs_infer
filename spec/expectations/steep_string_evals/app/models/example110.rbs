@@ -1,0 +1,10 @@
+module Example110
+  class Options
+    def self.plural_labels: () -> untyped
+    def self.plural_labels=: (untyped value) -> untyped
+    def self.plural_labels?: () -> untyped
+
+    def plural_labels: () -> untyped
+    def plural_labels?: () -> untyped
+  end
+end
