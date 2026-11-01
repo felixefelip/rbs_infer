@@ -324,8 +324,11 @@ class ::User < ::ApplicationRecord
 
     def updated_at_for_database: () -> ::Time?
 
+    def avatar: () -> ::String?
 
+    def avatar=: (::String?) -> ::String?
 
+    def avatar?: () -> bool
 
     def avatar_changed?: (?from: ::String?, ?to: ::String?) -> bool
 

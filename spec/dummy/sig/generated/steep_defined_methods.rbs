@@ -7,3 +7,8 @@ class Example108::Settings
   def self.__class_attr_plural_names: () -> ::TrueClass
   def self.__class_attr_plural_names=: (untyped new_value) -> untyped
 end
+
+class Example109::Base
+  def self.__class_attr_pluralize_table_names: () -> untyped
+  def self.__class_attr_pluralize_table_names=: (untyped new_value) -> untyped
+end

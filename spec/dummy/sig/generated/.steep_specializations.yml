@@ -41,8 +41,6 @@ methods:
         "@default_proc": nil
   Concurrent::Collection::NonConcurrentMapBackend#[]:
     "(:en) with {@backend: {  }, @default_proc: nil}": nil
-    '(:en) with {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}': "::Example104::Rules"
-    '(:en) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}': "::Example104::Rules"
   Concurrent::Map#each_pair:
     "() &-> (nil | void)": self
     "() &-> ::Array[untyped]": self
@@ -161,35 +159,6 @@ methods:
       class: "::Example102::FallbackChains"
       ivars:
         "@default": ":en"
-  Example102::Inflector.rule_set_for:
-    ? '(:en) on singleton(::Example102::Inflector) with {@locale_rule_sets: { :en
-      => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
-    : class: "::Example102::Rules"
-      ivars:
-        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
-    '(:en) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}':
-      class: "::Example102::Rules"
-      ivars:
-        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
-  Example102::Inflector.rules_or_fallback:
-    ? '(:en) on singleton(::Example102::Inflector) with {@locale_rule_sets: { :en
-      => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
-    : class: "::Example102::Rules"
-      ivars:
-        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
-    '(:en) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}':
-      class: "::Example102::Rules"
-      ivars:
-        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
-  Example102::Inflector.singularize:
-    ? '("categories") on singleton(::Example102::Inflector) with {@locale_rule_sets:
-      { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
-    : '"category"'
-    '("categories") with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}': '"category"'
-    ? '("posts") on singleton(::Example102::Inflector) with {@locale_rule_sets: {
-      :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
-    : '"post"'
-    '("posts") with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}': '"post"'
   Example102::Inflector.with_rules:
     "(:en) &-> ::Array[untyped] with {@locale_rule_sets: {  }}": "::Array[untyped]"
     "(:en) on singleton(::Example102::Inflector) &-> ::Array[untyped] with {@locale_rule_sets: {  }}": "::Array[untyped]"
@@ -198,22 +167,6 @@ methods:
       class: "::Example102::FallbackChains"
       ivars:
         "@default": ":en"
-  Example102::Post.has_many_like:
-    ? '(:categories) on singleton(::Example102::Post) with {::Example102::Inflector{@locale_rule_sets:
-      { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}}'
-    : ":category_ids"
-    ? '(:categories) with {::Example102::Inflector{@locale_rule_sets: { :en => ::Example102::Rules{@singulars:
-      [[/ies\z/, "y"], [/s\z/, ""]]} }}}'
-    : ":category_ids"
-    ? '(:posts) on singleton(::Example102::Post) with {::Example102::Inflector{@locale_rule_sets:
-      { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}}'
-    : ":post_ids"
-    ? '(:posts) with {::Example102::Inflector{@locale_rule_sets: { :en => ::Example102::Rules{@singulars:
-      [[/ies\z/, "y"], [/s\z/, ""]]} }}}'
-    : ":post_ids"
-  Example102::Rules#apply:
-    '("categories") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}': '"category"'
-    '("posts") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}': '"post"'
   Example102::Rules.new:
     "()":
       class: "::Example102::Rules"
@@ -226,66 +179,9 @@ methods:
       class: "::Example103::MriBackend"
       ivars:
         "@entries": "{  }"
-  Example104.has_many_like:
-    ? '(:categories) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
-      [/s\z/, ""]]} }, @default_proc: nil}}'
-    : ":category_ids"
-    ? '(:categories) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
-      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
-      nil}}'
-    : ":category_ids"
-    ? '(:posts) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
-      [/s\z/, ""]]} }, @default_proc: nil}}'
-    : ":post_ids"
-    ? '(:posts) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
-      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
-      nil}}'
-    : ":post_ids"
   Example104.rules:
     "() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}": "::Example104::Rules"
-    ? '() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
-      [/s\z/, ""]]} }, @default_proc: nil}}'
-    : class: "::Example104::Rules"
-      ivars:
-        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
-    ? '() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} },
-      @default_proc: nil}}'
-    : class: "::Example104::Rules"
-      ivars:
-        "@singulars": '[[::Regexp, ""]]'
     "() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}": "::Example104::Rules"
-    ? '() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {
-      :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
-      nil}}'
-    : class: "::Example104::Rules"
-      ivars:
-        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
-    ? '() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {
-      :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}}'
-    : class: "::Example104::Rules"
-      ivars:
-        "@singulars": '[[::Regexp, ""]]'
-  Example104.singularize:
-    ? '("categories") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
-      [/s\z/, ""]]} }, @default_proc: nil}}'
-    : '"category"'
-    ? '("categories") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
-      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
-      nil}}'
-    : '"category"'
-    ? '("posts") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
-      [/s\z/, ""]]} }, @default_proc: nil}}'
-    : '"post"'
-    ? '("posts") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
-      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
-      nil}}'
-    : '"post"'
   Example104::Rules#singular:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}': '[[::Regexp, "y"], [::Regexp,
       ""]]'
@@ -317,8 +213,6 @@ methods:
   Example107::Square#area:
     "(5)": '20'
   Example108::ClassAttribute.redefine:
-    "(self, :plural_names, :__class_attr_plural_names, untyped)": '"__class_attr_plural_names="'
-    "(self, :plural_names, :__class_attr_plural_names, untyped) on singleton(::Example108::ClassAttribute)": '"__class_attr_plural_names="'
     ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
       true) on singleton(::Example108::ClassAttribute) with {::Example108::Settings{@generated_readers:
       nil}}"
@@ -326,21 +220,125 @@ methods:
     ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
       true) with {::Example108::Settings{@generated_readers: nil}}"
     : '"__class_attr_plural_names="'
+    "(singleton(::Example109::Base), :pluralize_table_names, :__class_attr_pluralize_table_names, true)": '"__class_attr_pluralize_table_names="'
+    ? "(singleton(::Example109::Base), :pluralize_table_names, :__class_attr_pluralize_table_names,
+      true) on singleton(::Example108::ClassAttribute)"
+    : '"__class_attr_pluralize_table_names="'
   Example108::ClassAttribute.redefine_method:
-    '(::Class, "__class_attr_plural_names=", private: true) &-> "__class_attr_plural_names="': '"__class_attr_plural_names="'
-    "(::Class, :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
+    ? "((singleton(::Example109::Base) | singleton(::Example108::Settings)), (:__class_attr_plural_names
+      | :__class_attr_pluralize_table_names), private: true) &-> true"
+    : "::Symbol"
+    "((singleton(::Example109::Base) | singleton(::Example108::Settings)), (:plural_names | :pluralize_table_names)) &-> true": nil
+    '(::Class, ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names="), private: true) &-> (::interned | nil)': ("__class_attr_plural_names="
+      | "__class_attr_pluralize_table_names=")
+    "(::Class, (:__class_attr_plural_names | :__class_attr_pluralize_table_names), private: true) &-> true": "::Symbol"
     "(singleton(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
     "(singleton(::Example108::Settings), :plural_names) &-> true": nil
-    '(singleton_class(::Example108::ClassAttribute), "__class_attr_plural_names=", private: true) &-> "__class_attr_plural_names="': '"__class_attr_plural_names="'
-    "(singleton_class(::Example108::ClassAttribute), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
-    '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private: true) &-> "__class_attr_plural_names="': '"__class_attr_plural_names="'
-    "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> ::TrueClass": "::Symbol"
+    "(singleton(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
+    "(singleton(::Example109::Base), :pluralize_table_names) &-> true": nil
+    '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private: true) &-> (::interned | nil)': '"__class_attr_plural_names="'
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
+    '(singleton_class(::Example109::Base), "__class_attr_pluralize_table_names=", private: true) &-> (::interned | nil)': '"__class_attr_pluralize_table_names="'
+    "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
   Example108::Settings.__class_attr_plural_names:
     "() with {@generated_readers: nil}": "::TrueClass"
   Example108::Settings.generated_readers:
     "() on singleton(::Example108::Gauge)": singleton(::Example108::Gauge::GeneratedReaders)
     "() on singleton(::Example108::Gauge) with {@generated_readers: nil}": singleton(::Example108::Gauge::GeneratedReaders)
+  Example109::Associations::Builder::Association.create_reflection:
+    "(singleton(::Example109::Post), :comments, nil, {  }) with {::Example109::Post{@generated_relation_methods: nil}}": "(::Example109::Reflection::ThroughReflection
+      | ::Example109::Reflection::AggregateReflection | ::Example109::Reflection::HasManyReflection
+      | ::Example109::Reflection::HasOneReflection | ::Example109::Reflection::BelongsToReflection)"
+  Example109::Associations::Builder::CollectionAssociation.define_extensions:
+    ? "(singleton(::Example109::Post), :comments) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: nil}}"
+    : nil
+    "(singleton(::Example109::Post), :comments) with {::Example109::Post{@generated_relation_methods: nil}}": nil
+  Example109::Reflection.create:
+    "(untyped, :comments, ::Proc, ({ :extend => ::Array[::Module] } | {  }), singleton(::Example109::Post))":
+      class: "::Example109::Reflection::BelongsToReflection"
+      ivars:
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@foreign_key": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@join_table": nil
+        "@name": ":comments"
+    ? "(untyped, :comments, ::Proc, ({ :extend => ::Array[::Module] } | {  }), singleton(::Example109::Post))
+      on singleton(::Example109::Reflection)"
+    : "(::Example109::Reflection::AggregateReflection | ::Example109::Reflection::HasManyReflection
+      | ::Example109::Reflection::HasOneReflection | ::Example109::Reflection::BelongsToReflection)"
+    "(untyped, :comments, ::Proc, ::Hash[::Symbol, untyped], singleton(::Example109::Base))": "(::Example109::Reflection::ThroughReflection
+      | ::Example109::Reflection::BelongsToReflection)"
+    "(untyped, :comments, ::Proc, ::Hash[::Symbol, untyped], singleton(::Example109::Base)) on singleton(::Example109::Reflection)": "(::Example109::Reflection::ThroughReflection
+      | ::Example109::Reflection::AggregateReflection | ::Example109::Reflection::HasManyReflection
+      | ::Example109::Reflection::HasOneReflection | ::Example109::Reflection::BelongsToReflection)"
+    "(untyped, :comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))": "(::Example109::Reflection::ThroughReflection
+      | ::Example109::Reflection::BelongsToReflection)"
+    "(untyped, :comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post)) on singleton(::Example109::Reflection)": "(::Example109::Reflection::ThroughReflection
+      | ::Example109::Reflection::AggregateReflection | ::Example109::Reflection::HasManyReflection
+      | ::Example109::Reflection::HasOneReflection | ::Example109::Reflection::BelongsToReflection)"
+  Example109::Reflection.reflection_class_for:
+    "(untyped) on singleton(::Example109::Reflection)": "(singleton(::Example109::Reflection::AggregateReflection)
+      | singleton(::Example109::Reflection::HasManyReflection) | singleton(::Example109::Reflection::HasOneReflection)
+      | singleton(::Example109::Reflection::BelongsToReflection))"
+  Example109::Reflection::AssociationReflection.new:
+    "(:comments, ::Proc, ({ :extend => ::Array[::Module] } | {  }), singleton(::Example109::Post))":
+      class: "::Example109::Reflection::AssociationReflection"
+      ivars:
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@foreign_key": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@join_table": nil
+        "@name": ":comments"
+    "(:comments, ::Proc, ::Hash[::Symbol, untyped], singleton(::Example109::Base))":
+      class: "::Example109::Reflection::AssociationReflection"
+      ivars:
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@foreign_key": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@join_table": nil
+        "@name": ":comments"
+    "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))":
+      class: "::Example109::Reflection::AssociationReflection"
+      ivars:
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@foreign_key": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@join_table": nil
+        "@name": ":comments"
+  Example109::Reflection::ThroughReflection.new:
+    "(::Example109::Reflection::BelongsToReflection{@name: :comments})":
+      class: "::Example109::Reflection::ThroughReflection"
+      ivars:
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@delegate_reflection":
+          class: "::Example109::Reflection::BelongsToReflection"
+          ivars:
+            "@name": ":comments"
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": 'false'
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -993,6 +991,7 @@ methods:
   IncludedHook::Slots#stamp=:
     ("value"): '"value"'
   Module#extend_object:
+    "(singleton(::Example109::Base)) with {::Example109::Base{@generated_relation_methods: nil}}": singleton(::Example109::Base)
     "(singleton(::Example90::Base)) with {::Example90::Base{@generated_association_methods: nil}}": singleton(::Example90::Base)
     "(singleton(::Example91::Base)) with {::Example91::Base{@generated_association_methods: nil}}": singleton(::Example91::Base)
   Notification::GeneratedStoreAccessors#channel=:
@@ -1013,15 +1012,11 @@ declarations:
   Example102::FallbackChains#[]: "[:en, :en]"
   Example102::FallbackChains#compute: "[:en, :en]"
   Example102::Inflector.with_rules: "::Array[untyped]"
-  Example102::Rules#apply: ("post" | "category")
   Example103::MriBackend#[]: ":x"
-  Example104.rules: "::Example104::Rules"
-  Example104.singularize: ("post" | "category")
   Example104::Rules#singular: ([[::Regexp, ""]] | [[::Regexp, "y"], [::Regexp, ""]])
   Example105::Animal#introduce: ("hello, woof" | "hello, meow")
   Example106::Visitor#visit: '"leaf of weight 1"'
   Example107::Canvas#draw: "(5 | 15 | 20)"
-  Example108::ClassAttribute.redefine: '"__class_attr_plural_names="'
   Example108::Settings.__class_attr_plural_names: "::TrueClass"
   Example108::Settings.generated_readers: singleton(::Example108::Gauge::GeneratedReaders)
   Example13::Guarded#with_format: 'true'
@@ -1254,6 +1249,56 @@ receivers:
   app/models/example107_caller.rb:5:57:
   - singleton(::Example107::Square)
   app/models/example108.rb:52:50:
+  - singleton(::Module)
+  app/models/example109.rb:101:36:
+  - "::Hash[untyped, untyped]"
+  app/models/example109.rb:119:25:
+  - untyped
+  app/models/example109.rb:119:60:
+  - untyped
+  app/models/example109.rb:119:84:
+  - untyped
+  app/models/example109.rb:120:33:
+  - untyped
+  app/models/example109.rb:120:84:
+  - untyped
+  app/models/example109.rb:126:18:
+  - untyped
+  app/models/example109.rb:135:20:
+  - untyped
+  app/models/example109.rb:135:44:
+  - untyped
+  app/models/example109.rb:213:38:
+  - "::Hash[::Symbol, untyped]"
+  app/models/example109.rb:217:21:
+  - singleton(::Example109::Reflection)
+  app/models/example109.rb:243:28:
+  - "(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::AggregateReflection
+    | ::Example109::Reflection::HasManyReflection | ::Example109::Reflection::HasOneReflection
+    | ::Example109::Reflection::BelongsToReflection)"
+  app/models/example109.rb:280:31:
+  - "(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::AggregateReflection
+    | ::Example109::Reflection::HasManyReflection | ::Example109::Reflection::HasOneReflection
+    | ::Example109::Reflection::BelongsToReflection)"
+  app/models/example109.rb:281:31:
+  - "(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::AggregateReflection
+    | ::Example109::Reflection::HasManyReflection | ::Example109::Reflection::HasOneReflection
+    | ::Example109::Reflection::BelongsToReflection)"
+  app/models/example109.rb:290:31:
+  - singleton(::Module)
+  app/models/example109.rb:298:41:
+  - untyped
+  app/models/example109.rb:361:39:
+  - singleton(::Example109::Associations::HasManyAssociation)
+  app/models/example109.rb:36:49:
+  - singleton(::Example109::Reflection::BelongsToReflection)
+  app/models/example109.rb:37:15:
+  - "::Hash[::Symbol, untyped]"
+  app/models/example109.rb:37:46:
+  - singleton(::Example109::Reflection::ThroughReflection)
+  app/models/example109.rb:84:32:
+  - untyped
+  app/models/example109/core.rb:6:60:
   - singleton(::Module)
   app/models/example11.rb:12:22:
   - singleton(::Example11::View)
@@ -2047,41 +2092,11 @@ receivers:
   - "::NoMethodError[untyped]"
 exits:
   Concurrent::Collection::MriMapBackend#[]=:
-    ? '(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with
-      {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/,
-      ""]]} }, @default_proc: nil}'
-    : ivars:
-        "@default_proc": nil
-    ? '(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with
-      {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc:
-      nil}'
-    : ivars:
-        "@default_proc": nil
     "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}":
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
-    ? '(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend:
-      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
-      nil}'
-    : ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
-    ? '(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend:
-      { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}'
-    : ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
     "(:en, ::Example104::Rules) with {@backend: {  }, @default_proc: nil}":
-      ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
-    ? '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars:
-      [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}'
-    : ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
-    '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
@@ -2094,62 +2109,16 @@ exits:
   Concurrent::Collection::NonConcurrentMapBackend#[]:
     "(::Symbol) with {@backend: {  }, @default_proc: nil}":
       ivars: {}
-    '(::Symbol) with {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}':
-      ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
-    '(::Symbol) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
-      ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
     "(:en) with {@backend: {  }, @default_proc: nil}":
       ivars:
         "@backend": "{  }"
         "@default_proc": nil
-    '(:en) with {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}':
-      ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
-    '(:en) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
-      ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
   Concurrent::Collection::NonConcurrentMapBackend#[]=:
-    ? '(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with
-      {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/,
-      ""]]} }, @default_proc: nil}'
-    : ivars:
-        "@default_proc": nil
-    ? '(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with
-      {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc:
-      nil}'
-    : ivars:
-        "@default_proc": nil
     "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}":
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
-    ? '(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend:
-      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
-      nil}'
-    : ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
-    ? '(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend:
-      { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}'
-    : ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
     "(:en, ::Example104::Rules) with {@backend: {  }, @default_proc: nil}":
-      ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
-    ? '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars:
-      [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}'
-    : ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
-    '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
@@ -2270,37 +2239,7 @@ exits:
     "(:en) on singleton(::Example102::Inflector) with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    ? '(:en) on singleton(::Example102::Inflector) with {@locale_rule_sets: { :en
-      => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
-    : ivars:
-        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
     "(:en) with {@locale_rule_sets: {  }}":
-      ivars:
-        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    '(:en) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}':
-      ivars:
-        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-  Example102::Inflector.rules_or_fallback:
-    ? '(:en) on singleton(::Example102::Inflector) with {@locale_rule_sets: { :en
-      => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
-    : ivars:
-        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    '(:en) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}':
-      ivars:
-        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-  Example102::Inflector.singularize:
-    ? '("categories") on singleton(::Example102::Inflector) with {@locale_rule_sets:
-      { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
-    : ivars:
-        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    '("categories") with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}':
-      ivars:
-        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    ? '("posts") on singleton(::Example102::Inflector) with {@locale_rule_sets: {
-      :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
-    : ivars:
-        "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    '("posts") with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}':
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
   Example102::Inflector.with_rules:
@@ -2318,37 +2257,16 @@ exits:
     : ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
   Example102::Post.has_many_like:
-    ? '(:categories) on singleton(::Example102::Post) with {::Example102::Inflector{@locale_rule_sets:
-      { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}}'
-    : ivars: {}
-      classes:
-        "::Example102::Inflector":
-          "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    ? '(:categories) with {::Example102::Inflector{@locale_rule_sets: { :en => ::Example102::Rules{@singulars:
-      [[/ies\z/, "y"], [/s\z/, ""]]} }}}'
-    : ivars: {}
-      classes:
-        "::Example102::Inflector":
-          "@locale_rule_sets": "{ :en => ::Example102::Rules }"
     ? '(:posts) on singleton(::Example102::Post) with {::Example102::Inflector{@locale_rule_sets:
       { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}}'
     : ivars: {}
       classes:
-        "::Example102::Inflector":
-          "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+        "::Example102::Inflector": {}
     ? '(:posts) with {::Example102::Inflector{@locale_rule_sets: { :en => ::Example102::Rules{@singulars:
       [[/ies\z/, "y"], [/s\z/, ""]]} }}}'
     : ivars: {}
       classes:
-        "::Example102::Inflector":
-          "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-  Example102::Rules#apply:
-    '("categories") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}':
-      ivars:
-        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
-    '("posts") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}':
-      ivars:
-        "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+        "::Example102::Inflector": {}
   Example102::Rules#singular:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}':
       ivars:
@@ -2365,71 +2283,17 @@ exits:
       ivars:
         "@entries": "{ :a => :x }"
   Example104.has_many_like:
-    ? '(:categories) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
-      [/s\z/, ""]]} }, @default_proc: nil}}'
-    : ivars:
-        "@rules_by_locale":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::Example104::Rules }"
-            "@default_proc": nil
     "(:categories) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}":
       ivars: {}
-    ? '(:categories) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
-      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
-      nil}}'
-    : ivars:
-        "@rules_by_locale":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::Example104::Rules }"
-            "@default_proc": nil
     "(:categories) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}":
       ivars: {}
-    ? '(:posts) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
-      [/s\z/, ""]]} }, @default_proc: nil}}'
-    : ivars:
-        "@rules_by_locale":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::Example104::Rules }"
-            "@default_proc": nil
     "(:posts) on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}":
       ivars: {}
-    ? '(:posts) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
-      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
-      nil}}'
-    : ivars:
-        "@rules_by_locale":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::Example104::Rules }"
-            "@default_proc": nil
     "(:posts) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}":
       ivars: {}
   Example104.rules:
     "() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}":
       ivars:
-        "@rules_by_locale":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::Example104::Rules }"
-            "@default_proc": nil
-    ? '() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
-      [/s\z/, ""]]} }, @default_proc: nil}}'
-    : ivars:
-        "@rules_by_locale":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::Example104::Rules }"
-            "@default_proc": nil
-    ? '() on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} },
-      @default_proc: nil}}'
-    : ivars:
         "@rules_by_locale":
           class: "::Concurrent::Map[untyped, untyped]"
           ivars:
@@ -2444,68 +2308,15 @@ exits:
           ivars:
             "@backend": "{ :en => ::Example104::Rules }"
             "@default_proc": nil
-    ? '() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {
-      :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
-      nil}}'
-    : ivars:
-        "@rules_by_locale":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::Example104::Rules }"
-            "@default_proc": nil
-    ? '() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend: {
-      :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}}'
-    : ivars:
-        "@rules_by_locale":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::Example104::Rules }"
-            "@default_proc": nil
     "() with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}":
       ivars: {}
   Example104.singularize:
-    ? '("categories") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
-      [/s\z/, ""]]} }, @default_proc: nil}}'
-    : ivars:
-        "@rules_by_locale":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::Example104::Rules }"
-            "@default_proc": nil
     '("categories") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}':
       ivars: {}
-    ? '("categories") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
-      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
-      nil}}'
-    : ivars:
-        "@rules_by_locale":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::Example104::Rules }"
-            "@default_proc": nil
     '("categories") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}':
       ivars: {}
-    ? '("posts") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
-      [/s\z/, ""]]} }, @default_proc: nil}}'
-    : ivars:
-        "@rules_by_locale":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::Example104::Rules }"
-            "@default_proc": nil
     '("posts") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}':
       ivars: {}
-    ? '("posts") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
-      { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
-      nil}}'
-    : ivars:
-        "@rules_by_locale":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::Example104::Rules }"
-            "@default_proc": nil
     '("posts") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}':
       ivars: {}
   Example104::Rules#singular:
@@ -2553,6 +2364,235 @@ exits:
     "() with {@generated_readers: nil}":
       ivars:
         "@generated_readers": nil
+  Example109::Associations::Builder::Association.build:
+    ? "(self, :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Base{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example109::Base":
+          "@generated_relation_methods": nil
+    "(self, :comments, nil, {  }) with {::Example109::Base{@generated_relation_methods: nil}}":
+      ivars: {}
+      classes:
+        "::Example109::Base":
+          "@generated_relation_methods": nil
+    ? "(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post": {}
+    "(singleton(::Example109::Post), :comments, nil, {  }) with {::Example109::Post{@generated_relation_methods: nil}}":
+      ivars: {}
+      classes:
+        "::Example109::Post": {}
+    ? "(singleton(::Example109::Post), :comments, untyped, {  }) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post": {}
+  Example109::Associations::Builder::Association.create_reflection:
+    ? "(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post": {}
+    "(singleton(::Example109::Post), :comments, nil, {  }) with {::Example109::Post{@generated_relation_methods: nil}}":
+      ivars: {}
+      classes:
+        "::Example109::Post": {}
+    ? "(singleton(::Example109::Post), :comments, untyped, {  }) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post": {}
+  Example109::Associations::Builder::CollectionAssociation.define_extensions:
+    ? "(singleton(::Example109::Post), :comments) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": nil
+    "(singleton(::Example109::Post), :comments) with {::Example109::Post{@generated_relation_methods: nil}}":
+      ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": nil
+  Example109::Associations::ClassMethods#has_records:
+    "(:comments, **{  }) on singleton(::Example109::Post) with {@generated_relation_methods: nil}":
+      ivars: {}
+    "(:comments, **{  }) with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
+  Example109::Base.__class_attr_pluralize_table_names:
+    "() with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
+  Example109::Base.pluralize_table_names:
+    "() on singleton(::Example109::Post) with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
+  Example109::Reflection::AbstractReflection#initialize:
+    ? "() with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
+      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      nil, @join_table: nil, @name: nil, @options: nil, @plural_name: nil, @scope:
+      nil, @type: nil}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+    ? "() with {@class_name: nil, @counter_cache_column: nil, @delegate_reflection:
+      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      nil}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+  Example109::Reflection::AssociationReflection#ensure_option_not_given_as_class!:
+    ? "(:class_name) with {@active_record: singleton(::Example109::Base), @association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
+        "@join_table": nil
+        "@foreign_key": nil
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+    ? "(:class_name) with {@active_record: singleton(::Example109::Post), @association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
+        "@join_table": nil
+        "@foreign_key": nil
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+  Example109::Reflection::AssociationReflection.new:
+    ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
+      with {::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
+        "@join_table": nil
+        "@foreign_key": nil
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": nil
+  Example109::Reflection::MacroReflection#initialize:
+    ? "(:comments, ::Proc, ({ :extend => ::Array[::Module] } | {  }), singleton(::Example109::Post))
+      with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
+      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      nil, @join_table: nil, @name: nil, @options: nil, @plural_name: nil, @scope:
+      nil, @type: nil}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
+        "@active_record": singleton(::Example109::Post)
+    ? "(:comments, ::Proc, ::Hash[::Symbol, untyped], singleton(::Example109::Base))
+      with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
+      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      nil, @join_table: nil, @name: nil, @options: nil, @plural_name: nil, @scope:
+      nil, @type: nil}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
+        "@active_record": singleton(::Example109::Base)
+    ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
+      with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
+      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      nil, @join_table: nil, @name: nil, @options: nil, @plural_name: nil, @scope:
+      nil, @type: nil, ::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
+        "@active_record": singleton(::Example109::Post)
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": nil
+    ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
+      with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
+      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      nil, @join_table: nil, @name: nil, @options: nil, @plural_name: nil, @scope:
+      nil, @type: nil}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
+        "@active_record": singleton(::Example109::Post)
+  Example109::Reflection::MacroReflection#normalize_options:
+    ? "(({ :extend => ::Array[::Module] } | {  })) with {@class_name: nil, @counter_cache_column:
+      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      false, @name: :comments}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
+    ? "(::Hash[::Symbol, untyped]) with {@class_name: nil, @counter_cache_column:
+      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      false, @name: :comments}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
+    ? "(::Hash[untyped, untyped]) with {@class_name: nil, @counter_cache_column: nil,
+      @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      false, @name: :comments}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
   Example84::Reflection#rename:
     "((:articles | :replies)) with {@name: (:posts | :comments)}":
       ivars:
@@ -3322,6 +3362,10 @@ exits:
           ivars:
             "@my_hash": "{ ?:bar => untyped }"
   Module#extend_object:
+    "(singleton(::Example109::Base)) with {::Example109::Base{@generated_relation_methods: nil}}":
+      ivars: {}
+      classes:
+        "::Example109::Base": {}
     "(singleton(::Example90::Base)) with {::Example90::Base{@generated_association_methods: nil}}":
       ivars: {}
       classes:
@@ -3369,6 +3413,11 @@ exits:
       ivars:
         "@generated_association_methods": nil
   Object#extend:
+    "(singleton(::Example109::Core::ClassMethods)) on singleton(::Example109::Base) with {@generated_relation_methods: nil}":
+      ivars: {}
+    "(singleton(::Example109::Core::ClassMethods)) with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
     "(singleton(::Example90::Core::ClassMethods)) on singleton(::Example90::Base) with {@generated_association_methods: nil}":
       ivars: {}
     "(singleton(::Example90::Core::ClassMethods)) with {@generated_association_methods: nil}":

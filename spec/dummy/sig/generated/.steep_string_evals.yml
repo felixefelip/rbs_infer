@@ -35,13 +35,13 @@ call_sites:
                   self.content.body = body
                 end
   app/models/example102.rb:87:4:
-  - def post_ids; []; end
+  -
   app/models/example102.rb:88:4:
-  - def category_ids; []; end
+  -
   app/models/example104.rb:43:2:
-  - def post_ids; []; end
+  -
   app/models/example104.rb:44:2:
-  - def category_ids; []; end
+  -
   app/models/example108.rb:60:6:
   -
   -
@@ -53,6 +53,15 @@ call_sites:
   - source: def size; 1; end
     target: "::Example108::Gauge::GeneratedReaders"
     kind: module
+  app/models/example109.rb:202:10:
+  -
+  -
+  app/models/example109.rb:242:18:
+  -
+  -
+  app/models/example109.rb:366:4:
+  -
+  -
   app/models/example60.rb:9:2:
   - source: def stamp(...);  _ = example60_printer;  _.stamp(...);rescue NoMethodError
       => e;  if _.nil? && e.name == :stamp;    raise ::ActiveSupport::DelegationError.nil_target(:stamp,

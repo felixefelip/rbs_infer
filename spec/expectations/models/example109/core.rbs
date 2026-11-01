@@ -1,0 +1,9 @@
+module Example109
+  module Core
+    module ClassMethods
+      @generated_relation_methods: Module?
+
+      def generated_relation_methods: () -> Module
+    end
+  end
+end
