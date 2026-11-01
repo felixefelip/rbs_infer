@@ -15,14 +15,14 @@
 # in the gem), and defines `comments`, `comments=`, `comment_ids` and
 # `comment_ids=` in it.
 #
-# None of the four is defined yet: each `class_eval` is a hole. What stops it:
+# `Post::GeneratedRelationMethods` is built and included, but none of the
+# four is defined yet: each of their `class_eval`s is a hole. What stops it:
 #
-#   - `options[:through]` is not read as nil, so `Reflection.create` answers
-#     `ThroughReflection` beside `HasManyReflection`, and the `name` of a
-#     `ThroughReflection` is one of the methods it delegates by a computed list;
+#   - `options[:through]` is not read as nil once `.new` has taken `options`,
+#     so `Reflection.create` answers `ThroughReflection` beside
+#     `HasManyReflection`, and the `name` of a `ThroughReflection` is one of
+#     the methods it delegates by a computed list;
 #   - `@active_record` holds `singleton(Base)` where `Post` builds the reflection;
-#   - `pluralize_table_names` reads `untyped`, where example108's store reads
-#     `TrueClass`;
 #   - `name` reaches `define_readers` `untyped`, so its `singularize` may be
 #     example102's and example104's own, which drop the memos they fold through.
 #

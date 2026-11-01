@@ -56,10 +56,26 @@ call_sites:
   app/models/example109.rb:200:10:
   -
   -
+  -
+  -
   app/models/example109.rb:240:18:
   -
   -
+  app/models/example109.rb:242:10:
+  -
+  -
+  app/models/example109.rb:243:10:
+  -
+  -
   app/models/example109.rb:364:4:
+  - source: |-
+      module GeneratedRelationMethods
+      end
+    target: "::Example109::Post"
+  - source: include ::Example109::Post::GeneratedRelationMethods
+    target: "::Example109::Post"
+  -
+  -
   -
   -
   app/models/example60.rb:9:2:
