@@ -20,7 +20,7 @@
 #   - `options[:through]` is not read as nil, so `Reflection.create` answers
 #     `ThroughReflection` beside `HasManyReflection`, and the `name` of a
 #     `ThroughReflection` is one of the methods it delegates by a computed list;
-#   - `MacroReflection#initialize` reads each of its parameters `untyped`;
+#   - `@active_record` holds `singleton(Base)` where `Post` builds the reflection;
 #   - `pluralize_table_names` reads `untyped`, where example108's store reads
 #     `TrueClass`;
 #   - `name` reaches `define_readers` `untyped`, so its `singularize` may be

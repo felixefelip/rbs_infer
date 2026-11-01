@@ -587,6 +587,11 @@ postconditions:
     - "@type"
 - class: Example109::Reflection::MacroReflection
   method: initialize
+  unconditional:
+    ivars:
+      "@options": "::Hash[::Symbol, untyped]"
+      "@plural_name": "::String"
+    self: "::Example109::Reflection::MacroReflection & ::Example109::Reflection::MacroReflection::AfterInitialize"
   effects:
     may_write:
     - "@active_record"
@@ -2523,6 +2528,11 @@ method_entry_facts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
     Current.viewer_name: "::String"
+- class: Example109::Reflection::MacroReflection
+  method: normalize_options
+  ivars:
+    "@name": ":comments"
+    "@scope": "::Proc"
 - class: Example10::Bar
   method: greet
   consts:
