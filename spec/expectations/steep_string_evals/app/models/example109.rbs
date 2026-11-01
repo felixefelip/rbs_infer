@@ -1,8 +1,14 @@
 module Example109
   class Post
-    module GeneratedRelationMethods
-    end
-
     include ::Example109::Post::GeneratedRelationMethods
+  end
+end
+
+module Example109
+  class Post
+    module GeneratedRelationMethods
+      def comments: () -> nil
+      def comments=: (untyped value) -> nil
+    end
   end
 end

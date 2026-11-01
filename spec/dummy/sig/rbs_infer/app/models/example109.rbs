@@ -1,6 +1,6 @@
 module Example109
   module Reflection
-    def self.create: (untyped macro, :comments name, Proc scope, Hash[Symbol, untyped] options, singleton(Example109::Base) ar) -> (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection)
+    def self.create: (untyped macro, :comments name, Proc scope, Hash[Symbol, untyped] options, singleton(Example109::Base) ar) -> Example109::Reflection::HasManyReflection
     def self.reflection_class_for: (untyped macro) -> singleton(Example109::Reflection::HasManyReflection)
   end
 
@@ -8,7 +8,7 @@ module Example109
   end
 
   module Associations::ClassMethods
-    def has_records: (:comments name, ?untyped scope, **untyped) ?{ (*untyped) -> untyped } -> (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection)
+    def has_records: (:comments name, ?untyped scope, **untyped) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
   end
 
   module Associations::Builder
