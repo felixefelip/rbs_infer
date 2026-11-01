@@ -3,11 +3,7 @@ app/helpers/application_helper.rb:11:4: [error] Type `(::Object & ::ApplicationH
 app/models/concerns/test/filtrable.rb:16:13: [error] Type `(::Post & ::Test::Filtrable)` does not have method `adddd`
 app/models/concerns/test/filtrable.rb:16:4: [error] Type `(::Post & ::Test::Filtrable)` does not have method `asdasd`
 app/models/eval_reopen.rb:61:6: [warning] Method `::Object#by_instance_eval` is not declared in RBS
-app/models/example102.rb:92:14: [error] Type `::Example102::Post` does not have method `post_ids`
-app/models/example102.rb:92:31: [error] Type `::Example102::Post` does not have method `category_ids`
 app/models/example103.rb:54:10: [error] Cannot allow method body have type `:a` because declared as type `:x`
-app/models/example104.rb:48:12: [error] Type `::Example104` does not have method `post_ids`
-app/models/example104.rb:48:29: [error] Type `::Example104` does not have method `category_ids`
 app/models/example108.rb:40:34: [warning] Cannot pass a value of type `^(*untyped) -> (true | ::TrueClass | ::interned | nil)` as a block-pass-argument of type `^ [self: top] -> untyped`
 app/models/example109.rb:210:39: [warning] The method cannot be called with a block
 app/models/example109.rb:220:33: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^ [self: self] -> U(_)`
