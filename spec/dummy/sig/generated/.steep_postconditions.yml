@@ -632,6 +632,11 @@ postconditions:
   effects:
     may_write:
     - "@last"
+- class: Example110::Options
+  method: generated_option_readers
+  effects:
+    may_write:
+    - "@generated_option_readers"
 - class: Example11::Partial
   method: initialize
   effects:

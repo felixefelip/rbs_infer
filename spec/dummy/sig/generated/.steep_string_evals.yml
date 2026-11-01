@@ -67,6 +67,10 @@ call_sites:
   app/models/example109.rb:243:10:
   -
   -
+  app/models/example109.rb:281:12:
+  -
+  app/models/example109.rb:302:12:
+  -
   app/models/example109.rb:364:4:
   - source: |-
       module GeneratedRelationMethods
@@ -87,6 +91,18 @@ call_sites:
                   end
     target: "::Example109::Post::GeneratedRelationMethods"
     kind: module
+  -
+  app/models/example110.rb:14:4:
+  - class << self;def plural_labels; __class_attr_plural_labels; end;def plural_labels=(value);
+    self.__class_attr_plural_labels = value; end;silence_redefinition_of_method def
+    plural_labels?; !!self.plural_labels; end;end;silence_redefinition_of_method def
+    plural_labels;  if defined?(@plural_labels);    @plural_labels;  else;    self.class.plural_labels;  end;end;;silence_redefinition_of_method
+    def plural_labels?; !!self.plural_labels; end
+  app/models/example110.rb:26:6:
+  -
+  -
+  app/models/example110.rb:31:4:
+  -
   -
   app/models/example60.rb:9:2:
   - source: def stamp(...);  _ = example60_printer;  _.stamp(...);rescue NoMethodError

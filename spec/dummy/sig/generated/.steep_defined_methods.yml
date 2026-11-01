@@ -17,3 +17,7 @@ methods:
     params: "(untyped new_value)"
     returns: untyped
     block: app/models/example108.rb:29:8
+  Example110::Options.__class_attr_plural_labels=:
+    params: "(untyped new_value)"
+    returns: untyped
+    block: sig/generated/steep_activesupport_runtime/class_attribute.rb:27:8

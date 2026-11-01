@@ -1,0 +1,10 @@
+module ActiveSupport
+  module ClassAttribute
+    def self.redefine: ((singleton(Example110::Options) | Class) owner, Symbol name, Symbol namespaced_name, untyped value) -> String
+    def self.redefine_method: ((singleton(Example110::Options) | Class) owner, (Symbol | String) name, ?private: bool) { (*untyped) -> String } -> interned?
+  end
+end
+
+class Class
+  def class_attribute: (*(String | :plural_labels) attrs, ?instance_accessor: bool, ?instance_reader: untyped, ?instance_writer: false, ?instance_predicate: bool, ?default: true?) -> untyped | ...
+end

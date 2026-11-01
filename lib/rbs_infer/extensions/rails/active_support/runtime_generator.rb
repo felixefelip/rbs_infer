@@ -2,12 +2,14 @@
 
 require "fileutils"
 require_relative "runtime/delegation_transcriber"
+require_relative "runtime/class_attribute_transcriber"
 
 module RbsInfer
   module Extensions
     module Rails
       module ActiveSupport
-        # Puts ActiveSupport's `delegate` where the pipeline can read it.
+        # Puts ActiveSupport's `delegate` and `class_attribute` where the
+        # pipeline can read it.
         #
         # `delegate :email, to: :user` defines an ordinary method, written by
         # `module_eval` on a STRING the macro builds — and a string is where
@@ -44,15 +46,14 @@ module RbsInfer
             @app_dir = app_dir
           end
 
-          # => [{ filename:, source: }] — empty when ActiveSupport is not
-          # installed or the macro could not be read.
+          # => [{ filename:, source: }] — one per macro that could be read;
+          # empty when ActiveSupport is not installed.
           #
           # It does not depend on the app: the file describes the FRAMEWORK, and
           # is written whether or not a class calls the macro — the rule the
           # ActionText generator follows, for the same reason.
           def build
-            entry = Runtime::DelegationTranscriber.file_entry
-            entry ? [entry] : []
+            [Runtime::DelegationTranscriber.file_entry, Runtime::ClassAttributeTranscriber.file_entry].compact
           end
 
           # Writes the sidecar dir, dropping a stale one when nothing qualifies.

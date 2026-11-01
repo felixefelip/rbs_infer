@@ -12,3 +12,7 @@ class Example109::Base
   def self.__class_attr_pluralize_table_names: () -> ::TrueClass
   def self.__class_attr_pluralize_table_names=: (untyped new_value) -> untyped
 end
+
+class Example110::Options
+  def self.__class_attr_plural_labels=: (untyped new_value) -> untyped
+end
