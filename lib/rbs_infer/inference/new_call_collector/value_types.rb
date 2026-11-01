@@ -5,11 +5,14 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
   # (`value_type`, `"untyped"` when unknown) or a receiver (`receiver_type`, nil
   # when unknown).
   class ValueTypes
-    def initialize(scope:, method_return_types:, local_var_read_types:, method_type_resolver:, constant_arg_resolver:,
-                   self_types_by_method:, module_self_types:, invoker_self_types:, inherited_selves:, expression_types:)
+    def initialize(scope:, method_return_types:, owned_method_return_types:, local_var_read_types:,
+                   method_type_resolver:, constant_arg_resolver:, self_types_by_method:, module_self_types:,
+                   invoker_self_types:, inherited_selves:, expression_types:)
       @scope = scope
       @expression_types = expression_types
       @method_return_types = method_return_types
+      @owned_method_return_types = owned_method_return_types
+      @file_def_names = owned_method_return_types.keys.to_set { |key| key.split(/[#.]/).last }
       @local_var_read_types = local_var_read_types
       @method_type_resolver = method_type_resolver
       @constant_arg_resolver = constant_arg_resolver
@@ -36,7 +39,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
         ivar_type(node) || "untyped"
       when Prism::CallNode
         if node.receiver.nil?
-          refined_self_method_type(node.name.to_s) || @method_return_types[node.name.to_s] || "untyped"
+          bare_call_type(node.name.to_s) || "untyped"
         elsif node.name == :new && node.receiver
           constructed_class(node) || "untyped"
         else
@@ -66,8 +69,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
           # callback-refined method, resolve against the refined self so a
           # `self.<association>` picks up the marker-decorated reader instead
           # of the base nilable one.
-          refined_self_method_type(node.name.to_s) || @method_return_types[node.name.to_s] ||
-            expression_type(node)&.delete_prefix("::")
+          bare_call_type(node.name.to_s) || expression_type(node)&.delete_prefix("::")
         elsif node.name == :new && node.receiver
           constructed_class(node)
         else
@@ -186,6 +188,12 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       checked = checked_type(node)
       return checked if checked&.start_with?("singleton(")
 
+      context_self_type(checked)
+    end
+
+    # `checked`: what the checker typed a `self` written here as, read where
+    # nothing nearer the method answers.
+    def context_self_type(checked = nil)
       # Inside an instance method covered by an after-validation callback,
       # `self` is the validated record — prefer the refined type from the
       # callback sidecar (e.g. `Caderneta & Caderneta::Validated`) over the
@@ -246,6 +254,29 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
     # to the marker-decorated reader (e.g. `Caderneta & Caderneta::Validated`)
     # rather than the base nilable reader. Returns nil outside such methods,
     # so the normal `@method_return_types` path is preserved unchanged.
+    # A bare call runs on `self`: the method its own class body defines on that
+    # side, or the one `self`'s type resolves to. The per-file table answers
+    # only a name no `def` of the file defines, since a homonym there may be
+    # another class's (felixefelip/rbs_infer#554).
+    def bare_call_type(method_name)
+      refined_self_method_type(method_name) || own_method_type(method_name) || self_method_type(method_name) ||
+        (@method_return_types[method_name] unless @file_def_names.include?(method_name))
+    end
+
+    def own_method_type(method_name)
+      kind = @scope.in_singleton_method? ? :class_method : :method
+      key = RbsInfer::Inference::MethodKey.for(method_name, owner: @scope.lexical_name, kind: kind)
+      @owned_method_return_types[key]
+    end
+
+    def self_method_type(method_name)
+      receiver = context_self_type
+      return nil if receiver == "untyped" || @method_type_resolver.nil?
+
+      resolved = @method_type_resolver.resolve(receiver, method_name, arg_types: nil)
+      resolved unless resolved == "untyped"
+    end
+
     def refined_self_method_type(method_name)
       return nil if @scope.in_singleton_method?
       return nil unless @method_type_resolver
