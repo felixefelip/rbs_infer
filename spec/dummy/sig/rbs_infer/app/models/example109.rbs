@@ -134,17 +134,17 @@ module Example109
   module Associations
     module Builder
       class Association
-        def self.build: ((singleton(Example109::Base)) model, :comments name, untyped scope, Hash[Symbol, untyped] options) ?{ (*untyped) -> untyped } -> (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection)
-        def self.create_reflection: (singleton(Example109::Base) model, :comments name, untyped scope, Hash[Symbol, untyped] options) ?{ (*untyped) -> untyped } -> (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection)
+        def self.build: ((singleton(Example109::Base)) model, :comments name, untyped scope, Hash[Symbol, untyped] options) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
+        def self.create_reflection: (singleton(Example109::Base) model, :comments name, untyped scope, Hash[Symbol, untyped] options) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
         def self.build_scope: (Proc scope) -> Proc
         def self.macro: () -> untyped
         def self.define_extensions: (singleton(Example109::Base) model, :comments name) -> nil
-        def self.define_callbacks: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection) reflection) -> untyped
-        def self.define_accessors: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection) reflection) -> untyped
-        def self.define_readers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, untyped name) -> untyped
-        def self.define_writers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, untyped name) -> untyped
-        def self.define_validations: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection) reflection) -> nil
-        def self.define_change_tracking_methods: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection) reflection) -> nil
+        def self.define_callbacks: (singleton(Example109::Base) model, Example109::Reflection::HasManyReflection reflection) -> untyped
+        def self.define_accessors: (singleton(Example109::Base) model, Example109::Reflection::HasManyReflection reflection) -> :comments=
+        def self.define_readers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, :comments name) -> :comments
+        def self.define_writers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, :comments name) -> :comments=
+        def self.define_validations: (singleton(Example109::Base) model, Example109::Reflection::HasManyReflection reflection) -> nil
+        def self.define_change_tracking_methods: (singleton(Example109::Base) model, Example109::Reflection::HasManyReflection reflection) -> nil
 
         attr_accessor self.extensions: untyped
       end
@@ -158,11 +158,11 @@ module Example109
       class CollectionAssociation < Association
         CALLBACKS: Array[(:before_add | :after_add | :before_remove | :after_remove)]
 
-        def self.define_callbacks: (singleton(Example109::Base) model, (Example109::Reflection::ThroughReflection | Example109::Reflection::HasManyReflection) reflection) -> Array[(:before_add | :after_add | :before_remove | :after_remove)]
+        def self.define_callbacks: (singleton(Example109::Base) model, Example109::Reflection::HasManyReflection reflection) -> Array[(:before_add | :after_add | :before_remove | :after_remove)]
         def self.define_extensions: (singleton(Example109::Base) model, :comments name) ?{ (*untyped) -> untyped } -> Module?
-        def self.define_callback: (singleton(Example109::Base) model, (:before_add | :after_add | :before_remove | :after_remove) callback_name, untyped name, untyped options) -> untyped
-        def self.define_readers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, untyped name) -> untyped
-        def self.define_writers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, untyped name) -> untyped
+        def self.define_callback: (singleton(Example109::Base) model, (:before_add | :after_add | :before_remove | :after_remove) callback_name, :comments name, untyped options) -> untyped
+        def self.define_readers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, :comments name) -> untyped
+        def self.define_writers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, :comments name) -> untyped
       end
     end
   end

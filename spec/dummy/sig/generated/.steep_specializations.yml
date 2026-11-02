@@ -3,8 +3,6 @@ version: 1
 methods:
   ActiveSupport::ClassAttribute.redefine:
     "(self, :plural_labels, :__class_attr_plural_labels, true)": '"__class_attr_plural_labels="'
-    "(singleton(::Example109::Base), ::Symbol, ::Symbol, nil) on singleton(::ActiveSupport::ClassAttribute)": "::String"
-    "(singleton(::Example109::Post), ::Symbol, ::Symbol, nil) on singleton(::ActiveSupport::ClassAttribute)": "::String"
     "(singleton(::Example110::Options), :plural_labels, :__class_attr_plural_labels, true)": '"__class_attr_plural_labels="'
     ? "(singleton(::Example110::Options), :plural_labels, :__class_attr_plural_labels,
       true) on singleton(::ActiveSupport::ClassAttribute)"
@@ -15,8 +13,6 @@ methods:
     '(::Class, "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
     "(::Class, ::String, private: true) &-> ::String": "::String"
     "(::Class, ::Symbol, private: true) &-> untyped": "::Symbol"
-    "(singleton_class(::Example109::Base), ::String, private: true) &-> ::String": "::String"
-    "(singleton_class(::Example109::Post), ::String, private: true) &-> ::String": "::String"
     '(singleton_class(::Example110::Options), "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
   ActiveSupport::Concern#class_methods:
     "() &-> :declare": ":declare"
@@ -441,18 +437,6 @@ methods:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@join_table": nil
         "@name": ":comments"
-  Example109::Associations::Builder::Association.define_accessors:
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
-      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
-      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
-      @name: :comments}) with {::Example109::Post{@generated_relation_methods: nil}}"
-    : ":comments="
-    "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name: :comments})": ":comments="
-  Example109::Associations::Builder::Association.define_readers:
-    "(singleton(::Example109::Post::GeneratedRelationMethods), :comments)": ":comments"
-  Example109::Associations::Builder::Association.define_writers:
-    "(singleton(::Example109::Post::GeneratedRelationMethods), :comments)": ":comments="
   Example109::Associations::Builder::CollectionAssociation.define_extensions:
     ? "(singleton(::Example109::Post), :comments) on singleton(::Example109::Associations::Builder::HasMany)
       with {::Example109::Post{@generated_relation_methods: nil}}"
@@ -1365,7 +1349,7 @@ declarations:
   Example107::Canvas#draw: "(5 | 15 | 20)"
   Example108::Settings.__class_attr_plural_names: "::TrueClass"
   Example108::Settings.generated_readers: singleton(::Example108::Gauge::GeneratedReaders)
-  Example109::Associations::ClassMethods#has_records: "::Example109::Reflection::HasManyReflection"
+  Example109::Associations::Builder::Association.create_reflection: "::Example109::Reflection::HasManyReflection"
   Example109::Base.__class_attr_pluralize_table_names: "::TrueClass"
   Example109::Core::ClassMethods#generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Reflection.create: "::Example109::Reflection::HasManyReflection"
@@ -1611,62 +1595,62 @@ receivers:
   - singleton(::Example107::Square)
   app/models/example108.rb:52:50:
   - singleton(::Module)
-  app/models/example109.rb:102:19:
+  app/models/example109.rb:114:25:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:117:25:
+  app/models/example109.rb:114:60:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:117:60:
+  app/models/example109.rb:114:84:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:117:84:
+  app/models/example109.rb:115:33:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:118:33:
+  app/models/example109.rb:115:84:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:118:84:
+  app/models/example109.rb:121:18:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:124:18:
+  app/models/example109.rb:122:17:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:125:17:
-  - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:133:20:
+  app/models/example109.rb:130:20:
   - untyped
-  app/models/example109.rb:133:44:
+  app/models/example109.rb:130:44:
   - untyped
-  app/models/example109.rb:172:25:
+  app/models/example109.rb:169:25:
   - singleton(::Example109::Associations::Builder::HasMany)
-  app/models/example109.rb:211:17:
+  app/models/example109.rb:208:17:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:211:38:
+  app/models/example109.rb:208:38:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:215:21:
+  app/models/example109.rb:212:21:
   - singleton(::Example109::Reflection)
-  app/models/example109.rb:235:22:
+  app/models/example109.rb:232:22:
   - untyped
-  app/models/example109.rb:241:28:
-  - "(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::HasManyReflection)"
-  app/models/example109.rb:278:31:
-  - "(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::HasManyReflection)"
-  app/models/example109.rb:279:31:
-  - "(::Example109::Reflection::ThroughReflection | ::Example109::Reflection::HasManyReflection)"
-  app/models/example109.rb:288:31:
+  app/models/example109.rb:238:28:
+  - "::Example109::Reflection::HasManyReflection"
+  app/models/example109.rb:275:31:
+  - "::Example109::Reflection::HasManyReflection"
+  app/models/example109.rb:276:31:
+  - "::Example109::Reflection::HasManyReflection"
+  app/models/example109.rb:285:31:
   - singleton(::Module)
-  app/models/example109.rb:296:41:
+  app/models/example109.rb:293:41:
   - untyped
-  app/models/example109.rb:322:28:
-  - untyped
-  app/models/example109.rb:332:28:
-  - untyped
-  app/models/example109.rb:34:49:
+  app/models/example109.rb:319:28:
+  - '"comments"'
+  app/models/example109.rb:31:49:
   - singleton(::Example109::Reflection::HasManyReflection)
-  app/models/example109.rb:359:39:
-  - singleton(::Example109::Associations::HasManyAssociation)
-  app/models/example109.rb:35:15:
+  app/models/example109.rb:329:28:
+  - '"comments"'
+  app/models/example109.rb:32:15:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:35:46:
+  app/models/example109.rb:32:46:
   - singleton(::Example109::Reflection::ThroughReflection)
-  app/models/example109.rb:82:32:
+  app/models/example109.rb:356:39:
+  - singleton(::Example109::Associations::HasManyAssociation)
+  app/models/example109.rb:79:32:
   - "::Hash[::Symbol, untyped]"
-  app/models/example109.rb:99:36:
+  app/models/example109.rb:96:36:
   - "::Hash[untyped, untyped]"
+  app/models/example109.rb:99:19:
+  - "::Hash[::Symbol, untyped]"
   app/models/example109/core.rb:6:60:
   - singleton(::Module)
   app/models/example11.rb:12:22:
@@ -2509,16 +2493,6 @@ receivers:
   - "::NoMethodError[untyped]"
 exits:
   Concurrent::Collection::MriMapBackend#[]=:
-    ? '(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with
-      {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/,
-      ""]]} }, @default_proc: nil}'
-    : ivars:
-        "@default_proc": nil
-    ? '(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with
-      {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc:
-      nil}'
-    : ivars:
-        "@default_proc": nil
     "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}":
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
@@ -2554,16 +2528,6 @@ exits:
         "@backend": "{  }"
       keeps_self: true
   Concurrent::Collection::NonConcurrentMapBackend#[]:
-    "(::Symbol) with {@backend: {  }, @default_proc: nil}":
-      ivars: {}
-    '(::Symbol) with {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}':
-      ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
-    '(::Symbol) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}':
-      ivars:
-        "@backend": "{ :en => ::Example104::Rules }"
-        "@default_proc": nil
     "(:en) with {@backend: {  }, @default_proc: nil}":
       ivars:
         "@backend": "{  }"
@@ -2577,16 +2541,6 @@ exits:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
   Concurrent::Collection::NonConcurrentMapBackend#[]=:
-    ? '(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with
-      {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/,
-      ""]]} }, @default_proc: nil}'
-    : ivars:
-        "@default_proc": nil
-    ? '(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with
-      {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc:
-      nil}'
-    : ivars:
-        "@default_proc": nil
     "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}":
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
@@ -3040,13 +2994,6 @@ exits:
         "::Example109::Post": {}
       params:
         '3': "{  }"
-    ? "(singleton(::Example109::Post), :comments, untyped, {  }) on singleton(::Example109::Associations::Builder::HasMany)
-      with {::Example109::Post{@generated_relation_methods: nil}}"
-    : ivars: {}
-      classes:
-        "::Example109::Post": {}
-      params:
-        '3': "{  }"
   Example109::Associations::Builder::Association.create_reflection:
     ? "(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
       with {::Example109::Post{@generated_relation_methods: nil}}"
@@ -3062,22 +3009,7 @@ exits:
         "::Example109::Post": {}
       params:
         '3': "{  }"
-    ? "(singleton(::Example109::Post), :comments, untyped, {  }) on singleton(::Example109::Associations::Builder::HasMany)
-      with {::Example109::Post{@generated_relation_methods: nil}}"
-    : ivars: {}
-      classes:
-        "::Example109::Post":
-          "@generated_relation_methods": nil
-      params:
-        '3': "{  }"
   Example109::Associations::Builder::Association.define_accessors:
-    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection
-      | ::Example109::Reflection::HasManyReflection)) on singleton(::Example109::Associations::Builder::HasMany)
-      with {::Example109::Post{@generated_relation_methods: nil}}"
-    : ivars: {}
-      classes:
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -3098,13 +3030,6 @@ exits:
         "::Example109::Post":
           "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Associations::Builder::Association.define_callbacks:
-    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection
-      | ::Example109::Reflection::HasManyReflection)) on singleton(::Example109::Associations::Builder::HasMany)
-      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
-    : ivars: {}
-      classes:
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -3147,20 +3072,7 @@ exits:
     : ivars: {}
       classes:
         "::Example109::Post": {}
-    ? "(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
-      | :after_remove), untyped, untyped) on singleton(::Example109::Associations::Builder::HasMany)
-      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
-    : ivars: {}
-      classes:
-        "::Example109::Post": {}
   Example109::Associations::Builder::CollectionAssociation.define_callbacks:
-    ? "(singleton(::Example109::Post), (::Example109::Reflection::ThroughReflection
-      | ::Example109::Reflection::HasManyReflection)) on singleton(::Example109::Associations::Builder::HasMany)
-      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
-    : ivars: {}
-      classes:
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
