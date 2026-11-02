@@ -18,12 +18,16 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveSupport::RuntimeGenerator do
     files.find { |file| file[:filename] == "class_attribute.rb" }[:source]
   end
 
+  def inflector_source
+    files.find { |file| file[:filename] == "inflector.rb" }[:source]
+  end
+
   # The whole extension: put the gem's macro where the pipeline can read it.
   # What it writes at each call site is folded by the checker and placed by
   # `Project::StringEvalMacroExpander`, which knows no framework.
   describe "the file it writes" do
     it "emits one file per macro" do
-      expect(files.map { |file| file[:filename] }).to eq(["delegation.rb", "class_attribute.rb"])
+      expect(files.map { |file| file[:filename] }).to eq(["delegation.rb", "class_attribute.rb", "inflector.rb"])
     end
 
     it "holds `delegate` and the writer it hands its arguments to" do
@@ -75,6 +79,45 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveSupport::RuntimeGenerator do
     it "states no type" do
       expect(class_attribute_source).not_to match(/^\s*#:/)
       expect(class_attribute_source).not_to include("@type")
+    end
+  end
+
+  describe "the inflector file" do
+    it "holds the store and the memo that keeps one per locale" do
+      expect(inflector_source).to include("class Inflections")
+      expect(inflector_source).to include("def uncountable(*words)")
+      expect(inflector_source).to include("def inflections(locale = :en)")
+    end
+
+    it "reopens Inflector with the methods singularize runs, under the gem's visibility" do
+      expect(inflector_source).to match(
+        /^module ActiveSupport\n  module Inflector\n    # @rbs_infer \|\.\.\.\n    def singularize\(/
+      )
+      expect(inflector_source).to include("def pluralize(word, locale = :en)")
+      expect(inflector_source).to match(/^    private\n\n    # @rbs_infer \|\.\.\.\n    def apply_inflections\(/)
+    end
+
+    it "reopens String for the entry" do
+      expect(inflector_source).to match(/^class String\n  # @rbs_infer \|\.\.\.\n  def singularize\(/)
+    end
+
+    it "keeps the English rules the gem loads" do
+      expect(inflector_source).to include("Inflector.inflections(:en) do |inflect|")
+      expect(inflector_source).to include('inflect.irregular("person", "people")')
+    end
+
+    it "leaves out what the files require" do
+      expect(inflector_source).not_to match(/^\s*require /)
+    end
+
+    it "marks every def ahead of the gem's signature" do
+      defs = inflector_source.scan(/^\s*def /).size
+      expect(inflector_source.scan(/# @rbs_infer \|\.\.\.\n\s*def /).size).to eq(defs)
+    end
+
+    it "states no type" do
+      expect(inflector_source).not_to match(/^\s*#:/)
+      expect(inflector_source).not_to include("@type")
     end
   end
 

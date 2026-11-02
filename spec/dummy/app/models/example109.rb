@@ -18,8 +18,8 @@
 # `Post::GeneratedRelationMethods` is built and included, and `comments` and
 # `comments=` are defined in it. What is still missing:
 #
-#   - `comment_ids` and `comment_ids=`: `name.to_s.singularize` needs Active
-#     Support's inflector, which is not in the program;
+#   - `comment_ids` and `comment_ids=`: `name.to_s.singularize` runs the
+#     inflector, which reads `I18n.fallbacks[locale]` (felixefelip/steep#265);
 #   -`association(:comments).reader` is a stub here, so `comments` answers
 #     `nil`; the records would come from the rest of Active Record's path.
 #

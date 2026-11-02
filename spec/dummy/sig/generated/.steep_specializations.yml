@@ -59,6 +59,17 @@ methods:
     "() on singleton(::Test::Filtrable) &-> void": "^(*untyped) -> void"
     "() on singleton(::User::Notifiable) &-> untyped": "^(*untyped) -> untyped"
     "() on singleton(::User::Recoverable) &-> void": "^(*untyped) -> void"
+  ActiveSupport::Inflector::Inflections#clear:
+    "(:acronyms)": "::Regexp"
+    "(:humans)": "::Array[untyped]"
+    "(:plurals)": "(::Array[untyped] | nil)"
+    "(:singulars)": "(::Array[untyped] | nil)"
+    "(:uncountables)": "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
+  ActiveSupport::Inflector::Inflections::Uncountables.new:
+    "()":
+      class: "::ActiveSupport::Inflector::Inflections::Uncountables"
+      ivars:
+        "@regex_array": "[]"
   Array#sum:
     "() &-> (15 | 6 | 20 | 8)": "::Integer"
   Concurrent::Collection::MriMapBackend.new:
@@ -72,7 +83,10 @@ methods:
     '(:en) with {@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}': "::Example104::Rules"
     '(:en) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}': "::Example104::Rules"
   Concurrent::Collection::NonConcurrentMapBackend#[]=:
+    "(::Symbol, ::ActiveSupport::Inflector::Inflections) on ::Concurrent::Map[untyped, untyped]": "::ActiveSupport::Inflector::Inflections"
     "(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped]": "::Example104::Rules"
+    "(:en, ::ActiveSupport::Inflector::Inflections)": "::ActiveSupport::Inflector::Inflections"
+    "(:en, ::ActiveSupport::Inflector::Inflections) on ::Concurrent::Map[untyped, untyped]": "::ActiveSupport::Inflector::Inflections"
     "(:en, ::Example104::Rules)": "::Example104::Rules"
     "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped]": "::Example104::Rules"
     "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}": "::Example104::Rules"
@@ -1434,6 +1448,8 @@ methods:
     "() &-> bool": bool
 declarations:
   ActiveJob::Base.perform_later: "(::AuthorDigestJob | ::AvatarThumbnailJob)"
+  ActiveSupport::Inflector::Inflections#clear: "(::Regexp | ::Array[untyped] | nil
+    | ::ActiveSupport::Inflector::Inflections::Uncountables[untyped])"
   Current.account=: "(::Account & ::Account::Validated)"
   Current.user=: "(::User & ::User::Validated)"
   EvalReopen::Slots#slot=: '"value"'
@@ -2018,6 +2034,8 @@ receivers:
   - "::Example109::Reflection::AssociationReflection"
   app/models/example109.rb:79:32:
   - "::Hash[::Symbol, untyped]"
+  app/models/example109.rb:81:38:
+  - '"comments"'
   app/models/example109.rb:95:37:
   - "::Hash[untyped, untyped]"
   app/models/example109.rb:96:36:
@@ -2694,6 +2712,8 @@ receivers:
   - singleton(::Example60::Labels)
   app/models/example60/labels.rb:19:2:
   - singleton(::Example60::Labels)
+  app/models/example62.rb:34:11:
+  - "::Object"
   app/models/example62.rb:34:51:
   - singleton(::Array)
   app/models/example62.rb:86:14:
@@ -2872,12 +2892,60 @@ receivers:
   - "::Example70::Foo"
   app/models/example70.rb:90:22:
   - "::Example70::Foo"
+  app/models/example70.rb:91:12:
+  - '::Array[("def content" | ::String)]'
   app/models/example70.rb:91:20:
   - "::Example70::Foo"
   app/models/example72.rb:102:6:
   - "::Example72::Foo"
+  app/models/example72.rb:107:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:116:12:
+  - "::Array[::String]"
+  app/models/example72.rb:125:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:126:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:134:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:136:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:26:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:27:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:37:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:38:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:49:38:
+  - "::Array[untyped]"
+  app/models/example72.rb:57:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:58:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:67:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:68:12:
+  - "::Array[untyped]"
+  app/models/example72.rb:72:18:
+  - "::Example72::Foo"
+  app/models/example72.rb:79:34:
+  - "::Array[untyped]"
+  app/models/example72.rb:92:12:
+  - "::Array[untyped]"
+  app/models/example73.rb:23:12:
+  - "::Array[untyped]"
+  app/models/example73.rb:24:12:
+  - "::Array[untyped]"
+  app/models/example73.rb:25:12:
+  - "::Array[untyped]"
+  app/models/example73.rb:32:12:
+  - "::Array[::String]"
   app/models/example73.rb:43:6:
   - "::Example73::Foo"
+  app/models/example73.rb:56:12:
+  - "::Array[untyped]"
   app/models/example74.rb:102:11:
   - '::Array["a"]'
   app/models/example74.rb:39:24:
@@ -2886,6 +2954,8 @@ receivers:
   - "::Example74::Foo"
   app/models/example74.rb:73:6:
   - "::Example74::Foo"
+  app/models/example74.rb:89:14:
+  - '::Array["a"]'
   app/models/example74.rb:98:6:
   - "::Example74::Foo"
   app/models/example75.rb:61:11:
@@ -2934,6 +3004,20 @@ receivers:
   - "::Example8"
   app/models/example8.rb:9:4:
   - "::Example8"
+  app/models/example80.rb:34:21:
+  - "::Array[untyped]"
+  app/models/example80.rb:34:40:
+  - "::Array[untyped]"
+  app/models/example80.rb:34:63:
+  - "::Array[untyped]"
+  app/models/example80.rb:34:83:
+  - "::Array[untyped]"
+  app/models/example80.rb:36:21:
+  - "::Array[untyped]"
+  app/models/example80.rb:36:40:
+  - "::Array[untyped]"
+  app/models/example80.rb:36:69:
+  - "::Array[untyped]"
   app/models/example80.rb:51:16:
   - singleton(::Example80::Forwarder)
   app/models/example80.rb:56:22:
@@ -3726,8 +3810,62 @@ receivers:
   - untyped
   sig/generated/steep_activesupport_runtime/class_attribute.rb:53:8:
   - "::Class"
+  sig/generated/steep_activesupport_runtime/class_attribute.rb:60:20:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/class_attribute.rb:61:20:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/class_attribute.rb:64:16:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/class_attribute.rb:71:16:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/class_attribute.rb:82:14:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/class_attribute.rb:88:22:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/class_attribute.rb:90:18:
+  - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:111:18:
   - singleton(::ActiveSupport::Delegation)
+  sig/generated/steep_activesupport_runtime/delegation.rb:123:23:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:139:23:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:140:50:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:141:57:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:146:23:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:147:50:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:148:34:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:149:60:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:150:47:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:151:22:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:157:23:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:158:50:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:159:34:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:160:45:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:161:42:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:162:52:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:163:103:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:164:23:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:165:26:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:166:22:
+  - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:16:32:
   - singleton(::ActiveSupport::Delegation)
   sig/generated/steep_activesupport_runtime/delegation.rb:47:10:
@@ -3746,8 +3884,100 @@ receivers:
   - "::Module"
   sig/generated/steep_activesupport_runtime/delegation.rb:73:18:
   - "::Module"
+  sig/generated/steep_activesupport_runtime/delegation.rb:93:19:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:97:23:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/inflector.rb:104:10:
+  - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_activesupport_runtime/inflector.rb:106:8:
+  - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_activesupport_runtime/inflector.rb:160:17:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_activesupport_runtime/inflector.rb:161:8:
+  - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_activesupport_runtime/inflector.rb:198:21:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:199:24:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:201:19:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:202:22:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:230:22:
+  - "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
+  sig/generated/steep_activesupport_runtime/inflector.rb:257:10:
+  - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_activesupport_runtime/inflector.rb:258:10:
+  - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_activesupport_runtime/inflector.rb:259:10:
+  - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_activesupport_runtime/inflector.rb:260:10:
+  - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_activesupport_runtime/inflector.rb:261:10:
+  - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_activesupport_runtime/inflector.rb:264:10:
+  - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_activesupport_runtime/inflector.rb:266:39:
+  - singleton(::ActiveSupport::Inflector::Inflections::Uncountables)
+  sig/generated/steep_activesupport_runtime/inflector.rb:268:10:
+  - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_activesupport_runtime/inflector.rb:292:26:
+  - singleton(::ActiveSupport::Inflector::Inflections)
+  sig/generated/steep_activesupport_runtime/inflector.rb:294:20:
+  - singleton(::ActiveSupport::Inflector::Inflections)
+  sig/generated/steep_activesupport_runtime/inflector.rb:304:30:
+  - "(::Object & ::ActiveSupport::Inflector)"
+  sig/generated/steep_activesupport_runtime/inflector.rb:304:50:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:304:6:
+  - "(::Object & ::ActiveSupport::Inflector)"
+  sig/generated/steep_activesupport_runtime/inflector.rb:309:30:
+  - "(::Object & ::ActiveSupport::Inflector)"
+  sig/generated/steep_activesupport_runtime/inflector.rb:309:6:
+  - "(::Object & ::ActiveSupport::Inflector)"
+  sig/generated/steep_activesupport_runtime/inflector.rb:318:24:
+  - "(::Object & ::ActiveSupport::Inflector)"
+  sig/generated/steep_activesupport_runtime/inflector.rb:331:29:
+  - singleton(::ActiveSupport::Inflector)
+  sig/generated/steep_activesupport_runtime/inflector.rb:343:12:
+  - singleton(::ActiveSupport::Inflector)
+  sig/generated/steep_activesupport_runtime/inflector.rb:37:38:
+  - singleton(::Concurrent::Map)
+  sig/generated/steep_activesupport_runtime/inflector.rb:394:12:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:395:12:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:396:12:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:397:12:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:398:12:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:399:12:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:401:12:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:79:21:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_activesupport_runtime/inflector.rb:79:34:
+  - singleton(::ActiveSupport::Inflector::Inflections)
+  sig/generated/steep_activesupport_runtime/inflector.rb:84:22:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:85:30:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_activesupport_runtime/inflector.rb:87:8:
+  - singleton(::ActiveSupport::Inflector::Inflections)
+  sig/generated/steep_activesupport_runtime/inflector.rb:96:87:
+  - singleton(::ActiveSupport::Inflector::Inflections::Uncountables)
+  sig/generated/steep_activesupport_runtime/inflector.rb:97:8:
+  - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_ar_runtime/active_support/concern.rb:18:11:
+  - untyped
   sig/generated/steep_ar_runtime/active_support/concern.rb:18:56:
   - singleton(::Array)
+  sig/generated/steep_ar_runtime/active_support/concern.rb:29:52:
+  - untyped
   sig/generated/steep_ar_runtime/active_support/concern.rb:51:103:
   - singleton(::Module)
   sig/generated/steep_ar_runtime/assignment.rb:13:4:
@@ -3880,6 +4110,8 @@ receivers:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:104:11:
   - "::Concurrent::Collection::NonConcurrentMapBackend"
+  sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:114:17:
+  - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:128:17:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:133:17:
@@ -3930,6 +4162,10 @@ receivers:
   - singleton(::Object)
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:162:24:
   - "^(*untyped) -> untyped"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:250:29:
+  - "::Array[untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:259:29:
+  - "::Array[untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:328:26:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:51:
@@ -4273,6 +4509,9 @@ receivers:
   sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:33:
   - "::Post"
 exits:
+  ActiveSupport::Inflector::Inflections#define_acronym_regex_patterns:
+    "() with {@acronym_regex: nil, @acronyms_camelize_regex: nil, @acronyms_underscore_regex: nil}":
+      ivars: {}
   Concurrent::Collection::MriMapBackend#[]=:
     "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}":
       ivars:

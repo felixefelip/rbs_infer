@@ -225,6 +225,14 @@ raises adds no value. The one annotation in the file is
 sites goes ahead of gem_rbs_collection's `(*untyped …)`, whose `untyped` would
 otherwise stop the call site's literals from reaching the body.
 
+The same generator writes `class_attribute.rb` (`Class#class_attribute` and its
+`ActiveSupport::ClassAttribute` store) and `inflector.rb`: `String#singularize`,
+the `Inflector` methods it runs, the `Inflections` store they read and the
+English rules ActiveSupport loads into it, so a macro that names a method
+`"#{name.to_s.singularize}_ids"` is folded by the gem's own rules. Every `def`
+in `inflector.rb` is marked `# @rbs_infer |...`, since gem_rbs_collection
+declares them all.
+
 **concurrent-ruby runtime generator** — writes, verbatim, every file of the
 installed concurrent-ruby that `require "concurrent/map"` loads, measured in a
 fresh interpreter. gem_rbs_collection declares `Concurrent::Map[K, V]` flat, with

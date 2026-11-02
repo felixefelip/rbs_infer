@@ -4,6 +4,7 @@ require "fileutils"
 require "open3"
 require "prism"
 require "rbconfig"
+require_relative "../framework_source"
 
 module RbsInfer
   module Extensions
@@ -43,7 +44,7 @@ module RbsInfer
           lib = gem_lib or return []
 
           loaded_files.select { |file| file.start_with?(lib) }.map do |file|
-            { filename: file.delete_prefix(lib), source: HEADER + marked(File.read(file)) }
+            { filename: file.delete_prefix(lib), source: HEADER + Extensions::FrameworkSource.mark_defs(File.read(file), OVERLOAD_MARKER) }
           end
         end
 
@@ -62,14 +63,6 @@ module RbsInfer
         end
 
         private
-
-        def marked(source)
-          def_lines = RbsInfer::Analyzer.find_all_nodes(Prism.parse(source).value) { |node| node.is_a?(Prism::DefNode) }
-                                        .to_set { |node| node.location.start_line }
-          source.lines.each_with_index.map do |line, index|
-            def_lines.include?(index + 1) ? "#{line[/\A */]}#{OVERLOAD_MARKER}\n#{line}" : line
-          end.join
-        end
 
         def gem_lib
           spec = Gem.loaded_specs["concurrent-ruby"] || Gem::Specification.find_by_name("concurrent-ruby")
