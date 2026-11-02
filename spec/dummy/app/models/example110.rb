@@ -5,8 +5,8 @@
 #
 # The reader is written by `class_eval` on a string the macro builds, and
 # reads a store written by `define_method`. With both read, the call keeps the
-# memo `Options` holds: `define_option_reader :size` builds
-# `Options::GeneratedOptionReaders` and defines `size` in it.
+# memo `Dial` holds: `define_option_reader :size` builds
+# `Dial::GeneratedOptionReaders` and defines `size` in it.
 #
 # Nothing here states a type.
 module Example110

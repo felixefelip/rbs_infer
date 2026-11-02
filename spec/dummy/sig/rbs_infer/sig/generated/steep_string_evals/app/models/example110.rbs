@@ -8,3 +8,17 @@ module Example110
     def plural_labels?: () -> untyped
   end
 end
+
+module Example110
+  class Dial
+    include ::Example110::Dial::GeneratedOptionReaders
+  end
+end
+
+module Example110
+  class Dial
+    module GeneratedOptionReaders
+      def size: () -> 1
+    end
+  end
+end

@@ -3,7 +3,7 @@ module Example110
     self.@generated_option_readers: Module?
 
     def self.generated_option_readers: () -> Module
-    def self.define_option_reader: (:size name) -> untyped
+    def self.define_option_reader: (:size name) -> :size
   end
 end
 

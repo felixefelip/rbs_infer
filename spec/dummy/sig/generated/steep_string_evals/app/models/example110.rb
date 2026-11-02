@@ -9,3 +9,13 @@
 class Example110::Options
   class << self;def plural_labels; __class_attr_plural_labels; end;def plural_labels=(value); self.__class_attr_plural_labels = value; end;silence_redefinition_of_method def plural_labels?; !!self.plural_labels; end;end;silence_redefinition_of_method def plural_labels;  if defined?(@plural_labels);    @plural_labels;  else;    self.class.plural_labels;  end;end;;silence_redefinition_of_method def plural_labels?; !!self.plural_labels; end
 end
+
+class Example110::Dial
+  module GeneratedOptionReaders
+  end
+  include ::Example110::Dial::GeneratedOptionReaders
+end
+
+module Example110::Dial::GeneratedOptionReaders
+  def size; 1; end
+end

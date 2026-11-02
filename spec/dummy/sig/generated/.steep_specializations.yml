@@ -3,6 +3,8 @@ version: 1
 methods:
   ActiveSupport::ClassAttribute.redefine:
     "(self, :plural_labels, :__class_attr_plural_labels, true)": '"__class_attr_plural_labels="'
+    "(self, :plural_labels, :__class_attr_plural_labels, untyped)": '"__class_attr_plural_labels="'
+    "(singleton(::ActiveSupport::ClassAttribute), :plural_labels, :__class_attr_plural_labels, untyped)": '"__class_attr_plural_labels="'
     "(singleton(::Example110::Options), :plural_labels, :__class_attr_plural_labels, true)": '"__class_attr_plural_labels="'
     ? "(singleton(::Example110::Options), :plural_labels, :__class_attr_plural_labels,
       true) on singleton(::ActiveSupport::ClassAttribute)"
@@ -13,7 +15,20 @@ methods:
     '(::Class, "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
     "(::Class, ::String, private: true) &-> ::String": "::String"
     "(::Class, ::Symbol, private: true) &-> untyped": "::Symbol"
+    "(::Class, :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
+    "(::Class, :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
+    "(self, :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
+    "(self, :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
+    "(self, :plural_labels) &-> true": nil
+    "(self, :plural_labels) &-> untyped": nil
+    "(singleton(::ActiveSupport::ClassAttribute), :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
+    "(singleton(::ActiveSupport::ClassAttribute), :plural_labels) &-> untyped": nil
+    "(singleton(::Example110::Options), :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
+    "(singleton(::Example110::Options), :plural_labels) &-> true": nil
+    '(singleton_class(::ActiveSupport::ClassAttribute), "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
+    "(singleton_class(::ActiveSupport::ClassAttribute), :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
     '(singleton_class(::Example110::Options), "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
+    "(singleton_class(::Example110::Options), :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
   ActiveSupport::Concern#class_methods:
     "() &-> :declare": ":declare"
     "() &-> :default_values": ":default_values"
@@ -349,6 +364,10 @@ methods:
   Example107::Square#area:
     "(5)": '20'
   Example108::ClassAttribute.redefine:
+    "(self, :plural_names, :__class_attr_plural_names, untyped)": '"__class_attr_plural_names="'
+    "(self, :pluralize_table_names, :__class_attr_pluralize_table_names, untyped)": '"__class_attr_pluralize_table_names="'
+    "(singleton(::Example108::ClassAttribute), :plural_names, :__class_attr_plural_names, untyped)": '"__class_attr_plural_names="'
+    "(singleton(::Example108::ClassAttribute), :pluralize_table_names, :__class_attr_pluralize_table_names, untyped)": '"__class_attr_pluralize_table_names="'
     ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
       true) on singleton(::Example108::ClassAttribute) with {::Example108::Settings{@generated_readers:
       nil}}"
@@ -365,16 +384,45 @@ methods:
       | :__class_attr_pluralize_table_names), private: true) &-> true"
     : "::Symbol"
     "((singleton(::Example109::Base) | singleton(::Example108::Settings)), (:plural_names | :pluralize_table_names)) &-> true": nil
-    '(::Class, ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names="), private: true) &-> (::interned | nil)': ("__class_attr_plural_names="
-      | "__class_attr_pluralize_table_names=")
+    ? '(::Class, "__class_attr_plural_names=", private: true) &-> ("__class_attr_plural_names="
+      | "__class_attr_pluralize_table_names=")'
+    : '"__class_attr_plural_names="'
+    ? '(::Class, "__class_attr_pluralize_table_names=", private: true) &-> ("__class_attr_plural_names="
+      | "__class_attr_pluralize_table_names=")'
+    : '"__class_attr_pluralize_table_names="'
+    ? '(::Class, ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names="),
+      private: true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
+    : ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")
     "(::Class, (:__class_attr_plural_names | :__class_attr_pluralize_table_names), private: true) &-> true": "::Symbol"
+    "(::Class, :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
+    "(::Class, :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
+    "(self, :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
+    "(self, :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
+    "(self, :plural_names) &-> untyped": nil
+    "(self, :pluralize_table_names) &-> untyped": nil
+    "(singleton(::Example108::ClassAttribute), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
+    "(singleton(::Example108::ClassAttribute), :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
+    "(singleton(::Example108::ClassAttribute), :plural_names) &-> untyped": nil
+    "(singleton(::Example108::ClassAttribute), :pluralize_table_names) &-> untyped": nil
     "(singleton(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
     "(singleton(::Example108::Settings), :plural_names) &-> true": nil
     "(singleton(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
     "(singleton(::Example109::Base), :pluralize_table_names) &-> true": nil
-    '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private: true) &-> (::interned | nil)': '"__class_attr_plural_names="'
+    ? '(singleton_class(::Example108::ClassAttribute), "__class_attr_plural_names=",
+      private: true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
+    : '"__class_attr_plural_names="'
+    ? '(singleton_class(::Example108::ClassAttribute), "__class_attr_pluralize_table_names=",
+      private: true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
+    : '"__class_attr_pluralize_table_names="'
+    "(singleton_class(::Example108::ClassAttribute), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
+    "(singleton_class(::Example108::ClassAttribute), :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
+    ? '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private:
+      true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
+    : '"__class_attr_plural_names="'
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
-    '(singleton_class(::Example109::Base), "__class_attr_pluralize_table_names=", private: true) &-> (::interned | nil)': '"__class_attr_pluralize_table_names="'
+    ? '(singleton_class(::Example109::Base), "__class_attr_pluralize_table_names=",
+      private: true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
+    : '"__class_attr_pluralize_table_names="'
     "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
   Example108::Settings.__class_attr_plural_names:
     "() with {@generated_readers: nil}": "::TrueClass"
@@ -438,6 +486,7 @@ methods:
         "@join_table": nil
         "@name": ":comments"
   Example109::Associations::Builder::CollectionAssociation.define_extensions:
+    "(self, :comments)": nil
     ? "(singleton(::Example109::Post), :comments) on singleton(::Example109::Associations::Builder::HasMany)
       with {::Example109::Post{@generated_relation_methods: nil}}"
     : nil
@@ -622,6 +671,23 @@ methods:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@join_table": nil
         "@name": ":comments"
+    "(:comments, ::Proc, ::Hash[untyped, untyped], self)":
+      class: "::Example109::Reflection::AssociationReflection"
+      ivars:
+        "@active_record": nil
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@foreign_key": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": nil
+        "@join_table": nil
+        "@name": nil
+        "@options": nil
+        "@plural_name": nil
+        "@scope": nil
     "(:comments, ::Proc, {  }, singleton(::Example109::Post))":
       class: "::Example109::Reflection::AssociationReflection"
       ivars:
@@ -655,6 +721,10 @@ methods:
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
     : "({ :extend => ::Array[::Module] } | {  })"
+    ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Base),
+      @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
+    : "::Hash[untyped, untyped]"
     ? "({  }) with {@active_record: singleton(::Example109::Base), @class_name: nil,
       @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
@@ -672,6 +742,11 @@ methods:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@inverse_which_updates_counter_cache_defined": 'false'
+  Example110::Options.define_option_reader:
+    "(:size) on singleton(::Example110::Dial) with {@generated_option_readers: nil}": ":size"
+  Example110::Options.generated_option_readers:
+    "() on singleton(::Example110::Dial)": singleton(::Example110::Dial::GeneratedOptionReaders)
+    "() on singleton(::Example110::Dial) with {@generated_option_readers: nil}": singleton(::Example110::Dial::GeneratedOptionReaders)
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -699,19 +774,23 @@ methods:
     "(singleton(::Example26::BazOther)) on singleton(::Example26::BarOther)": '"bazingado"'
   Example28::Foo#bazingado:
     "() &-> :age_after_a_decade": "^(*untyped) -> :age_after_a_decade"
+    "() &-> nil": "^(*untyped) -> nil"
     "() on singleton(::Example28::Baz) &-> :age_after_a_decade": "^(*untyped) -> :age_after_a_decade"
   Example29::Foo#bazingado:
     "() &-> :age_after_a_decade": "^(*untyped) -> :age_after_a_decade"
     "() &-> :name_upcase": "^(*untyped) -> :name_upcase"
+    "() &-> nil": "^(*untyped) -> nil"
     "() on singleton(::Example29::Baz) &-> :age_after_a_decade": "^(*untyped) -> :age_after_a_decade"
     "() on singleton(::Example29::BazOther) &-> :name_upcase": "^(*untyped) -> :name_upcase"
   Example31::Foo#bazingado:
     "() &-> :age": "^(*untyped) -> :age"
+    "() &-> nil": "^(*untyped) -> nil"
     "() on singleton(::Example31::Baz) &-> :age": "^(*untyped) -> :age"
   Example32::Foo#bazinga:
     "(singleton(::Example32::Baz)) on singleton(::Example32::Bar)": "(:age | nil)"
   Example32::Foo#bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example32::Bar)] -> :age"
+    "() &-> nil": "^(*untyped) [self: singleton(::Example32::Bar)] -> nil"
     "() on singleton(::Example32::Baz) &-> :age": "^(*untyped) [self: singleton(::Example32::Bar)]
       -> :age"
     "(singleton(::Example32::Bar)) on singleton(::Example32::Baz)": "(:age | nil)"
@@ -725,6 +804,8 @@ methods:
       -> :age"
     "() &-> :name_upcase": "^(*untyped) [self: (singleton(::Example33::Bar) | singleton(::Example33::BarOther))]
       -> :name_upcase"
+    "() &-> nil": "^(*untyped) [self: (singleton(::Example33::Bar) | singleton(::Example33::BarOther))]
+      -> nil"
     "() on singleton(::Example33::Baz) &-> :age": "^(*untyped) [self: (singleton(::Example33::Bar)
       | singleton(::Example33::BarOther))] -> :age"
     "() on singleton(::Example33::BazOther) &-> :name_upcase": "^(*untyped) [self:
@@ -736,6 +817,8 @@ methods:
   Example34::Foo#included:
     "() &-> :age": "^(*untyped) [self: (singleton(::Example34::Bar) | singleton(::Example34::Baz)
       | ::Module)] -> :age"
+    "() &-> nil": "^(*untyped) [self: (singleton(::Example34::Bar) | singleton(::Example34::Baz)
+      | ::Module)] -> nil"
     "() on singleton(::Example34::Baz) &-> :age": "^(*untyped) [self: (singleton(::Example34::Bar)
       | singleton(::Example34::Baz) | ::Module)] -> :age"
     "(singleton(::Example34::Bar)) on singleton(::Example34::Baz)": "(:age | nil)"
@@ -743,28 +826,33 @@ methods:
     "(singleton(::Example35::Baz)) on singleton(::Example35::Bar)": "(:age | nil)"
   Example35::Foo.bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example35::Foo)] -> :age"
+    "() &-> nil": "^(*untyped) [self: singleton(::Example35::Foo)] -> nil"
     "() on singleton(::Example35::Baz) &-> :age": "^(*untyped) [self: singleton(::Example35::Foo)]
       -> :age"
     "(singleton(::Example35::Bar)) on singleton(::Example35::Baz)": "(:age | nil)"
   Example36::Foo.bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example36::Foo)] -> :age"
+    "() &-> nil": "^(*untyped) [self: singleton(::Example36::Foo)] -> nil"
     "() on singleton(::Example36::Baz) &-> :age": "^(*untyped) [self: singleton(::Example36::Foo)]
       -> :age"
     "(singleton(::Example36::Bar)) on singleton(::Example36::Baz)": "(:age | nil)"
   Example37::Foo#bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example37::Bar)] -> :age"
+    "() &-> nil": "^(*untyped) [self: singleton(::Example37::Bar)] -> nil"
     "() on singleton(::Example37::Baz) &-> :age": "^(*untyped) [self: singleton(::Example37::Bar)]
       -> :age"
     "(singleton(::Example37::Bar)) on singleton(::Example37::Baz)": "(:age | nil)"
   Example38::Foo#bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example38::Bar)] -> :age"
     "() &-> :name": "^(*untyped) [self: singleton(::Example38::Bar)] -> :name"
+    "() &-> nil": "^(*untyped) [self: singleton(::Example38::Bar)] -> nil"
     "() on singleton(::Example38::Baz) &-> :age": "^(*untyped) [self: singleton(::Example38::Bar)]
       -> :age"
     "() on singleton(::Example38::BazOther) &-> :name": "^(*untyped) [self: singleton(::Example38::Bar)]
       -> :name"
   Example39::Foo#bananed:
     "() &-> :age": "^(*untyped) [self: ::Module] -> :age"
+    "() &-> nil": "^(*untyped) [self: ::Module] -> nil"
     "() on singleton(::Example39::Baz) &-> :age": "^(*untyped) [self: ::Module] ->
       :age"
   Example3::Foo#user=:
@@ -775,11 +863,14 @@ methods:
     "(nil) on singleton(::Example3::Foo)": nil
   Example41::Foo#included:
     "() &-> :age": "^(*untyped) [self: ::Module] -> :age"
+    "() &-> nil": "^(*untyped) [self: ::Module] -> nil"
     "() on singleton(::Example41::Baz) &-> :age": "^(*untyped) [self: ::Module] ->
       :age"
   Example42::Foo#bazingado:
     "() &-> :age": "^(*untyped) [self: (singleton(::Example42::Bar) | singleton(::Example42::BarOther))]
       -> :age"
+    "() &-> nil": "^(*untyped) [self: (singleton(::Example42::Bar) | singleton(::Example42::BarOther))]
+      -> nil"
     "() on singleton(::Example42::Baz) &-> :age": "^(*untyped) [self: (singleton(::Example42::Bar)
       | singleton(::Example42::BarOther))] -> :age"
     "(singleton(::Example42::Bar)) on singleton(::Example42::Baz)": "(:age | nil)"
@@ -793,6 +884,8 @@ methods:
       | singleton(::Example43::BarOther2))] -> :age"
     "() &-> :name": "^(*untyped) [self: (singleton(::Example43::Bar) | singleton(::Example43::BarOther)
       | singleton(::Example43::BarOther2))] -> :name"
+    "() &-> nil": "^(*untyped) [self: (singleton(::Example43::Bar) | singleton(::Example43::BarOther)
+      | singleton(::Example43::BarOther2))] -> nil"
     "() on singleton(::Example43::Baz) &-> :age": "^(*untyped) [self: (singleton(::Example43::Bar)
       | singleton(::Example43::BarOther) | singleton(::Example43::BarOther2))] ->
       :age"
@@ -805,10 +898,12 @@ methods:
       :name | nil)"
   Example44::Foo#included:
     "() &-> :age": "^(*untyped) [self: ::Module] -> :age"
+    "() &-> nil": "^(*untyped) [self: ::Module] -> nil"
     "() on singleton(::Example44::Baz) &-> :age": "^(*untyped) [self: ::Module] ->
       :age"
   Example45::Foo#banana_class_method:
     "() &-> :age": "^(*untyped) [self: ::Class] -> :age"
+    "() &-> nil": "^(*untyped) [self: ::Class] -> nil"
     "() on singleton(::Example45::Baz) &-> :age": "^(*untyped) [self: ::Class] ->
       :age"
   Example47::Foo#banana_class_method:
@@ -819,11 +914,20 @@ methods:
     "(nil) on singleton(::Example4::Foo)": nil
   Example50::Foo#banana_class_method:
     "() on singleton(::Example50::Baz) &-> :age": ":age"
+  Example51::Foo#banana_class_method:
+    "() &-> nil": nil
+  Example52::Foo#banana_class_method:
+    "() &-> nil": nil
+  Example53::Foo#banana_class_method:
+    "() &-> nil": nil
+  Example54::Foo#banana_class_method:
+    "() &-> nil": nil
   Example61.normalize:
     ("indexed_by"): '"indexed_by"'
     "(:indexed_by)": '"indexed_by"'
   Example62::Deferring#keep:
     "() &-> :hallmark": "^(*untyped) [self: ::Module] -> :hallmark"
+    "() &-> nil": "^(*untyped) [self: ::Module] -> nil"
     "() on singleton(::Example62::Shared) &-> :hallmark": "^(*untyped) [self: ::Module]
       -> :hallmark"
   Example62::Slots#hallmark=:
@@ -1324,6 +1428,7 @@ methods:
   Notification::GeneratedStoreAccessors#channel=:
     ("none"): '"none"'
   SendDispatch#stamp:
+    ("a", "b", "c"): '"stamped: a"'
     ("post"): '"stamped: post"'
   Thread::Mutex#synchronize:
     "() &-> bool": bool
@@ -1347,6 +1452,8 @@ declarations:
   Example105::Animal#introduce: ("hello, woof" | "hello, meow")
   Example106::Visitor#visit: '"leaf of weight 1"'
   Example107::Canvas#draw: "(5 | 15 | 20)"
+  Example108::ClassAttribute.redefine_method: (::Symbol | nil | "__class_attr_plural_names="
+    | "__class_attr_pluralize_table_names=")
   Example108::Settings.__class_attr_plural_names: "::TrueClass"
   Example108::Settings.generated_readers: singleton(::Example108::Gauge::GeneratedReaders)
   Example109::Associations::Builder::Association.create_reflection: "::Example109::Reflection::HasManyReflection"
@@ -1354,6 +1461,8 @@ declarations:
   Example109::Core::ClassMethods#generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Reflection.create: "::Example109::Reflection::HasManyReflection"
   Example109::Reflection.reflection_class_for: singleton(::Example109::Reflection::HasManyReflection)
+  Example110::Options.define_option_reader: ":size"
+  Example110::Options.generated_option_readers: singleton(::Example110::Dial::GeneratedOptionReaders)
   Example13::Guarded#with_format: 'true'
   Example19#record: '"denied"'
   Example20#record: '"denied"'
@@ -3186,6 +3295,26 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
   Example109::Reflection::AssociationReflection#ensure_option_not_given_as_class!:
+    ? "(:class_name) with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      nil, @join_table: nil, @name: nil, @options: nil, @plural_name: nil, @scope:
+      nil}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": nil
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": nil
+        "@scope": nil
+        "@options": nil
+        "@active_record": nil
+        "@plural_name": nil
+        "@join_table": nil
+        "@foreign_key": nil
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
     ? "(:class_name) with {@active_record: singleton(::Example109::Base), @association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -3335,6 +3464,20 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
         "@active_record": singleton(::Example109::Base)
+    ? "(:comments, ::Proc, ::Hash[untyped, untyped], self) with {@active_record: nil,
+      @association_foreign_key: nil, @association_primary_key: nil, @class_name: nil,
+      @counter_cache_column: nil, @foreign_key: nil, @foreign_type: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      nil, @join_table: nil, @name: nil, @options: nil, @plural_name: nil, @scope:
+      nil, @type: nil}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
+        "@active_record": singleton(::Example109::Base)
     "(:comments, ::Proc, {  }, singleton(::Example109::Post)) with {::Example109::Post{@generated_relation_methods: nil}}":
       ivars: {}
       classes:
@@ -3400,6 +3543,17 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
         "@active_record": singleton(::Example109::Base)
+    ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Base),
+      @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@name": ":comments"
+        "@active_record": singleton(::Example109::Base)
     ? "({  }) with {@active_record: singleton(::Example109::Base), @class_name: nil,
       @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments}"
@@ -3413,16 +3567,29 @@ exits:
         "@active_record": singleton(::Example109::Base)
       params:
         '0': "{  }"
+  Example110::Options.__class_attr_plural_labels:
+    "() with {@generated_option_readers: nil}":
+      ivars:
+        "@generated_option_readers": nil
   Example110::Options.define_option_reader:
     "(:size) on singleton(::Example110::Dial) with {@generated_option_readers: nil}":
-      ivars: {}
+      ivars:
+        "@generated_option_readers": singleton(::Example110::Dial::GeneratedOptionReaders)
     "(:size) with {@generated_option_readers: nil}":
+      ivars: {}
+  Example110::Options.generated_option_readers:
+    "() on singleton(::Example110::Dial) with {@generated_option_readers: nil}":
+      ivars:
+        "@generated_option_readers": singleton(::Example110::Dial::GeneratedOptionReaders)
+    "() with {@generated_option_readers: nil}":
       ivars: {}
   Example110::Options.plural_labels:
     "() on singleton(::Example110::Dial) with {@generated_option_readers: nil}":
-      ivars: {}
+      ivars:
+        "@generated_option_readers": nil
     "() with {@generated_option_readers: nil}":
-      ivars: {}
+      ivars:
+        "@generated_option_readers": nil
   Example84::Reflection#rename:
     "((:articles | :replies)) with {@name: (:posts | :comments)}":
       ivars:
@@ -4233,6 +4400,11 @@ exits:
     "(singleton(::Example109::Post::GeneratedRelationMethods)) with {@generated_relation_methods: nil}":
       ivars:
         "@generated_relation_methods": nil
+    "(singleton(::Example110::Dial::GeneratedOptionReaders)) on singleton(::Example110::Dial) with {@generated_option_readers: nil}":
+      ivars: {}
+    "(singleton(::Example110::Dial::GeneratedOptionReaders)) with {@generated_option_readers: nil}":
+      ivars:
+        "@generated_option_readers": nil
     "(singleton(::Example13::Registry::GeneratedAttributes)) on singleton(::Example13::Registry) with {@registry_instance: nil}":
       ivars: {}
     "(singleton(::Example13::Registry::GeneratedAttributes)) with {@registry_instance: nil}":
