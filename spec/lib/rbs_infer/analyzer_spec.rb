@@ -1726,6 +1726,32 @@ RSpec.describe RbsInfer::Analyzer do
     end
   end
 
+  # ─── a generic class built with `new` and no arguments ──────────
+
+  describe "#generate_rbs for an ivar holding a generic class built with new" do
+    it "writes untyped for each of the class's parameters" do
+      files = {
+        "holder.rb" => <<~RUBY
+          class Holder
+            attr_reader :set, :lazy
+
+            def initialize
+              @set = Set.new
+              @lazy = Enumerator::Lazy.new([]) { |yielder, value| yielder << value }
+            end
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |_dir, paths|
+        rbs = described_class.new(target_class: "Holder", target_file: paths.first, source_files: paths).generate_rbs
+
+        expect(rbs).to include("attr_reader set: Set[untyped]")
+        expect(rbs).to include("attr_reader lazy: Enumerator::Lazy[untyped, untyped]")
+      end
+    end
+  end
+
   # ─── optarg from call sites across a reopened class ─────────────
 
   describe "#generate_rbs typing an optional parameter from call sites" do

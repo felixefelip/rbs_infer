@@ -59,7 +59,7 @@ module RbsInfer
         return [] unless decl.is_a?(RBS::AST::Declarations::Class) && decl.super_class
 
         super_class = decl.super_class
-        [[super_class.name, super_class.location[:name], outer]] +
+        [[super_class.name, super_class.location[:name], outer, nil]] +
           super_class.args.flat_map { |type| names_in_type(type, outer) }
       end
 
@@ -74,7 +74,7 @@ module RbsInfer
         when RBS::AST::Members::MethodDefinition
           member.overloads.flat_map { |overload| method_type_names(overload.method_type, context) }
         when RBS::AST::Members::Mixin
-          [[member.name, member.location[:name], context], *types_names(member.args, context)]
+          [[member.name, member.location[:name], context, member], *types_names(member.args, context)]
         else
           member.respond_to?(:type) ? types_names([member.type].compact, context) : []
         end
@@ -90,7 +90,7 @@ module RbsInfer
       def names_in_type(type, context)
         own = case type
               when RBS::Types::ClassInstance, RBS::Types::ClassSingleton
-                type.location ? [[type.name, type.location[:name], context]] : []
+                type.location ? [[type.name, type.location[:name], context, type]] : []
               else
                 []
               end
