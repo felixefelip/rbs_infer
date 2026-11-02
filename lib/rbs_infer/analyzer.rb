@@ -337,8 +337,7 @@ module RbsInfer
       )
 
       namespace_classes = resolve_namespace_classes
-      rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, superclass_name: @superclass_name,
-                                                         superclass_args: @superclass_name ? method_type_resolver.type_param_string(@superclass_name, untyped: true) : "",
+      rbs_builder = RbsInfer::Signatures::RbsBuilder.new(target_class: @target_class, **RbsInfer::Signatures::DeclaredSuperclass.written(@target_class, @superclass_name, rbs_definition_resolver),
                                                          namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class), declared: rbs_definition_resolver.method(:declaration))
       rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types,
                         ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types,
@@ -944,6 +943,7 @@ require_relative "signatures/method_type_resolver"
 require_relative "inference/caller_file_analyzer"
 require_relative "signatures/type_name_qualifier"
 require_relative "signatures/rbs_builder"
+require_relative "signatures/declared_superclass"
 require_relative "signatures/foreign_declarations"
 require_relative "signatures/class_alias"
 require_relative "inference/constant_type_resolver"
