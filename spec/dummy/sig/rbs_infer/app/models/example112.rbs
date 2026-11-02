@@ -1,0 +1,9 @@
+class Example112
+  attr_reader tags: Set[untyped]
+
+  def initialize: () -> void
+
+  class AfterInitialize
+    attr_reader tags: Set[untyped]
+  end
+end

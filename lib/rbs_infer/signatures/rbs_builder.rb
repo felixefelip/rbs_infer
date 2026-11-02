@@ -112,7 +112,7 @@ module RbsInfer::Signatures
         lines << "#{"  " * (modules.size - 1 - i)}end"
       end
 
-      TypeNameQualifier.apply("#{lines.join("\n")}\n", declared: @declared)
+      GenericArguments.apply(TypeNameQualifier.apply("#{lines.join("\n")}\n", declared: @declared), declared: @declared)
     end
 
     private

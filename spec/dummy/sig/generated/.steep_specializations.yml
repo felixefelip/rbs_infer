@@ -1846,6 +1846,8 @@ receivers:
   - singleton(::Example11::Partial)
   app/models/example110.rb:18:56:
   - singleton(::Module)
+  app/models/example112.rb:8:16:
+  - singleton(::Set)
   app/models/example13.rb:104:15:
   - singleton(::Example13::Registry)
   app/models/example13.rb:104:20:
