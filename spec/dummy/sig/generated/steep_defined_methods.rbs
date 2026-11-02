@@ -14,5 +14,6 @@ class Example109::Base
 end
 
 class Example110::Options
+  def self.__class_attr_plural_labels: () -> untyped
   def self.__class_attr_plural_labels=: (untyped new_value) -> untyped
 end

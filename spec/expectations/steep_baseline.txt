@@ -4,7 +4,7 @@ app/models/concerns/test/filtrable.rb:16:13: [error] Type `(::Post & ::Test::Fil
 app/models/concerns/test/filtrable.rb:16:4: [error] Type `(::Post & ::Test::Filtrable)` does not have method `asdasd`
 app/models/eval_reopen.rb:61:6: [warning] Method `::Object#by_instance_eval` is not declared in RBS
 app/models/example103.rb:54:10: [error] Cannot allow method body have type `:a` because declared as type `:x`
-app/models/example108.rb:40:34: [warning] Cannot pass a value of type `^(*untyped) -> (true | ::TrueClass | ::interned | nil)` as a block-pass-argument of type `^ [self: top] -> untyped`
+app/models/example108.rb:40:34: [warning] Cannot pass a value of type `^(*untyped) -> (true | ::TrueClass | "__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")` as a block-pass-argument of type `^ [self: top] -> untyped`
 app/models/example109.rb:207:39: [warning] The method cannot be called with a block
 app/models/example109.rb:217:33: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^ [self: self] -> U(_)`
 app/models/example109.rb:285:35: [warning] Cannot pass a value of type `^(*untyped) -> untyped` as a block-pass-argument of type `(^(::Module) [self: ::Module] -> void | nil)`
@@ -94,7 +94,6 @@ sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:43:59: [erro
 sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:43:66: [error] The method parameter is incompatible with the declaration `(?::String) -> bool`
 sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:43:73: [error] The method parameter is incompatible with the declaration `(?::String) -> bool`
 sig/generated/steep_ruby_runtime/module.rb:94:8: [error] Type `(::Object | T(_))` does not have method `singleton_class`
-sig/generated/steep_string_evals/app/models/example110.rb:10:35: [error] Type `singleton(::Example110::Options)` does not have method `__class_attr_plural_labels`
 sig/generated/steep_string_evals/app/models/example60.rb:10:141: [warning] Cannot find the declaration of constant: `DelegationError`
 sig/generated/steep_string_evals/app/models/example81.rb:10:142: [warning] Cannot find the declaration of constant: `DelegationError`
 sig/generated/steep_string_evals/app/models/example81.rb:11:148: [warning] Cannot find the declaration of constant: `DelegationError`
