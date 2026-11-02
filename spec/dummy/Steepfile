@@ -1,3 +1,5 @@
+RubyVM::YJIT.enable if defined?(RubyVM::YJIT)
+
 ENV["STEEP_ERB_CONVENTION"] = "1"
 ENV["STEEP_MODULE_CONVENTION"] = "1"
 
