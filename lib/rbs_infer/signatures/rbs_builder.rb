@@ -42,7 +42,7 @@ module RbsInfer::Signatures
       modules.each_with_index do |mod, i|
         full_name = modules[0..i].join("::")
         keyword = @namespace_classes.include?(full_name) ? "class" : "module"
-        lines << "#{"  " * i}#{keyword} #{mod}"
+        lines << "#{"  " * i}#{keyword} #{mod}#{declared_params(full_name)}"
       end
       keyword = @is_module ? "module" : "class"
       lines << "#{base_indent}#{keyword} #{class_name}#{@type_params}#{" < #{qualify(@superclass_name)}#{@superclass_args}" if !@is_module && @superclass_name}"
@@ -463,6 +463,17 @@ module RbsInfer::Signatures
     # Qualifica nomes de tipo que seriam ambíguos no contexto do namespace gerado.
     # Ex: dentro de "class Account { module Storage { ... } }", um include "Storage::Totaled"
     # seria resolvido como Account::Storage::Totaled em vez de ::Storage::Totaled.
+    # A namespace this declaration reopens to nest the class repeats the
+    # parameters it is declared with, as the class itself does (`type_params`):
+    # `class Enumerator` around `class Lazy` is `class Enumerator[unchecked out
+    # Elem, out Return = void]`, or RBS rejects every declaration of it.
+    def declared_params(name)
+      params = @declared.call(name)&.type_params
+      params.nil? || params.empty? ? "" : "[#{params.join(", ")}]"
+    rescue StandardError
+      ""
+    end
+
     def qualify(type_name)
       return type_name if type_name.start_with?("::")
 
@@ -474,7 +485,7 @@ module RbsInfer::Signatures
     MAILER_BASES = %w[ApplicationMailer ActionMailer::Base].freeze
 
     def mailer_class?
-      MAILER_BASES.include?(@superclass_name)
+      MAILER_BASES.include?(@superclass_name&.delete_prefix("::"))
     end
 
     # Substitui parâmetros `untyped` na assinatura por tipos inferidos

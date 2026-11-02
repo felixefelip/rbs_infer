@@ -1,0 +1,9 @@
+class Example111
+  def self.second_of: (untyped list) -> untyped
+end
+
+class Enumerator[unchecked out E, out R = void]
+  class Lazy[out E, out R = void] < ::Enumerator[E, R]
+    def example111_second: () -> untyped
+  end
+end

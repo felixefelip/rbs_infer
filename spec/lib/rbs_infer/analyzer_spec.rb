@@ -1706,6 +1706,26 @@ RSpec.describe RbsInfer::Analyzer do
     end
   end
 
+  # ─── a reopen of a class declared with a generic superclass ─────
+
+  describe "#generate_rbs for a reopen of a generic class with a superclass" do
+    it "names the superclass the class is declared with, and the parameters of the namespace it reopens" do
+      files = {
+        "lazy.rb" => <<~RUBY
+          class Enumerator::Lazy < Enumerator
+            def second = drop(1).first
+          end
+        RUBY
+      }
+
+      with_temp_files(files) do |_dir, paths|
+        rbs = described_class.new(target_class: "Enumerator::Lazy", target_file: paths.first, source_files: paths).generate_rbs
+
+        expect(rbs).to include("class Enumerator[unchecked out E, out R = void]\n  class Lazy[out E, out R = void] < ::Enumerator[E, R]")
+      end
+    end
+  end
+
   # ─── optarg from call sites across a reopened class ─────────────
 
   describe "#generate_rbs typing an optional parameter from call sites" do
