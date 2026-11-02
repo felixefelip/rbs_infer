@@ -65,6 +65,26 @@ module RbsInfer
         ([first] + rest.map { |line| line.strip.empty? ? line : line.sub(/\A {0,#{margin}}/, "") }).join
       end
 
+      # `source` with `marker` on its own line above every `def`, at the def's
+      # indentation.
+      def mark_defs(source, marker)
+        def_lines = RbsInfer::Analyzer.find_all_nodes(Prism.parse(source).value) { |node| node.is_a?(Prism::DefNode) }
+                                      .to_set { |node| node.location.start_line }
+        source.lines.each_with_index.map do |line, index|
+          def_lines.include?(index + 1) ? "#{line[/\A */]}#{marker}\n#{line}" : line
+        end.join
+      end
+
+      # `source` with its top-level `require`s left out: what a file loads is
+      # not part of what it defines.
+      def without_requires(source)
+        requires = Prism.parse(source).value.statements.body.select do |node|
+          node.is_a?(Prism::CallNode) && node.receiver.nil? && %i[require require_relative].include?(node.name)
+        end
+        lines = requires.flat_map { |node| (node.location.start_line..node.location.end_line).to_a }.to_set
+        source.lines.each_with_index.reject { |_, index| lines.include?(index + 1) }.map(&:first).join
+      end
+
       # `source` indented by `depth` levels, blank lines left blank.
       def indent(source, depth)
         source.lines.map { |line| line.strip.empty? ? "\n" : "#{"  " * depth}#{line}" }.join

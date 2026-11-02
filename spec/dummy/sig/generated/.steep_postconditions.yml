@@ -150,6 +150,63 @@ postconditions:
   effects:
     may_write:
     - "@_included_block"
+- class: ActiveSupport::Inflector::Inflections
+  method: acronym
+  effects:
+    may_write:
+    - "@acronym_regex"
+    - "@acronyms_camelize_regex"
+    - "@acronyms_underscore_regex"
+- class: ActiveSupport::Inflector::Inflections
+  method: clear
+  effects:
+    may_write:
+    - "@acronym_regex"
+    - "@acronyms"
+    - "@acronyms_camelize_regex"
+    - "@acronyms_underscore_regex"
+    - "@uncountables"
+- class: ActiveSupport::Inflector::Inflections
+  method: define_acronym_regex_patterns
+  effects:
+    may_write:
+    - "@acronym_regex"
+    - "@acronyms_camelize_regex"
+    - "@acronyms_underscore_regex"
+- class: ActiveSupport::Inflector::Inflections
+  method: initialize
+  effects:
+    may_write:
+    - "@acronym_regex"
+    - "@acronyms"
+    - "@acronyms_camelize_regex"
+    - "@acronyms_underscore_regex"
+    - "@humans"
+    - "@plurals"
+    - "@singulars"
+    - "@uncountables"
+- class: ActiveSupport::Inflector::Inflections
+  method: initialize_dup
+  effects:
+    may_write:
+    - "@acronym_regex"
+    - "@acronyms_camelize_regex"
+    - "@acronyms_underscore_regex"
+- class: ActiveSupport::Inflector::Inflections::Uncountables
+  method: !!str '<<'
+  effects:
+    may_write:
+    - "@regex_array"
+- class: ActiveSupport::Inflector::Inflections::Uncountables
+  method: add
+  effects:
+    may_write:
+    - "@regex_array"
+- class: ActiveSupport::Inflector::Inflections::Uncountables
+  method: initialize
+  effects:
+    may_write:
+    - "@regex_array"
 - class: ApplicationController
   method: authenticate_user
   effects:

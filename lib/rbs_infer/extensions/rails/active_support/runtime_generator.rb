@@ -3,12 +3,13 @@
 require "fileutils"
 require_relative "runtime/delegation_transcriber"
 require_relative "runtime/class_attribute_transcriber"
+require_relative "runtime/inflector_transcriber"
 
 module RbsInfer
   module Extensions
     module Rails
       module ActiveSupport
-        # Puts ActiveSupport's `delegate` and `class_attribute` where the
+        # Puts ActiveSupport's `delegate`, `class_attribute` and inflector where the
         # pipeline can read it.
         #
         # `delegate :email, to: :user` defines an ordinary method, written by
@@ -53,7 +54,11 @@ module RbsInfer
           # is written whether or not a class calls the macro — the rule the
           # ActionText generator follows, for the same reason.
           def build
-            [Runtime::DelegationTranscriber.file_entry, Runtime::ClassAttributeTranscriber.file_entry].compact
+            [
+              Runtime::DelegationTranscriber.file_entry,
+              Runtime::ClassAttributeTranscriber.file_entry,
+              Runtime::InflectorTranscriber.file_entry
+            ].compact
           end
 
           # Writes the sidecar dir, dropping a stale one when nothing qualifies.
