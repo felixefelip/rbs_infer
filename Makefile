@@ -97,4 +97,4 @@ test_parallel:
 
 ## Análise de tipos com Steep no dummy
 steep:
-	cd $(DUMMY_DIR) && STEEP_ERB_CONVENTION=1 STEEP_MODULE_CONVENTION=1 bundle exec steep check
+	cd $(DUMMY_DIR) && RUBY_YJIT_ENABLE=1 STEEP_ERB_CONVENTION=1 STEEP_MODULE_CONVENTION=1 bundle exec steep check
