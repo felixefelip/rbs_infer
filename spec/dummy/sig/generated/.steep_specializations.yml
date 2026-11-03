@@ -5156,24 +5156,30 @@ exits:
       => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
     : ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      keeps_self: true
     '(:en) with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}':
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      keeps_self: true
   Example102::Inflector.singularize:
     ? '("categories") on singleton(::Example102::Inflector) with {@locale_rule_sets:
       { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
     : ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      keeps_self: true
     '("categories") with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}':
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      keeps_self: true
     ? '("posts") on singleton(::Example102::Inflector) with {@locale_rule_sets: {
       :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}'
     : ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      keeps_self: true
     '("posts") with {@locale_rule_sets: { :en => ::Example102::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }}':
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
+      keeps_self: true
   Example102::Inflector.with_rules:
     "(:en) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
@@ -5217,9 +5223,11 @@ exits:
     '("categories") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}':
       ivars:
         "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
     '("posts") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}':
       ivars:
         "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
   Example102::Rules#singular:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}':
       ivars:
@@ -5344,8 +5352,10 @@ exits:
           ivars:
             "@backend": "{ :en => ::Example104::Rules }"
             "@default_proc": nil
+      keeps_self: true
     '("categories") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}':
       ivars: {}
+      keeps_self: true
     ? '("categories") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
       { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
       nil}}'
@@ -5355,8 +5365,10 @@ exits:
           ivars:
             "@backend": "{ :en => ::Example104::Rules }"
             "@default_proc": nil
+      keeps_self: true
     '("categories") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}':
       ivars: {}
+      keeps_self: true
     ? '("posts") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"],
       [/s\z/, ""]]} }, @default_proc: nil}}'
@@ -5366,8 +5378,10 @@ exits:
           ivars:
             "@backend": "{ :en => ::Example104::Rules }"
             "@default_proc": nil
+      keeps_self: true
     '("posts") on singleton(::Example104) with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}':
       ivars: {}
+      keeps_self: true
     ? '("posts") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{@backend:
       { :en => ::Example104::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc:
       nil}}'
@@ -5377,8 +5391,10 @@ exits:
           ivars:
             "@backend": "{ :en => ::Example104::Rules }"
             "@default_proc": nil
+      keeps_self: true
     '("posts") with {@rules_by_locale: ::Concurrent::Map[untyped, untyped]{}}':
       ivars: {}
+      keeps_self: true
   Example104::Rules#singular:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}':
       ivars:
@@ -6092,24 +6108,28 @@ exits:
           class: "::Example85::Rules"
           ivars:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
     '("categories") with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
       ivars:
         "@rules":
           class: "::Example85::Rules"
           ivars:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
     '("posts") on singleton(::Example85) with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
       ivars:
         "@rules":
           class: "::Example85::Rules"
           ivars:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
     '("posts") with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
       ivars:
         "@rules":
           class: "::Example85::Rules"
           ivars:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
   Example85::Rules#singular:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}':
       ivars:
@@ -6195,24 +6215,28 @@ exits:
           class: "::Example88::Rules"
           ivars:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
     '("categories") with {@rules: ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
       ivars:
         "@rules":
           class: "::Example88::Rules"
           ivars:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
     '("comments") on singleton(::Example88::Inflector) with {@rules: ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
       ivars:
         "@rules":
           class: "::Example88::Rules"
           ivars:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
     '("comments") with {@rules: ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
       ivars:
         "@rules":
           class: "::Example88::Rules"
           ivars:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
   Example88::Rules#singular:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}':
       ivars:
@@ -6405,9 +6429,11 @@ exits:
     '("categories") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}':
       ivars:
         "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
     '("posts") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}':
       ivars:
         "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
   Example92::Rules#singular:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}':
       ivars:
@@ -6515,9 +6541,11 @@ exits:
     '("categories") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}':
       ivars:
         "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
     '("posts") with {@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}':
       ivars:
         "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
+      keeps_self: true
   Example93::Rules#singular:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}':
       ivars:
