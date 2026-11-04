@@ -1450,8 +1450,40 @@ methods:
     "(singleton(::Example109::Base)) with {::Example109::Base{@generated_relation_methods: nil}}": singleton(::Example109::Base)
     "(singleton(::Example90::Base)) with {::Example90::Base{@generated_association_methods: nil}}": singleton(::Example90::Base)
     "(singleton(::Example91::Base)) with {::Example91::Base{@generated_association_methods: nil}}": singleton(::Example91::Base)
+  Module#include:
+    "(singleton(::Current::GeneratedAttributeMethods)) on singleton(::Current) with {@__rbs_infer_instance: nil}": self
+    "(singleton(::Current::GeneratedAttributeMethods)) with {@__rbs_infer_instance: nil}": self
+    "(singleton(::Example108::Gauge::GeneratedReaders)) on singleton(::Example108::Gauge) with {@generated_readers: nil}": self
+    "(singleton(::Example108::Gauge::GeneratedReaders)) with {@generated_readers: nil}": self
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods)) on singleton(::Example109::Post)
+      with {@generated_relation_methods: nil}"
+    : self
+    "(singleton(::Example109::Post::GeneratedRelationMethods)) with {@generated_relation_methods: nil}": self
+    "(singleton(::Example110::Dial::GeneratedOptionReaders)) on singleton(::Example110::Dial) with {@generated_option_readers: nil}": self
+    "(singleton(::Example110::Dial::GeneratedOptionReaders)) with {@generated_option_readers: nil}": self
+    "(singleton(::Example13::Registry::GeneratedAttributes)) on singleton(::Example13::Registry) with {@registry_instance: nil}": self
+    "(singleton(::Example13::Registry::GeneratedAttributes)) with {@registry_instance: nil}": self
+    "(singleton(::Example3::Foo::GeneratedAttributes)) on singleton(::Example3::Foo) with {@foo_instance: nil}": self
+    "(singleton(::Example3::Foo::GeneratedAttributes)) with {@foo_instance: nil}": self
+    "(singleton(::Example89::Widget::GeneratedMethods)) on singleton(::Example89::Widget) with {@generated_methods: nil}": self
+    "(singleton(::Example89::Widget::GeneratedMethods)) with {@generated_methods: nil}": self
+    ? "(singleton(::Example90::Post::GeneratedAssociationMethods)) on singleton(::Example90::Post)
+      with {@generated_association_methods: nil}"
+    : self
+    "(singleton(::Example90::Post::GeneratedAssociationMethods)) with {@generated_association_methods: nil}": self
+    ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) on singleton(::Example91::Post)
+      with {@generated_association_methods: nil}"
+    : self
+    "(singleton(::Example91::Post::GeneratedAssociationMethods)) with {@generated_association_methods: nil}": self
   Notification::GeneratedStoreAccessors#channel=:
     ("none"): '"none"'
+  Object#extend:
+    "(singleton(::Example109::Core::ClassMethods)) on singleton(::Example109::Base) with {@generated_relation_methods: nil}": self
+    "(singleton(::Example109::Core::ClassMethods)) with {@generated_relation_methods: nil}": self
+    "(singleton(::Example90::Core::ClassMethods)) on singleton(::Example90::Base) with {@generated_association_methods: nil}": self
+    "(singleton(::Example90::Core::ClassMethods)) with {@generated_association_methods: nil}": self
+    "(singleton(::Example91::Core::ClassMethods)) on singleton(::Example91::Base) with {@generated_association_methods: nil}": self
+    "(singleton(::Example91::Core::ClassMethods)) with {@generated_association_methods: nil}": self
   SendDispatch#stamp:
     ("a", "b", "c"): '"stamped: a"'
     ("post"): '"stamped: post"'
