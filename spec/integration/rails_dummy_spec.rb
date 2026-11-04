@@ -803,7 +803,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     # identical reopen with a changed RBS → inference pipeline bug. The
     # `CurrentAttributesRuntimeGenerator` reopen is now BOTH the RBS-inference
     # source and the Steep-checked pseudo-code (felixefelip/steep#68 item 5).
-    files = RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator.new(app_dir: ".").build
+    files = RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator.new(app_dir: ".", app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(".")).build
     reopen = files.find { |f| f[:filename] == "current.rb" }
 
     expect(reopen).not_to be_nil
@@ -1714,6 +1714,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
         generator = RbsInfer::Extensions::CarrierWave::Generator.new(
           app_dir: Dir.pwd,
+          app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(Dir.pwd),
           output_dir: tmpdir,
           rbs_rails_dir: rbs_rails_copy
         )
@@ -1745,6 +1746,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
 
         generator = RbsInfer::Extensions::CarrierWave::Generator.new(
           app_dir: Dir.pwd,
+          app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(Dir.pwd),
           output_dir: tmpdir,
           rbs_rails_dir: rbs_rails_copy
         )
@@ -1766,7 +1768,11 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     # sig/generated/steep_devise_runtime/), which is also what `steep check` consumes.
     it "emits the pseudo-code checked into the dummy" do
       Dir.mktmpdir do |tmpdir|
-        generator = RbsInfer::Extensions::Devise::Generator.new(app_dir: Dir.pwd, output_dir: tmpdir)
+        generator = RbsInfer::Extensions::Devise::Generator.new(
+          app_dir: Dir.pwd,
+          app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(Dir.pwd),
+          output_dir: tmpdir
+        )
         scopes = generator.generate_all
 
         expect(scopes).to eq([{ scope: "account", class_name: "Account" }])
@@ -1986,6 +1992,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       generator = RbsInfer::Extensions::Rails::CustomGenerator.new(
         output_dir: tmpdir,
         app_dir: Dir.pwd,
+        app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(Dir.pwd),
         source_files: source_files
       )
       generator.generate_all
@@ -2006,6 +2013,7 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       generator = RbsInfer::Extensions::Rails::CustomGenerator.new(
         output_dir: tmpdir,
         app_dir: Dir.pwd,
+        app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(Dir.pwd),
         source_files: source_files
       )
       generator.generate_all

@@ -7,13 +7,13 @@ namespace :rbs_infer do
     desc "Generate RBS files for custom Rails types (ApplicationController, DeviseCustom, etc.)"
     task :all do
       app_dir = defined?(Rails) ? Rails.root.to_s : Dir.pwd
+      app_paths = RbsInfer::Extensions::Rails::AppPaths.current(app_dir)
       output_dir = File.join(app_dir, "sig/rbs_rails_custom")
-      source_files = Dir[File.join(app_dir, "app/**/*.rb")]
 
       generator = RbsInfer::Extensions::Rails::CustomGenerator.new(
         output_dir: output_dir,
         app_dir: app_dir,
-        source_files: source_files
+        app_paths: app_paths
       )
       generator.generate_all
 

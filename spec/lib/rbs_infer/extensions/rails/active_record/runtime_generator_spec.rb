@@ -6,6 +6,10 @@ require "fileutils"
 require "pathname"
 
 RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
+  def generator(app_dir)
+    described_class.new(app_dir: app_dir, app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(app_dir))
+  end
+
   def in_app(files)
     Dir.mktmpdir do |dir|
       files.each do |rel, content|
@@ -51,7 +55,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
   describe "model reopen (save flow)" do
     it "runs the before_validation callbacks from save" do
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
-        model = source_of(described_class.new(app_dir: dir).build, "assignment.rb")
+        model = source_of(generator(dir).build, "assignment.rb")
 
         expect(model).to include("class Assignment\n")
         expect(model).to match(/def save\(\*\*\)\n\s*run_before_validation_callbacks\n\s*true\n\s*end/)
@@ -69,7 +73,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         end
       RUBY
       in_app("app/models/assignment.rb" => model_src) do |dir|
-        model = source_of(described_class.new(app_dir: dir).build, "assignment.rb")
+        model = source_of(generator(dir).build, "assignment.rb")
         expect(model).to match(/def run_before_validation_callbacks\n\s*a\n\s*b\n\s*c\n\s*end/)
       end
     end
@@ -86,7 +90,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         end
       RUBY
       in_app("app/models/assignment.rb" => model_src, "app/models/post.rb" => POST) do |dir|
-        model = source_of(described_class.new(app_dir: dir).build, "assignment.rb")
+        model = source_of(generator(dir).build, "assignment.rb")
 
         expect(model).to match(/def run_before_validation_callbacks\n\s*run_belongs_to_default_callbacks\n\s*end/)
         expect(model).to match(/def run_belongs_to_default_callbacks\n\s*run_belongs_to_default_owner\n\s*end/)
@@ -100,7 +104,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       # for it (only `belongs_to :owner, default:` would produce one).
       plain = "class Assignment < ApplicationRecord\n  belongs_to :post\nend\n"
       in_app("app/models/assignment.rb" => plain, "app/models/post.rb" => POST) do |dir|
-        model = source_of(described_class.new(app_dir: dir).build, "assignment.rb")
+        model = source_of(generator(dir).build, "assignment.rb")
         # No save flow at all: no before_validation callback and no default lambda.
         expect(model).to be_nil
       end
@@ -111,7 +115,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       # its class/proxy can't be modeled — the association is skipped, and with
       # no before_validation callback either, nothing is emitted.
       in_app("app/models/post.rb" => POST) do |dir|
-        expect(app_reopens(described_class.new(app_dir: dir).build)).to be_empty
+        expect(app_reopens(generator(dir).build)).to be_empty
       end
     end
   end
@@ -119,7 +123,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
   describe "owner reopen (association getter)" do
     it "returns the owner-specific proxy from the has_many getter, passing self" do
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
-        owner = source_of(described_class.new(app_dir: dir).build, "post.rb")
+        owner = source_of(generator(dir).build, "post.rb")
 
         expect(owner).to include("class Post\n")
         # 2 args (klass, self) to match the real CollectionProxy constructor;
@@ -149,7 +153,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         end
       RUBY
     ) do |dir|
-      owner = source_of(described_class.new(app_dir: dir).build, "caderneta.rb")
+      owner = source_of(generator(dir).build, "caderneta.rb")
 
       expect(owner).to match(
         /def recomendacao_vacinas\n\s*Caderneta_Caderneta_RecomendacaoVacina::ActiveRecord_Associations_CollectionProxy\.new\(Caderneta::RecomendacaoVacina, self\)/
@@ -164,7 +168,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       "app/models/caderneta.rb" => "class Caderneta < ApplicationRecord\n  has_many :posts\nend\n",
       "app/models/post.rb" => "class Post < ApplicationRecord\n  belongs_to :caderneta\nend\n"
     ) do |dir|
-      owner = source_of(described_class.new(app_dir: dir).build, "caderneta.rb")
+      owner = source_of(generator(dir).build, "caderneta.rb")
 
       expect(owner).to match(/Caderneta_Post::ActiveRecord_Associations_CollectionProxy\.new\(Post, self\)/)
     end
@@ -204,7 +208,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         "app/models/user.rb" => USER,
         "app/models/user/notifiable.rb" => NOTIFIABLE,
         "app/models/notification.rb" => NOTIFICATION
-      }.merge(extra)) { |dir| yield described_class.new(app_dir: dir).build }
+      }.merge(extra)) { |dir| yield generator(dir).build }
     end
 
     it "emits the getter on the includer, not on the concern" do
@@ -458,7 +462,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         "app/models/board.rb" => BOARD,
         "app/models/card.rb" => CARD,
         "app/models/comment.rb" => CARD_COMMENT
-      }.merge(extra)) { |dir| yield described_class.new(app_dir: dir).build }
+      }.merge(extra)) { |dir| yield generator(dir).build }
     end
 
     it "reads the element off the `source:` association of the through model" do
@@ -489,7 +493,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         "app/models/assignment.rb" => "class Assignment < ApplicationRecord\n  belongs_to :post\n  belongs_to :assignee, class_name: \"User\"\nend\n",
         "app/models/user.rb" => "class User < ApplicationRecord\nend\n"
       ) do |dir|
-        expect(source_of(described_class.new(app_dir: dir).build, "post.rb")).to match(
+        expect(source_of(generator(dir).build, "post.rb")).to match(
           /def assignees\n\s*Post_User::ActiveRecord_Associations_CollectionProxy\.new\(User, self\)/
         )
       end
@@ -504,7 +508,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         "app/models/user.rb" => "class User < ApplicationRecord\n  has_many :data_exports, class_name: \"User::DataExport\"\nend\n",
         "app/models/user/data_export.rb" => "class User::DataExport < Export\n  def filename\n    \"x.zip\"\n  end\nend\n"
       ) do |dir|
-        files = described_class.new(app_dir: dir).build
+        files = generator(dir).build
         expect(source_of(files, "user.rb")).to match(
           /def data_exports\n\s*User_User_DataExport::ActiveRecord_Associations_CollectionProxy\.new\(User::DataExport, self\)/
         )
@@ -521,7 +525,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         "app/models/post.rb" => "class Post < ApplicationRecord\n  has_many :tags, through: :taggings\nend\n",
         "app/models/tag.rb" => "class Tag < ApplicationRecord\n  belongs_to :post\nend\n"
       ) do |dir|
-        expect(source_of(described_class.new(app_dir: dir).build, "post.rb")).to match(
+        expect(source_of(generator(dir).build, "post.rb")).to match(
           /def tags\n\s*Post_Tag::ActiveRecord_Associations_CollectionProxy\.new\(Tag, self\)/
         )
       end
@@ -531,7 +535,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       # Neither resolves (Rails would raise on this too); the point is that it
       # terminates rather than recursing forever.
       in_app("app/models/loop.rb" => "class Loop < ApplicationRecord\n  has_many :as, through: :bs\n  has_many :bs, through: :as\nend\n") do |dir|
-        expect(app_reopens(described_class.new(app_dir: dir).build)).to be_empty
+        expect(app_reopens(generator(dir).build)).to be_empty
       end
     end
   end
@@ -548,7 +552,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       through_only = "class User < ApplicationRecord\n  has_many :pins\n  has_many :pinned_cards, through: :pins, source: :card\nend\n"
       in_app("app/models/user.rb" => through_only, "app/models/pin.rb" => PIN,
              "app/models/card.rb" => OWNED_CARD) do |dir|
-        proxy = source_of(described_class.new(app_dir: dir).build, "user_card.rb")
+        proxy = source_of(generator(dir).build, "user_card.rb")
 
         expect(proxy).to match(/def owner\n\s*@owner\n\s*end/)
         expect(proxy).not_to include("def build")
@@ -563,7 +567,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       # candidate would cost `user.cards.create` its construction flow.
       both = "class User < ApplicationRecord\n  has_many :pins\n  has_many :pinned_cards, through: :pins, source: :card\n  has_many :cards\nend\n"
       in_app("app/models/user.rb" => both, "app/models/pin.rb" => PIN, "app/models/card.rb" => OWNED_CARD) do |dir|
-        proxy = source_of(described_class.new(app_dir: dir).build, "user_card.rb")
+        proxy = source_of(generator(dir).build, "user_card.rb")
 
         expect(proxy).to match(/def build\(\*\)\n\s*record = Card\.new\n\s*record\.user = owner\n\s*record\n\s*end/)
       end
@@ -581,7 +585,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         "app/models/post.rb" => "class Post < ApplicationRecord\n  belongs_to :user\nend\n",
         "app/models/post/archiver.rb" => "class Post\n  class Archiver\n  end\nend\n"
       ) do |dir|
-        expect(source_of(described_class.new(app_dir: dir).build, "user_post.rb")).to include("record.user = owner")
+        expect(source_of(generator(dir).build, "user_post.rb")).to include("record.user = owner")
       end
     end
   end
@@ -596,7 +600,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         scanned = RbsInfer::Extensions::Rails::ActiveRecord::Runtime::ReflectionScanner
                   .scan(path: "app/models/blog.rb", source: File.read(File.join(dir, "app/models/blog.rb")))
         expect(scanned.map(&:class_name)).to eq(%w[Blog::Base Blog::Post])
-        expect(source_of(described_class.new(app_dir: dir).build, "user_post.rb")).to include("record.user = owner")
+        expect(source_of(generator(dir).build, "user_post.rb")).to include("record.user = owner")
       end
     end
   end
@@ -604,7 +608,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
   describe "proxy reopen (construction flow)" do
     it "captures the owner and reopens with build/new/create/create!" do
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
-        proxy = source_of(described_class.new(app_dir: dir).build, "post_assignment.rb")
+        proxy = source_of(generator(dir).build, "post_assignment.rb")
 
         expect(proxy).to include("class Post_Assignment::ActiveRecord_Associations_CollectionProxy\n")
         # initialize(klass, owner) matches the real constructor arity; owner captured.
@@ -624,7 +628,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
 
     it "names the proxy <Owner>_<Element> to match rbs_rails" do
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
-        expect(described_class.new(app_dir: dir).build.map(&:filename)).to include("post_assignment.rb")
+        expect(generator(dir).build.map(&:filename)).to include("post_assignment.rb")
       end
     end
 
@@ -632,7 +636,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       # Assignment belongs_to :post AND :owner(User); the has_many owner is Post,
       # so the inverse the proxy sets is `post`, not `owner`.
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
-        proxy = source_of(described_class.new(app_dir: dir).build, "post_assignment.rb")
+        proxy = source_of(generator(dir).build, "post_assignment.rb")
         expect(proxy).to include("record.post = owner")
         expect(proxy).not_to include("record.owner = owner")
       end
@@ -644,7 +648,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       # construction flow, since it has an inverse belongs_to (`post`).
       plain = "class Assignment < ApplicationRecord\n  belongs_to :post\nend\n"
       in_app("app/models/assignment.rb" => plain, "app/models/post.rb" => POST) do |dir|
-        files = described_class.new(app_dir: dir).build
+        files = generator(dir).build
         proxy = source_of(files, "post_assignment.rb")
         expect(proxy).not_to be_nil
         expect(proxy).to match(/def build\(\*\)\n\s*record = Assignment\.new\n\s*record\.post = owner\n\s*record\n\s*end/)
@@ -661,7 +665,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       post = "class Post < ApplicationRecord\n  has_many :tags, through: :post_tags\nend\n"
       tag  = "class Tag < ApplicationRecord\n  has_many :posts, through: :post_tags\nend\n"
       in_app("app/models/post.rb" => post, "app/models/tag.rb" => tag) do |dir|
-        proxy = source_of(described_class.new(app_dir: dir).build, "post_tag.rb")
+        proxy = source_of(generator(dir).build, "post_tag.rb")
         expect(proxy).not_to be_nil
         expect(proxy).to match(/def owner\n\s*@owner\n\s*end/)
         expect(proxy).not_to include("def build")
@@ -676,7 +680,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
       # its RBS from that pseudo-code, so no `.rbs` is emitted here (a
       # hand-written one would collide with the inferred declaration).
       in_app("app/models/assignment.rb" => ASSIGNMENT, "app/models/post.rb" => POST) do |dir|
-        files = described_class.new(app_dir: dir).build
+        files = generator(dir).build
         expect(files.map(&:filename)).not_to include("assignment.rbs")
         expect(files.map(&:filename)).to all(end_with(".rb"))
       end
@@ -696,7 +700,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
 
     def relation_methods_for(files)
       in_app({ "app/models/application_record.rb" => APP_RECORD }.merge(files)) do |dir|
-        yield described_class.new(app_dir: dir).build
+        yield generator(dir).build
       end
     end
 
@@ -915,7 +919,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
   describe "store accessors" do
     def store_app(model, extra = {})
       in_app({ "app/models/setting.rb" => model }.merge(extra)) do |dir|
-        yield described_class.new(app_dir: dir).build
+        yield generator(dir).build
       end
     end
 
@@ -1059,7 +1063,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
     let(:expectations) { Pathname(DUMMY_APP_ROOT).dirname.join("expectations/steep_ar_runtime") }
 
     it "matches the expected files for every generated class" do
-      files = described_class.new(app_dir: DUMMY_APP_ROOT).build
+      files = generator(DUMMY_APP_ROOT).build
 
       if ENV["UPDATE_EXPECTATIONS"]
         # `.rb` only: the inferred `.rbs` snapshots share this directory
@@ -1094,7 +1098,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
   describe "framework transcriptions" do
     it "emits ActiveSupport::Concern for an app with no models at all" do
       in_app({}) do |dir|
-        expect(described_class.new(app_dir: dir).build.map(&:filename)).to eq(["active_support/concern.rb"])
+        expect(generator(dir).build.map(&:filename)).to eq(["active_support/concern.rb"])
       end
     end
   end
@@ -1112,7 +1116,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         FileUtils.mkdir_p(stale)
         File.write(File.join(stale, "Old.rb"), "old")
 
-        out = described_class.new(app_dir: dir).generate
+        out = generator(dir).generate
         expect(written(out)).to eq(["active_support/concern.rb", "assignment.rb", "post.rb", "post_assignment.rb"])
       end
     end
@@ -1126,7 +1130,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator do
         FileUtils.mkdir_p(out)
         File.write(File.join(out, "Stale.rb"), "stale")
 
-        described_class.new(app_dir: dir).generate
+        generator(dir).generate
         expect(written(out)).to eq(["active_support/concern.rb"])
       end
     end

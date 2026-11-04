@@ -131,8 +131,10 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::FrameworkSourceTranscri
     # Not detected from whether Rails happens to be loaded: that would make the
     # sidecar's content depend on the process rather than on intent.
     Dir.mktmpdir do |dir|
-      quiet = RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator.new(app_dir: dir)
-      asked = RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator.new(app_dir: dir, transcribe_framework: true)
+      app_paths = RbsInfer::Extensions::Rails::AppPaths.conventional(dir)
+      quiet = RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator.new(app_dir: dir, app_paths: app_paths)
+      asked = RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator.new(app_dir: dir, app_paths: app_paths,
+                                                                             transcribe_framework: true)
 
       transcribed = "action_controller/metal/http_authentication.rb"
       expect(quiet.build.map(&:filename)).not_to include(transcribed)

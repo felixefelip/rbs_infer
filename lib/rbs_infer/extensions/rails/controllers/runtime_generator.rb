@@ -4,6 +4,7 @@ require "fileutils"
 require_relative "callback_chain_scanner"
 require_relative "pseudo_code_builder"
 require_relative "framework_source_transcriber"
+require_relative "../app_paths"
 
 module RbsInfer
   module Extensions
@@ -33,8 +34,9 @@ module RbsInfer
           # would depend on whether something in the process happened to require
           # Rails, which is environment rather than intent. The rake task, which
           # runs inside the booted app, asks for it; a bare library call does not.
-          def initialize(app_dir:, transcribe_framework: false)
+          def initialize(app_dir:, app_paths:, transcribe_framework: false)
             @app_dir = app_dir
+            @app_paths = app_paths
             @transcribe_framework = transcribe_framework
           end
 
@@ -42,7 +44,8 @@ module RbsInfer
           # controller with actions). Public so the CLI/specs can inspect the
           # pseudo-code without touching disk.
           def build
-            files = PseudoCodeBuilder.new(scanner: CallbackChainScanner.new(app_dir: @app_dir), app_dir: @app_dir).build
+            scanner = CallbackChainScanner.new(app_paths: @app_paths)
+            files = PseudoCodeBuilder.new(scanner: scanner, app_paths: @app_paths).build
             files + framework_source_files
           end
 

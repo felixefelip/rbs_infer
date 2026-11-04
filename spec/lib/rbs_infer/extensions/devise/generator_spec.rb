@@ -3,15 +3,23 @@
 require "spec_helper"
 require "rbs_infer/extensions/devise/generator"
 require "tmpdir"
+require_relative "../../../../support/rails_app_paths_helper"
 
 RSpec.describe RbsInfer::Extensions::Devise::Generator do
+  include RailsAppPathsHelper
+
+  def generator(app_dir, output_dir:)
+    described_class.new(app_dir: app_dir, app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(app_dir),
+                        output_dir: output_dir)
+  end
+
   def generate(routes_source)
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, "config"))
       File.write(File.join(dir, "config/routes.rb"), routes_source)
 
       output_dir = File.join(dir, described_class::SIDECAR_DIR)
-      scopes = described_class.new(app_dir: dir, output_dir: output_dir).generate_all
+      scopes = generator(dir, output_dir: output_dir).generate_all
 
       path = File.join(output_dir, described_class::FILENAME)
       [scopes, File.exist?(path) ? File.read(path) : nil]
@@ -140,7 +148,7 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
 
   it "writes nothing when routes.rb is absent" do
     Dir.mktmpdir do |dir|
-      generator = described_class.new(app_dir: dir, output_dir: File.join(dir, "sig"))
+      generator = generator(dir, output_dir: File.join(dir, "sig"))
 
       expect(generator.generate_all).to eq([])
     end
@@ -155,11 +163,11 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
       output_dir = File.join(dir, described_class::SIDECAR_DIR)
 
       File.write(routes, "devise_for :users")
-      described_class.new(app_dir: dir, output_dir: output_dir).generate_all
+      generator(dir, output_dir: output_dir).generate_all
       expect(File.exist?(File.join(output_dir, described_class::FILENAME))).to be(true)
 
       File.write(routes, 'root "home#index"')
-      described_class.new(app_dir: dir, output_dir: output_dir).generate_all
+      generator(dir, output_dir: output_dir).generate_all
       expect(Dir.exist?(output_dir)).to be(false)
     end
   end
@@ -180,7 +188,7 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
       RUBY
 
       output_dir = File.join(dir, described_class::SIDECAR_DIR)
-      described_class.new(app_dir: dir, output_dir: output_dir).generate_all
+      generator(dir, output_dir: output_dir).generate_all
 
       expect(Dir.glob(File.join(output_dir, "**/*"), File::FNM_DOTMATCH).map { |p| File.basename(p) })
         .not_to include(".steep_callbacks.yml")
@@ -197,5 +205,60 @@ RSpec.describe RbsInfer::Extensions::Devise::Generator do
     RUBY
 
     expect(scopes).to eq([{ scope: "user", class_name: "User" }])
+  end
+
+  describe "routes split with `draw`" do
+    def scopes_in(files, packs: [])
+      Dir.mktmpdir do |dir|
+        files.each do |rel, content|
+          path = File.join(dir, rel)
+          FileUtils.mkdir_p(File.dirname(path))
+          File.write(path, content)
+        end
+
+        described_class.new(app_dir: dir, app_paths: rails_app_paths(dir, packs: packs),
+                            output_dir: File.join(dir, described_class::SIDECAR_DIR)).parse_scopes
+      end
+    end
+
+    it "reads a devise_for from a routes file a pack draws" do
+      scopes = scopes_in(
+        {
+          "config/routes.rb" => "Rails.application.routes.draw { draw :identity }",
+          "packs/identity/config/routes/identity.rb" => "devise_for :users"
+        },
+        packs: ["packs/identity"]
+      )
+
+      expect(scopes).to eq([{ scope: "user", class_name: "User" }])
+    end
+
+    it "follows a draw nested in a drawn file, by path" do
+      scopes = scopes_in(
+        {
+          "config/routes.rb" => "Rails.application.routes.draw { draw :admin }",
+          "config/routes/admin.rb" => 'draw "admin/accounts"',
+          "config/routes/admin/accounts.rb" => "devise_for :admins"
+        }
+      )
+
+      expect(scopes).to eq([{ scope: "admin", class_name: "Admin" }])
+    end
+
+    it "reads a file drawn twice once" do
+      scopes = scopes_in(
+        {
+          "config/routes.rb" => "draw :users\ndraw :users",
+          "config/routes/users.rb" => "devise_for :users\ndraw :users"
+        }
+      )
+
+      expect(scopes).to eq([{ scope: "user", class_name: "User" }])
+    end
+
+    it "skips a draw whose file does not exist" do
+      expect(scopes_in({ "config/routes.rb" => "draw :missing\ndevise_for :users" }))
+        .to eq([{ scope: "user", class_name: "User" }])
+    end
   end
 end

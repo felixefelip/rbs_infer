@@ -22,7 +22,12 @@ RSpec.describe RbsInfer::Extensions::Rails::CustomGenerator do
       end
 
       output_dir = File.join(dir, "sig/rbs_rails_custom")
-      described_class.new(output_dir: output_dir, app_dir: dir, source_files: []).generate_all
+      described_class.new(
+        output_dir: output_dir,
+        app_dir: dir,
+        app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(dir),
+        source_files: []
+      ).generate_all
       File.read(File.join(output_dir, "action_view_context.rbs"))
     end
   end

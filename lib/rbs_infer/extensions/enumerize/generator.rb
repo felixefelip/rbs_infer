@@ -2,6 +2,7 @@
 
 require "prism"
 require "fileutils"
+require_relative "../rails/app_paths"
 
 module RbsInfer
   module Extensions
@@ -9,13 +10,14 @@ module RbsInfer
       class Generator
         attr_reader :app_dir, :output_dir
 
-        def initialize(app_dir:, output_dir:)
+        def initialize(app_dir:, app_paths:, output_dir:)
           @app_dir = app_dir
+          @app_paths = app_paths
           @output_dir = output_dir
         end
 
         def generate_all
-          Dir.glob(File.join(app_dir, "app/models/**/*.rb")).sort.each do |model_path|
+          @app_paths.glob("app/models", "**/*.rb").each do |model_path|
             generate_for_model(model_path)
           end
         end

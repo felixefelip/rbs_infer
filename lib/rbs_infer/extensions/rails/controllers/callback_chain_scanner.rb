@@ -80,8 +80,8 @@ module RbsInfer
         class CallbackChainScanner
           CALLBACK_MACROS = %i[before_action prepend_before_action].freeze
 
-          def initialize(app_dir:)
-            @app_dir = app_dir
+          def initialize(app_paths:)
+            @app_paths = app_paths
           end
 
           # Controller class names that define at least one action, sorted.
@@ -185,7 +185,7 @@ module RbsInfer
           end
 
           def units
-            @units ||= Dir.glob(File.join(@app_dir, "app/controllers/**/*.rb")).sort.each_with_object({}) do |path, acc|
+            @units ||= @app_paths.glob("app/controllers", "**/*.rb").each_with_object({}) do |path, acc|
               source = File.read(path)
               result = Prism.parse(source)
               next unless result.success?

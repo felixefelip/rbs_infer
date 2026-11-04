@@ -92,12 +92,9 @@ module RbsInfer
             # Regenerated on every run; do not edit.
           RUBY
 
-          # app_dir: used to check whether an action's convention view template
-          # exists (to emit the view render site). Required — a nil default would
-          # silently skip every view render site.
-          def initialize(scanner:, app_dir:)
+          def initialize(scanner:, app_paths:)
             @scanner = scanner
-            @app_dir = app_dir
+            @app_paths = app_paths
           end
 
           # => [FileEntry] (framework reopen first, then one .rb per controller
@@ -292,12 +289,10 @@ module RbsInfer
             view_dir = class_name.sub(/Controller\z/, "").underscore
             return [] if view_dir.empty?
 
-            pattern = File.join(@app_dir, "app/views", view_dir, "*.{html,turbo_stream}.erb")
-            Dir[pattern].sort.filter_map do |path|
-              basename = File.basename(path)
+            @app_paths.files("app/views", "#{view_dir}/*.{html,turbo_stream}.erb").keys.filter_map do |relative|
+              basename = File.basename(relative)
               next if basename.start_with?("_")
 
-              relative = "#{view_dir}/#{basename}"
               [basename.sub(/\.(html|turbo_stream)\.erb\z/, ""), view_path_naming.erb_class_name(relative), relative]
             end
           end
@@ -326,7 +321,7 @@ module RbsInfer
           # `ERBPostsNew`), or nil when no template exists.
           def absolute_view(path)
             fmt = %w[html turbo_stream].find do |f|
-              File.exist?(File.join(@app_dir, "app/views", "#{path}.#{f}.erb"))
+              @app_paths.find("app/views", "#{path}.#{f}.erb")
             end
             return nil unless fmt
 
@@ -374,7 +369,7 @@ module RbsInfer
             return nil if view_dir.empty?
 
             fmt = %w[html turbo_stream].find do |f|
-              File.exist?(File.join(@app_dir, "app/views", view_dir, "#{action}.#{f}.erb"))
+              @app_paths.find("app/views", "#{view_dir}/#{action}.#{f}.erb")
             end
             return nil unless fmt
 
@@ -401,8 +396,7 @@ module RbsInfer
           def view_ivars(view_relative)
             return [] unless view_relative
 
-            path = File.join(@app_dir, "app/views", view_relative)
-            return [] unless File.exist?(path)
+            path = @app_paths.find("app/views", view_relative) or return []
 
             Views::TemplateScanner.scan(File.read(path)).ivars
           end

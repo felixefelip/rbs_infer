@@ -7,6 +7,10 @@ require "tmpdir"
 require "fileutils"
 
 RSpec.describe RbsInfer::Extensions::Rails::ActiveJob::RuntimeGenerator do
+  def generator(app_dir)
+    described_class.new(app_dir: app_dir, app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(app_dir))
+  end
+
   def in_app(files)
     Dir.mktmpdir do |dir|
       files.each do |rel, content|
@@ -19,7 +23,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveJob::RuntimeGenerator do
   end
 
   def build(files)
-    in_app(files) { |dir| described_class.new(app_dir: dir).build }
+    in_app(files) { |dir| generator(dir).build }
   end
 
   APPLICATION_JOB = <<~RUBY
@@ -68,7 +72,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveJob::RuntimeGenerator do
       FileUtils.mkdir_p(sidecar)
       File.write(File.join(sidecar, "active_job_base.rb"), "# stale")
 
-      described_class.new(app_dir: dir).generate
+      generator(dir).generate
 
       expect(Dir.exist?(sidecar)).to be(false)
     end
@@ -76,7 +80,7 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveJob::RuntimeGenerator do
 
   it "writes the sidecar under sig/generated/steep_activejob_runtime/" do
     in_app("app/jobs/application_job.rb" => APPLICATION_JOB) do |dir|
-      path = described_class.new(app_dir: dir).generate
+      path = generator(dir).generate
 
       expect(path).to eq(File.join(dir, "sig/generated/steep_activejob_runtime"))
       expect(File.exist?(File.join(path, "active_job_base.rb"))).to be(true)

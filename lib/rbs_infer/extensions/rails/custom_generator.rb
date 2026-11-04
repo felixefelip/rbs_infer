@@ -3,6 +3,7 @@
 require "fileutils"
 require "prism"
 require_relative "../../../rbs_infer"
+require_relative "app_paths"
 
 module RbsInfer
   module Extensions
@@ -10,10 +11,11 @@ module RbsInfer
       class CustomGenerator
         attr_reader :output_dir, :app_dir, :source_files
 
-        def initialize(output_dir:, app_dir: nil, source_files: nil)
+        def initialize(output_dir:, app_paths:, app_dir: nil, source_files: nil)
           @output_dir = output_dir
           @app_dir = app_dir || Dir.pwd
-          @source_files = source_files || Dir[File.join(@app_dir, "app/**/*.rb")]
+          @app_paths = app_paths
+          @source_files = source_files || app_paths.glob("app", "**/*.rb")
         end
 
         def generate_all
@@ -152,10 +154,8 @@ module RbsInfer
         def app_helper_modules
           return ["ApplicationHelper"] unless include_all_helpers?
 
-          helpers_root = File.join(@app_dir, "app/helpers")
-          Dir[File.join(helpers_root, "**/*.rb")].map do |path|
-            relative = path.delete_prefix("#{helpers_root}/").delete_suffix(".rb")
-            RbsInfer.path_to_class_name(relative)
+          @app_paths.files("app/helpers", "**/*.rb").keys.map do |relative|
+            RbsInfer.path_to_class_name(relative.delete_suffix(".rb"))
           end.sort
         end
 
@@ -171,8 +171,8 @@ module RbsInfer
         end
 
         def extract_app_controller_helper_methods # rubocop:todo Metrics/MethodLength
-          app_ctrl = File.join(@app_dir, "app/controllers/application_controller.rb")
-          return {} unless File.exist?(app_ctrl)
+          app_ctrl = @app_paths.find("app/controllers", "application_controller.rb")
+          return {} unless app_ctrl
 
           source = File.read(app_ctrl)
           tree = Prism.parse(source).value

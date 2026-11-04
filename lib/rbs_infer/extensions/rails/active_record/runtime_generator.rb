@@ -5,6 +5,7 @@ require_relative "runtime/reflection_scanner"
 require_relative "runtime/concern_resolver"
 require_relative "runtime/concern_pseudo_code"
 require_relative "runtime/pseudo_code_builder"
+require_relative "../app_paths"
 
 module RbsInfer
   module Extensions
@@ -33,10 +34,10 @@ module RbsInfer
           # `.steep_*.yml` sidecars can be dot-prefixed because the fork loads
           # them explicitly, not through a source glob.)
           SIDECAR_DIR = "sig/generated/steep_ar_runtime"
-          MODEL_ROOTS = %w[app/models].freeze
 
-          def initialize(app_dir:)
+          def initialize(app_dir:, app_paths:)
             @app_dir = app_dir
+            @app_paths = app_paths
           end
 
           # Returns [Runtime::PseudoCodeBuilder::FileEntry]. Public so the CLI/specs
@@ -82,13 +83,11 @@ module RbsInfer
           # own body, and the scan is per-file so only this level can see both
           # (felixefelip/rbs_infer#139).
           def scan_models
-            units = MODEL_ROOTS.flat_map do |root|
-              Dir.glob(File.join(@app_dir, root, "**/*.rb")).sort.flat_map do |abs|
-                Runtime::ReflectionScanner.scan(path: relative(abs), source: File.read(abs))
-              rescue StandardError => e
-                warn "[rbs_infer ar_runtime] skipped #{relative(abs)}: #{e.class}: #{e.message}"
-                []
-              end
+            units = @app_paths.glob("app/models", "**/*.rb").flat_map do |abs|
+              Runtime::ReflectionScanner.scan(path: relative(abs), source: File.read(abs))
+            rescue StandardError => e
+              warn "[rbs_infer ar_runtime] skipped #{relative(abs)}: #{e.class}: #{e.message}"
+              []
             end
 
             Runtime::ConcernResolver.resolve(units)

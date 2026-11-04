@@ -2,6 +2,7 @@
 
 require "fileutils"
 require "prism"
+require_relative "../app_paths"
 
 module RbsInfer
   module Extensions
@@ -53,12 +54,12 @@ module RbsInfer
           # NOT dot-prefixed: `.rb` SOURCE the analyzer and the Steep fork read
           # via `sig/**/*.rb` (`**` skips hidden dirs).
           SIDECAR_DIR = "sig/generated/steep_activejob_runtime"
-          JOB_ROOTS = %w[app/jobs].freeze
           SUPERCLASS_NAMES = ["ActiveJob::Base", "::ActiveJob::Base"].freeze
           FILENAME = "active_job_base.rb"
 
-          def initialize(app_dir:)
+          def initialize(app_dir:, app_paths:)
             @app_dir = app_dir
+            @app_paths = app_paths
           end
 
           # => [{ filename:, source: }] — empty unless the app defines a job.
@@ -89,13 +90,11 @@ module RbsInfer
           # `ApplicationJob` does), so a project without jobs pays nothing and
           # the reopen never names a class that isn't loaded.
           def job_base_subclass?
-            JOB_ROOTS.any? do |root|
-              Dir.glob(File.join(@app_dir, root, "**/*.rb")).sort.any? do |path|
-                source = File.read(path)
-                next false unless source.include?("ActiveJob::Base")
+            @app_paths.glob("app/jobs", "**/*.rb").any? do |path|
+              source = File.read(path)
+              next false unless source.include?("ActiveJob::Base")
 
-                subclasses_job_base?(source)
-              end
+              subclasses_job_base?(source)
             end
           end
 

@@ -3,6 +3,7 @@
 require "prism"
 require "fileutils"
 require "active_support/core_ext/string/inflections"
+require_relative "../rails/app_paths"
 
 module RbsInfer
   module Extensions
@@ -60,8 +61,9 @@ module RbsInfer
 
         attr_reader :app_dir, :output_dir, :routes_path
 
-        def initialize(app_dir:, output_dir:, routes_path: nil)
+        def initialize(app_dir:, app_paths:, output_dir:, routes_path: nil)
           @app_dir = app_dir
+          @app_paths = app_paths
           @output_dir = output_dir
           @routes_path = routes_path || File.join(app_dir, "config/routes.rb")
         end
@@ -90,22 +92,38 @@ module RbsInfer
 
         # Extracts [{scope:, class_name:}, ...] from `devise_for` calls.
         def parse_scopes
-          return [] unless File.exist?(routes_path)
-
-          source = File.read(routes_path)
-          return [] unless source.include?("devise_for")
-
-          result = Prism.parse(source)
-          return [] unless result.success?
-
-          calls = RbsInfer::Analyzer.find_all_nodes(result.value) do |node|
-            node.is_a?(Prism::CallNode) && node.name == :devise_for && node.receiver.nil? && node.arguments
-          end
-
-          calls.flat_map { |call| scopes_from_call(call) }.uniq
+          route_trees(routes_path, Set.new).flat_map do |tree|
+            routing_calls(tree, :devise_for).flat_map { |call| scopes_from_call(call) }
+          end.uniq
         end
 
         private
+
+        def route_trees(path, visited)
+          return [] unless path && File.exist?(path) && visited.add?(path)
+
+          result = Prism.parse(File.read(path))
+          return [] unless result.success?
+
+          drawn = routing_calls(result.value, :draw).flat_map do |call|
+            route_trees(drawn_routes_path(call), visited)
+          end
+
+          [result.value, *drawn]
+        end
+
+        def drawn_routes_path(call)
+          name = call.arguments.arguments.first
+          return nil unless name.is_a?(Prism::SymbolNode) || name.is_a?(Prism::StringNode)
+
+          @app_paths.find("config/routes", "#{name.unescaped}.rb")
+        end
+
+        def routing_calls(tree, name)
+          RbsInfer::Analyzer.find_all_nodes(tree) do |node|
+            node.is_a?(Prism::CallNode) && node.name == name && node.receiver.nil? && node.arguments
+          end
+        end
 
         # `devise_for :users, :admins, class_name: "Account"` — every
         # SymbolNode is a resource; keyword options apply to all of them
