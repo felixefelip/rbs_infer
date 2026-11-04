@@ -57,11 +57,6 @@ module RbsInfer
 
             { controller_name: controller_name, controller_class: controller_class, action: filename }
           end
-
-          def find_controller_file(controller_name)
-            file = File.join(@app_dir, "app/controllers/#{controller_name}_controller.rb")
-            File.exist?(file) ? file : nil
-          end
         end
       end
     end

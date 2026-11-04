@@ -7,6 +7,10 @@ require "tmpdir"
 require "fileutils"
 
 RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator do
+  def generator(app_dir)
+    described_class.new(app_dir: app_dir, app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(app_dir))
+  end
+
   def in_app(files)
     Dir.mktmpdir do |dir|
       files.each do |rel, content|
@@ -19,7 +23,7 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator do
   end
 
   def build(files)
-    in_app(files) { |dir| described_class.new(app_dir: dir).build }
+    in_app(files) { |dir| generator(dir).build }
   end
 
   def source_for(files, filename = "current.rb")
@@ -132,7 +136,7 @@ RSpec.describe RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator do
         FileUtils.mkdir_p(File.dirname(stale))
         File.write(stale, "# stale")
 
-        described_class.new(app_dir: dir).generate
+        generator(dir).generate
 
         expect(File).to exist(File.join(dir, described_class::SIDECAR_DIR, "current.rb"))
         expect(File).not_to exist(stale)

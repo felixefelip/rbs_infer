@@ -2,6 +2,7 @@
 
 require_relative "template_scanner"
 require_relative "path_naming"
+require_relative "../app_paths"
 
 module RbsInfer
   module Extensions
@@ -55,22 +56,21 @@ module RbsInfer
             # Regenerated on every run; do not edit.
           HEADER
 
-          def initialize(app_dir:)
-            @app_dir = app_dir
+          def initialize(app_paths:)
+            @app_paths = app_paths
           end
 
           def build
-            templates.filter_map { |path| file_for(path) }
+            templates.filter_map { |view_relative, path| file_for(view_relative, path) }
           end
 
           private
 
           def templates
-            Dir[File.join(@app_dir, "app/views/**/*.{html,turbo_stream}.erb")].sort
+            @templates ||= @app_paths.files("app/views", "**/*.{html,turbo_stream}.erb")
           end
 
-          def file_for(path)
-            view_relative = path.sub("#{@app_dir}/", "").sub(%r{\Aapp/views/}, "")
+          def file_for(view_relative, path)
             class_name = erb_class_name(view_relative) or return nil
 
             scan = TemplateScanner.scan(File.read(path))
@@ -110,8 +110,8 @@ module RbsInfer
             key = partial_key_from_view_relative(view_relative) or return []
             names = []
 
-            templates.each do |path|
-              dir = File.dirname(path.sub("#{@app_dir}/", "").sub(%r{\Aapp/views/}, ""))
+            templates.each do |template_relative, path|
+              dir = File.dirname(template_relative)
               dir = nil if dir == "."
               TemplateScanner.scan(File.read(path)).renders.each do |render|
                 next unless resolve_partial(render.partial, dir) == key
@@ -130,8 +130,7 @@ module RbsInfer
             modules = ["ActionViewContext"]
             if (info = parse_view_path(view_relative))
               helper = info[:controller_class].sub(/Controller\z/, "Helper")
-              path = File.join(@app_dir, "app/helpers/#{info[:controller_name]}_helper.rb")
-              modules << helper if File.exist?(path)
+              modules << helper if @app_paths.find("app/helpers", "#{info[:controller_name]}_helper.rb")
             end
             modules.map { |m| "  include #{m}" }.join("\n")
           end
@@ -219,7 +218,7 @@ module RbsInfer
             underscored = key.sub(%r{([^/]+)\z}, '_\1')
             %w[html turbo_stream].each do |format|
               relative = "#{underscored}.#{format}.erb"
-              return relative if File.exist?(File.join(@app_dir, "app/views", relative))
+              return relative if @app_paths.find("app/views", relative)
             end
             nil
           end

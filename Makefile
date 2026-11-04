@@ -10,7 +10,7 @@ rbs_infer:
 	cd $(DUMMY_DIR) && $(RBS_INFER) app/ lib/ sig/ --output --output-dir $(OUTPUT_DIR)
 
 rbs_rails_custom:
-	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/extensions/rails/custom_generator'; RbsInfer::Extensions::Rails::CustomGenerator.new(output_dir: 'sig/rbs_rails_custom').generate_all"
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/extensions/rails/custom_generator'; RbsInfer::Extensions::Rails::CustomGenerator.new(output_dir: 'sig/rbs_rails_custom', app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional('.')).generate_all"
 
 rbs_infer_enumerize:
 	cd $(DUMMY_DIR) && bundle exec rake rbs_infer:enumerize:all
@@ -34,7 +34,7 @@ rbs_infer_module_self_types:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer/project/module_self_type_generator'; RbsInfer::Project::ModuleSelfTypeGenerator.new(app_dir: '.').generate"
 
 rbs_infer_ar_runtime:
-	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/active_record/runtime_generator'; RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator.new(app_dir: '.').generate"
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/active_record/runtime_generator'; RbsInfer::Extensions::Rails::ActiveRecord::RuntimeGenerator.new(app_dir: '.', app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional('.')).generate"
 
 ## `include M` chama `M.included(self)` — a unica coisa que diz qual classe o `base`
 ## de um hook e. Core: `include` e Ruby puro, nao Rails.
@@ -42,16 +42,16 @@ rbs_infer_ruby_runtime:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/project/ruby_runtime_generator'; RbsInfer::Project::RubyRuntimeGenerator.new(app_dir: '.').generate"
 
 rbs_infer_controller_runtime:
-	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/controllers/runtime_generator'; RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator.new(app_dir: '.').generate"
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/controllers/runtime_generator'; RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator.new(app_dir: '.', app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional('.')).generate"
 
 rbs_infer_actionview_runtime:
-	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/views/runtime_generator'; RbsInfer::Extensions::Rails::Views::RuntimeGenerator.new(app_dir: '.').generate"
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/views/runtime_generator'; RbsInfer::Extensions::Rails::Views::RuntimeGenerator.new(app_dir: '.', app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional('.')).generate"
 
 rbs_infer_current_runtime:
-	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/current_attributes_runtime_generator'; RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator.new(app_dir: '.').generate"
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/current_attributes_runtime_generator'; RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator.new(app_dir: '.', app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional('.')).generate"
 
 rbs_infer_job_runtime:
-	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/active_job/runtime_generator'; RbsInfer::Extensions::Rails::ActiveJob::RuntimeGenerator.new(app_dir: '.').generate"
+	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/active_job/runtime_generator'; RbsInfer::Extensions::Rails::ActiveJob::RuntimeGenerator.new(app_dir: '.', app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional('.')).generate"
 
 rbs_infer_actiontext_runtime:
 	cd $(DUMMY_DIR) && bundle exec ruby -I$(ROOT_DIR)/lib -e "require 'rbs_infer'; require 'rbs_infer/extensions/rails/action_text/runtime_generator'; RbsInfer::Extensions::Rails::ActionText::RuntimeGenerator.new(app_dir: '.').generate"

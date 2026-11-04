@@ -7,7 +7,12 @@ namespace :rbs_infer do
     desc "Generate the CurrentAttributes-runtime pseudo-code sidecar for Steep (sig/generated/steep_current_runtime/)"
     task :all do
       app_dir = defined?(Rails) ? Rails.root.to_s : Dir.pwd
-      dir = RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator.new(app_dir: app_dir).generate
+      app_paths = RbsInfer::Extensions::Rails::AppPaths.current(app_dir)
+      generator = RbsInfer::Extensions::Rails::CurrentAttributesRuntimeGenerator.new(
+        app_dir: app_dir,
+        app_paths: app_paths
+      )
+      dir = generator.generate
       puts "Generated CurrentAttributes-runtime pseudo-code: #{dir}"
     end
   end

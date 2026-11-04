@@ -33,6 +33,7 @@ RSpec.describe RbsInfer::Extensions::CarrierWave::Generator do
   def run_generator
     RbsInfer::Extensions::CarrierWave::Generator.new(
       app_dir: app_dir,
+      app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(app_dir),
       output_dir: output_dir,
       rbs_rails_dir: rbs_rails_dir
     ).generate_all

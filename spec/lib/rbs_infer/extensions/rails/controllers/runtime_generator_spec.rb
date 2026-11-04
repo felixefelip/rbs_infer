@@ -5,8 +5,15 @@ require "rbs_infer"
 require "rbs_infer/extensions/rails/controllers/runtime_generator"
 require "tmpdir"
 require "fileutils"
+require_relative "../../../../../support/rails_app_paths_helper"
 
 RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
+  include RailsAppPathsHelper
+
+  def generator(app_dir)
+    described_class.new(app_dir: app_dir, app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(app_dir))
+  end
+
   def in_app(files)
     Dir.mktmpdir do |dir|
       files.each do |rel, content|
@@ -19,7 +26,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
   end
 
   def build(files)
-    in_app(files) { |dir| described_class.new(app_dir: dir).build }
+    in_app(files) { |dir| generator(dir).build }
   end
 
   def source_of(result, filename)
@@ -776,6 +783,61 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
     end
   end
 
+  describe "an app split into packs" do
+    def build_packs(files, packs:)
+      in_app(files) do |dir|
+        described_class.new(app_dir: dir, app_paths: rails_app_paths(dir, packs: packs)).build
+      end
+    end
+
+    it "models a controller that lives in a pack, rendering a view from its own pack" do
+      result = build_packs(
+        {
+          "packs/billing/app/controllers/invoices_controller.rb" => <<~RUBY,
+            class InvoicesController < ActionController::Base
+              before_action :set_invoice
+
+              def show; end
+
+              private
+
+              def set_invoice
+                @invoice = Invoice.find(params[:id])
+              end
+            end
+          RUBY
+          "packs/billing/app/views/invoices/show.html.erb" => "<%= @invoice %>"
+        },
+        packs: ["packs/billing"]
+      )
+
+      expect(runner(result, "invoices_controller.rb", "show")).to eq(
+        ["set_invoice", "return if performed?", "show", "return if performed?", "render :show"]
+      )
+      expect(source_of(result, "invoices_controller.rb"))
+        .to include("when :show then ERBInvoicesShow.new(invoice: @invoice).__rbs_infer__body")
+    end
+
+    it "resolves a render target whose template lives in another root" do
+      result = build_packs(
+        {
+          "packs/billing/app/controllers/invoices_controller.rb" => <<~RUBY,
+            class InvoicesController < ActionController::Base
+              def index
+                render "shared/empty"
+              end
+            end
+          RUBY
+          "app/views/shared/empty.html.erb" => "<%= @notice %>"
+        },
+        packs: ["packs/billing"]
+      )
+
+      expect(source_of(result, "invoices_controller.rb"))
+        .to include('when "shared/empty" then ERBSharedEmpty.new(notice: @notice).__rbs_infer__body')
+    end
+  end
+
   # Snapshot of the generated pseudo-code against the real dummy app, mirroring
   # the AR- and Current-runtime snapshots: a change in the emitted pseudo-code
   # shows up as a reviewable diff, and a failure points at the right layer
@@ -786,7 +848,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
     let(:expectations) { Pathname(DUMMY_APP_ROOT).dirname.join("expectations/steep_controller_runtime") }
 
     it "matches the expected pseudo-code for every controller" do
-      files = described_class.new(app_dir: DUMMY_APP_ROOT).build
+      files = generator(DUMMY_APP_ROOT).build
 
       if ENV["UPDATE_EXPECTATIONS"]
         # `.rb` only: the inferred `.rbs` snapshots share this directory
@@ -815,7 +877,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
         FileUtils.mkdir_p(File.dirname(stale))
         File.write(stale, "# stale")
 
-        described_class.new(app_dir: dir).generate
+        generator(dir).generate
 
         expect(File).to exist(File.join(dir, described_class::SIDECAR_DIR, "posts_controller.rb"))
         expect(File).not_to exist(stale)

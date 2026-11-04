@@ -2,6 +2,7 @@
 
 require "fileutils"
 require "prism"
+require_relative "app_paths"
 
 module RbsInfer
   module Extensions
@@ -37,13 +38,13 @@ module RbsInfer
         # NOT dot-prefixed: `.rb` SOURCE the analyzer and the Steep fork read via
         # `sig/**/*.rb` (`**` skips hidden dirs).
         SIDECAR_DIR = "sig/generated/steep_current_runtime"
-        MODEL_ROOTS = %w[app/models].freeze
         SUPERCLASS_NAMES = ["ActiveSupport::CurrentAttributes", "::ActiveSupport::CurrentAttributes"].freeze
 
         Reopen = Struct.new(:class_name, :names, :defaults, :overrides, keyword_init: true)
 
-        def initialize(app_dir:)
+        def initialize(app_dir:, app_paths:)
           @app_dir = app_dir
+          @app_paths = app_paths
         end
 
         # => [{ filename:, source: }] (empty when no CurrentAttributes subclass
@@ -75,13 +76,11 @@ module RbsInfer
         private
 
         def reopens
-          MODEL_ROOTS.flat_map do |root|
-            Dir.glob(File.join(@app_dir, root, "**/*.rb")).sort.filter_map do |path|
-              source = File.read(path)
-              next unless source.include?("CurrentAttributes")
+          @app_paths.glob("app/models", "**/*.rb").filter_map do |path|
+            source = File.read(path)
+            next unless source.include?("CurrentAttributes")
 
-              reopen_for(source)
-            end
+            reopen_for(source)
           end
         end
 

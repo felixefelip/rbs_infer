@@ -19,14 +19,15 @@ module RbsInfer
           # `check "sig/**/*.rb"` glob), and `**` skips hidden (dot) directories.
           SIDECAR_DIR = "sig/generated/steep_actionview_runtime"
 
-          def initialize(app_dir:)
+          def initialize(app_dir:, app_paths:)
             @app_dir = app_dir
+            @app_paths = app_paths
           end
 
           # Returns [PseudoCodeBuilder::FileEntry]. Public so the CLI/specs can inspect the
           # pseudo-code without touching disk.
           def build
-            PseudoCodeBuilder.new(app_dir: @app_dir).build
+            PseudoCodeBuilder.new(app_paths: @app_paths).build
           end
 
           # Writes the sidecar directory, removing a stale one when nothing qualifies.

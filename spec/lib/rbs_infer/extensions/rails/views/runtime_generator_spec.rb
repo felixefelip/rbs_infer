@@ -5,8 +5,15 @@ require "rbs_infer"
 require "rbs_infer/extensions/rails/views/runtime_generator"
 require "tmpdir"
 require "fileutils"
+require_relative "../../../../../support/rails_app_paths_helper"
 
 RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
+  include RailsAppPathsHelper
+
+  def generator(app_dir)
+    described_class.new(app_dir: app_dir, app_paths: RbsInfer::Extensions::Rails::AppPaths.conventional(app_dir))
+  end
+
   def in_app(files)
     Dir.mktmpdir do |dir|
       files.each do |rel, content|
@@ -19,7 +26,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
   end
 
   def build(files)
-    in_app(files) { |dir| described_class.new(app_dir: dir).build }
+    in_app(files) { |dir| generator(dir).build }
   end
 
   def source_of(result, filename)
@@ -256,7 +263,7 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
         FileUtils.mkdir_p(File.dirname(stale))
         File.write(stale, "# stale")
 
-        described_class.new(app_dir: dir).generate
+        generator(dir).generate
 
         expect(File).to exist(File.join(dir, described_class::SIDECAR_DIR, "posts", "edit.rb"))
         expect(File).not_to exist(stale)
@@ -264,11 +271,63 @@ RSpec.describe RbsInfer::Extensions::Rails::Views::RuntimeGenerator do
     end
   end
 
+  describe "an app split into packs" do
+    def build_packs(files, packs:)
+      in_app(files) do |dir|
+        described_class.new(app_dir: dir, app_paths: rails_app_paths(dir, packs: packs)).build
+      end
+    end
+
+    it "names a pack's template by its path under the pack's view root" do
+      result = build_packs(
+        {
+          "packs/billing/app/views/invoices/show.html.erb" => "<%= @invoice %>\n",
+          "packs/billing/app/helpers/invoices_helper.rb" => "module InvoicesHelper\nend\n"
+        },
+        packs: ["packs/billing"]
+      )
+
+      expect(result.map(&:filename)).to eq(["invoices/show.rb"])
+      expect(source_of(result, "invoices/show.rb")).to include("class ERBInvoicesShow")
+      expect(source_of(result, "invoices/show.rb")).to include("include InvoicesHelper")
+    end
+
+    it "renders a partial that lives in another root" do
+      result = build_packs(
+        {
+          "app/views/shared/_total.html.erb" => "<%= amount %>\n",
+          "packs/billing/app/views/invoices/show.html.erb" =>
+            "<%= render partial: \"shared/total\", locals: { amount: @invoice.amount } %>\n"
+        },
+        packs: ["packs/billing"]
+      )
+
+      expect(source_of(result, "invoices/show.rb"))
+        .to include('when "shared/total" then ERBPartialSharedTotal.new(amount: @invoice.amount).__rbs_infer__body')
+      expect(source_of(result, "shared/_total.rb")).to include("def initialize(amount:)")
+    end
+
+    it "keeps the template of the first root when two roots have the same path" do
+      result = build_packs(
+        {
+          "app/views/shared/_header.html.erb" => "<%= title %>\n",
+          "packs/billing/app/views/shared/_header.html.erb" => "<%= subtitle %>\n",
+          "packs/billing/app/views/invoices/show.html.erb" =>
+            "<%= render partial: \"shared/header\", locals: { title: @title } %>\n"
+        },
+        packs: ["packs/billing"]
+      )
+
+      expect(result.map(&:filename)).to contain_exactly("invoices/show.rb", "shared/_header.rb")
+      expect(source_of(result, "shared/_header.rb")).to include("def initialize(title:)")
+    end
+  end
+
   describe "dummy snapshot" do
     let(:expectations) { Pathname(DUMMY_APP_ROOT).dirname.join("expectations/steep_actionview_runtime") }
 
     it "matches the expected pseudo-code for every template" do
-      files = described_class.new(app_dir: DUMMY_APP_ROOT).build
+      files = generator(DUMMY_APP_ROOT).build
 
       if ENV["UPDATE_EXPECTATIONS"]
         # `.rb` only: the inferred `.rbs` snapshots share this directory
