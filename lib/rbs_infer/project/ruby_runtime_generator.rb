@@ -338,13 +338,21 @@ module RbsInfer::Project
         # @rbs_infer |...
         def [](key)
           locals = @__rbs_infer__locals
-          locals ? locals[key.is_a?(Symbol) ? key : key.to_str.to_sym] : nil
+          return nil unless locals
+
+          case key
+          when Symbol then locals[key]
+          else locals[key.to_str.to_sym]
+          end
         end
 
         # What `thread[key] = value` writes — `threadptr_local_aset` in MRI's thread.c.
         # @rbs_infer |...
         def []=(key, value)
-          id = key.is_a?(Symbol) ? key : key.to_str.to_sym
+          id = case key
+               when Symbol then key
+               else key.to_str.to_sym
+               end
           if value.nil?
             @__rbs_infer__locals&.delete(id)
             return nil
