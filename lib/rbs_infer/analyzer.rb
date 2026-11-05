@@ -208,7 +208,7 @@ module RbsInfer
         namespace_classes: resolve_namespace_classes(receiver),
         is_module: false,
         type_params: method_type_resolver.type_param_string(receiver)
-      ).build(members, {}, {}, ivar_types: {}, singleton_ivar_types: {}, module_ivar_types: {}, module_singleton_ivar_types: {}, markers: [],
+      ).build(members, {}, {}, ivar_types: {}, singleton_ivar_types: {}, module_ivar_types: {}, module_singleton_ivar_types: {}, class_variable_types: {}, markers: [],
                                nested_modules: [])
     end
 
@@ -341,7 +341,9 @@ module RbsInfer
                                                          namespace_classes: namespace_classes, is_module: @is_module, type_params: method_type_resolver.type_param_string(@target_class), declared: rbs_definition_resolver.method(:declaration))
       rbs_builder.build(target_members, init_arg_types, attr_types, optional_params, method_param_types,
                         ivar_types: ivar_types, singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types,
-                        module_singleton_ivar_types: ivar_inference.singleton_by_module, markers: markers, nested_modules: @nested_modules)
+                        module_singleton_ivar_types: ivar_inference.singleton_by_module, markers: markers, nested_modules: @nested_modules,
+                        class_variable_types: RbsInfer::Signatures::SteepBridge::ClassVariableWriteAnalyzer.new(steep_bridge: steep_bridge)
+                                                                                                           .by_owner(@parsed_target, target_class: @target_class, owners: target_members.filter_map(&:owner).uniq))
     end
 
     # Builds the marker class list to inject into the generated RBS.
@@ -976,6 +978,7 @@ require_relative "signatures/steep_bridge/initialize_reach"
 require_relative "signatures/steep_bridge/dead_branches"
 require_relative "signatures/steep_bridge/call_selves"
 require_relative "signatures/steep_bridge/ivar_write_analyzer"
+require_relative "signatures/steep_bridge/class_variable_write_analyzer"
 require_relative "signatures/steep_bridge/block_analyzer"
 require_relative "signatures/steep_bridge/forwarding_analyzer"
 require_relative "signatures/steep_bridge/return_type_analyzer"
