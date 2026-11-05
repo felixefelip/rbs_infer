@@ -294,9 +294,9 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
         "class Thread\n",
         "  # @rbs_infer no-signature\n  def self.current\n    @__rbs_infer__main ||= allocate\n",
         "  # @rbs_infer |...\n  def [](key)\n    locals = @__rbs_infer__locals\n",
-        "    locals ? locals[key.to_sym] : nil\n",
+        "    locals ? locals[key.is_a?(Symbol) ? key : key.to_str.to_sym] : nil\n",
         "  # @rbs_infer |...\n  def []=(key, value)\n",
-        "    (@__rbs_infer__locals ||= {})[key] = value\n"
+        "    (@__rbs_infer__locals ||= Hash.new)[id] = value\n"
       )
     end
   end

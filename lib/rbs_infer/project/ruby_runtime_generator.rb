@@ -315,7 +315,9 @@ module RbsInfer::Project
     #   return val;
     #
     # The main thread is allocated by `Init_Thread`, not built by `new` (which
-    # raises without a block), and its fiber-local storage starts NULL. Core
+    # raises without a block), and its fiber-local storage starts NULL.
+    # `rb_check_id` takes a Symbol as it is and a String, or what converts
+    # with `to_str`, as the Symbol it names. Core
     # declares `[]` as `-> untyped`, which stops a call site's value from
     # reaching the body, so `[]` and `[]=` add the signatures their call sites
     # infer ahead of core's; `current` keeps core's, which is accurate.
@@ -336,19 +338,19 @@ module RbsInfer::Project
         # @rbs_infer |...
         def [](key)
           locals = @__rbs_infer__locals
-          locals ? locals[key.to_sym] : nil
+          locals ? locals[key.is_a?(Symbol) ? key : key.to_str.to_sym] : nil
         end
 
         # What `thread[key] = value` writes — `threadptr_local_aset` in MRI's thread.c.
         # @rbs_infer |...
         def []=(key, value)
-          key = key.to_sym
+          id = key.is_a?(Symbol) ? key : key.to_str.to_sym
           if value.nil?
-            @__rbs_infer__locals&.delete(key)
+            @__rbs_infer__locals&.delete(id)
             return nil
           end
 
-          (@__rbs_infer__locals ||= {})[key] = value
+          (@__rbs_infer__locals ||= Hash.new)[id] = value
         end
       end
     RUBY
