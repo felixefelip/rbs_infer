@@ -22,12 +22,17 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveSupport::RuntimeGenerator do
     files.find { |file| file[:filename] == "inflector.rb" }[:source]
   end
 
+  def i18n_source
+    files.find { |file| file[:filename] == "i18n.rb" }[:source]
+  end
+
   # The whole extension: put the gem's macro where the pipeline can read it.
   # What it writes at each call site is folded by the checker and placed by
   # `Project::StringEvalMacroExpander`, which knows no framework.
   describe "the file it writes" do
     it "emits one file per macro" do
-      expect(files.map { |file| file[:filename] }).to eq(["delegation.rb", "class_attribute.rb", "inflector.rb"])
+      expect(files.map { |file| file[:filename] })
+        .to eq(["delegation.rb", "class_attribute.rb", "inflector.rb", "i18n.rb"])
     end
 
     it "holds `delegate` and the writer it hands its arguments to" do
@@ -118,6 +123,28 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveSupport::RuntimeGenerator do
     it "states no type" do
       expect(inflector_source).not_to match(/^\s*#:/)
       expect(inflector_source).not_to include("@type")
+    end
+  end
+
+  describe "the i18n the inflector runs" do
+    it "holds `I18n.fallbacks` and its writer, without the translation backend" do
+      expect(i18n_source).to include("  @@fallbacks = nil\n")
+      expect(i18n_source).to include("def fallbacks\n", "def fallbacks=(fallbacks)\n")
+      expect(i18n_source).not_to include("module Backend")
+    end
+
+    it "holds the locale files loading the inflector loads" do
+      expect(i18n_source).to include(
+        "class Fallbacks < Hash\n",
+        "def compute(tags, include_defaults = true, exclude = [])\n",
+        "def self_and_parents\n",
+        "class Simple\n"
+      )
+    end
+
+    it "marks every def ahead of the gem's signature" do
+      defs = i18n_source.scan(/^ *def /).size
+      expect(i18n_source.scan(/# @rbs_infer \|\.\.\.\n *def /).size).to eq(defs)
     end
   end
 
