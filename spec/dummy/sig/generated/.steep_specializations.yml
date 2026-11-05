@@ -1616,6 +1616,8 @@ receivers:
   - "::ActionController::Parameters"
   app/controllers/concerns/filter_configuration.rb:19:4:
   - "(::PostsController & ::FilterConfiguration)"
+  app/controllers/concerns/filter_configuration.rb:4:2:
+  - singleton(::FilterConfiguration)
   app/controllers/concerns/filter_configuration.rb:7:17:
   - "(::PostsController & ::FilterConfiguration)"
   app/controllers/concerns/filter_configuration.rb:9:4:
@@ -1688,6 +1690,8 @@ receivers:
   - "(::Post & ::Post::Validated)"
   app/controllers/posts_controller.rb:49:65:
   - "(::User & ::User::Validated)"
+  app/controllers/posts_controller.rb:4:2:
+  - singleton(::PostsController)
   app/controllers/posts_controller.rb:50:6:
   - "::PostsController"
   app/controllers/posts_controller.rb:52:6:
@@ -1822,8 +1826,12 @@ receivers:
   - "(::Comment & ::Comment::Validated)"
   app/models/comment.rb:9:2:
   - singleton(::Comment)
+  app/models/concerns/commentable.rb:16:2:
+  - singleton(::Commentable)
   app/models/concerns/commentable.rb:18:2:
   - singleton(::Commentable)
+  app/models/concerns/test/filtrable.rb:4:2:
+  - singleton(::Test::Filtrable)
   app/models/concerns/test/filtrable.rb:6:2:
   - singleton(::Test::Filtrable)
   app/models/concerns/test/filtrable.rb:7:4:
@@ -1844,10 +1852,14 @@ receivers:
   - "((::User & ::User::Validated) | ::User | nil)"
   app/models/current.rb:33:4:
   - singleton(::Current)
+  app/models/eval_reopen.rb:14:2:
+  - singleton(::EvalReopen)
   app/models/eval_reopen.rb:75:24:
   - singleton(::EvalReopen)
   app/models/eval_reopen.rb:76:11:
   - "::EvalReopen"
+  app/models/eventable.rb:8:2:
+  - singleton(::Eventable)
   app/models/example.rb:13:4:
   - "::Column"
   app/models/example.rb:29:18:
@@ -1912,8 +1924,14 @@ receivers:
   - "::Example100::Reflection"
   app/models/example100.rb:58:58:
   - "::Hash[::Symbol, untyped]"
+  app/models/example101.rb:11:4:
+  - singleton(::Example101::Assoc)
   app/models/example101.rb:13:4:
   - singleton(::Example101::Assoc)
+  app/models/example101/post.rb:3:4:
+  - singleton(::Example101::Post)
+  app/models/example102.rb:31:17:
+  - "::Array[untyped]"
   app/models/example102.rb:48:15:
   - "::Example102::FallbackChains"
   app/models/example102.rb:48:29:
@@ -1964,6 +1982,8 @@ receivers:
   - "::Example103::Store"
   app/models/example103.rb:64:11:
   - "::Example103::Store"
+  app/models/example104.rb:20:17:
+  - "::Array[untyped]"
   app/models/example104.rb:24:37:
   - singleton(::Concurrent::Map)
   app/models/example104.rb:27:20:
@@ -2030,6 +2050,8 @@ receivers:
   - "::Array[(::Example107::Circle | ::Example107::Square)]"
   app/models/example108.rb:52:50:
   - singleton(::Module)
+  app/models/example108.rb:53:8:
+  - singleton(::Example108::Settings)
   app/models/example108.rb:60:6:
   - singleton(::Example108::Settings)
   app/models/example108.rb:65:4:
@@ -2104,6 +2126,8 @@ receivers:
   - singleton(::Module)
   app/models/example109.rb:293:41:
   - untyped
+  app/models/example109.rb:296:36:
+  - "::Array[untyped]"
   app/models/example109.rb:307:51:
   - "::Proc"
   app/models/example109.rb:319:28:
@@ -2116,6 +2140,10 @@ receivers:
   - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:32:46:
   - singleton(::Example109::Reflection::ThroughReflection)
+  app/models/example109.rb:349:4:
+  - singleton(::Example109::Base)
+  app/models/example109.rb:350:4:
+  - singleton(::Example109::Base)
   app/models/example109.rb:356:39:
   - singleton(::Example109::Associations::HasManyAssociation)
   app/models/example109.rb:361:4:
@@ -2138,6 +2166,8 @@ receivers:
   - "::Hash[::Symbol, untyped]"
   app/models/example109/core.rb:6:60:
   - singleton(::Module)
+  app/models/example109/core.rb:8:10:
+  - singleton(::Example109::Base)
   app/models/example11.rb:12:22:
   - singleton(::Example11::View)
   app/models/example11.rb:12:48:
@@ -2146,6 +2176,8 @@ receivers:
   - singleton(::Example11::Partial)
   app/models/example110.rb:18:56:
   - singleton(::Module)
+  app/models/example110.rb:19:8:
+  - singleton(::Example110::Options)
   app/models/example110.rb:26:6:
   - singleton(::Example110::Options)
   app/models/example110.rb:31:4:
@@ -2212,6 +2244,8 @@ receivers:
   - "::Example13::Guarded"
   app/models/example13.rb:187:6:
   - "::Example13::Guarded"
+  app/models/example13.rb:18:4:
+  - singleton(::Example13::Registry)
   app/models/example13.rb:190:6:
   - "::Example13::Guarded"
   app/models/example13.rb:194:15:
@@ -2342,12 +2376,18 @@ receivers:
   - "::Example16"
   app/models/example16.rb:56:14:
   - "::Example16"
+  app/models/example16.rb:56:28:
+  - "::Example16"
   app/models/example16.rb:56:4:
+  - "::Example16"
+  app/models/example16.rb:61:7:
   - "::Example16"
   app/models/example16.rb:62:15:
   - singleton(::Example16::Registry)
   app/models/example16.rb:62:27:
   - singleton(::Example16::User)
+  app/models/example16.rb:68:7:
+  - "::Example16"
   app/models/example16.rb:69:15:
   - singleton(::Example16::Registry)
   app/models/example16.rb:69:27:
@@ -2394,6 +2434,8 @@ receivers:
   - "::Example18"
   app/models/example18.rb:67:4:
   - "::Example18"
+  app/models/example18.rb:75:18:
+  - "::Example18"
   app/models/example18.rb:75:4:
   - "::Example18"
   app/models/example18.rb:81:4:
@@ -2402,10 +2444,14 @@ receivers:
   - "::Example18"
   app/models/example18.rb:83:17:
   - singleton(::Example18::Registry)
+  app/models/example18.rb:90:27:
+  - "::Example18"
   app/models/example18.rb:90:4:
   - "::Example18"
   app/models/example18.rb:95:12:
   - "::Example18"
+  app/models/example18.rb:97:17:
+  - "::String"
   app/models/example18.rb:98:12:
   - "^(::String) -> (::Example18::User | nil)"
   app/models/example19.rb:100:4:
@@ -2414,12 +2460,18 @@ receivers:
   - "::Example19"
   app/models/example19.rb:102:17:
   - singleton(::Example19::Registry)
+  app/models/example19.rb:110:27:
+  - "::Example19"
   app/models/example19.rb:110:4:
   - "::Example19"
   app/models/example19.rb:114:12:
   - "::Example19"
+  app/models/example19.rb:116:17:
+  - "::String"
   app/models/example19.rb:117:12:
   - "^(::String) -> (::Example19::User | nil)"
+  app/models/example19.rb:125:14:
+  - singleton(::Example19::Responder)
   app/models/example19.rb:129:9:
   - singleton(::Example19::User)
   app/models/example19.rb:133:8:
@@ -2435,6 +2487,8 @@ receivers:
   app/models/example19.rb:76:4:
   - "::Example19"
   app/models/example19.rb:80:4:
+  - "::Example19"
+  app/models/example19.rb:95:18:
   - "::Example19"
   app/models/example19.rb:95:4:
   - "::Example19"
@@ -2460,12 +2514,20 @@ receivers:
   - "::Example20"
   app/models/example20.rb:104:21:
   - singleton(::Example20::Registry)
+  app/models/example20.rb:108:8:
+  - "::Example20"
+  app/models/example20.rb:114:27:
+  - "::Example20"
   app/models/example20.rb:114:4:
   - "::Example20"
   app/models/example20.rb:118:12:
   - "::Example20"
+  app/models/example20.rb:120:17:
+  - "::String"
   app/models/example20.rb:121:12:
   - "^(::String) -> (::Example20::User | nil)"
+  app/models/example20.rb:126:14:
+  - singleton(::Example20::Responder)
   app/models/example20.rb:130:9:
   - singleton(::Example20::User)
   app/models/example20.rb:134:4:
@@ -2486,6 +2548,8 @@ receivers:
   - "::Example20"
   app/models/example20.rb:79:4:
   - "::Example20"
+  app/models/example20.rb:94:18:
+  - "::Example20"
   app/models/example20.rb:94:4:
   - "::Example20"
   app/models/example21.rb:105:24:
@@ -2504,52 +2568,98 @@ receivers:
   - "(::Example21::Ticket | nil)"
   app/models/example22.rb:25:22:
   - untyped
+  app/models/example22.rb:34:4:
+  - singleton(::Example22::Bar)
   app/models/example23.rb:31:22:
   - singleton(::Example23::Baz)
+  app/models/example23.rb:40:4:
+  - singleton(::Example23::Baz)
+  app/models/example23.rb:48:4:
+  - singleton(::Example23::Bar)
   app/models/example23.rb:58:4:
   - singleton(::Example23::Bar)
+  app/models/example23.rb:62:4:
+  - singleton(::Example23::BarOther)
   app/models/example23.rb:72:4:
   - singleton(::Example23::BarOther)
   app/models/example24.rb:17:22:
   - singleton(::Example24::Baz)
+  app/models/example24.rb:26:4:
+  - singleton(::Example24::Baz)
+  app/models/example24.rb:30:4:
+  - singleton(::Example24::Bar)
   app/models/example24.rb:33:4:
   - singleton(::Example24::Bar)
+  app/models/example24.rb:37:4:
+  - singleton(::Example24::BarOther)
   app/models/example24.rb:39:4:
   - singleton(::Example24::BarOther)
+  app/models/example25.rb:13:4:
+  - singleton(::Example25::Baz)
+  app/models/example25.rb:17:4:
+  - singleton(::Example25::BazOther)
+  app/models/example25.rb:21:4:
+  - singleton(::Example25::Bar)
   app/models/example25.rb:24:4:
   - singleton(::Example25::Bar)
+  app/models/example25.rb:28:4:
+  - singleton(::Example25::BarOther)
   app/models/example25.rb:30:4:
   - singleton(::Example25::BarOther)
   app/models/example25.rb:4:22:
   - "(singleton(::Example25::Baz) | singleton(::Example25::BazOther))"
   app/models/example26.rb:32:22:
   - "(singleton(::Example26::Baz) | singleton(::Example26::BazOther))"
+  app/models/example26.rb:41:4:
+  - singleton(::Example26::Baz)
+  app/models/example26.rb:45:4:
+  - singleton(::Example26::BazOther)
+  app/models/example26.rb:53:4:
+  - singleton(::Example26::Bar)
   app/models/example26.rb:56:4:
   - singleton(::Example26::Bar)
+  app/models/example26.rb:60:4:
+  - singleton(::Example26::BarOther)
   app/models/example26.rb:68:4:
   - singleton(::Example26::BarOther)
   app/models/example27.rb:14:22:
   - singleton(::Example27::Baz)
+  app/models/example27.rb:25:4:
+  - singleton(::Example27::Baz)
   app/models/example27.rb:27:4:
   - singleton(::Example27::Baz)
+  app/models/example27.rb:35:4:
+  - singleton(::Example27::Bar)
   app/models/example27.rb:38:4:
   - singleton(::Example27::Bar)
+  app/models/example28.rb:15:4:
+  - singleton(::Example28::Baz)
   app/models/example28.rb:17:4:
   - singleton(::Example28::Baz)
+  app/models/example28.rb:31:4:
+  - singleton(::Example28::Bar)
   app/models/example28.rb:37:4:
   - singleton(::Example28::Bar)
   app/models/example28.rb:44:6:
   - "::Example28::Bar"
+  app/models/example29.rb:15:4:
+  - singleton(::Example29::Baz)
   app/models/example29.rb:17:4:
   - singleton(::Example29::Baz)
+  app/models/example29.rb:31:4:
+  - singleton(::Example29::Bar)
   app/models/example29.rb:37:4:
   - singleton(::Example29::Bar)
   app/models/example29.rb:44:6:
   - "::Example29::Bar"
+  app/models/example29.rb:49:4:
+  - singleton(::Example29::BazOther)
   app/models/example29.rb:51:4:
   - singleton(::Example29::BazOther)
   app/models/example29.rb:53:8:
   - "::Example29::BarOther"
+  app/models/example29.rb:59:4:
+  - singleton(::Example29::BarOther)
   app/models/example29.rb:61:4:
   - singleton(::Example29::BarOther)
   app/models/example29.rb:68:6:
@@ -2580,6 +2690,8 @@ receivers:
   - "(::Example3::User | nil)"
   app/models/example3.rb:122:6:
   - "::Example3::Foo"
+  app/models/example3.rb:16:4:
+  - singleton(::Example3::Foo)
   app/models/example3.rb:19:28:
   - singleton(::Example3::Foo)
   app/models/example3.rb:23:19:
@@ -2664,32 +2776,56 @@ receivers:
   - singleton(::Example3::User)
   app/models/example3.rb:99:8:
   - singleton(::Example3::Foo)
+  app/models/example31.rb:15:4:
+  - singleton(::Example31::Baz)
   app/models/example31.rb:17:4:
   - singleton(::Example31::Baz)
+  app/models/example31.rb:31:4:
+  - singleton(::Example31::Bar)
+  app/models/example31.rb:33:4:
+  - singleton(::Example31::Bar)
   app/models/example31.rb:35:4:
   - singleton(::Example31::Bar)
+  app/models/example32.rb:17:4:
+  - singleton(::Example32::Baz)
   app/models/example32.rb:19:4:
   - singleton(::Example32::Baz)
+  app/models/example32.rb:27:4:
+  - singleton(::Example32::Bar)
   app/models/example32.rb:29:4:
   - singleton(::Example32::Bar)
   app/models/example32.rb:4:22:
   - singleton(::Example32::Baz)
+  app/models/example33.rb:17:4:
+  - singleton(::Example33::Baz)
   app/models/example33.rb:19:4:
   - singleton(::Example33::Baz)
+  app/models/example33.rb:27:4:
+  - singleton(::Example33::Bar)
   app/models/example33.rb:29:4:
   - singleton(::Example33::Bar)
+  app/models/example33.rb:33:4:
+  - singleton(::Example33::BazOther)
   app/models/example33.rb:35:4:
   - singleton(::Example33::BazOther)
   app/models/example33.rb:37:8:
   - "::Example33::BarOther"
+  app/models/example33.rb:43:4:
+  - singleton(::Example33::BarOther)
   app/models/example33.rb:45:4:
   - singleton(::Example33::BarOther)
   app/models/example33.rb:4:22:
   - "(singleton(::Example33::Baz) | singleton(::Example33::BazOther))"
   app/models/example33.rb:52:6:
   - "::Example33::BarOther"
+  app/models/example34.rb:19:4:
+  - singleton(::Example34::Baz)
   app/models/example34.rb:21:4:
   - singleton(::Example34::Baz)
+  app/models/example34.rb:29:4:
+  - singleton(::Example34::Bar)
+  app/models/example34.rb:31:4:
+  - singleton(::Example34::Bar)
   app/models/example34.rb:5:12:
   - singleton(::Example34::Baz)
   app/models/example35.rb:17:4:
@@ -2704,20 +2840,34 @@ receivers:
   - singleton(::Example36::Bar)
   app/models/example36.rb:5:12:
   - singleton(::Example36::Baz)
+  app/models/example37.rb:19:4:
+  - singleton(::Example37::Baz)
   app/models/example37.rb:21:4:
   - singleton(::Example37::Baz)
+  app/models/example37.rb:29:4:
+  - singleton(::Example37::Bar)
   app/models/example37.rb:31:4:
   - singleton(::Example37::Bar)
   app/models/example37.rb:5:12:
   - singleton(::Example37::Baz)
+  app/models/example38.rb:21:4:
+  - singleton(::Example38::Baz)
   app/models/example38.rb:23:4:
   - singleton(::Example38::Baz)
+  app/models/example38.rb:31:4:
+  - singleton(::Example38::BazOther)
   app/models/example38.rb:33:4:
   - singleton(::Example38::BazOther)
+  app/models/example38.rb:41:4:
+  - singleton(::Example38::Bar)
   app/models/example38.rb:43:4:
   - singleton(::Example38::Bar)
+  app/models/example39.rb:15:4:
+  - singleton(::Example39::Baz)
   app/models/example39.rb:17:4:
   - singleton(::Example39::Baz)
+  app/models/example39.rb:25:4:
+  - singleton(::Example39::Bar)
   app/models/example4.rb:14:20:
   - singleton(::Example4::Foo)
   app/models/example4.rb:18:20:
@@ -2754,45 +2904,101 @@ receivers:
   - singleton(::Example40::Bazinga)
   app/models/example40.rb:16:25:
   - "::Example40::Bazinga"
+  app/models/example40.rb:31:4:
+  - singleton(::Example40::Baz)
   app/models/example40.rb:33:4:
   - singleton(::Example40::Baz)
+  app/models/example40.rb:41:4:
+  - singleton(::Example40::BazOther)
   app/models/example40.rb:43:4:
   - singleton(::Example40::BazOther)
+  app/models/example40.rb:51:4:
+  - singleton(::Example40::Bar)
   app/models/example40.rb:53:4:
   - singleton(::Example40::Bar)
+  app/models/example41.rb:13:4:
+  - singleton(::Example41::Baz)
   app/models/example41.rb:15:4:
   - singleton(::Example41::Baz)
+  app/models/example41.rb:23:4:
+  - singleton(::Example41::Bar)
+  app/models/example41.rb:25:4:
+  - singleton(::Example41::Bar)
+  app/models/example42.rb:21:4:
+  - singleton(::Example42::Baz)
   app/models/example42.rb:23:4:
   - singleton(::Example42::Baz)
+  app/models/example42.rb:31:4:
+  - singleton(::Example42::Bar)
   app/models/example42.rb:33:4:
   - singleton(::Example42::Bar)
+  app/models/example42.rb:41:4:
+  - singleton(::Example42::BarOther)
   app/models/example42.rb:43:4:
   - singleton(::Example42::BarOther)
+  app/models/example43.rb:21:4:
+  - singleton(::Example43::Baz)
   app/models/example43.rb:23:4:
   - singleton(::Example43::Baz)
+  app/models/example43.rb:31:4:
+  - singleton(::Example43::BazOther)
   app/models/example43.rb:33:4:
   - singleton(::Example43::BazOther)
+  app/models/example43.rb:41:4:
+  - singleton(::Example43::Bar)
   app/models/example43.rb:43:4:
   - singleton(::Example43::Bar)
+  app/models/example43.rb:51:4:
+  - singleton(::Example43::BarOther)
   app/models/example43.rb:53:4:
   - singleton(::Example43::BarOther)
+  app/models/example43.rb:61:4:
+  - singleton(::Example43::BarOther2)
   app/models/example43.rb:63:4:
   - singleton(::Example43::BarOther2)
   app/models/example43.rb:70:6:
   - "::Example43::BarOther2"
+  app/models/example44.rb:13:4:
+  - singleton(::Example44::Baz)
   app/models/example44.rb:15:4:
   - singleton(::Example44::Baz)
+  app/models/example44.rb:23:4:
+  - singleton(::Example44::Bar)
+  app/models/example44.rb:25:4:
+  - singleton(::Example44::Bar)
+  app/models/example44.rb:33:4:
+  - singleton(::Example44::BarOther)
+  app/models/example44.rb:35:4:
+  - singleton(::Example44::BarOther)
+  app/models/example45.rb:13:4:
+  - singleton(::Example45::Baz)
   app/models/example45.rb:15:4:
   - singleton(::Example45::Baz)
+  app/models/example45.rb:23:4:
+  - singleton(::Example45::Bar)
+  app/models/example45.rb:31:4:
+  - singleton(::Example45::BarOther)
   app/models/example46.rb:3:27:
   - singleton(::Module)
   app/models/example46.rb:5:37:
   - singleton(::Module)
   app/models/example47.rb:17:4:
   - singleton(::Example47::Baz)
+  app/models/example47.rb:25:4:
+  - singleton(::Example47::Bar)
   app/models/example47.rb:28:6:
   - singleton(::Example47::Bar)
+  app/models/example47.rb:9:4:
+  - singleton(::Example47::Baz)
+  app/models/example48.rb:19:4:
+  - singleton(::Example48::Bar)
+  app/models/example48.rb:4:11:
+  - "::Module"
+  app/models/example48.rb:9:4:
+  - singleton(::Example48::Baz)
   app/models/example49.rb:12:6:
+  - singleton(::Example49::Bar)
+  app/models/example49.rb:9:4:
   - singleton(::Example49::Bar)
   app/models/example5.rb:17:20:
   - singleton(::Example5::Foo)
@@ -2806,30 +3012,60 @@ receivers:
   - singleton(::Example5::Bar)
   app/models/example5.rb:37:22:
   - "::Example5::Bar"
+  app/models/example50.rb:10:4:
+  - singleton(::Example50::Baz)
   app/models/example50.rb:18:4:
   - singleton(::Example50::Baz)
+  app/models/example50.rb:26:4:
+  - singleton(::Example50::Bar)
   app/models/example50.rb:29:6:
   - singleton(::Example50::Bar)
   app/models/example51.rb:11:4:
   - singleton(::Example51::Baz)
   app/models/example51.rb:4:39:
   - singleton(::Module)
+  app/models/example51.rb:9:4:
+  - singleton(::Example51::Baz)
+  app/models/example52.rb:14:4:
+  - singleton(::Example52::Baz)
   app/models/example52.rb:16:4:
   - singleton(::Example52::Baz)
+  app/models/example52.rb:24:4:
+  - singleton(::Example52::Bar)
   app/models/example52.rb:4:106:
   - singleton(::Module)
+  app/models/example52.rb:9:11:
+  - "::Module"
+  app/models/example53.rb:14:4:
+  - singleton(::Example53::Baz)
   app/models/example53.rb:16:4:
   - singleton(::Example53::Baz)
+  app/models/example53.rb:24:4:
+  - singleton(::Example53::Bar)
   app/models/example53.rb:4:106:
   - singleton(::Module)
+  app/models/example53.rb:9:11:
+  - "::Module"
+  app/models/example54.rb:3:4:
+  - singleton(::Example54::Bar)
+  app/models/example54/baz.rb:10:11:
+  - "::Module"
+  app/models/example54/baz.rb:15:4:
+  - singleton(::Example54::Baz)
   app/models/example54/baz.rb:17:4:
   - singleton(::Example54::Baz)
   app/models/example54/baz.rb:4:106:
   - singleton(::Module)
+  app/models/example55.rb:3:4:
+  - singleton(::Example55::Bar)
+  app/models/example55/baz.rb:2:2:
+  - singleton(::Example55::Baz)
   app/models/example55/baz.rb:4:2:
   - singleton(::Example55::Baz)
   app/models/example55/foo.rb:3:104:
   - singleton(::Module)
+  app/models/example55/foo.rb:9:9:
+  - "::Module"
   app/models/example56.rb:29:16:
   - "::Example56::Reader"
   app/models/example56.rb:31:6:
@@ -2842,16 +3078,32 @@ receivers:
   - singleton(::Example56::Reader)
   app/models/example56.rb:51:15:
   - "::Example56::Reader"
+  app/models/example57.rb:14:2:
+  - singleton(::Example57)
+  app/models/example57.rb:25:4:
+  - singleton(::Example57::Inner)
+  app/models/example57/fields.rb:2:2:
+  - singleton(::Example57::Fields)
   app/models/example57/fields.rb:4:2:
   - singleton(::Example57::Fields)
+  app/models/example57_windowed.rb:2:2:
+  - singleton(::Example57Windowed)
   app/models/example57_windowed.rb:4:2:
   - singleton(::Example57Windowed)
+  app/models/example58.rb:19:2:
+  - singleton(::Example58)
   app/models/example58.rb:24:4:
   - "::Example58"
+  app/models/example58/defaults.rb:11:2:
+  - singleton(::Example58::Defaults)
   app/models/example58/defaults.rb:13:2:
   - singleton(::Example58::Defaults)
   app/models/example58/defaults.rb:20:29:
   - '{ :indexed_by => "all", :sorted_by => "latest" }'
+  app/models/example59.rb:5:2:
+  - singleton(::Example59)
+  app/models/example59/naming.rb:14:2:
+  - singleton(::Example59::Naming)
   app/models/example59/naming.rb:16:2:
   - singleton(::Example59::Naming)
   app/models/example6.rb:16:20:
@@ -2870,8 +3122,12 @@ receivers:
   - "::Example60Printer"
   app/models/example60.rb:16:4:
   - "::Example60"
+  app/models/example60.rb:7:2:
+  - singleton(::Example60)
   app/models/example60.rb:9:2:
   - singleton(::Example60)
+  app/models/example60/labels.rb:15:2:
+  - singleton(::Example60::Labels)
   app/models/example60/labels.rb:17:2:
   - singleton(::Example60::Labels)
   app/models/example60/labels.rb:19:2:
@@ -2880,8 +3136,20 @@ receivers:
   - "::Object"
   app/models/example62.rb:34:51:
   - singleton(::Array)
+  app/models/example62.rb:48:36:
+  - "::Module"
+  app/models/example62.rb:56:4:
+  - singleton(::Example62::Shared)
   app/models/example62.rb:58:4:
   - singleton(::Example62::Shared)
+  app/models/example62.rb:68:4:
+  - singleton(::Example62::Middle)
+  app/models/example62.rb:70:4:
+  - singleton(::Example62::Middle)
+  app/models/example62.rb:73:2:
+  - singleton(::Example62)
+  app/models/example62.rb:74:2:
+  - singleton(::Example62)
   app/models/example62.rb:86:14:
   - singleton(::Example62)
   app/models/example62.rb:86:18:
@@ -2900,6 +3168,8 @@ receivers:
   - "::Example63::Foo"
   app/models/example63.rb:22:6:
   - singleton(::Example63::Foo)
+  app/models/example64.rb:23:2:
+  - singleton(::Example64)
   app/models/example65.rb:24:16:
   - singleton(::Example65::Dispatcher)
   app/models/example65.rb:32:6:
@@ -2916,6 +3186,12 @@ receivers:
   - singleton(::Example65Impostor)
   app/models/example65_caller.rb:6:21:
   - singleton(::Example65Greeter)
+  app/models/example66.rb:30:2:
+  - singleton(::Example66)
+  app/models/example66.rb:31:2:
+  - singleton(::Example66)
+  app/models/example66_override.rb:6:2:
+  - singleton(::Example66Override)
   app/models/example66_override.rb:8:2:
   - singleton(::Example66Override)
   app/models/example66_trackable.rb:16:9:
@@ -3006,6 +3282,8 @@ receivers:
   - "::Method"
   app/models/example68_store.rb:11:18:
   - "::Example68Store"
+  app/models/example68_store.rb:11:26:
+  - "::Array[::Example68Entry]"
   app/models/example68_store.rb:13:4:
   - "::Example68Store"
   app/models/example68_store.rb:7:20:
@@ -3074,6 +3352,8 @@ receivers:
   - '::Array[("def content" | ::String)]'
   app/models/example70.rb:91:20:
   - "::Example70::Foo"
+  app/models/example71.rb:106:4:
+  - singleton(::Example71::Mixed)
   app/models/example72.rb:102:6:
   - "::Example72::Foo"
   app/models/example72.rb:107:12:
@@ -3262,6 +3542,8 @@ receivers:
   - singleton(::Example84)
   app/models/example84.rb:49:13:
   - singleton(::Example84)
+  app/models/example85.rb:36:17:
+  - "::Array[untyped]"
   app/models/example85.rb:41:21:
   - singleton(::Example85::Rules)
   app/models/example85.rb:44:2:
@@ -3314,6 +3596,8 @@ receivers:
   - "::Example87"
   app/models/example87.rb:64:26:
   - "::Example87"
+  app/models/example88.rb:21:17:
+  - "::Array[untyped]"
   app/models/example88.rb:27:23:
   - singleton(::Example88::Rules)
   app/models/example88.rb:30:10:
@@ -3338,6 +3622,8 @@ receivers:
   - singleton(::Example88::Post)
   app/models/example89.rb:24:50:
   - singleton(::Module)
+  app/models/example89.rb:25:8:
+  - singleton(::Example89::Base)
   app/models/example89.rb:31:6:
   - singleton(::Example89::Base)
   app/models/example89.rb:40:4:
@@ -3374,6 +3660,10 @@ receivers:
   - "::Example9::Dispatcher"
   app/models/example90.rb:16:63:
   - singleton(::Module)
+  app/models/example90.rb:17:10:
+  - singleton(::Example90::Base)
+  app/models/example90.rb:25:4:
+  - singleton(::Example90::Base)
   app/models/example90.rb:28:6:
   - singleton(::Example90::Base)
   app/models/example90.rb:33:4:
@@ -3390,12 +3680,16 @@ receivers:
   - "::Example90::Post"
   app/models/example91.rb:15:63:
   - singleton(::Module)
+  app/models/example91.rb:16:10:
+  - singleton(::Example91::Base)
   app/models/example91.rb:26:8:
   - singleton(::Example91::Builder::HasReader)
   app/models/example91.rb:30:22:
   - singleton(::Example91::Base)
   app/models/example91.rb:31:8:
   - singleton(::Example91::Builder::HasReader)
+  app/models/example91.rb:41:4:
+  - singleton(::Example91::Base)
   app/models/example91.rb:44:25:
   - singleton(::Example91::Builder::HasReader)
   app/models/example91.rb:49:4:
@@ -3410,6 +3704,8 @@ receivers:
   - singleton(::Example91::Post)
   app/models/example91.rb:55:29:
   - "::Example91::Post"
+  app/models/example92.rb:22:17:
+  - "::Array[untyped]"
   app/models/example92.rb:34:29:
   - singleton(::Example92::Rules)
   app/models/example92.rb:35:16:
@@ -3428,6 +3724,8 @@ receivers:
   - singleton(::Example92::Post)
   app/models/example92.rb:52:15:
   - singleton(::Example92::Post)
+  app/models/example93.rb:26:17:
+  - "::Array[untyped]"
   app/models/example93.rb:38:26:
   - singleton(::Example93::Rules)
   app/models/example93.rb:42:12:
@@ -3657,6 +3955,14 @@ receivers:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:50:50:
   - untyped
+  app/models/included_hook.rb:112:2:
+  - singleton(::IncludedHook)
+  app/models/included_hook.rb:113:2:
+  - singleton(::IncludedHook)
+  app/models/included_hook.rb:114:2:
+  - singleton(::IncludedHook)
+  app/models/included_hook.rb:115:2:
+  - singleton(::IncludedHook)
   app/models/included_hook.rb:127:26:
   - singleton(::IncludedHook)
   app/models/included_hook.rb:128:11:
@@ -3679,10 +3985,18 @@ receivers:
   - "::IncludedHook"
   app/models/included_hook.rb:164:22:
   - singleton(::IncludedHookFirst)
+  app/models/included_hook.rb:57:4:
+  - singleton(::IncludedHook::Sugared)
   app/models/included_hook.rb:59:4:
   - singleton(::IncludedHook::Sugared)
+  app/models/included_hook.rb:80:4:
+  - singleton(::IncludedHook::Homespun)
   app/models/included_hook.rb:82:4:
   - singleton(::IncludedHook::Homespun)
+  app/models/included_hook_first.rb:8:2:
+  - singleton(::IncludedHookFirst)
+  app/models/included_hook_second.rb:5:2:
+  - singleton(::IncludedHookSecond)
   app/models/notification.rb:11:2:
   - singleton(::Notification)
   app/models/notification.rb:35:9:
@@ -3693,6 +4007,8 @@ receivers:
   - "::Post"
   app/models/post.rb:109:4:
   - "::Post"
+  app/models/post.rb:10:2:
+  - singleton(::Post)
   app/models/post.rb:117:14:
   - "::Post"
   app/models/post.rb:119:15:
@@ -3727,16 +4043,22 @@ receivers:
   - "::Post"
   app/models/post.rb:49:4:
   - "::Post"
+  app/models/post.rb:4:2:
+  - singleton(::Post)
   app/models/post.rb:53:4:
   - "::Post"
   app/models/post.rb:53:9:
   - "::User"
+  app/models/post.rb:5:2:
+  - singleton(::Post)
   app/models/post.rb:61:30:
   - "::Post"
   app/models/post.rb:63:4:
   - "::Post"
   app/models/post.rb:67:48:
   - singleton(::Time)
+  app/models/post.rb:6:2:
+  - singleton(::Post)
   app/models/post.rb:71:13:
   - "::Post_Comment::ActiveRecord_Associations_CollectionProxy"
   app/models/post.rb:71:4:
@@ -3745,8 +4067,12 @@ receivers:
   - "::Post_Comment::ActiveRecord_Associations_CollectionProxy"
   app/models/post.rb:75:4:
   - "::Post"
+  app/models/post.rb:7:2:
+  - singleton(::Post)
   app/models/post.rb:84:6:
   - "::Post"
+  app/models/post.rb:8:2:
+  - singleton(::Post)
   app/models/post.rb:96:4:
   - "::Post"
   app/models/post/archiver.rb:18:12:
@@ -3755,6 +4081,12 @@ receivers:
   - "::Post::Archiver"
   app/models/post/archiver.rb:22:6:
   - singleton(::Post::Archiver)
+  app/models/post/commentable.rb:10:2:
+  - singleton(::Post::Commentable)
+  app/models/post/commentable.rb:8:2:
+  - singleton(::Post::Commentable)
+  app/models/post/exportable.rb:25:2:
+  - singleton(::Post::Exportable)
   app/models/post/notifiable.rb:30:6:
   - "(::Post & ::Post::Notifiable)"
   app/models/post/notifiable.rb:35:4:
@@ -3765,6 +4097,8 @@ receivers:
   - "(::User | nil)"
   app/models/post/notifiable.rb:44:15:
   - "(::Post & ::Post::Notifiable)"
+  app/models/post/notifiable.rb:4:2:
+  - singleton(::Post::Notifiable)
   app/models/post/notifiable.rb:51:18:
   - singleton(::EmailNotifier)
   app/models/post/notifiable.rb:51:22:
@@ -3797,6 +4131,8 @@ receivers:
   - singleton(::Post::TagDigest)
   app/models/post/taggable.rb:47:4:
   - "(::Post & ::Post::Taggable)"
+  app/models/post/taggable.rb:4:2:
+  - singleton(::Post::Taggable)
   app/models/post/taggable.rb:53:4:
   - "(::Post & ::Post::Taggable)"
   app/models/post/taggable.rb:57:4:
@@ -3841,6 +4177,8 @@ receivers:
   - "::User"
   app/models/user.rb:42:4:
   - "::User"
+  app/models/user.rb:4:2:
+  - singleton(::User)
   app/models/user.rb:51:35:
   - "::User_Post::ActiveRecord_Associations_CollectionProxy"
   app/models/user.rb:51:4:
@@ -3849,6 +4187,10 @@ receivers:
   - "::Notification::ActiveRecord_Relation"
   app/models/user.rb:57:4:
   - "::User"
+  app/models/user.rb:5:2:
+  - singleton(::User)
+  app/models/user.rb:8:2:
+  - singleton(::User)
   app/models/user/displayable.rb:13:26:
   - "(::User & ::User::Displayable)"
   app/models/user/displayable.rb:13:4:
@@ -3865,10 +4207,14 @@ receivers:
   - "(::User & ::User::Displayable)"
   app/models/user/displayable.rb:31:7:
   - "(::User & ::User::Displayable)"
+  app/models/user/displayable.rb:4:2:
+  - singleton(::User::Displayable)
   app/models/user/displayable.rb:7:27:
   - "::String"
   app/models/user/displayable.rb:8:25:
   - "::String"
+  app/models/user/notifiable.rb:16:2:
+  - singleton(::User::Notifiable)
   app/models/user/notifiable.rb:18:2:
   - singleton(::User::Notifiable)
   app/models/user/notifiable.rb:30:4:
@@ -3897,16 +4243,30 @@ receivers:
   - singleton(::Time)
   app/models/user/recoverable.rb:34:11:
   - "(::User & ::User::Recoverable)"
+  app/models/user/recoverable.rb:4:2:
+  - singleton(::User::Recoverable)
   app/models/user/recoverable.rb:6:2:
   - singleton(::User::Recoverable)
   app/models/user/recoverable.rb:7:4:
   - singleton(::User)
+  app/models/vault/totaled.rb:7:2:
+  - singleton(::Vault::Totaled)
   app/models/vault/totaled.rb:9:2:
   - singleton(::Vault::Totaled)
+  app/models/widget.rb:7:2:
+  - singleton(::Widget)
+  app/models/widget.rb:8:2:
+  - singleton(::Widget)
+  app/models/widget.rb:9:2:
+  - singleton(::Widget)
   app/models/widget/closeable.rb:22:18:
   - singleton(::WidgetAuditor)
   app/models/widget/closeable.rb:22:28:
   - "::WidgetAuditor"
+  app/models/widget/closeable.rb:5:2:
+  - singleton(::Widget::Closeable)
+  app/models/widget/publishable.rb:6:2:
+  - singleton(::Widget::Publishable)
   app/services/comment/create.rb:22:20:
   - singleton(::Comment)
   app/services/comment/create.rb:27:12:
@@ -4007,22 +4367,36 @@ receivers:
   - "::TagDestroy"
   app/services/widget_auditor.rb:29:4:
   - "::WidgetAuditor"
+  sig/generated/steep_actiontext_runtime/attribute.rb:15:4:
+  - singleton(::ActionText::Attribute)
   sig/generated/steep_actiontext_runtime/attribute.rb:17:4:
   - singleton(::ActionText::Attribute)
   sig/generated/steep_actiontext_runtime/attribute.rb:56:8:
   - "(singleton(::ActiveRecord::Base) & ::ActionText::Attribute::ClassMethods)"
   sig/generated/steep_actiontext_runtime/attribute.rb:57:8:
   - "(singleton(::ActiveRecord::Base) & ::ActionText::Attribute::ClassMethods)"
+  sig/generated/steep_actiontext_runtime/attribute.rb:64:2:
+  - singleton(::ActiveRecord::Base)
   sig/generated/steep_actionview_runtime/dashboard/show.rb:15:33:
   - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/dashboard/show.rb:7:2:
+  - singleton(::ERBDashboardShow)
   sig/generated/steep_actionview_runtime/layouts/application.rb:10:33:
   - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/layouts/application.rb:7:2:
+  - singleton(::ERBLayoutsApplication)
   sig/generated/steep_actionview_runtime/posts/_comment.rb:14:33:
   - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/_comment.rb:7:2:
+  - singleton(::ERBPartialPostsComment)
   sig/generated/steep_actionview_runtime/posts/_form.rb:14:33:
   - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/_form.rb:7:2:
+  - singleton(::ERBPartialPostsForm)
   sig/generated/steep_actionview_runtime/posts/_summary.rb:14:33:
   - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/_summary.rb:7:2:
+  - singleton(::ERBPartialPostsSummary)
   sig/generated/steep_actionview_runtime/posts/edit.rb:15:40:
   - ({ :locals => { :post => (::Post & ::Post::Validated) }, :partial => "posts/form"
     } | { :locals => { :post => (::Post & ::Post::Validated) }, :partial => "posts/summary"
@@ -4033,14 +4407,26 @@ receivers:
   - singleton(::ERBPartialPostsSummary)
   sig/generated/steep_actionview_runtime/posts/edit.rb:24:33:
   - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/edit.rb:7:2:
+  - singleton(::ERBPostsEdit)
+  sig/generated/steep_actionview_runtime/posts/edit.rb:8:2:
+  - singleton(::ERBPostsEdit)
   sig/generated/steep_actionview_runtime/posts/index.rb:15:33:
   - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/index.rb:7:2:
+  - singleton(::ERBPostsIndex)
+  sig/generated/steep_actionview_runtime/posts/index.rb:8:2:
+  - singleton(::ERBPostsIndex)
   sig/generated/steep_actionview_runtime/posts/new.rb:15:40:
   - '{ :locals => { :post => ::Post }, :partial => "posts/form" }'
   sig/generated/steep_actionview_runtime/posts/new.rb:17:47:
   - singleton(::ERBPartialPostsForm)
   sig/generated/steep_actionview_runtime/posts/new.rb:23:33:
   - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/new.rb:7:2:
+  - singleton(::ERBPostsNew)
+  sig/generated/steep_actionview_runtime/posts/new.rb:8:2:
+  - singleton(::ERBPostsNew)
   sig/generated/steep_actionview_runtime/posts/show.rb:16:40:
   - '{ :locals => { :comment => (::Comment & ::Comment::Validated) }, :partial =>
     "comment" }'
@@ -4050,10 +4436,18 @@ receivers:
   - singleton(::ERBPartialPostsSummary)
   sig/generated/steep_actionview_runtime/posts/show.rb:25:33:
   - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/posts/show.rb:7:2:
+  - singleton(::ERBPostsShow)
+  sig/generated/steep_actionview_runtime/posts/show.rb:8:2:
+  - singleton(::ERBPostsShow)
   sig/generated/steep_actionview_runtime/users/avatars/edit.rb:14:33:
   - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/users/avatars/edit.rb:7:2:
+  - singleton(::ERBUsersAvatarsEdit)
   sig/generated/steep_actionview_runtime/users/show.rb:15:33:
   - singleton(::ActionController::Parameters)
+  sig/generated/steep_actionview_runtime/users/show.rb:7:2:
+  - singleton(::ERBUsersShow)
   sig/generated/steep_activejob_runtime/active_job_base.rb:14:10:
   - singleton(::ActiveJob::Base)
   sig/generated/steep_activejob_runtime/active_job_base.rb:15:8:
@@ -4144,6 +4538,8 @@ receivers:
   - "::ActiveSupport::Inflector::Inflections"
   sig/generated/steep_activesupport_runtime/inflector.rb:106:8:
   - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_activesupport_runtime/inflector.rb:14:4:
+  - singleton(::ActiveSupport::Inflector)
   sig/generated/steep_activesupport_runtime/inflector.rb:160:17:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:161:8:
@@ -4152,10 +4548,14 @@ receivers:
   - "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:171:22:
   - "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
+  sig/generated/steep_activesupport_runtime/inflector.rb:172:17:
+  - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:181:22:
   - "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:182:22:
   - "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
+  sig/generated/steep_activesupport_runtime/inflector.rb:183:19:
+  - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:195:22:
   - "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:196:22:
@@ -4194,6 +4594,8 @@ receivers:
   - "::ActiveSupport::Inflector::Inflections"
   sig/generated/steep_activesupport_runtime/inflector.rb:230:22:
   - "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
+  sig/generated/steep_activesupport_runtime/inflector.rb:243:16:
+  - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:257:10:
   - "::ActiveSupport::Inflector::Inflections"
   sig/generated/steep_activesupport_runtime/inflector.rb:258:10:
@@ -4210,6 +4612,10 @@ receivers:
   - singleton(::ActiveSupport::Inflector::Inflections::Uncountables)
   sig/generated/steep_activesupport_runtime/inflector.rb:268:10:
   - "::ActiveSupport::Inflector::Inflections"
+  sig/generated/steep_activesupport_runtime/inflector.rb:275:49:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_activesupport_runtime/inflector.rb:275:82:
+  - "::Hash[untyped, untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:292:26:
   - singleton(::ActiveSupport::Inflector::Inflections)
   sig/generated/steep_activesupport_runtime/inflector.rb:294:20:
@@ -4224,6 +4630,8 @@ receivers:
   - "(::Object & ::ActiveSupport::Inflector)"
   sig/generated/steep_activesupport_runtime/inflector.rb:309:6:
   - "(::Object & ::ActiveSupport::Inflector)"
+  sig/generated/steep_activesupport_runtime/inflector.rb:318:14:
+  - untyped
   sig/generated/steep_activesupport_runtime/inflector.rb:318:24:
   - "(::Object & ::ActiveSupport::Inflector)"
   sig/generated/steep_activesupport_runtime/inflector.rb:318:57:
@@ -4368,6 +4776,10 @@ receivers:
   - singleton(::Array)
   sig/generated/steep_ar_runtime/active_support/concern.rb:29:52:
   - untyped
+  sig/generated/steep_ar_runtime/active_support/concern.rb:34:41:
+  - untyped
+  sig/generated/steep_ar_runtime/active_support/concern.rb:36:13:
+  - untyped
   sig/generated/steep_ar_runtime/active_support/concern.rb:51:103:
   - singleton(::Module)
   sig/generated/steep_ar_runtime/assignment.rb:13:4:
@@ -4386,6 +4798,8 @@ receivers:
   - "::Assignment"
   sig/generated/steep_ar_runtime/comment/generated_relation_methods.rb:8:14:
   - singleton(::Comment)
+  sig/generated/steep_ar_runtime/notification.rb:7:2:
+  - singleton(::Notification)
   sig/generated/steep_ar_runtime/post.rb:12:63:
   - singleton(::Post_Assignment::ActiveRecord_Associations_CollectionProxy)
   sig/generated/steep_ar_runtime/post.rb:16:60:
@@ -4394,6 +4808,8 @@ receivers:
   - singleton(::Post_Tag::ActiveRecord_Associations_CollectionProxy)
   sig/generated/steep_ar_runtime/post.rb:8:60:
   - singleton(::Post_Comment::ActiveRecord_Associations_CollectionProxy)
+  sig/generated/steep_ar_runtime/post/generated_relation_methods.rb:7:2:
+  - singleton(::Post::GeneratedRelationMethods)
   sig/generated/steep_ar_runtime/post_assignment.rb:16:24:
   - singleton(::Assignment)
   sig/generated/steep_ar_runtime/post_assignment.rb:17:18:
@@ -4452,6 +4868,8 @@ receivers:
   - singleton(::User_Post::ActiveRecord_Associations_CollectionProxy)
   sig/generated/steep_ar_runtime/user.rb:18:60:
   - singleton(::User_Comment::ActiveRecord_Associations_CollectionProxy)
+  sig/generated/steep_ar_runtime/user.rb:7:2:
+  - singleton(::User)
   sig/generated/steep_ar_runtime/user_comment.rb:16:21:
   - singleton(::Comment)
   sig/generated/steep_ar_runtime/user_comment.rb:17:11:
@@ -4503,6 +4921,8 @@ receivers:
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:105:19:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:114:17:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:120:23:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:120:8:
   - "::Concurrent::Collection::NonConcurrentMapBackend"
@@ -4578,6 +4998,8 @@ receivers:
   - "::String"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:85:
   - "(^(*untyped) -> untyped | nil)"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:362:11:
+  - untyped
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:368:36:
   - "::Concurrent::Hash[::Symbol, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:371:31:
@@ -4591,6 +5013,10 @@ receivers:
   sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:50:20:
   - "{ :< => ::Array[::Integer], :<= => ::Array[::Integer], :== => ::Array[::Integer],
     :> => ::Array[::Integer], :>= => ::Array[::Integer] }"
+  sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:56:2:
+  - singleton(::Concurrent)
+  sig/generated/steep_controller_runtime/action_controller/base.rb:14:4:
+  - singleton(::ActionController::Base)
   sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:23:10:
   - "(::ActionController::Base & ::ActionController::HttpAuthentication::Token::ControllerMethods)"
   sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:23:60:
@@ -4880,6 +5306,8 @@ receivers:
   - singleton(::UsersController)
   sig/generated/steep_controller_runtime/users_controller.rb:55:16:
   - singleton(::UsersController)
+  sig/generated/steep_current_runtime/current.rb:33:2:
+  - singleton(::Current)
   sig/generated/steep_current_runtime/current.rb:41:25:
   - "::Current"
   sig/generated/steep_current_runtime/current.rb:41:4:
@@ -4912,16 +5340,63 @@ receivers:
   - "::ActionController::Base"
   sig/generated/steep_devise_runtime/devise_scoped_helpers.rb:31:4:
   - "::ActionController::Base"
+  sig/generated/steep_devise_runtime/devise_scoped_helpers.rb:41:4:
+  - singleton(::ActionController::Base)
   sig/generated/steep_ruby_runtime/module.rb:14:4:
   - "::Module"
+  sig/generated/steep_ruby_runtime/module.rb:14:87:
+  - "::Array[(::Module | singleton(::Example52::Baz) | singleton(::Example53::Baz)
+    | singleton(::IncludedHook::Slots) | singleton(::IncludedHook::Hookable) | singleton(::IncludedHook::Sugared)
+    | singleton(::IncludedHook::Homespun) | singleton(::Example62::Shared) | singleton(::Example62::Slots)
+    | singleton(::Example62::Middle) | singleton(::User::Recoverable) | singleton(::User::Displayable)
+    | singleton(::User::Notifiable) | singleton(::ActiveStorage::Authorize) | singleton(::ChoiceSentenceArrayConversion)
+    | singleton(::RelationPrependOrder) | singleton(::Example34::Baz) | singleton(::FilterConfiguration)
+    | singleton(::EvalReopen::Slots) | singleton(::Example101::Assoc) | singleton(::Example13::Registry::GeneratedAttributes)
+    | singleton(::Example3::Foo::GeneratedAttributes) | singleton(::Example31::Age)
+    | singleton(::Example41::Baz) | singleton(::Example44::Baz) | singleton(::Example45::Baz)
+    | singleton(::Example48::Baz) | singleton(::Example54::Baz) | singleton(::Example55::Baz)
+    | singleton(::Example57::Fields) | singleton(::Example57Windowed) | singleton(::Example58::Defaults)
+    | singleton(::Example59::Naming) | singleton(::Example60::Labels) | singleton(::Vault::Totaled)
+    | singleton(::Example66Trackable) | singleton(::Example66Override) | singleton(::IncludedHook::Shared)
+    | singleton(::Commentable) | singleton(::Post::Taggable) | singleton(::Post::Commentable)
+    | singleton(::Post::Notifiable) | singleton(::Post::Exportable) | singleton(::Test::Filtrable)
+    | singleton(::Eventable) | singleton(::Widget::Publishable) | singleton(::Widget::Closeable)
+    | singleton(::ActionText::Attribute) | singleton(::ActionViewContext) | singleton(::PostsHelper)
+    | singleton(::Notification::GeneratedStoreAccessors) | singleton(::Post::Taggable::ClassMethods)
+    | singleton(::User::GeneratedStoreAccessors) | singleton(::ActionController::HttpAuthentication::Token::ControllerMethods)
+    | singleton(::Current::GeneratedAttributeMethods) | singleton(::DeviseScopedHelpers)
+    | singleton(::Example108::Gauge::GeneratedReaders) | singleton(::Example109::Post::GeneratedRelationMethods)
+    | singleton(::Example110::Dial::GeneratedOptionReaders) | singleton(::Example89::Widget::GeneratedMethods)
+    | singleton(::Example90::Post::GeneratedAssociationMethods) | singleton(::Example91::Post::GeneratedAssociationMethods))]"
   sig/generated/steep_ruby_runtime/module.rb:29:4:
   - "::Module"
+  sig/generated/steep_ruby_runtime/module.rb:29:87:
+  - "::Array[untyped]"
   sig/generated/steep_ruby_runtime/module.rb:53:4:
   - "::Module"
   sig/generated/steep_ruby_runtime/module.rb:64:4:
   - "::Module"
+  sig/generated/steep_ruby_runtime/module.rb:94:24:
+  - untyped
   sig/generated/steep_ruby_runtime/object.rb:23:4:
   - "::Object"
+  sig/generated/steep_ruby_runtime/object.rb:23:87:
+  - "::Array[(singleton(::ActiveSupport::Concern) | singleton(::Example48::Foo) |
+    singleton(::Example52::Foo) | singleton(::Example53::Foo) | singleton(::Example54::Foo)
+    | singleton(::Example109::Core::ClassMethods) | singleton(::Example109::Associations::ClassMethods)
+    | singleton(::Example22::Foo) | singleton(::Example23::Foo) | singleton(::Example24::Foo)
+    | singleton(::Example25::Foo) | singleton(::Example26::Foo) | singleton(::Example27::Foo)
+    | singleton(::Example28::Foo) | singleton(::Example29::Foo) | singleton(::Example31::Foo)
+    | singleton(::Example32::Foo) | singleton(::Example33::Foo) | singleton(::Example34::Foo)
+    | singleton(::Example37::Foo) | singleton(::Example38::Foo) | singleton(::Example39::Foo)
+    | singleton(::Example40::Foo) | singleton(::Example41::Foo) | singleton(::Example42::Foo)
+    | singleton(::Example43::Foo) | singleton(::Example44::Foo) | singleton(::Example45::Foo)
+    | singleton(::Example47::Foo) | singleton(::Example47::Baz::BananaMethods) | singleton(::Example49::Baz)
+    | singleton(::Example50::Foo) | singleton(::Example50::Baz::BananaMethods) | singleton(::Example51::Foo)
+    | singleton(::Example55::Foo) | singleton(::Example62::Deferring) | singleton(::Example71::Writes)
+    | singleton(::Example90::Core::ClassMethods) | singleton(::Example91::Core::ClassMethods)
+    | singleton(::IncludedHook::HomeMade) | singleton(::Enumerize) | singleton(::ActiveSupport::Inflector)
+    | singleton(::Concurrent::Utility::EngineDetector) | ::Module)]"
   sig/generated/steep_ruby_runtime/object.rb:30:6:
   - "::Object"
   sig/generated/steep_ruby_runtime/thread.rb:10:27:
@@ -4944,10 +5419,16 @@ receivers:
   - "(::Article & ::Article::AfterSummary)"
   sig/generated/steep_string_evals/app/models/article.rb:36:13:
   - "(::Article & ::Article::AfterSummary)"
+  sig/generated/steep_string_evals/app/models/example108.rb:12:2:
+  - singleton(::Example108::Gauge)
+  sig/generated/steep_string_evals/app/models/example109.rb:12:2:
+  - singleton(::Example109::Post)
   sig/generated/steep_string_evals/app/models/example109.rb:17:4:
   - "(::Example109::Post & ::Example109::Post::GeneratedRelationMethods)"
   sig/generated/steep_string_evals/app/models/example109.rb:21:4:
   - "(::Example109::Post & ::Example109::Post::GeneratedRelationMethods)"
+  sig/generated/steep_string_evals/app/models/example110.rb:16:2:
+  - singleton(::Example110::Dial)
   sig/generated/steep_string_evals/app/models/example60.rb:10:118:
   - "::Example60"
   sig/generated/steep_string_evals/app/models/example60.rb:10:209:
@@ -5008,6 +5489,12 @@ receivers:
   - "::Example82"
   sig/generated/steep_string_evals/app/models/example82.rb:11:91:
   - "::User"
+  sig/generated/steep_string_evals/app/models/example89.rb:12:2:
+  - singleton(::Example89::Widget)
+  sig/generated/steep_string_evals/app/models/example90.rb:12:2:
+  - singleton(::Example90::Post)
+  sig/generated/steep_string_evals/app/models/example91.rb:12:2:
+  - singleton(::Example91::Post)
   sig/generated/steep_string_evals/app/models/post.rb:10:110:
   - "::Post"
   sig/generated/steep_string_evals/app/models/post.rb:10:193:
@@ -5289,13 +5776,13 @@ exits:
     "(:en) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    "(:en) &/home/felipefelix/workspaces/wt594/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
+    "(:en) &/home/felipefelix/workspaces/wt570r/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
     "(:en) on singleton(::Example102::Inflector) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/wt594/spec/dummy/app/models/example102.rb:2354
+    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/wt570r/spec/dummy/app/models/example102.rb:2354
       with {@locale_rule_sets: {  }}"
     : ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
@@ -6549,7 +7036,7 @@ exits:
   Example93::Inflector.configure:
     "() &-> ::Array[untyped] with {@rule_set: nil}":
       ivars: {}
-    "() &/home/felipefelix/workspaces/wt594/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
+    "() &/home/felipefelix/workspaces/wt570r/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
       ivars:
         "@rule_set":
           class: "::Example93::Rules"
@@ -6557,7 +7044,7 @@ exits:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
     "() on singleton(::Example93::Inflector) &-> ::Array[untyped] with {@rule_set: nil}":
       ivars: {}
-    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/wt594/spec/dummy/app/models/example93.rb:1310
+    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/wt570r/spec/dummy/app/models/example93.rb:1310
       with {@rule_set: nil}"
     : ivars:
         "@rule_set":
