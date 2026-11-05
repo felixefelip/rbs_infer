@@ -90,7 +90,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge, :dummy_app do
       code = <<~RUBY
         class Foo
           def bar
-            result = 42 > 10
+            result = Comment.count > 10
           end
         end
       RUBY

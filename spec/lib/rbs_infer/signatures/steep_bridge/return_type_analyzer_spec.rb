@@ -18,7 +18,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
       RUBY
 
       result = bridge.method_return_types(code, file: nil)
-      expect(result["bar"]).to eq("bool")
+      expect(result["bar"]).to eq("true")
     end
 
     it "resolves chained method return types" do
