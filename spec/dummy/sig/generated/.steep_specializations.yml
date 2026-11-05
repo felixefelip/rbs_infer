@@ -4636,6 +4636,8 @@ receivers:
   - "::DashboardController"
   sig/generated/steep_controller_runtime/dashboard_controller.rb:37:4:
   - "::DashboardController"
+  sig/generated/steep_controller_runtime/dashboard_controller.rb:41:20:
+  - singleton(::DashboardController)
   sig/generated/steep_controller_runtime/posts_assignments_controller.rb:10:4:
   - "::Posts::AssignmentsController"
   sig/generated/steep_controller_runtime/posts_assignments_controller.rb:11:14:
@@ -4652,6 +4654,8 @@ receivers:
   - "::Posts::AssignmentsController"
   sig/generated/steep_controller_runtime/posts_assignments_controller.rb:19:4:
   - "::Posts::AssignmentsController"
+  sig/generated/steep_controller_runtime/posts_assignments_controller.rb:23:29:
+  - singleton(::Posts::AssignmentsController)
   sig/generated/steep_controller_runtime/posts_controller.rb:102:4:
   - "::PostsController"
   sig/generated/steep_controller_runtime/posts_controller.rb:103:14:
@@ -4670,8 +4674,22 @@ receivers:
   - singleton(::ERBPostsEdit)
   sig/generated/steep_controller_runtime/posts_controller.rb:111:4:
   - "::PostsController"
+  sig/generated/steep_controller_runtime/posts_controller.rb:115:16:
+  - singleton(::PostsController)
+  sig/generated/steep_controller_runtime/posts_controller.rb:116:16:
+  - singleton(::PostsController)
+  sig/generated/steep_controller_runtime/posts_controller.rb:117:16:
+  - singleton(::PostsController)
+  sig/generated/steep_controller_runtime/posts_controller.rb:118:16:
+  - singleton(::PostsController)
+  sig/generated/steep_controller_runtime/posts_controller.rb:119:16:
+  - singleton(::PostsController)
   sig/generated/steep_controller_runtime/posts_controller.rb:11:35:
   - singleton(::ERBPostsIndex)
+  sig/generated/steep_controller_runtime/posts_controller.rb:120:16:
+  - singleton(::PostsController)
+  sig/generated/steep_controller_runtime/posts_controller.rb:121:16:
+  - singleton(::PostsController)
   sig/generated/steep_controller_runtime/posts_controller.rb:12:31:
   - singleton(::ERBPostsNew)
   sig/generated/steep_controller_runtime/posts_controller.rb:13:33:
@@ -4808,6 +4826,10 @@ receivers:
   - "::Users::AvatarsController"
   sig/generated/steep_controller_runtime/users_avatars_controller.rb:44:4:
   - "::Users::AvatarsController"
+  sig/generated/steep_controller_runtime/users_avatars_controller.rb:48:25:
+  - singleton(::Users::AvatarsController)
+  sig/generated/steep_controller_runtime/users_avatars_controller.rb:49:25:
+  - singleton(::Users::AvatarsController)
   sig/generated/steep_controller_runtime/users_controller.rb:10:33:
   - singleton(::ERBUsersShow)
   sig/generated/steep_controller_runtime/users_controller.rb:11:40:
@@ -4852,6 +4874,12 @@ receivers:
   - "::UsersController"
   sig/generated/steep_controller_runtime/users_controller.rb:49:4:
   - "::UsersController"
+  sig/generated/steep_controller_runtime/users_controller.rb:53:16:
+  - singleton(::UsersController)
+  sig/generated/steep_controller_runtime/users_controller.rb:54:16:
+  - singleton(::UsersController)
+  sig/generated/steep_controller_runtime/users_controller.rb:55:16:
+  - singleton(::UsersController)
   sig/generated/steep_current_runtime/current.rb:41:25:
   - "::Current"
   sig/generated/steep_current_runtime/current.rb:41:4:
@@ -5261,13 +5289,13 @@ exits:
     "(:en) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    "(:en) &/home/felipefelix/workspaces/wt587/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
+    "(:en) &/home/felipefelix/workspaces/wt594/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
     "(:en) on singleton(::Example102::Inflector) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/wt587/spec/dummy/app/models/example102.rb:2354
+    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/wt594/spec/dummy/app/models/example102.rb:2354
       with {@locale_rule_sets: {  }}"
     : ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
@@ -6521,7 +6549,7 @@ exits:
   Example93::Inflector.configure:
     "() &-> ::Array[untyped] with {@rule_set: nil}":
       ivars: {}
-    "() &/home/felipefelix/workspaces/wt587/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
+    "() &/home/felipefelix/workspaces/wt594/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
       ivars:
         "@rule_set":
           class: "::Example93::Rules"
@@ -6529,7 +6557,7 @@ exits:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
     "() on singleton(::Example93::Inflector) &-> ::Array[untyped] with {@rule_set: nil}":
       ivars: {}
-    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/wt587/spec/dummy/app/models/example93.rb:1310
+    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/wt594/spec/dummy/app/models/example93.rb:1310
       with {@rule_set: nil}"
     : ivars:
         "@rule_set":

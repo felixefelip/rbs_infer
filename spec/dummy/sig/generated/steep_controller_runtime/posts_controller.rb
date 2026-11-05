@@ -111,3 +111,11 @@ class PostsController
     publish
   end
 end
+
+PostsController.new.send(:__rbs_infer__run_index)
+PostsController.new.send(:__rbs_infer__run_show)
+PostsController.new.send(:__rbs_infer__run_new)
+PostsController.new.send(:__rbs_infer__run_create)
+PostsController.new.send(:__rbs_infer__run_update)
+PostsController.new.send(:__rbs_infer__run_destroy)
+PostsController.new.send(:__rbs_infer__run_publish)
