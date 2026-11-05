@@ -1,0 +1,8 @@
+class Thread
+  self.@__rbs_infer__main: nil
+
+  @__rbs_infer__locals: Hash[untyped, untyped]?
+
+  def []: (:example113_settings key) -> untyped | ...
+  def []=: (:example113_settings key, untyped value) -> untyped | ...
+end

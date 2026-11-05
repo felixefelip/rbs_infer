@@ -15,7 +15,8 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     Dir.mktmpdir do |dir|
       files = build_in(dir)
 
-      expect(files.map(&:filename)).to eq(["module.rb", "object.rb", "ruby_engine.rb", "thread_mutex.rb", "array.rb"])
+      expect(files.map(&:filename))
+        .to eq(["module.rb", "object.rb", "ruby_engine.rb", "thread_mutex.rb", "thread.rb", "array.rb"])
       expect(files.first.source).to include(
         "class Module\n",
         "  def include(*modules)\n",
@@ -287,6 +288,20 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     end
   end
 
+  it "emits `Thread.current` as an allocated main thread, and its locals as storage made by the first write" do
+    Dir.mktmpdir do |dir|
+      expect(source_of(dir, "thread.rb")).to include(
+        "class Thread\n",
+        "  # @rbs_infer no-signature\n  def self.current\n    @__rbs_infer__main ||= allocate\n",
+        "  # @rbs_infer |...\n  def [](key)\n    locals = @__rbs_infer__locals\n",
+        "    return nil unless locals\n",
+        "    when Symbol then locals[key]\n    else locals[key.to_str.to_sym]\n",
+        "  # @rbs_infer |...\n  def []=(key, value)\n",
+        "    (@__rbs_infer__locals ||= Hash.new)[id] = value\n"
+      )
+    end
+  end
+
   it "emits `Array#sum`, adding what the block makes of each element to `init`" do
     Dir.mktmpdir do |dir|
       expect(source_of(dir, "array.rb")).to include(
@@ -323,7 +338,7 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
         described_class.new(app_dir: dir).generate
 
         expect(Dir.children(sidecar).sort)
-          .to eq(["array.rb", "module.rb", "object.rb", "ruby_engine.rb", "thread_mutex.rb"])
+          .to eq(["array.rb", "module.rb", "object.rb", "ruby_engine.rb", "thread.rb", "thread_mutex.rb"])
       end
     end
   end
