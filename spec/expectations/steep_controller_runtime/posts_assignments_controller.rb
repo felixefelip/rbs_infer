@@ -19,3 +19,5 @@ class Posts::AssignmentsController
     create
   end
 end
+
+Posts::AssignmentsController.new.send(:__rbs_infer__run_create)

@@ -37,3 +37,5 @@ class DashboardController
     render :show
   end
 end
+
+DashboardController.new.send(:__rbs_infer__run_show)
