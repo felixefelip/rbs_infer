@@ -165,7 +165,7 @@ module RbsInfer::Signatures
     # preserve the historical source order.
     def class_level_lines(members, indent, method_param_types)
       out = []
-      members.select { |m| m.kind == :class_method && m.owner.nil? }.each do |member|
+      members.select { |m| m.kind == :class_method && m.owner.nil? && !m.no_signature }.each do |member|
         sig = member.signature
         # Param types inferred from call-sites also apply to singletons
         # (`Current.user = x` → `def self.user=: (User? value)`) —
@@ -414,7 +414,7 @@ module RbsInfer::Signatures
                  mod_members.select { |m| m.kind == :extend }.map { |ext| "#{inner_indent}extend #{qualify(ext.name)}" }
         add_group(lines, body_start, mixins)
 
-        class_level = mod_members.select { |m| m.kind == :class_method }.map do |m|
+        class_level = mod_members.select { |m| m.kind == :class_method && !m.no_signature }.map do |m|
           # The same substitution the top-level singletons get. Omitting it left
           # a nested module's `def self.x` carrying the raw structural signature
           # even once its call sites had been read (felixefelip/rbs_infer#159).

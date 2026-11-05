@@ -29,6 +29,24 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
                                                               module_singleton_ivar_types: module_singleton_ivar_types, markers: markers, nested_modules: nested_modules)
   end
 
+  describe "a def marked `# @rbs_infer no-signature`" do
+    it "declares nothing, on the class object as on its instances" do
+      members = [
+        RbsInfer::Inference::Member.new(kind: :method, name: "read", signature: "read: () -> untyped", visibility: :public,
+                                        no_signature: true),
+        RbsInfer::Inference::Member.new(kind: :class_method, name: "current", signature: "current: () -> untyped",
+                                        visibility: :public, no_signature: true),
+        RbsInfer::Inference::Member.new(kind: :class_method, name: "kept", signature: "kept: () -> 1", visibility: :public)
+      ]
+
+      result = build_rbs(make_builder(target_class: "Clock", superclass_name: nil), members)
+
+      expect(result).not_to include("read")
+      expect(result).not_to include("current")
+      expect(result).to include("  def self.kept: () -> 1\n")
+    end
+  end
+
   describe "initialize" do
     it "is rendered -> void whatever its body ended with, and a class method of that name is not" do
       members = [
