@@ -1,0 +1,16 @@
+class Example113
+  def self.settings: () -> untyped
+  def self.settings=: (untyped settings) -> untyped
+
+  def name: () -> untyped
+end
+
+class Example113Settings
+  attr_reader name: :default
+
+  def initialize: () -> void
+
+  class AfterInitialize
+    attr_reader name: Symbol
+  end
+end

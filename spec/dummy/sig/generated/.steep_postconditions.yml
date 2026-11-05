@@ -699,6 +699,11 @@ postconditions:
   effects:
     may_write:
     - "@tags"
+- class: Example113Settings
+  method: initialize
+  effects:
+    may_write:
+    - "@name"
 - class: Example11::Partial
   method: initialize
   effects:
@@ -2232,6 +2237,16 @@ postconditions:
   method: owner
   effects:
     returns_ivar: "@owner"
+- class: Thread
+  method: "[]="
+  effects:
+    may_write:
+    - "@__rbs_infer__locals"
+- class: Thread
+  method: current
+  effects:
+    may_write:
+    - "@__rbs_infer__main"
 - class: Thread::Mutex
   method: synchronize
   effects:
