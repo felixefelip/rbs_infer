@@ -21,7 +21,8 @@ module RbsInfer
         #     This is the only place the "a callback can abort the chain"
         #     semantics lives.
         #   * one CONTROLLER reopen per controller — a private
-        #     `__rbs_infer__run_<action>` per action, holding that action's
+        #     `__rbs_infer__run_<action>` per action, each called at the top level
+        #     after the reopen as the server would dispatch it, holding that action's
         #     effective before_action chain inlined, each link followed by the
         #     halt check, and the action call last; plus (when the controller has
         #     explicit `render :view` calls) a public `render` override that
@@ -197,7 +198,19 @@ module RbsInfer
               class #{class_name}
               #{members.join("\n\n")}
               end
+              #{dispatch_lines(class_name, actions)}
             RUBY
+          end
+
+          # What the server does with each request: Rails reaches the action
+          # through `RouteSet#call` → `controller.dispatch` → `process_action`,
+          # which ends in `send_action`, an alias of `send`. Written at the top
+          # level, as a call no method holds, so a reader that counts only the
+          # calls code that runs makes sees each runner run.
+          def dispatch_lines(class_name, actions)
+            return "" if actions.empty?
+
+            "\n" + actions.map { |action| "#{class_name}.new.send(:__rbs_infer__run_#{action})" }.join("\n")
           end
 
           # A per-controller override of `render`: the ONE place a view of this

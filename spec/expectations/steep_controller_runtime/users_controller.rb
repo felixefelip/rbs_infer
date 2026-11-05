@@ -49,3 +49,7 @@ class UsersController
     featured_post
   end
 end
+
+UsersController.new.send(:__rbs_infer__run_index)
+UsersController.new.send(:__rbs_infer__run_show)
+UsersController.new.send(:__rbs_infer__run_featured_post)

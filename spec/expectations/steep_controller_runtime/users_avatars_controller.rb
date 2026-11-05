@@ -44,3 +44,6 @@ class Users::AvatarsController
     update
   end
 end
+
+Users::AvatarsController.new.send(:__rbs_infer__run_edit)
+Users::AvatarsController.new.send(:__rbs_infer__run_update)

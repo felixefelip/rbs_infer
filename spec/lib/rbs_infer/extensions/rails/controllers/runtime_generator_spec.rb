@@ -305,6 +305,27 @@ RSpec.describe RbsInfer::Extensions::Rails::Controllers::RuntimeGenerator do
     end
   end
 
+  describe "the dispatch" do
+    it "calls each action's runner at the top level, after the reopen" do
+      result = build("app/controllers/posts_controller.rb" => <<~RUBY)
+        class PostsController < ActionController::Base
+          def index; end
+          def show; end
+
+          private
+
+          def set_post; end
+        end
+      RUBY
+
+      source = source_of(result, "posts_controller.rb")
+      expect(source).to end_with(
+        "end\n\nPostsController.new.send(:__rbs_infer__run_index)\nPostsController.new.send(:__rbs_infer__run_show)\n"
+      )
+      expect(source).not_to include("__rbs_infer__run_set_post")
+    end
+  end
+
   describe "what is not a controller" do
     # `app/controllers` also holds framework reopens and plain classes; only
     # a `*Controller` with actions has a request flow to model.
