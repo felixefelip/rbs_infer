@@ -1524,6 +1524,10 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
       assert_runtime_rbs("steep_actiontext_runtime")
     end
 
+    it "ActiveSupport runtime" do
+      assert_runtime_rbs("steep_activesupport_runtime")
+    end
+
     # What each `class_eval` of a string defines, as the checked Ruby
     # `Project::StringEvalSources` writes from `.steep_string_evals.yml`: the
     # methods `delegate`, `has_rich_text` and the examples' own macros define.
