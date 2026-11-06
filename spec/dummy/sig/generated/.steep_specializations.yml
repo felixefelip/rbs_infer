@@ -1492,6 +1492,8 @@ methods:
   SendDispatch#stamp:
     ("a", "b", "c"): '"stamped: a"'
     ("post"): '"stamped: post"'
+  Thread#[]:
+    "(:example113_settings) with {@__rbs_infer__locals: nil}": nil
   Thread::Mutex#synchronize:
     "() &-> bool": bool
 declarations:
@@ -1583,6 +1585,7 @@ declarations:
   IncludedHook::Slots#slot=: '"value"'
   IncludedHook::Slots#stamp=: '"value"'
   Notification::GeneratedStoreAccessors#channel=: '"none"'
+  Thread#[]: nil
 receivers:
   app/controllers/application_controller.rb:13:28:
   - untyped
@@ -2184,20 +2187,20 @@ receivers:
   - singleton(::Example110::Dial)
   app/models/example112.rb:8:16:
   - singleton(::Set)
-  app/models/example113.rb:15:40:
+  app/models/example113.rb:10:40:
   - singleton(::Example113Settings)
+  app/models/example113.rb:11:13:
+  - singleton(::Thread)
+  app/models/example113.rb:11:20:
+  - "::Thread"
   app/models/example113.rb:16:13:
   - singleton(::Thread)
   app/models/example113.rb:16:20:
   - "::Thread"
-  app/models/example113.rb:21:13:
-  - singleton(::Thread)
-  app/models/example113.rb:21:20:
-  - "::Thread"
-  app/models/example113.rb:25:24:
+  app/models/example113.rb:20:24:
   - singleton(::Example113)
-  app/models/example113.rb:25:33:
-  - untyped
+  app/models/example113.rb:20:33:
+  - "::Example113Settings"
   app/models/example12.rb:16:4:
   - "::Example12"
   app/models/example12.rb:20:4:
@@ -4754,6 +4757,8 @@ receivers:
   - untyped
   sig/generated/steep_activesupport_runtime/inflector.rb:49:23:
   - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/inflector.rb:54:10:
+  - "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:79:21:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:79:34:
@@ -4986,24 +4991,70 @@ receivers:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/constants.rb:11:18:
   - singleton(::Object)
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:141:10:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:161:64:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:162:24:
   - "^(*untyped) -> untyped"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:192:26:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:215:6:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:227:17:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:239:6:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:250:29:
   - "::Array[untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:250:6:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:259:29:
   - "::Array[untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:259:6:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:270:6:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:280:6:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:302:6:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:310:6:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:319:6:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:326:6:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:328:26:
   - "::Hash[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:328:6:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:335:6:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:336:6:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:51:
   - "::String"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:60:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:85:
   - "(^(*untyped) -> untyped | nil)"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:351:6:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:357:6:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:362:11:
   - untyped
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:362:34:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:368:36:
   - "::Concurrent::Hash[::Symbol, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:369:8:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:371:31:
   - "::Concurrent::Hash[::Symbol, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:372:8:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:29:26:
   - "::Hash[::String, ::String]"
   sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:34:26:
@@ -5342,6 +5393,8 @@ receivers:
   - "::ActionController::Base"
   sig/generated/steep_devise_runtime/devise_scoped_helpers.rb:41:4:
   - singleton(::ActionController::Base)
+  sig/generated/steep_ruby_runtime/array.rb:14:20:
+  - "::Array[untyped]"
   sig/generated/steep_ruby_runtime/module.rb:14:4:
   - "::Module"
   sig/generated/steep_ruby_runtime/module.rb:14:87:
@@ -5776,13 +5829,13 @@ exits:
     "(:en) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    "(:en) &/home/felipefelix/workspaces/wt570r/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
+    "(:en) &/home/felipefelix/workspaces/wt591/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
     "(:en) on singleton(::Example102::Inflector) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/wt570r/spec/dummy/app/models/example102.rb:2354
+    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/wt591/spec/dummy/app/models/example102.rb:2354
       with {@locale_rule_sets: {  }}"
     : ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
@@ -7036,7 +7089,7 @@ exits:
   Example93::Inflector.configure:
     "() &-> ::Array[untyped] with {@rule_set: nil}":
       ivars: {}
-    "() &/home/felipefelix/workspaces/wt570r/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
+    "() &/home/felipefelix/workspaces/wt591/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
       ivars:
         "@rule_set":
           class: "::Example93::Rules"
@@ -7044,7 +7097,7 @@ exits:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
     "() on singleton(::Example93::Inflector) &-> ::Array[untyped] with {@rule_set: nil}":
       ivars: {}
-    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/wt570r/spec/dummy/app/models/example93.rb:1310
+    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/wt591/spec/dummy/app/models/example93.rb:1310
       with {@rule_set: nil}"
     : ivars:
         "@rule_set":
@@ -7505,3 +7558,7 @@ exits:
     "(singleton(::Example91::Core::ClassMethods)) with {@generated_association_methods: nil}":
       ivars:
         "@generated_association_methods": nil
+  Thread#[]:
+    "(:example113_settings) with {@__rbs_infer__locals: nil}":
+      ivars:
+        "@__rbs_infer__locals": nil

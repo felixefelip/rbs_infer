@@ -23,10 +23,10 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
   # (docs/engineering/required-threaded-deps.md). This helper supplies the
   # test-only empty defaults so examples state only what they exercise.
   def build_rbs(builder, members, init_arg_types = {}, attr_types = {}, *rest, ivar_types: {},
-                singleton_ivar_types: {}, module_ivar_types: {}, module_singleton_ivar_types: {}, markers: [], nested_modules: [])
+                singleton_ivar_types: {}, module_ivar_types: {}, module_singleton_ivar_types: {}, class_variable_types: {}, markers: [], nested_modules: [])
     builder.build(members, init_arg_types, attr_types, *rest, ivar_types: ivar_types,
                                                               singleton_ivar_types: singleton_ivar_types, module_ivar_types: module_ivar_types,
-                                                              module_singleton_ivar_types: module_singleton_ivar_types, markers: markers, nested_modules: nested_modules)
+                                                              module_singleton_ivar_types: module_singleton_ivar_types, class_variable_types: class_variable_types, markers: markers, nested_modules: nested_modules)
   end
 
   describe "a def marked `# @rbs_infer no-signature`" do
@@ -480,6 +480,21 @@ RSpec.describe RbsInfer::Signatures::RbsBuilder do
 
       expect(result).to match(/module Generated\n\s+self\.@rules: Rules\?/)
       expect(result).not_to match(/^  self\.@rules:/)
+      expect { RBS::Parser.parse_signature(result) }.not_to raise_error
+    end
+
+    it "declares the class's class variables" do
+      result = build_rbs(builder, [], class_variable_types: { nil => { "@@settings" => "Settings?" } })
+
+      expect(result).to match(/^  @@settings: Settings\?$/)
+      expect { RBS::Parser.parse_signature(result) }.not_to raise_error
+    end
+
+    it "declares a module's class variables inside that module" do
+      result = build_rbs(builder, [owned_method("configure", "Generated")],
+                         class_variable_types: { "Generated" => { "@@rules" => "Rules?" } })
+
+      expect(result).to match(/module Generated\n\s+@@rules: Rules\?/)
       expect { RBS::Parser.parse_signature(result) }.not_to raise_error
     end
   end

@@ -29,7 +29,7 @@ module RbsInfer::Signatures
     # (docs/engineering/required-threaded-deps.md).
     # rubocop:todo-next Metrics/MethodLength
     def build(members, init_arg_types, attr_types, optional_params = Set.new, method_param_types = {}, ivar_types:,
-              singleton_ivar_types:, module_ivar_types:, module_singleton_ivar_types:, markers:, nested_modules:)
+              singleton_ivar_types:, module_ivar_types:, module_singleton_ivar_types:, class_variable_types:, markers:, nested_modules:)
       members = reconcile_attrs_with_explicit_defs(members)
       parts = @target_class.split("::")
       class_name = parts.pop
@@ -51,6 +51,8 @@ module RbsInfer::Signatures
       # previous one by a single blank line (`add_group`). `body_start` marks
       # where the body begins so the first group never gets a leading blank.
       body_start = lines.size
+
+      add_group(lines, body_start, class_variable_lines(class_variable_types[nil], member_indent))
 
       # Class-instance variables written in `def self.x` / `class << self` /
       # the class body. RBS declares these on the singleton as `self.@x` — a
@@ -75,7 +77,7 @@ module RbsInfer::Signatures
       # (felixefelip/rbs_infer#19, #22).
       nested = []
       emit_parsed_nested_modules(nested, members, member_indent, attr_types, method_param_types, module_ivar_types,
-                                 module_singleton_ivar_types, nested_modules)
+                                 module_singleton_ivar_types, class_variable_types, nested_modules)
       add_group(lines, body_start, nested)
 
       # Mixins: extend (e.g. ActiveSupport::Concern) + include (concerns),
@@ -361,9 +363,11 @@ module RbsInfer::Signatures
     # parsed `include X` is emitted separately as a direct member, so the
     # module declaration here gives that include a real target — no
     # dangling mixin (felixefelip/rbs_infer#22).
+    def class_variable_lines(types, indent) = (types || {}).map { |name, type| "#{indent}#{name}: #{type}" }
+
     # rubocop:todo-next Metrics/MethodLength
     def emit_parsed_nested_modules(lines, members, member_indent, attr_types, method_param_types, module_ivar_types,
-                                   module_singleton_ivar_types, nested_modules)
+                                   module_singleton_ivar_types, class_variable_types, nested_modules)
       by_owner = members.reject { |m| m.owner.nil? }.group_by(&:owner)
       # Declaration order first, so the RBS reads in the order the file does.
       # The union is what admits an EMPTY module: it declares one and carries no
@@ -388,9 +392,8 @@ module RbsInfer::Signatures
         # the file where everything touched.
         body_start = lines.size
 
-        add_group(lines, body_start, (module_singleton_ivar_types[owner] || {}).map do |name, type|
-          "#{inner_indent}self.@#{name}: #{type}"
-        end)
+        add_group(lines, body_start, class_variable_lines(class_variable_types[owner], inner_indent) +
+                                     (module_singleton_ivar_types[owner] || {}).map { |name, type| "#{inner_indent}self.@#{name}: #{type}" })
 
         # The module's own instance variables. A method here writes them on
         # whatever includes or extends the module, never on the enclosing class,

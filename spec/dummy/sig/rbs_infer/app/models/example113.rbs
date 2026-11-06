@@ -1,8 +1,10 @@
 class Example113
-  def self.settings: () -> untyped
+  @@settings: Example113Settings?
+
+  def self.settings: () -> Example113Settings
   def self.settings=: (untyped settings) -> untyped
 
-  def name: () -> untyped
+  def name: () -> :default
 end
 
 class Example113Settings

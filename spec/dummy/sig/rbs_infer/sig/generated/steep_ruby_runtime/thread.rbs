@@ -1,5 +1,5 @@
 class Thread
-  self.@__rbs_infer__main: nil
+  self.@__rbs_infer__main: Thread?
 
   @__rbs_infer__locals: Hash[untyped, untyped]?
 
