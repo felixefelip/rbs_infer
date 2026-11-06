@@ -162,6 +162,26 @@ methods:
         chain:
         - window
         - size
+  I18n::Locale::Tag::Parents#parents:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: parent
+    - kind: self_type
+      type: "(::I18n::Locale::Tag::Simple & ::I18n::Locale::Tag::Parents)"
+    enforced: false
+  I18n::Locale::Tag::Parents#self_and_parents:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: parent
+    enforced: false
   Post#author_name:
     requires:
     - kind: not_nil
