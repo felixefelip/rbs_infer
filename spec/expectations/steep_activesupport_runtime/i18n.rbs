@@ -1,0 +1,74 @@
+module I18n
+  @@fallbacks: I18n::Locale::Fallbacks?
+
+  module Locale
+  end
+
+  module Locale::Tag
+    @@implementation: singleton(I18n::Locale::Tag::Simple)?
+
+    def self.implementation: () -> singleton(I18n::Locale::Tag::Simple)
+    def self.implementation=: (untyped implementation) -> untyped
+    def self.tag: ((Symbol | Hash::_Key) tag) -> I18n::Locale::Tag::Simple
+  end
+
+  module Locale::Tag::Parents
+    @parent: I18n::Locale::Tag::Simple?
+    @self_and_parents: Array[self]?
+    @parents: Array[untyped]?
+
+    def parent: () -> I18n::Locale::Tag::Simple?
+    def self_and_parents: () -> Array[self]
+    def parents: () -> Array[untyped]
+  end
+
+  def self.fallbacks: () -> I18n::Locale::Fallbacks | ...
+  def self.fallbacks=: (untyped fallbacks) -> I18n::Locale::Fallbacks | ...
+end
+
+module I18n
+  module Locale
+    class Fallbacks < Hash[untyped, untyped]
+      @map: Hash[untyped, untyped]
+
+      attr_reader defaults: untyped
+
+      def initialize: (*Array[untyped] mappings) -> void | ...
+      def defaults=: (Array[untyped] defaults) -> Array[untyped]
+      def []: (Symbol locale) -> untyped | ...
+      def map: (*untyped args) ?{ (*untyped) -> untyped } -> Hash[untyped, untyped] | ...
+      def empty?: () -> untyped | ...
+      def inspect: () -> String | ...
+
+      def compute: ((Symbol | Hash::_Key) tags, ?bool include_defaults, ?Array[untyped] exclude) -> Array[untyped]
+
+      class AfterDefaults
+        attr_reader defaults: Array[untyped]
+      end
+    end
+  end
+end
+
+module I18n
+  module Locale
+    module Tag
+      class Simple
+        include Parents
+
+        def self.tag: ((Symbol | Hash::_Key) tag) -> I18n::Locale::Tag::Simple
+
+        attr_reader tag: untyped
+
+        def initialize: (*untyped tag) -> void | ...
+        def subtags: () -> untyped
+        def to_sym: () -> untyped
+        def to_s: () -> untyped | ...
+        def to_a: () -> untyped
+
+        class AfterInitialize
+          attr_reader tag: Symbol
+        end
+      end
+    end
+  end
+end

@@ -4,13 +4,14 @@ require "fileutils"
 require_relative "runtime/delegation_transcriber"
 require_relative "runtime/class_attribute_transcriber"
 require_relative "runtime/inflector_transcriber"
+require_relative "runtime/i18n_transcriber"
 
 module RbsInfer
   module Extensions
     module Rails
       module ActiveSupport
-        # Puts ActiveSupport's `delegate`, `class_attribute` and inflector where the
-        # pipeline can read it.
+        # Puts ActiveSupport's `delegate`, `class_attribute` and inflector, and the
+        # part of i18n the inflector runs, where the pipeline can read it.
         #
         # `delegate :email, to: :user` defines an ordinary method, written by
         # `module_eval` on a STRING the macro builds — and a string is where
@@ -57,7 +58,8 @@ module RbsInfer
             [
               Runtime::DelegationTranscriber.file_entry,
               Runtime::ClassAttributeTranscriber.file_entry,
-              Runtime::InflectorTranscriber.file_entry
+              Runtime::InflectorTranscriber.file_entry,
+              Runtime::I18nTranscriber.file_entry
             ].compact
           end
 

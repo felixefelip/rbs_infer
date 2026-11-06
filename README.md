@@ -233,6 +233,10 @@ English rules ActiveSupport loads into it, so a macro that names a method
 in `inflector.rb` is marked `# @rbs_infer |...`, since gem_rbs_collection
 declares them all.
 
+It also writes `i18n.rb`: `I18n.fallbacks` and the `I18n::Locale` files it loads,
+which the inflector runs to find a locale's rules. The chain does not fold yet,
+so what `I18n.fallbacks[locale]` answers is still `untyped`.
+
 **concurrent-ruby runtime generator** — writes, verbatim, every file of the
 installed concurrent-ruby that `require "concurrent/map"` loads, measured in a
 fresh interpreter. gem_rbs_collection declares `Concurrent::Map[K, V]` flat, with

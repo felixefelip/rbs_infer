@@ -702,6 +702,11 @@ sig/generated/steep_actiontext_runtime/attribute.rb:
     in: "::ActionText::Attribute"
     implements: "::ActionText::Attribute::ClassMethods"
     self: singleton(::ActiveRecord::Base) & ::ActionText::Attribute::ClassMethods
+sig/generated/steep_activesupport_runtime/i18n.rb:
+  modules:
+  - anchor: Parents
+    annotations:
+    - "# @type instance: I18n::Locale::Tag::Simple & I18n::Locale::Tag::Parents"
 sig/generated/steep_ar_runtime/active_support/concern.rb:
   modules:
   - anchor: Concern

@@ -1445,6 +1445,59 @@ methods:
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
+  I18n::Locale::Fallbacks#defaults=:
+    "([]) with {@defaults: nil, @map: {  }}": "[]"
+  I18n::Locale::Fallbacks.new:
+    "()":
+      class: "::I18n::Locale::Fallbacks"
+      ivars:
+        "@defaults": "[]"
+        "@map": "{  }"
+  I18n::Locale::Tag.tag:
+    "(:en)":
+      class: "::I18n::Locale::Tag::Simple"
+      ivars:
+        "@tag": ":en"
+  I18n::Locale::Tag::Parents#parent:
+    "() on ::I18n::Locale::Tag::Simple with {@tag: :en}": nil
+    "() with {@tag: :en}": nil
+  I18n::Locale::Tag::Parents#parents:
+    "() on ::I18n::Locale::Tag::Simple with {@tag: :en}": "[]"
+  I18n::Locale::Tag::Parents#self_and_parents:
+    "() on ::I18n::Locale::Tag::Simple with {@tag: :en}": "[self]"
+    "() with {@tag: :en}": "::Array[self]"
+  I18n::Locale::Tag::Simple#subtags:
+    "() with {@tag: :en}": '["en"]'
+  I18n::Locale::Tag::Simple#to_a:
+    "() with {@tag: :en}": '["en"]'
+  I18n::Locale::Tag::Simple#to_sym:
+    "() with {@tag: :en}": ":en"
+  I18n::Locale::Tag::Simple.new:
+    ("en"):
+      class: "::I18n::Locale::Tag::Simple"
+      ivars:
+        "@tag": ":en"
+    "(:en)":
+      class: "::I18n::Locale::Tag::Simple"
+      ivars:
+        "@tag": ":en"
+  I18n::Locale::Tag::Simple.tag:
+    ("en"):
+      class: "::I18n::Locale::Tag::Simple"
+      ivars:
+        "@tag": ":en"
+    ("en") on singleton(::I18n::Locale::Tag::Simple):
+      class: "::I18n::Locale::Tag::Simple"
+      ivars:
+        "@tag": ":en"
+    "(:en)":
+      class: "::I18n::Locale::Tag::Simple"
+      ivars:
+        "@tag": ":en"
+    "(:en) on singleton(::I18n::Locale::Tag::Simple)":
+      class: "::I18n::Locale::Tag::Simple"
+      ivars:
+        "@tag": ":en"
   IncludedHook::Slots#badge=:
     ("value"): '"value"'
   IncludedHook::Slots#slot=:
@@ -1494,6 +1547,9 @@ methods:
     ("post"): '"stamped: post"'
   Thread#[]:
     "(:example113_settings) with {@__rbs_infer__locals: nil}": nil
+    "(:i18n_fallbacks) with {@__rbs_infer__locals: nil}": nil
+  Thread#[]=:
+    "(:i18n_fallbacks, ::I18n::Locale::Fallbacks)": "::I18n::Locale::Fallbacks"
   Thread::Mutex#synchronize:
     "() &-> bool": bool
 declarations:
@@ -1753,14 +1809,20 @@ receivers:
   - "::UsersController"
   app/controllers/users_controller.rb:9:28:
   - "::ActionController::Parameters"
+  app/helpers/posts_helper.rb:11:35:
+  - "::Post::EnumerizeStatusValue"
   app/helpers/posts_helper.rb:15:25:
   - "(::Post & ::Post::Validated)"
   app/helpers/posts_helper.rb:25:31:
   - "[1, 2, 3]"
   app/helpers/posts_helper.rb:50:31:
   - "(::Comment & ::Comment::Validated)"
+  app/helpers/posts_helper.rb:5:33:
+  - "::Post::EnumerizeStatusValue"
   app/jobs/author_digest_job.rb:14:20:
   - "::Post"
+  app/jobs/avatar_thumbnail_job.rb:14:10:
+  - "::Array[(64 | 128)]"
   app/jobs/avatar_thumbnail_job.rb:15:20:
   - "(::User & ::User::Validated)"
   app/jobs/profile_formatter_job.rb:16:21:
@@ -1935,6 +1997,8 @@ receivers:
   - singleton(::Example101::Post)
   app/models/example102.rb:31:17:
   - "::Array[untyped]"
+  app/models/example102.rb:47:22:
+  - ":en"
   app/models/example102.rb:48:15:
   - "::Example102::FallbackChains"
   app/models/example102.rb:48:29:
@@ -1946,6 +2010,8 @@ receivers:
   app/models/example102.rb:61:73:
   - singleton(::Example102::Rules)
   app/models/example102.rb:64:12:
+  - singleton(::Example102::Inflector)
+  app/models/example102.rb:64:36:
   - singleton(::Example102::Inflector)
   app/models/example102.rb:68:14:
   - singleton(::Example102::Locales)
@@ -1969,6 +2035,8 @@ receivers:
   - "::Example102::Rules"
   app/models/example102.rb:84:34:
   - singleton(::Example102::Inflector)
+  app/models/example102.rb:84:51:
+  - "(:posts | :categories)"
   app/models/example102.rb:87:4:
   - singleton(::Example102::Post)
   app/models/example102.rb:88:4:
@@ -2007,6 +2075,8 @@ receivers:
   - singleton(::Example104)
   app/models/example104.rb:40:22:
   - singleton(::Example104)
+  app/models/example104.rb:40:39:
+  - "(:posts | :categories)"
   app/models/example104.rb:43:2:
   - singleton(::Example104)
   app/models/example104.rb:44:2:
@@ -2061,12 +2131,16 @@ receivers:
   - singleton(::Example108::Gauge)
   app/models/example109.rb:114:25:
   - "::Hash[::Symbol, untyped]"
+  app/models/example109.rb:114:42:
+  - untyped
   app/models/example109.rb:114:60:
   - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:114:84:
   - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:115:33:
   - "::Hash[::Symbol, untyped]"
+  app/models/example109.rb:115:50:
+  - untyped
   app/models/example109.rb:115:84:
   - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:121:18:
@@ -2125,18 +2199,32 @@ receivers:
   - "::Example109::Reflection::HasManyReflection"
   app/models/example109.rb:278:12:
   - singleton(::Example109::Associations::Builder::CollectionAssociation)
+  app/models/example109.rb:283:13:
+  - singleton(::Example109::Associations::Builder::CollectionAssociation)
+  app/models/example109.rb:284:44:
+  - ":comments"
   app/models/example109.rb:285:31:
   - singleton(::Module)
+  app/models/example109.rb:293:28:
+  - singleton(::Example109::Associations::Builder::CollectionAssociation)
   app/models/example109.rb:293:41:
   - untyped
+  app/models/example109.rb:293:56:
+  - "(:before_add | :after_add | :before_remove | :after_remove)"
   app/models/example109.rb:296:36:
+  - "::Array[untyped]"
+  app/models/example109.rb:302:38:
   - "::Array[untyped]"
   app/models/example109.rb:307:51:
   - "::Proc"
+  app/models/example109.rb:319:23:
+  - ":comments"
   app/models/example109.rb:319:28:
   - '"comments"'
   app/models/example109.rb:31:49:
   - singleton(::Example109::Reflection::HasManyReflection)
+  app/models/example109.rb:329:23:
+  - ":comments"
   app/models/example109.rb:329:28:
   - '"comments"'
   app/models/example109.rb:32:15:
@@ -2157,14 +2245,22 @@ receivers:
   - "::Example109::Reflection::AssociationReflection"
   app/models/example109.rb:79:32:
   - "::Hash[::Symbol, untyped]"
+  app/models/example109.rb:81:33:
+  - ":comments"
   app/models/example109.rb:81:38:
   - '"comments"'
+  app/models/example109.rb:81:55:
+  - ":comments"
   app/models/example109.rb:86:34:
   - "::Hash[::Symbol, untyped]"
+  app/models/example109.rb:93:38:
+  - "(::String | ::Symbol)"
   app/models/example109.rb:95:37:
   - "::Hash[untyped, untyped]"
   app/models/example109.rb:96:36:
   - "::Hash[untyped, untyped]"
+  app/models/example109.rb:96:47:
+  - untyped
   app/models/example109.rb:99:19:
   - "::Hash[::Symbol, untyped]"
   app/models/example109/core.rb:6:60:
@@ -2420,6 +2516,8 @@ receivers:
   app/models/example17.rb:74:4:
   - "::Example17"
   app/models/example17.rb:85:4:
+  - "::Example17"
+  app/models/example17.rb:92:21:
   - "::Example17"
   app/models/example17.rb:92:4:
   - "::Example17"
@@ -3109,6 +3207,8 @@ receivers:
   - singleton(::Example59::Naming)
   app/models/example59/naming.rb:16:2:
   - singleton(::Example59::Naming)
+  app/models/example59_labels.rb:7:12:
+  - '::Array[("all" | "closed")]'
   app/models/example6.rb:16:20:
   - singleton(::Example6::Foo)
   app/models/example6.rb:35:18:
@@ -3135,6 +3235,12 @@ receivers:
   - singleton(::Example60::Labels)
   app/models/example60/labels.rb:19:2:
   - singleton(::Example60::Labels)
+  app/models/example61.rb:14:8:
+  - (:indexed_by | "indexed_by")
+  app/models/example61.rb:18:15:
+  - singleton(::Example61)
+  app/models/example61_caller.rb:6:14:
+  - singleton(::Example61)
   app/models/example62.rb:34:11:
   - "::Object"
   app/models/example62.rb:34:51:
@@ -3227,10 +3333,14 @@ receivers:
   - "::Example68"
   app/models/example68.rb:102:11:
   - "(::Example68Entry | nil)"
+  app/models/example68.rb:102:18:
+  - ("opened" | nil)
   app/models/example68.rb:102:44:
   - "::Example68Entry"
   app/models/example68.rb:113:12:
   - "(::Example68Entry | nil)"
+  app/models/example68.rb:113:19:
+  - ("opened" | nil)
   app/models/example68.rb:113:4:
   - "::Example68"
   app/models/example68.rb:113:49:
@@ -3239,12 +3349,16 @@ receivers:
   - "::Example68Entry"
   app/models/example68.rb:121:12:
   - "(::Example68Entry | nil)"
+  app/models/example68.rb:121:20:
+  - untyped
   app/models/example68.rb:121:4:
   - "::Example68"
   app/models/example68.rb:121:50:
   - "::Example68"
   app/models/example68.rb:121:57:
   - "::Example68Entry"
+  app/models/example68.rb:133:22:
+  - "(::String | nil)"
   app/models/example68.rb:133:79:
   - singleton(::Time)
   app/models/example68.rb:65:19:
@@ -3275,6 +3389,8 @@ receivers:
   - "::Example68Entry"
   app/models/example68.rb:95:12:
   - "(::Example68Entry | nil)"
+  app/models/example68.rb:95:19:
+  - ("opened" | nil)
   app/models/example68.rb:95:39:
   - "::Example68"
   app/models/example68.rb:95:4:
@@ -3411,6 +3527,8 @@ receivers:
   - '::Array["a"]'
   app/models/example74.rb:39:24:
   - "::Example74::Foo"
+  app/models/example74.rb:60:20:
+  - "(:user | :class)"
   app/models/example74.rb:67:6:
   - "::Example74::Foo"
   app/models/example74.rb:73:6:
@@ -3421,6 +3539,8 @@ receivers:
   - "::Example74::Foo"
   app/models/example75.rb:61:11:
   - singleton(::Example75::Skin)
+  app/models/example75.rb:69:20:
+  - "(:user | :class)"
   app/models/example75.rb:80:4:
   - singleton(::Example75::Peel)
   app/models/example75.rb:85:4:
@@ -3465,6 +3585,8 @@ receivers:
   - "::Example8"
   app/models/example8.rb:9:4:
   - "::Example8"
+  app/models/example80.rb:30:20:
+  - "(:user | :buyer)"
   app/models/example80.rb:34:21:
   - "::Array[untyped]"
   app/models/example80.rb:34:40:
@@ -3527,6 +3649,8 @@ receivers:
   - singleton(::Example83)
   app/models/example83.rb:60:12:
   - "::Example83"
+  app/models/example83.rb:60:25:
+  - "::Example83"
   app/models/example83.rb:60:40:
   - "::Example83"
   app/models/example83.rb:60:54:
@@ -3563,6 +3687,8 @@ receivers:
   - singleton(::Example85)
   app/models/example85.rb:54:22:
   - singleton(::Example85)
+  app/models/example85.rb:54:39:
+  - "(:posts | :categories)"
   app/models/example85.rb:57:2:
   - singleton(::Example85)
   app/models/example85.rb:58:2:
@@ -3617,6 +3743,8 @@ receivers:
   - singleton(::Example88::Inflector)
   app/models/example88.rb:42:34:
   - singleton(::Example88::Inflector)
+  app/models/example88.rb:42:51:
+  - "(:comments | :categories)"
   app/models/example88.rb:47:4:
   - singleton(::Example88::Post)
   app/models/example88.rb:48:4:
@@ -3721,6 +3849,8 @@ receivers:
   - "::Example92::Rules"
   app/models/example92.rb:45:34:
   - singleton(::Example92::Inflector)
+  app/models/example92.rb:45:51:
+  - "(:posts | :categories)"
   app/models/example92.rb:48:4:
   - singleton(::Example92::Post)
   app/models/example92.rb:49:4:
@@ -3732,6 +3862,8 @@ receivers:
   app/models/example93.rb:38:26:
   - singleton(::Example93::Rules)
   app/models/example93.rb:42:12:
+  - singleton(::Example93::Inflector)
+  app/models/example93.rb:42:24:
   - singleton(::Example93::Inflector)
   app/models/example93.rb:45:33:
   - singleton(::Example93::Inflector)
@@ -3745,6 +3877,8 @@ receivers:
   - "::Example93::Rules"
   app/models/example93.rb:55:34:
   - singleton(::Example93::Inflector)
+  app/models/example93.rb:55:51:
+  - "(:posts | :categories)"
   app/models/example93.rb:58:4:
   - singleton(::Example93::Post)
   app/models/example93.rb:59:4:
@@ -3876,6 +4010,8 @@ receivers:
   - "::Example97::Foo"
   app/models/example97.rb:29:17:
   - "::Hash[untyped, untyped]"
+  app/models/example97.rb:29:24:
+  - untyped
   app/models/example98.rb:13:13:
   - "{  }"
   app/models/example98.rb:14:6:
@@ -3887,6 +4023,8 @@ receivers:
   app/models/example98.rb:17:13:
   - "::Hash[untyped, untyped]"
   app/models/example98.rb:17:19:
+  - untyped
+  app/models/example98.rb:17:27:
   - untyped
   app/models/example98.rb:21:13:
   - "{ :bar => { :num1 => 5, :num2 => 10 } }"
@@ -3929,6 +4067,8 @@ receivers:
   app/models/example99.rb:34:17:
   - "{ ?:bar => untyped }"
   app/models/example99.rb:34:23:
+  - untyped
+  app/models/example99.rb:34:31:
   - untyped
   app/models/example99.rb:38:10:
   - "::Example99::Foo"
@@ -4008,6 +4148,8 @@ receivers:
   - singleton(::Palette)
   app/models/post.rb:100:4:
   - "::Post"
+  app/models/post.rb:109:21:
+  - "(::String | nil)"
   app/models/post.rb:109:4:
   - "::Post"
   app/models/post.rb:10:2:
@@ -4044,6 +4186,8 @@ receivers:
   - singleton(::Post)
   app/models/post.rb:37:4:
   - "::Post"
+  app/models/post.rb:37:9:
+  - "(::String | nil)"
   app/models/post.rb:49:4:
   - "::Post"
   app/models/post.rb:4:2:
@@ -4094,6 +4238,8 @@ receivers:
   - "(::Post & ::Post::Notifiable)"
   app/models/post/notifiable.rb:35:4:
   - "(::Post & ::Post::Notifiable)"
+  app/models/post/notifiable.rb:35:9:
+  - "(::String | nil)"
   app/models/post/notifiable.rb:42:19:
   - "(::Post & ::Post::Notifiable)"
   app/models/post/notifiable.rb:42:24:
@@ -4200,6 +4346,8 @@ receivers:
   - "(::User & ::User::Displayable)"
   app/models/user/displayable.rb:17:33:
   - "(::User & ::User::Displayable)"
+  app/models/user/displayable.rb:17:39:
+  - "(::String | nil)"
   app/models/user/displayable.rb:23:12:
   - "(::User & ::User::Displayable)"
   app/models/user/displayable.rb:24:16:
@@ -4212,8 +4360,12 @@ receivers:
   - "(::User & ::User::Displayable)"
   app/models/user/displayable.rb:4:2:
   - singleton(::User::Displayable)
+  app/models/user/displayable.rb:7:23:
+  - "(::String | nil)"
   app/models/user/displayable.rb:7:27:
   - "::String"
+  app/models/user/displayable.rb:8:21:
+  - "(::String | nil)"
   app/models/user/displayable.rb:8:25:
   - "::String"
   app/models/user/notifiable.rb:16:2:
@@ -4342,9 +4494,21 @@ receivers:
   - "::TagDestroy"
   app/services/tag_destroy.rb:126:10:
   - "(::User & ::User::Validated)"
+  app/services/tag_destroy.rb:13:4:
+  - "::TagDestroy"
   app/services/tag_destroy.rb:13:8:
   - "(::Tag & ::Tag::Validated)"
   app/services/tag_destroy.rb:17:4:
+  - "(::TagDestroy & ::TagDestroy::AfterTestNokogiri)"
+  app/services/tag_destroy.rb:18:4:
+  - "(::TagDestroy & ::TagDestroy::AfterTestNokogiri)"
+  app/services/tag_destroy.rb:19:4:
+  - "(::TagDestroy & ::TagDestroy::AfterTestNokogiri)"
+  app/services/tag_destroy.rb:20:4:
+  - "(::TagDestroy & ::TagDestroy::AfterTestNokogiri)"
+  app/services/tag_destroy.rb:21:4:
+  - "(::TagDestroy & ::TagDestroy::AfterTestNokogiri)"
+  app/services/tag_destroy.rb:22:4:
   - "(::TagDestroy & ::TagDestroy::AfterTestNokogiri)"
   app/services/tag_destroy.rb:28:17:
   - singleton(::User)
@@ -4352,24 +4516,42 @@ receivers:
   - "::TagDestroy"
   app/services/tag_destroy.rb:32:9:
   - "(::User & ::User::Validated)"
+  app/services/tag_destroy.rb:36:14:
+  - "::TagDestroy"
   app/services/tag_destroy.rb:36:18:
   - "(::Tag & ::Tag::Validated)"
   app/services/tag_destroy.rb:36:31:
   - "((::Post & ::Post::Validated) | nil)"
+  app/services/tag_destroy.rb:44:12:
+  - "::TagDestroy"
   app/services/tag_destroy.rb:44:16:
   - "(::Tag & ::Tag::Validated)"
   app/services/tag_destroy.rb:52:6:
   - "::TagDestroy"
+  app/services/tag_destroy.rb:57:16:
+  - "::TagDestroy"
+  app/services/tag_destroy.rb:69:27:
+  - "::Nokogiri::XML::NodeSet"
+  app/services/tag_destroy.rb:75:27:
+  - "::Nokogiri::XML::NodeSet"
   app/services/tag_destroy.rb:7:15:
   - singleton(::Tag)
+  app/services/tag_destroy.rb:81:27:
+  - "::Nokogiri::XML::NodeSet"
   app/services/tag_destroy.rb:82:15:
   - singleton(::ParseXml)
   app/services/tag_destroy.rb:82:30:
   - "::ParseXml"
+  app/services/tag_destroy.rb:91:27:
+  - "::Nokogiri::XML::NodeSet"
+  app/services/tag_destroy.rb:97:27:
+  - "::Nokogiri::XML::NodeSet"
   app/services/tag_destroy.rb:9:4:
   - "::TagDestroy"
   app/services/widget_auditor.rb:29:4:
   - "::WidgetAuditor"
+  app/uploaders/avatar_uploader.rb:14:27:
+  - untyped
   sig/generated/steep_actiontext_runtime/attribute.rb:15:4:
   - singleton(::ActionText::Attribute)
   sig/generated/steep_actiontext_runtime/attribute.rb:17:4:
@@ -4459,6 +4641,8 @@ receivers:
   - untyped
   sig/generated/steep_activesupport_runtime/class_attribute.rb:53:8:
   - "::Class"
+  sig/generated/steep_activesupport_runtime/class_attribute.rb:56:18:
+  - "(::Symbol | ::String)"
   sig/generated/steep_activesupport_runtime/class_attribute.rb:60:20:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/class_attribute.rb:61:20:
@@ -4475,6 +4659,8 @@ receivers:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:111:18:
   - singleton(::ActiveSupport::Delegation)
+  sig/generated/steep_activesupport_runtime/delegation.rb:119:30:
+  - "::Method::param_types"
   sig/generated/steep_activesupport_runtime/delegation.rb:123:23:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:139:23:
@@ -4483,6 +4669,8 @@ receivers:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:141:57:
   - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:144:28:
+  - untyped
   sig/generated/steep_activesupport_runtime/delegation.rb:146:23:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:147:50:
@@ -4495,6 +4683,10 @@ receivers:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:151:22:
   - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:154:28:
+  - untyped
+  sig/generated/steep_activesupport_runtime/delegation.rb:155:38:
+  - "::String"
   sig/generated/steep_activesupport_runtime/delegation.rb:157:23:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:158:50:
@@ -4517,6 +4709,10 @@ receivers:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:16:32:
   - singleton(::ActiveSupport::Delegation)
+  sig/generated/steep_activesupport_runtime/delegation.rb:175:24:
+  - untyped
+  sig/generated/steep_activesupport_runtime/delegation.rb:29:32:
+  - singleton(::ActiveSupport::Delegation)
   sig/generated/steep_activesupport_runtime/delegation.rb:47:10:
   - singleton(::ActiveSupport::Delegation)
   sig/generated/steep_activesupport_runtime/delegation.rb:51:10:
@@ -4533,10 +4729,130 @@ receivers:
   - "::Module"
   sig/generated/steep_activesupport_runtime/delegation.rb:73:18:
   - "::Module"
+  sig/generated/steep_activesupport_runtime/delegation.rb:75:13:
+  - untyped
   sig/generated/steep_activesupport_runtime/delegation.rb:93:19:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:97:23:
   - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/delegation.rb:97:38:
+  - "::String"
+  sig/generated/steep_activesupport_runtime/i18n.rb:100:28:
+  - singleton(::I18n::InvalidLocale)
+  sig/generated/steep_activesupport_runtime/i18n.rb:100:8:
+  - "::I18n::Locale::Fallbacks"
+  sig/generated/steep_activesupport_runtime/i18n.rb:101:23:
+  - singleton(::I18n::Disabled)
+  sig/generated/steep_activesupport_runtime/i18n.rb:101:8:
+  - "::I18n::Locale::Fallbacks"
+  sig/generated/steep_activesupport_runtime/i18n.rb:102:24:
+  - "(::Symbol | ::Hash::_Key)"
+  sig/generated/steep_activesupport_runtime/i18n.rb:103:17:
+  - "::I18n::Locale::Fallbacks"
+  sig/generated/steep_activesupport_runtime/i18n.rb:103:31:
+  - "::I18n::Locale::Fallbacks"
+  sig/generated/steep_activesupport_runtime/i18n.rb:108:16:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/i18n.rb:108:31:
+  - "::I18n::Locale::Fallbacks"
+  sig/generated/steep_activesupport_runtime/i18n.rb:111:28:
+  - untyped
+  sig/generated/steep_activesupport_runtime/i18n.rb:111:36:
+  - "::I18n::Locale::Fallbacks"
+  sig/generated/steep_activesupport_runtime/i18n.rb:113:18:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_activesupport_runtime/i18n.rb:114:18:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_activesupport_runtime/i18n.rb:114:25:
+  - untyped
+  sig/generated/steep_activesupport_runtime/i18n.rb:114:32:
+  - untyped
+  sig/generated/steep_activesupport_runtime/i18n.rb:118:15:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_activesupport_runtime/i18n.rb:124:13:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_activesupport_runtime/i18n.rb:124:33:
+  - untyped
+  sig/generated/steep_activesupport_runtime/i18n.rb:129:23:
+  - singleton(::I18n::Locale::Fallbacks)
+  sig/generated/steep_activesupport_runtime/i18n.rb:129:41:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_activesupport_runtime/i18n.rb:129:72:
+  - untyped
+  sig/generated/steep_activesupport_runtime/i18n.rb:137:8:
+  - "::I18n::Locale::Fallbacks"
+  sig/generated/steep_activesupport_runtime/i18n.rb:138:35:
+  - singleton(::I18n::Locale::Tag)
+  sig/generated/steep_activesupport_runtime/i18n.rb:138:44:
+  - "::I18n::Locale::Tag::Simple"
+  sig/generated/steep_activesupport_runtime/i18n.rb:138:74:
+  - "::I18n::Locale::Tag::Simple"
+  sig/generated/steep_activesupport_runtime/i18n.rb:140:39:
+  - "::I18n::Locale::Fallbacks"
+  sig/generated/steep_activesupport_runtime/i18n.rb:140:51:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_activesupport_runtime/i18n.rb:140:91:
+  - "::Hash[untyped, untyped]"
+  sig/generated/steep_activesupport_runtime/i18n.rb:143:21:
+  - "::I18n::Locale::Fallbacks"
+  sig/generated/steep_activesupport_runtime/i18n.rb:177:10:
+  - singleton(::I18n::Locale::Tag)
+  sig/generated/steep_activesupport_runtime/i18n.rb:177:25:
+  - singleton(::I18n::Locale::Tag::Simple)
+  sig/generated/steep_activesupport_runtime/i18n.rb:17:46:
+  - singleton(::I18n::Locale::Fallbacks)
+  sig/generated/steep_activesupport_runtime/i18n.rb:18:13:
+  - singleton(::Thread)
+  sig/generated/steep_activesupport_runtime/i18n.rb:18:20:
+  - "::Thread"
+  sig/generated/steep_activesupport_runtime/i18n.rb:192:21:
+  - "(::I18n::Locale::Tag::Simple & ::I18n::Locale::Tag::Parents)"
+  sig/generated/steep_activesupport_runtime/i18n.rb:194:43:
+  - "(singleton(::I18n::Locale::Tag::Simple) & singleton(::I18n::Locale::Tag::Parents))"
+  sig/generated/steep_activesupport_runtime/i18n.rb:194:52:
+  - untyped
+  sig/generated/steep_activesupport_runtime/i18n.rb:200:46:
+  - "(::I18n::Locale::Tag::Simple & ::I18n::Locale::Tag::Parents)"
+  sig/generated/steep_activesupport_runtime/i18n.rb:205:23:
+  - "(::I18n::Locale::Tag::Simple & ::I18n::Locale::Tag::Parents)"
+  sig/generated/steep_activesupport_runtime/i18n.rb:205:33:
+  - "(::I18n::Locale::Tag::Simple & ::I18n::Locale::Tag::Parents)"
+  sig/generated/steep_activesupport_runtime/i18n.rb:205:48:
+  - "(::I18n::Locale::Tag::Simple & ::I18n::Locale::Tag::Parents)"
+  sig/generated/steep_activesupport_runtime/i18n.rb:205:55:
+  - "(::I18n::Locale::Tag::Simple | nil)"
+  sig/generated/steep_activesupport_runtime/i18n.rb:221:12:
+  - singleton(::I18n::Locale::Tag::Simple)
+  sig/generated/steep_activesupport_runtime/i18n.rb:225:8:
+  - singleton(::I18n::Locale::Tag::Simple)
+  sig/generated/steep_activesupport_runtime/i18n.rb:231:31:
+  - "::String"
+  sig/generated/steep_activesupport_runtime/i18n.rb:236:21:
+  - "::I18n::Locale::Tag::Simple"
+  sig/generated/steep_activesupport_runtime/i18n.rb:236:25:
+  - untyped
+  sig/generated/steep_activesupport_runtime/i18n.rb:241:10:
+  - "::I18n::Locale::Tag::Simple"
+  sig/generated/steep_activesupport_runtime/i18n.rb:246:10:
+  - "::I18n::Locale::Tag::Simple"
+  sig/generated/steep_activesupport_runtime/i18n.rb:246:14:
+  - untyped
+  sig/generated/steep_activesupport_runtime/i18n.rb:24:69:
+  - singleton(::I18n::Locale::Fallbacks)
+  sig/generated/steep_activesupport_runtime/i18n.rb:251:10:
+  - "::I18n::Locale::Tag::Simple"
+  sig/generated/steep_activesupport_runtime/i18n.rb:25:13:
+  - singleton(::Thread)
+  sig/generated/steep_activesupport_runtime/i18n.rb:25:20:
+  - "::Thread"
+  sig/generated/steep_activesupport_runtime/i18n.rb:88:8:
+  - "::I18n::Locale::Fallbacks"
+  sig/generated/steep_activesupport_runtime/i18n.rb:89:13:
+  - "(::I18n::Locale::Fallbacks & ::I18n::Locale::Fallbacks::AfterDefaults)"
+  sig/generated/steep_activesupport_runtime/i18n.rb:89:33:
+  - "::Array[untyped]"
+  sig/generated/steep_activesupport_runtime/i18n.rb:94:50:
+  - "::I18n::Locale::Fallbacks"
   sig/generated/steep_activesupport_runtime/inflector.rb:104:10:
   - "::ActiveSupport::Inflector::Inflections"
   sig/generated/steep_activesupport_runtime/inflector.rb:106:8:
@@ -4619,6 +4935,8 @@ receivers:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:275:82:
   - "::Hash[untyped, untyped]"
+  sig/generated/steep_activesupport_runtime/inflector.rb:291:9:
+  - "(::Object & ::ActiveSupport::Inflector)"
   sig/generated/steep_activesupport_runtime/inflector.rb:292:26:
   - singleton(::ActiveSupport::Inflector::Inflections)
   sig/generated/steep_activesupport_runtime/inflector.rb:294:20:
@@ -4633,6 +4951,8 @@ receivers:
   - "(::Object & ::ActiveSupport::Inflector)"
   sig/generated/steep_activesupport_runtime/inflector.rb:309:6:
   - "(::Object & ::ActiveSupport::Inflector)"
+  sig/generated/steep_activesupport_runtime/inflector.rb:316:20:
+  - untyped
   sig/generated/steep_activesupport_runtime/inflector.rb:318:14:
   - untyped
   sig/generated/steep_activesupport_runtime/inflector.rb:318:24:
@@ -4759,12 +5079,18 @@ receivers:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:54:10:
   - "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
+  sig/generated/steep_activesupport_runtime/inflector.rb:59:32:
+  - untyped
+  sig/generated/steep_activesupport_runtime/inflector.rb:61:32:
+  - untyped
   sig/generated/steep_activesupport_runtime/inflector.rb:79:21:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:79:34:
   - singleton(::ActiveSupport::Inflector::Inflections)
+  sig/generated/steep_activesupport_runtime/inflector.rb:84:13:
+  - singleton(::I18n)
   sig/generated/steep_activesupport_runtime/inflector.rb:84:22:
-  - untyped
+  - "::I18n::Locale::Fallbacks"
   sig/generated/steep_activesupport_runtime/inflector.rb:85:30:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_activesupport_runtime/inflector.rb:85:51:
@@ -4999,7 +5325,11 @@ receivers:
   - "^(*untyped) -> untyped"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:192:26:
   - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:194:12:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:215:6:
+  - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:216:17:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:227:17:
   - "::Concurrent::Map[untyped, untyped]"
@@ -5017,6 +5347,8 @@ receivers:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:280:6:
   - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:291:40:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:302:6:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:310:6:
@@ -5033,10 +5365,14 @@ receivers:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:336:6:
   - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:47:
+  - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:51:
   - "::String"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:60:
   - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:65:
+  - "::Integer"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:85:
   - "(^(*untyped) -> untyped | nil)"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:351:6:
@@ -5061,6 +5397,8 @@ receivers:
   - "::Hash[::String, ::String]"
   sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:39:26:
   - "::Hash[::String, ::String]"
+  sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:44:42:
+  - "::Array[::String]"
   sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:50:20:
   - "{ :< => ::Array[::Integer], :<= => ::Array[::Integer], :== => ::Array[::Integer],
     :> => ::Array[::Integer], :>= => ::Array[::Integer] }"
@@ -5395,6 +5733,8 @@ receivers:
   - singleton(::ActionController::Base)
   sig/generated/steep_ruby_runtime/array.rb:14:20:
   - "::Array[untyped]"
+  sig/generated/steep_ruby_runtime/array.rb:15:34:
+  - "::Array[untyped]"
   sig/generated/steep_ruby_runtime/module.rb:14:4:
   - "::Module"
   sig/generated/steep_ruby_runtime/module.rb:14:87:
@@ -5415,8 +5755,9 @@ receivers:
     | singleton(::Post::Notifiable) | singleton(::Post::Exportable) | singleton(::Test::Filtrable)
     | singleton(::Eventable) | singleton(::Widget::Publishable) | singleton(::Widget::Closeable)
     | singleton(::ActionText::Attribute) | singleton(::ActionViewContext) | singleton(::PostsHelper)
-    | singleton(::Notification::GeneratedStoreAccessors) | singleton(::Post::Taggable::ClassMethods)
-    | singleton(::User::GeneratedStoreAccessors) | singleton(::ActionController::HttpAuthentication::Token::ControllerMethods)
+    | singleton(::I18n::Locale::Tag::Parents) | singleton(::Notification::GeneratedStoreAccessors)
+    | singleton(::Post::Taggable::ClassMethods) | singleton(::User::GeneratedStoreAccessors)
+    | singleton(::ActionController::HttpAuthentication::Token::ControllerMethods)
     | singleton(::Current::GeneratedAttributeMethods) | singleton(::DeviseScopedHelpers)
     | singleton(::Example108::Gauge::GeneratedReaders) | singleton(::Example109::Post::GeneratedRelationMethods)
     | singleton(::Example110::Dial::GeneratedOptionReaders) | singleton(::Example89::Widget::GeneratedMethods)
@@ -5458,6 +5799,10 @@ receivers:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_ruby_runtime/thread.rb:21:15:
   - "::Hash[untyped, untyped]"
+  sig/generated/steep_ruby_runtime/thread.rb:21:27:
+  - "::String"
+  sig/generated/steep_ruby_runtime/thread.rb:30:25:
+  - "::String"
   sig/generated/steep_ruby_runtime/thread.rb:33:28:
   - "(::Hash[untyped, untyped] | nil)"
   sig/generated/steep_ruby_runtime/thread.rb:37:35:
@@ -5465,6 +5810,8 @@ receivers:
   sig/generated/steep_ruby_runtime/thread.rb:37:39:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_ruby_runtime/thread_mutex.rb:11:4:
+  - "::Thread::Mutex"
+  sig/generated/steep_ruby_runtime/thread_mutex.rb:11:60:
   - "::Thread::Mutex"
   sig/generated/steep_string_evals/app/models/article.rb:32:11:
   - "::Article"
@@ -5575,6 +5922,8 @@ receivers:
   sig/generated/steep_string_evals/app/models/post.rb:12:213:
   - "::Post"
   sig/generated/steep_string_evals/app/models/post.rb:12:33:
+  - "::Post"
+  sig/generated/steep_string_evals/app/models/post.rb:13:22:
   - "::Post"
   sig/generated/steep_string_evals/app/models/post.rb:13:71:
   - untyped
@@ -5829,13 +6178,13 @@ exits:
     "(:en) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    "(:en) &/home/felipefelix/workspaces/wt591/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
+    "(:en) &/home/felipefelix/workspaces/wti18n/spec/dummy/app/models/example102.rb:2354 with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
     "(:en) on singleton(::Example102::Inflector) &-> ::Array[untyped] with {@locale_rule_sets: {  }}":
       ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
-    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/wt591/spec/dummy/app/models/example102.rb:2354
+    ? "(:en) on singleton(::Example102::Inflector) &/home/felipefelix/workspaces/wti18n/spec/dummy/app/models/example102.rb:2354
       with {@locale_rule_sets: {  }}"
     : ivars:
         "@locale_rule_sets": "{ :en => ::Example102::Rules }"
@@ -7089,7 +7438,7 @@ exits:
   Example93::Inflector.configure:
     "() &-> ::Array[untyped] with {@rule_set: nil}":
       ivars: {}
-    "() &/home/felipefelix/workspaces/wt591/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
+    "() &/home/felipefelix/workspaces/wti18n/spec/dummy/app/models/example93.rb:1310 with {@rule_set: nil}":
       ivars:
         "@rule_set":
           class: "::Example93::Rules"
@@ -7097,7 +7446,7 @@ exits:
             "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
     "() on singleton(::Example93::Inflector) &-> ::Array[untyped] with {@rule_set: nil}":
       ivars: {}
-    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/wt591/spec/dummy/app/models/example93.rb:1310
+    ? "() on singleton(::Example93::Inflector) &/home/felipefelix/workspaces/wti18n/spec/dummy/app/models/example93.rb:1310
       with {@rule_set: nil}"
     : ivars:
         "@rule_set":
@@ -7480,6 +7829,67 @@ exits:
           class: "::Example99::Foo"
           ivars:
             "@my_hash": "{ ?:bar => untyped }"
+  I18n::Locale::Fallbacks#compute:
+    "(bot, false) with {@defaults: nil, @map: {  }}":
+      ivars:
+        "@map": "{  }"
+        "@defaults": nil
+    "(bot, false, ::Array[untyped]) with {@defaults: nil, @map: {  }}":
+      ivars:
+        "@map": "{  }"
+        "@defaults": nil
+  I18n::Locale::Fallbacks#defaults=:
+    "([]) with {@defaults: nil, @map: {  }}":
+      ivars:
+        "@map": "{  }"
+        "@defaults": "[]"
+      keeps_self: true
+  I18n::Locale::Fallbacks#map:
+    "(untyped) with {@defaults: nil, @map: {  }}":
+      ivars:
+        "@map": "{  }"
+        "@defaults": nil
+  I18n::Locale::Fallbacks.new:
+    "()":
+      ivars:
+        "@map": "{  }"
+        "@defaults": "[]"
+      keeps_self: true
+  I18n::Locale::Tag::Parents#parent:
+    "() on ::I18n::Locale::Tag::Simple with {@tag: :en}":
+      ivars:
+        "@tag": ":en"
+      keeps_self: true
+    "() with {@tag: :en}":
+      ivars:
+        "@tag": ":en"
+  I18n::Locale::Tag::Parents#parents:
+    "() on ::I18n::Locale::Tag::Simple with {@tag: :en}":
+      ivars:
+        "@tag": ":en"
+      keeps_self: true
+    "() with {@tag: :en}":
+      ivars:
+        "@tag": ":en"
+  I18n::Locale::Tag::Parents#self_and_parents:
+    "() on ::I18n::Locale::Tag::Simple with {@tag: :en}":
+      ivars:
+        "@tag": ":en"
+    "() with {@tag: :en}":
+      ivars:
+        "@tag": ":en"
+  I18n::Locale::Tag::Simple#subtags:
+    "() with {@tag: :en}":
+      ivars:
+        "@tag": ":en"
+  I18n::Locale::Tag::Simple#to_a:
+    "() with {@tag: :en}":
+      ivars:
+        "@tag": ":en"
+  I18n::Locale::Tag::Simple#to_sym:
+    "() with {@tag: :en}":
+      ivars:
+        "@tag": ":en"
   Module#extend_object:
     "(singleton(::Example109::Base)) with {::Example109::Base{@generated_relation_methods: nil}}":
       ivars: {}
@@ -7560,5 +7970,8 @@ exits:
         "@generated_association_methods": nil
   Thread#[]:
     "(:example113_settings) with {@__rbs_infer__locals: nil}":
+      ivars:
+        "@__rbs_infer__locals": nil
+    "(:i18n_fallbacks) with {@__rbs_infer__locals: nil}":
       ivars:
         "@__rbs_infer__locals": nil

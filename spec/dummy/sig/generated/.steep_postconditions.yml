@@ -1864,6 +1864,48 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: I18n::Locale::Fallbacks
+  method: defaults=
+  unconditional:
+    ivars:
+      "@defaults": "::Array[untyped]"
+    self: "::I18n::Locale::Fallbacks & ::I18n::Locale::Fallbacks::AfterDefaults"
+  effects:
+    may_write:
+    - "@defaults"
+- class: I18n::Locale::Fallbacks
+  method: initialize
+  effects:
+    may_write:
+    - "@defaults"
+    - "@map"
+- class: I18n::Locale::Tag::Parents
+  method: parent
+  effects:
+    may_write:
+    - "@parent"
+- class: I18n::Locale::Tag::Parents
+  method: parents
+  effects:
+    may_write:
+    - "@parent"
+    - "@parents"
+- class: I18n::Locale::Tag::Parents
+  method: self_and_parents
+  effects:
+    may_write:
+    - "@parent"
+    - "@parents"
+    - "@self_and_parents"
+- class: I18n::Locale::Tag::Simple
+  method: initialize
+  unconditional:
+    ivars:
+      "@tag": "::Symbol"
+    self: "::I18n::Locale::Tag::Simple & ::I18n::Locale::Tag::Simple::AfterInitialize"
+  effects:
+    may_write:
+    - "@tag"
 - class: IncludedHook::HomeMade
   method: included
   effects:
@@ -2779,6 +2821,10 @@ method_entry_facts:
     Current.author_name: "::String"
     Current.user: "(::User & ::User::Validated)"
     Current.viewer_name: "::String"
+- class: I18n::Locale::Fallbacks
+  method: map
+  ivars:
+    "@map": "::Hash[untyped, untyped]"
 - class: Post
   method: assignments
   consts:
