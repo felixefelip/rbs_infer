@@ -1445,6 +1445,13 @@ methods:
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
+  I18n::Locale::Fallbacks#[]:
+    "(::Symbol) with {@defaults: [], @map: {  }}": "::Array[untyped]"
+    "(:en)": "::Array[untyped]"
+    "(:en) with {@defaults: [], @map: {  }}": "[:en]"
+  I18n::Locale::Fallbacks#compute:
+    "(:en) with {@defaults: [], @map: {  }}": "[:en]"
+    "(nil, false, ::Array[untyped]) with {@defaults: [], @map: {  }}": "[]"
   I18n::Locale::Fallbacks#defaults=:
     "([]) with {@defaults: nil, @map: {  }}": "[]"
   I18n::Locale::Fallbacks.new:
@@ -1633,6 +1640,7 @@ declarations:
   Example99::Runner#call_num1: '5'
   Example99::Runner#call_num2: '10'
   Example99::Runner#change_num2: '30'
+  I18n::Locale::Fallbacks#[]: "([:en] | ::Array[untyped])"
   IncludedHook::Slots#badge=: '"value"'
   IncludedHook::Slots#slot=: '"value"'
   IncludedHook::Slots#stamp=: '"value"'
@@ -7825,15 +7833,42 @@ exits:
           class: "::Example99::Foo"
           ivars:
             "@my_hash": "{ ?:bar => untyped }"
+  I18n::Locale::Fallbacks#[]:
+    "(::Symbol) with {@defaults: [], @map: {  }}":
+      ivars:
+        "@defaults": "[]"
+        "@map": "{  }"
+    "(:en) with {@defaults: [], @map: {  }}":
+      ivars:
+        "@defaults": "[]"
+        "@map": "{  }"
   I18n::Locale::Fallbacks#compute:
+    "(::Symbol) with {@defaults: [], @map: {  }}":
+      ivars:
+        "@defaults": "[]"
+        "@map": "{  }"
+    "(:en) with {@defaults: [], @map: {  }}":
+      ivars:
+        "@defaults": "[]"
+        "@map": "{  }"
+      keeps_self: true
     "(bot, false) with {@defaults: nil, @map: {  }}":
       ivars:
         "@map": "{  }"
         "@defaults": nil
+    "(bot, false, ::Array[untyped]) with {@defaults: [], @map: {  }}":
+      ivars:
+        "@defaults": "[]"
+        "@map": "{  }"
     "(bot, false, ::Array[untyped]) with {@defaults: nil, @map: {  }}":
       ivars:
         "@map": "{  }"
         "@defaults": nil
+    "(nil, false, ::Array[untyped]) with {@defaults: [], @map: {  }}":
+      ivars:
+        "@defaults": "[]"
+        "@map": "{  }"
+      keeps_self: true
   I18n::Locale::Fallbacks#defaults=:
     "([]) with {@defaults: nil, @map: {  }}":
       ivars:
