@@ -55,6 +55,15 @@ RSpec.describe "the `# @rbs_infer |...` overloading marker" do
     expect(rbs).to include("| ...")
   end
 
+  it "does not confirm against an ancestor in a class nothing else declares" do
+    resolver = RbsInfer::Signatures::RbsDefinitionResolver.new
+
+    expect(resolver.foreign_plain_declaration?("Rational", "tap", singleton: false,
+                                                                  excluding_suffix: "elsewhere.rbs")).to be(true)
+    expect(resolver.foreign_plain_declaration?("Rational", "tap", singleton: false,
+                                                                  excluding_suffix: "core/rational.rbs")).to be(false)
+  end
+
   # …and only for an INSTANCE member. `frozen?` is `Kernel`'s, an instance method;
   # a `def self.frozen?` confirmed against it would put `| ...` on the SINGLETON, where
   # there is nothing to overload — `InvalidOverloadMethodError`, which poisons the whole
