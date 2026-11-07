@@ -78,10 +78,13 @@ methods:
     "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}": "::ActiveSupport::Inflector::Inflections"
   ActiveSupport::Inflector::Inflections.instance_or_fallback:
     ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}"
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
     : class: "::ActiveSupport::Inflector::Inflections"
       ivars: {}
-    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}": "::ActiveSupport::Inflector::Inflections"
+    ? "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {
+      \ }, @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}"
+    : "::ActiveSupport::Inflector::Inflections"
   ActiveSupport::Inflector::Inflections::Uncountables.new:
     "()":
       class: "::ActiveSupport::Inflector::Inflections::Uncountables"
@@ -1484,6 +1487,12 @@ methods:
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
+  I18n.fallbacks:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      class: "::I18n::Locale::Fallbacks"
+      ivars:
+        "@defaults": "[]"
+        "@map": "{  }"
   I18n::Locale::Fallbacks#[]:
     "(::Symbol) with {@defaults: [], @map: {  }}": "::Array[untyped]"
     "(:en)": "::Array[untyped]"
@@ -5982,35 +5991,60 @@ receivers:
 exits:
   ActiveSupport::Inflector#inflections:
     ? "(:en) &-> untyped with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}"
     : ivars: {}
       classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
               "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
               "@default_proc": nil
-    "(:en) &-> untyped with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}":
+    ? "(:en) &-> untyped with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+        "::ActiveSupport::Inflector::Inflections": {}
+    "(:en) &-> untyped with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(:en) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
         "::ActiveSupport::Inflector::Inflections": {}
     ? "(:en) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: {  }, @default_proc: nil}}}"
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
       classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
         "::ActiveSupport::Inflector::Inflections": {}
     ? "(:en) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
-      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}}"
+      with {::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
       classes:
-        "::ActiveSupport::Inflector::Inflections": {}
+        "::Thread":
+          "@__rbs_infer__main": nil
     ? "(:en) on singleton(::ActiveSupport::Inflector) &-> untyped with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}"
     : ivars: {}
       classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
             class: "::Concurrent::Map[untyped, untyped]"
@@ -6018,22 +6052,40 @@ exits:
               "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
               "@default_proc": nil
     ? "(:en) on singleton(::ActiveSupport::Inflector) &-> untyped with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{}}}"
+      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
       classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+        "::ActiveSupport::Inflector::Inflections": {}
+    "(:en) on singleton(::ActiveSupport::Inflector) &-> untyped with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(:en) on singleton(::ActiveSupport::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
         "::ActiveSupport::Inflector::Inflections": {}
     ? "(:en) on singleton(::ActiveSupport::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: {  }, @default_proc: nil}}}"
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
       classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
         "::ActiveSupport::Inflector::Inflections": {}
     ? "(:en) on singleton(::ActiveSupport::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
-      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}}"
+      with {::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
       classes:
-        "::ActiveSupport::Inflector::Inflections": {}
+        "::Thread":
+          "@__rbs_infer__main": nil
   ActiveSupport::Inflector::Inflections#define_acronym_regex_patterns:
     "() with {@acronym_regex: nil, @acronyms_camelize_regex: nil, @acronyms_underscore_regex: nil}":
       ivars: {}
@@ -6058,25 +6110,44 @@ exits:
     "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}}":
       ivars: {}
   ActiveSupport::Inflector::Inflections.instance_or_fallback:
+    "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread": {}
     ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}"
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
     : ivars:
         "@__instance__":
           class: "::Concurrent::Map[untyped, untyped]"
           ivars:
             "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
             "@default_proc": nil
-    "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}}":
+      classes:
+        "::Thread": {}
+    ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread": {}
+    "(:en) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
-    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}":
-      ivars:
+      classes:
+        "::Thread": {}
+    ? "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {
+      \ }, @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars:
         "@__instance__":
           class: "::Concurrent::Map[untyped, untyped]"
           ivars:
             "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
             "@default_proc": nil
-    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}}":
+      classes:
+        "::Thread": {}
+    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}, ::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
+      classes:
+        "::Thread": {}
   ActiveSupport::Inflector::Inflections.new:
     "() with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}":
       ivars: {}
@@ -8108,6 +8179,11 @@ exits:
           class: "::Example99::Foo"
           ivars:
             "@my_hash": "{ ?:bar => untyped }"
+  I18n.fallbacks:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread": {}
   I18n::Locale::Fallbacks#[]:
     "(::Symbol) with {@defaults: [], @map: {  }}":
       ivars:
@@ -8281,3 +8357,8 @@ exits:
     "(:i18n_fallbacks) with {@__rbs_infer__locals: nil}":
       ivars:
         "@__rbs_infer__locals": nil
+  Thread.current:
+    "() on singleton(::Thread) with {@__rbs_infer__main: nil}":
+      ivars: {}
+    "() with {@__rbs_infer__main: nil}":
+      ivars: {}
