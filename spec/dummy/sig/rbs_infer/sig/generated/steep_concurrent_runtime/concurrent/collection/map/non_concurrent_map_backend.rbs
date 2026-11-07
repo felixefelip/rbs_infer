@@ -4,7 +4,7 @@ module Concurrent
       @default_proc: (^(*untyped) -> untyped)?
       @backend: ::Hash[untyped, untyped]
 
-      def initialize: (?untyped options) ?{ (*untyped) -> untyped } -> void | ...
+      def initialize: (?untyped options) ?{ (*untyped) -> untyped } -> void
       def []: (untyped key) -> untyped
       def []=: (untyped key, untyped value) -> untyped
       def compute_if_absent: (untyped key) { () -> untyped } -> untyped
@@ -25,7 +25,7 @@ module Concurrent
       private
 
       def set_backend: ((^(*untyped) -> untyped)? default_proc) -> ::Hash[untyped, untyped]
-      def initialize_copy: (untyped other) -> self | ...
+      def initialize_copy: (untyped other) -> self
       def dupped_backend: () -> ::Hash[untyped, untyped]
       def pair?: (untyped key, untyped expected_value) -> untyped
       def store_computed_value: (untyped key, untyped new_value) -> untyped

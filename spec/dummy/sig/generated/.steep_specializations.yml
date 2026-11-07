@@ -1486,10 +1486,6 @@ methods:
       class: "::I18n::Locale::Tag::Simple"
       ivars:
         "@tag": ":en"
-    ("en") on singleton(::I18n::Locale::Tag::Simple):
-      class: "::I18n::Locale::Tag::Simple"
-      ivars:
-        "@tag": ":en"
     "(:en)":
       class: "::I18n::Locale::Tag::Simple"
       ivars:
@@ -4746,7 +4742,7 @@ receivers:
   sig/generated/steep_activesupport_runtime/i18n.rb:101:8:
   - "::I18n::Locale::Fallbacks"
   sig/generated/steep_activesupport_runtime/i18n.rb:102:24:
-  - "(::Symbol | ::Hash::_Key)"
+  - "::Symbol"
   sig/generated/steep_activesupport_runtime/i18n.rb:103:17:
   - "::I18n::Locale::Fallbacks"
   sig/generated/steep_activesupport_runtime/i18n.rb:103:31:
@@ -4850,7 +4846,7 @@ receivers:
   sig/generated/steep_activesupport_runtime/i18n.rb:89:13:
   - "(::I18n::Locale::Fallbacks & ::I18n::Locale::Fallbacks::AfterDefaults)"
   sig/generated/steep_activesupport_runtime/i18n.rb:89:33:
-  - "::Array[untyped]"
+  - "::Array[::Array[untyped]]"
   sig/generated/steep_activesupport_runtime/i18n.rb:94:50:
   - "::I18n::Locale::Fallbacks"
   sig/generated/steep_activesupport_runtime/inflector.rb:104:10:
@@ -5266,7 +5262,7 @@ receivers:
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:141:57:
   - "^(*untyped) -> untyped"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:150:8:
-  - "::Concurrent::Collection::NonConcurrentMapBackend"
+  - "::Concurrent::Map"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:161:41:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:167:19:
@@ -7845,7 +7841,7 @@ exits:
         "@defaults": "[]"
       keeps_self: true
   I18n::Locale::Fallbacks#map:
-    "(untyped) with {@defaults: nil, @map: {  }}":
+    "((::Array[untyped] | nil)) with {@defaults: nil, @map: {  }}":
       ivars:
         "@map": "{  }"
         "@defaults": nil
