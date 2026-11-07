@@ -71,6 +71,17 @@ methods:
     "(:plurals)": "(::Array[untyped] | nil)"
     "(:singulars)": "(::Array[untyped] | nil)"
     "(:uncountables)": "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
+  ActiveSupport::Inflector::Inflections.instance:
+    ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}"
+    : "::ActiveSupport::Inflector::Inflections"
+    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}": "::ActiveSupport::Inflector::Inflections"
+  ActiveSupport::Inflector::Inflections.instance_or_fallback:
+    ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}"
+    : class: "::ActiveSupport::Inflector::Inflections"
+      ivars: {}
+    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}": "::ActiveSupport::Inflector::Inflections"
   ActiveSupport::Inflector::Inflections::Uncountables.new:
     "()":
       class: "::ActiveSupport::Inflector::Inflections::Uncountables"
@@ -93,6 +104,8 @@ methods:
     "(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped]": "::Example104::Rules"
     "(:en, ::ActiveSupport::Inflector::Inflections)": "::ActiveSupport::Inflector::Inflections"
     "(:en, ::ActiveSupport::Inflector::Inflections) on ::Concurrent::Map[untyped, untyped]": "::ActiveSupport::Inflector::Inflections"
+    "(:en, ::ActiveSupport::Inflector::Inflections) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}": "::ActiveSupport::Inflector::Inflections"
+    "(:en, ::ActiveSupport::Inflector::Inflections) with {@backend: {  }, @default_proc: nil}": "::ActiveSupport::Inflector::Inflections"
     "(:en, ::Example104::Rules)": "::Example104::Rules"
     "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped]": "::Example104::Rules"
     "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}": "::Example104::Rules"
@@ -110,6 +123,8 @@ methods:
     '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}': "::Example104::Rules"
   Concurrent::Collection::NonConcurrentMapBackend#initialize:
     "(nil) with {@backend: nil, @default_proc: nil, @write_lock: nil}": nil
+  Concurrent::Collection::NonConcurrentMapBackend#key?:
+    "(:en) with {@backend: {  }, @default_proc: nil}": 'false'
   Concurrent::Map#each_pair:
     "() &-> (nil | void)": self
     "() &-> ::Array[untyped]": self
@@ -5965,10 +5980,115 @@ receivers:
   sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:33:
   - "::Post"
 exits:
+  ActiveSupport::Inflector#inflections:
+    ? "(:en) &-> untyped with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+    "(:en) &-> untyped with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}":
+      ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections": {}
+    ? "(:en) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections": {}
+    ? "(:en) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections": {}
+    ? "(:en) on singleton(::ActiveSupport::Inflector) &-> untyped with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+    ? "(:en) on singleton(::ActiveSupport::Inflector) &-> untyped with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections": {}
+    ? "(:en) on singleton(::ActiveSupport::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections": {}
+    ? "(:en) on singleton(::ActiveSupport::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections": {}
   ActiveSupport::Inflector::Inflections#define_acronym_regex_patterns:
     "() with {@acronym_regex: nil, @acronyms_camelize_regex: nil, @acronyms_underscore_regex: nil}":
       ivars: {}
+  ActiveSupport::Inflector::Inflections.instance:
+    ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}"
+    : ivars:
+        "@__instance__":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+            "@default_proc": nil
+    "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}}":
+      ivars: {}
+    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}":
+      ivars:
+        "@__instance__":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+            "@default_proc": nil
+    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}}":
+      ivars: {}
+  ActiveSupport::Inflector::Inflections.instance_or_fallback:
+    ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}"
+    : ivars:
+        "@__instance__":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+            "@default_proc": nil
+    "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}}":
+      ivars: {}
+    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}":
+      ivars:
+        "@__instance__":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+            "@default_proc": nil
+    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}}":
+      ivars: {}
+  ActiveSupport::Inflector::Inflections.new:
+    "() with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}":
+      ivars: {}
   Concurrent::Collection::MriMapBackend#[]=:
+    "(:en, ::ActiveSupport::Inflector::Inflections) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}":
+      ivars:
+        "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+        "@default_proc": nil
+    "(:en, ::ActiveSupport::Inflector::Inflections) with {@backend: {  }, @default_proc: nil}":
+      ivars:
+        "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+        "@default_proc": nil
     "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}":
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
@@ -6016,7 +6136,17 @@ exits:
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
+    "(untyped) with {@backend: {  }, @default_proc: nil}":
+      ivars: {}
   Concurrent::Collection::NonConcurrentMapBackend#[]=:
+    "(:en, ::ActiveSupport::Inflector::Inflections) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}":
+      ivars:
+        "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+        "@default_proc": nil
+    "(:en, ::ActiveSupport::Inflector::Inflections) with {@backend: {  }, @default_proc: nil}":
+      ivars:
+        "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+        "@default_proc": nil
     "(:en, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}":
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
@@ -6051,6 +6181,15 @@ exits:
         "@default_proc": nil
         "@backend": "{  }"
       keeps_self: true
+  Concurrent::Collection::NonConcurrentMapBackend#key?:
+    "(:en) with {@backend: {  }, @default_proc: nil}":
+      ivars:
+        "@backend": "{  }"
+        "@default_proc": nil
+    "(untyped) with {@backend: {  }, @default_proc: nil}":
+      ivars:
+        "@backend": "{  }"
+        "@default_proc": nil
   Concurrent::Collection::NonConcurrentMapBackend#set_backend:
     "(nil) with {@backend: nil, @default_proc: nil, @write_lock: nil}":
       ivars:
