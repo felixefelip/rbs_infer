@@ -75,21 +75,17 @@ sig/generated/steep_activesupport_runtime/delegation.rb:19:39: [error] Type `(::
 sig/generated/steep_activesupport_runtime/delegation.rb:61:44: [error] Type `(::Array[::Thread::Backtrace::Location] | nil)` does not have method `first`
 sig/generated/steep_activesupport_runtime/delegation.rb:90:21: [warning] Empty array doesn't have type annotation
 sig/generated/steep_activesupport_runtime/delegation.rb:91:23: [warning] Empty array doesn't have type annotation
-sig/generated/steep_activesupport_runtime/i18n.rb:100:50: [error] Type `(::Symbol | ::Hash::_Key)` does not have method `nil?`
-sig/generated/steep_activesupport_runtime/i18n.rb:101:52: [error] Type `(::Symbol | ::Hash::_Key)` does not have method `==`
-sig/generated/steep_activesupport_runtime/i18n.rb:102:24: [error] Type `(::Symbol | ::Hash::_Key)` does not have method `to_sym`
 sig/generated/steep_activesupport_runtime/i18n.rb:118:10: [error] Cannot find compatible overloading of method `map` of type `::Hash[untyped, untyped]`
 sig/generated/steep_activesupport_runtime/i18n.rb:136:17: [warning] Empty array doesn't have type annotation
 sig/generated/steep_activesupport_runtime/i18n.rb:138:17: [error] `self_and_parents` requires `self.parent` to be non-nil here
-sig/generated/steep_activesupport_runtime/i18n.rb:139:20: [error] Cannot pass a value of type `(::Symbol | ::Hash::_Key)` as an argument of type `::array[U(_)]`
-sig/generated/steep_activesupport_runtime/i18n.rb:140:15: [error] Type `(::Symbol | ::Hash::_Key)` does not have method `each`
+sig/generated/steep_activesupport_runtime/i18n.rb:139:20: [error] Cannot pass a value of type `(::Array[untyped] | ::Symbol)` as an argument of type `::array[U(_)]`
+sig/generated/steep_activesupport_runtime/i18n.rb:140:15: [error] Type `(::Array[untyped] | ::Symbol)` does not have method `each`
 sig/generated/steep_activesupport_runtime/i18n.rb:194:47: [error] Unexpected positional argument
 sig/generated/steep_activesupport_runtime/i18n.rb:200:46: [error] `parents` requires `self.parent` to be non-nil here
 sig/generated/steep_activesupport_runtime/i18n.rb:205:55: [error] Type `(::I18n::Locale::Tag::Simple | nil)` does not have method `parents`
-sig/generated/steep_activesupport_runtime/i18n.rb:86:20: [error] Method parameters are incompatible with declaration `(?untyped, *::Array[untyped], ?capacity: ::int) ?{ (instance, ::Hash::_Key) -> untyped } -> void`
 sig/generated/steep_ar_runtime/active_support/concern.rb:53:22: [warning] Cannot pass a value of type `^(?(::Module | nil)) -> untyped` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
 sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:22:8: [error] Type `::Concurrent::Collection::NonConcurrentMapBackend` does not have method `validate_options_hash!`
-sig/generated/steep_concurrent_runtime/concurrent/map.rb:146:8: [error] Cannot find compatible overloading of method `initialize` of type `::Concurrent::Map[K, V]`
+sig/generated/steep_concurrent_runtime/concurrent/map.rb:146:8: [warning] Cannot pass a value of type `(^(self, untyped) -> V | nil)` as a block-pass-argument of type `(^(*untyped) -> untyped | nil)`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:161:84: [error] Cannot pass a value of type `::Object` as an argument of type `nil`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:192:46: [error] Cannot pass a value of type `::Object` as an argument of type `nil`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:19:26: [warning] Cannot find the declaration of constant: `JRubyMapBackend`

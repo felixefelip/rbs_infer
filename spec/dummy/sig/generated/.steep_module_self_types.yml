@@ -733,6 +733,11 @@ sig/generated/steep_ar_runtime/user/generated_store_accessors.rb:
   - anchor: GeneratedStoreAccessors
     annotations:
     - "# @type instance: User & User::GeneratedStoreAccessors"
+sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:
+  modules:
+  - anchor: NonConcurrentMapBackend
+    defs:
+      initialize_copy: Concurrent::Map
 sig/generated/steep_concurrent_runtime/concurrent/utility/engine.rb:
   modules:
   - anchor: EngineDetector
