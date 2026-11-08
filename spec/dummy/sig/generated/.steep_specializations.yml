@@ -62,9 +62,37 @@ methods:
   ActiveSupport::Inflector#apply_inflections:
     ("comments", untyped, :en): "::String"
     ("comments", untyped, :en) on singleton(::ActiveSupport::Inflector): "::String"
+    ? '("comments", untyped, :en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}'
+    : "::String"
+    ? '("comments", untyped, :en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}}'
+    : "::String"
+    ? '("comments", untyped, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}'
+    : "::String"
+    '("comments", untyped, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}': "::String"
+    ? "(self, untyped, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
+    : "::String"
+    "(self, untyped, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}": "::String"
   ActiveSupport::Inflector#singularize:
     ("comments", :en): "::String"
     ("comments", :en) on singleton(::ActiveSupport::Inflector): "::String"
+    ? '("comments", :en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}'
+    : "::String"
+    ? '("comments", :en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}}'
+    : "::String"
+    ? '("comments", :en) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}'
+    : "::String"
+    '("comments", :en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}': "::String"
+    ? "(self, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}}"
+    : "::String"
+    "(self, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}": "::String"
   ActiveSupport::Inflector::Inflections#clear:
     "(:acronyms)": "::Regexp"
     "(:humans)": "::Array[untyped]"
@@ -76,15 +104,6 @@ methods:
       ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}"
     : "::ActiveSupport::Inflector::Inflections"
     "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}": "::ActiveSupport::Inflector::Inflections"
-  ActiveSupport::Inflector::Inflections.instance_or_fallback:
-    ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : class: "::ActiveSupport::Inflector::Inflections"
-      ivars: {}
-    ? "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {
-      \ }, @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}"
-    : "::ActiveSupport::Inflector::Inflections"
   ActiveSupport::Inflector::Inflections::Uncountables.new:
     "()":
       class: "::ActiveSupport::Inflector::Inflections::Uncountables"
@@ -126,14 +145,16 @@ methods:
     '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}': "::Example104::Rules"
   Concurrent::Collection::NonConcurrentMapBackend#initialize:
     "(nil) with {@backend: nil, @default_proc: nil, @write_lock: nil}": nil
-  Concurrent::Collection::NonConcurrentMapBackend#key?:
-    "(:en) with {@backend: {  }, @default_proc: nil}": 'false'
   Concurrent::Map#each_pair:
     "() &-> (nil | void)": self
     "() &-> ::Array[untyped]": self
     "() &-> ::Integer": self
     "() &-> bot": self
     "() &-> nil": self
+  Current::GeneratedAttributeMethods#author_name=:
+    "(::String)": "::String"
+  Current::GeneratedAttributeMethods#viewer_name=:
+    "(::String)": "::String"
   EmailNotifier#notify:
     ((::User | nil), "post_notification"): '{ :body => "post_notification", :from
       => ::String, :sent_at => ::ActiveSupport::TimeWithZone, :to => (::String | nil)
@@ -487,7 +508,73 @@ methods:
     "() on singleton(::Example108::Gauge) with {@generated_readers: nil}": singleton(::Example108::Gauge::GeneratedReaders)
   Example109::Associations::Builder::Association.build:
     ? "(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@generated_relation_methods: nil}}"
+    : class: "::Example109::Reflection::HasManyReflection"
+      ivars:
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@foreign_key": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@join_table": nil
+        "@name": ":comments"
+        "@options": "{  }"
+    ? "(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
+      nil}}"
+    : class: "::Example109::Reflection::HasManyReflection"
+      ivars:
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@foreign_key": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@join_table": nil
+        "@name": ":comments"
+        "@options": "{  }"
+    ? "(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
       with {::Example109::Post{@generated_relation_methods: nil}}"
+    : class: "::Example109::Reflection::HasManyReflection"
+      ivars:
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@foreign_key": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@join_table": nil
+        "@name": ":comments"
+        "@options": "{  }"
+    ? "(singleton(::Example109::Post), :comments, nil, {  }) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@generated_relation_methods: nil}}"
+    : class: "::Example109::Reflection::HasManyReflection"
+      ivars:
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@foreign_key": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@join_table": nil
+        "@name": ":comments"
+        "@options": "{  }"
+    ? "(singleton(::Example109::Post), :comments, nil, {  }) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@generated_relation_methods: nil}}"
     : class: "::Example109::Reflection::HasManyReflection"
       ivars:
         "@association_foreign_key": nil
@@ -552,6 +639,39 @@ methods:
     : nil
     "(singleton(::Example109::Post), :comments) with {::Example109::Post{@generated_relation_methods: nil}}": nil
   Example109::Associations::ClassMethods#has_records:
+    ? "(:comments, **{  }) on singleton(::Example109::Post) with {@generated_relation_methods:
+      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : class: "::Example109::Reflection::HasManyReflection"
+      ivars:
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@foreign_key": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@join_table": nil
+        "@name": ":comments"
+        "@options": "{  }"
+    ? "(:comments, **{  }) on singleton(::Example109::Post) with {@generated_relation_methods:
+      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : class: "::Example109::Reflection::HasManyReflection"
+      ivars:
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@foreign_key": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@join_table": nil
+        "@name": ":comments"
+        "@options": "{  }"
     "(:comments, **{  }) on singleton(::Example109::Post) with {@generated_relation_methods: nil}":
       class: "::Example109::Reflection::HasManyReflection"
       ivars:
@@ -1064,8 +1184,12 @@ methods:
   Example83.has_stored:
     "(:comments)": ":comments"
     "(:comments) on singleton(::Example83)": ":comments"
+    "(:comments) on singleton(::Example83) with {::Thread{@__rbs_infer__main: nil}}": ":comments"
+    "(:comments) with {::Thread{@__rbs_infer__main: nil}}": ":comments"
     "(:posts)": ":posts"
     "(:posts) on singleton(::Example83)": ":posts"
+    "(:posts) on singleton(::Example83) with {::Thread{@__rbs_infer__main: nil}}": ":posts"
+    "(:posts) with {::Thread{@__rbs_infer__main: nil}}": ":posts"
   Example83::Reflection.new:
     "(:comments)":
       class: "::Example83::Reflection"
@@ -1082,9 +1206,18 @@ methods:
     "(singleton(::Example83), :tags)": ":tags"
   Example83::Writer.define_stored:
     "(self, ::Example83::Reflection{@name: :comments})": ":comments"
+    "(self, ::Example83::Reflection{@name: :comments}) with {::Thread{@__rbs_infer__main: nil}}": ":comments"
     "(self, ::Example83::Reflection{@name: :posts})": ":posts"
+    "(self, ::Example83::Reflection{@name: :posts}) with {::Thread{@__rbs_infer__main: nil}}": ":posts"
     "(singleton(::Example83), ::Example83::Reflection{@name: :comments})": ":comments"
+    "(singleton(::Example83), ::Example83::Reflection{@name: :comments}) with {::Thread{@__rbs_infer__main: nil}}": ":comments"
     "(singleton(::Example83), ::Example83::Reflection{@name: :posts})": ":posts"
+    "(singleton(::Example83), ::Example83::Reflection{@name: :posts}) with {::Thread{@__rbs_infer__main: nil}}": ":posts"
+  Example84.has_renamed:
+    "(:comments, :replies) on singleton(::Example84) with {::Thread{@__rbs_infer__main: nil}}": ":replies"
+    "(:comments, :replies) with {::Thread{@__rbs_infer__main: nil}}": ":replies"
+    "(:posts, :articles) on singleton(::Example84) with {::Thread{@__rbs_infer__main: nil}}": ":articles"
+    "(:posts, :articles) with {::Thread{@__rbs_infer__main: nil}}": ":articles"
   Example84::Reflection#rename:
     "(:articles) with {@name: :posts}": ":articles"
     "(:replies) with {@name: :comments}": ":replies"
@@ -1142,6 +1275,11 @@ methods:
       class: "::Example86::Box"
       ivars:
         "@value": ":published"
+  Example87.has_association:
+    "(:comments) on singleton(::Example87) with {::Thread{@__rbs_infer__main: nil}}": ":comments"
+    "(:comments) with {::Thread{@__rbs_infer__main: nil}}": ":comments"
+    "(:posts) on singleton(::Example87) with {::Thread{@__rbs_infer__main: nil}}": ":posts"
+    "(:posts) with {::Thread{@__rbs_infer__main: nil}}": ":posts"
   Example87::AssociationReflection.new:
     "(:comments, ::Hash[untyped, untyped])":
       class: "::Example87::AssociationReflection"
@@ -1154,10 +1292,22 @@ methods:
         "@collection": 'false'
         "@name": ":posts"
   Example87::Writer.define_accessors:
+    "(self, ::Example87::HasManyReflection{@collection: false, @name: :comments}) with {::Thread{@__rbs_infer__main: nil}}": ":comments"
+    "(self, ::Example87::HasManyReflection{@collection: false, @name: :posts}) with {::Thread{@__rbs_infer__main: nil}}": ":posts"
     "(self, ::Example87::HasManyReflection{@name: :comments})": ":comments"
+    "(self, ::Example87::HasManyReflection{@name: :comments}) with {::Thread{@__rbs_infer__main: nil}}": ":comments"
     "(self, ::Example87::HasManyReflection{@name: :posts})": ":posts"
+    "(self, ::Example87::HasManyReflection{@name: :posts}) with {::Thread{@__rbs_infer__main: nil}}": ":posts"
+    ? "(singleton(::Example87), ::Example87::HasManyReflection{@collection: false,
+      @name: :comments}) with {::Thread{@__rbs_infer__main: nil}}"
+    : ":comments"
+    ? "(singleton(::Example87), ::Example87::HasManyReflection{@collection: false,
+      @name: :posts}) with {::Thread{@__rbs_infer__main: nil}}"
+    : ":posts"
     "(singleton(::Example87), ::Example87::HasManyReflection{@name: :comments})": ":comments"
+    "(singleton(::Example87), ::Example87::HasManyReflection{@name: :comments}) with {::Thread{@__rbs_infer__main: nil}}": ":comments"
     "(singleton(::Example87), ::Example87::HasManyReflection{@name: :posts})": ":posts"
+    "(singleton(::Example87), ::Example87::HasManyReflection{@name: :posts}) with {::Thread{@__rbs_infer__main: nil}}": ":posts"
   Example88::Base.has_many_like:
     ? '(:categories) on singleton(::Example88::Post) with {::Example88::Inflector{@rules:
       ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}}'
@@ -1493,10 +1643,6 @@ methods:
       ivars:
         "@defaults": "[]"
         "@map": "{  }"
-  I18n::Locale::Fallbacks#[]:
-    "(::Symbol) with {@defaults: [], @map: {  }}": "::Array[untyped]"
-    "(:en)": "::Array[untyped]"
-    "(:en) with {@defaults: [], @map: {  }}": "[:en]"
   I18n::Locale::Fallbacks#compute:
     "(:en) with {@defaults: [], @map: {  }}": "[:en]"
     "(nil, false, ::Array[untyped]) with {@defaults: [], @map: {  }}": "[]"
@@ -1598,7 +1744,7 @@ methods:
     ("post"): '"stamped: post"'
   Thread#[]:
     "(:example113_settings) with {@__rbs_infer__locals: nil}": nil
-    "(:i18n_fallbacks) with {@__rbs_infer__locals: nil}": nil
+    "(:i18n_fallbacks) with {@__rbs_infer__locals: nil, ::I18n{@@fallbacks: ::I18n::Locale::Fallbacks{@defaults: [], @map: {  }}}}": nil
   Thread#[]=:
     "(:i18n_fallbacks, ::I18n::Locale::Fallbacks)": "::I18n::Locale::Fallbacks"
   Thread::Mutex#synchronize:
@@ -1689,7 +1835,6 @@ declarations:
   Example99::Runner#call_num1: '5'
   Example99::Runner#call_num2: '10'
   Example99::Runner#change_num2: '30'
-  I18n::Locale::Fallbacks#[]: "([:en] | ::Array[untyped])"
   IncludedHook::Slots#badge=: '"value"'
   IncludedHook::Slots#slot=: '"value"'
   IncludedHook::Slots#stamp=: '"value"'
@@ -5989,14 +6134,160 @@ receivers:
   sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:33:
   - "::Post"
 exits:
-  ActiveSupport::Inflector#inflections:
-    ? "(:en) &-> untyped with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+  ActiveJob::Base.perform_later:
+    ? "((::Post & ::Post::Validated), **{ :recipient => ::String }) on singleton(::AuthorDigestJob)
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "((::Post & ::Post::Validated), **{ :recipient => ::String }) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "((::User & ::User::Validated), **{ :sizes => ::Array[::Integer] }) on singleton(::AvatarThumbnailJob)
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "((::User & ::User::Validated), **{ :sizes => ::Array[::Integer] }) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  ActiveSupport::Delegation.generate:
+    ? "(self, [:human_name], allow_nil: nil, location: untyped, prefix: nil, private:
+      nil, to: :class) on singleton(::ActiveSupport::Delegation) with {::Thread{@__rbs_infer__main:
       nil}}"
     : ivars: {}
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
+    ? "(self, [:human_name], allow_nil: nil, location: untyped, prefix: nil, private:
+      nil, to: :class) with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(self, [:updated_at], allow_nil: nil, location: untyped, prefix: true, private:
+      nil, to: :user) on singleton(::ActiveSupport::Delegation) with {::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(self, [:updated_at], allow_nil: nil, location: untyped, prefix: true, private:
+      nil, to: :user) with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(singleton(::Example60::Labels), [:human_name], allow_nil: nil, location: untyped,
+      prefix: nil, private: nil, to: :class) on singleton(::ActiveSupport::Delegation)
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(singleton(::Example60::Labels), [:human_name], allow_nil: nil, location: untyped,
+      prefix: nil, private: nil, to: :class) with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(singleton(::Post), [:updated_at], allow_nil: nil, location: untyped, prefix:
+      true, private: nil, to: :user) on singleton(::ActiveSupport::Delegation) with
+      {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(singleton(::Post), [:updated_at], allow_nil: nil, location: untyped, prefix:
+      true, private: nil, to: :user) with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  ActiveSupport::Inflector#apply_inflections:
+    ? '("comments", untyped, :en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? '("comments", untyped, :en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? '("comments", untyped, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    '("comments", untyped, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}':
+      ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(self, untyped, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    "(self, untyped, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}":
+      ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::ActiveSupport::Inflector), untyped, :en) on singleton(::ActiveSupport::Inflector)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::ActiveSupport::Inflector), untyped, :en) on singleton(::ActiveSupport::Inflector)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+  ActiveSupport::Inflector#inflections:
+    ? "(:en) &-> untyped with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
             class: "::Concurrent::Map[untyped, untyped]"
@@ -6017,12 +6308,9 @@ exits:
           "@__rbs_infer__main": nil
     ? "(:en) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
-      nil}}"
+      untyped]{@backend: {  }, @default_proc: nil}}}"
     : ivars: {}
       classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
         "::ActiveSupport::Inflector::Inflections": {}
     ? "(:en) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
@@ -6039,12 +6327,9 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
     ? "(:en) on singleton(::ActiveSupport::Inflector) &-> untyped with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
-      nil}}"
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
     : ivars: {}
       classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
             class: "::Concurrent::Map[untyped, untyped]"
@@ -6065,12 +6350,9 @@ exits:
           "@__rbs_infer__main": nil
     ? "(:en) on singleton(::ActiveSupport::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
-      nil}}"
+      untyped]{@backend: {  }, @default_proc: nil}}}"
     : ivars: {}
       classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
         "::ActiveSupport::Inflector::Inflections": {}
     ? "(:en) on singleton(::ActiveSupport::Inflector) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_activesupport_runtime/inflector.rb:11886
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
@@ -6086,6 +6368,96 @@ exits:
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
+    ? "(:en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections": {}
+    ? "(:en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections": {}
+    ? "(:en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections": {}
+    "(:en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}":
+      ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections": {}
+  ActiveSupport::Inflector#singularize:
+    ? '("comments", :en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? '("comments", :en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? '("comments", :en) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    '("comments", :en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}':
+      ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(self, :en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(self, :en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(self, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    "(self, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}":
+      ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
   ActiveSupport::Inflector::Inflections#define_acronym_regex_patterns:
     "() with {@acronym_regex: nil, @acronyms_camelize_regex: nil, @acronyms_underscore_regex: nil}":
       ivars: {}
@@ -6115,42 +6487,54 @@ exits:
       classes:
         "::Thread": {}
     ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars:
-        "@__instance__":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-            "@default_proc": nil
-      classes:
-        "::Thread": {}
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}"
+    : ivars: {}
     ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
       ::Concurrent::Map[untyped, untyped]{}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
       classes:
         "::Thread": {}
+    "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}}":
+      ivars: {}
     "(:en) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
         "::Thread": {}
-    ? "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {
-      \ }, @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}"
-    : ivars:
-        "@__instance__":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-            "@default_proc": nil
-      classes:
-        "::Thread": {}
+    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}":
+      ivars: {}
     "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}, ::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
         "::Thread": {}
+    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}}":
+      ivars: {}
   ActiveSupport::Inflector::Inflections.new:
     "() with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}":
       ivars: {}
+  ApplicationController#authenticate_user:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  ApplicationController#log_user_author_name:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Class#class_attribute:
+    ? "(:plural_labels, default: true, instance_writer: false) on singleton(::Example110::Options)
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:plural_labels, default: true, instance_writer: false) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Concurrent::Collection::MriMapBackend#[]=:
     "(:en, ::ActiveSupport::Inflector::Inflections) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}":
       ivars:
@@ -6253,10 +6637,6 @@ exits:
         "@backend": "{  }"
       keeps_self: true
   Concurrent::Collection::NonConcurrentMapBackend#key?:
-    "(:en) with {@backend: {  }, @default_proc: nil}":
-      ivars:
-        "@backend": "{  }"
-        "@default_proc": nil
     "(untyped) with {@backend: {  }, @default_proc: nil}":
       ivars:
         "@backend": "{  }"
@@ -6268,6 +6648,35 @@ exits:
         "@backend": "{  }"
         "@write_lock": nil
       keeps_self: true
+  Current#user=:
+    "((::User & ::User::Validated)) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Current.user=:
+    "((::User & ::User::Validated)) on singleton(::Current) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "((::User & ::User::Validated)) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  DashboardController#__rbs_infer__run_show:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  DashboardController#set_current_viewer:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   EmailNotifier#notify:
     '((::User | nil), "post_notification") with {@delivery_method: :smtp}':
       ivars:
@@ -6786,9 +7195,67 @@ exits:
         "@generated_readers": nil
   Example109::Associations::Builder::Association.build:
     ? "(self, :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Base{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+        "::Example109::Base":
+          "@generated_relation_methods": nil
+    ? "(self, :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Base{@generated_relation_methods:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Example109::Base":
+          "@generated_relation_methods": nil
+    ? "(self, :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
       with {::Example109::Base{@generated_relation_methods: nil}}"
     : ivars: {}
       classes:
+        "::Example109::Base":
+          "@generated_relation_methods": nil
+    ? "(self, :comments, nil, {  }) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Base{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+        "::Example109::Base":
+          "@generated_relation_methods": nil
+    ? "(self, :comments, nil, {  }) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Base{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
         "::Example109::Base":
           "@generated_relation_methods": nil
     "(self, :comments, nil, {  }) with {::Example109::Base{@generated_relation_methods: nil}}":
@@ -6797,9 +7264,71 @@ exits:
         "::Example109::Base":
           "@generated_relation_methods": nil
     ? "(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+        "::Example109::Post": {}
+      params:
+        '3': "{  }"
+    ? "(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Example109::Post": {}
+      params:
+        '3': "{  }"
+    ? "(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
       with {::Example109::Post{@generated_relation_methods: nil}}"
     : ivars: {}
       classes:
+        "::Example109::Post": {}
+      params:
+        '3': "{  }"
+    ? "(singleton(::Example109::Post), :comments, nil, {  }) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+        "::Example109::Post": {}
+      params:
+        '3': "{  }"
+    ? "(singleton(::Example109::Post), :comments, nil, {  }) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
         "::Example109::Post": {}
       params:
         '3': "{  }"
@@ -6825,6 +7354,95 @@ exits:
       params:
         '3': "{  }"
   Example109::Associations::Builder::Association.define_accessors:
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::HasMany) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::HasMany) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -6839,10 +7457,116 @@ exits:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @name: :comments, @options: {  }}) with {::Example109::Post{@generated_relation_methods:
       nil}}"
     : ivars: {}
       classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}) on singleton(::Example109::Associations::Builder::HasMany)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
         "::Example109::Post":
           "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
@@ -6859,12 +7583,217 @@ exits:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@generated_relation_methods: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @name: :comments}) with {::Example109::Post{@generated_relation_methods: nil}}"
     : ivars: {}
       classes:
         "::Example109::Post":
           "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
+      :comments}) on singleton(::Example109::Associations::Builder::HasMany) with
+      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
+      :comments}) on singleton(::Example109::Associations::Builder::HasMany) with
+      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
+      :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
+      :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
   Example109::Associations::Builder::Association.define_callbacks:
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::CollectionAssociation) with
+      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::CollectionAssociation) with
+      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) on singleton(::Example109::Associations::Builder::CollectionAssociation)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) on singleton(::Example109::Associations::Builder::CollectionAssociation)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -6889,12 +7818,77 @@ exits:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @name: :comments, @options: {  }}) with {::Example109::Post{@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}}"
     : ivars: {}
       classes:
         "::Example109::Post":
           "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}) on singleton(::Example109::Associations::Builder::CollectionAssociation)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}) on singleton(::Example109::Associations::Builder::CollectionAssociation)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -6919,11 +7913,95 @@ exits:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @name: :comments}) with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
     : ivars: {}
       classes:
         "::Example109::Post":
           "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
+      :comments}) on singleton(::Example109::Associations::Builder::CollectionAssociation)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
+      :comments}) on singleton(::Example109::Associations::Builder::CollectionAssociation)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
+      :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
+      :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
   Example109::Associations::Builder::CollectionAssociation.define_callback:
     ? "(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
       | :after_remove), :comments, ::Hash[untyped, untyped]) on singleton(::Example109::Associations::Builder::HasMany)
@@ -6950,6 +8028,31 @@ exits:
       classes:
         "::Example109::Post": {}
   Example109::Associations::Builder::CollectionAssociation.define_callbacks:
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -6960,6 +8063,38 @@ exits:
       classes:
         "::Example109::Post":
           "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -6984,11 +8119,68 @@ exits:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @name: :comments}) with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
     : ivars: {}
       classes:
         "::Example109::Post":
           "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
+      :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
+      :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
   Example109::Associations::Builder::CollectionAssociation.define_extensions:
     ? "(singleton(::Example109::Post), :comments) on singleton(::Example109::Associations::Builder::HasMany)
       with {::Example109::Post{@generated_relation_methods: nil}}"
@@ -7001,9 +8193,110 @@ exits:
       classes:
         "::Example109::Post":
           "@generated_relation_methods": nil
+  Example109::Associations::Builder::CollectionAssociation.define_readers:
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods), :comments) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods), :comments) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+  Example109::Associations::Builder::CollectionAssociation.define_writers:
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods), :comments) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods), :comments) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
   Example109::Associations::ClassMethods#has_records:
+    ? "(:comments, **{  }) on singleton(::Example109::Post) with {@generated_relation_methods:
+      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(:comments, **{  }) on singleton(::Example109::Post) with {@generated_relation_methods:
+      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
     "(:comments, **{  }) on singleton(::Example109::Post) with {@generated_relation_methods: nil}":
       ivars: {}
+    ? "(:comments, **{  }) with {@generated_relation_methods: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars:
+        "@generated_relation_methods": nil
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(:comments, **{  }) with {@generated_relation_methods: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}}"
+    : ivars:
+        "@generated_relation_methods": nil
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
     "(:comments, **{  }) with {@generated_relation_methods: nil}":
       ivars:
         "@generated_relation_methods": nil
@@ -7381,6 +8674,69 @@ exits:
     "() with {@generated_option_readers: nil}":
       ivars:
         "@generated_option_readers": nil
+  Example83.has_stored:
+    "(:comments) on singleton(::Example83) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:comments) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:posts) on singleton(::Example83) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:posts) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example83::Writer.define_stored:
+    "(self, ::Example83::Reflection{@name: :comments}) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(self, ::Example83::Reflection{@name: :posts}) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(singleton(::Example83), ::Example83::Reflection{@name: :comments}) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(singleton(::Example83), ::Example83::Reflection{@name: :posts}) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example84.has_renamed:
+    "(:comments, :replies) on singleton(::Example84) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:comments, :replies) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:posts, :articles) on singleton(::Example84) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:posts, :articles) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Example84::Reflection#rename:
     "((:articles | :replies)) with {@name: (:posts | :comments)}":
       ivars:
@@ -7391,6 +8747,31 @@ exits:
     "(:replies) with {@name: :comments}":
       ivars:
         "@name": ":replies"
+  Example84::Writer.define_stored:
+    ? "(self, (::Example84::Reflection{@name: :articles} & ::Example84::Reflection::AfterRename))
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(self, (::Example84::Reflection{@name: :replies} & ::Example84::Reflection::AfterRename))
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(singleton(::Example84), (::Example84::Reflection{@name: :articles} & ::Example84::Reflection::AfterRename))
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(singleton(::Example84), (::Example84::Reflection{@name: :replies} & ::Example84::Reflection::AfterRename))
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Example85.has_many_like:
     '(:categories) on singleton(::Example85) with {@rules: ::Example85::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}':
       ivars:
@@ -7481,6 +8862,27 @@ exits:
     '(/s\z/, "") with {@singulars: []}':
       ivars:
         "@singulars": '[[::Regexp, ""]]'
+  Example87.has_association:
+    "(:comments) on singleton(::Example87) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:comments) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:posts) on singleton(::Example87) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:posts) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Example87::MacroReflection#initialize:
     "(:comments, ::Hash[untyped, untyped]) with {@collection: nil, @name: nil, @options: nil}":
       ivars:
@@ -7488,6 +8890,49 @@ exits:
     "(:posts, ::Hash[untyped, untyped]) with {@collection: nil, @name: nil, @options: nil}":
       ivars:
         "@name": ":posts"
+  Example87::Writer.define_accessors:
+    "(self, ::Example87::HasManyReflection{@collection: false, @name: :comments}) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(self, ::Example87::HasManyReflection{@collection: false, @name: :posts}) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(self, ::Example87::HasManyReflection{@name: :comments}) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(self, ::Example87::HasManyReflection{@name: :posts}) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(singleton(::Example87), ::Example87::HasManyReflection{@collection: false,
+      @name: :comments}) with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(singleton(::Example87), ::Example87::HasManyReflection{@collection: false,
+      @name: :posts}) with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(singleton(::Example87), ::Example87::HasManyReflection{@name: :comments}) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(singleton(::Example87), ::Example87::HasManyReflection{@name: :posts}) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Example88::Base.has_many_like:
     ? '(:categories) on singleton(::Example88::Post) with {::Example88::Inflector{@rules:
       ::Example88::Rules{@singulars: [[/ies\z/, "y"], [/s\z/, ""]]}}}'
@@ -8185,19 +9630,11 @@ exits:
       classes:
         "::Thread": {}
   I18n::Locale::Fallbacks#[]:
-    "(::Symbol) with {@defaults: [], @map: {  }}":
-      ivars:
-        "@defaults": "[]"
-        "@map": "{  }"
     "(:en) with {@defaults: [], @map: {  }}":
       ivars:
         "@defaults": "[]"
         "@map": "{  }"
   I18n::Locale::Fallbacks#compute:
-    "(::Symbol) with {@defaults: [], @map: {  }}":
-      ivars:
-        "@defaults": "[]"
-        "@map": "{  }"
     "(:en) with {@defaults: [], @map: {  }}":
       ivars:
         "@defaults": "[]"
@@ -8272,6 +9709,27 @@ exits:
     "() with {@tag: :en}":
       ivars:
         "@tag": ":en"
+  Module#delegate:
+    "(:human_name, to: :class) on singleton(::Example60::Labels) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:human_name, to: :class) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:updated_at, prefix: true, to: :user) on singleton(::Post) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(:updated_at, prefix: true, to: :user) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Module#extend_object:
     "(singleton(::Example109::Base)) with {::Example109::Base{@generated_relation_methods: nil}}":
       ivars: {}
@@ -8350,15 +9808,153 @@ exits:
     "(singleton(::Example91::Core::ClassMethods)) with {@generated_association_methods: nil}":
       ivars:
         "@generated_association_methods": nil
+  PostsController#__rbs_infer__run_create:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  PostsController#__rbs_infer__run_destroy:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  PostsController#__rbs_infer__run_index:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  PostsController#__rbs_infer__run_new:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  PostsController#__rbs_infer__run_publish:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  PostsController#__rbs_infer__run_show:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  PostsController#__rbs_infer__run_update:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  PostsController#create:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  PostsController#publish:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  PostsController#update:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  String#singularize:
+    ? '() on "comments" with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    '() on "comments" with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}':
+      ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    "() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped, untyped]{}}}":
+      ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
   Thread#[]:
     "(:example113_settings) with {@__rbs_infer__locals: nil}":
       ivars:
         "@__rbs_infer__locals": nil
-    "(:i18n_fallbacks) with {@__rbs_infer__locals: nil}":
+    "(:i18n_fallbacks) with {@__rbs_infer__locals: nil, ::I18n{@@fallbacks: ::I18n::Locale::Fallbacks{@defaults: [], @map: {  }}}}":
       ivars:
         "@__rbs_infer__locals": nil
+      classes:
+        "::I18n":
+          "@@fallbacks":
+            class: "::I18n::Locale::Fallbacks"
+            ivars:
+              "@defaults": "[]"
+              "@map": "{  }"
   Thread.current:
     "() on singleton(::Thread) with {@__rbs_infer__main: nil}":
       ivars: {}
     "() with {@__rbs_infer__main: nil}":
       ivars: {}
+  Users::AvatarsController#__rbs_infer__run_edit:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Users::AvatarsController#__rbs_infer__run_update:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Users::AvatarsController#update:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  UsersController#__rbs_infer__run_featured_post:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  UsersController#__rbs_infer__run_index:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  UsersController#__rbs_infer__run_show:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
