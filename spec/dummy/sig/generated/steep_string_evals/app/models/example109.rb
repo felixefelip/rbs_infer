@@ -17,7 +17,15 @@ module Example109::Post::GeneratedRelationMethods
     association(:comments).reader
   end
 
+  def comment_ids
+    association(:comments).ids_reader
+  end
+
   def comments=(value)
     association(:comments).writer(value)
+  end
+
+  def comment_ids=(ids)
+    association(:comments).ids_writer(ids)
   end
 end
