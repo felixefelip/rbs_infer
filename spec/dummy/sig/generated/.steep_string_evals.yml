@@ -53,7 +53,7 @@ call_sites:
   - source: def size; 1; end
     target: "::Example108::Gauge::GeneratedReaders"
     kind: module
-  app/models/example109.rb:197:10:
+  app/models/example109.rb:194:10:
   -
   -
   - source: |2
@@ -68,10 +68,10 @@ call_sites:
                   end
     target: "::Example109::Post::GeneratedRelationMethods"
     kind: module
-  app/models/example109.rb:237:18:
+  app/models/example109.rb:234:18:
   -
   -
-  app/models/example109.rb:239:10:
+  app/models/example109.rb:236:10:
   - source: |2
                   def comments
                     association(:comments).reader
@@ -79,7 +79,7 @@ call_sites:
     target: "::Example109::Post::GeneratedRelationMethods"
     kind: module
   -
-  app/models/example109.rb:240:10:
+  app/models/example109.rb:237:10:
   - source: |2
                   def comments=(value)
                     association(:comments).writer(value)
@@ -87,11 +87,11 @@ call_sites:
     target: "::Example109::Post::GeneratedRelationMethods"
     kind: module
   -
-  app/models/example109.rb:278:12:
+  app/models/example109.rb:275:12:
   -
-  app/models/example109.rb:299:12:
+  app/models/example109.rb:296:12:
   -
-  app/models/example109.rb:361:4:
+  app/models/example109.rb:358:4:
   - source: |-
       module GeneratedRelationMethods
       end
@@ -104,14 +104,24 @@ call_sites:
                   end
     target: "::Example109::Post::GeneratedRelationMethods"
     kind: module
-  -
+  - source: |2
+                  def comment_ids
+                    association(:comments).ids_reader
+                  end
+    target: "::Example109::Post::GeneratedRelationMethods"
+    kind: module
   - source: |2
                   def comments=(value)
                     association(:comments).writer(value)
                   end
     target: "::Example109::Post::GeneratedRelationMethods"
     kind: module
-  -
+  - source: |2
+                  def comment_ids=(ids)
+                    association(:comments).ids_writer(ids)
+                  end
+    target: "::Example109::Post::GeneratedRelationMethods"
+    kind: module
   app/models/example110.rb:14:4:
   - class << self;def plural_labels; __class_attr_plural_labels; end;def plural_labels=(value);
     self.__class_attr_plural_labels = value; end;silence_redefinition_of_method def

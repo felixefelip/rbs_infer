@@ -15,13 +15,10 @@
 # in the gem), and defines `comments`, `comments=`, `comment_ids` and
 # `comment_ids=` in it.
 #
-# `Post::GeneratedRelationMethods` is built and included, and `comments` and
-# `comments=` are defined in it. What is still missing:
-#
-#   - `comment_ids` and `comment_ids=`: `name.to_s.singularize` runs the
-#     inflector, which reads `I18n.fallbacks[locale]` (felixefelip/steep#265);
-#   -`association(:comments).reader` is a stub here, so `comments` answers
-#     `nil`; the records would come from the rest of Active Record's path.
+# `Post::GeneratedRelationMethods` is built and included, and `comments`,
+# `comments=`, `comment_ids` and `comment_ids=` are defined in it.
+# `association(:comments).reader` is a stub here, so `comments` answers `nil`;
+# the records would come from the rest of Active Record's path.
 #
 # Nothing here states a type.
 module Example109

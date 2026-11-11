@@ -8,7 +8,9 @@ module Example109
   class Post
     module GeneratedRelationMethods
       def comments: () -> nil
+      def comment_ids: () -> nil
       def comments=: (untyped value) -> nil
+      def comment_ids=: (untyped ids) -> nil
     end
   end
 end
