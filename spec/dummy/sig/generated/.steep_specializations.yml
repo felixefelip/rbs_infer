@@ -6688,7 +6688,6 @@ methods:
   Example104::Rules#singular:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}': '[[::Regexp, "y"], [::Regexp,
       ""]]'
-    '(/ies\z/, "y") with {@singulars: []}': '[[::Regexp, "y"]]'
     '(/s\z/, "") with {@singulars: []}': '[[::Regexp, ""]]'
   Example104::Rules.new:
     "()":
@@ -24372,9 +24371,6 @@ exits:
     '(/ies\z/, "y") with {@singulars: [[/s\z/, ""]]}':
       ivars:
         "@singulars": '[[::Regexp, "y"], [::Regexp, ""]]'
-    '(/ies\z/, "y") with {@singulars: []}':
-      ivars:
-        "@singulars": '[[::Regexp, "y"]]'
     '(/s\z/, "") with {@singulars: []}':
       ivars:
         "@singulars": '[[::Regexp, ""]]'
