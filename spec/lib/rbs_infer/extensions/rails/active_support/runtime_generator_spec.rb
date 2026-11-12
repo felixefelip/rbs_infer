@@ -94,16 +94,18 @@ RSpec.describe RbsInfer::Extensions::Rails::ActiveSupport::RuntimeGenerator do
       expect(inflector_source).to include("def inflections(locale = :en)")
     end
 
-    it "reopens Inflector with the methods singularize runs, under the gem's visibility" do
+    it "reopens Inflector with the methods singularize and camelize run, under the gem's visibility" do
       expect(inflector_source).to match(
         /^module ActiveSupport\n  module Inflector\n    # @rbs_infer \|\.\.\.\n    def singularize\(/
       )
       expect(inflector_source).to include("def pluralize(word, locale = :en)")
+      expect(inflector_source).to include("def camelize(term, uppercase_first_letter = true)")
       expect(inflector_source).to match(/^    private\n\n    # @rbs_infer \|\.\.\.\n    def apply_inflections\(/)
     end
 
     it "reopens String for the entry" do
       expect(inflector_source).to match(/^class String\n  # @rbs_infer \|\.\.\.\n  def singularize\(/)
+      expect(inflector_source).to include("ActiveSupport::Inflector.camelize(self, true)")
     end
 
     it "keeps the English rules the gem loads" do
