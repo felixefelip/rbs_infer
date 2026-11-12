@@ -9070,6 +9070,7 @@ receivers:
   app/models/example109.rb:111:25:
   - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:111:42:
+  - nil
   - untyped
   app/models/example109.rb:111:60:
   - "::Hash[::Symbol, untyped]"
@@ -9078,6 +9079,7 @@ receivers:
   app/models/example109.rb:112:33:
   - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:112:50:
+  - nil
   - untyped
   app/models/example109.rb:112:84:
   - "::Hash[::Symbol, untyped]"
@@ -9092,11 +9094,15 @@ receivers:
   app/models/example109.rb:127:13:
   - "::Example109::Reflection::AssociationReflection"
   app/models/example109.rb:127:20:
+  - nil
   - untyped
+  - "{  }"
   app/models/example109.rb:127:37:
   - "::Example109::Reflection::AssociationReflection"
   app/models/example109.rb:127:44:
+  - nil
   - untyped
+  - "{  }"
   app/models/example109.rb:128:12:
   - "::Example109::Reflection::AssociationReflection"
   app/models/example109.rb:159:8:
@@ -9152,6 +9158,7 @@ receivers:
   app/models/example109.rb:290:28:
   - singleton(::Example109::Associations::Builder::CollectionAssociation)
   app/models/example109.rb:290:41:
+  - "::Hash[untyped, untyped]"
   - untyped
   app/models/example109.rb:290:56:
   - "(:before_add | :after_add | :before_remove | :after_remove)"
@@ -10977,7 +10984,7 @@ receivers:
   app/models/example97.rb:29:17:
   - "::Hash[untyped, untyped]"
   app/models/example97.rb:29:24:
-  - untyped
+  - '10'
   app/models/example98.rb:13:13:
   - "{  }"
   app/models/example98.rb:14:6:
@@ -11012,10 +11019,12 @@ receivers:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:20:20:
   - untyped
+  - "{ :num1 => 5, :num2 => 30 }"
   app/models/example99.rb:20:38:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:20:44:
   - untyped
+  - "{ :num1 => 5, :num2 => 30 }"
   app/models/example99.rb:28:17:
   - singleton(::Example99::Foo)
   app/models/example99.rb:29:6:
@@ -11046,24 +11055,28 @@ receivers:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:42:23:
   - untyped
+  - "{ :num1 => 5, :num2 => 10 }"
   app/models/example99.rb:46:10:
   - "::Example99::Foo"
   app/models/example99.rb:46:17:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:46:23:
   - untyped
+  - "{ :num1 => 5, :num2 => 10 }"
   app/models/example99.rb:50:10:
   - "::Example99::Foo"
   app/models/example99.rb:50:17:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:50:23:
   - untyped
+  - "{ :num1 => 5, :num2 => 10 }"
   app/models/example99.rb:50:37:
   - "::Example99::Foo"
   app/models/example99.rb:50:44:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:50:50:
   - untyped
+  - "{ :num1 => 5, :num2 => 10 }"
   app/models/included_hook.rb:112:2:
   - singleton(::IncludedHook)
   app/models/included_hook.rb:113:2:
