@@ -372,7 +372,7 @@ methods:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : "::String"
+    : '"ActiveSupport::Inflector"'
     ? '(singleton(::ActiveSupport::Inflector), [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i,
       "\\1ombie"], [/(m)oves$/i, "\\1ove"], [/(m)ove$/i, "\\1ove"], [/(s)exes$/i,
       "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i, "\\1hild"], [/(c)hild$/i, "\\1hild"],
@@ -413,7 +413,7 @@ methods:
       [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : "::String"
+    : '"ActiveSupport::Inflector"'
     ? '(singleton(::ActiveSupport::Inflector), [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i,
       "\\1ombie"], [/(m)oves$/i, "\\1ove"], [/(m)ove$/i, "\\1ove"], [/(s)exes$/i,
       "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i, "\\1hild"], [/(c)hild$/i, "\\1hild"],
@@ -457,7 +457,7 @@ methods:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : "::String"
+    : '"ActiveSupport::Inflector"'
     ? '(singleton(::ActiveSupport::Inflector), [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i,
       "\\1ombie"], [/(m)oves$/i, "\\1ove"], [/(m)ove$/i, "\\1ove"], [/(s)exes$/i,
       "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i, "\\1hild"], [/(c)hild$/i, "\\1hild"],
@@ -498,7 +498,7 @@ methods:
       [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : "::String"
+    : '"ActiveSupport::Inflector"'
     ? "(singleton(::ActiveSupport::Inflector), untyped, :en) on singleton(::ActiveSupport::Inflector)
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
@@ -6668,6 +6668,10 @@ methods:
     ("zombie"): "::Regexp"
     ("zombies"): "::Regexp"
   ActiveSupport::Inflector::Inflections::Uncountables#uncountable?:
+    ? '("ActiveSupport::Inflector") with {@regex_array: [/\bequipment\Z/i, /\binformation\Z/i,
+      /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i, /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i,
+      /\bjeans\Z/i, /\bpolice\Z/i]}'
+    : 'false'
     ? '("comments") with {@regex_array: [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i,
       /\bmoney\Z/i, /\bspecies\Z/i, /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i,
       /\bpolice\Z/i]}'
@@ -9863,6 +9867,10 @@ methods:
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : "::String"
+    ? "() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : "::String"
+    "() with {::Thread{@__rbs_infer__main: nil}}": "::String"
   String#singularize:
     () on "comments": "::String"
     ? '() on "comments" with {::ActiveSupport::Inflector::Inflections{@__instance__:
@@ -9927,7 +9935,7 @@ methods:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : "::String"
+    : '"ActiveSupport::Inflector"'
     ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -9955,7 +9963,7 @@ methods:
       [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : "::String"
+    : '"ActiveSupport::Inflector"'
     ? "() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : "::String"
@@ -25849,6 +25857,13 @@ exits:
       ivars:
         "@regex_array": "[]"
   ActiveSupport::Inflector::Inflections::Uncountables#uncountable?:
+    ? '("ActiveSupport::Inflector") with {@regex_array: [/\bequipment\Z/i, /\binformation\Z/i,
+      /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i, /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i,
+      /\bjeans\Z/i, /\bpolice\Z/i]}'
+    : ivars:
+        "@regex_array": "[::Regexp, ::Regexp, ::Regexp, ::Regexp, ::Regexp, ::Regexp,
+          ::Regexp, ::Regexp, ::Regexp, ::Regexp]"
+      keeps_self: true
     ? '("comments") with {@regex_array: [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i,
       /\bmoney\Z/i, /\bspecies\Z/i, /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i,
       /\bpolice\Z/i]}'
