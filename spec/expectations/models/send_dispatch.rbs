@@ -4,5 +4,5 @@ class SendDispatch
   private
 
   def stamp: (("post" | "a") value) -> ("stamped: post" | "stamped: a")
-  def stamped?: ("stamped: post" value) -> bool
+  def stamped?: ("stamped: post" value) -> true
 end

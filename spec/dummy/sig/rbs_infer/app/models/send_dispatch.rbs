@@ -4,12 +4,12 @@ class SendDispatch
   private
 
   def stamp: (("post" | "a") value) -> ("stamped: post" | "stamped: a")
-  def stamped?: ("stamped: post" value) -> bool
+  def stamped?: ("stamped: post" value) -> true
 end
 
 class SendDispatchCaller
   def stamped: () -> ("stamped: post" | "stamped: a")
-  def stamped_predicate: () -> bool
+  def stamped_predicate: () -> true
   def called: () -> "called"
   def dynamic: (untyped name) -> untyped
   def underscored: () -> ("stamped: post" | "stamped: a")
