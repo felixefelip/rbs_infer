@@ -31,7 +31,7 @@ module Example102
     self.@locale_rule_sets: Hash[:en, Example102::Rules]
 
     def self.rule_set_for: (:en locale) -> Example102::Rules
-    def self.with_rules: (:en locale) ?{ (Example102::Rules) -> Array[untyped] } -> Array[untyped]
+    def self.with_rules: (:en locale) ?{ (Example102::Rules) -> Array[untyped] } -> [ [ Regexp, "y" ], [ Regexp, "" ] ]
     def self.rules_or_fallback: (:en locale) -> Example102::Rules
     def self.singularize: (("posts" | "categories") word) -> ("post" | "category")
   end
