@@ -8520,6 +8520,13 @@ methods:
       class: "::Example113Settings"
       ivars:
         "@name": ":default"
+  Example114.new:
+    "() &{d8fe9a2b0f926c06}":
+      class: "::Example114"
+      ivars:
+        "@default_proc":
+          proc: "^(self, ::Hash::_Key) -> untyped"
+          block: "{ |_map, key| key.to_s }"
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -30423,6 +30430,16 @@ exits:
     "() with {@generated_option_readers: nil}":
       ivars:
         "@generated_option_readers": nil
+  Example114#[]:
+    "(:missing) with {@default_proc: proc(&{d8fe9a2b0f926c06})}":
+      ivars:
+        "@default_proc":
+          proc: "^(self, ::Hash::_Key) -> untyped"
+          block: "{ |_map, key| key.to_s }"
+  Example114#set_backend:
+    "(proc(&{d8fe9a2b0f926c06})) with {@backend: nil, @default_proc: nil}":
+      ivars:
+        "@default_proc": nil
   Example83.has_stored:
     "(:comments) on singleton(::Example83) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
