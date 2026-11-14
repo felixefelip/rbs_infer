@@ -101,16 +101,18 @@ module RbsInfer::Signatures
     end
 
     def forwarded_block_requirements(source_code, file:, open_signatures:)
-      BlockAnalyzer.new(steep_bridge: self).forwarded_block_requirements(source_code, file:, open_signatures:)
+      block_analyzer.forwarded_block_requirements(source_code, file:, open_signatures:)
     end
 
     def forwarded_call_targets(source_code, file:)
       ForwardingAnalyzer.new(steep_bridge: self).forwarded_call_targets(source_code, file:)
     end
 
-    def stored_block_self_types(source_code, file:)
-      BlockAnalyzer.new(steep_bridge: self).stored_block_self_types(source_code, file:)
-    end
+    def handed_block_params(source_code, file:) = block_analyzer.handed_block_params(source_code, file:)
+
+    def stored_block_self_types(source_code, file:) = block_analyzer.stored_block_self_types(source_code, file:)
+
+    def block_analyzer = BlockAnalyzer.new(steep_bridge: self)
 
     def method_return_types(source_code, file:)
       return_type_analyzer.method_return_types(source_code, file:)

@@ -24,6 +24,24 @@ RSpec.describe RbsInfer::Signatures::TypeNameQualifier do
     expect(rbs).to include("def keys: () -> ::Array[String]")
   end
 
+  it "roots an interface whose namespace a namespace of the declaration would shadow" do
+    rbs = qualify(<<~RBS)
+      module Concurrent
+        class Backend
+          def initialize: () ?{ (self, Hash::_Key) -> untyped } -> void
+        end
+      end
+    RBS
+
+    expect(rbs).to include("?{ (self, ::Hash::_Key) -> untyped }")
+  end
+
+  it "leaves an interface at the top level as written" do
+    rbs = "module Concurrent\n  def each: () -> _Each[untyped]\nend\n"
+
+    expect(qualify(rbs)).to eq(rbs)
+  end
+
   it "leaves a name nothing shadows as written" do
     rbs = "module Concurrent\n  def name: () -> String\n  include Comparable\nend\n"
 

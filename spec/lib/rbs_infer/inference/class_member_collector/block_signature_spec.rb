@@ -191,4 +191,22 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector::BlockSignature do
     def_node = Prism.parse("def m(&block); end").value.statements.body.first
     expect(described_class.new(def_node.parameters, body: nil).call).to eq("?{ (*untyped) -> untyped }")
   end
+  describe "handed_on?" do
+    def handed_on?(source)
+      def_node = Prism.parse(source).value.statements.body.first
+      described_class.new(def_node.parameters, body: def_node.body).handed_on?
+    end
+
+    it "is true when the block is passed as an ordinary argument" do
+      expect(handed_on?("def m(&block); install(block); end")).to be(true)
+    end
+
+    it "is false when the body calls the block itself" do
+      expect(handed_on?("def m(&block); install(block); block.call(1); end")).to be(false)
+    end
+
+    it "is false when the block is passed as a block" do
+      expect(handed_on?("def m(&block); install(&block); end")).to be(false)
+    end
+  end
 end

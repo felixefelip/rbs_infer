@@ -914,7 +914,6 @@ methods:
     : class: "::ActiveSupport::Inflector::Inflections"
       ivars:
         "@acronyms": "{  }"
-        "@humans": "[]"
         "@plurals": '[[::Regexp, "\\1ombies"], [::Regexp, "\\1ombies"], [::Regexp,
           "\\1oves"], [::Regexp, "\\1oves"], [::Regexp, "\\1exes"], [::Regexp, "\\1exes"],
           [::Regexp, "\\1hildren"], [::Regexp, "\\1hildren"], [::Regexp, "\\1en"],
@@ -971,7 +970,6 @@ methods:
     : class: "::ActiveSupport::Inflector::Inflections"
       ivars:
         "@acronyms": "{  }"
-        "@humans": "[]"
         "@plurals": '[[::Regexp, "\\1ombies"], [::Regexp, "\\1ombies"], [::Regexp,
           "\\1oves"], [::Regexp, "\\1oves"], [::Regexp, "\\1exes"], [::Regexp, "\\1exes"],
           [::Regexp, "\\1hildren"], [::Regexp, "\\1hildren"], [::Regexp, "\\1en"],
@@ -1026,7 +1024,6 @@ methods:
     : class: "::ActiveSupport::Inflector::Inflections"
       ivars:
         "@acronyms": "{  }"
-        "@humans": "[]"
         "@plurals": '[[::Regexp, "\\1ombies"], [::Regexp, "\\1ombies"], [::Regexp,
           "\\1oves"], [::Regexp, "\\1oves"], [::Regexp, "\\1exes"], [::Regexp, "\\1exes"],
           [::Regexp, "\\1hildren"], [::Regexp, "\\1hildren"], [::Regexp, "\\1en"],
@@ -1083,7 +1080,6 @@ methods:
     : class: "::ActiveSupport::Inflector::Inflections"
       ivars:
         "@acronyms": "{  }"
-        "@humans": "[]"
         "@plurals": '[[::Regexp, "\\1ombies"], [::Regexp, "\\1ombies"], [::Regexp,
           "\\1oves"], [::Regexp, "\\1oves"], [::Regexp, "\\1exes"], [::Regexp, "\\1exes"],
           [::Regexp, "\\1hildren"], [::Regexp, "\\1hildren"], [::Regexp, "\\1en"],
@@ -1138,7 +1134,6 @@ methods:
     : class: "::ActiveSupport::Inflector::Inflections"
       ivars:
         "@acronyms": "{  }"
-        "@humans": "[]"
         "@plurals": '[[::Regexp, "\\1ombies"], [::Regexp, "\\1ombies"], [::Regexp,
           "\\1oves"], [::Regexp, "\\1oves"], [::Regexp, "\\1exes"], [::Regexp, "\\1exes"],
           [::Regexp, "\\1hildren"], [::Regexp, "\\1hildren"], [::Regexp, "\\1en"],
@@ -1195,7 +1190,6 @@ methods:
     : class: "::ActiveSupport::Inflector::Inflections"
       ivars:
         "@acronyms": "{  }"
-        "@humans": "[]"
         "@plurals": '[[::Regexp, "\\1ombies"], [::Regexp, "\\1ombies"], [::Regexp,
           "\\1oves"], [::Regexp, "\\1oves"], [::Regexp, "\\1exes"], [::Regexp, "\\1exes"],
           [::Regexp, "\\1hildren"], [::Regexp, "\\1hildren"], [::Regexp, "\\1en"],
@@ -1250,7 +1244,6 @@ methods:
     : class: "::ActiveSupport::Inflector::Inflections"
       ivars:
         "@acronyms": "{  }"
-        "@humans": "[]"
         "@plurals": '[[::Regexp, "\\1ombies"], [::Regexp, "\\1ombies"], [::Regexp,
           "\\1oves"], [::Regexp, "\\1oves"], [::Regexp, "\\1exes"], [::Regexp, "\\1exes"],
           [::Regexp, "\\1hildren"], [::Regexp, "\\1hildren"], [::Regexp, "\\1en"],
@@ -1307,7 +1300,6 @@ methods:
     : class: "::ActiveSupport::Inflector::Inflections"
       ivars:
         "@acronyms": "{  }"
-        "@humans": "[]"
         "@plurals": '[[::Regexp, "\\1ombies"], [::Regexp, "\\1ombies"], [::Regexp,
           "\\1oves"], [::Regexp, "\\1oves"], [::Regexp, "\\1exes"], [::Regexp, "\\1exes"],
           [::Regexp, "\\1hildren"], [::Regexp, "\\1hildren"], [::Regexp, "\\1en"],
@@ -6176,19 +6168,6 @@ methods:
           [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
           "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
   ActiveSupport::Inflector::Inflections.instance_or_fallback:
-    ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : class: "::ActiveSupport::Inflector::Inflections"
-      ivars:
-        "@acronyms": "{  }"
-        "@humans": "[]"
-        "@plurals": "[]"
-        "@singulars": "[]"
-        "@uncountables":
-          class: "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
-          ivars:
-            "@regex_array": "[]"
     ? '(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -6219,36 +6198,7 @@ methods:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}'
-    : class: "::ActiveSupport::Inflector::Inflections"
-      ivars:
-        "@acronyms": "{  }"
-        "@humans": "[]"
-        "@plurals": '[[::Regexp, "\\1ombies"], [::Regexp, "\\1ombies"], [::Regexp,
-          "\\1oves"], [::Regexp, "\\1oves"], [::Regexp, "\\1exes"], [::Regexp, "\\1exes"],
-          [::Regexp, "\\1hildren"], [::Regexp, "\\1hildren"], [::Regexp, "\\1en"],
-          [::Regexp, "\\1en"], [::Regexp, "\\1eople"], [::Regexp, "\\1eople"], [::Regexp,
-          "\\1zes"], [::Regexp, "\\1"], [::Regexp, "\\1en"], [::Regexp, "\\1ice"],
-          [::Regexp, "\\1ice"], [::Regexp, "\\1ices"], [::Regexp, "\\1es"], [::Regexp,
-          "\\1ies"], [::Regexp, "\\1s"], [::Regexp, "\\1\\2ves"], [::Regexp, "ses"],
-          [::Regexp, "\\1a"], [::Regexp, "\\1a"], [::Regexp, "\\1oes"], [::Regexp,
-          "\\1ses"], [::Regexp, "\\1es"], [::Regexp, "\\1i"], [::Regexp, "\\1i"],
-          [::Regexp, "\\1es"], [::Regexp, "s"], [::Regexp, "s"]]'
-        "@singulars": '[[::Regexp, "\\1ombie"], [::Regexp, "\\1ombie"], [::Regexp,
-          "\\1ove"], [::Regexp, "\\1ove"], [::Regexp, "\\1ex"], [::Regexp, "\\1ex"],
-          [::Regexp, "\\1hild"], [::Regexp, "\\1hild"], [::Regexp, "\\1an"], [::Regexp,
-          "\\1an"], [::Regexp, "\\1erson"], [::Regexp, "\\1erson"], [::Regexp, "\\1"],
-          [::Regexp, "\\1"], [::Regexp, "\\1ix"], [::Regexp, "\\1ex"], [::Regexp,
-          "\\1"], [::Regexp, "\\1"], [::Regexp, "\\1us"], [::Regexp, "\\1xis"], [::Regexp,
-          "\\1is"], [::Regexp, "\\1"], [::Regexp, "\\1"], [::Regexp, "\\1"], [::Regexp,
-          "\\1ouse"], [::Regexp, "\\1"], [::Regexp, "\\1ovie"], [::Regexp, "\\1eries"],
-          [::Regexp, "\\1y"], [::Regexp, "\\1f"], [::Regexp, "\\1"], [::Regexp, "\\1"],
-          [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
-          "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
-        "@uncountables":
-          class: "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
-          ivars:
-            "@regex_array": "[::Regexp, ::Regexp, ::Regexp, ::Regexp, ::Regexp, ::Regexp,
-              ::Regexp, ::Regexp, ::Regexp, ::Regexp]"
+    : "::ActiveSupport::Inflector::Inflections"
     ? '(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -6276,42 +6226,7 @@ methods:
       [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}'
-    : class: "::ActiveSupport::Inflector::Inflections"
-      ivars:
-        "@acronyms": "{  }"
-        "@humans": "[]"
-        "@plurals": '[[::Regexp, "\\1ombies"], [::Regexp, "\\1ombies"], [::Regexp,
-          "\\1oves"], [::Regexp, "\\1oves"], [::Regexp, "\\1exes"], [::Regexp, "\\1exes"],
-          [::Regexp, "\\1hildren"], [::Regexp, "\\1hildren"], [::Regexp, "\\1en"],
-          [::Regexp, "\\1en"], [::Regexp, "\\1eople"], [::Regexp, "\\1eople"], [::Regexp,
-          "\\1zes"], [::Regexp, "\\1"], [::Regexp, "\\1en"], [::Regexp, "\\1ice"],
-          [::Regexp, "\\1ice"], [::Regexp, "\\1ices"], [::Regexp, "\\1es"], [::Regexp,
-          "\\1ies"], [::Regexp, "\\1s"], [::Regexp, "\\1\\2ves"], [::Regexp, "ses"],
-          [::Regexp, "\\1a"], [::Regexp, "\\1a"], [::Regexp, "\\1oes"], [::Regexp,
-          "\\1ses"], [::Regexp, "\\1es"], [::Regexp, "\\1i"], [::Regexp, "\\1i"],
-          [::Regexp, "\\1es"], [::Regexp, "s"], [::Regexp, "s"]]'
-        "@singulars": '[[::Regexp, "\\1ombie"], [::Regexp, "\\1ombie"], [::Regexp,
-          "\\1ove"], [::Regexp, "\\1ove"], [::Regexp, "\\1ex"], [::Regexp, "\\1ex"],
-          [::Regexp, "\\1hild"], [::Regexp, "\\1hild"], [::Regexp, "\\1an"], [::Regexp,
-          "\\1an"], [::Regexp, "\\1erson"], [::Regexp, "\\1erson"], [::Regexp, "\\1"],
-          [::Regexp, "\\1"], [::Regexp, "\\1ix"], [::Regexp, "\\1ex"], [::Regexp,
-          "\\1"], [::Regexp, "\\1"], [::Regexp, "\\1us"], [::Regexp, "\\1xis"], [::Regexp,
-          "\\1is"], [::Regexp, "\\1"], [::Regexp, "\\1"], [::Regexp, "\\1"], [::Regexp,
-          "\\1ouse"], [::Regexp, "\\1"], [::Regexp, "\\1ovie"], [::Regexp, "\\1eries"],
-          [::Regexp, "\\1y"], [::Regexp, "\\1f"], [::Regexp, "\\1"], [::Regexp, "\\1"],
-          [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
-          "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
-    ? "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {
-      \ }, @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}"
-    : class: "::ActiveSupport::Inflector::Inflections"
-      ivars:
-        "@acronyms": "{  }"
-        "@plurals": "[]"
-        "@singulars": "[]"
-        "@uncountables":
-          class: "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
-          ivars:
-            "@regex_array": "[]"
+    : "::ActiveSupport::Inflector::Inflections"
     ? '(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {
       :en => ::ActiveSupport::Inflector::Inflections{@acronyms: {  }, @humans: [],
       @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"], [/(m)oves$/i,
@@ -6342,36 +6257,7 @@ methods:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}'
-    : class: "::ActiveSupport::Inflector::Inflections"
-      ivars:
-        "@acronyms": "{  }"
-        "@humans": "[]"
-        "@plurals": '[[::Regexp, "\\1ombies"], [::Regexp, "\\1ombies"], [::Regexp,
-          "\\1oves"], [::Regexp, "\\1oves"], [::Regexp, "\\1exes"], [::Regexp, "\\1exes"],
-          [::Regexp, "\\1hildren"], [::Regexp, "\\1hildren"], [::Regexp, "\\1en"],
-          [::Regexp, "\\1en"], [::Regexp, "\\1eople"], [::Regexp, "\\1eople"], [::Regexp,
-          "\\1zes"], [::Regexp, "\\1"], [::Regexp, "\\1en"], [::Regexp, "\\1ice"],
-          [::Regexp, "\\1ice"], [::Regexp, "\\1ices"], [::Regexp, "\\1es"], [::Regexp,
-          "\\1ies"], [::Regexp, "\\1s"], [::Regexp, "\\1\\2ves"], [::Regexp, "ses"],
-          [::Regexp, "\\1a"], [::Regexp, "\\1a"], [::Regexp, "\\1oes"], [::Regexp,
-          "\\1ses"], [::Regexp, "\\1es"], [::Regexp, "\\1i"], [::Regexp, "\\1i"],
-          [::Regexp, "\\1es"], [::Regexp, "s"], [::Regexp, "s"]]'
-        "@singulars": '[[::Regexp, "\\1ombie"], [::Regexp, "\\1ombie"], [::Regexp,
-          "\\1ove"], [::Regexp, "\\1ove"], [::Regexp, "\\1ex"], [::Regexp, "\\1ex"],
-          [::Regexp, "\\1hild"], [::Regexp, "\\1hild"], [::Regexp, "\\1an"], [::Regexp,
-          "\\1an"], [::Regexp, "\\1erson"], [::Regexp, "\\1erson"], [::Regexp, "\\1"],
-          [::Regexp, "\\1"], [::Regexp, "\\1ix"], [::Regexp, "\\1ex"], [::Regexp,
-          "\\1"], [::Regexp, "\\1"], [::Regexp, "\\1us"], [::Regexp, "\\1xis"], [::Regexp,
-          "\\1is"], [::Regexp, "\\1"], [::Regexp, "\\1"], [::Regexp, "\\1"], [::Regexp,
-          "\\1ouse"], [::Regexp, "\\1"], [::Regexp, "\\1ovie"], [::Regexp, "\\1eries"],
-          [::Regexp, "\\1y"], [::Regexp, "\\1f"], [::Regexp, "\\1"], [::Regexp, "\\1"],
-          [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
-          "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
-        "@uncountables":
-          class: "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
-          ivars:
-            "@regex_array": "[::Regexp, ::Regexp, ::Regexp, ::Regexp, ::Regexp, ::Regexp,
-              ::Regexp, ::Regexp, ::Regexp, ::Regexp]"
+    : "::ActiveSupport::Inflector::Inflections"
     ? '(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {
       :en => ::ActiveSupport::Inflector::Inflections{@acronyms: {  }, @humans: [],
       @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"], [/(m)oves$/i,
@@ -6399,31 +6285,7 @@ methods:
       [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}'
-    : class: "::ActiveSupport::Inflector::Inflections"
-      ivars:
-        "@acronyms": "{  }"
-        "@humans": "[]"
-        "@plurals": '[[::Regexp, "\\1ombies"], [::Regexp, "\\1ombies"], [::Regexp,
-          "\\1oves"], [::Regexp, "\\1oves"], [::Regexp, "\\1exes"], [::Regexp, "\\1exes"],
-          [::Regexp, "\\1hildren"], [::Regexp, "\\1hildren"], [::Regexp, "\\1en"],
-          [::Regexp, "\\1en"], [::Regexp, "\\1eople"], [::Regexp, "\\1eople"], [::Regexp,
-          "\\1zes"], [::Regexp, "\\1"], [::Regexp, "\\1en"], [::Regexp, "\\1ice"],
-          [::Regexp, "\\1ice"], [::Regexp, "\\1ices"], [::Regexp, "\\1es"], [::Regexp,
-          "\\1ies"], [::Regexp, "\\1s"], [::Regexp, "\\1\\2ves"], [::Regexp, "ses"],
-          [::Regexp, "\\1a"], [::Regexp, "\\1a"], [::Regexp, "\\1oes"], [::Regexp,
-          "\\1ses"], [::Regexp, "\\1es"], [::Regexp, "\\1i"], [::Regexp, "\\1i"],
-          [::Regexp, "\\1es"], [::Regexp, "s"], [::Regexp, "s"]]'
-        "@singulars": '[[::Regexp, "\\1ombie"], [::Regexp, "\\1ombie"], [::Regexp,
-          "\\1ove"], [::Regexp, "\\1ove"], [::Regexp, "\\1ex"], [::Regexp, "\\1ex"],
-          [::Regexp, "\\1hild"], [::Regexp, "\\1hild"], [::Regexp, "\\1an"], [::Regexp,
-          "\\1an"], [::Regexp, "\\1erson"], [::Regexp, "\\1erson"], [::Regexp, "\\1"],
-          [::Regexp, "\\1"], [::Regexp, "\\1ix"], [::Regexp, "\\1ex"], [::Regexp,
-          "\\1"], [::Regexp, "\\1"], [::Regexp, "\\1us"], [::Regexp, "\\1xis"], [::Regexp,
-          "\\1is"], [::Regexp, "\\1"], [::Regexp, "\\1"], [::Regexp, "\\1"], [::Regexp,
-          "\\1ouse"], [::Regexp, "\\1"], [::Regexp, "\\1ovie"], [::Regexp, "\\1eries"],
-          [::Regexp, "\\1y"], [::Regexp, "\\1f"], [::Regexp, "\\1"], [::Regexp, "\\1"],
-          [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
-          "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
+    : "::ActiveSupport::Inflector::Inflections"
   ActiveSupport::Inflector::Inflections.new:
     "()":
       class: "::ActiveSupport::Inflector::Inflections"
@@ -7115,65 +6977,6 @@ methods:
     '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}': "::Example104::Rules"
   Concurrent::Collection::NonConcurrentMapBackend#initialize:
     "(nil) with {@backend: nil, @default_proc: nil, @write_lock: nil}": nil
-  Concurrent::Collection::NonConcurrentMapBackend#key?:
-    "(:en) with {@backend: {  }, @default_proc: nil}": 'false'
-    ? '(:en) with {@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}'
-    : 'true'
-    ? '(:en) with {@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
-      }, @default_proc: nil}'
-    : 'true'
   Concurrent::Map#each_pair:
     "() &-> (nil | void)": self
     "() &-> ::Array[untyped]": self
@@ -9390,10 +9193,6 @@ methods:
       ivars:
         "@defaults": "[]"
         "@map": "{  }"
-  I18n::Locale::Fallbacks#[]:
-    "(::Symbol) with {@defaults: [], @map: {  }}": "::Array[untyped]"
-    "(:en)": "::Array[untyped]"
-    "(:en) with {@defaults: [], @map: {  }}": "[:en]"
   I18n::Locale::Fallbacks#compute:
     "(:en) with {@defaults: [], @map: {  }}": "[:en]"
     "(nil, false, ::Array[untyped]) with {@defaults: [], @map: {  }}": "[]"
@@ -10132,7 +9931,6 @@ declarations:
   Example99::Runner#call_num1: '5'
   Example99::Runner#call_num2: '10'
   Example99::Runner#change_num2: '30'
-  I18n::Locale::Fallbacks#[]: "([:en] | ::Array[untyped])"
   IncludedHook::Slots#badge=: '"value"'
   IncludedHook::Slots#slot=: '"value"'
   IncludedHook::Slots#stamp=: '"value"'
@@ -10825,6 +10623,18 @@ receivers:
   - singleton(::Example113)
   app/models/example113.rb:20:33:
   - "::Example113Settings"
+  app/models/example114.rb:12:12:
+  - "::Hash[untyped, untyped]"
+  app/models/example114.rb:19:22:
+  - singleton(::Hash)
+  app/models/example114.rb:32:26:
+  - singleton(::Example114)
+  app/models/example114.rb:32:48:
+  - "::Hash::_Key"
+  app/models/example114.rb:32:54:
+  - "::Example114"
+  app/models/example114.rb:7:4:
+  - "::Example114"
   app/models/example12.rb:16:4:
   - "::Example12"
   app/models/example12.rb:20:4:
@@ -13888,8 +13698,6 @@ receivers:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:141:28:
   - singleton(::Hash)
-  sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:141:57:
-  - "^(*untyped) -> untyped"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:150:8:
   - "::Concurrent::Map"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:161:41:
@@ -13946,8 +13754,6 @@ receivers:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:161:64:
   - "::Concurrent::Map[untyped, untyped]"
-  sig/generated/steep_concurrent_runtime/concurrent/map.rb:162:24:
-  - "^(*untyped) -> untyped"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:192:26:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:194:12:
@@ -13998,8 +13804,6 @@ receivers:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:65:
   - "::Integer"
-  sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:85:
-  - "(^(*untyped) -> untyped | nil)"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:351:6:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:357:6:
@@ -25350,12 +25154,7 @@ exits:
     ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
       nil}}"
-    : ivars:
-        "@__instance__":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-            "@default_proc": nil
+    : ivars: {}
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
@@ -25447,12 +25246,7 @@ exits:
           "@__rbs_infer__main": nil
     ? "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {
       \ }, @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}"
-    : ivars:
-        "@__instance__":
-          class: "::Concurrent::Map[untyped, untyped]"
-          ivars:
-            "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-            "@default_proc": nil
+    : ivars: {}
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
@@ -27030,71 +26824,6 @@ exits:
         "@backend": "{  }"
       keeps_self: true
   Concurrent::Collection::NonConcurrentMapBackend#key?:
-    "(:en) with {@backend: {  }, @default_proc: nil}":
-      ivars:
-        "@backend": "{  }"
-        "@default_proc": nil
-    ? '(:en) with {@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}'
-    : ivars:
-        "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-        "@default_proc": nil
-    ? '(:en) with {@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
-      }, @default_proc: nil}'
-    : ivars:
-        "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-        "@default_proc": nil
     "(untyped) with {@backend: {  }, @default_proc: nil}":
       ivars:
         "@backend": "{  }"

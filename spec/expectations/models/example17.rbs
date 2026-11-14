@@ -5,7 +5,7 @@ class Example17
   def with_pair: () { ("EXAMPLE", 7) -> untyped } -> untyped
   def with_either: (untyped flag) { ("text" | 42) -> untyped } -> untyped
   def forward_required: () { ("token") -> untyped } -> "TOKEN"
-  def forward_optional: () ?{ (*untyped) -> untyped } -> untyped
+  def forward_optional: () ?{ ("token") -> untyped } -> untyped
   def forward_guarded: () ?{ (*untyped) -> untyped } -> "TOKEN"?
   def forward_anonymous: () { ("token") -> untyped } -> "TOKEN"
   def forward_anonymous_guarded: () ?{ (*untyped) -> untyped } -> "TOKEN"?

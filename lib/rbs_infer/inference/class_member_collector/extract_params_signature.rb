@@ -49,6 +49,14 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       block_signature.stored_forward?
     end
 
+    def block_handed_on?
+      block_signature.handed_on?
+    end
+
+    def proc_param_calls
+      ProcParamCalls.new(@params, body: @body).call
+    end
+
     # `body` decides whether a block is required, and whether a method that only
     # `yield`s takes one at all — neither is visible from the parameters alone.
     def initialize(params, body: nil)
