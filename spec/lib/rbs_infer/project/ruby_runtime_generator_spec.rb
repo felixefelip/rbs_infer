@@ -16,7 +16,7 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
       files = build_in(dir)
 
       expect(files.map(&:filename))
-        .to eq(["module.rb", "object.rb", "ruby_engine.rb", "thread_mutex.rb", "thread.rb", "array.rb"])
+        .to eq(["module.rb", "object.rb", "class.rb", "ruby_engine.rb", "thread_mutex.rb", "thread.rb", "array.rb"])
       expect(files.first.source).to include(
         "class Module\n",
         "  def include(*modules)\n",
@@ -313,6 +313,36 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     end
   end
 
+  describe "`Class`, in class.rb" do
+    it "runs the superclass's `inherited` from `initialize`, through send, before the block" do
+      Dir.mktmpdir do |dir|
+        expect(source_of(dir, "class.rb")).to include(
+          "class Class\n",
+          "  # @rbs_infer no-signature\n  def initialize(superclass = Object, &block)\n",
+          "    superclass.send(:inherited, self)\n    class_exec(self, &block) if block\n"
+        )
+      end
+    end
+
+    it "checks the superclass as rb_check_inheritable does" do
+      Dir.mktmpdir do |dir|
+        expect(source_of(dir, "class.rb")).to include(
+          "(given an instance of \#{superclass.class})\" unless superclass.is_a?(Class)\n",
+          "\"can't make subclass of singleton class\" if superclass.singleton_class?\n",
+          "\"can't make subclass of Class\" if superclass.equal?(Class)\n"
+        )
+      end
+    end
+
+    it "leaves inherited the private no-op it is on Class" do
+      Dir.mktmpdir do |dir|
+        expect(source_of(dir, "class.rb"))
+          .to include("  private\n\n  # The notification")
+          .and include("  # @rbs_infer no-signature\n  def inherited(subclass)\n  end\n")
+      end
+    end
+  end
+
   it "writes `RUBY_ENGINE` as the interpreter running it, in a file that freezes its strings" do
     Dir.mktmpdir do |dir|
       expect(source_of(dir, "ruby_engine.rb")).to start_with("# frozen_string_literal: true\n")
@@ -338,7 +368,7 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
         described_class.new(app_dir: dir).generate
 
         expect(Dir.children(sidecar).sort)
-          .to eq(["array.rb", "module.rb", "object.rb", "ruby_engine.rb", "thread.rb", "thread_mutex.rb"])
+          .to eq(["array.rb", "class.rb", "module.rb", "object.rb", "ruby_engine.rb", "thread.rb", "thread_mutex.rb"])
       end
     end
   end

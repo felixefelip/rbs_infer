@@ -14360,6 +14360,14 @@ receivers:
   - "::Array[untyped]"
   sig/generated/steep_ruby_runtime/array.rb:15:34:
   - "::Array[untyped]"
+  sig/generated/steep_ruby_runtime/class.rb:12:4:
+  - "::Class"
+  sig/generated/steep_ruby_runtime/class.rb:13:4:
+  - "::Class"
+  sig/generated/steep_ruby_runtime/class.rb:14:4:
+  - "::Class"
+  sig/generated/steep_ruby_runtime/class.rb:17:4:
+  - "::Class"
   sig/generated/steep_ruby_runtime/module.rb:14:4:
   - "::Module"
   sig/generated/steep_ruby_runtime/module.rb:14:87:
@@ -28143,7 +28151,8 @@ exits:
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
       params:
         '3': "{  }"
     ? '(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
@@ -28187,7 +28196,8 @@ exits:
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
       params:
         '3': "{  }"
     ? "(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
@@ -28204,7 +28214,8 @@ exits:
             ivars: {}
         "::Thread":
           "@__rbs_infer__main": nil
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
       params:
         '3': "{  }"
     ? "(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
@@ -28214,14 +28225,16 @@ exits:
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
       params:
         '3': "{  }"
     ? "(singleton(::Example109::Post), :comments, nil, {  }) on singleton(::Example109::Associations::Builder::HasMany)
       with {::Example109::Post{@generated_relation_methods: nil}}"
     : ivars: {}
       classes:
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
       params:
         '3': "{  }"
     ? '(singleton(::Example109::Post), :comments, nil, {  }) with {::ActiveSupport::Inflector::Inflections{@__instance__:
@@ -29458,6 +29471,34 @@ exits:
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
+  Example109::Associations::Builder::Association.define_change_tracking_methods:
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) with {::Example109::Post{@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+  Example109::Associations::Builder::Association.define_extensions:
+    "(singleton(::Example109::Post), :comments) with {::Example109::Post{@generated_relation_methods: nil}}":
+      ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": nil
+  Example109::Associations::Builder::Association.define_validations:
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @name: :comments, @options: {  }}) with {::Example109::Post{@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Associations::Builder::CollectionAssociation.define_callback:
     ? "(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
       | :after_remove), :comments, ::Hash[untyped, untyped]) on singleton(::Example109::Associations::Builder::HasMany)
@@ -30188,7 +30229,8 @@ exits:
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
       nil}}'
-    : ivars: {}
+    : ivars:
+        "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
       classes:
         "::Example102::Locales":
           "@fallback_chains": nil
@@ -30229,7 +30271,8 @@ exits:
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
       nil}}'
-    : ivars: {}
+    : ivars:
+        "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
       classes:
         "::Example102::Locales":
           "@fallback_chains": nil
@@ -30245,7 +30288,8 @@ exits:
       nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
       nil}}"
-    : ivars: {}
+    : ivars:
+        "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
       classes:
         "::Example102::Locales":
           "@fallback_chains": nil
@@ -30256,12 +30300,14 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
     "(:comments, **{  }) on singleton(::Example109::Post) with {@generated_relation_methods: nil, ::Thread{@__rbs_infer__main: nil}}":
-      ivars: {}
+      ivars:
+        "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
     "(:comments, **{  }) on singleton(::Example109::Post) with {@generated_relation_methods: nil}":
-      ivars: {}
+      ivars:
+        "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
     ? '(:comments, **{  }) with {@generated_relation_methods: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
