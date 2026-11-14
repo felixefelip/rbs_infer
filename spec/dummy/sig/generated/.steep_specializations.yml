@@ -8553,19 +8553,17 @@ methods:
     "() &-> :age_after_a_decade": "^(*untyped) -> :age_after_a_decade"
     "() &-> :name_upcase": "^(*untyped) -> :name_upcase"
     "() &-> nil": "^(*untyped) -> nil"
-    "() &{1c2ffade529cd9f2}": "^(*untyped) -> (:age_after_a_decade | :name_upcase)"
     "() on singleton(::Example29::Baz) &-> :age_after_a_decade": "^(*untyped) -> :age_after_a_decade"
     "() on singleton(::Example29::BazOther) &-> :name_upcase": "^(*untyped) -> :name_upcase"
   Example31::Foo#bazingado:
     "() &-> :age": "^(*untyped) -> :age"
-    "() &{d3f4833e6dc3d801}": "^(*untyped) -> :age"
+    "() &-> nil": "^(*untyped) -> nil"
     "() on singleton(::Example31::Baz) &-> :age": "^(*untyped) -> :age"
   Example32::Foo#bazinga:
     "(singleton(::Example32::Baz)) on singleton(::Example32::Bar)": "(:age | nil)"
   Example32::Foo#bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example32::Bar)] -> :age"
-    "() &{1aa2027e5f759e37}": "^(*untyped) [self: singleton(::Example32::Bar)] ->
-      :age"
+    "() &-> nil": "^(*untyped) [self: singleton(::Example32::Bar)] -> nil"
     "() on singleton(::Example32::Baz) &-> :age": "^(*untyped) [self: singleton(::Example32::Bar)]
       -> :age"
     "(singleton(::Example32::Bar)) on singleton(::Example32::Baz)": "(:age | nil)"
@@ -8579,10 +8577,8 @@ methods:
       -> :age"
     "() &-> :name_upcase": "^(*untyped) [self: (singleton(::Example33::Bar) | singleton(::Example33::BarOther))]
       -> :name_upcase"
-    "() &{523bfbb6b9ab6f42}": "^(*untyped) [self: (singleton(::Example33::Bar) | singleton(::Example33::BarOther))]
-      -> (:age | :name_upcase)"
-    "() &{780047b758e35777}": "^(*untyped) [self: (singleton(::Example33::Bar) | singleton(::Example33::BarOther))]
-      -> (:age | :name_upcase)"
+    "() &-> nil": "^(*untyped) [self: (singleton(::Example33::Bar) | singleton(::Example33::BarOther))]
+      -> nil"
     "() on singleton(::Example33::Baz) &-> :age": "^(*untyped) [self: (singleton(::Example33::Bar)
       | singleton(::Example33::BarOther))] -> :age"
     "() on singleton(::Example33::BazOther) &-> :name_upcase": "^(*untyped) [self:
@@ -8594,8 +8590,8 @@ methods:
   Example34::Foo#included:
     "() &-> :age": "^(*untyped) [self: (singleton(::Example34::Bar) | singleton(::Example34::Baz)
       | ::Module)] -> :age"
-    "() &{1d8d7a4074ab05ab}": "^(*untyped) [self: (singleton(::Example34::Bar) | singleton(::Example34::Baz)
-      | ::Module)] -> :age"
+    "() &-> nil": "^(*untyped) [self: (singleton(::Example34::Bar) | singleton(::Example34::Baz)
+      | ::Module)] -> nil"
     "() on singleton(::Example34::Baz) &-> :age": "^(*untyped) [self: (singleton(::Example34::Bar)
       | singleton(::Example34::Baz) | ::Module)] -> :age"
     "(singleton(::Example34::Bar)) on singleton(::Example34::Baz)": "(:age | nil)"
@@ -8603,39 +8599,33 @@ methods:
     "(singleton(::Example35::Baz)) on singleton(::Example35::Bar)": "(:age | nil)"
   Example35::Foo.bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example35::Foo)] -> :age"
-    "() &{75029a3870211952}": "^(*untyped) [self: singleton(::Example35::Foo)] ->
-      :age"
+    "() &-> nil": "^(*untyped) [self: singleton(::Example35::Foo)] -> nil"
     "() on singleton(::Example35::Baz) &-> :age": "^(*untyped) [self: singleton(::Example35::Foo)]
       -> :age"
     "(singleton(::Example35::Bar)) on singleton(::Example35::Baz)": "(:age | nil)"
   Example36::Foo.bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example36::Foo)] -> :age"
-    "() &{6b32c40d8d0c16ab}": "^(*untyped) [self: singleton(::Example36::Foo)] ->
-      :age"
+    "() &-> nil": "^(*untyped) [self: singleton(::Example36::Foo)] -> nil"
     "() on singleton(::Example36::Baz) &-> :age": "^(*untyped) [self: singleton(::Example36::Foo)]
       -> :age"
     "(singleton(::Example36::Bar)) on singleton(::Example36::Baz)": "(:age | nil)"
   Example37::Foo#bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example37::Bar)] -> :age"
-    "() &{bf436601b84c7ad7}": "^(*untyped) [self: singleton(::Example37::Bar)] ->
-      :age"
+    "() &-> nil": "^(*untyped) [self: singleton(::Example37::Bar)] -> nil"
     "() on singleton(::Example37::Baz) &-> :age": "^(*untyped) [self: singleton(::Example37::Bar)]
       -> :age"
     "(singleton(::Example37::Bar)) on singleton(::Example37::Baz)": "(:age | nil)"
   Example38::Foo#bazingado:
     "() &-> :age": "^(*untyped) [self: singleton(::Example38::Bar)] -> :age"
     "() &-> :name": "^(*untyped) [self: singleton(::Example38::Bar)] -> :name"
-    "() &{d92340867bec7875}": "^(*untyped) [self: singleton(::Example38::Bar)] ->
-      (:age | :name)"
-    "() &{fac94a15d90f352d}": "^(*untyped) [self: singleton(::Example38::Bar)] ->
-      (:age | :name)"
+    "() &-> nil": "^(*untyped) [self: singleton(::Example38::Bar)] -> nil"
     "() on singleton(::Example38::Baz) &-> :age": "^(*untyped) [self: singleton(::Example38::Bar)]
       -> :age"
     "() on singleton(::Example38::BazOther) &-> :name": "^(*untyped) [self: singleton(::Example38::Bar)]
       -> :name"
   Example39::Foo#bananed:
     "() &-> :age": "^(*untyped) [self: ::Module] -> :age"
-    "() &{6e35af5bc953d3d6}": "^(*untyped) [self: ::Module] -> :age"
+    "() &-> nil": "^(*untyped) [self: ::Module] -> nil"
     "() on singleton(::Example39::Baz) &-> :age": "^(*untyped) [self: ::Module] ->
       :age"
   Example3::Foo#user=:
@@ -8646,14 +8636,14 @@ methods:
     "(nil) on singleton(::Example3::Foo)": nil
   Example41::Foo#included:
     "() &-> :age": "^(*untyped) [self: ::Module] -> :age"
-    "() &{56430ca66806e1b4}": "^(*untyped) [self: ::Module] -> :age"
+    "() &-> nil": "^(*untyped) [self: ::Module] -> nil"
     "() on singleton(::Example41::Baz) &-> :age": "^(*untyped) [self: ::Module] ->
       :age"
   Example42::Foo#bazingado:
     "() &-> :age": "^(*untyped) [self: (singleton(::Example42::Bar) | singleton(::Example42::BarOther))]
       -> :age"
-    "() &{ca674a972d18934a}": "^(*untyped) [self: (singleton(::Example42::Bar) | singleton(::Example42::BarOther))]
-      -> :age"
+    "() &-> nil": "^(*untyped) [self: (singleton(::Example42::Bar) | singleton(::Example42::BarOther))]
+      -> nil"
     "() on singleton(::Example42::Baz) &-> :age": "^(*untyped) [self: (singleton(::Example42::Bar)
       | singleton(::Example42::BarOther))] -> :age"
     "(singleton(::Example42::Bar)) on singleton(::Example42::Baz)": "(:age | nil)"
@@ -8667,10 +8657,8 @@ methods:
       | singleton(::Example43::BarOther2))] -> :age"
     "() &-> :name": "^(*untyped) [self: (singleton(::Example43::Bar) | singleton(::Example43::BarOther)
       | singleton(::Example43::BarOther2))] -> :name"
-    "() &{255c189162a9ec69}": "^(*untyped) [self: (singleton(::Example43::Bar) | singleton(::Example43::BarOther)
-      | singleton(::Example43::BarOther2))] -> (:age | :name)"
-    "() &{311201bf36eb7e9d}": "^(*untyped) [self: (singleton(::Example43::Bar) | singleton(::Example43::BarOther)
-      | singleton(::Example43::BarOther2))] -> (:age | :name)"
+    "() &-> nil": "^(*untyped) [self: (singleton(::Example43::Bar) | singleton(::Example43::BarOther)
+      | singleton(::Example43::BarOther2))] -> nil"
     "() on singleton(::Example43::Baz) &-> :age": "^(*untyped) [self: (singleton(::Example43::Bar)
       | singleton(::Example43::BarOther) | singleton(::Example43::BarOther2))] ->
       :age"
@@ -8683,12 +8671,12 @@ methods:
       :name | nil)"
   Example44::Foo#included:
     "() &-> :age": "^(*untyped) [self: ::Module] -> :age"
-    "() &{33f9cea37f7c2384}": "^(*untyped) [self: ::Module] -> :age"
+    "() &-> nil": "^(*untyped) [self: ::Module] -> nil"
     "() on singleton(::Example44::Baz) &-> :age": "^(*untyped) [self: ::Module] ->
       :age"
   Example45::Foo#banana_class_method:
     "() &-> :age": "^(*untyped) [self: ::Class] -> :age"
-    "() &{cf980c4bcce8c327}": "^(*untyped) [self: ::Class] -> :age"
+    "() &-> nil": "^(*untyped) [self: ::Class] -> nil"
     "() on singleton(::Example45::Baz) &-> :age": "^(*untyped) [self: ::Class] ->
       :age"
   Example47::Foo#banana_class_method:
@@ -8699,12 +8687,20 @@ methods:
     "(nil) on singleton(::Example4::Foo)": nil
   Example50::Foo#banana_class_method:
     "() on singleton(::Example50::Baz) &-> :age": ":age"
+  Example51::Foo#banana_class_method:
+    "() &-> nil": nil
+  Example52::Foo#banana_class_method:
+    "() &-> nil": nil
+  Example53::Foo#banana_class_method:
+    "() &-> nil": nil
+  Example54::Foo#banana_class_method:
+    "() &-> nil": nil
   Example61.normalize:
     ("indexed_by"): '"indexed_by"'
     "(:indexed_by)": '"indexed_by"'
   Example62::Deferring#keep:
     "() &-> :hallmark": "^(*untyped) [self: ::Module] -> :hallmark"
-    "() &{d523b9f52b57e7ab}": "^(*untyped) [self: ::Module] -> :hallmark"
+    "() &-> nil": "^(*untyped) [self: ::Module] -> nil"
     "() on singleton(::Example62::Shared) &-> :hallmark": "^(*untyped) [self: ::Module]
       -> :hallmark"
   Example62::Slots#hallmark=:
