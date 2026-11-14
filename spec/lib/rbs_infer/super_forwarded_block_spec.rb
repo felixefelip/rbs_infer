@@ -60,14 +60,14 @@ RSpec.describe "a block a method passes on through super" do
     expect(rbs).to include("def required: (untyped key) { (Integer) -> untyped } -> untyped")
   end
 
-  it "keeps the block optional when the method super reaches does" do
+  it "keeps the block optional when the method super reaches does, with its parameters" do
     rbs = child_rbs(<<~RUBY)
       def optional(key)
         super
       end
     RUBY
 
-    expect(rbs).to include("def optional: (untyped key) ?{ (*untyped) -> untyped } -> untyped")
+    expect(rbs).to include("def optional: (untyped key) ?{ () -> untyped } -> untyped")
   end
 
   it "takes no block when the method super reaches takes none" do

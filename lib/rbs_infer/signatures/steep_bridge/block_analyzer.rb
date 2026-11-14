@@ -40,15 +40,18 @@ class RbsInfer::Signatures::SteepBridge
       # without one would reach that call. The parameters only survive while the
       # sites agree; past that, `nil` widens them back to `*untyped`.
       sites.each_with_object({}) do |(method_key, found), requirements|
-        agreed = found.reject { |shape| shape.nil? || shape == :optional }.uniq
+        agreed = found.reject { |shape| shape.nil? || shape.is_a?(Optional) }.uniq
         if agreed.any?
-          params = agreed.first if agreed.size == 1 && agreed.first != :unknown
-          requirements[method_key] = { required: true, params: params }
-        elsif found.include?(:optional)
-          requirements[method_key] = { required: false, params: nil }
+          requirements[method_key] = { required: true, params: agreed_params(agreed) }
+        elsif (optional = found.grep(Optional)).any?
+          requirements[method_key] = { required: false, params: agreed_params(optional.map(&:params).uniq) }
         end
       end
     end
+
+    # A callee that takes a block without requiring one, with the parameters it
+    # declares for it (`nil` when the declarations disagree or not all take one).
+    Optional = Struct.new(:params)
 
     # Methods that STORE their block in an ivar, mapped to the `self` the block
     # will run against when that ivar is finally handed on:
@@ -98,7 +101,77 @@ class RbsInfer::Signatures::SteepBridge
       result
     end
 
+    # Methods that pass their block as an ordinary argument, mapped to the
+    # parameters the receiving method declares for the proc it takes there:
+    #
+    #   { "initialize" => ["self", "untyped"] }
+    #
+    # `set_backend(default_proc)` hands the block to a parameter typed
+    # `(^(self, untyped) -> untyped)?`, so the block is called with those two.
+    # Calls that disagree say nothing.
+    def handed_block_params(source_code, file:)
+      typing = @steep_bridge.type_check(source_code, file:)
+      return {} unless typing
+
+      sites = Hash.new { |hash, key| hash[key] = [] }
+      walk_handed_blocks(typing.source.node, nil, nil, false) do |send_node, index, method_key|
+        sites[method_key] << handed_params(typing, send_node, index)
+      end
+      sites.each_with_object({}) do |(method_key, found), params|
+        params[method_key] = found.first if found.uniq.size == 1 && found.first.is_a?(Array)
+      end
+    end
+
     private
+
+    def agreed_params(shapes)
+      shapes.first if shapes.size == 1 && shapes.first.is_a?(Array)
+    end
+
+    def walk_handed_blocks(node, method_key, block_param, singleton, &block)
+      return unless node.is_a?(Parser::AST::Node)
+
+      case node.type
+      when :def
+        method_key = singleton ? "self.#{node.children[0]}" : node.children[0].to_s
+        block_param = block_param_name(node.children[1])
+      when :defs
+        method_key = "self.#{node.children[1]}"
+        block_param = block_param_name(node.children[2])
+      when :sclass
+        singleton = true
+      when :send, :csend
+        node.children.drop(2).each_with_index do |arg, index|
+          next unless block_param && arg.is_a?(Parser::AST::Node) && arg.type == :lvar
+          next unless arg.children[0].to_s == block_param
+
+          block.call(node, index, method_key)
+        end
+      end
+
+      node.children.each { |child| walk_handed_blocks(child, method_key, block_param, singleton, &block) }
+    end
+
+    # What the receiving method's positional parameter at `index` declares, if
+    # it is a proc with a plain list of required parameters; `:unknown` otherwise.
+    def handed_params(typing, send_node, index)
+      call = typing.call_of(node: send_node)
+      decls = call.respond_to?(:method_decls) ? call.method_decls.to_a : []
+      shapes = decls.map do |decl|
+        function = decl.method_type.type
+        param = [*function.required_positionals, *function.optional_positionals][index]
+        proc_type = param && handed_proc(param.type)
+        proc_type ? callee_block_params(proc_type, receiver_type(typing, send_node)) : :unknown
+      end.uniq
+      shapes.size == 1 ? shapes.first : :unknown
+    rescue Steep::Typing::UnknownNodeError
+      :unknown
+    end
+
+    def handed_proc(type)
+      type = type.type if type.is_a?(RBS::Types::Optional)
+      type if type.is_a?(RBS::Types::Proc)
+    end
 
     # Yields `[send_node, method_key]` for every call that receives a
     # `&block_param` — the method's own block on its way out. `&:symbol` is a
@@ -260,11 +333,11 @@ class RbsInfer::Signatures::SteepBridge
       call = typing.call_of(node: typing.explicit_super_of(node: send_node) || send_node)
       blocks = (call.respond_to?(:method_decls) ? call.method_decls.to_a : []).map { |decl| decl.method_type.block }
       return nil if blocks.none?
-      return :optional unless blocks.all? { |block| block&.required }
 
       receiver = receiver_type(typing, send_node)
-      shapes = blocks.map { |block| callee_block_params(block, receiver) }.uniq
-      shapes.size == 1 ? shapes.first : :unknown
+      shapes = blocks.map { |block| block ? callee_block_params(block, receiver) : :unknown }.uniq
+      shape = shapes.size == 1 ? shapes.first : :unknown
+      blocks.all? { |block| block&.required } ? shape : Optional.new(shape)
     rescue Steep::Typing::UnknownNodeError
       nil
     end

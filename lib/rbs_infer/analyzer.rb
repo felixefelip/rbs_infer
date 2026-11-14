@@ -320,7 +320,10 @@ module RbsInfer
       # blocos: a lista copiada já traz o bloco do método chamado.
       forwarded_parameters_resolver.apply(target_members)
 
-      block_signature_resolver.apply(target_members, caller_returns: param_type_inferrer.caller_block_returns)
+      RbsInfer::Inference::ProcParamResolver.new(parsed_target: @parsed_target, steep_bridge: steep_bridge, target_class: @target_class)
+                                            .apply(target_members, method_param_types)
+      RbsInfer::Inference::BlockSignatureResolver.new(parsed_target: @parsed_target, steep_bridge: steep_bridge)
+                                                 .apply(target_members, caller_returns: param_type_inferrer.caller_block_returns)
 
       # Identificar parâmetros opcionais do initialize
       optional_params = extract_optional_init_params
@@ -793,13 +796,6 @@ module RbsInfer
       )
     end
 
-    def block_signature_resolver
-      @block_signature_resolver ||= RbsInfer::Inference::BlockSignatureResolver.new(
-        parsed_target: @parsed_target,
-        steep_bridge: steep_bridge
-      )
-    end
-
     def attr_type_inferrer
       @attr_type_inferrer ||= RbsInfer::Inference::AttrTypeInferrer.new(
         target_class: @target_class,
@@ -930,6 +926,7 @@ require_relative "ast/comment_index"
 require_relative "inference/class_member_collector"
 require_relative "inference/class_member_collector/extract_params_signature"
 require_relative "inference/class_member_collector/block_signature"
+require_relative "inference/class_member_collector/proc_param_calls"
 require_relative "ast/def_collector"
 require_relative "inference/new_call_collector"
 require_relative "inference/new_call_collector/receiver_matcher"
@@ -939,6 +936,7 @@ require_relative "inference/new_call_collector/call_arguments"
 require_relative "inference/new_call_collector/assigned_types"
 require_relative "inference/block_return_collector"
 require_relative "inference/block_signature_resolver"
+require_relative "inference/proc_param_resolver"
 require_relative "inference/forwarded_parameters_resolver"
 require_relative "inference/local_self_paths"
 require_relative "signatures/method_type_resolver"

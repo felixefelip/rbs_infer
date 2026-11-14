@@ -34,8 +34,16 @@ module RbsInfer::Inference
   # checker (`ForwardedParametersResolver`).
   # `block_implicit_forward` = o método não declara bloco, mas um `super` repassa
   # o dele; o bloco só fica se o método que o `super` alcança declarar um (#510).
+  # `block_handed_on` = o corpo passa o bloco como argumento comum
+  # (`set_backend(block)`) sem chamá-lo; os parâmetros dele vêm do parâmetro
+  # que o recebe — resolvido no Analyzer.
+  # `proc_param_calls` = onde o corpo chama um parâmetro posicional como proc
+  # (`default_proc.call(self, key)`), por nome, no formato de
+  # `block_arg_positions`; dá a lista de parâmetros do proc que os call-sites
+  # deixaram `*untyped` — resolvido no Analyzer (`ProcParamResolver`).
   Member = Struct.new(:kind, :name, :signature, :visibility, :owner, :value_node, :param_constant_defaults, :old_name,
-                      :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_literal_defaults, :block_stored_forward, :no_signature, :params_forward, :block_implicit_forward, keyword_init: true)
+                      :singleton, :block_arg_positions, :block_open_forward, :overloading, :param_literal_defaults, :block_stored_forward, :no_signature, :params_forward, :block_implicit_forward,
+                      :block_handed_on, :proc_param_calls, keyword_init: true)
 
   # Pelo que eu entendi, essa classe é responsável por gerar o signature inicial
   # de uma class/module, porém depois no analyzer, terá outras classes que irão
@@ -200,6 +208,8 @@ module RbsInfer::Inference
         block_open_forward: sig ? nil : extractor.block_open_forward?,
         block_implicit_forward: sig ? nil : extractor.block_implicit_forward?,
         block_stored_forward: sig ? nil : extractor.block_stored_forward?,
+        block_handed_on: sig ? nil : extractor.block_handed_on?,
+        proc_param_calls: sig ? nil : extractor.proc_param_calls,
         params_forward: sig ? nil : extractor.params_forward?,
         overloading: overloading,
         no_signature: no_signature

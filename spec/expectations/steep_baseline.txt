@@ -8,6 +8,7 @@ app/models/example108.rb:40:34: [warning] Cannot pass a value of type `^(*untype
 app/models/example109.rb:204:39: [warning] The method cannot be called with a block
 app/models/example109.rb:214:33: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^ [self: self] -> U(_)`
 app/models/example109.rb:282:35: [warning] Cannot pass a value of type `^(*untyped) -> untyped` as a block-pass-argument of type `(^(::Module) [self: ::Module] -> void | nil)`
+app/models/example114.rb:32:48: [error] Type `::Hash::_Key` does not have method `to_s`
 app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
 app/models/example21.rb:96:29: [error] Type `(::Example21::Ticket | nil)` does not have method `holder`
@@ -86,7 +87,6 @@ sig/generated/steep_activesupport_runtime/i18n.rb:205:55: [error] Type `(::I18n:
 sig/generated/steep_activesupport_runtime/inflector.rb:325:57: [error] Type `(::String | nil)` does not have method `capitalize!`
 sig/generated/steep_ar_runtime/active_support/concern.rb:53:22: [warning] Cannot pass a value of type `^(?(::Module | nil)) -> untyped` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
 sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:22:8: [error] Type `::Concurrent::Collection::NonConcurrentMapBackend` does not have method `validate_options_hash!`
-sig/generated/steep_concurrent_runtime/concurrent/map.rb:146:8: [warning] Cannot pass a value of type `(^(self, untyped) -> V | nil)` as a block-pass-argument of type `(^(*untyped) -> untyped | nil)`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:161:84: [error] Cannot pass a value of type `::Object` as an argument of type `nil`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:192:46: [error] Cannot pass a value of type `::Object` as an argument of type `nil`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:19:26: [warning] Cannot find the declaration of constant: `JRubyMapBackend`

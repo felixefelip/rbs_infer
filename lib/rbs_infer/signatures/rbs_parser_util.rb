@@ -465,6 +465,12 @@ module RbsInfer::Signatures
       method_sig.sub(OPEN_FORWARD_BLOCK, "{ (#{params&.join(", ") || "*untyped"}) -> untyped }")
     end
 
+    # The open block's parameters, from the method it is handed to; whether it
+    # is required stays as the body said.
+    def shape_open_block(method_sig, params)
+      method_sig&.sub("{ (*untyped) -> untyped }", "{ (#{params.join(", ")}) -> untyped }")
+    end
+
     def drop_open_block(method_sig)
       method_sig&.sub(" #{OPEN_FORWARD_BLOCK}", "")
     end

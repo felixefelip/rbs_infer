@@ -293,6 +293,10 @@ postconditions:
     - "@write_lock"
 - class: Concurrent::Collection::NonConcurrentMapBackend
   method: initialize
+  unconditional:
+    ivars:
+      "@default_proc": "(^(self, ::Hash::_Key) -> untyped | nil)"
+    self: "::Concurrent::Collection::NonConcurrentMapBackend & ::Concurrent::Collection::NonConcurrentMapBackend::AfterInitialize"
   effects:
     may_write:
     - "@backend"
@@ -309,6 +313,10 @@ postconditions:
     - "@backend"
 - class: Concurrent::Map
   method: initialize
+  unconditional:
+    ivars:
+      "@default_proc": "(^(self, untyped) -> V | nil)"
+    self: "::Concurrent::Map & ::Concurrent::Map::AfterInitialize"
   effects:
     may_write:
     - "@default_proc"
@@ -704,6 +712,17 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Example114
+  method: initialize
+  effects:
+    may_write:
+    - "@backend"
+    - "@default_proc"
+- class: Example114
+  method: set_backend
+  effects:
+    may_write:
+    - "@backend"
 - class: Example11::Partial
   method: initialize
   effects:

@@ -93,6 +93,17 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
       block_param? && use_sites.empty? && stores_block?
     end
 
+    # True when the body passes the block as an ordinary argument —
+    # `set_backend(default_proc)` — and never calls it: the method that receives
+    # it says what it will be called with.
+    def handed_on?
+      name = block_param_name or return false
+
+      use_sites.empty? && walk_body do |node|
+        node.is_a?(Prism::CallNode) && node.arguments&.arguments&.any? { |arg| reads_block?(arg, name) }
+      end
+    end
+
     private
 
     # `@x = block` — the block leaving this method by being kept. An anonymous

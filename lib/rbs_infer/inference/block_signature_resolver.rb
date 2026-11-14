@@ -54,6 +54,7 @@ module RbsInfer::Inference
       return if @parsed_target.nil?
 
       resolve_param_types(members)
+      resolve_handed_on_params(members)
       resolve_forwarded_requirements(members)
       resolve_stored_self_types(members)
       resolve_return_types(members, caller_returns)
@@ -82,6 +83,23 @@ module RbsInfer::Inference
       selected.each do |member|
         types = member.block_arg_positions.map { |positions| param_type(positions, expression_types) }
         member.signature = RbsInfer::Signatures::RbsParserUtil.replace_block_param_types(member.signature, types)
+      end
+    end
+
+    # A block passed on as an ordinary argument — `set_backend(default_proc)` —
+    # is called by the method that receives it, with what that method's
+    # parameter declares.
+    def resolve_handed_on_params(members)
+      selected = members.select do |m|
+        %i[method class_method].include?(m.kind) && m.block_handed_on &&
+          m.signature.to_s.include?(RbsInfer::Signatures::RbsParserUtil::OPEN_FORWARD_BLOCK)
+      end
+      return if selected.empty?
+
+      handed = @steep_bridge.handed_block_params(@parsed_target.source, file: @parsed_target.path)
+      selected.each do |member|
+        params = handed[method_key(member)] or next
+        member.signature = RbsInfer::Signatures::RbsParserUtil.shape_open_block(member.signature, params)
       end
     end
 
@@ -119,6 +137,7 @@ module RbsInfer::Inference
     def forwarded_block(member, requirement)
       util = RbsInfer::Signatures::RbsParserUtil
       return util.require_block(member.signature, requirement[:params]) if requirement&.fetch(:required)
+      return util.shape_open_block(member.signature, requirement[:params]) if requirement&.fetch(:params)
       return util.drop_open_block(member.signature) if requirement.nil? && member.block_implicit_forward
 
       member.signature

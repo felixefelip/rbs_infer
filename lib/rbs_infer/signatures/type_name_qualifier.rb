@@ -89,7 +89,7 @@ module RbsInfer
 
       def names_in_type(type, context)
         own = case type
-              when RBS::Types::ClassInstance, RBS::Types::ClassSingleton
+              when RBS::Types::ClassInstance, RBS::Types::ClassSingleton, RBS::Types::Interface
                 type.location ? [[type.name, type.location[:name], context, type]] : []
               else
                 []
@@ -102,7 +102,7 @@ module RbsInfer
 
         name = type_name.to_s
         resolved = resolve(name, context)
-        resolved && resolved != name && declared?(name)
+        resolved && resolved != name && declared?(type_name.interface? ? type_name.namespace.path.join("::") : name)
       end
 
       def resolve(name, context)
