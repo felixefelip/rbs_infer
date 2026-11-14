@@ -7117,9 +7117,6 @@ methods:
       class: "::Example100::Reflection"
       ivars:
         "@options": "{ :through => :taggings }"
-  Example102::FallbackChains#[]:
-    "(:en)": "[:en, :en]"
-    "(:en) with {@default: :en}": "[:en, :en]"
   Example102::FallbackChains#compute:
     "(:en) with {@default: :en}": "[:en, :en]"
   Example102::FallbackChains.new:
@@ -8527,6 +8524,8 @@ methods:
         "@default_proc":
           proc: "^(self, ::Hash::_Key) -> untyped"
           block: "{ |_map, key| key.to_s }"
+  Example115#label_for:
+    "(:missing)": '"missing"'
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -9239,17 +9238,28 @@ methods:
   Example9::Dispatcher#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
+  Hash#default:
+    "(:missing) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}": '"missing"'
+    "(:missing) with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}": '"missing"'
+  Hash.new:
+    "()":
+      class: "::Hash"
+      ivars:
+        "@__rbs_infer__default_proc": nil
+    "() &{c0c4849b9a5b278b}":
+      class: "::Hash"
+      ivars:
+        "@__rbs_infer__default_proc":
+          proc: "^(instance, ::Hash::_Key) -> V"
+          block: "{ |_labels, missing| missing.to_s }"
   I18n.fallbacks:
     "() with {::Thread{@__rbs_infer__main: nil}}":
       class: "::I18n::Locale::Fallbacks"
       ivars:
         "@defaults": "[]"
         "@map": "{  }"
-  I18n::Locale::Fallbacks#compute:
-    "(:en) with {@defaults: [], @map: {  }}": "[:en]"
-    "(nil, false, ::Array[untyped]) with {@defaults: [], @map: {  }}": "[]"
   I18n::Locale::Fallbacks#defaults=:
-    "([]) with {@defaults: nil, @map: {  }}": "[]"
+    "([]) with {@__rbs_infer__default_proc: nil, @defaults: nil, @map: {  }}": "[]"
   I18n::Locale::Fallbacks.new:
     "()":
       class: "::I18n::Locale::Fallbacks"
@@ -9908,7 +9918,6 @@ declarations:
   Eventable#track_event: ({ :action => :closed, :particulars => {  } } | { :action
     => :reopened, :particulars => {  } } | { :action => :published, :particulars =>
     {  } } | { :action => "renamed", :particulars => {  } })
-  Example102::FallbackChains#[]: "[:en, :en]"
   Example102::FallbackChains#compute: "[:en, :en]"
   Example102::Inflector.with_rules: '[[::Regexp, "y"], [::Regexp, ""]]'
   Example102::Rules#apply: ("post" | "category")
@@ -9934,6 +9943,7 @@ declarations:
   Example109::Reflection::MacroReflection#normalize_options: "{  }"
   Example110::Options.define_option_reader: ":size"
   Example110::Options.generated_option_readers: singleton(::Example110::Dial::GeneratedOptionReaders)
+  Example115#label_for: '"missing"'
   Example13::Guarded#with_format: 'true'
   Example19#record: '"denied"'
   Example20#record: '"denied"'
@@ -10692,6 +10702,16 @@ receivers:
   - "::Example114"
   app/models/example114.rb:7:4:
   - "::Example114"
+  app/models/example115.rb:12:33:
+  - singleton(::Example115)
+  app/models/example115.rb:12:37:
+  - "::Example115"
+  app/models/example115.rb:6:18:
+  - singleton(::Hash)
+  app/models/example115.rb:6:51:
+  - "::Hash::_Key"
+  app/models/example115.rb:7:10:
+  - "::Hash[untyped, untyped]"
   app/models/example12.rb:16:4:
   - "::Example12"
   app/models/example12.rb:20:4:
@@ -14229,6 +14249,8 @@ receivers:
   - "::Class"
   sig/generated/steep_ruby_runtime/class.rb:17:4:
   - "::Class"
+  sig/generated/steep_ruby_runtime/hash.rb:11:6:
+  - "::Hash[untyped, untyped]"
   sig/generated/steep_ruby_runtime/module.rb:14:4:
   - "::Module"
   sig/generated/steep_ruby_runtime/module.rb:14:87:
@@ -31373,6 +31395,20 @@ exits:
           class: "::Example99::Foo"
           ivars:
             "@my_hash": "{ ?:bar => untyped }"
+  Hash#default:
+    "(:missing) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}":
+      ivars: {}
+    "(:missing) on ::Hash[untyped, untyped] with {[]: {  }}":
+      ivars: {}
+    "(:missing) with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}":
+      ivars: {}
+    "(:missing) with {[]: {  }}":
+      ivars: {}
+  Hash.new:
+    "()":
+      ivars:
+        "@__rbs_infer__default_proc": nil
+      keeps_self: true
   I18n.fallbacks:
     "() with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
@@ -31381,49 +31417,31 @@ exits:
           "@__rbs_infer__main": nil
   I18n::Locale::Fallbacks#[]:
     "(::Symbol) with {@defaults: [], @map: {  }}":
-      ivars:
-        "@defaults": "[]"
-        "@map": "{  }"
+      ivars: {}
     "(:en) with {@defaults: [], @map: {  }}":
-      ivars:
-        "@defaults": "[]"
-        "@map": "{  }"
+      ivars: {}
   I18n::Locale::Fallbacks#compute:
-    "(::Symbol) with {@defaults: [], @map: {  }}":
+    "(bot, false) with {@__rbs_infer__default_proc: nil, @defaults: nil, @map: {  }}":
       ivars:
-        "@defaults": "[]"
-        "@map": "{  }"
-    "(:en) with {@defaults: [], @map: {  }}":
-      ivars:
-        "@defaults": "[]"
-        "@map": "{  }"
-      keeps_self: true
-    "(bot, false) with {@defaults: nil, @map: {  }}":
-      ivars:
+        "@__rbs_infer__default_proc": nil
         "@map": "{  }"
         "@defaults": nil
-    "(bot, false, ::Array[untyped]) with {@defaults: [], @map: {  }}":
+    "(bot, false, ::Array[untyped]) with {@__rbs_infer__default_proc: nil, @defaults: nil, @map: {  }}":
       ivars:
-        "@defaults": "[]"
-        "@map": "{  }"
-    "(bot, false, ::Array[untyped]) with {@defaults: nil, @map: {  }}":
-      ivars:
+        "@__rbs_infer__default_proc": nil
         "@map": "{  }"
         "@defaults": nil
-    "(nil, false, ::Array[untyped]) with {@defaults: [], @map: {  }}":
-      ivars:
-        "@defaults": "[]"
-        "@map": "{  }"
-      keeps_self: true
   I18n::Locale::Fallbacks#defaults=:
-    "([]) with {@defaults: nil, @map: {  }}":
+    "([]) with {@__rbs_infer__default_proc: nil, @defaults: nil, @map: {  }}":
       ivars:
+        "@__rbs_infer__default_proc": nil
         "@map": "{  }"
         "@defaults": "[]"
       keeps_self: true
   I18n::Locale::Fallbacks#map:
-    "((::Array[untyped] | nil)) with {@defaults: nil, @map: {  }}":
+    "((::Array[untyped] | nil)) with {@__rbs_infer__default_proc: nil, @defaults: nil, @map: {  }}":
       ivars:
+        "@__rbs_infer__default_proc": nil
         "@map": "{  }"
         "@defaults": nil
   I18n::Locale::Fallbacks.new:
