@@ -1,10 +1,10 @@
 class SendDispatchCaller
-  def stamped: () -> ("stamped: post" | "stamped: a")
+  def stamped: () -> "stamped: post"
   def stamped_predicate: () -> true
   def called: () -> "called"
   def dynamic: (untyped name) -> untyped
-  def underscored: () -> ("stamped: post" | "stamped: a")
-  def string_named: () -> ("stamped: post" | "stamped: a")
+  def underscored: () -> "stamped: post"
+  def string_named: () -> "stamped: post"
   def stamped_publicly: () -> untyped
   def missing_name: () -> untyped
   def wrong_arity: () -> ("stamped: post" | "stamped: a")
