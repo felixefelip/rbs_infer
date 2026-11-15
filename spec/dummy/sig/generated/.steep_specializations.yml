@@ -8553,8 +8553,6 @@ methods:
         "@default_proc":
           proc: "^(self, ::Hash::_Key) -> untyped"
           block: "{ |_map, key| key.to_s }"
-  Example115#label_for:
-    "(:missing)": '"missing"'
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -9268,8 +9266,8 @@ methods:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
   Hash#default:
+    '(:missing) on ::Hash[untyped, "missing"] with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}': V
     "(:missing) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}": '"missing"'
-    "(:missing) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}": '"missing"'
     "(:missing) with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}": '"missing"'
     "(:missing) with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}": '"missing"'
   Hash.new:
@@ -9995,7 +9993,6 @@ declarations:
   Example110::Options.define_option_reader: ":size"
   Example110::Options.generated_option_readers: singleton(::Example110::Dial::GeneratedOptionReaders)
   Example114#[]: '"missing"'
-  Example115#label_for: '"missing"'
   Example13::Guarded#with_format: 'true'
   Example19#record: '"denied"'
   Example20#record: '"denied"'
@@ -10761,9 +10758,9 @@ receivers:
   app/models/example115.rb:6:18:
   - singleton(::Hash)
   app/models/example115.rb:6:51:
-  - "::Hash::_Key"
+  - ":missing"
   app/models/example115.rb:7:10:
-  - "::Hash[untyped, untyped]"
+  - '::Hash[untyped, "missing"]'
   app/models/example12.rb:16:4:
   - "::Example12"
   app/models/example12.rb:20:4:
@@ -31466,9 +31463,11 @@ exits:
           ivars:
             "@my_hash": "{ ?:bar => untyped }"
   Hash#default:
-    "(:missing) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}":
+    '(:missing) on ::Hash[untyped, "missing"] with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}':
       ivars: {}
-    "(:missing) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}":
+    '(:missing) on ::Hash[untyped, "missing"] with {[]: {  }}':
+      ivars: {}
+    "(:missing) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}":
       ivars: {}
     "(:missing) on ::Hash[untyped, untyped] with {[]: {  }}":
       ivars: {}
