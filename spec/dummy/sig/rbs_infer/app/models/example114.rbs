@@ -1,13 +1,13 @@
 class Example114
-  @default_proc: (^(self, Hash::_Key) -> untyped)?
+  @default_proc: (^(self, :missing) -> untyped)?
   @backend: Hash[untyped, untyped]
 
-  def initialize: () ?{ (self, Hash::_Key) -> untyped } -> void
+  def initialize: () ?{ (self, :missing) -> untyped } -> void
   def []: (:missing key) -> "missing"
 
   private
 
-  def set_backend: ((^(self, Hash::_Key) -> untyped)? default_proc) -> Hash[untyped, untyped]
+  def set_backend: ((^(self, :missing) -> untyped)? default_proc) -> Hash[untyped, untyped]
 end
 
 class Example114Caller

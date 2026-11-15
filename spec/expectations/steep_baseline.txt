@@ -8,7 +8,6 @@ app/models/example108.rb:40:34: [warning] Cannot pass a value of type `^(*untype
 app/models/example109.rb:204:39: [warning] The method cannot be called with a block
 app/models/example109.rb:214:33: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^ [self: self] -> U(_)`
 app/models/example109.rb:282:35: [warning] Cannot pass a value of type `^(*untyped) -> untyped` as a block-pass-argument of type `(^(::Module) [self: ::Module] -> void | nil)`
-app/models/example114.rb:31:48: [error] Type `::Hash::_Key` does not have method `to_s`
 app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
 app/models/example21.rb:96:29: [error] Type `(::Example21::Ticket | nil)` does not have method `holder`
