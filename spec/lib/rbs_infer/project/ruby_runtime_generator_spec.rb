@@ -16,7 +16,8 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
       files = build_in(dir)
 
       expect(files.map(&:filename))
-        .to eq(["module.rb", "object.rb", "class.rb", "ruby_engine.rb", "thread_mutex.rb", "thread.rb", "array.rb"])
+        .to eq(["module.rb", "object.rb", "class.rb", "ruby_engine.rb", "thread_mutex.rb", "thread.rb", "array.rb",
+                "hash.rb"])
       expect(files.first.source).to include(
         "class Module\n",
         "  def include(*modules)\n",
@@ -313,6 +314,36 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     end
   end
 
+  describe "`Hash`, in hash.rb" do
+    it "keeps the default block or the default value as rb_hash_init does" do
+      Dir.mktmpdir do |dir|
+        expect(source_of(dir, "hash.rb")).to include(
+          "class Hash\n",
+          "  # @rbs_infer no-signature\n  def initialize(ifnone = (ifnone_unset = true), capacity: 0, &block)\n",
+          "      raise ArgumentError, \"wrong number of arguments (given 1, expected 0)\" unless ifnone_unset\n",
+          "      @__rbs_infer__default_proc = block\n",
+          "      @__rbs_infer__ifnone = ifnone_unset ? nil : ifnone\n"
+        )
+      end
+    end
+
+    it "answers the default as rb_hash_default does, calling the block with the hash and the key" do
+      Dir.mktmpdir do |dir|
+        expect(source_of(dir, "hash.rb")).to include(
+          "  # @rbs_infer no-signature\n  def default(key = (key_unset = true))\n",
+          "      return nil if key_unset\n\n      return default_proc.call(self, key)\n",
+          "    @__rbs_infer__ifnone\n"
+        )
+      end
+    end
+
+    it "leaves Hash#[] to the checker" do
+      Dir.mktmpdir do |dir|
+        expect(source_of(dir, "hash.rb")).not_to include("def [](")
+      end
+    end
+  end
+
   describe "`Class`, in class.rb" do
     it "runs the superclass's `inherited` from `initialize`, through send, before the block" do
       Dir.mktmpdir do |dir|
@@ -368,7 +399,8 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
         described_class.new(app_dir: dir).generate
 
         expect(Dir.children(sidecar).sort)
-          .to eq(["array.rb", "class.rb", "module.rb", "object.rb", "ruby_engine.rb", "thread.rb", "thread_mutex.rb"])
+          .to eq(["array.rb", "class.rb", "hash.rb", "module.rb", "object.rb", "ruby_engine.rb", "thread.rb",
+                  "thread_mutex.rb"])
       end
     end
   end

@@ -1,0 +1,7 @@
+class Example115
+  def label_for: (:missing key) -> "missing"
+end
+
+class Example115Caller
+  def missing_label: () -> "missing"
+end

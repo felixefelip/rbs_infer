@@ -1883,6 +1883,15 @@ postconditions:
   effects:
     may_write:
     - "@name"
+- class: Hash
+  method: initialize
+  unconditional:
+    ivars:
+      "@__rbs_infer__default_proc": "^(instance, ::Hash::_Key) -> V"
+    self: "::Hash & ::Hash::AfterInitialize"
+  effects:
+    may_write:
+    - "@__rbs_infer__default_proc"
 - class: I18n::Locale::Fallbacks
   method: defaults=
   unconditional:
