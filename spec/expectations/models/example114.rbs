@@ -3,7 +3,7 @@ class Example114
   @backend: Hash[untyped, untyped]
 
   def initialize: () ?{ (self, Hash::_Key) -> untyped } -> void
-  def []: (:missing key) -> untyped
+  def []: (:missing key) -> "missing"
 
   private
 
@@ -11,5 +11,5 @@ class Example114
 end
 
 class Example114Caller
-  def lookup: () -> untyped
+  def lookup: () -> "missing"
 end

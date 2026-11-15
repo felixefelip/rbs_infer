@@ -8517,6 +8517,10 @@ methods:
       class: "::Example113Settings"
       ivars:
         "@name": ":default"
+  Example114#[]:
+    ? "(:missing) with {@backend: ::Hash[untyped, untyped]{@__rbs_infer__default_proc:
+      proc(&{c03080c5d9b42d46}), []: {  }}, @default_proc: proc(&{d8fe9a2b0f926c06})}"
+    : '"missing"'
   Example114#set_backend:
     "(proc(&{d8fe9a2b0f926c06})) with {@backend: nil, @default_proc: nil}":
       class: "::Hash[untyped, untyped]"
@@ -9263,6 +9267,8 @@ methods:
     "(:name)": '"JOHN DOE"'
   Hash#default:
     '(:missing) on ::Hash[untyped, "missing"] with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}': V
+    "(:missing) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}": '"missing"'
+    "(:missing) with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}": '"missing"'
     "(:missing) with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}": '"missing"'
   Hash.new:
     "()":
@@ -9986,6 +9992,7 @@ declarations:
   Example109::Reflection::MacroReflection#normalize_options: "{  }"
   Example110::Options.define_option_reader: ":size"
   Example110::Options.generated_option_readers: singleton(::Example110::Dial::GeneratedOptionReaders)
+  Example114#[]: '"missing"'
   Example13::Guarded#with_format: 'true'
   Example19#record: '"denied"'
   Example20#record: '"denied"'
@@ -30520,12 +30527,12 @@ exits:
         "@generated_option_readers": nil
   Example114#[]:
     ? "(:missing) with {@backend: ::Hash[untyped, untyped]{@__rbs_infer__default_proc:
-      proc(&{c03080c5d9b42d46})}, @default_proc: proc(&{d8fe9a2b0f926c06})}"
+      proc(&{c03080c5d9b42d46}), []: {  }}, @default_proc: proc(&{d8fe9a2b0f926c06})}"
     : ivars:
         "@default_proc":
           proc: "^(self, ::Hash::_Key) -> untyped"
           block: "{ |_map, key| key.to_s }"
-    "(:missing) with {@backend: ::Hash[untyped, untyped]{}, @default_proc: proc(&{d8fe9a2b0f926c06})}":
+    "(:missing) with {@backend: ::Hash[untyped, untyped]{[]: {  }}, @default_proc: proc(&{d8fe9a2b0f926c06})}":
       ivars:
         "@default_proc":
           proc: "^(self, ::Hash::_Key) -> untyped"
@@ -30546,6 +30553,26 @@ exits:
                   block: "{ |_map, key| key.to_s }"
                 self: "::Example114"
           contents: "{  }"
+      keeps_self: true
+  Example114.new:
+    "() &{d8fe9a2b0f926c06}":
+      ivars:
+        "@default_proc":
+          proc: "^(self, ::Hash::_Key) -> untyped"
+          block: "{ |_map, key| key.to_s }"
+        "@backend":
+          class: "::Hash[untyped, untyped]"
+          ivars:
+            "@__rbs_infer__default_proc":
+              proc: "^(instance, ::Hash::_Key) -> V"
+              block: "{ |_hash, key| default_proc.call(self, key) }"
+              captures:
+                default_proc:
+                  proc: "^(self, ::Hash::_Key) -> untyped"
+                  block: "{ |_map, key| key.to_s }"
+                self: "::Example114"
+          contents: "{  }"
+      keeps_self: true
   Example83.has_stored:
     "(:comments) on singleton(::Example83) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
@@ -31489,6 +31516,12 @@ exits:
     '(:missing) on ::Hash[untyped, "missing"] with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}':
       ivars: {}
     '(:missing) on ::Hash[untyped, "missing"] with {[]: {  }}':
+      ivars: {}
+    "(:missing) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}":
+      ivars: {}
+    "(:missing) on ::Hash[untyped, untyped] with {[]: {  }}":
+      ivars: {}
+    "(:missing) with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}":
       ivars: {}
     "(:missing) with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}":
       ivars: {}
