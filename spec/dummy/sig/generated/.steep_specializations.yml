@@ -8517,10 +8517,17 @@ methods:
       class: "::Example113Settings"
       ivars:
         "@name": ":default"
+  Example114#set_backend:
+    "(proc(&{d8fe9a2b0f926c06})) with {@backend: nil, @default_proc: nil}":
+      class: "::Hash[untyped, untyped]"
+      ivars: {}
   Example114.new:
     "() &{d8fe9a2b0f926c06}":
       class: "::Example114"
       ivars:
+        "@backend":
+          class: "::Hash[untyped, untyped]"
+          ivars: {}
         "@default_proc":
           proc: "^(self, ::Hash::_Key) -> untyped"
           block: "{ |_map, key| key.to_s }"
@@ -30453,7 +30460,7 @@ exits:
       ivars:
         "@generated_option_readers": nil
   Example114#[]:
-    "(:missing) with {@default_proc: proc(&{d8fe9a2b0f926c06})}":
+    "(:missing) with {@backend: ::Hash[untyped, untyped]{[]: {  }}, @default_proc: proc(&{d8fe9a2b0f926c06})}":
       ivars:
         "@default_proc":
           proc: "^(self, ::Hash::_Key) -> untyped"
@@ -30462,6 +30469,9 @@ exits:
     "(proc(&{d8fe9a2b0f926c06})) with {@backend: nil, @default_proc: nil}":
       ivars:
         "@default_proc": nil
+        "@backend":
+          class: "::Hash[untyped, untyped]"
+          ivars: {}
   Example83.has_stored:
     "(:comments) on singleton(::Example83) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
