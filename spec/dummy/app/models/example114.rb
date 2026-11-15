@@ -25,7 +25,8 @@ end
 
 class Example114Caller
   # Returns "missing": `:missing` is not in the hash, so the read runs the
-  # default block. Core declares the block's `key` `::Hash::_Key`, so
-  # `key.to_s` is still reported.
+  # default block. Inferred as `untyped`: that block hands `self` to the
+  # caller's, which may write the hash it reads (felixefelip/rbs_infer#623).
+  # Core declares the block's `key` `::Hash::_Key`, so `key.to_s` is reported.
   def lookup = Example114.new { |_map, key| key.to_s }[:missing]
 end
