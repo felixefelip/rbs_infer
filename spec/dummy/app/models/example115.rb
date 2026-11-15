@@ -1,6 +1,6 @@
 # A hash built with a default block and read by a key nothing stored: the
-# read runs the block with the key, so `missing_label` is "missing". Core
-# declares the block's key `::Hash::_Key`, so `key.to_s` is still reported.
+# read runs the block with the key, so `missing_label` is "missing", and the
+# block's key is the one `label_for` reads with.
 class Example115
   def label_for(key)
     labels = Hash.new { |_labels, missing| missing.to_s }
