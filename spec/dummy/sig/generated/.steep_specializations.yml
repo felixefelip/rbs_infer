@@ -37,6 +37,7 @@ methods:
     '(singleton_class(::ActiveSupport::ClassAttribute), "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
     "(singleton_class(::ActiveSupport::ClassAttribute), :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
     '(singleton_class(::Example110::Options), "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
+    "(singleton_class(::Example110::Options), :__class_attr_plural_labels, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example110::Options), :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
   ActiveSupport::Concern#class_methods:
     "() &-> :declare": ":declare"
@@ -7358,10 +7359,12 @@ methods:
     ? '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private:
       true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
     : '"__class_attr_plural_names="'
+    "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
     ? '(singleton_class(::Example109::Base), "__class_attr_pluralize_table_names=",
       private: true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
     : '"__class_attr_pluralize_table_names="'
+    "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
   Example108::Settings.__class_attr_plural_names:
     "() with {@generated_readers: nil}": "::TrueClass"
@@ -8507,11 +8510,16 @@ methods:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@inverse_which_updates_counter_cache_defined": 'false'
+  Example110::Options.__class_attr_plural_labels:
+    "() with {@generated_option_readers: nil}": "::TrueClass"
   Example110::Options.define_option_reader:
     "(:size) on singleton(::Example110::Dial) with {@generated_option_readers: nil}": ":size"
   Example110::Options.generated_option_readers:
     "() on singleton(::Example110::Dial)": singleton(::Example110::Dial::GeneratedOptionReaders)
     "() on singleton(::Example110::Dial) with {@generated_option_readers: nil}": singleton(::Example110::Dial::GeneratedOptionReaders)
+  Example110::Options.plural_labels:
+    "() on singleton(::Example110::Dial) with {@generated_option_readers: nil}": "::TrueClass"
+    "() with {@generated_option_readers: nil}": "::TrueClass"
   Example113Settings.new:
     "()":
       class: "::Example113Settings"
