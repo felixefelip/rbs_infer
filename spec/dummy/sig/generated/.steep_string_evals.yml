@@ -139,6 +139,8 @@ call_sites:
   - source: def size; 1; end
     target: "::Example110::Dial::GeneratedOptionReaders"
     kind: module
+  app/models/example116.rb:27:2:
+  - def title_label; :labeled; end
   app/models/example60.rb:9:2:
   - source: def stamp(...);  _ = example60_printer;  _.stamp(...);rescue NoMethodError
       => e;  if _.nil? && e.name == :stamp;    raise ::ActiveSupport::DelegationError.nil_target(:stamp,

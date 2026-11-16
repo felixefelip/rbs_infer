@@ -1,0 +1,15 @@
+class Example116
+  @backend: Hash[untyped, untyped]
+
+  def initialize: () -> void
+  def []: (untyped key) -> untyped
+end
+
+class Example116Base
+  def self.inherited: (untyped subclass) -> Example116
+  def self.label_for: (:title key) -> "title"
+  def self.labeled: (:title key) -> :title_label
+end
+
+class Example116Child < Example116Base
+end

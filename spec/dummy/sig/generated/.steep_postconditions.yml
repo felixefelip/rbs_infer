@@ -723,6 +723,16 @@ postconditions:
   effects:
     may_write:
     - "@backend"
+- class: Example116
+  method: initialize
+  unconditional:
+    ivars:
+      "@backend": "::Hash[untyped, untyped]{@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}),
+        []: {  }}"
+    self: "::Example116 & ::Example116::AfterInitialize"
+  effects:
+    may_write:
+    - "@backend"
 - class: Example11::Partial
   method: initialize
   effects:
