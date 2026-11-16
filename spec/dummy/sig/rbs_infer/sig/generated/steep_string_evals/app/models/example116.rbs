@@ -1,0 +1,3 @@
+class Example116Child
+  def title_label: () -> :labeled
+end

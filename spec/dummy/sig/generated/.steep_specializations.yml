@@ -8554,6 +8554,37 @@ methods:
         "@default_proc":
           proc: "^(self, :missing) -> untyped"
           block: "{ |_map, key| key.to_s }"
+  Example116#[]:
+    "(:title) with {@backend: ::Hash[untyped, untyped]{@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}}": '"title"'
+  Example116.new:
+    "()":
+      class: "::Example116"
+      ivars:
+        "@backend":
+          class: "::Hash[untyped, untyped]"
+          ivars:
+            "@__rbs_infer__default_proc":
+              proc: "^(instance, ::Hash::_Key) -> V"
+              block: "{ |_hash, key| key.to_s }"
+          contents: "{  }"
+  Example116Base.inherited:
+    "(singleton(::Example116Child)) with {::Example116Child{}}":
+      class: "::Example116"
+      ivars:
+        "@backend":
+          class: "::Hash[untyped, untyped]"
+          ivars:
+            "@__rbs_infer__default_proc":
+              proc: "^(instance, ::Hash::_Key) -> V"
+              block: "{ |_hash, key| key.to_s }"
+  Example116Base.label_for:
+    ? "(:title) on singleton(::Example116Child) with {@example116_labels: ::Example116{@backend:
+      ::Hash[untyped, untyped]{@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}),
+      []: {  }}}}"
+    : '"title"'
+    ? "(:title) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{@__rbs_infer__default_proc:
+      proc(&{939eb0f200ceb408}), []: {  }}}}"
+    : '"title"'
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
@@ -9271,11 +9302,19 @@ methods:
     '(:missing) on ::Hash[untyped, "missing"] with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}': V
     "(:missing) with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}": '"missing"'
     "(:missing) with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}": '"missing"'
+    "(:title) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}": '"title"'
+    "(:title) with {@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}": '"title"'
   Hash.new:
     "()":
       class: "::Hash"
       ivars:
         "@__rbs_infer__default_proc": nil
+    "() &{939eb0f200ceb408}":
+      class: "::Hash"
+      ivars:
+        "@__rbs_infer__default_proc":
+          proc: "^(instance, ::Hash::_Key) -> V"
+          block: "{ |_hash, key| key.to_s }"
     "() &{ba01983a8db5f9e0}":
       class: "::Hash"
       ivars:
@@ -9994,6 +10033,8 @@ declarations:
   Example110::Options.define_option_reader: ":size"
   Example110::Options.generated_option_readers: singleton(::Example110::Dial::GeneratedOptionReaders)
   Example114#[]: '"missing"'
+  Example116Base.inherited: "::Example116"
+  Example116Base.label_for: '"title"'
   Example13::Guarded#with_format: 'true'
   Example19#record: '"denied"'
   Example20#record: '"denied"'
@@ -10762,6 +10803,23 @@ receivers:
   - ":missing"
   app/models/example115.rb:7:10:
   - '::Hash[untyped, "missing"]'
+  app/models/example116.rb:10:24:
+  - "::Hash[untyped, untyped]"
+  app/models/example116.rb:16:13:
+  - singleton(::Example116Child)
+  app/models/example116.rb:16:67:
+  - singleton(::Example116)
+  app/models/example116.rb:19:46:
+  - "::Example116"
+  - untyped
+  app/models/example116.rb:22:22:
+  - singleton(::Example116Base)
+  app/models/example116.rb:27:2:
+  - singleton(::Example116Child)
+  app/models/example116.rb:7:20:
+  - singleton(::Hash)
+  app/models/example116.rb:7:43:
+  - untyped
   app/models/example12.rb:16:4:
   - "::Example12"
   app/models/example12.rb:20:4:
@@ -26389,6 +26447,11 @@ exits:
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
+  Class#inherited:
+    "(singleton(::Example116Child)) with {::Example116Child{}}":
+      ivars: {}
+      classes:
+        "::Example116Child": {}
   Concurrent::Collection::MriMapBackend#[]=:
     ? "(:en, ::ActiveSupport::Inflector::Inflections{@acronyms: {  }, @plurals: [],
       @singulars: [], @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
@@ -30574,6 +30637,95 @@ exits:
                 self: "::Example114"
           contents: "{  }"
       keeps_self: true
+  Example116#[]:
+    "(:title) with {@backend: ::Hash[untyped, untyped]{@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}}":
+      ivars: {}
+    "(:title) with {@backend: ::Hash[untyped, untyped]{[]: {  }}}":
+      ivars: {}
+  Example116.new:
+    "()":
+      ivars:
+        "@backend":
+          class: "::Hash[untyped, untyped]"
+          ivars:
+            "@__rbs_infer__default_proc":
+              proc: "^(instance, ::Hash::_Key) -> V"
+              block: "{ |_hash, key| key.to_s }"
+          contents: "{  }"
+      keeps_self: true
+  Example116Base.inherited:
+    "(singleton(::Example116Child)) with {::Example116Child{}}":
+      ivars: {}
+      classes:
+        "::Example116Child":
+          "@example116_labels":
+            class: "::Example116"
+            ivars:
+              "@backend":
+                class: "::Hash[untyped, untyped]"
+                ivars:
+                  "@__rbs_infer__default_proc":
+                    proc: "^(instance, ::Hash::_Key) -> V"
+                    block: "{ |_hash, key| key.to_s }"
+                contents: "{  }"
+  Example116Base.label_for:
+    ? "(:title) on singleton(::Example116Child) with {@example116_labels: ::Example116{@backend:
+      ::Hash[untyped, untyped]{@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}),
+      []: {  }}}}"
+    : ivars: {}
+    "(:title) on singleton(::Example116Child) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{[]: {  }}}}":
+      ivars: {}
+    ? "(:title) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{@__rbs_infer__default_proc:
+      proc(&{939eb0f200ceb408}), []: {  }}}}"
+    : ivars: {}
+    "(:title) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{[]: {  }}}}":
+      ivars: {}
+  Example116Base.labeled:
+    ? "(:title) on singleton(::Example116Child) with {@example116_labels: ::Example116{@backend:
+      ::Hash[untyped, untyped]{@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}),
+      []: {  }}}}"
+    : ivars:
+        "@example116_labels":
+          class: "::Example116"
+          ivars:
+            "@backend":
+              class: "::Hash[untyped, untyped]"
+              ivars:
+                "@__rbs_infer__default_proc":
+                  proc: "^(instance, ::Hash::_Key) -> V"
+                  block: "{ |_hash, key| key.to_s }"
+              contents: "{  }"
+    "(:title) on singleton(::Example116Child) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{[]: {  }}}}":
+      ivars:
+        "@example116_labels":
+          class: "::Example116"
+          ivars:
+            "@backend":
+              class: "::Hash[untyped, untyped]"
+              ivars: {}
+              contents: "{  }"
+    ? "(:title) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{@__rbs_infer__default_proc:
+      proc(&{939eb0f200ceb408}), []: {  }}}}"
+    : ivars:
+        "@example116_labels":
+          class: "::Example116"
+          ivars:
+            "@backend":
+              class: "::Hash[untyped, untyped]"
+              ivars:
+                "@__rbs_infer__default_proc":
+                  proc: "^(instance, ::Hash::_Key) -> V"
+                  block: "{ |_hash, key| key.to_s }"
+              contents: "{  }"
+    "(:title) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{[]: {  }}}}":
+      ivars:
+        "@example116_labels":
+          class: "::Example116"
+          ivars:
+            "@backend":
+              class: "::Hash[untyped, untyped]"
+              ivars: {}
+              contents: "{  }"
   Example83.has_stored:
     "(:comments) on singleton(::Example83) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
@@ -31525,6 +31677,14 @@ exits:
     "(:missing) with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}":
       ivars: {}
     "(:missing) with {[]: {  }}":
+      ivars: {}
+    "(:title) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}":
+      ivars: {}
+    "(:title) on ::Hash[untyped, untyped] with {[]: {  }}":
+      ivars: {}
+    "(:title) with {@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}":
+      ivars: {}
+    "(:title) with {[]: {  }}":
       ivars: {}
   Hash.new:
     "()":
