@@ -10635,15 +10635,11 @@ receivers:
   app/models/example109.rb:127:13:
   - "::Example109::Reflection::AssociationReflection"
   app/models/example109.rb:127:20:
-  - nil
-  - untyped
-  - "{  }"
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:127:37:
   - "::Example109::Reflection::AssociationReflection"
   app/models/example109.rb:127:44:
-  - nil
-  - untyped
-  - "{  }"
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:128:12:
   - "::Example109::Reflection::AssociationReflection"
   app/models/example109.rb:159:8:
@@ -10701,8 +10697,7 @@ receivers:
   app/models/example109.rb:290:28:
   - singleton(::Example109::Associations::Builder::CollectionAssociation)
   app/models/example109.rb:290:41:
-  - "::Hash[untyped, untyped]"
-  - untyped
+  - "::Hash[::Symbol, untyped]"
   app/models/example109.rb:290:56:
   - "(:before_add | :after_add | :before_remove | :after_remove)"
   app/models/example109.rb:293:36:
@@ -13357,13 +13352,13 @@ receivers:
   sig/generated/steep_activesupport_runtime/i18n.rb:124:13:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_activesupport_runtime/i18n.rb:124:33:
-  - untyped
+  - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/i18n.rb:129:23:
   - singleton(::I18n::Locale::Fallbacks)
   sig/generated/steep_activesupport_runtime/i18n.rb:129:41:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_activesupport_runtime/i18n.rb:129:72:
-  - untyped
+  - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/i18n.rb:137:20:
   - "[(::Array[untyped] | ::Symbol)]"
   sig/generated/steep_activesupport_runtime/i18n.rb:137:8:
@@ -13401,7 +13396,7 @@ receivers:
   sig/generated/steep_activesupport_runtime/i18n.rb:194:43:
   - "(singleton(::I18n::Locale::Tag::Simple) & singleton(::I18n::Locale::Tag::Parents))"
   sig/generated/steep_activesupport_runtime/i18n.rb:194:52:
-  - untyped
+  - "::Array[::String]"
   sig/generated/steep_activesupport_runtime/i18n.rb:200:46:
   - "(::I18n::Locale::Tag::Simple & ::I18n::Locale::Tag::Parents)"
   sig/generated/steep_activesupport_runtime/i18n.rb:205:23:
@@ -13421,13 +13416,13 @@ receivers:
   sig/generated/steep_activesupport_runtime/i18n.rb:236:21:
   - "::I18n::Locale::Tag::Simple"
   sig/generated/steep_activesupport_runtime/i18n.rb:236:25:
-  - untyped
+  - "::Symbol"
   sig/generated/steep_activesupport_runtime/i18n.rb:241:10:
   - "::I18n::Locale::Tag::Simple"
   sig/generated/steep_activesupport_runtime/i18n.rb:246:10:
   - "::I18n::Locale::Tag::Simple"
   sig/generated/steep_activesupport_runtime/i18n.rb:246:14:
-  - untyped
+  - "::Symbol"
   sig/generated/steep_activesupport_runtime/i18n.rb:24:69:
   - singleton(::I18n::Locale::Fallbacks)
   sig/generated/steep_activesupport_runtime/i18n.rb:251:10:
@@ -13439,7 +13434,7 @@ receivers:
   sig/generated/steep_activesupport_runtime/i18n.rb:88:8:
   - "::I18n::Locale::Fallbacks"
   sig/generated/steep_activesupport_runtime/i18n.rb:89:13:
-  - "(::I18n::Locale::Fallbacks & ::I18n::Locale::Fallbacks::AfterDefaults)"
+  - "::I18n::Locale::Fallbacks"
   sig/generated/steep_activesupport_runtime/i18n.rb:89:33:
   - "::Array[::Array[untyped]]"
   sig/generated/steep_activesupport_runtime/i18n.rb:94:29:
@@ -29441,6 +29436,14 @@ exits:
           "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Associations::Builder::CollectionAssociation.define_callback:
     ? "(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
+      | :after_remove), :comments, ::Hash[::Symbol, untyped]) with {::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
+    ? "(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
       | :after_remove), :comments, ::Hash[untyped, untyped]) on singleton(::Example109::Associations::Builder::HasMany)
       with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)},
       ::Thread{@__rbs_infer__main: nil}}"
@@ -29485,13 +29488,6 @@ exits:
     ? "(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
       | :after_remove), :comments, ::Hash[untyped, untyped]) with {::Thread{@__rbs_infer__main:
       nil}}"
-    : ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
-    ? "(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
-      | :after_remove), :comments, untyped) with {::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
       classes:
         "::Thread":

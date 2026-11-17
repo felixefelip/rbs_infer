@@ -652,11 +652,6 @@ postconditions:
     - "@type"
 - class: Example109::Reflection::MacroReflection
   method: initialize
-  unconditional:
-    ivars:
-      "@options": "::Hash[::Symbol, untyped]"
-      "@plural_name": "::String"
-    self: "::Example109::Reflection::MacroReflection & ::Example109::Reflection::MacroReflection::AfterInitialize"
   effects:
     may_write:
     - "@active_record"
@@ -1904,10 +1899,6 @@ postconditions:
     - "@__rbs_infer__default_proc"
 - class: I18n::Locale::Fallbacks
   method: defaults=
-  unconditional:
-    ivars:
-      "@defaults": "::Array[untyped]"
-    self: "::I18n::Locale::Fallbacks & ::I18n::Locale::Fallbacks::AfterDefaults"
   effects:
     may_write:
     - "@defaults"
@@ -1922,12 +1913,14 @@ postconditions:
   effects:
     may_write:
     - "@parent"
+    - "@subtags"
 - class: I18n::Locale::Tag::Parents
   method: parents
   effects:
     may_write:
     - "@parent"
     - "@parents"
+    - "@subtags"
 - class: I18n::Locale::Tag::Parents
   method: self_and_parents
   effects:
@@ -1935,15 +1928,26 @@ postconditions:
     - "@parent"
     - "@parents"
     - "@self_and_parents"
+    - "@subtags"
 - class: I18n::Locale::Tag::Simple
   method: initialize
-  unconditional:
-    ivars:
-      "@tag": "::Symbol"
-    self: "::I18n::Locale::Tag::Simple & ::I18n::Locale::Tag::Simple::AfterInitialize"
   effects:
     may_write:
     - "@tag"
+- class: I18n::Locale::Tag::Simple
+  method: subtags
+  unconditional:
+    ivars:
+      "@subtags": "::Array[::String]"
+    self: "::I18n::Locale::Tag::Simple & ::I18n::Locale::Tag::Simple::AfterSubtags"
+  effects:
+    may_write:
+    - "@subtags"
+- class: I18n::Locale::Tag::Simple
+  method: to_a
+  effects:
+    may_write:
+    - "@subtags"
 - class: IncludedHook::HomeMade
   method: included
   effects:
