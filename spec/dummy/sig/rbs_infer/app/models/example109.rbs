@@ -34,20 +34,15 @@ module Example109
     class MacroReflection < AbstractReflection
       attr_reader name: :comments
       attr_reader scope: Proc
-      attr_reader options: untyped
+      attr_reader options: Hash[Symbol, untyped]
       attr_reader active_record: singleton(Example109::Base)
-      attr_reader plural_name: untyped
+      attr_reader plural_name: String
 
       def initialize: (:comments name, Proc scope, Hash[Symbol, untyped] options, singleton(Example109::Base) active_record) -> void
 
       private
 
       def normalize_options: (Hash[Symbol, untyped] options) -> Hash[Symbol, untyped]
-
-      class AfterInitialize
-        attr_reader options: Hash[Symbol, untyped]
-        attr_reader plural_name: String
-      end
     end
   end
 end
@@ -160,7 +155,7 @@ module Example109
 
         def self.define_callbacks: (singleton(Example109::Base) model, Example109::Reflection::HasManyReflection reflection) -> Array[(:before_add | :after_add | :before_remove | :after_remove)]
         def self.define_extensions: (singleton(Example109::Base) model, :comments name) ?{ (*untyped) -> untyped } -> Module?
-        def self.define_callback: (singleton(Example109::Base) model, (:before_add | :after_add | :before_remove | :after_remove) callback_name, :comments name, untyped options) -> untyped
+        def self.define_callback: (singleton(Example109::Base) model, (:before_add | :after_add | :before_remove | :after_remove) callback_name, :comments name, Hash[Symbol, untyped] options) -> untyped
         def self.define_readers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, :comments name) -> :comment_ids
         def self.define_writers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, :comments name) -> :comment_ids=
       end

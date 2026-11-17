@@ -12,7 +12,7 @@ end
 
 class Example2
   class Foo
-    attr_reader user: untyped
+    attr_reader user: Example2::User?
     attr_reader name: "John Doe"?
     attr_writer name: "John Doe"?
 
