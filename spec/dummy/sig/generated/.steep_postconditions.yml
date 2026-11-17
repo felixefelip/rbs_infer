@@ -625,6 +625,7 @@ postconditions:
   method: initialize
   effects:
     may_write:
+    - "@name"
     - "@owner"
 - class: Example109::Core::ClassMethods
   method: generated_relation_methods
