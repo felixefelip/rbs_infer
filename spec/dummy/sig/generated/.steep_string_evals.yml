@@ -337,3 +337,38 @@ call_sites:
       => e;  if _.nil? && e.name == :updated_at;    raise ::ActiveSupport::DelegationError.nil_target(:user_updated_at,
       :'user');  else;    raise;  end;end
     target: "::Post"
+folded:
+- app/models/example102.rb:84:6
+- app/models/example104.rb:40:4
+- app/models/example108.rb:60:24
+- app/models/example109.rb:241:16
+- app/models/example109.rb:249:16
+- app/models/example110.rb:26:31
+- app/models/example116.rb:22:4
+- app/models/example71.rb:101:11
+- app/models/example71.rb:26:11
+- app/models/example71.rb:34:13
+- app/models/example71.rb:43:13
+- app/models/example71.rb:47:13
+- app/models/example71.rb:71:11
+- app/models/example75.rb:72:6
+- app/models/example77.rb:37:12
+- app/models/example79.rb:25:6
+- app/models/example80.rb:39:12
+- app/models/example83.rb:37:12
+- app/models/example83.rb:41:12
+- app/models/example84.rb:35:12
+- app/models/example85.rb:54:4
+- app/models/example86.rb:46:4
+- app/models/example87.rb:51:12
+- app/models/example88.rb:42:6
+- app/models/example89.rb:31:24
+- app/models/example89.rb:35:6
+- app/models/example90.rb:28:36
+- app/models/example92.rb:45:6
+- app/models/example93.rb:55:6
+- app/models/example94.rb:48:6
+- sig/generated/steep_actiontext_runtime/attribute.rb:20:8
+- sig/generated/steep_actiontext_runtime/attribute.rb:31:10
+- sig/generated/steep_actiontext_runtime/attribute.rb:37:10
+- sig/generated/steep_activesupport_runtime/delegation.rb:170:14
