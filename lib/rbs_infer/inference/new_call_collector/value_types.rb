@@ -130,6 +130,11 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
       checked_type(node) unless node.is_a?(Prism::SelfNode)
     end
 
+    # The includers a module's instance method runs on, or nil outside one.
+    def module_instance_self
+      module_self_type if @scope.in_module? && !@scope.in_singleton_method?
+    end
+
     private
 
     def checked_type(node)

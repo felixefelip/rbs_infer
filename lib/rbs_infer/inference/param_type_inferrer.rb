@@ -258,10 +258,12 @@ module RbsInfer::Inference
           Set.new
         end
 
-      # A bare call in a method a subclass inherits runs on that subclass, from a
-      # file that need not name it. The file is not forced bare: the collector
-      # places each call by the method it is in.
-      inheriting = @inherited_self_types.files_running_on(@target_class, target_methods.keys)
+      # A bare call in a method a subclass inherits runs on that subclass, and one
+      # in a module's method on the classes that include it, from a file that need
+      # not name either. Not forced bare: the collector places each call by the
+      # method it is in.
+      inheriting = @inherited_self_types.files_running_on(@target_class, target_methods.keys) |
+                   @mixin_index.files_mixed_into([@target_class, *inherited_reach.descendants])
 
       (referencing.to_set | reaching | calling | bare_reaching | supering | inheriting).each do |file|
         yield file, reaching.include?(file) || bare_reaching.include?(file)

@@ -121,6 +121,15 @@ module RbsInfer::Project
       end
     end
 
+    # Files declaring a module one of `class_names` includes: a bare call in its
+    # instance methods runs on that class.
+    def files_mixed_into(class_names)
+      classes = class_names.to_set { |name| unqualified(name) }
+      @declared_by_file.filter_map do |file, declared|
+        file if declared.any? { |name| included_by?(name, classes) }
+      end
+    end
+
     private
 
     EMPTY = Set.new.freeze
@@ -128,6 +137,10 @@ module RbsInfer::Project
 
     EMPTY_ARRAY = [].freeze
     private_constant :EMPTY_ARRAY
+
+    def included_by?(name, classes)
+      @module_declarations.include?(name) && hosts_of(name).any? { |host| classes.include?(unqualified(host)) }
+    end
 
     # `seen` is recursion state, threaded rather than exposed: only the outermost
     # call is memoized, so a cached entry is always the complete answer.
