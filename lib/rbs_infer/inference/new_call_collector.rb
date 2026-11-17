@@ -186,7 +186,7 @@ module RbsInfer::Inference
         if bare_calls_reach_target?
           args = @arguments.for_params(node, @target_methods[method_name])
           @method_call_usages[method_name] << args unless args.empty?
-        elsif (receiver_type = @types.bare_call_self) && !match_class?(receiver_type)
+        elsif !written_in_target? && (receiver_type = @types.bare_call_self)
           @receivers.keys_by_branch(receiver_type, method_name, namespace: @scope.constant_scope).each do |key, branches|
             args = extract_cross_class_args_for(node, method_name, branches)
             @method_call_usages[key] << args unless args.empty?
@@ -206,6 +206,11 @@ module RbsInfer::Inference
 
       self_type = @inherited_selves[@scope.own_instance_method_key] or return false
       self_type.split(" | ").any? { |name| match_class?(name) }
+    end
+
+    # The target's own methods are read as its body, not as callers of it.
+    def written_in_target?
+      !@scope.in_module? && match_class?(@scope.lexical_class_name.to_s)
     end
 
     def match_class?(name)
