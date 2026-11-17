@@ -12,8 +12,9 @@ module RbsInfer::Inference
   #   3. the writes from OUTSIDE — `receiver.x = value`, which only the
   #      cross-class pass can see, and which therefore cannot be asked for until
   #      the method parameter types exist;
-  #   4. the ivar writes of every other method, which widen the type rather
-  #      than fill it, since any of them may be the last;
+  #   4. the ivar writes of every method, which widen the type, since any of
+  #      them may be the last, and fill it where `initialize`'s write is one the
+  #      body alone cannot type;
   #   5. the definite-initialization rule, which needs the finished map.
   #
   # The split into `infer` and `finalize` is that dependency, not a preference:
@@ -61,7 +62,7 @@ module RbsInfer::Inference
     # `initialize`) wrongly stayed non-nil (felixefelip/rbs_infer#71, follow-up).
     def finalize(attr_types, members, method_param_types:)
       apply_external_setter_types(attr_types, members, method_param_types)
-      apply_writes_outside_initialize(attr_types, members)
+      apply_writes_by_method(attr_types, members)
       apply_definite_init_nilability(attr_types, members)
     end
 
@@ -167,19 +168,21 @@ module RbsInfer::Inference
 
     # A getter answers the last value written to its ivar, and a method other
     # than `initialize` may write it last: `rename(to)` leaves `to` in `@name`.
-    def apply_writes_outside_initialize(attr_types, members)
+    # Where no earlier step typed the attr, `initialize`'s own write is read the
+    # same way: `@options = normalize_options(options)` is typed by the checker.
+    def apply_writes_by_method(attr_types, members)
       getters = members.select { |m| %i[attr_reader attr_accessor].include?(m.kind) && !m.singleton && !m.owner }
       return if getters.empty?
 
-      writes = @ivar_type_inferrer.writes_per_method(@parsed_target).except("initialize")
+      writes = @ivar_type_inferrer.writes_per_method(@parsed_target)
       getters.each do |m|
-        current = attr_types[m.name]
-        written = writes.values.filter_map { |ivars| ivars[m.name] }
-        next if current.nil? || current == "untyped" || written.empty?
+        current = attr_types[m.name] unless attr_types[m.name] == "untyped"
+        written = writes.filter_map { |method, ivars| ivars[m.name] if current.nil? || method != "initialize" }
+        next if written.empty?
 
         types = IvarTypeSet.new
-        [current, *written].each { |type| types.add(type) }
-        attr_types[m.name] = types.emit
+        [current, *written].compact.each { |type| types.add(type) }
+        attr_types[m.name] = types.emit || attr_types[m.name]
       end
     end
 

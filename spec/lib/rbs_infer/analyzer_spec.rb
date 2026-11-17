@@ -151,6 +151,32 @@ RSpec.describe RbsInfer::Analyzer do
       end
     end
 
+    it "types an attr initialize writes from an expression the body alone cannot type" do
+      files = {
+        "settings.rb" => <<~RUBY,
+          class Settings
+            attr_reader :names, :label
+
+            def initialize(loud)
+              @names = "a b".split
+              @label = loud ? "LOUD" : "quiet"
+            end
+          end
+        RUBY
+        "app.rb" => <<~RUBY
+          Settings.new(true)
+        RUBY
+      }
+
+      with_temp_files(files) do |_dir, paths|
+        rbs = described_class.new(target_file: paths.first, source_files: paths).generate_rbs
+
+        expect(rbs).to include("attr_reader names: Array[String]")
+        expect(rbs).to include("attr_reader label: String")
+        expect(rbs).not_to include("AfterInitialize")
+      end
+    end
+
     it "gera módulos aninhados corretamente" do
       email_src = <<~RUBY
         module Academico
