@@ -66,7 +66,8 @@ module RbsInfer
         def holders(source_node, target_class, singleton)
           return {} unless target_class
 
-          scan = Steep::TypeInference::ConstructorBindingAnalyzer.scan(source_node)
+          scan = Steep::TypeInference::ConstructorBindingAnalyzer.scan(source_node,
+                                                                       folded_evals: @constructor_bindings.folded_evals)
           methods = (singleton ? scan.singleton_methods : scan.methods)[target_class.delete_prefix("::")] || {}
           methods.filter_map do |name, bodies|
             ivar = held_by(bodies)
