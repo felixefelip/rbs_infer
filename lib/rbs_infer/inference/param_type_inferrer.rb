@@ -203,7 +203,7 @@ module RbsInfer::Inference
         inherited_self_types: @inherited_self_types
       )
 
-      caller_files(target_methods, is_module: is_module, inherited_supers: inherited_supers,
+      caller_files(target_methods, is_module: is_module,
                                    modules: [@target_class, *nested_method_owners(members).values.flatten(1).map(&:first)]) do |file, force_bare|
         analyzer.analyze(file, force_bare: force_bare)
       end
@@ -223,13 +223,8 @@ module RbsInfer::Inference
     # Who may be calling the target, by six routes no single index covers. Yields
     # each file along with whether it matches RECEIVERLESS calls — which only the
     # two routes that proved reachability earn.
-    def caller_files(target_methods, is_module:, inherited_supers:, modules:)
+    def caller_files(target_methods, is_module:, modules:)
       referencing = @source_index.files_referencing(@target_class)
-
-      # A subclass whose own method hands on to the target's with `super`
-      # (felixefelip/rbs_infer#414): the files writing its body, which need not
-      # name the target. Only those: the `super` can be nowhere else.
-      supering = inherited_reach.defining_files(inherited_supers.values.flat_map(&:values).reduce(Set.new, :|))
 
       # A concern's instance methods are called *bare* by includer hosts and by
       # the host's sibling concerns — files that never name the concern, so the
@@ -258,14 +253,16 @@ module RbsInfer::Inference
           Set.new
         end
 
-      # A bare call in a method a subclass inherits runs on that subclass, and one
-      # in a module's method on the classes that include it, from a file that need
-      # not name either. Not forced bare: the collector places each call by the
+      # A bare call runs on `self`: in a method a subclass inherits or defines, the
+      # subclass; in a module's method, the classes that include it. None of those
+      # files need name the target, and a subclass's `super` (felixefelip/rbs_infer#414)
+      # is among them. Not forced bare: the collector places each call by the
       # method it is in.
-      inheriting = @inherited_self_types.files_running_on(@target_class, target_methods.keys) |
-                   @mixin_index.files_mixed_into([@target_class, *inherited_reach.descendants])
+      descendants = inherited_reach.descendants
+      inheriting = inherited_reach.defining_files(descendants) | @mixin_index.files_mixed_into([@target_class, *descendants]) |
+                   @inherited_self_types.files_running_on(@target_class, target_methods.keys)
 
-      (referencing.to_set | reaching | calling | bare_reaching | supering | inheriting).each do |file|
+      (referencing.to_set | reaching | calling | bare_reaching | inheriting).each do |file|
         yield file, reaching.include?(file) || bare_reaching.include?(file)
       end
     end

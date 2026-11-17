@@ -5,7 +5,7 @@ require "rbs_infer"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe "A bare call in a module's method" do
+RSpec.describe "A bare call made on a subclass of the target" do
   around do |ex|
     Dir.mktmpdir { |dir| Dir.chdir(dir) { ex.run } }
   end
@@ -30,7 +30,7 @@ RSpec.describe "A bare call in a module's method" do
     write("app/caller.rb", "Post.new.comments\n")
   end
 
-  it "is a call site of the method the module's includer inherits" do
+  it "in a module's method, is a call site of the method the includer inherits" do
     write("app/generated.rb", <<~RUBY)
       class Post
         module Generated
@@ -56,7 +56,7 @@ RSpec.describe "A bare call in a module's method" do
     expect(base_rbs).to include("def lookup: (:comments name)")
   end
 
-  it "is not one when the includer defines the method itself" do
+  it "in a module's method, is not one when the includer defines the method itself" do
     write("app/generated.rb", <<~RUBY)
       class Post
         def lookup(name) = name
@@ -82,5 +82,19 @@ RSpec.describe "A bare call in a module's method" do
     RBS
 
     expect(base_rbs).to include("def lookup: (untyped name)")
+  end
+
+  it "in the subclass's own method, is a call site of the method it inherits" do
+    write("app/generated.rb", "class Post\n  def comments = lookup(:comments)\nend\n")
+    write("sig/generated/app.rbs", <<~RBS)
+      class Base
+        def lookup: (untyped name) -> untyped
+      end
+      class Post < Base
+        def comments: () -> untyped
+      end
+    RBS
+
+    expect(base_rbs).to include("def lookup: (:comments name)")
   end
 end
