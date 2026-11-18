@@ -19,8 +19,8 @@ methods:
   ActiveSupport::ClassAttribute.redefine_method:
     "((singleton(::Example110::Options) | ::Class), ::Symbol) &-> untyped": nil
     "((singleton(::Example110::Options) | ::Class), ::Symbol, private: true) &-> untyped": "::Symbol"
-    '(::Class, "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
-    "(::Class, ::String, private: true) &-> ::String": "::String"
+    '(::Class, "__class_attr_plural_labels=", private: true) &-> untyped': '"__class_attr_plural_labels="'
+    "(::Class, ::String, private: true) &-> untyped": "::String"
     "(::Class, ::Symbol, private: true) &-> untyped": "::Symbol"
     "(::Class, :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
     "(::Class, :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
@@ -32,18 +32,13 @@ methods:
     "(singleton(::ActiveSupport::ClassAttribute), :plural_labels) &-> untyped": nil
     "(singleton(::Example110::Options), :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
     "(singleton(::Example110::Options), :plural_labels) &-> true": nil
-    '(singleton_class(::ActiveSupport::ClassAttribute), "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
+    '(singleton_class(::ActiveSupport::ClassAttribute), "__class_attr_plural_labels=", private: true) &-> untyped': '"__class_attr_plural_labels="'
     "(singleton_class(::ActiveSupport::ClassAttribute), :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
     '(singleton_class(::Example110::Options), "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
+    '(singleton_class(::Example110::Options), "__class_attr_plural_labels=", private: true) &-> untyped': '"__class_attr_plural_labels="'
     "(singleton_class(::Example110::Options), :__class_attr_plural_labels, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example110::Options), :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
   ActiveSupport::Concern#class_methods:
-    "() &-> :declare": ":declare"
-    "() &-> :default_values": ":default_values"
-    "() &-> :has_rich_text": ":has_rich_text"
-    "() &-> :human_name": ":human_name"
-    "() &-> :touch_recently_tagged": ":touch_recently_tagged"
-    "() &-> :vault_key": ":vault_key"
     "() on singleton(::ActionText::Attribute) &-> :has_rich_text": ":has_rich_text"
     "() on singleton(::Example101::Assoc) &-> :declare": ":declare"
     "() on singleton(::Example58::Defaults) &-> :default_values": ":default_values"
@@ -333,6 +328,7 @@ methods:
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : "::String"
+    "(self, untyped, ::Symbol) with {::Thread{@__rbs_infer__main: nil}}": "::String"
     ? "(self, untyped, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : "::String"
@@ -507,6 +503,10 @@ methods:
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : '"ActiveSupport::Inflector"'
+    ? "(singleton(::ActiveSupport::Inflector), untyped, ::Symbol) on singleton(::ActiveSupport::Inflector)
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : "::String"
+    "(singleton(::ActiveSupport::Inflector), untyped, ::Symbol) with {::Thread{@__rbs_infer__main: nil}}": "::String"
     ? "(singleton(::ActiveSupport::Inflector), untyped, :en) on singleton(::ActiveSupport::Inflector)
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
@@ -1466,6 +1466,7 @@ methods:
       ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}'
     : "::String"
     '("comments", :en) with {::Thread{@__rbs_infer__main: nil}}': "::String"
+    "(self, ::Symbol) with {::Thread{@__rbs_infer__main: nil}}": "::String"
     ? '(self, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -6993,6 +6994,8 @@ methods:
     '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}': "::Example104::Rules"
   Concurrent::Collection::NonConcurrentMapBackend#initialize:
     "(nil) with {@backend: nil, @default_proc: nil, @write_lock: nil}": nil
+  Concurrent::Collection::NonConcurrentMapBackend#initialize_copy:
+    "(untyped) with {::Thread{@__rbs_infer__main: nil}}": self
   Concurrent::Map#each_pair:
     "() &-> (nil | void)": self
     "() &-> ::Array[untyped]": self
@@ -7307,30 +7310,18 @@ methods:
     "(singleton(::Example108::ClassAttribute), :plural_names, :__class_attr_plural_names, untyped)": '"__class_attr_plural_names="'
     "(singleton(::Example108::ClassAttribute), :pluralize_table_names, :__class_attr_pluralize_table_names, untyped)": '"__class_attr_pluralize_table_names="'
     ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
-      true) on singleton(::Example108::ClassAttribute) with {::Example108::Settings{@generated_readers:
-      nil}}"
-    : '"__class_attr_plural_names="'
-    ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
       true) with {::Example108::Settings{@generated_readers: nil}}"
     : '"__class_attr_plural_names="'
     "(singleton(::Example109::Base), :pluralize_table_names, :__class_attr_pluralize_table_names, true)": '"__class_attr_pluralize_table_names="'
-    ? "(singleton(::Example109::Base), :pluralize_table_names, :__class_attr_pluralize_table_names,
-      true) on singleton(::Example108::ClassAttribute)"
-    : '"__class_attr_pluralize_table_names="'
   Example108::ClassAttribute.redefine_method:
     ? "((singleton(::Example109::Base) | singleton(::Example108::Settings)), (:__class_attr_plural_names
       | :__class_attr_pluralize_table_names), private: true) &-> true"
     : "::Symbol"
     "((singleton(::Example109::Base) | singleton(::Example108::Settings)), (:plural_names | :pluralize_table_names)) &-> true": nil
-    ? '(::Class, "__class_attr_plural_names=", private: true) &-> ("__class_attr_plural_names="
-      | "__class_attr_pluralize_table_names=")'
-    : '"__class_attr_plural_names="'
-    ? '(::Class, "__class_attr_pluralize_table_names=", private: true) &-> ("__class_attr_plural_names="
-      | "__class_attr_pluralize_table_names=")'
-    : '"__class_attr_pluralize_table_names="'
-    ? '(::Class, ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names="),
-      private: true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
-    : ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")
+    '(::Class, "__class_attr_plural_names=", private: true) &-> untyped': '"__class_attr_plural_names="'
+    '(::Class, "__class_attr_pluralize_table_names=", private: true) &-> untyped': '"__class_attr_pluralize_table_names="'
+    '(::Class, ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names="), private: true) &-> untyped': ("__class_attr_plural_names="
+      | "__class_attr_pluralize_table_names=")
     "(::Class, (:__class_attr_plural_names | :__class_attr_pluralize_table_names), private: true) &-> true": "::Symbol"
     "(::Class, :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
     "(::Class, :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
@@ -7346,22 +7337,20 @@ methods:
     "(singleton(::Example108::Settings), :plural_names) &-> true": nil
     "(singleton(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
     "(singleton(::Example109::Base), :pluralize_table_names) &-> true": nil
-    ? '(singleton_class(::Example108::ClassAttribute), "__class_attr_plural_names=",
-      private: true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
-    : '"__class_attr_plural_names="'
-    ? '(singleton_class(::Example108::ClassAttribute), "__class_attr_pluralize_table_names=",
-      private: true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
-    : '"__class_attr_pluralize_table_names="'
+    '(singleton_class(::Example108::ClassAttribute), "__class_attr_plural_names=", private: true) &-> untyped': '"__class_attr_plural_names="'
+    '(singleton_class(::Example108::ClassAttribute), "__class_attr_pluralize_table_names=", private: true) &-> untyped': '"__class_attr_pluralize_table_names="'
     "(singleton_class(::Example108::ClassAttribute), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
     "(singleton_class(::Example108::ClassAttribute), :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
     ? '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private:
       true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
     : '"__class_attr_plural_names="'
+    '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private: true) &-> untyped': '"__class_attr_plural_names="'
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
     ? '(singleton_class(::Example109::Base), "__class_attr_pluralize_table_names=",
       private: true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
     : '"__class_attr_pluralize_table_names="'
+    '(singleton_class(::Example109::Base), "__class_attr_pluralize_table_names=", private: true) &-> untyped': '"__class_attr_pluralize_table_names="'
     "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
   Example108::Settings.__class_attr_plural_names:
@@ -8506,6 +8495,8 @@ methods:
         "@name": ":comments"
         "@options": "{  }"
   Example109::Reflection::MacroReflection#normalize_options:
+    "(::Hash[untyped, untyped]) with {::Thread{@__rbs_infer__main: nil}}": "::Hash[untyped,
+      untyped]"
     ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Base),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
@@ -8532,6 +8523,11 @@ methods:
   Example110::Options.generated_option_readers:
     "() on singleton(::Example110::Dial)": singleton(::Example110::Dial::GeneratedOptionReaders)
     "() on singleton(::Example110::Dial) with {@generated_option_readers: nil}": singleton(::Example110::Dial::GeneratedOptionReaders)
+  Example113.settings:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      class: "::Example113Settings"
+      ivars:
+        "@name": ":default"
   Example113Settings.new:
     "()":
       class: "::Example113Settings"
@@ -8610,6 +8606,7 @@ methods:
     "(:name)": '"JOHN DOE"'
   Example13::Guarded#with_format:
     "() &-> true": 'true'
+    "() &-> true with {::Thread{@__rbs_infer__main: nil}}": 'true'
   Example13::Guarded.new:
     '(name: "John Doe")':
       class: "::Example13::Guarded"
@@ -8622,7 +8619,11 @@ methods:
   Example13::Registry.user=:
     "(::Example13Viewer)": "::Example13Viewer"
     "(::Example13Viewer) on singleton(::Example13::Registry)": "::Example13Viewer"
+    "(::Example13Viewer) on singleton(::Example13::Registry) with {::Thread{@__rbs_infer__main: nil}}": "::Example13Viewer"
+    "(::Example13Viewer) with {::Thread{@__rbs_infer__main: nil}}": "::Example13Viewer"
     "(nil) on singleton(::Example13::Registry)": nil
+    "(nil) on singleton(::Example13::Registry) with {::Thread{@__rbs_infer__main: nil}}": nil
+    "(nil) with {::Thread{@__rbs_infer__main: nil}}": nil
   Example19#record:
     ("denied"): '"denied"'
   Example20#record:
@@ -8715,10 +8716,16 @@ methods:
       :age"
   Example3::Foo#user=:
     "(::Example3::User)": ("John Doe" | "x")
+    "(::Example3::User) with {::Thread{@__rbs_infer__main: nil}}": ("John Doe" | "x")
+    "(nil) with {::Thread{@__rbs_infer__main: nil}}": nil
   Example3::Foo.user=:
     "(::Example3::User)": "::Example3::User"
     "(::Example3::User) on singleton(::Example3::Foo)": "::Example3::User"
+    "(::Example3::User) on singleton(::Example3::Foo) with {::Thread{@__rbs_infer__main: nil}}": "::Example3::User"
+    "(::Example3::User) with {::Thread{@__rbs_infer__main: nil}}": "::Example3::User"
     "(nil) on singleton(::Example3::Foo)": nil
+    "(nil) on singleton(::Example3::Foo) with {::Thread{@__rbs_infer__main: nil}}": nil
+    "(nil) with {::Thread{@__rbs_infer__main: nil}}": nil
   Example41::Foo#included:
     "() &-> :age": "^(*untyped) [self: ::Module] -> :age"
     "() &-> nil": "^(*untyped) [self: ::Module] -> nil"
@@ -8775,11 +8782,13 @@ methods:
   Example51::Foo#banana_class_method:
     "() &-> nil": nil
   Example52::Foo#banana_class_method:
-    "() &-> nil": nil
+    "() on singleton(::Example52::Baz) &-> :age": ":age"
   Example53::Foo#banana_class_method:
-    "() &-> nil": nil
+    "() on singleton(::Example53::Baz) &-> :age": ":age"
   Example54::Foo#banana_class_method:
-    "() &-> nil": nil
+    "() on singleton(::Example54::Baz) &-> :age": ":age"
+  Example55::Foo#banana_class_method:
+    "() on singleton(::Example55::Baz) &-> :age": ":age"
   Example61.normalize:
     ("indexed_by"): '"indexed_by"'
     "(:indexed_by)": '"indexed_by"'
@@ -9319,8 +9328,12 @@ methods:
     "(:name)": '"JOHN DOE"'
   Hash#default:
     '(:missing) on ::Hash[untyped, "missing"] with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}': V
+    ? '(:missing) on ::Hash[untyped, "missing"] with {@__rbs_infer__default_proc:
+      proc(&{c0c4849b9a5b278b}), ::Thread{@__rbs_infer__main: nil}, []: {  }}'
+    : V
     '(:missing) on ::Hash[untyped, "missing"] with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}': V
     "(:missing) with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}": '"missing"'
+    "(:missing) with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), ::Thread{@__rbs_infer__main: nil}, []: {  }}": '"missing"'
     "(:missing) with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}": '"missing"'
     "(:title) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}": '"title"'
     "(:title) with {@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}": '"title"'
@@ -9946,8 +9959,6 @@ methods:
   Thread#[]:
     "(:example113_settings) with {@__rbs_infer__locals: nil}": nil
     "(:i18n_fallbacks) with {@__rbs_infer__locals: nil}": nil
-  Thread#[]=:
-    "(:i18n_fallbacks, ::I18n::Locale::Fallbacks)": "::I18n::Locale::Fallbacks"
   Thread::Mutex#synchronize:
     "() &-> bool": bool
   Users::AvatarsController#__rbs_infer__run_update:
@@ -10045,14 +10056,13 @@ declarations:
   Example109::Associations::Builder::Association.create_reflection: "::Example109::Reflection::HasManyReflection"
   Example109::Associations::Builder::Association.define_accessors: ":comment_ids="
   Example109::Associations::Builder::CollectionAssociation.define_extensions: nil
-  Example109::Associations::Builder::CollectionAssociation.define_readers: ":comment_ids"
-  Example109::Associations::Builder::CollectionAssociation.define_writers: ":comment_ids="
   Example109::Base.__class_attr_pluralize_table_names: "::TrueClass"
   Example109::Core::ClassMethods#generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Reflection.reflection_class_for: singleton(::Example109::Reflection::HasManyReflection)
   Example110::Options.__class_attr_plural_labels: "::TrueClass"
   Example110::Options.define_option_reader: ":size"
   Example110::Options.generated_option_readers: singleton(::Example110::Dial::GeneratedOptionReaders)
+  Example113.settings: "::Example113Settings"
   Example114#[]: '"missing"'
   Example116Base.inherited: "::Example116"
   Example116Base.label_for: '"title"'
@@ -10081,6 +10091,10 @@ declarations:
   Example45::Foo#banana_class_method: "^(*untyped) [self: ::Class] -> :age"
   Example47::Foo#banana_class_method: ":age"
   Example50::Foo#banana_class_method: ":age"
+  Example52::Foo#banana_class_method: ":age"
+  Example53::Foo#banana_class_method: ":age"
+  Example54::Foo#banana_class_method: ":age"
+  Example55::Foo#banana_class_method: ":age"
   Example61.normalize: '"indexed_by"'
   Example62::Deferring#keep: "^(*untyped) [self: ::Module] -> :hallmark"
   Example62::Slots#hallmark=: '"value"'
@@ -10110,6 +10124,7 @@ declarations:
   Example99::Runner#call_num1: '5'
   Example99::Runner#call_num2: '10'
   Example99::Runner#change_num2: '30'
+  I18n.fallbacks: "::I18n::Locale::Fallbacks"
   IncludedHook::Slots#badge=: '"value"'
   IncludedHook::Slots#slot=: '"value"'
   IncludedHook::Slots#stamp=: '"value"'
@@ -10119,6 +10134,7 @@ declarations:
   PostsController#__rbs_infer__run_publish: "(true | nil)"
   PostsController#__rbs_infer__run_update: "(true | nil)"
   String#camelize: (::String | "Comments")
+  String#singularize: '"comment"'
   Thread#[]: nil
   Users::AvatarsController#__rbs_infer__run_update: "(true | nil)"
 receivers:
@@ -13247,9 +13263,9 @@ receivers:
   sig/generated/steep_activesupport_runtime/delegation.rb:111:18:
   - singleton(::ActiveSupport::Delegation)
   sig/generated/steep_activesupport_runtime/delegation.rb:119:30:
-  - "::Method::param_types"
+  - untyped
   sig/generated/steep_activesupport_runtime/delegation.rb:123:23:
-  - "::Array[untyped]"
+  - untyped
   sig/generated/steep_activesupport_runtime/delegation.rb:139:23:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:140:50:
@@ -13273,7 +13289,7 @@ receivers:
   sig/generated/steep_activesupport_runtime/delegation.rb:154:28:
   - untyped
   sig/generated/steep_activesupport_runtime/delegation.rb:155:38:
-  - "::String"
+  - untyped
   sig/generated/steep_activesupport_runtime/delegation.rb:157:23:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:158:50:
@@ -13325,7 +13341,7 @@ receivers:
   sig/generated/steep_activesupport_runtime/delegation.rb:97:23:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:97:38:
-  - "::String"
+  - untyped
   sig/generated/steep_activesupport_runtime/i18n.rb:100:28:
   - singleton(::I18n::InvalidLocale)
   sig/generated/steep_activesupport_runtime/i18n.rb:100:8:
@@ -14601,6 +14617,26 @@ receivers:
   sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:33:
   - "::Post"
 exits:
+  ActionController::HttpAuthentication::Token#authenticate:
+    ? "(self) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:1178
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(self) on singleton(::ActionController::HttpAuthentication::Token) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:1178
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  ActionController::HttpAuthentication::Token::ControllerMethods#authenticate_with_http_token:
+    ? "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:1000
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   ActiveJob::Base.perform_later:
     "((::Post & ::Post::Validated), recipient: ::String) on singleton(::AuthorDigestJob) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
@@ -14624,6 +14660,19 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
   ActiveSupport::Delegation.generate:
+    ? "(self, ::Array[untyped], allow_nil: untyped, location: untyped, prefix: untyped,
+      private: untyped, to: untyped) on singleton(::ActiveSupport::Delegation) with
+      {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(self, ::Array[untyped], allow_nil: untyped, location: untyped, prefix: untyped,
+      private: untyped, to: untyped) with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     ? "(self, [:created_at], allow_nil: nil, location: untyped, prefix: true, private:
       nil, to: :user) on singleton(::ActiveSupport::Delegation) with {::Thread{@__rbs_infer__main:
       nil}}"
@@ -15279,6 +15328,11 @@ exits:
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
+    "(self, untyped, ::Symbol) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     ? "(self, untyped, :en) with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
@@ -15500,6 +15554,17 @@ exits:
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
+    ? "(singleton(::ActiveSupport::Inflector), untyped, ::Symbol) on singleton(::ActiveSupport::Inflector)
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(singleton(::ActiveSupport::Inflector), untyped, ::Symbol) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     ? "(singleton(::ActiveSupport::Inflector), untyped, :en) on singleton(::ActiveSupport::Inflector)
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
@@ -15528,6 +15593,11 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
     "(singleton(::ActiveSupport::Inflector), untyped, :en) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(untyped, untyped, ::Symbol) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
         "::Thread":
@@ -16448,6 +16518,16 @@ exits:
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
+    "(::Symbol) on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(::Symbol) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     ? "(:en) &{bdfc3bdf9104d3fa} with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
       nil}}"
@@ -16857,6 +16937,16 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
     '("comments", :en) with {::Thread{@__rbs_infer__main: nil}}':
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(self, ::Symbol) on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(self, ::Symbol) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
         "::Thread":
@@ -25357,6 +25447,16 @@ exits:
     "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}}":
       ivars: {}
   ActiveSupport::Inflector::Inflections.instance_or_fallback:
+    "(::Symbol) on singleton(::ActiveSupport::Inflector::Inflections) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(::Symbol) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
@@ -26496,6 +26596,13 @@ exits:
   Class#class_attribute:
     ? '(("before_add_for_comments" | "after_add_for_comments" | "before_remove_for_comments"
       | "after_remove_for_comments"), instance_accessor: false, instance_predicate:
+      false) on singleton(::Example109::Base) with {::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '(("before_add_for_comments" | "after_add_for_comments" | "before_remove_for_comments"
+      | "after_remove_for_comments"), instance_accessor: false, instance_predicate:
       false) on singleton(::Example109::Post) with {::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -26524,6 +26631,36 @@ exits:
       ivars: {}
       classes:
         "::Example116Child": {}
+  Column#save:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Column#set_default_user_name:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Comment#author_full_name:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Comment#author_name:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Comment.latest_author_full_name:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Concurrent::Collection::MriMapBackend#[]=:
     ? "(:en, ::ActiveSupport::Inflector::Inflections{@acronyms: {  }, @plurals: [],
       @singulars: [], @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
@@ -27033,12 +27170,59 @@ exits:
       ivars:
         "@backend": "{ :en => ::Example104::Rules }"
         "@default_proc": nil
+  Concurrent::Collection::NonConcurrentMapBackend#compute:
+    "(untyped) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Concurrent::Collection::NonConcurrentMapBackend#compute_if_absent:
+    "(untyped) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Concurrent::Collection::NonConcurrentMapBackend#compute_if_present:
+    "(untyped) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Concurrent::Collection::NonConcurrentMapBackend#delete_pair:
+    "(untyped, untyped) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Concurrent::Collection::NonConcurrentMapBackend#get_and_set:
+    "(untyped, untyped) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Concurrent::Collection::NonConcurrentMapBackend#get_or_default:
+    "(untyped, ::Object) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(untyped, nil) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Concurrent::Collection::NonConcurrentMapBackend#initialize:
     "(nil) with {@backend: nil, @default_proc: nil, @write_lock: nil}":
       ivars:
         "@default_proc": nil
         "@backend": "{  }"
       keeps_self: true
+  Concurrent::Collection::NonConcurrentMapBackend#initialize_copy:
+    "(untyped) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Concurrent::Collection::NonConcurrentMapBackend#key?:
     "(untyped) with {@backend: {  }, @default_proc: nil}":
       ivars:
@@ -27105,14 +27289,60 @@ exits:
     : ivars:
         "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
         "@default_proc": nil
+  Concurrent::Collection::NonConcurrentMapBackend#merge_pair:
+    "(untyped, untyped) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Concurrent::Collection::NonConcurrentMapBackend#pair?:
+    "(untyped, untyped) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Concurrent::Collection::NonConcurrentMapBackend#replace_if_exists:
+    "(untyped, untyped) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Concurrent::Collection::NonConcurrentMapBackend#replace_pair:
+    "(untyped, untyped, untyped) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Concurrent::Collection::NonConcurrentMapBackend#set_backend:
+    "((^(self, ::Hash::_Key) -> untyped | nil)) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "((^(self, untyped) -> untyped | nil)) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     "(nil) with {@backend: nil, @default_proc: nil, @write_lock: nil}":
       ivars:
         "@default_proc": nil
         "@backend": "{  }"
         "@write_lock": nil
       keeps_self: true
+  Concurrent::Map#fetch:
+    ? "(untyped) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_concurrent_runtime/concurrent/map.rb:8909
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Current#user=:
+    "(((::User & ::User::Validated) | ::User | nil)) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     "((::User & ::User::Validated)) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
@@ -27126,6 +27356,30 @@ exits:
           "@__rbs_infer__main": nil
     "((::User & ::User::Validated)) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Current.with:
+    "(user: ((::User & ::User::Validated) | nil)) &-> (::String | nil) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(user: ((::User & ::User::Validated) | nil)) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/jobs/profile_formatter_job.rb:1259
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(user: ((::User & ::User::Validated) | nil)) on singleton(::Current) &-> (::String
+      | nil) with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(user: ((::User & ::User::Validated) | nil)) on singleton(::Current) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/jobs/profile_formatter_job.rb:1259
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
@@ -28528,6 +28782,29 @@ exits:
       params:
         '3': "{  }"
   Example109::Associations::Builder::Association.define_accessors:
+    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      with {::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
     ? '(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
@@ -28995,6 +29272,244 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
   Example109::Associations::Builder::Association.define_callbacks:
+    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::Association) with {::Example102::Locales{@fallback_chains:
+      nil}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
+    ? '(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::CollectionAssociation) with
+      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
+    ? '(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::CollectionAssociation) with
+      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
+      }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
+    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::CollectionAssociation) with
+      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
+    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::CollectionAssociation) with
+      {::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
+    ? '(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
+    ? '(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
+      }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
+    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
+    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      with {::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
     ? '(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
       on singleton(::Example109::Associations::Builder::CollectionAssociation) with
       {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
@@ -29447,6 +29962,14 @@ exits:
         "::Example109::Post":
           "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Associations::Builder::CollectionAssociation.define_callback:
+    ? "(singleton(::Example109::Base), (:before_add | :after_add | :before_remove
+      | :after_remove), :comments, ::Hash[untyped, untyped]) with {::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
     ? "(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
       | :after_remove), :comments, ::Hash[untyped, untyped]) on singleton(::Example109::Associations::Builder::HasMany)
       with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)},
@@ -29498,6 +30021,29 @@ exits:
           "@__rbs_infer__main": nil
       keeps_self: true
   Example109::Associations::Builder::CollectionAssociation.define_callbacks:
+    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+      with {::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
     ? '(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
@@ -30534,6 +31080,96 @@ exits:
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Associations::Builder::HasMany)
+    ? '(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Base))
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Base))
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
+      }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Base))
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
     ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Base))
       with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
       nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
@@ -30594,6 +31230,11 @@ exits:
       params:
         '2': "{  }"
   Example109::Reflection::MacroReflection#normalize_options:
+    "(::Hash[untyped, untyped]) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Base),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
@@ -30649,6 +31290,12 @@ exits:
     "() with {@generated_option_readers: nil}":
       ivars:
         "@generated_option_readers": nil
+  Example113.settings:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Example114#[]:
     ? '(:missing) with {@backend: ::Hash[untyped, "missing"]{@__rbs_infer__default_proc:
       proc(&{c03080c5d9b42d46}), []: {  }}, @default_proc: proc(&{d8fe9a2b0f926c06})}'
@@ -30662,6 +31309,11 @@ exits:
           proc: "^(self, :missing) -> untyped"
           block: "{ |_map, key| key.to_s }"
   Example114#set_backend:
+    "((^(self, :missing) -> untyped | nil)) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     "(proc(&{d8fe9a2b0f926c06})) with {@backend: nil, @default_proc: nil}":
       ivars:
         "@default_proc": nil
@@ -30786,6 +31438,329 @@ exits:
               class: "::Hash[untyped, untyped]"
               ivars: {}
               contents: "{  }"
+  Example13::Guarded#act_block_halt:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example13::Guarded#act_composite:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example13::Guarded#act_conjunction:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example13::Guarded#act_const_tested:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example13::Guarded#act_implicit_return:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example13::Guarded#act_safe_navigation:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example13::Guarded#act_supported:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example13::Guarded#guard_block_halt:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example13::Guarded#guard_composite:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example13::Guarded#guard_supported:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example13::Guarded#run_composite:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example13::Guarded#with_format:
+    "() &-> true with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example13.rb:10001 with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example13.rb:11125 with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example13::Registry.user=:
+    "(::Example13Viewer) on singleton(::Example13::Registry) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(::Example13Viewer) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(nil) on singleton(::Example13::Registry) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(nil) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example16#show:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example17#with_token:
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example17.rb:2357 with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example17.rb:2739 with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example17.rb:3295 with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example17.rb:3521 with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "() &{574b430ac89280a2} with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example18#authenticate:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example18#fetch_token:
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example18.rb:2904 with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example18#from_token:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example18#show:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example18#with_token:
+    "() &-> (::Example18::User | nil) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example18.rb:2690 with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example19#authenticate:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example19#fetch_token:
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example19.rb:3526 with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example19#from_token:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example19#show:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example19#with_token:
+    "() &-> (::Example19::User | nil) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example19.rb:3230 with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example20#authenticate:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example20#fetch_token:
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example20.rb:3194 with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example20#from_token:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example20#show:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example20#with_token:
+    "() &-> (::Example20::User | nil) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "() &/home/felipefelix/workspaces/rbs_infer/spec/dummy/app/models/example20.rb:2987 with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example2::Foo#user=:
+    "(::Example2::User) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example3::Foo#user=:
+    "((::Example3::User | nil)) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(::Example3::User) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(nil) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example3::Foo.clear_user:
+    "() on singleton(::Example3::Foo) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example3::Foo.name:
+    "() on singleton(::Example3::Foo) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example3::Foo.user=:
+    "(::Example3::User) on singleton(::Example3::Foo) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(::Example3::User) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(nil) on singleton(::Example3::Foo) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(nil) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example68Entry#marker:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example82#author_full_name:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Example82#owner_full_name:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Example83.has_stored:
     "(:comments) on singleton(::Example83) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
@@ -30808,6 +31783,11 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
   Example83::Writer.define_stored:
+    "(self, ::Example83::Reflection{@name: (:posts | :comments)}) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     "(self, ::Example83::Reflection{@name: :comments}) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
@@ -30860,6 +31840,12 @@ exits:
       ivars:
         "@name": ":replies"
   Example84::Writer.define_stored:
+    ? "(self, (::Example84::Reflection{@name: (:articles | :replies)} & ::Example84::Reflection::AfterRename))
+      with {::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     ? "(self, (::Example84::Reflection{@name: :articles} & ::Example84::Reflection::AfterRename))
       with {::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
@@ -31009,6 +31995,11 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
     "(self, ::Example87::HasManyReflection{@collection: false, @name: :posts}) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(self, ::Example87::HasManyReflection{@name: (:posts | :comments)}) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
         "::Thread":
@@ -31728,12 +32719,23 @@ exits:
   Hash#default:
     '(:missing) on ::Hash[untyped, "missing"] with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}':
       ivars: {}
+    ? '(:missing) on ::Hash[untyped, "missing"] with {@__rbs_infer__default_proc:
+      proc(&{c0c4849b9a5b278b}), ::Thread{@__rbs_infer__main: nil}, []: {  }}'
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     '(:missing) on ::Hash[untyped, "missing"] with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}':
       ivars: {}
     '(:missing) on ::Hash[untyped, "missing"] with {[]: {  }}':
       ivars: {}
     "(:missing) with {@__rbs_infer__default_proc: proc(&{c03080c5d9b42d46}), []: {  }}":
       ivars: {}
+    "(:missing) with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), ::Thread{@__rbs_infer__main: nil}, []: {  }}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     "(:missing) with {@__rbs_infer__default_proc: proc(&{c0c4849b9a5b278b}), []: {  }}":
       ivars: {}
     "(:missing) with {[]: {  }}":
@@ -32026,6 +33028,29 @@ exits:
     "(singleton(::Example91::Core::ClassMethods)) with {@generated_association_methods: nil}":
       ivars:
         "@generated_association_methods": nil
+  Post#author_name:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Post::Archiver.run:
+    "(self) on singleton(::Post::Archiver) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "(self) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Post::Notifiable#author_digest_subject:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
   Post_Assignment::ActiveRecord_Associations_CollectionProxy#create:
     ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
@@ -32193,6 +33218,270 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
     ? "(untyped) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Post_Comment::ActiveRecord_Associations_CollectionProxy#create:
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
+      }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Post_Comment::ActiveRecord_Associations_CollectionProxy#create!:
+    ? '(body: untyped, user: untyped) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '(body: untyped, user: untyped) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
+      }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(body: untyped, user: untyped) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Post_PostTag::ActiveRecord_Associations_CollectionProxy#create:
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
+      }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
       classes:
@@ -33504,6 +34793,100 @@ exits:
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
+  TagDestroy#user_name:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  Tag_PostTag::ActiveRecord_Associations_CollectionProxy#create:
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
+      }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
   Thread#[]:
     "(:example113_settings) with {@__rbs_infer__locals: nil}":
       ivars:
@@ -33516,6 +34899,464 @@ exits:
       ivars: {}
     "() with {@__rbs_infer__main: nil}":
       ivars: {}
+  User::Notifiable#notify!:
+    ? '("Welcome") with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '("Welcome") with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
+      }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '("Welcome") with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+  User_Comment::ActiveRecord_Associations_CollectionProxy#build:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  User_Comment::ActiveRecord_Associations_CollectionProxy#create:
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
+      }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+  User_Notification::ActiveRecord_Associations_CollectionProxy#build:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  User_Notification::ActiveRecord_Associations_CollectionProxy#create:
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
+      }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+  User_Notification::ActiveRecord_Associations_CollectionProxy#create!:
+    ? '(title: "Welcome") with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '(title: "Welcome") with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
+      }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '(title: "Welcome") with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+  User_Post::ActiveRecord_Associations_CollectionProxy#build:
+    "() with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+  User_Post::ActiveRecord_Associations_CollectionProxy#create:
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
+      }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
   Users::AvatarsController#__rbs_infer__run_edit:
     ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
