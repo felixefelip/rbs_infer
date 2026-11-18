@@ -195,7 +195,8 @@ class RbsInfer::Inference::ClassMemberCollector < Prism::Visitor
         @parts << "*untyped" unless @params.rest
         @parts << "**untyped"
       elsif @params.respond_to?(:keyword_rest) && @params.keyword_rest
-        @parts << "**untyped"
+        name = RbsInfer::Inference::RestParamMarker.keyword_name_from(@params)
+        @parts << (name ? "**untyped #{name}" : "**untyped")
       end
     end
 

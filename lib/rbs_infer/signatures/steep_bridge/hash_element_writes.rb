@@ -11,12 +11,24 @@ module RbsInfer
       class HashElementWrites
         STORES = %i[[]= store].freeze
 
+        # The stores the class makes into its hashes, recorded once per checked
+        # file; the block answers which nodes are the class's own.
+        def self.recorded(typing, target_class:, singleton:, constructor_bindings:, literal_methods:)
+          memo = (@recorded ||= ObjectSpace::WeakKeyMap.new)[typing] ||= {}
+          memo[[target_class, singleton]] ||=
+            new(typing.source.node, target_class:, singleton:, constructor_bindings:,
+                                    literal_methods:).tap do |elements|
+              elements.record_all(typing, yield(elements))
+            end
+        end
+
         def initialize(source_node, target_class:, singleton:, constructor_bindings:, literal_methods:)
           @constructor_bindings = constructor_bindings
           @literal_methods = literal_methods
           @holders = holders(source_node, target_class, singleton)
           @elements = Hash.new { |h, k| h[k] = [RbsInfer::Inference::IvarTypeSet.new, RbsInfer::Inference::IvarTypeSet.new] }
           @stores = Hash.new(0)
+          @keyed = Hash.new { |h, k| h[k] = {} }
         end
 
         # `hash[key] = value`, `hash.store(key, value)`, or `hash[key] ||= value`.
@@ -36,6 +48,24 @@ module RbsInfer
             type = TypeFormatter.intrinsic_type_of(arg, typing)
             set.add(TypeFormatter.format_type(type)) if type
           end
+          record_keyed(ivar, *args, typing)
+        end
+
+        def record_all(typing, in_scope)
+          dead = DeadBranches.new(typing)
+          typing.each_typing do |node, _type|
+            record(node, typing) if in_scope.include?(node.object_id) && !dead.cover?(node) && store?(node)
+          end
+        end
+
+        # A record the ivar is given, with the keys this class stores into it
+        # added as optional fields: the hash holds them once a store has run.
+        # A store made elsewhere is rejected by the checker against the record.
+        def widen(ivar, type)
+          return type if @keyed[ivar].empty?
+
+          members = RbsInfer::Inference::TypeUnion.flatten_union(type)
+          RbsInfer::Inference::TypeUnion.of(members.map { |member| with_stored_keys(ivar, member) })
         end
 
         def hash_type(ivar)
@@ -44,6 +74,32 @@ module RbsInfer
         end
 
         private
+
+        def record_keyed(ivar, key, value, typing)
+          type = TypeFormatter.intrinsic_type_of(value, typing) if key.is_a?(::Parser::AST::Node) && key.type == :sym
+          return unless type
+
+          (@keyed[ivar][key.children[0]] ||= RbsInfer::Inference::IvarTypeSet.new).add(TypeFormatter.format_type(type))
+        end
+
+        def with_stored_keys(ivar, member)
+          record = parse_record(member) or return member
+          added = @keyed[ivar].reject { |key, _| record.all_fields.key?(key) }
+          added.empty? ? member : "{ #{(given_fields(record) + added_fields(added)).join(", ")} }"
+        end
+
+        def parse_record(member)
+          parsed = RBS::Parser.parse_type(member)
+          parsed if parsed.is_a?(RBS::Types::Record)
+        rescue RBS::ParsingError
+          nil
+        end
+
+        def given_fields(record)
+          record.all_fields.map { |key, (type, required)| "#{"?" unless required}#{key}: #{type}" }
+        end
+
+        def added_fields(added) = added.map { |key, set| "?#{key}: #{set.emit || "untyped"}" }
 
         def confined?(ivar)
           names = [:"@#{ivar}", *@holders.filter_map { |name, held| name if held == ivar }]

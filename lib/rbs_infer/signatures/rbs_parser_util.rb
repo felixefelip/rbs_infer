@@ -520,6 +520,7 @@ module RbsInfer::Signatures
     def untyped_holes_filled?(holed, filled)
       return true if holed.is_a?(RBS::Types::Bases::Any)
       return record_holes_filled?(holed, filled) if holed.is_a?(RBS::Types::Record)
+      return untyped_hash?(holed) if filled.is_a?(RBS::Types::Record)
       return holed == filled unless holed.respond_to?(:map_type) && filled.respond_to?(:map_type)
       return false unless untyped_shape(holed) == untyped_shape(filled)
 
@@ -534,6 +535,15 @@ module RbsInfer::Signatures
         values = filled.public_send(kind)
         holes.keys.sort == values.keys.sort && holes.all? { |key, hole| untyped_holes_filled?(hole, values[key]) }
       end
+    end
+
+    # `Hash[Symbol, untyped]` is the record with its keys and values unknown.
+    def untyped_hash?(holed)
+      return false unless holed.is_a?(RBS::Types::ClassInstance) && holed.name.name == :Hash && holed.args.size == 2
+
+      key, value = holed.args
+      symbol_key = key.is_a?(RBS::Types::Bases::Any) || key.to_s.delete_prefix("::") == "Symbol"
+      symbol_key && value.is_a?(RBS::Types::Bases::Any)
     end
 
     def untyped_shape(type)

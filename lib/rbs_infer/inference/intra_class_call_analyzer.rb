@@ -7,8 +7,8 @@ module RbsInfer::Inference
   #    `Telefone.new(ddd:, numero:)` → infere `ddd: String, numero: String`
   #    a partir da assinatura de Telefone#initialize
   class IntraClassCallAnalyzer < Prism::Visitor
-    def initialize(file:, attr_types: {}, method_type_resolver: nil, method_positional_params: {}, steep_bridge: nil,
-                   source_code: nil)
+    def initialize(file:, method_keyword_params:, attr_types: {}, method_type_resolver: nil, method_positional_params: {},
+                   steep_bridge: nil, source_code: nil)
       @attr_types = attr_types
       @method_type_resolver = method_type_resolver
       # method_name → param_name → [type, ...] candidates from each call-site
@@ -17,6 +17,7 @@ module RbsInfer::Inference
       @current_method_name = nil
       @current_param_names = Set.new
       @method_positional_params = method_positional_params
+      @method_keyword_params = method_keyword_params
       @steep_local_var_types = steep_bridge && source_code ? steep_bridge.local_var_types_per_method(source_code, file:) : {}
       # Per-READ types, which carry Steep's narrowing; `@steep_local_var_types`
       # is per-method and cannot (felixefelip/rbs_infer#142).
@@ -64,6 +65,8 @@ module RbsInfer::Inference
       # methods this analyzer exists to type.
       node = SendCall.desugar(node) || node
 
+      record_keyword_rest(node) if node.receiver.nil?
+
       if node.receiver.nil? && node.arguments
         method_name = node.name.to_s
 
@@ -76,7 +79,7 @@ module RbsInfer::Inference
         end
 
         # Positional args: mapear por posição usando os nomes dos parâmetros do método-alvo
-        positional_params = @method_positional_params[method_name]
+        positional_params = @method_positional_params[method_name]&.reject { |name| RestParamMarker.keyword?(name) }
         if positional_params
           positional_args = node.arguments.arguments.reject { |a| a.is_a?(Prism::KeywordHashNode) }
           # From the rest param's index on, every argument is that same parameter. The
@@ -125,6 +128,14 @@ module RbsInfer::Inference
     end
 
     private
+
+    def record_keyword_rest(node)
+      keyword_rest = RestParamMarker.keyword_in(@method_positional_params[node.name.to_s] || []) or return
+
+      declared = @method_keyword_params.fetch(node.name.to_s, [])
+      record = KeywordRestRecord.of(node.arguments&.arguments || [], declared: declared) { |value| resolve_value_type(value) }
+      @param_type_candidates[node.name.to_s][keyword_rest] << record
+    end
 
     def extract_param_names(params)
       return Set.new unless params

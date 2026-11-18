@@ -498,6 +498,11 @@ module RbsInfer::Signatures
     #   → "notify: (User user, String message) -> ..."
     def apply_inferred_param_types(signature, param_types)
       param_types.each do |param_name, type|
+        if (keyword_rest = RbsInfer::Inference::RestParamMarker.keyword_name_from_marker(param_name))
+          signature = KeywordRestSignature.apply(signature, keyword_rest, type)
+          next
+        end
+
         # Keyword: ?param_name: untyped → ?param_name: Type
         signature = signature.gsub(/(\??)#{Regexp.escape(param_name)}:\s*untyped/, "\\1#{param_name}: #{type}")
         # Positional: untyped param_name → Type param_name

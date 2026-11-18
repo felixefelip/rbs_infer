@@ -139,7 +139,7 @@ module RbsInfer::Inference
       end
 
       # Cross-class method calls: receiver.method(args) onde receiver é do tipo target_class
-      if !@target_methods.empty? && node.receiver && node.arguments
+      if !@target_methods.empty? && node.receiver && call_with_arguments?(node)
         method_name = node.name.to_s
         if @target_methods.key?(method_name)
           receiver_type = @types.receiver_type(node.receiver)
@@ -181,7 +181,7 @@ module RbsInfer::Inference
       end
 
       # Bare method calls matching target_methods (for included modules, e.g. helpers in ERB views)
-      if !@target_methods.empty? && node.receiver.nil? && node.arguments && @target_methods.key?(node.name.to_s)
+      if !@target_methods.empty? && node.receiver.nil? && call_with_arguments?(node) && @target_methods.key?(node.name.to_s)
         method_name = node.name.to_s
         if bare_calls_reach_target?
           args = @arguments.for_params(node, @target_methods[method_name])
@@ -261,6 +261,11 @@ module RbsInfer::Inference
       when Prism::FalseNode then "false"
       when Prism::NilNode then "nil"
       end
+    end
+
+    # A call with no arguments still tells a keyword rest that it receives none.
+    def call_with_arguments?(node)
+      node.arguments || RestParamMarker.keyword_in(@target_methods[node.name.to_s] || [])
     end
 
     def extract_cross_class_args_for(node, method_name, branches)

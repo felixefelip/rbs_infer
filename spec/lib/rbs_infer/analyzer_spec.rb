@@ -1055,7 +1055,7 @@ RSpec.describe RbsInfer::Analyzer do
           # (`tag.section(&block)`, `items.each(&block)`) says nothing about how
           # it gets called, hence `*untyped`, while a bare `yield` says plainly
           # that it is called with nothing.
-          expect(rbs).to include("def wrapper: (id: untyped, name: untyped, ?data: untyped, **untyped) ?{ (*untyped) -> untyped } -> untyped")
+          expect(rbs).to include("def wrapper: (id: untyped, name: untyped, ?data: untyped, **untyped options) ?{ (*untyped) -> untyped } -> untyped")
           expect(rbs).to include("def simple_yield: () ?{ () -> untyped } -> untyped")
           expect(rbs).to include("def mixed: (untyped items, label: untyped) ?{ (*untyped) -> untyped } -> untyped")
 

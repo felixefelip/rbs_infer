@@ -20,8 +20,9 @@ module RbsInfer::Inference
     # class-instance variable, not the enclosing class's.
     IvarInference = Struct.new(:instance, :singleton, :by_module, :singleton_by_module)
 
-    def initialize(target_class:, method_type_resolver:, constant_resolver:, instance_types:, steep_bridge:)
+    def initialize(target_class:, method_type_resolver:, constant_resolver:, instance_types:, steep_bridge:, inherited_reach:)
       @target_class = target_class
+      @inherited_reach = inherited_reach
       @method_type_resolver = method_type_resolver
       @constant_resolver = constant_resolver
       @instance_types = instance_types
@@ -33,6 +34,20 @@ module RbsInfer::Inference
       return {} unless @steep_bridge && parsed_target&.source
 
       @steep_bridge.ivar_write_types_per_method(parsed_target.source, file: parsed_target.path, target_class: @target_class)
+    end
+
+    # `type`, the type of `@ivar`, with the keys stored into it by the class
+    # and by the classes below it, which write the same ivar.
+    def with_stored_keys(parsed_target, ivar, type)
+      return type unless @steep_bridge && parsed_target&.source
+
+      writers = [[@target_class, [[parsed_target.path, parsed_target.source]]]] +
+                @inherited_reach.descendants.map { |name| [name, @inherited_reach.defining_sources(name)] }
+      writers.reduce(type) do |widened, (class_name, sources)|
+        sources.reduce(widened) do |acc, (file, source)|
+          @steep_bridge.with_stored_keys(source, file:, target_class: class_name, ivar:, type: acc)
+        end
+      end
     end
 
     def infer_ivar_types(members, attr_types, parsed_target: nil, method_param_types: {}) # rubocop:todo Metrics/MethodLength

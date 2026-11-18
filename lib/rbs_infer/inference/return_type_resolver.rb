@@ -260,8 +260,9 @@ module RbsInfer::Inference
         next unless current_type&.end_with?("?")
 
         steep_type = steep_answer(m, steep_returns) or next
-        next if steep_type == current_type
-        next unless RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type) == current_type
+        current = TypeUnion.canonical_key(current_type)
+        next if TypeUnion.canonical_key(steep_type) == current
+        next unless TypeUnion.canonical_key(RbsInfer::Signatures::RbsParserUtil.nilablize(steep_type)) == current
         next if early_nil_return?(m, parsed_target)
 
         steep_type = "self" if self_return?(m, steep_type, self_types)

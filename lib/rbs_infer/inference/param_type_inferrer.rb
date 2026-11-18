@@ -105,29 +105,24 @@ module RbsInfer::Inference
       collector = RbsInfer::AST::DefCollector.new(target_class: @target_class)
       parsed_target.tree.accept(collector)
       positional_params = {}
+      keyword_params = {}
       collector.defs.each do |defn|
         next unless defn.is_a?(Prism::DefNode) && defn.parameters
 
-        names = []
-        if defn.parameters.respond_to?(:requireds)
-          defn.parameters.requireds.each do |p|
-            names << p.name.to_s if p.respond_to?(:name)
-          end
-        end
-        if defn.parameters.respond_to?(:optionals)
-          defn.parameters.optionals.each do |p|
-            names << p.name.to_s if p.respond_to?(:name)
-          end
-        end
-        rest = RestParamMarker.name_from(defn.parameters)
+        params = defn.parameters
+        names = (params.requireds + params.optionals).filter_map { |p| p.name.to_s if p.respond_to?(:name) }
+        rest = RestParamMarker.name_from(params)
         names << RestParamMarker.mark(rest) if rest
+        names.concat(RestParamMarker.keyword_markers(params))
         positional_params[defn.name.to_s] = names unless names.empty?
+        keyword_params[defn.name.to_s] = defn.parameters.keywords.map { |p| p.name.to_s }
       end
 
       visitor = IntraClassCallAnalyzer.new(
         attr_types: attr_types,
         method_type_resolver: @method_type_resolver,
         method_positional_params: positional_params,
+        method_keyword_params: keyword_params,
         steep_bridge: @steep_bridge,
         source_code: parsed_target.source,
         file: parsed_target.path
@@ -339,6 +334,7 @@ module RbsInfer::Inference
         rest = RestParamMarker.name_from(params)
         names << RestParamMarker.mark(rest) if rest
         params.keywords.each { |p| names << p.name.to_s if p.respond_to?(:name) } if params.respond_to?(:keywords)
+        names.concat(RestParamMarker.keyword_markers(params))
         methods[defn.name.to_s] = names unless names.empty?
       end
       methods

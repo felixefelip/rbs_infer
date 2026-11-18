@@ -784,7 +784,9 @@ module RbsInfer
         method_type_resolver: method_type_resolver,
         constant_resolver: constant_arg_resolver,
         instance_types: @instance_types || [],
-        steep_bridge: steep_bridge
+        steep_bridge: steep_bridge,
+        inherited_reach: RbsInfer::Inference::InheritedReach.new(target_class: @target_class, source_index: @source_index,
+                                                                 parse_cache: @parse_cache, rbs_definition_resolver: rbs_definition_resolver)
       )
     end
 
@@ -943,6 +945,7 @@ require_relative "signatures/method_type_resolver"
 require_relative "inference/caller_file_analyzer"
 require_relative "signatures/type_name_qualifier"
 require_relative "signatures/generic_arguments"
+require_relative "signatures/keyword_rest_signature"
 require_relative "signatures/rbs_builder"
 require_relative "signatures/declared_superclass"
 require_relative "signatures/foreign_declarations"
@@ -951,6 +954,7 @@ require_relative "inference/constant_type_resolver"
 require_relative "inference/constant_arg_type_resolver"
 require_relative "inference/self_return_type_context"
 require_relative "inference/rest_param_marker"
+require_relative "inference/keyword_rest_record"
 require_relative "inference/method_key"
 require_relative "inference/invoker_self_types"
 require_relative "inference/send_call"

@@ -25,7 +25,29 @@ module RbsInfer
       # The name behind the marker, or nil for an ordinary parameter name — so a consumer
       # asks "is this the rest param, and what is it called?" in one call.
       def self.unmark(name)
-        name&.start_with?(PREFIX) ? name.delete_prefix(PREFIX) : nil
+        name&.start_with?(PREFIX) && !keyword?(name) ? name.delete_prefix(PREFIX) : nil
+      end
+
+      KEYWORD_PREFIX = "**"
+
+      def self.mark_keyword(name) = "#{KEYWORD_PREFIX}#{name}"
+
+      def self.keyword?(name) = name&.start_with?(KEYWORD_PREFIX) || false
+
+      def self.keyword_name_from_marker(name) = keyword?(name) ? name.delete_prefix(KEYWORD_PREFIX) : nil
+
+      def self.keyword_in(names) = names.find { |name| keyword?(name) }
+
+      def self.keyword_markers(params)
+        name = keyword_name_from(params)
+        name ? [mark_keyword(name)] : []
+      end
+
+      def self.keyword_name_from(params)
+        rest = params.keyword_rest if params.respond_to?(:keyword_rest)
+        return unless rest.is_a?(Prism::KeywordRestParameterNode)
+
+        rest.name&.to_s
       end
 
       # Where the rest parameter sits in `names`, or nil when there is none.
