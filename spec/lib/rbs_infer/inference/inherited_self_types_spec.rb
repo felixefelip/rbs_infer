@@ -110,7 +110,14 @@ RSpec.describe RbsInfer::Inference::InheritedSelfTypes do
 
   it "takes the includers of the module a bare call is written in" do
     animals
-    write("app/greeting.rb", "class Dog\n  module Greeting\n    def hello = introduce\n  end\n  include Greeting\nend\n")
+    write("app/greeting.rb", <<~RUBY)
+      class Dog
+        module Greeting
+          def hello = introduce
+        end
+        include Greeting
+      end
+    RUBY
     caller_source("Dog.new.hello")
 
     expect(narrow).to eq("Dog")
