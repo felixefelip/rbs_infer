@@ -216,6 +216,7 @@ module RbsInfer
         @inherited_self_types ||= RbsInfer::Inference::InheritedSelfTypes.new(
           source_index: RbsInfer::Project::SourceIndex.new(source_files),
           parse_cache: RbsInfer::Project::ParseCache.new,
+          mixin_index: mixin_index,
           steep_bridge: RbsInfer::Signatures::SteepBridge.new(
             literal_method_registry: corpus.literal_method_registry,
             constructor_bindings: corpus.constructor_bindings

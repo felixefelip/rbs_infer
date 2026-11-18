@@ -23,10 +23,11 @@ module RbsInfer
       UNKNOWN_TYPES = [RBS::Types::Bases::Any, RBS::Types::Bases::Top, RBS::Types::Bases::Self,
                        RBS::Types::Bases::Instance, RBS::Types::Interface, RBS::Types::Variable].freeze
 
-      def initialize(source_index:, parse_cache:, steep_bridge:)
+      def initialize(source_index:, parse_cache:, steep_bridge:, mixin_index:)
         @source_index = source_index
         @parse_cache = parse_cache
         @steep_bridge = steep_bridge
+        @mixin_index = mixin_index
       end
 
       # `{ "Zoo::Animal" => { "introduce" => "Dog" } }` for the classes `root`
@@ -139,8 +140,9 @@ module RbsInfer
 
       def written_selves(written, class_name, method_name, runners)
         written.flat_map do |invocation|
-          if invocation.kind == :bare
-            bare_selves(invocation, class_name, method_name, runners)
+          case invocation.kind
+          when :bare then bare_selves(invocation, class_name, method_name, runners)
+          when :module_bare then module_bare_selves(invocation, class_name, runners)
           else
             super_selves(invocation, class_name, method_name)
           end
@@ -198,6 +200,14 @@ module RbsInfer
         names(narrow(caller, invocation.method_name) || caller)
       end
 
+      # A bare call in a module's instance method runs on the classes that
+      # include it; one that is not the class or an inheritor answers the
+      # method itself.
+      def module_bare_selves(invocation, class_name, runners)
+        @mixin_index.hosts_of(invocation.owner).map { |host| relative(host) }
+                    .select { |host| host == class_name || runners.include?(host) }
+      end
+
       def super_selves(invocation, class_name, method_name)
         reached = @resolver.super_method_owner(invocation.owner, method_name, kind: :instance)
         return [] unless reached == "::#{class_name}"
@@ -252,8 +262,7 @@ module RbsInfer
       end
 
       # Every place a file may invoke `method_name`, or nil where one cannot be
-      # placed: a bare call in a module's instance method, whose `self` is a
-      # host, and the method named as a symbol, which `send`, `method` and
+      # placed: the method named as a symbol, which `send`, `method` and
       # `alias_method` invoke without a call node.
       class InvocationCollector < Prism::Visitor
         def self.collect(root, method_name)
@@ -315,9 +324,9 @@ module RbsInfer
         def record_call(node)
           return @invocations << Invocation.new(:receiver, node.receiver) if node.receiver
           return unless @def.is_a?(Prism::DefNode)
-          return @unplaceable = true if @kinds.last == :module
 
-          @invocations << Invocation.new(:bare, nil, @path.join("::"), @def.name.to_s)
+          kind = @kinds.last == :module ? :module_bare : :bare
+          @invocations << Invocation.new(kind, nil, @path.join("::"), @def.name.to_s)
         end
 
         def record_super

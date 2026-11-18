@@ -114,10 +114,10 @@ end
 module Example109
   module Associations
     class HasManyAssociation
-      @owner: Example109::Base
+      @owner: Example109::Post
       @name: :comments
 
-      def initialize: (Example109::Base owner, :comments name) -> void
+      def initialize: (Example109::Post owner, :comments name) -> void
       def reader: () -> nil
       def writer: (untyped records) -> nil
       def ids_reader: () -> nil

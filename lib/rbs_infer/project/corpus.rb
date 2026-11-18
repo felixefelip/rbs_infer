@@ -95,6 +95,7 @@ module RbsInfer::Project
       @inherited_self_types ||= RbsInfer::Inference::InheritedSelfTypes.new(
         source_index: @source_index,
         parse_cache: @parse_cache,
+        mixin_index: mixin_index,
         steep_bridge: RbsInfer::Signatures::SteepBridge.new(
           literal_method_registry: literal_method_registry,
           constructor_bindings: constructor_bindings
