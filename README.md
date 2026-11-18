@@ -320,6 +320,7 @@ make rbs_generators_all   # every generator above, in order
 make test                 # bundle exec rspec
 make lint                 # bundle exec rubocop (double-quoted strings; debt in .rubocop_todo.yml)
 make steep                # STEEP_ERB_CONVENTION=1 STEEP_MODULE_CONVENTION=1 steep check
+make dummy_fixpoint       # steep check --jobs 2 -> make rbs_infer, until spec/dummy/sig stops changing (ROUNDS=6, logs in tmp/dummy-fixpoint/)
 ```
 
 ### Snapshot tests

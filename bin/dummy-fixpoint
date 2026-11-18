@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+#
+# Regenerates spec/dummy/sig to a fixed point: `steep check` then
+# `make rbs_infer`, round after round, until a round leaves spec/dummy/sig
+# as the previous one did. Each round's sidecars feed the next, so a single
+# round shows lag (nilable types the next round removes), not the result.
+#
+#   bin/dummy-fixpoint [MAX_ROUNDS]     (default 6; OUT=dir for the logs)
+#
+# `--jobs 2` because the dummy check with more workers can reach 13-14 GB.
+# Per round, OUT gets steep_N.log, rbs_N.log, diff_N.patch (spec/dummy/sig
+# against HEAD) and a line in summary.txt.
+
+set -u
+
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
+DUMMY=$ROOT/spec/dummy
+OUT=${OUT:-$ROOT/tmp/dummy-fixpoint}
+mkdir -p "$OUT"
+: > "$OUT/summary.txt"
+
+sig_state() {
+  (cd "$ROOT" && { git diff -- spec/dummy/sig; git ls-files -o --exclude-standard spec/dummy/sig; } | sha1sum | cut -c1-12)
+}
+
+previous=""
+for round in $(seq 1 "${1:-6}"); do
+  t0=$(date +%s)
+  (cd "$DUMMY" && STEEP_ERB_CONVENTION=1 STEEP_MODULE_CONVENTION=1 \
+    bundle exec timeout 1500 steep check --jobs 2 > "$OUT/steep_$round.log" 2>&1)
+  t1=$(date +%s)
+  (cd "$ROOT" && make rbs_infer > "$OUT/rbs_$round.log" 2>&1)
+  t2=$(date +%s)
+
+  state=$(sig_state)
+  problems=$(grep -oE "Detected [0-9]+ problems" "$OUT/steep_$round.log" | tail -1)
+  failures=$(grep -c "inference failed\|Unexpected worker" "$OUT/steep_$round.log")
+  echo "round $round steep=$((t1 - t0))s rbs=$((t2 - t1))s ${problems:-no problems line} failures=$failures sig=$state" \
+    | tee -a "$OUT/summary.txt"
+  (cd "$ROOT" && git diff -- spec/dummy/sig > "$OUT/diff_$round.patch")
+
+  if [ "$state" = "$previous" ]; then
+    echo "stable" | tee -a "$OUT/summary.txt"
+    exit 0
+  fi
+  previous=$state
+done
+
+echo "not stable after ${1:-6} rounds" | tee -a "$OUT/summary.txt"
+exit 1
