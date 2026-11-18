@@ -10125,19 +10125,23 @@ receivers:
   app/controllers/application_controller.rb:13:28:
   - untyped
   app/controllers/application_controller.rb:17:11:
-  - "::ApplicationController"
+  - "(::DashboardController | ::Posts::AssignmentsController | ::PostsController |
+    ::Users::AvatarsController | ::UsersController)"
   app/controllers/application_controller.rb:18:6:
-  - "::ApplicationController"
+  - "(::DashboardController | ::Posts::AssignmentsController | ::PostsController |
+    ::Users::AvatarsController | ::UsersController)"
   app/controllers/application_controller.rb:22:17:
   - "(::User & ::User::Validated)"
   app/controllers/application_controller.rb:22:27:
   - "::String"
   app/controllers/application_controller.rb:22:4:
-  - "::ApplicationController"
+  - "(::DashboardController | ::Posts::AssignmentsController | ::PostsController |
+    ::Users::AvatarsController | ::UsersController)"
   app/controllers/application_controller.rb:24:12:
   - singleton(::Current)
   app/controllers/application_controller.rb:24:19:
-  - "::ApplicationController"
+  - "(::DashboardController | ::Posts::AssignmentsController | ::PostsController |
+    ::Users::AvatarsController | ::UsersController)"
   app/controllers/application_controller.rb:28:38:
   - singleton(::Current)
   app/controllers/application_controller.rb:28:69:

@@ -1,4 +1,14 @@
 ---
+app/controllers/application_controller.rb:
+  modules:
+  - anchor: ApplicationController
+    defs:
+      current_user: DashboardController | Posts::AssignmentsController | PostsController
+        | Users::AvatarsController | UsersController
+      authenticate_user: DashboardController | Posts::AssignmentsController | PostsController
+        | Users::AvatarsController | UsersController
+      log_user_author_name: DashboardController | Posts::AssignmentsController | PostsController
+        | Users::AvatarsController | UsersController
 app/controllers/concerns/filter_configuration.rb:
   modules:
   - anchor: FilterConfiguration
