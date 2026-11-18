@@ -67,6 +67,9 @@ app/models/example109.rb:
     defs:
       initialize: Example109::Reflection::AssociationReflection
       normalize_options: Example109::Reflection::AssociationReflection
+  - anchor: Base
+    defs:
+      association: Example109::Post
 app/models/example109/core.rb:
   modules:
   - anchor: ClassMethods
