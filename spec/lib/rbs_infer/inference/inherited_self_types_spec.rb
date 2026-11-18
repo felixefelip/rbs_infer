@@ -53,7 +53,7 @@ RSpec.describe RbsInfer::Inference::InheritedSelfTypes do
     write("app/caller.rb", "class Caller\n  def run(other)\n    #{body}\n  end\nend\n")
   end
 
-  def narrow(method_name = "introduce")
+  def narrow(method_name = "introduce", class_name: "Animal")
     files = Dir["app/*.rb"]
     described_class.new(
       source_index: RbsInfer::Project::SourceIndex.new(files),
@@ -63,7 +63,7 @@ RSpec.describe RbsInfer::Inference::InheritedSelfTypes do
         literal_method_registry: Steep::Project::LiteralMethodRegistry.from_paths(files),
         constructor_bindings: Steep::Project::ConstructorBindingRegistry.from_paths(files)
       )
-    ).narrow("Animal", method_name)
+    ).narrow(class_name, method_name)
   end
 
   it "narrows to the subclasses the method is invoked on" do
@@ -94,11 +94,45 @@ RSpec.describe RbsInfer::Inference::InheritedSelfTypes do
     expect(narrow).to be_nil
   end
 
-  it "declines when the method is named as a symbol" do
+  it "declines when the method is called by name" do
     animals
     caller_source("Dog.new.send(:introduce)\n    Cat.new.introduce")
 
     expect(narrow).to be_nil
+  end
+
+  it "declines when the method's name is passed as a block" do
+    animals
+    caller_source("[Dog.new].map(&:introduce)\n    Cat.new.introduce")
+
+    expect(narrow).to be_nil
+  end
+
+  it "places a method whose name is only read as a hash key" do
+    animals
+    caller_source("{ introduce: 1 }[:introduce]\n    Cat.new.introduce")
+
+    expect(narrow).to eq("Cat")
+  end
+
+  def puppies
+    animals
+    write("app/puppy.rb", "class Puppy < Dog\nend\n")
+    write("sig/generated/puppy.rbs", "class Puppy < Dog\nend\n")
+  end
+
+  it "takes the classes an ancestor's narrowed method runs on that inherit the override" do
+    puppies
+    caller_source("Puppy.new.introduce")
+
+    expect(narrow("speak", class_name: "Dog")).to eq("Puppy")
+  end
+
+  it "declines when the ancestor's method a bare call is written in is not narrowed" do
+    puppies
+    caller_source("other.introduce\n    Puppy.new.speak('hi')")
+
+    expect(narrow("speak", class_name: "Dog")).to be_nil
   end
 
   it "takes the self of the inherited method a bare call is written in" do

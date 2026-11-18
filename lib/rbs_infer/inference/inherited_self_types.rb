@@ -121,12 +121,17 @@ module RbsInfer
 
       def selves_of(class_name, method_name)
         runners = inheritors(class_name, method_name)
-        return nil if runners.empty?
+        return nil if runners.empty? || dispatched_names.include?(method_name)
 
         @source_index.files_mentioning(method_name).each_with_object(Set.new) do |file, selves|
           found = file_selves(file, class_name, method_name, runners) or return nil
           selves.merge(found)
         end
+      end
+
+      def dispatched_names
+        memo[:dispatched] ||= DynamicDispatches.new(source_index: @source_index, parse_cache: @parse_cache,
+                                                    steep_bridge: @steep_bridge).names
       end
 
       def file_selves(file, class_name, method_name, runners)
@@ -135,13 +140,14 @@ module RbsInfer
         received, written = invocations.partition { |invocation| invocation.kind == :receiver }
 
         on_receivers = receivers_selves(entry.source, file, received, class_name, method_name, runners) or return nil
-        on_receivers + written_selves(written, class_name, method_name, runners)
+        on_written = written_selves(written, class_name, method_name, runners) or return nil
+        on_receivers + on_written
       end
 
       def written_selves(written, class_name, method_name, runners)
         written.flat_map do |invocation|
           case invocation.kind
-          when :bare then bare_selves(invocation, class_name, method_name, runners)
+          when :bare then bare_selves(invocation, class_name, method_name, runners) or return nil
           when :module_bare then module_bare_selves(invocation, class_name, runners)
           else
             super_selves(invocation, class_name, method_name)
@@ -191,14 +197,24 @@ module RbsInfer
       end
 
       # A bare call in a method of the class or of an inheritor runs on whatever
-      # that method runs on.
+      # that method runs on. One in an ancestor's method reaches this definition
+      # on the classes of that method's self that inherit it, and cannot be
+      # placed where that self is not narrowed.
       def bare_selves(invocation, class_name, method_name, runners)
         caller = invocation.owner
+        return ancestor_bare_selves(invocation, class_name, runners) if ancestor?(caller, class_name)
         return [] unless caller == class_name || runners.include?(caller)
         return [] if caller == class_name && invocation.method_name == method_name
 
         names(narrow(caller, invocation.method_name) || caller)
       end
+
+      def ancestor_bare_selves(invocation, class_name, runners)
+        narrowed = narrow(invocation.owner, invocation.method_name) or return nil
+        names(narrowed).select { |name| name == class_name || runners.include?(name) }
+      end
+
+      def ancestor?(name, class_name) = name != class_name && @resolver.descendant_parents(name).key?("::#{class_name}")
 
       # A bare call in a module's instance method runs on the classes that
       # include it; one that is not the class or an inheritor answers the
@@ -262,8 +278,8 @@ module RbsInfer
       end
 
       # Every place a file may invoke `method_name`, or nil where one cannot be
-      # placed: the method named as a symbol, which `send`, `method` and
-      # `alias_method` invoke without a call node.
+      # placed: `&:name` and an alias, which invoke it without a call node.
+      # `send(:name)` and the other calls by name are `DynamicDispatches`'.
       class InvocationCollector < Prism::Visitor
         def self.collect(root, method_name)
           collector = new(method_name.to_sym)
@@ -296,6 +312,17 @@ module RbsInfer
 
         def visit_call_node(node)
           record_call(node) if node.name == @method_name
+          @unplaceable = true if node.name == :alias_method && names_method?(node.arguments&.arguments&.last)
+          super
+        end
+
+        def visit_block_argument_node(node)
+          @unplaceable = true if names_method?(node.expression)
+          super
+        end
+
+        def visit_alias_method_node(node)
+          @unplaceable = true if names_method?(node.old_name)
           super
         end
 
@@ -309,17 +336,9 @@ module RbsInfer
           super
         end
 
-        def visit_assoc_node(node)
-          node.key.accept(self) unless node.key.is_a?(Prism::SymbolNode)
-          node.value&.accept(self)
-        end
-
-        def visit_symbol_node(node)
-          @unplaceable = true if node.unescaped == @method_name.to_s
-          super
-        end
-
         private
+
+        def names_method?(node) = node.is_a?(Prism::SymbolNode) && node.unescaped == @method_name.to_s
 
         def record_call(node)
           return @invocations << Invocation.new(:receiver, node.receiver) if node.receiver
