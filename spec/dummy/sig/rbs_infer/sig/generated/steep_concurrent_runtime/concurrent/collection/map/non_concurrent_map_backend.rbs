@@ -20,7 +20,7 @@ module Concurrent
       def clear: () -> self
       def each_pair: () { (untyped, untyped) -> untyped } -> self
       def size: () -> Integer
-      def get_or_default: (untyped key, nil default_value) -> untyped
+      def get_or_default: (untyped key, Object? default_value) -> untyped
 
       private
 

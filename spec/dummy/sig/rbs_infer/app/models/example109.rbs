@@ -115,8 +115,9 @@ module Example109
   module Associations
     class HasManyAssociation
       @owner: Example109::Base
+      @name: :comments
 
-      def initialize: (Example109::Base owner, untyped name) -> void
+      def initialize: (Example109::Base owner, :comments name) -> void
       def reader: () -> nil
       def writer: (untyped records) -> nil
       def ids_reader: () -> nil
@@ -180,7 +181,7 @@ module Example109
 
     def self.pluralize_table_names: () -> ::TrueClass
 
-    def association: (untyped name) -> Associations::HasManyAssociation
+    def association: (:comments name) -> Associations::HasManyAssociation
   end
 end
 

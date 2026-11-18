@@ -8357,6 +8357,16 @@ methods:
         "@join_table": nil
         "@name": ":comments"
         "@options": "{  }"
+  Example109::Associations::HasManyAssociation.new:
+    "(self, :comments)":
+      class: "::Example109::Associations::HasManyAssociation"
+      ivars:
+        "@name": ":comments"
+  Example109::Base#association:
+    "(:comments)":
+      class: "::Example109::Associations::HasManyAssociation"
+      ivars:
+        "@name": ":comments"
   Example109::Base.__class_attr_pluralize_table_names:
     "()": "::TrueClass"
     "() with {@generated_relation_methods: nil}": "::TrueClass"
@@ -30359,6 +30369,22 @@ exits:
     "(:comments, **{  }) with {@generated_relation_methods: nil}":
       ivars:
         "@generated_relation_methods": nil
+  Example109::Associations::HasManyAssociation#ids_reader:
+    "() with {@name: :comments}":
+      ivars:
+        "@name": ":comments"
+  Example109::Associations::HasManyAssociation#ids_writer:
+    "(untyped) with {@name: :comments}":
+      ivars:
+        "@name": ":comments"
+  Example109::Associations::HasManyAssociation#reader:
+    "() with {@name: :comments}":
+      ivars:
+        "@name": ":comments"
+  Example109::Associations::HasManyAssociation#writer:
+    "(untyped) with {@name: :comments}":
+      ivars:
+        "@name": ":comments"
   Example109::Base.__class_attr_pluralize_table_names:
     "() with {@generated_relation_methods: nil}":
       ivars:

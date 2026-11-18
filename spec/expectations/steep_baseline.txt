@@ -88,8 +88,6 @@ sig/generated/steep_activesupport_runtime/i18n.rb:205:55: [error] Type `(::I18n:
 sig/generated/steep_activesupport_runtime/inflector.rb:325:57: [error] Type `(::String | nil)` does not have method `capitalize!`
 sig/generated/steep_ar_runtime/active_support/concern.rb:53:22: [warning] Cannot pass a value of type `^(?(::Module | nil)) -> untyped` as a block-pass-argument of type `^(::Module) [self: ::Module] -> U(_)`
 sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:22:8: [error] Type `::Concurrent::Collection::NonConcurrentMapBackend` does not have method `validate_options_hash!`
-sig/generated/steep_concurrent_runtime/concurrent/map.rb:161:84: [error] Cannot pass a value of type `::Object` as an argument of type `nil`
-sig/generated/steep_concurrent_runtime/concurrent/map.rb:192:46: [error] Cannot pass a value of type `::Object` as an argument of type `nil`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:19:26: [warning] Cannot find the declaration of constant: `JRubyMapBackend`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:216:17: [error] Cannot pass a value of type `(::Object | V | nil)` as an argument of type `V`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:249:12: [warning] Empty array doesn't have type annotation

@@ -182,6 +182,11 @@ module RbsInfer::Inference
       end
     end
 
+    # Every class below the target.
+    def descendants
+      parents.each_key.map { |name| relative(name) }
+    end
+
     # The files that write the body of any of `names`: the only ones a
     # `super` in it can be in.
     def defining_files(names)

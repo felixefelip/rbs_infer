@@ -2,7 +2,7 @@ module ActionController
   class Base
     @__rbs_infer__performed: true?
 
-    def redirect_to: (*untyped args) -> true
+    def redirect_to: (*(String | Post & Post::Validated | { notice: "Assignment created." } | Post | { notice: "Post created." } | { notice: "Post updated." } | { notice: "Post deleted." } | { notice: "Post published." } | { alert: "Post could not be published." } | User & User::Validated | { notice: "Avatar updated." }) args) -> true
     def render: (*{ plain: String, status: :unauthorized } args) -> true
     def head: (*untyped args) -> true
     def performed?: () -> true?
