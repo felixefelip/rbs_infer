@@ -1,3 +1,4 @@
+require "forwardable"
 require "steep"
 require_relative "../inference/ivar_type_set"
 require_relative "../project/base_dir"
@@ -19,6 +20,9 @@ module RbsInfer::Signatures
   # - RBS generation
   class SteepBridge
     include TypeRelations
+    extend Forwardable
+
+    def_delegators :@ivar_write_analyzer, :ivar_write_types, :ivar_write_types_per_method, :with_stored_keys
 
     def initialize(literal_method_registry:, constructor_bindings:)
       # The corpus registry is a project-wide snapshot. Each bridge augments it
@@ -250,14 +254,6 @@ module RbsInfer::Signatures
       end
       candidates << "::#{bare}"
       candidates.uniq
-    end
-
-    def ivar_write_types(source_code, file:, target_class:, singleton:)
-      @ivar_write_analyzer.ivar_write_types(source_code, file:, target_class: target_class, singleton: singleton)
-    end
-
-    def ivar_write_types_per_method(source_code, file:, target_class:)
-      @ivar_write_analyzer.ivar_write_types_per_method(source_code, file:, target_class: target_class)
     end
 
     # Byte ranges of the branches Steep proved cannot run in `source_code`.

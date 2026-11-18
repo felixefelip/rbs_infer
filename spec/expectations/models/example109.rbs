@@ -1,6 +1,6 @@
 module Example109
   module Reflection
-    def self.create: (untyped macro, :comments name, Proc scope, Hash[Symbol, untyped] options, singleton(Example109::Base) ar) -> Example109::Reflection::HasManyReflection
+    def self.create: (untyped macro, :comments name, Proc scope, {  } options, singleton(Example109::Base) ar) -> Example109::Reflection::HasManyReflection
     def self.reflection_class_for: (untyped macro) -> singleton(Example109::Reflection::HasManyReflection)
   end
 
@@ -8,7 +8,7 @@ module Example109
   end
 
   module Associations::ClassMethods
-    def has_records: (:comments name, ?untyped scope, **untyped) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
+    def has_records: (:comments name, ?untyped scope) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
   end
 
   module Associations::Builder
@@ -34,15 +34,15 @@ module Example109
     class MacroReflection < AbstractReflection
       attr_reader name: :comments
       attr_reader scope: Proc
-      attr_reader options: Hash[Symbol, untyped]
+      attr_reader options: {  }
       attr_reader active_record: singleton(Example109::Base)
       attr_reader plural_name: String
 
-      def initialize: (:comments name, Proc scope, Hash[Symbol, untyped] options, singleton(Example109::Base) active_record) -> void
+      def initialize: (:comments name, Proc scope, {  } options, singleton(Example109::Base) active_record) -> void
 
       private
 
-      def normalize_options: (Hash[Symbol, untyped] options) -> Hash[Symbol, untyped]
+      def normalize_options: ({  } options) -> { }
     end
   end
 end
@@ -62,10 +62,10 @@ module Example109
       @association_foreign_key: nil
       @association_primary_key: nil
 
-      attr_reader type: untyped
-      attr_reader foreign_type: untyped
+      attr_reader type: String
+      attr_reader foreign_type: "comments_type"
 
-      def initialize: (:comments name, Proc scope, Hash[Symbol, untyped] options, singleton(Example109::Base) active_record) -> void
+      def initialize: (:comments name, Proc scope, {  } options, singleton(Example109::Base) active_record) -> void
 
       private
 
@@ -130,8 +130,8 @@ module Example109
   module Associations
     module Builder
       class Association
-        def self.build: ((singleton(Example109::Base)) model, :comments name, untyped scope, Hash[Symbol, untyped] options) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
-        def self.create_reflection: (singleton(Example109::Base) model, :comments name, untyped scope, Hash[Symbol, untyped] options) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
+        def self.build: ((singleton(Example109::Base)) model, :comments name, untyped scope, {  } options) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
+        def self.create_reflection: (singleton(Example109::Base) model, :comments name, untyped scope, {  } options) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
         def self.build_scope: (Proc scope) -> Proc
         def self.macro: () -> untyped
         def self.define_extensions: (singleton(Example109::Base) model, :comments name) -> nil
@@ -156,7 +156,7 @@ module Example109
 
         def self.define_callbacks: (singleton(Example109::Base) model, Example109::Reflection::HasManyReflection reflection) -> Array[(:before_add | :after_add | :before_remove | :after_remove)]
         def self.define_extensions: (singleton(Example109::Base) model, :comments name) ?{ (*untyped) -> untyped } -> Module?
-        def self.define_callback: (singleton(Example109::Base) model, (:before_add | :after_add | :before_remove | :after_remove) callback_name, :comments name, Hash[Symbol, untyped] options) -> untyped
+        def self.define_callback: (singleton(Example109::Base) model, (:before_add | :after_add | :before_remove | :after_remove) callback_name, :comments name, {  } options) -> untyped
         def self.define_readers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, :comments name) -> :comment_ids
         def self.define_writers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, :comments name) -> :comment_ids=
       end

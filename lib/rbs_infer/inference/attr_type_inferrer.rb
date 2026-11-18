@@ -63,6 +63,7 @@ module RbsInfer::Inference
     def finalize(attr_types, members, method_param_types:)
       apply_external_setter_types(attr_types, members, method_param_types)
       apply_writes_by_method(attr_types, members)
+      apply_stored_keys(attr_types, members)
       apply_definite_init_nilability(attr_types, members)
     end
 
@@ -183,6 +184,14 @@ module RbsInfer::Inference
         types = IvarTypeSet.new
         [current, *written].compact.each { |type| types.add(type) }
         attr_types[m.name] = types.emit || attr_types[m.name]
+      end
+    end
+
+    def apply_stored_keys(attr_types, members)
+      members.each do |m|
+        next unless %i[attr_reader attr_accessor].include?(m.kind) && !m.singleton && !m.owner && attr_types[m.name]
+
+        attr_types[m.name] = @ivar_type_inferrer.with_stored_keys(@parsed_target, m.name, attr_types[m.name])
       end
     end
 

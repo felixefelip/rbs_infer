@@ -52,9 +52,7 @@ class RbsInfer::Signatures::SteepBridge
       # like `initialize` — pool into each other (felixefelip/rbs_infer#38).
       # `each_typing` enumerates the whole file, so we filter it by node
       # identity against the set of writes that belong to `target_class`.
-      elements = HashElementWrites.new(source_node, target_class: target_class, singleton: singleton,
-                                                    constructor_bindings: @constructor_bindings,
-                                                    literal_methods: @literal_methods)
+      elements = hash_element_writes(typing, attr_writer_to_ivar, target_class, singleton)
       in_scope = collect_scoped_write_node_ids(source_node, attr_writer_to_ivar, target_class, singleton, elements: elements)
       masgn_values = collect_masgn_target_values(source_node)
       empty_hashes = Set.new
@@ -65,7 +63,7 @@ class RbsInfer::Signatures::SteepBridge
 
         case node.type
         when :ivasgn, :or_asgn, :and_asgn
-          next elements.record(node, typing) if elements.store?(node)
+          next if elements.store?(node)
 
           parts = ivar_write_name_and_rhs(node, masgn_values: masgn_values)
           next unless parts
@@ -78,7 +76,7 @@ class RbsInfer::Signatures::SteepBridge
 
           type_sets[var_name].add(RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(rhs_type))
         when :send
-          next elements.record(node, typing) if elements.store?(node)
+          next if elements.store?(node)
 
           receiver, method_name, *args = node.children
           next unless attr_writer_to_ivar.key?(method_name)
@@ -100,9 +98,16 @@ class RbsInfer::Signatures::SteepBridge
       type_sets.each do |name, type_set|
         force_nilable = !initialized.include?(name)
         emitted = type_set.emit(force_nilable: force_nilable)
-        result[name] = emitted if emitted
+        result[name] = elements.widen(name, emitted) if emitted
       end
       result
+    end
+
+    # `type`, the type of `@ivar`, with the keys the class stores into it.
+    def with_stored_keys(source_code, file:, target_class:, ivar:, type:)
+      typing = @steep_bridge.type_check(source_code, file:) or return type
+
+      hash_element_writes(typing, collect_attr_writers(typing.source.node), target_class, false).widen(ivar, type)
     end
 
     # Returns `{ "method_name" => { "ivar_name" => "type" } }` for every
@@ -166,17 +171,13 @@ class RbsInfer::Signatures::SteepBridge
 
     private
 
-    # Returns Set[String] of ivar names (without leading `@`) that are
-    # assigned inside `def initialize` of `target_class`, or at its
-    # class-body scope. Used by the definite-initialization rule to
-    # decide whether `nil` is added to the union — so it must be scoped to
-    # the same class the writes are, or an `@x` initialized in a *sibling*
-    # class in the same file would wrongly suppress the `| nil` here.
-    #
-    # `singleton: true` asks the same question of the `self.@x` slot, where the
-    # only definite initialization available is a class-body write: no
-    # constructor runs for a class-instance variable, so `initialize` says
-    # nothing about it and is not walked (felixefelip/rbs_infer#252).
+    def hash_element_writes(typing, attr_writers, target_class, singleton)
+      HashElementWrites.recorded(typing, target_class:, singleton:, constructor_bindings: @constructor_bindings,
+                                         literal_methods: @literal_methods) do |elements|
+        collect_scoped_write_node_ids(typing.source.node, attr_writers, target_class, singleton, elements: elements)
+      end
+    end
+
     def collect_initialized_ivars(node, target_class:, singleton:)
       result = Set.new
       walk_ivar_init_targets(node, in_init: false, in_class_body: false, singleton: singleton,

@@ -8,7 +8,7 @@ RSpec.describe RbsInfer::Inference::IvarTypeInferrer do
     def resolver_for(target_class)
       described_class.new(
         target_class: target_class, method_type_resolver: nil, constant_resolver: nil,
-        instance_types: [], steep_bridge: nil
+        instance_types: [], steep_bridge: nil, inherited_reach: nil
       )
     end
 

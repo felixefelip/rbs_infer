@@ -33,13 +33,14 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
     # argumento desaparece, e o parâmetro é tipado só pelos OUTROS call-sites —
     # estreito demais, não apenas impreciso.
     def for_params(call_node, param_names)
-      return {} unless call_node.arguments
+      keyword_rest = RbsInfer::Inference::RestParamMarker.keyword_in(param_names)
+      param_names -= [keyword_rest]
+      arguments = call_node.arguments&.arguments || []
+      args = keyword_rest ? { keyword_rest => keyword_rest_record(arguments, param_names) } : {}
+      return args if arguments.empty?
 
-      arguments = call_node.arguments.arguments
-      keyword = ->(arg) { arg.is_a?(Prism::KeywordHashNode) && !collapses_to_positional?(arg, param_names) }
-      args = bind_positionals(placeable(arguments).reject(&keyword), param_names) do |arg|
-        arg.is_a?(Prism::KeywordHashNode) ? @value_types.hash_literal_type(arg) : argument_type(arg)
-      end
+      keyword = ->(arg) { keyword_argument?(arg, param_names, keyword_rest) }
+      args.merge!(positional_types(placeable(arguments).reject(&keyword), param_names))
       args.merge!(keyword_types(arguments.select(&keyword)))
     end
 
@@ -80,6 +81,21 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
         args[splat] = RbsInfer::Inference::TypeUnion.of(rest_types.compact)
       end
       args
+    end
+
+    # A method that takes a keyword rest receives every keyword hash as keywords.
+    def keyword_argument?(arg, param_names, keyword_rest)
+      arg.is_a?(Prism::KeywordHashNode) && (keyword_rest || !collapses_to_positional?(arg, param_names))
+    end
+
+    def positional_types(nodes, param_names)
+      bind_positionals(nodes, param_names) do |arg|
+        arg.is_a?(Prism::KeywordHashNode) ? @value_types.hash_literal_type(arg) : argument_type(arg)
+      end
+    end
+
+    def keyword_rest_record(arguments, declared)
+      RbsInfer::Inference::KeywordRestRecord.of(arguments, declared: declared) { |value| argument_type(value) }
     end
 
     def keyword_types(hashes, except: [])

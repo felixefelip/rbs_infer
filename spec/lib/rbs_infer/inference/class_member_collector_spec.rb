@@ -398,7 +398,8 @@ RSpec.describe RbsInfer::Inference::ClassMemberCollector do
     member = collector.members.find { |m| m.name == "tag" }
     # `*untyped`: an empty body never calls the block, so there is no arity to
     # read off it — this example is about WHERE the block goes.
-    expect(member.signature).to eq("tag: (id: untyped, name: untyped, **untyped) ?{ (*untyped) -> untyped } -> untyped")
+    expect(member.signature)
+      .to eq("tag: (id: untyped, name: untyped, **untyped options) ?{ (*untyped) -> untyped } -> untyped")
     expect(member.signature).not_to include(", ?{")
   end
 

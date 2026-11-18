@@ -187,6 +187,11 @@ module RbsInfer::Inference
       parents.each_key.map { |name| relative(name) }
     end
 
+    # `[file, source]` for each file that writes the body of `name`.
+    def defining_sources(name)
+      defining_files([name]).filter_map { |file| (entry = @parse_cache.get(file)) && [file, entry.source] }
+    end
+
     # The files that write the body of any of `names`: the only ones a
     # `super` in it can be in.
     def defining_files(names)
