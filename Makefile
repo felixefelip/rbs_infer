@@ -3,7 +3,7 @@ ROOT_DIR = $(shell pwd)
 RBS_INFER = bundle exec rbs_infer
 OUTPUT_DIR = sig/rbs_infer
 
-.PHONY: rbs rbs-controllers rbs-models rbs-services rbs-rails-custom rbs-erb test lint steep
+.PHONY: rbs rbs-controllers rbs-models rbs-services rbs-rails-custom rbs-erb test lint steep dummy_fixpoint
 
 ## Gerar RBS para todo o app/ do dummy
 rbs_infer:
@@ -94,6 +94,12 @@ lint:
 ## explica o porquê.
 test_parallel:
 	./bin/rspec-parallel
+
+## Loop steep check -> rbs_infer no dummy até o sig/ parar de mudar.
+## Logs em tmp/dummy-fixpoint/; ROUNDS limita as voltas.
+ROUNDS ?= 6
+dummy_fixpoint:
+	./bin/dummy-fixpoint $(ROUNDS)
 
 ## Análise de tipos com Steep no dummy
 steep:
