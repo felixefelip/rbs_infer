@@ -20,7 +20,8 @@ RSpec.describe RbsInfer::Inference::CallerFileAnalyzer do
       inherited_self_types: RbsInfer::Inference::InheritedSelfTypes.new(
         source_index: RbsInfer::Project::SourceIndex.new([]),
         parse_cache: RbsInfer::Project::ParseCache.new,
-        steep_bridge: nil
+        steep_bridge: nil,
+        mixin_index: RbsInfer::Project::MixinIndex.new([])
       ),
       inherited_forwards: {},
       inherited_initializers: RbsInfer::Inference::InheritedReach::NONE,

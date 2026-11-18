@@ -58,6 +58,7 @@ RSpec.describe RbsInfer::Inference::InheritedSelfTypes do
     described_class.new(
       source_index: RbsInfer::Project::SourceIndex.new(files),
       parse_cache: RbsInfer::Project::ParseCache.new,
+      mixin_index: RbsInfer::Project::MixinIndex.new(files),
       steep_bridge: RbsInfer::Signatures::SteepBridge.new(
         literal_method_registry: Steep::Project::LiteralMethodRegistry.from_paths(files),
         constructor_bindings: Steep::Project::ConstructorBindingRegistry.from_paths(files)
@@ -103,6 +104,14 @@ RSpec.describe RbsInfer::Inference::InheritedSelfTypes do
   it "takes the self of the inherited method a bare call is written in" do
     animals(greet: true)
     caller_source("Dog.new.greet")
+
+    expect(narrow).to eq("Dog")
+  end
+
+  it "takes the includers of the module a bare call is written in" do
+    animals
+    write("app/greeting.rb", "class Dog\n  module Greeting\n    def hello = introduce\n  end\n  include Greeting\nend\n")
+    caller_source("Dog.new.hello")
 
     expect(narrow).to eq("Dog")
   end
