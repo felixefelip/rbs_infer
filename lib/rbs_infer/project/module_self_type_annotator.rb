@@ -13,8 +13,9 @@ module RbsInfer
 
       # SelfTypeAnnotators plugin contract: the concern/module self-type as a
       # (possibly empty) list of inject-ready entries.
-      def self_type_entries(path:, module_name:, source:, mixin_index: nil) # rubocop:disable Lint/UnusedMethodArgument
-        entry = entry_for(module_name: module_name, source: source, mixin_index: mixin_index)
+      def self_type_entries(path:, module_name:, source:, mixin_index: nil, invoker_self_types: nil) # rubocop:disable Lint/UnusedMethodArgument
+        entry = entry_for(module_name: module_name, source: source, mixin_index: mixin_index,
+                          invoker_self_types: invoker_self_types)
         entry ? [entry] : []
       end
 

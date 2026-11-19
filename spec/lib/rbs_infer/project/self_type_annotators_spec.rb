@@ -49,7 +49,8 @@ RSpec.describe RbsInfer::Project::SelfTypeAnnotators do
       )
 
       result = described_class.apply(
-        target_source, detect_source: original_source, path: "app/models/foo.rb", module_name: "Foo"
+        target_source, detect_source: original_source, path: "app/models/foo.rb",
+                       invoker_self_types: nil, module_name: "Foo"
       )
 
       expect(result).to include("# @type self: singleton(::Foo)")
@@ -60,7 +61,8 @@ RSpec.describe RbsInfer::Project::SelfTypeAnnotators do
       described_class.register(fake_annotator(seen: seen, entries: []))
 
       described_class.apply(
-        target_source, detect_source: original_source, path: "app/models/foo.rb", module_name: "Foo"
+        target_source, detect_source: original_source, path: "app/models/foo.rb",
+                       invoker_self_types: nil, module_name: "Foo"
       )
 
       expect(seen.first[:source]).to eq(original_source)
@@ -69,7 +71,7 @@ RSpec.describe RbsInfer::Project::SelfTypeAnnotators do
 
     it "returns the target source unchanged when no annotators are registered" do
       result = described_class.apply(
-        target_source, detect_source: original_source, path: "x.rb", module_name: "Foo"
+        target_source, detect_source: original_source, path: "x.rb", invoker_self_types: nil, module_name: "Foo"
       )
       expect(result).to eq(target_source)
     end
@@ -79,10 +81,25 @@ RSpec.describe RbsInfer::Project::SelfTypeAnnotators do
       described_class.register(fake_annotator(seen: seen, entries: []))
 
       described_class.apply(
-        target_source, detect_source: "module Foo\n  module Bar\n  end\nend\n", path: "x.rb", module_name: "Foo"
+        target_source, detect_source: "module Foo\n  module Bar\n  end\nend\n", path: "x.rb",
+                       invoker_self_types: nil, module_name: "Foo"
       )
 
       expect(seen.map { |call| call[:module_name] }).to eq(%w[Foo Foo::Bar])
+    end
+
+    it "places an entry's per-method self type on that method's signature line" do
+      described_class.register(
+        fake_annotator(seen: [], entries: [{ "anchor" => "Foo", "annotations" => ["# @type instance: Object"],
+                                             "defs" => { "bar" => "singleton(::Baz)" } }])
+      )
+
+      result = described_class.apply(
+        "module Foo\n  def bar\n  end\nend\n", detect_source: "module Foo\nend\n", path: "x.rb",
+                                               invoker_self_types: nil, module_name: "Foo"
+      )
+
+      expect(result.lines[1]).to include("def bar").and include("# @type self: singleton(::Baz)")
     end
 
     it "is a no-op (and never calls annotators) when module_name is blank" do
@@ -93,9 +110,9 @@ RSpec.describe RbsInfer::Project::SelfTypeAnnotators do
                                               }]))
 
       expect(described_class.apply(target_source, detect_source: original_source, path: "x.rb",
-                                                  module_name: nil)).to eq(target_source)
+                                                  invoker_self_types: nil, module_name: nil)).to eq(target_source)
       expect(described_class.apply(target_source, detect_source: original_source, path: "x.rb",
-                                                  module_name: "")).to eq(target_source)
+                                                  invoker_self_types: nil, module_name: "")).to eq(target_source)
       expect(seen).to be_empty
     end
   end
