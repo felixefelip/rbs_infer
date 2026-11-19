@@ -7,16 +7,17 @@ module RbsInfer
 
       class << self
         # Unions a list of types (from distinct call-sites) into a single RBS
-        # string. `untyped` is dropped when at least one resolved type exists.
-        # Pre-existing unions (`(String | Symbol)`) are flattened via the RBS
-        # parser, so combining partial results (intra-class + cross-class) is
-        # associative and idempotent — no nested parens, no duplicate members.
+        # string. A site typed `untyped` is dropped when another site resolved;
+        # an `untyped` member of a site's own union is what the checker knows
+        # and stays. Pre-existing unions (`(String | Symbol)`) are flattened via
+        # the RBS parser, so combining partial results (intra-class +
+        # cross-class) is associative and idempotent — no nested parens, no
+        # duplicate members.
         def of(types)
-          flat = types.flat_map { |t| flatten_union(t) }
-          resolved = flat.reject { |t| t == "untyped" }
-          resolved = flat if resolved.empty?
+          resolved = types.reject { |t| t == "untyped" }
+          resolved = types if resolved.empty?
 
-          spell(collapse_subsumed(unique(resolved)))
+          spell(collapse_subsumed(unique(resolved.flat_map { |t| flatten_union(t) })))
         end
 
         # Drops members another member already covers — which de-duplication can't

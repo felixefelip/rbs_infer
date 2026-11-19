@@ -17,6 +17,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 DUMMY=$ROOT/spec/dummy
 OUT=${OUT:-$ROOT/tmp/dummy-fixpoint}
 mkdir -p "$OUT"
+OUT=$(cd "$OUT" && pwd)
 : > "$OUT/summary.txt"
 
 sig_state() {

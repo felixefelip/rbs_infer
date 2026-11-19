@@ -16,11 +16,12 @@ methods:
       true) on singleton(::ActiveSupport::ClassAttribute)"
     : '"__class_attr_plural_labels="'
   ActiveSupport::ClassAttribute.redefine_method:
-    "((singleton(::Example110::Options) | ::Class), ::Symbol) &-> untyped": nil
-    "((singleton(::Example110::Options) | ::Class), ::Symbol, private: true) &-> untyped": "::Symbol"
-    '(::Class, "__class_attr_plural_labels=", private: true) &-> untyped': '"__class_attr_plural_labels="'
-    "(::Class, ::String, private: true) &-> untyped": "::String"
-    "(::Class, ::Symbol, private: true) &-> untyped": "::Symbol"
+    "((singleton(::Example110::Options) | ::Class), ::Symbol) &-> (true | untyped | nil)": nil
+    "((singleton(::Example110::Options) | ::Class), ::Symbol, private: true) &-> (true | untyped | nil)": "::Symbol"
+    '(::Class, "__class_attr_plural_labels=", private: true) &-> (untyped | ::String)': '"__class_attr_plural_labels="'
+    "(::Class, ::String, private: true) &-> (untyped | ::String)": "::String"
+    "(::Class, ::Symbol, private: true) &-> (::TrueClass | untyped | nil)": "::Symbol"
+    "(::Class, ::Symbol, private: true) &-> (true | untyped | nil)": "::Symbol"
     "(::Class, :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
     "(::Class, :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
     "(self, :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
@@ -29,7 +30,7 @@ methods:
     "(self, :plural_labels) &-> untyped": nil
     "(singleton(::Example110::Options), :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
     "(singleton(::Example110::Options), :plural_labels) &-> true": nil
-    '(singleton_class(::Example110::Options), "__class_attr_plural_labels=", private: true) &-> untyped': '"__class_attr_plural_labels="'
+    '(singleton_class(::Example110::Options), "__class_attr_plural_labels=", private: true) &-> (untyped | ::String)': '"__class_attr_plural_labels="'
     "(singleton_class(::Example110::Options), :__class_attr_plural_labels, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example110::Options), :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
   ActiveSupport::Concern#class_methods:
@@ -47,6 +48,7 @@ methods:
     "() on singleton(::Post::Taggable) &-> :touch_recently_tagged": ":touch_recently_tagged"
     "() on singleton(::Vault::Totaled) &-> :vault_key": ":vault_key"
   ActiveSupport::Concern#included:
+    "() &-> (false | nil | untyped)": "^(*untyped) -> (false | nil | untyped)"
     "() &-> :badge": "^(*untyped) -> :badge"
     "() &-> :creation_window": "^(*untyped) -> :creation_window"
     "() &-> :relevant?": "^(*untyped) -> :relevant?"
@@ -60,7 +62,8 @@ methods:
     "() on singleton(::Post::Notifiable) &-> void": "^(*untyped) -> void"
     "() on singleton(::Post::Taggable) &-> void": "^(*untyped) -> void"
     "() on singleton(::Test::Filtrable) &-> void": "^(*untyped) -> void"
-    "() on singleton(::User::Notifiable) &-> untyped": "^(*untyped) -> untyped"
+    "() on singleton(::User::Notifiable) &-> (false | nil | untyped)": "^(*untyped)
+      -> (false | nil | untyped)"
     "() on singleton(::User::Recoverable) &-> void": "^(*untyped) -> void"
   ActiveSupport::Inflector#apply_inflections:
     ? '("comments", [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i,
@@ -647,6 +650,8 @@ methods:
       ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}'
     : "::String"
     '("comments", false) with {::Thread{@__rbs_infer__main: nil}}': "::String"
+    ("comments", true): (untyped | "Comments")
+    ("comments", true) on singleton(::ActiveSupport::Inflector): (untyped | "Comments")
     ? '("comments", true) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -706,6 +711,11 @@ methods:
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : '"Comments"'
+    ? '("comments", true) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}'
+    : (untyped | "Comments")
+    '("comments", true) on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}': (untyped
+      | "Comments")
     ? '("comments", true) with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -765,6 +775,10 @@ methods:
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : '"Comments"'
+    ? '("comments", true) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}'
+    : (untyped | "Comments")
+    '("comments", true) with {::Thread{@__rbs_infer__main: nil}}': (untyped | "Comments")
     "(self, false)": "::String"
     ? '(self, false) with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
@@ -829,6 +843,7 @@ methods:
       ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : "::String"
     "(self, false) with {::Thread{@__rbs_infer__main: nil}}": "::String"
+    "(self, true)": "(::String | untyped)"
     ? '(self, true) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -888,7 +903,13 @@ methods:
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : "::String"
+    ? "(self, true) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : "(::String | untyped)"
+    "(self, true) with {::Thread{@__rbs_infer__main: nil}}": "(::String | untyped)"
   ActiveSupport::Inflector#inflections:
+    "() on singleton(::ActiveSupport::Inflector)": "(::ActiveSupport::Inflector::Inflections
+      | untyped)"
     ? '() on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -999,6 +1020,11 @@ methods:
           [::Regexp, "\\1y"], [::Regexp, "\\1f"], [::Regexp, "\\1"], [::Regexp, "\\1"],
           [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
           "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
+    ? "() on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : "(::ActiveSupport::Inflector::Inflections | untyped)"
+    "() on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}": "(::ActiveSupport::Inflector::Inflections
+      | untyped)"
     ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -1109,10 +1135,22 @@ methods:
           [::Regexp, "\\1y"], [::Regexp, "\\1f"], [::Regexp, "\\1"], [::Regexp, "\\1"],
           [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
           "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
+    ? "() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : "(::ActiveSupport::Inflector::Inflections | untyped)"
+    "() with {::Thread{@__rbs_infer__main: nil}}": "(::ActiveSupport::Inflector::Inflections
+      | untyped)"
+    "(::Symbol) on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}": "(::ActiveSupport::Inflector::Inflections
+      | untyped)"
+    "(::Symbol) with {::Thread{@__rbs_infer__main: nil}}": "(::ActiveSupport::Inflector::Inflections
+      | untyped)"
+    "(:en)": "(::ActiveSupport::Inflector::Inflections | untyped)"
     ? "(:en) &{bdfc3bdf9104d3fa} with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
       nil}}"
     : "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
+    "(:en) on singleton(::ActiveSupport::Inflector)": "(::ActiveSupport::Inflector::Inflections
+      | untyped)"
     ? "(:en) on singleton(::ActiveSupport::Inflector) &{bdfc3bdf9104d3fa} with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
       nil}}"
@@ -1227,6 +1265,11 @@ methods:
           [::Regexp, "\\1y"], [::Regexp, "\\1f"], [::Regexp, "\\1"], [::Regexp, "\\1"],
           [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
           "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
+    ? "(:en) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : "(::ActiveSupport::Inflector::Inflections | untyped)"
+    "(:en) on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}": "(::ActiveSupport::Inflector::Inflections
+      | untyped)"
     ? '(:en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -1337,6 +1380,11 @@ methods:
           [::Regexp, "\\1y"], [::Regexp, "\\1f"], [::Regexp, "\\1"], [::Regexp, "\\1"],
           [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
           "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
+    ? "(:en) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+    : "(::ActiveSupport::Inflector::Inflections | untyped)"
+    "(:en) with {::Thread{@__rbs_infer__main: nil}}": "(::ActiveSupport::Inflector::Inflections
+      | untyped)"
   ActiveSupport::Inflector#singularize:
     ("comments", :en): "::String"
     ("comments", :en) on singleton(::ActiveSupport::Inflector): "::String"
@@ -5939,6 +5987,10 @@ methods:
       "\\1"], [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
       "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
   ActiveSupport::Inflector::Inflections.instance:
+    "(::Symbol) on singleton(::ActiveSupport::Inflector::Inflections)": "(untyped
+      | ::ActiveSupport::Inflector::Inflections)"
+    "(:en)": "(untyped | ::ActiveSupport::Inflector::Inflections)"
+    "(:en) on singleton(::ActiveSupport::Inflector::Inflections)": "(untyped | ::ActiveSupport::Inflector::Inflections)"
     ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}"
     : class: "::ActiveSupport::Inflector::Inflections"
@@ -6062,6 +6114,8 @@ methods:
           [::Regexp, "\\1y"], [::Regexp, "\\1f"], [::Regexp, "\\1"], [::Regexp, "\\1"],
           [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
           "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
+    "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}}": "(untyped
+      | ::ActiveSupport::Inflector::Inflections)"
     "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}":
       class: "::ActiveSupport::Inflector::Inflections"
       ivars:
@@ -6184,7 +6238,13 @@ methods:
           [::Regexp, "\\1y"], [::Regexp, "\\1f"], [::Regexp, "\\1"], [::Regexp, "\\1"],
           [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
           "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
+    "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{}}": "(untyped
+      | ::ActiveSupport::Inflector::Inflections)"
   ActiveSupport::Inflector::Inflections.instance_or_fallback:
+    ? "(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : "(::ActiveSupport::Inflector::Inflections | untyped | nil)"
     ? '(:en) on singleton(::ActiveSupport::Inflector::Inflections) with {@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -6244,6 +6304,9 @@ methods:
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
       }, @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}'
     : "::ActiveSupport::Inflector::Inflections"
+    ? "(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {
+      \ }, @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}"
+    : "(::ActiveSupport::Inflector::Inflections | untyped | nil)"
     ? '(:en) with {@__instance__: ::Concurrent::Map[untyped, untyped]{@backend: {
       :en => ::ActiveSupport::Inflector::Inflections{@acronyms: {  }, @humans: [],
       @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"], [/(m)oves$/i,
@@ -6992,12 +7055,19 @@ methods:
       [[/ies\z/, "y"], [/s\z/, ""]]} }, @default_proc: nil}'
     : "::Example104::Rules"
     '(:en, ::Example104::Rules) with {@backend: { :en => ::Example104::Rules{@singulars: [[/s\z/, ""]]} }, @default_proc: nil}': "::Example104::Rules"
+  Concurrent::Collection::NonConcurrentMapBackend#get_or_default:
+    "((untyped | K), ::Object) with {::Thread{@__rbs_infer__main: nil}}": "(untyped
+      | ::Object)"
+    "(untyped, ::Object)": "(untyped | ::Object)"
+    "(untyped, ::Object) with {::Thread{@__rbs_infer__main: nil}}": "(untyped | ::Object)"
+    "(untyped, nil) with {::Thread{@__rbs_infer__main: nil}}": "(untyped | nil)"
   Concurrent::Collection::NonConcurrentMapBackend#initialize:
     "(nil) with {@backend: nil, @default_proc: nil, @write_lock: nil}": nil
   Concurrent::Collection::NonConcurrentMapBackend#initialize_copy:
-    "(untyped) with {::Thread{@__rbs_infer__main: nil}}": self
+    "((untyped | instance)) with {::Thread{@__rbs_infer__main: nil}}": self
   Concurrent::Map#each_pair:
     "() &-> (nil | void)": self
+    "() &-> (untyped | void)": self
     "() &-> ::Array[untyped]": self
     "() &-> ::Integer": self
     "() &-> bot": self
@@ -7323,10 +7393,15 @@ methods:
       | :__class_attr_pluralize_table_names), private: true) &-> true"
     : "::Symbol"
     "((singleton(::Example109::Base) | singleton(::Example108::Settings)), (:plural_names | :pluralize_table_names)) &-> true": nil
-    '(::Class, "__class_attr_plural_names=", private: true) &-> untyped': '"__class_attr_plural_names="'
-    '(::Class, "__class_attr_pluralize_table_names=", private: true) &-> untyped': '"__class_attr_pluralize_table_names="'
-    '(::Class, ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names="), private: true) &-> untyped': ("__class_attr_plural_names="
-      | "__class_attr_pluralize_table_names=")
+    ? '(::Class, "__class_attr_plural_names=", private: true) &-> (untyped | "__class_attr_plural_names="
+      | "__class_attr_pluralize_table_names=")'
+    : '"__class_attr_plural_names="'
+    ? '(::Class, "__class_attr_pluralize_table_names=", private: true) &-> (untyped
+      | "__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
+    : '"__class_attr_pluralize_table_names="'
+    ? '(::Class, ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names="),
+      private: true) &-> (untyped | "__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
+    : ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")
     "(::Class, (:__class_attr_plural_names | :__class_attr_pluralize_table_names), private: true) &-> true": "::Symbol"
     "(::Class, :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
     "(::Class, :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
@@ -7338,10 +7413,14 @@ methods:
     "(singleton(::Example108::Settings), :plural_names) &-> true": nil
     "(singleton(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
     "(singleton(::Example109::Base), :pluralize_table_names) &-> true": nil
-    '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private: true) &-> untyped': '"__class_attr_plural_names="'
+    ? '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private:
+      true) &-> (untyped | "__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
+    : '"__class_attr_plural_names="'
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
-    '(singleton_class(::Example109::Base), "__class_attr_pluralize_table_names=", private: true) &-> untyped': '"__class_attr_pluralize_table_names="'
+    ? '(singleton_class(::Example109::Base), "__class_attr_pluralize_table_names=",
+      private: true) &-> (untyped | "__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
+    : '"__class_attr_pluralize_table_names="'
     "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
   Example108::Settings.__class_attr_plural_names:
@@ -8563,6 +8642,7 @@ methods:
           block: "{ |_map, key| key.to_s }"
   Example116#[]:
     "(:title) with {@backend: ::Hash[untyped, untyped]{@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}}": '"title"'
+    "(:title) with {@backend: ::Hash[untyped, untyped]{[]: {  }}}": "(untyped | nil)"
   Example116.new:
     "()":
       class: "::Example116"
@@ -9950,6 +10030,9 @@ methods:
     "(:example113_settings) with {@__rbs_infer__locals: nil}": nil
     "(:i18n_fallbacks) with {@__rbs_infer__locals: nil}": nil
   Thread::Mutex#synchronize:
+    "() &-> (untyped | ::Object | nil)": "(untyped | ::Object | nil)"
+    "() &-> (untyped | ::Object)": "(untyped | ::Object)"
+    "() &-> (untyped | nil)": "(untyped | nil)"
     "() &-> bool": bool
   Users::AvatarsController#__rbs_infer__run_update:
     ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
@@ -10018,9 +10101,16 @@ methods:
 declarations:
   ActiveJob::Base.perform_later: "(::AuthorDigestJob | ::AvatarThumbnailJob)"
   ActiveSupport::Inflector#camelize: (::String | "Comments")
+  ActiveSupport::Inflector#inflections: "(::ActiveSupport::Inflector::Inflections
+    | untyped | ::ActiveSupport::Inflector::Inflections::Uncountables[untyped])"
   ActiveSupport::Inflector#singularize: '"comment"'
   ActiveSupport::Inflector::Inflections#clear: "(::Regexp | ::Array[untyped] | nil
     | ::ActiveSupport::Inflector::Inflections::Uncountables[untyped])"
+  ActiveSupport::Inflector::Inflections.instance: "(::ActiveSupport::Inflector::Inflections
+    | untyped)"
+  Concurrent::Collection::NonConcurrentMapBackend#get_or_default: "(untyped | nil
+    | ::Object)"
+  Concurrent::Map#fetch: "(untyped | nil | ::Object)"
   Current#user=: "::String"
   Current.account=: "(::Account & ::Account::Validated)"
   Current.user=: "(::User & ::User::Validated)"
@@ -11898,7 +11988,7 @@ receivers:
   app/models/example68.rb:121:12:
   - "(::Example68Entry | nil)"
   app/models/example68.rb:121:20:
-  - untyped
+  - "(untyped | nil)"
   app/models/example68.rb:121:4:
   - "::Example68"
   app/models/example68.rb:121:50:
@@ -12566,7 +12656,7 @@ receivers:
   app/models/example97.rb:25:10:
   - "::Example97::Foo"
   app/models/example97.rb:25:17:
-  - "{ :bar => untyped }"
+  - "{ :bar => (10 | untyped) }"
   app/models/example97.rb:29:10:
   - "::Example97::Foo"
   app/models/example97.rb:29:17:
@@ -12606,12 +12696,12 @@ receivers:
   app/models/example99.rb:20:14:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:20:20:
-  - untyped
+  - "(untyped | nil)"
   - "{ :num1 => 5, :num2 => 30 }"
   app/models/example99.rb:20:38:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:20:44:
-  - untyped
+  - "(untyped | nil)"
   - "{ :num1 => 5, :num2 => 30 }"
   app/models/example99.rb:28:17:
   - singleton(::Example99::Foo)
@@ -12630,7 +12720,7 @@ receivers:
   app/models/example99.rb:34:17:
   - "{ ?:bar => untyped }"
   app/models/example99.rb:34:23:
-  - untyped
+  - "(untyped | nil)"
   app/models/example99.rb:34:31:
   - untyped
   app/models/example99.rb:38:10:
@@ -12642,28 +12732,28 @@ receivers:
   app/models/example99.rb:42:17:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:42:23:
-  - untyped
+  - "(untyped | nil)"
   - "{ :num1 => 5, :num2 => 10 }"
   app/models/example99.rb:46:10:
   - "::Example99::Foo"
   app/models/example99.rb:46:17:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:46:23:
-  - untyped
+  - "(untyped | nil)"
   - "{ :num1 => 5, :num2 => 10 }"
   app/models/example99.rb:50:10:
   - "::Example99::Foo"
   app/models/example99.rb:50:17:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:50:23:
-  - untyped
+  - "(untyped | nil)"
   - "{ :num1 => 5, :num2 => 10 }"
   app/models/example99.rb:50:37:
   - "::Example99::Foo"
   app/models/example99.rb:50:44:
   - "::Hash[untyped, untyped]"
   app/models/example99.rb:50:50:
-  - untyped
+  - "(untyped | nil)"
   - "{ :num1 => 5, :num2 => 10 }"
   app/models/included_hook.rb:112:2:
   - singleton(::IncludedHook)
@@ -13221,7 +13311,8 @@ receivers:
   sig/generated/steep_activejob_runtime/active_job_base.rb:15:8:
   - "::ActiveJob::Base"
   sig/generated/steep_activesupport_runtime/class_attribute.rb:51:10:
-  - "::Array[untyped]"
+  - '::Array[("before_add_for_comments" | "after_add_for_comments" | "before_remove_for_comments"
+    | "after_remove_for_comments" | :plural_labels | untyped)]'
   sig/generated/steep_activesupport_runtime/class_attribute.rb:53:33:
   - untyped
   sig/generated/steep_activesupport_runtime/class_attribute.rb:53:8:
@@ -13271,7 +13362,7 @@ receivers:
   sig/generated/steep_activesupport_runtime/delegation.rb:154:28:
   - untyped
   sig/generated/steep_activesupport_runtime/delegation.rb:155:38:
-  - untyped
+  - "(::String | untyped)"
   sig/generated/steep_activesupport_runtime/delegation.rb:157:23:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:158:50:
@@ -13303,27 +13394,29 @@ receivers:
   sig/generated/steep_activesupport_runtime/delegation.rb:51:10:
   - singleton(::ActiveSupport::Delegation)
   sig/generated/steep_activesupport_runtime/delegation.rb:65:16:
-  - "::Module"
+  - "(singleton(::Example81::Shelf) | ::Module)"
   sig/generated/steep_activesupport_runtime/delegation.rb:66:12:
   - singleton(::ActiveSupport::Delegation)
   sig/generated/steep_activesupport_runtime/delegation.rb:69:47:
-  - "::Module"
+  - "(singleton(::Example81::Shelf) | ::Module)"
   sig/generated/steep_activesupport_runtime/delegation.rb:70:12:
   - singleton(::ActiveSupport::Delegation)
   sig/generated/steep_activesupport_runtime/delegation.rb:70:83:
-  - "::Module"
+  - "(singleton(::Example81::Shelf) | ::Module)"
   sig/generated/steep_activesupport_runtime/delegation.rb:73:18:
-  - "::Module"
+  - "(singleton(::Example81::Shelf) | ::Module)"
   sig/generated/steep_activesupport_runtime/delegation.rb:75:13:
-  - untyped
+  - "(:delegate_reflection | :class | :example60_printer | :author | :@owner | :owner
+    | :user | :tag | untyped)"
   sig/generated/steep_activesupport_runtime/delegation.rb:93:19:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:95:16:
-  - "::Array[untyped]"
+  - "::Array[(:human_name | :stamp | :full_name | :fetch | :updated_at | :email |
+    :created_at | :name | untyped)]"
   sig/generated/steep_activesupport_runtime/delegation.rb:97:23:
   - "::Array[untyped]"
   sig/generated/steep_activesupport_runtime/delegation.rb:97:38:
-  - untyped
+  - "(::String | untyped)"
   sig/generated/steep_activesupport_runtime/i18n.rb:100:28:
   - singleton(::I18n::InvalidLocale)
   sig/generated/steep_activesupport_runtime/i18n.rb:100:8:
@@ -13545,17 +13638,17 @@ receivers:
   sig/generated/steep_activesupport_runtime/inflector.rb:304:30:
   - "(::Object & ::ActiveSupport::Inflector)"
   sig/generated/steep_activesupport_runtime/inflector.rb:304:50:
-  - untyped
+  - "(::ActiveSupport::Inflector::Inflections | untyped | ::ActiveSupport::Inflector::Inflections::Uncountables[untyped])"
   sig/generated/steep_activesupport_runtime/inflector.rb:304:6:
   - "(::Object & ::ActiveSupport::Inflector)"
   sig/generated/steep_activesupport_runtime/inflector.rb:309:30:
   - "(::Object & ::ActiveSupport::Inflector)"
   sig/generated/steep_activesupport_runtime/inflector.rb:309:50:
-  - untyped
+  - "(::ActiveSupport::Inflector::Inflections | untyped | ::ActiveSupport::Inflector::Inflections::Uncountables[untyped])"
   sig/generated/steep_activesupport_runtime/inflector.rb:309:6:
   - "(::Object & ::ActiveSupport::Inflector)"
   sig/generated/steep_activesupport_runtime/inflector.rb:314:20:
-  - untyped
+  - "(::String | untyped)"
   sig/generated/steep_activesupport_runtime/inflector.rb:317:28:
   - "(::Object & ::ActiveSupport::Inflector)"
   sig/generated/steep_activesupport_runtime/inflector.rb:319:15:
@@ -13580,9 +13673,9 @@ receivers:
   - untyped
   - "{  }"
   sig/generated/steep_activesupport_runtime/inflector.rb:335:20:
-  - untyped
+  - "(::String | untyped)"
   sig/generated/steep_activesupport_runtime/inflector.rb:337:14:
-  - untyped
+  - "(::String | untyped)"
   sig/generated/steep_activesupport_runtime/inflector.rb:337:24:
   - "(::Object & ::ActiveSupport::Inflector)"
   sig/generated/steep_activesupport_runtime/inflector.rb:337:57:
@@ -13738,7 +13831,7 @@ receivers:
   sig/generated/steep_activesupport_runtime/inflector.rb:97:8:
   - "::ActiveSupport::Inflector::Inflections"
   sig/generated/steep_ar_runtime/active_support/concern.rb:18:11:
-  - untyped
+  - "(::Object | untyped)"
   sig/generated/steep_ar_runtime/active_support/concern.rb:18:56:
   - singleton(::Array)
   sig/generated/steep_ar_runtime/active_support/concern.rb:29:52:
@@ -13746,9 +13839,9 @@ receivers:
   sig/generated/steep_ar_runtime/active_support/concern.rb:34:23:
   - untyped
   sig/generated/steep_ar_runtime/active_support/concern.rb:34:41:
-  - untyped
+  - "(::Module | untyped)"
   sig/generated/steep_ar_runtime/active_support/concern.rb:36:13:
-  - untyped
+  - "(::Module | untyped)"
   sig/generated/steep_ar_runtime/active_support/concern.rb:51:103:
   - singleton(::Module)
   sig/generated/steep_ar_runtime/assignment.rb:13:4:
@@ -14011,8 +14104,6 @@ receivers:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:357:6:
   - "::Concurrent::Map[untyped, untyped]"
-  sig/generated/steep_concurrent_runtime/concurrent/map.rb:362:11:
-  - untyped
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:362:34:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:368:36:
@@ -14407,7 +14498,7 @@ receivers:
   sig/generated/steep_ruby_runtime/module.rb:29:4:
   - "::Module"
   sig/generated/steep_ruby_runtime/module.rb:29:87:
-  - "::Array[untyped]"
+  - "::Array[(untyped | ::Module)]"
   sig/generated/steep_ruby_runtime/module.rb:53:4:
   - "::Module"
   sig/generated/steep_ruby_runtime/module.rb:64:4:
@@ -14642,15 +14733,23 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
   ActiveSupport::Delegation.generate:
-    ? "(self, ::Array[untyped], allow_nil: untyped, location: untyped, prefix: untyped,
-      private: untyped, to: untyped) on singleton(::ActiveSupport::Delegation) with
-      {::Thread{@__rbs_infer__main: nil}}"
+    ? "(self, ::Array[(:human_name | :stamp | :full_name | :fetch | :updated_at |
+      :email | :created_at | :name | untyped)], allow_nil: (true | nil | untyped),
+      location: untyped, prefix: (:owner | true | nil | untyped), private: (untyped
+      | nil), to: (:delegate_reflection | :class | :example60_printer | :author |
+      :@owner | singleton(::Example81::Shelf) | :owner | :user | :tag | nil | untyped))
+      on singleton(::ActiveSupport::Delegation) with {::Thread{@__rbs_infer__main:
+      nil}}"
     : ivars: {}
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
-    ? "(self, ::Array[untyped], allow_nil: untyped, location: untyped, prefix: untyped,
-      private: untyped, to: untyped) with {::Thread{@__rbs_infer__main: nil}}"
+    ? "(self, ::Array[(:human_name | :stamp | :full_name | :fetch | :updated_at |
+      :email | :created_at | :name | untyped)], allow_nil: (true | nil | untyped),
+      location: untyped, prefix: (:owner | true | nil | untyped), private: (untyped
+      | nil), to: (:delegate_reflection | :class | :example60_printer | :author |
+      :@owner | singleton(::Example81::Shelf) | :owner | :user | :tag | nil | untyped))
+      with {::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
       classes:
         "::Thread":
@@ -15203,6 +15302,11 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
     '("comments", untyped, :en) with {::Thread{@__rbs_infer__main: nil}}':
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    "((::String | untyped), untyped, ::Symbol) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
         "::Thread":
@@ -27183,6 +27287,11 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
   Concurrent::Collection::NonConcurrentMapBackend#get_or_default:
+    "((untyped | K), ::Object) with {::Thread{@__rbs_infer__main: nil}}":
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
     "(untyped, ::Object) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
@@ -27200,7 +27309,7 @@ exits:
         "@backend": "{  }"
       keeps_self: true
   Concurrent::Collection::NonConcurrentMapBackend#initialize_copy:
-    "(untyped) with {::Thread{@__rbs_infer__main: nil}}":
+    "((untyped | instance)) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
         "::Thread":
@@ -27313,7 +27422,7 @@ exits:
         "@write_lock": nil
       keeps_self: true
   Concurrent::Map#fetch:
-    ? "(untyped) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_concurrent_runtime/concurrent/map.rb:8909
+    ? "((untyped | K)) &/home/felipefelix/workspaces/rbs_infer/spec/dummy/sig/generated/steep_concurrent_runtime/concurrent/map.rb:8909
       with {::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
       classes:

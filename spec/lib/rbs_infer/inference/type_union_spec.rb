@@ -27,6 +27,10 @@ RSpec.describe RbsInfer::Inference::TypeUnion do
     expect(described_class.of(%w[untyped String])).to eq("String")
   end
 
+  it "keeps an untyped member of a union the checker gave" do
+    expect(described_class.of(["(Integer | untyped)", "untyped"])).to eq("(Integer | untyped)")
+  end
+
   # The same intersection arrives parenthesized when read back from an RBS declaration
   # and bare from Steep. A textual key made them two members of a bogus union.
   it "collapses two spellings of the same type" do

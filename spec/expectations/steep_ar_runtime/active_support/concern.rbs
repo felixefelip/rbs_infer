@@ -1,6 +1,6 @@
 module ActiveSupport
   module Concern
-    @_included_block: (^(*untyped) -> untyped)?
+    @_included_block: (^(*untyped) -> (:creation_window | :window_days | :relevant? | :badge | :stamp | false | untyped | :prepend_order_marker | nil))?
 
     def self.extended: (Object base) -> untyped | ...
 
