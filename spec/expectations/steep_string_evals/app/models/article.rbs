@@ -4,7 +4,7 @@ class Article
   def content=: (untyped body) -> untyped
   def summary: () -> ActionText::RichText
   def summary?: () -> bool
-  def summary=: (untyped body) -> untyped
+  def summary=: (untyped body) -> untyped?
 
   class AfterContent
     def rich_text_content: () -> ::ActionText::RichText

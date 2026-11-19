@@ -84,7 +84,7 @@ sig/generated/steep_concurrent_runtime/concurrent/map.rb:19:26: [warning] Cannot
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:249:12: [warning] Empty array doesn't have type annotation
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:258:12: [warning] Empty array doesn't have type annotation
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:26:28: [warning] Cannot find the declaration of constant: `TruffleRubyMapBackend`
-sig/generated/steep_concurrent_runtime/concurrent/map.rb:292:6: [warning] Cannot pass a value of type `(^(?untyped, ?untyped, *untyped) -> (::Array[untyped] | ::Integer | nil | void) | nil)` as a block-pass-argument of type `^(untyped, untyped) -> untyped`
+sig/generated/steep_concurrent_runtime/concurrent/map.rb:292:6: [warning] Cannot pass a value of type `(^(?(untyped | K), ?(untyped | V), *untyped) -> (::Array[untyped] | untyped | ::Integer | nil | void) | nil)` as a block-pass-argument of type `^(untyped, untyped) -> untyped`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:29:28: [warning] Cannot find the declaration of constant: `SynchronizedMapBackend`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:327:10: [warning] Empty hash doesn't have type annotation
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:34:26: [warning] Cannot find the declaration of constant: `SynchronizedMapBackend`

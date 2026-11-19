@@ -7,28 +7,28 @@ module Concurrent
       def initialize: (?untyped options) ?{ (self, ::Hash::_Key) -> untyped } -> void
       def []: (untyped key) -> untyped
       def []=: (untyped key, untyped value) -> untyped
-      def compute_if_absent: (untyped key) { () -> untyped } -> untyped
+      def compute_if_absent: (untyped key) { () -> untyped } -> (untyped | Object)
       def replace_pair: (untyped key, untyped old_value, untyped new_value) -> bool
-      def replace_if_exists: (untyped key, untyped new_value) -> untyped
-      def compute_if_present: (untyped key) { (untyped) -> untyped } -> untyped
-      def compute: (untyped key) { (untyped) -> untyped } -> untyped
-      def merge_pair: (untyped key, untyped value) { (untyped) -> untyped } -> untyped
-      def get_and_set: (untyped key, untyped value) -> untyped
+      def replace_if_exists: (untyped key, untyped new_value) -> (untyped | Object | nil)
+      def compute_if_present: (untyped key) { (untyped | Object) -> untyped } -> untyped?
+      def compute: (untyped key) { ((untyped | Object)?) -> untyped } -> untyped?
+      def merge_pair: (untyped key, untyped value) { (untyped | Object) -> untyped } -> untyped?
+      def get_and_set: (untyped key, untyped value) -> (untyped | nil | Object)
       def key?: (untyped key) -> bool
-      def delete: (untyped key) -> untyped
+      def delete: (untyped key) -> untyped?
       def delete_pair: (untyped key, untyped value) -> bool
       def clear: () -> self
       def each_pair: () { (untyped, untyped) -> untyped } -> self
       def size: () -> Integer
-      def get_or_default: (untyped key, Object? default_value) -> untyped
+      def get_or_default: (untyped key, Object? default_value) -> (untyped | nil | Object)
 
       private
 
       def set_backend: ((^(self, untyped) -> untyped)? default_proc) -> ::Hash[untyped, untyped]
-      def initialize_copy: (untyped other) -> self
+      def initialize_copy: ((untyped | instance) other) -> self
       def dupped_backend: () -> ::Hash[untyped, untyped]
-      def pair?: (untyped key, untyped expected_value) -> untyped
-      def store_computed_value: (untyped key, untyped new_value) -> untyped
+      def pair?: (untyped key, untyped expected_value) -> (bool | untyped)
+      def store_computed_value: (untyped key, untyped new_value) -> untyped?
     end
   end
 end
