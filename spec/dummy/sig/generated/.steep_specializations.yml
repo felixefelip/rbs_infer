@@ -11,7 +11,6 @@ methods:
   ActiveSupport::ClassAttribute.redefine:
     "(self, :plural_labels, :__class_attr_plural_labels, true)": '"__class_attr_plural_labels="'
     "(self, :plural_labels, :__class_attr_plural_labels, untyped)": '"__class_attr_plural_labels="'
-    "(singleton(::ActiveSupport::ClassAttribute), :plural_labels, :__class_attr_plural_labels, untyped)": '"__class_attr_plural_labels="'
     "(singleton(::Example110::Options), :plural_labels, :__class_attr_plural_labels, true)": '"__class_attr_plural_labels="'
     ? "(singleton(::Example110::Options), :plural_labels, :__class_attr_plural_labels,
       true) on singleton(::ActiveSupport::ClassAttribute)"
@@ -28,17 +27,18 @@ methods:
     "(self, :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
     "(self, :plural_labels) &-> true": nil
     "(self, :plural_labels) &-> untyped": nil
-    "(singleton(::ActiveSupport::ClassAttribute), :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
-    "(singleton(::ActiveSupport::ClassAttribute), :plural_labels) &-> untyped": nil
     "(singleton(::Example110::Options), :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
     "(singleton(::Example110::Options), :plural_labels) &-> true": nil
-    '(singleton_class(::ActiveSupport::ClassAttribute), "__class_attr_plural_labels=", private: true) &-> untyped': '"__class_attr_plural_labels="'
-    "(singleton_class(::ActiveSupport::ClassAttribute), :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
-    '(singleton_class(::Example110::Options), "__class_attr_plural_labels=", private: true) &-> ::String': '"__class_attr_plural_labels="'
     '(singleton_class(::Example110::Options), "__class_attr_plural_labels=", private: true) &-> untyped': '"__class_attr_plural_labels="'
     "(singleton_class(::Example110::Options), :__class_attr_plural_labels, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example110::Options), :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
   ActiveSupport::Concern#class_methods:
+    "() &-> :declare": ":declare"
+    "() &-> :default_values": ":default_values"
+    "() &-> :has_rich_text": ":has_rich_text"
+    "() &-> :human_name": ":human_name"
+    "() &-> :touch_recently_tagged": ":touch_recently_tagged"
+    "() &-> :vault_key": ":vault_key"
     "() on singleton(::ActionText::Attribute) &-> :has_rich_text": ":has_rich_text"
     "() on singleton(::Example101::Assoc) &-> :declare": ":declare"
     "() on singleton(::Example58::Defaults) &-> :default_values": ":default_values"
@@ -7307,12 +7307,17 @@ methods:
   Example108::ClassAttribute.redefine:
     "(self, :plural_names, :__class_attr_plural_names, untyped)": '"__class_attr_plural_names="'
     "(self, :pluralize_table_names, :__class_attr_pluralize_table_names, untyped)": '"__class_attr_pluralize_table_names="'
-    "(singleton(::Example108::ClassAttribute), :plural_names, :__class_attr_plural_names, untyped)": '"__class_attr_plural_names="'
-    "(singleton(::Example108::ClassAttribute), :pluralize_table_names, :__class_attr_pluralize_table_names, untyped)": '"__class_attr_pluralize_table_names="'
+    ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
+      true) on singleton(::Example108::ClassAttribute) with {::Example108::Settings{@generated_readers:
+      nil}}"
+    : '"__class_attr_plural_names="'
     ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
       true) with {::Example108::Settings{@generated_readers: nil}}"
     : '"__class_attr_plural_names="'
     "(singleton(::Example109::Base), :pluralize_table_names, :__class_attr_pluralize_table_names, true)": '"__class_attr_pluralize_table_names="'
+    ? "(singleton(::Example109::Base), :pluralize_table_names, :__class_attr_pluralize_table_names,
+      true) on singleton(::Example108::ClassAttribute)"
+    : '"__class_attr_pluralize_table_names="'
   Example108::ClassAttribute.redefine_method:
     ? "((singleton(::Example109::Base) | singleton(::Example108::Settings)), (:__class_attr_plural_names
       | :__class_attr_pluralize_table_names), private: true) &-> true"
@@ -7329,27 +7334,13 @@ methods:
     "(self, :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
     "(self, :plural_names) &-> untyped": nil
     "(self, :pluralize_table_names) &-> untyped": nil
-    "(singleton(::Example108::ClassAttribute), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
-    "(singleton(::Example108::ClassAttribute), :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
-    "(singleton(::Example108::ClassAttribute), :plural_names) &-> untyped": nil
-    "(singleton(::Example108::ClassAttribute), :pluralize_table_names) &-> untyped": nil
     "(singleton(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
     "(singleton(::Example108::Settings), :plural_names) &-> true": nil
     "(singleton(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
     "(singleton(::Example109::Base), :pluralize_table_names) &-> true": nil
-    '(singleton_class(::Example108::ClassAttribute), "__class_attr_plural_names=", private: true) &-> untyped': '"__class_attr_plural_names="'
-    '(singleton_class(::Example108::ClassAttribute), "__class_attr_pluralize_table_names=", private: true) &-> untyped': '"__class_attr_pluralize_table_names="'
-    "(singleton_class(::Example108::ClassAttribute), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
-    "(singleton_class(::Example108::ClassAttribute), :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
-    ? '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private:
-      true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
-    : '"__class_attr_plural_names="'
     '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private: true) &-> untyped': '"__class_attr_plural_names="'
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
-    ? '(singleton_class(::Example109::Base), "__class_attr_pluralize_table_names=",
-      private: true) &-> ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=")'
-    : '"__class_attr_pluralize_table_names="'
     '(singleton_class(::Example109::Base), "__class_attr_pluralize_table_names=", private: true) &-> untyped': '"__class_attr_pluralize_table_names="'
     "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> ::TrueClass": "::Symbol"
     "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
@@ -8772,23 +8763,21 @@ methods:
     "() on singleton(::Example45::Baz) &-> :age": "^(*untyped) [self: ::Class] ->
       :age"
   Example47::Foo#banana_class_method:
-    "() on singleton(::Example47::Baz) &-> :age": ":age"
+    "() &-> nil": nil
   Example4::Foo.name=:
     ("John Doe"): '"John Doe"'
     ("John Doe") on singleton(::Example4::Foo): '"John Doe"'
     "(nil) on singleton(::Example4::Foo)": nil
   Example50::Foo#banana_class_method:
-    "() on singleton(::Example50::Baz) &-> :age": ":age"
+    "() &-> nil": nil
   Example51::Foo#banana_class_method:
     "() &-> nil": nil
   Example52::Foo#banana_class_method:
-    "() on singleton(::Example52::Baz) &-> :age": ":age"
+    "() &-> nil": nil
   Example53::Foo#banana_class_method:
-    "() on singleton(::Example53::Baz) &-> :age": ":age"
+    "() &-> nil": nil
   Example54::Foo#banana_class_method:
-    "() on singleton(::Example54::Baz) &-> :age": ":age"
-  Example55::Foo#banana_class_method:
-    "() on singleton(::Example55::Baz) &-> :age": ":age"
+    "() &-> nil": nil
   Example61.normalize:
     ("indexed_by"): '"indexed_by"'
     "(:indexed_by)": '"indexed_by"'
@@ -9436,6 +9425,7 @@ methods:
   IncludedHook::Slots#stamp=:
     ("value"): '"value"'
   Module#extend_object:
+    "(::Module{})": "::Module"
     "(singleton(::Example109::Base)) with {::Example109::Base{@generated_relation_methods: nil}}": singleton(::Example109::Base)
     "(singleton(::Example90::Base)) with {::Example90::Base{@generated_association_methods: nil}}": singleton(::Example90::Base)
     "(singleton(::Example91::Base)) with {::Example91::Base{@generated_association_methods: nil}}": singleton(::Example91::Base)
@@ -10049,8 +10039,6 @@ declarations:
   Example105::Animal#introduce: ("hello, woof" | "hello, meow")
   Example106::Visitor#visit: '"leaf of weight 1"'
   Example107::Canvas#draw: "(5 | 15 | 20)"
-  Example108::ClassAttribute.redefine_method: (::Symbol | nil | "__class_attr_plural_names="
-    | "__class_attr_pluralize_table_names=")
   Example108::Settings.__class_attr_plural_names: "::TrueClass"
   Example108::Settings.generated_readers: singleton(::Example108::Gauge::GeneratedReaders)
   Example109::Associations::Builder::Association.create_reflection: "::Example109::Reflection::HasManyReflection"
@@ -10089,12 +10077,6 @@ declarations:
   Example42::Foo#bazingado: "(:age | nil | ^(*untyped) [self: (singleton(::Example42::Bar)
     | singleton(::Example42::BarOther))] -> :age)"
   Example45::Foo#banana_class_method: "^(*untyped) [self: ::Class] -> :age"
-  Example47::Foo#banana_class_method: ":age"
-  Example50::Foo#banana_class_method: ":age"
-  Example52::Foo#banana_class_method: ":age"
-  Example53::Foo#banana_class_method: ":age"
-  Example54::Foo#banana_class_method: ":age"
-  Example55::Foo#banana_class_method: ":age"
   Example61.normalize: '"indexed_by"'
   Example62::Deferring#keep: "^(*untyped) [self: ::Module] -> :hallmark"
   Example62::Slots#hallmark=: '"value"'

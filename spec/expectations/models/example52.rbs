@@ -1,6 +1,6 @@
 class Example52
   module Foo
-    def banana_class_method: () ?{ (*untyped) -> :age } -> :age
+    def banana_class_method: () { (singleton(Example52::Baz::BananaMethods)) [self: singleton(Example52::Baz::BananaMethods)] -> :age } -> :age
     def included: (Module base) -> Module?
   end
 

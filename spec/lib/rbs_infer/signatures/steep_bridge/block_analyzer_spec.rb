@@ -20,7 +20,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::BlockAnalyzer, :dummy_app do
       RUBY
 
       expect(bridge.forwarded_block_requirements(code, open_signatures: {}, file: nil)["named"])
-        .to eq(required: true, params: ['"token"'])
+        .to eq(required: true, params: ['"token"'], self_type: nil)
     end
 
     # felixefelip/rbs_infer#174. The anonymous forward is the same statement
@@ -38,7 +38,20 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::BlockAnalyzer, :dummy_app do
       RUBY
 
       expect(bridge.forwarded_block_requirements(code, open_signatures: {}, file: nil)["anonymous"])
-        .to eq(required: true, params: ['"token"'])
+        .to eq(required: true, params: ['"token"'], self_type: nil)
+    end
+
+    it "takes the self the callee binds the block to" do
+      code = <<~RUBY
+        class Foo
+          def evaluated(&block)
+            Post.class_eval(&block)
+          end
+        end
+      RUBY
+
+      expect(bridge.forwarded_block_requirements(code, open_signatures: {}, file: nil)["evaluated"])
+        .to include(self_type: "singleton(Post)")
     end
 
     # `&:symbol` builds a proc on the spot; it is not this method's block, so it

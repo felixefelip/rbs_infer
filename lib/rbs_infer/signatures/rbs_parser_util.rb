@@ -412,7 +412,8 @@ module RbsInfer::Signatures
     # the checker can resolve the replay, the two answers alternated instead of
     # accumulating: a stored block never reached a fixed point at all
     # (felixefelip/rbs_infer#209).
-    BLOCK_RETURN = /(?<open>\??\{ \([^)]*\) (?:\[self: .+?\] )?-> )untyped(?<close> \})/
+    BLOCK_PARAMS = /(?<params>\((?:[^()]|\g<params>)*\))/.source
+    BLOCK_RETURN = /(?<open>\??\{ #{BLOCK_PARAMS} (?:\[self: .+?\] )?-> )untyped(?<close> \})/
 
     def replace_block_return_type(method_sig, type)
       return method_sig unless method_sig && usable_type?(type)
@@ -440,8 +441,8 @@ module RbsInfer::Signatures
     # the ivar holding the proc had already picked it up, the binding appeared
     # and vanished on alternating passes, which is a file that never converges
     # (felixefelip/rbs_infer#209).
-    BLOCK_SELF_BINDING = /(?<open>\??\{ \([^)]*\) )(?=->)/
-    BOUND_BLOCK = /\??\{ \([^)]*\) \[self: /
+    BLOCK_SELF_BINDING = /(?<open>\??\{ #{BLOCK_PARAMS} )(?=->)/
+    BOUND_BLOCK = /\??\{ #{BLOCK_PARAMS} \[self: /
 
     def bind_block_self(method_sig, self_type)
       return method_sig unless method_sig && usable_type?(self_type)
