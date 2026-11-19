@@ -1,6 +1,6 @@
 class Example47
   module Foo
-    def banana_class_method: () ?{ (*untyped) -> :age } -> :age
+    def banana_class_method: () { (singleton(Example47::Baz::BananaMethods)) [self: singleton(Example47::Baz::BananaMethods)] -> :age } -> :age
   end
 
   module Baz

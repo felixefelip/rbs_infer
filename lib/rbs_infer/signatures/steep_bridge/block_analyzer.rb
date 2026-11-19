@@ -32,8 +32,10 @@ class RbsInfer::Signatures::SteepBridge
       return {} unless typing
 
       sites = Hash.new { |hash, key| hash[key] = [] }
+      bindings = Hash.new { |hash, key| hash[key] = [] }
       each_forwarded_block(typing) do |send_node, method_key|
         sites[method_key] << callee_block(typing, send_node)
+        bindings[method_key] << callee_block_self_type(typing, send_node)
       end
 
       # Any site that requires a block makes the method require one — calling it
@@ -41,10 +43,11 @@ class RbsInfer::Signatures::SteepBridge
       # sites agree; past that, `nil` widens them back to `*untyped`.
       sites.each_with_object({}) do |(method_key, found), requirements|
         agreed = found.reject { |shape| shape.nil? || shape.is_a?(Optional) }.uniq
+        self_type = bindings[method_key].uniq.then { |bound| bound.first if bound.size == 1 }
         if agreed.any?
-          requirements[method_key] = { required: true, params: agreed_params(agreed) }
+          requirements[method_key] = { required: true, params: agreed_params(agreed), self_type: }
         elsif (optional = found.grep(Optional)).any?
-          requirements[method_key] = { required: false, params: agreed_params(optional.map(&:params).uniq) }
+          requirements[method_key] = { required: false, params: agreed_params(optional.map(&:params).uniq), self_type: }
         end
       end
     end
@@ -297,7 +300,8 @@ class RbsInfer::Signatures::SteepBridge
       decls = call.respond_to?(:method_decls) ? call.method_decls.to_a : []
       return nil if decls.empty?
 
-      bindings = decls.map { |decl| block_self_binding(typing, send_node, decl.method_type.block) }.uniq
+      blocks = decls.filter_map { |decl| decl.method_type.block }
+      bindings = blocks.map { |block| block_self_binding(typing, send_node, block) }.uniq
       bindings.size == 1 ? bindings.first : nil
     rescue StandardError
       nil

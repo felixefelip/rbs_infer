@@ -129,7 +129,12 @@ module RbsInfer::Inference
         @parsed_target.source, file: @parsed_target.path,
                                open_signatures: selected.to_h { |member| [method_key(member), member.signature] }
       )
-      selected.each { |member| member.signature = forwarded_block(member, requirements[method_key(member)]) }
+      selected.each do |member|
+        requirement = requirements[method_key(member)]
+        member.signature = RbsInfer::Signatures::RbsParserUtil.bind_block_self(
+          forwarded_block(member, requirement), requirement&.[](:self_type)
+        )
+      end
     end
 
     # A method that only passes its block to `super` takes none unless the

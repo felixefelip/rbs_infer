@@ -555,9 +555,22 @@ RSpec.describe RbsInfer::Signatures::RbsParserUtil do
                                                        "Post"))
         .to eq("m: () { (String) [self: Array[Foo]] -> Post } -> untyped")
     end
+
+    it "reads a parameter list whose types are themselves parenthesized" do
+      expect(described_class.replace_block_return_type("m: () { (singleton(A::B), ^(Integer) -> String) -> untyped } -> untyped",
+                                                       ":age"))
+        .to eq("m: () { (singleton(A::B), ^(Integer) -> String) -> :age } -> untyped")
+    end
   end
 
   describe ".bind_block_self" do
+    it "binds a clause whose parameter types are themselves parenthesized" do
+      expect(described_class.bind_block_self("m: () ?{ (singleton(A)) -> untyped } -> untyped", "Module"))
+        .to eq("m: () ?{ (singleton(A)) [self: Module] -> untyped } -> untyped")
+      expect(described_class.bind_block_self("m: () ?{ (singleton(A)) [self: X] -> untyped } -> untyped", "Module"))
+        .to eq("m: () ?{ (singleton(A)) [self: X] -> untyped } -> untyped")
+    end
+
     it "binds `self` between the parameter list and the arrow" do
       expect(described_class.bind_block_self("m: () ?{ (*untyped) -> untyped } -> untyped", "singleton(Bar)"))
         .to eq("m: () ?{ (*untyped) [self: singleton(Bar)] -> untyped } -> untyped")
