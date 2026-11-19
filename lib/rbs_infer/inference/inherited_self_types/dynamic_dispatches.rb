@@ -27,11 +27,12 @@ module RbsInfer
         def names_in(file)
           entry = @parse_cache.get(file) or return []
           arguments = name_arguments(entry.result.value)
-          return [] if arguments.empty?
+          written = arguments.map { |argument| literal_names(argument) }
+          return written.flatten if written.all?
 
           types = @steep_bridge.all_expression_types(entry.source, file:)
-          arguments.flat_map do |argument|
-            literal_names(argument) || literal_names_of(types[RbsInfer::Signatures::SteepBridge.prism_expression_key(argument.location)])
+          arguments.zip(written).flat_map do |argument, names|
+            names || literal_names_of(types[RbsInfer::Signatures::SteepBridge.prism_expression_key(argument.location)])
           end
         end
 
