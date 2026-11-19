@@ -49,14 +49,17 @@ module RbsInfer::Project
     # returns the annotated source. `detect_source` is what annotators inspect
     # (the original file); `target_source` is what gets parsed (post-expansion).
     # A no-op (no annotators, no matches) returns `target_source` unchanged.
-    def apply(target_source, detect_source:, path:, module_name:, mixin_index: nil)
+    def apply(target_source, detect_source:, path:, module_name:, invoker_self_types:, mixin_index: nil)
       return target_source if module_name.nil? || module_name.empty?
 
       [module_name, *declared_modules(detect_source)].uniq.product(@annotators).each do |name, annotator|
-        entries_from(annotator, path: path, module_name: name,
-                                source: detect_source, mixin_index: mixin_index).each do |entry|
+        entries_from(annotator, path: path, module_name: name, source: detect_source, mixin_index: mixin_index,
+                                invoker_self_types: invoker_self_types).each do |entry|
           target_source = Steep::Source::ModuleSelfTypes.inject(
             target_source, annotations: entry["annotations"], anchor: entry["anchor"]
+          )
+          target_source = Steep::Source::ModuleSelfTypes.inject_defs(
+            target_source, defs: entry["defs"], anchor: entry["anchor"]
           )
         end
       end
@@ -91,7 +94,8 @@ module RbsInfer::Project
       anchor = module_name.split("::").last
 
       type = @annotators.filter_map do |annotator|
-        entries_from(annotator, path: path, module_name: module_name, source: source, mixin_index: mixin_index)
+        entries_from(annotator, path: path, module_name: module_name, source: source, mixin_index: mixin_index,
+                                invoker_self_types: nil)
           .select { |entry| entry["anchor"] == anchor }
           .flat_map { |entry| entry["annotations"] }
           .filter_map { |line| line[INSTANCE_ANNOTATION, :type] }
@@ -115,20 +119,18 @@ module RbsInfer::Project
       end.compact
     end
 
-    # `mixin_index` is passed only to annotators that ask for it, so adding it
-    # to the contract does not break one written against the older three
-    # (felixefelip/rbs_infer#163).
-    def entries_from(annotator, path:, module_name:, source:, mixin_index:)
-      if accepts_mixin_index?(annotator)
-        annotator.self_type_entries(path: path, module_name: module_name, source: source, mixin_index: mixin_index)
-      else
-        annotator.self_type_entries(path: path, module_name: module_name, source: source)
-      end
+    # `mixin_index` and `invoker_self_types` are passed only to annotators that
+    # ask for them, so adding one to the contract does not break an annotator
+    # written against the older three (felixefelip/rbs_infer#163).
+    def entries_from(annotator, path:, module_name:, source:, mixin_index:, invoker_self_types:)
+      optional = { mixin_index: mixin_index, invoker_self_types: invoker_self_types }
+                 .select { |name, _| accepts?(annotator, name) }
+      annotator.self_type_entries(path: path, module_name: module_name, source: source, **optional)
     end
 
-    def accepts_mixin_index?(annotator)
+    def accepts?(annotator, keyword)
       annotator.method(:self_type_entries).parameters.any? do |kind, name|
-        name == :mixin_index || kind == :keyrest
+        name == keyword || kind == :keyrest
       end
     end
   end

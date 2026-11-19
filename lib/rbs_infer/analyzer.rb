@@ -125,7 +125,7 @@ module RbsInfer
         source = @corpus.inherited_self_types.inject(
           RbsInfer::Project::SelfTypeAnnotators.apply(
             source, detect_source: original_source, path: @target_file, module_name: @target_class,
-                    mixin_index: mixin_index
+                    mixin_index: mixin_index, invoker_self_types: @corpus.invoker_self_types
           )
         )
       end
