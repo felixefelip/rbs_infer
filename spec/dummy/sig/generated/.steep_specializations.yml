@@ -9449,6 +9449,11 @@ methods:
       ivars:
         "@defaults": "[]"
         "@map": "{  }"
+  I18n::Locale::Fallbacks#[]:
+    "(:en) with {@defaults: [], @map: {  }}": "(untyped | [:en])"
+  I18n::Locale::Fallbacks#compute:
+    "(:en) with {@defaults: [], @map: {  }}": "[:en]"
+    "(nil, false, ::Array[untyped]) with {@defaults: [], @map: {  }}": "[]"
   I18n::Locale::Fallbacks#defaults=:
     "([]) with {@__rbs_infer__default_proc: nil, @defaults: nil, @map: {  }}": "[]"
   I18n::Locale::Fallbacks.new:
@@ -10197,6 +10202,7 @@ declarations:
   Example99::Runner#call_num2: '10'
   Example99::Runner#change_num2: '30'
   I18n.fallbacks: "::I18n::Locale::Fallbacks"
+  I18n::Locale::Fallbacks#[]: "(untyped | [:en] | ::Array[untyped])"
   IncludedHook::Slots#badge=: '"value"'
   IncludedHook::Slots#slot=: '"value"'
   IncludedHook::Slots#stamp=: '"value"'
@@ -10512,9 +10518,13 @@ receivers:
   - singleton(::Column)
   app/models/example.rb:33:11:
   - "::Column"
+  app/models/example.rb:35:11:
+  - "::Column"
   app/models/example.rb:35:17:
   - "::Board"
   app/models/example.rb:37:11:
+  - "::Column"
+  app/models/example.rb:9:21:
   - "::Column"
   app/models/example.rb:9:27:
   - "::Board"
@@ -10892,6 +10902,8 @@ receivers:
   - "::Hash[untyped, untyped]"
   app/models/example114.rb:19:22:
   - singleton(::Hash)
+  app/models/example114.rb:19:54:
+  - "::Proc"
   app/models/example114.rb:31:26:
   - singleton(::Example114)
   app/models/example114.rb:31:48:
@@ -11060,7 +11072,7 @@ receivers:
   app/models/example13.rb:67:22:
   - singleton(::Example13Viewer)
   app/models/example13.rb:77:13:
-  - "(^(:html) -> true | nil)"
+  - "(::Proc | nil)"
   app/models/example13.rb:88:13:
   - "::Example13::Guarded"
   app/models/example13.rb:89:8:
@@ -11132,13 +11144,13 @@ receivers:
   app/models/example17.rb:100:4:
   - "::Example17"
   app/models/example17.rb:26:10:
-  - ^("token") -> "TOKEN"
+  - "::Proc"
   app/models/example17.rb:31:10:
-  - ^("token") -> untyped
+  - "::Proc"
   app/models/example17.rb:44:12:
   - "::Example17"
   app/models/example17.rb:45:10:
-  - ^("EXAMPLE", 7) -> untyped
+  - "::Proc"
   app/models/example17.rb:62:4:
   - "::Example17"
   app/models/example17.rb:67:4:
@@ -11184,7 +11196,7 @@ receivers:
   app/models/example18.rb:97:17:
   - "::String"
   app/models/example18.rb:98:12:
-  - "^(::String) -> (::Example18::User | nil)"
+  - "::Proc"
   app/models/example19.rb:100:4:
   - "::Example19"
   app/models/example19.rb:101:16:
@@ -11200,7 +11212,7 @@ receivers:
   app/models/example19.rb:116:17:
   - "::String"
   app/models/example19.rb:117:12:
-  - "^(::String) -> (::Example19::User | nil)"
+  - "::Proc"
   app/models/example19.rb:125:14:
   - singleton(::Example19::Responder)
   app/models/example19.rb:129:9:
@@ -11256,7 +11268,7 @@ receivers:
   app/models/example20.rb:120:17:
   - "::String"
   app/models/example20.rb:121:12:
-  - "^(::String) -> (::Example20::User | nil)"
+  - "::Proc"
   app/models/example20.rb:126:14:
   - singleton(::Example20::Responder)
   app/models/example20.rb:130:9:
@@ -11373,6 +11385,8 @@ receivers:
   - singleton(::Example28::Bar)
   app/models/example28.rb:44:6:
   - "::Example28::Bar"
+  app/models/example28.rb:6:34:
+  - singleton(::Example28::Baz)
   app/models/example29.rb:15:4:
   - singleton(::Example29::Baz)
   app/models/example29.rb:17:4:
@@ -11395,6 +11409,8 @@ receivers:
   - singleton(::Example29::BarOther)
   app/models/example29.rb:68:6:
   - "::Example29::BarOther"
+  app/models/example29.rb:6:34:
+  - "(singleton(::Example29::Baz) | singleton(::Example29::BazOther))"
   app/models/example3.rb:100:8:
   - singleton(::Example3::Foo)
   app/models/example3.rb:101:13:
@@ -11517,6 +11533,8 @@ receivers:
   - singleton(::Example31::Bar)
   app/models/example31.rb:35:4:
   - singleton(::Example31::Bar)
+  app/models/example31.rb:6:34:
+  - singleton(::Example31::Baz)
   app/models/example32.rb:17:4:
   - singleton(::Example32::Baz)
   app/models/example32.rb:19:4:
@@ -12651,18 +12669,24 @@ receivers:
   - "::Example97::Foo"
   app/models/example97.rb:23:17:
   - "{  }"
+  app/models/example97.rb:23:6:
+  - "::Example97::Runner"
   app/models/example97.rb:24:6:
   - "::Example97::Runner"
   app/models/example97.rb:25:10:
   - "::Example97::Foo"
   app/models/example97.rb:25:17:
   - "{ :bar => (10 | untyped) }"
+  app/models/example97.rb:25:6:
+  - "::Example97::Runner"
   app/models/example97.rb:29:10:
   - "::Example97::Foo"
   app/models/example97.rb:29:17:
   - "::Hash[untyped, untyped]"
   app/models/example97.rb:29:24:
   - '10'
+  app/models/example97.rb:29:6:
+  - "::Example97::Runner"
   app/models/example98.rb:13:13:
   - "{  }"
   app/models/example98.rb:14:6:
@@ -12715,6 +12739,8 @@ receivers:
   - "::Example99::Runner"
   app/models/example99.rb:33:10:
   - "::Example99::Foo"
+  app/models/example99.rb:33:6:
+  - "::Example99::Runner"
   app/models/example99.rb:34:10:
   - "::Example99::Foo"
   app/models/example99.rb:34:17:
@@ -12723,10 +12749,14 @@ receivers:
   - "(untyped | nil)"
   app/models/example99.rb:34:31:
   - untyped
+  app/models/example99.rb:34:6:
+  - "::Example99::Runner"
   app/models/example99.rb:38:10:
   - "::Example99::Foo"
   app/models/example99.rb:38:17:
   - "::Hash[untyped, untyped]"
+  app/models/example99.rb:38:6:
+  - "::Example99::Runner"
   app/models/example99.rb:42:10:
   - "::Example99::Foo"
   app/models/example99.rb:42:17:
@@ -12734,6 +12764,8 @@ receivers:
   app/models/example99.rb:42:23:
   - "(untyped | nil)"
   - "{ :num1 => 5, :num2 => 10 }"
+  app/models/example99.rb:42:6:
+  - "::Example99::Runner"
   app/models/example99.rb:46:10:
   - "::Example99::Foo"
   app/models/example99.rb:46:17:
@@ -12741,6 +12773,8 @@ receivers:
   app/models/example99.rb:46:23:
   - "(untyped | nil)"
   - "{ :num1 => 5, :num2 => 10 }"
+  app/models/example99.rb:46:6:
+  - "::Example99::Runner"
   app/models/example99.rb:50:10:
   - "::Example99::Foo"
   app/models/example99.rb:50:17:
@@ -12748,6 +12782,8 @@ receivers:
   app/models/example99.rb:50:23:
   - "(untyped | nil)"
   - "{ :num1 => 5, :num2 => 10 }"
+  app/models/example99.rb:50:33:
+  - "::Example99::Runner"
   app/models/example99.rb:50:37:
   - "::Example99::Foo"
   app/models/example99.rb:50:44:
@@ -12755,6 +12791,8 @@ receivers:
   app/models/example99.rb:50:50:
   - "(untyped | nil)"
   - "{ :num1 => 5, :num2 => 10 }"
+  app/models/example99.rb:50:6:
+  - "::Example99::Runner"
   app/models/included_hook.rb:112:2:
   - singleton(::IncludedHook)
   app/models/included_hook.rb:113:2:
@@ -13111,6 +13149,8 @@ receivers:
   - untyped
   app/services/email_notifier.rb:13:15:
   - "(::User | nil)"
+  app/services/email_notifier.rb:14:12:
+  - "::EmailNotifier"
   app/services/email_notifier.rb:16:20:
   - singleton(::Time)
   app/services/event_reporter.rb:8:17:
@@ -13133,6 +13173,8 @@ receivers:
   - "::PostPublisher"
   app/services/post_publisher.rb:15:25:
   - "::Post"
+  app/services/post_publisher.rb:15:4:
+  - "::PostPublisher"
   app/services/post_publisher.rb:15:45:
   - "::PostPublisher"
   app/services/post_publisher.rb:20:14:
@@ -13203,20 +13245,30 @@ receivers:
   - "::TagDestroy"
   app/services/tag_destroy.rb:69:27:
   - "::Nokogiri::XML::NodeSet"
+  app/services/tag_destroy.rb:69:4:
+  - "::TagDestroy"
   app/services/tag_destroy.rb:75:27:
   - "::Nokogiri::XML::NodeSet"
+  app/services/tag_destroy.rb:75:4:
+  - "::TagDestroy"
   app/services/tag_destroy.rb:7:15:
   - singleton(::Tag)
   app/services/tag_destroy.rb:81:27:
   - "::Nokogiri::XML::NodeSet"
+  app/services/tag_destroy.rb:81:4:
+  - "::TagDestroy"
   app/services/tag_destroy.rb:82:15:
   - singleton(::ParseXml)
   app/services/tag_destroy.rb:82:30:
   - "::ParseXml"
   app/services/tag_destroy.rb:91:27:
   - "::Nokogiri::XML::NodeSet"
+  app/services/tag_destroy.rb:91:4:
+  - "::TagDestroy"
   app/services/tag_destroy.rb:97:27:
   - "::Nokogiri::XML::NodeSet"
+  app/services/tag_destroy.rb:97:4:
+  - "::TagDestroy"
   app/services/tag_destroy.rb:9:4:
   - "::TagDestroy"
   app/services/widget_auditor.rb:29:4:
@@ -13651,8 +13703,12 @@ receivers:
   - "(::String | untyped)"
   sig/generated/steep_activesupport_runtime/inflector.rb:317:28:
   - "(::Object & ::ActiveSupport::Inflector)"
+  sig/generated/steep_activesupport_runtime/inflector.rb:317:40:
+  - "(::ActiveSupport::Inflector::Inflections | untyped | ::ActiveSupport::Inflector::Inflections::Uncountables[untyped])"
   sig/generated/steep_activesupport_runtime/inflector.rb:319:15:
   - "(::Object & ::ActiveSupport::Inflector)"
+  sig/generated/steep_activesupport_runtime/inflector.rb:319:27:
+  - "(::ActiveSupport::Inflector::Inflections | untyped | ::ActiveSupport::Inflector::Inflections::Uncountables[untyped])"
   sig/generated/steep_activesupport_runtime/inflector.rb:319:35:
   - untyped
   - "{  }"
@@ -13661,6 +13717,8 @@ receivers:
   - "::String"
   sig/generated/steep_activesupport_runtime/inflector.rb:321:51:
   - "(::Object & ::ActiveSupport::Inflector)"
+  sig/generated/steep_activesupport_runtime/inflector.rb:321:63:
+  - "(::ActiveSupport::Inflector::Inflections | untyped | ::ActiveSupport::Inflector::Inflections::Uncountables[untyped])"
   sig/generated/steep_activesupport_runtime/inflector.rb:321:71:
   - untyped
   - "{  }"
@@ -13669,6 +13727,8 @@ receivers:
   - "::String"
   sig/generated/steep_activesupport_runtime/inflector.rb:325:22:
   - "(::Object & ::ActiveSupport::Inflector)"
+  sig/generated/steep_activesupport_runtime/inflector.rb:325:34:
+  - "(::ActiveSupport::Inflector::Inflections | untyped | ::ActiveSupport::Inflector::Inflections::Uncountables[untyped])"
   sig/generated/steep_activesupport_runtime/inflector.rb:325:42:
   - untyped
   - "{  }"
@@ -13678,6 +13738,8 @@ receivers:
   - "(::String | untyped)"
   sig/generated/steep_activesupport_runtime/inflector.rb:337:24:
   - "(::Object & ::ActiveSupport::Inflector)"
+  sig/generated/steep_activesupport_runtime/inflector.rb:337:44:
+  - "(::ActiveSupport::Inflector::Inflections | untyped | ::ActiveSupport::Inflector::Inflections::Uncountables[untyped])"
   sig/generated/steep_activesupport_runtime/inflector.rb:337:57:
   - untyped
   sig/generated/steep_activesupport_runtime/inflector.rb:350:29:
@@ -13994,6 +14056,8 @@ receivers:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:141:28:
   - singleton(::Hash)
+  sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:141:57:
+  - "::Proc"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:150:8:
   - "::Concurrent::Map"
   sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:161:41:
@@ -14050,6 +14114,8 @@ receivers:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:161:64:
   - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:162:24:
+  - "::Proc"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:192:26:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:194:12:
@@ -14100,10 +14166,15 @@ receivers:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:65:
   - "::Integer"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:344:85:
+  - "(::Proc | nil)"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:351:6:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:357:6:
   - "::Concurrent::Map[untyped, untyped]"
+  sig/generated/steep_concurrent_runtime/concurrent/map.rb:362:11:
+  - "(untyped | ::Concurrent::Hash[untyped, untyped] | ::Concurrent::Map[untyped,
+    untyped])"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:362:34:
   - "::Concurrent::Map[untyped, untyped]"
   sig/generated/steep_concurrent_runtime/concurrent/map.rb:368:36:
@@ -14138,8 +14209,7 @@ receivers:
   sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:31:16:
   - singleton(::ActionController::HttpAuthentication::Token)
   sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:44:26:
-  - "^(::String, (::ActiveSupport::HashWithIndifferentAccess[untyped, untyped] | nil))
-    -> untyped"
+  - "::Proc"
   sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:50:26:
   - untyped
   sig/generated/steep_controller_runtime/action_controller/metal/http_authentication.rb:51:19:
@@ -14439,9 +14509,9 @@ receivers:
   sig/generated/steep_current_runtime/current.rb:72:38:
   - singleton(::Current)
   sig/generated/steep_current_runtime/current.rb:80:11:
-  - "(^() -> untyped | nil)"
+  - "(::Proc | nil)"
   sig/generated/steep_current_runtime/current.rb:88:11:
-  - "(^() -> (::String | nil) | nil)"
+  - "(::Proc | nil)"
   sig/generated/steep_devise_runtime/devise_scoped_helpers.rb:18:31:
   - untyped
   sig/generated/steep_devise_runtime/devise_scoped_helpers.rb:22:11:
@@ -14468,6 +14538,8 @@ receivers:
   - "::Class"
   sig/generated/steep_ruby_runtime/hash.rb:11:6:
   - "::Hash[untyped, untyped]"
+  sig/generated/steep_ruby_runtime/hash.rb:27:26:
+  - "::Proc"
   sig/generated/steep_ruby_runtime/module.rb:14:4:
   - "::Module"
   sig/generated/steep_ruby_runtime/module.rb:14:87:
@@ -32856,6 +32928,15 @@ exits:
     "(:en) with {@defaults: [], @map: {  }}":
       ivars: {}
   I18n::Locale::Fallbacks#compute:
+    "(::Symbol) with {@defaults: [], @map: {  }}":
+      ivars:
+        "@defaults": "[]"
+        "@map": "{  }"
+    "(:en) with {@defaults: [], @map: {  }}":
+      ivars:
+        "@defaults": "[]"
+        "@map": "{  }"
+      keeps_self: true
     "(bot, false) with {@__rbs_infer__default_proc: nil, @defaults: nil, @map: {  }}":
       ivars:
         "@__rbs_infer__default_proc": nil
@@ -32866,6 +32947,15 @@ exits:
         "@__rbs_infer__default_proc": nil
         "@map": "{  }"
         "@defaults": nil
+    "(bot, false, ::Array[untyped]) with {@defaults: [], @map: {  }}":
+      ivars:
+        "@defaults": "[]"
+        "@map": "{  }"
+    "(nil, false, ::Array[untyped]) with {@defaults: [], @map: {  }}":
+      ivars:
+        "@defaults": "[]"
+        "@map": "{  }"
+      keeps_self: true
   I18n::Locale::Fallbacks#defaults=:
     "([]) with {@__rbs_infer__default_proc: nil, @defaults: nil, @map: {  }}":
       ivars:
