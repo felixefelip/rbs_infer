@@ -1,14 +1,22 @@
 module Example109
   module Reflection
+    def self.add_reflection: ((singleton(Example109::Base)) ar, :comments name, Example109::Reflection::HasManyReflection reflection) -> { comments: Example109::Reflection::HasManyReflection }
     def self.create: (untyped macro, :comments name, Proc scope, {  } options, singleton(Example109::Base) ar) -> Example109::Reflection::HasManyReflection
     def self.reflection_class_for: (untyped macro) -> singleton(Example109::Reflection::HasManyReflection)
+  end
+
+  module Reflection::ClassMethods
+    @__reflections: nil
+
+    def _reflect_on_association: (:comments association) -> Example109::Reflection::HasManyReflection
+    def clear_reflections_cache: () -> nil
   end
 
   module Associations
   end
 
   module Associations::ClassMethods
-    def has_records: (:comments name, ?untyped scope) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
+    def has_records: (:comments name, ?untyped scope) ?{ (*untyped) -> untyped } -> { comments: Example109::Reflection::HasManyReflection }
   end
 
   module Associations::Builder
@@ -32,6 +40,9 @@ end
 module Example109
   module Reflection
     class MacroReflection < AbstractReflection
+      @klass: singleton(::Comment)?
+      @class_name: "Comment"?
+
       attr_reader name: :comments
       attr_reader scope: Proc
       attr_reader options: {  }
@@ -39,9 +50,14 @@ module Example109
       attr_reader plural_name: String
 
       def initialize: (:comments name, Proc scope, {  } options, singleton(Example109::Base) active_record) -> void
+      def class_name: () -> "Comment"
+      def klass: () -> singleton(::Comment)
+      def _klass: ("Comment" class_name) -> (singleton(::Comment) | untyped)
+      def compute_class: (String name) -> untyped
 
       private
 
+      def derive_class_name: () -> String
       def normalize_options: ({  } options) -> { }
     end
   end
@@ -65,11 +81,15 @@ module Example109
       attr_reader type: String
       attr_reader foreign_type: "comments_type"
 
+      def compute_class: (String name) -> untyped
       def initialize: (:comments name, Proc scope, {  } options, singleton(Example109::Base) active_record) -> void
+      def collection?: () -> false
+      def polymorphic?: () -> nil
 
       private
 
       def ensure_option_not_given_as_class!: (:class_name option_name) -> untyped
+      def derive_class_name: () -> "Comment"
     end
   end
 end
@@ -79,6 +99,7 @@ module Example109
     class HasManyReflection < AssociationReflection
       def macro: () -> :has_many
       def collection?: () -> true
+      def association_class: () -> singleton(Example109::Associations::HasManyAssociation)
     end
   end
 end
@@ -112,13 +133,54 @@ module Example109
 end
 
 module Example109
-  module Associations
-    class HasManyAssociation
-      @owner: Example109::Post
-      @name: :comments
+  class AssociationNotFoundError < StandardError
+    attr_reader record: Example109::Post
+    attr_reader association_name: :comments
 
-      def initialize: (Example109::Post owner, :comments name) -> void
-      def reader: () -> nil
+    def initialize: (?Example109::Post record, ?:comments association_name) -> void
+  end
+end
+
+module Example109
+  module Associations
+    class CollectionProxy
+      def self.create: (singleton(::Comment) klass, Example109::Associations::CollectionAssociation association) -> Example109::Associations::CollectionProxy
+
+      def initialize: (untyped klass, untyped association) -> void
+    end
+  end
+end
+
+module Example109
+  module Associations
+    class Association
+      @owner: Example109::Post
+
+      attr_reader reflection: Example109::Reflection::HasManyReflection
+
+      def initialize: (Example109::Post owner, Example109::Reflection::HasManyReflection reflection) -> void
+      def klass: () -> singleton(::Comment)
+
+      private
+
+      def ensure_klass_exists!: () -> singleton(::Comment)
+    end
+  end
+end
+
+module Example109
+  module Associations
+    class CollectionAssociation < Association
+      @proxy: Example109::Associations::CollectionProxy?
+
+      def reader: () -> Example109::Associations::CollectionProxy
+    end
+  end
+end
+
+module Example109
+  module Associations
+    class HasManyAssociation < CollectionAssociation
       def writer: (untyped records) -> nil
       def ids_reader: () -> nil
       def ids_writer: (untyped ids) -> nil
@@ -176,16 +238,40 @@ end
 
 module Example109
   class Base
+    @association_cache: Hash[untyped, untyped]
+
     extend Core::ClassMethods
+    extend Reflection::ClassMethods
     extend Associations::ClassMethods
 
     def self.pluralize_table_names: () -> ::TrueClass
+    def self._reflections: () -> { comments: Example109::Reflection::HasManyReflection }
+    def self._reflections=: ({ comments: Example109::Reflection::HasManyReflection } value) -> { comments: Example109::Reflection::HasManyReflection }
+    def self.inherited: (untyped subclass) -> Concurrent::Map[untyped, untyped]
+    def self.compute_type: (String type_name) -> untyped
 
+    def initialize: () -> void
     def association: (:comments name) -> Associations::HasManyAssociation
+
+    private
+
+    def association_instance_get: (:comments name) -> untyped
+    def association_instance_set: (:comments name, Example109::Associations::HasManyAssociation association) -> Associations::HasManyAssociation
+  end
+end
+
+module Example109
+  class Comment < Base
   end
 end
 
 module Example109
   class Post < Base
+  end
+end
+
+module Example109
+  class Feed
+    def self.comments: () -> Example109::Associations::CollectionProxy
   end
 end

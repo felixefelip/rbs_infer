@@ -227,9 +227,11 @@ otherwise stop the call site's literals from reaching the body.
 
 The same generator writes `class_attribute.rb` (`Class#class_attribute` and its
 `ActiveSupport::ClassAttribute` store) and `inflector.rb`: `String#singularize`,
-the `Inflector` methods it runs, the `Inflections` store they read and the
-English rules ActiveSupport loads into it, so a macro that names a method
-`"#{name.to_s.singularize}_ids"` is folded by the gem's own rules. Every `def`
+`camelize`, `demodulize`, `constantize` and `safe_constantize`, the `Inflector`
+methods they run, the `Inflections` store they read and the English rules
+ActiveSupport loads into it, so a macro that names a method
+`"#{name.to_s.singularize}_ids"` is folded by the gem's own rules, and Active
+Record's `compute_type` finds a model class the way the gem does. Every `def`
 in `inflector.rb` is marked `# @rbs_infer |...`, since gem_rbs_collection
 declares them all.
 

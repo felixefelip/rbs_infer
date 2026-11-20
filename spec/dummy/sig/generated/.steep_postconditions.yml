@@ -620,17 +620,33 @@ postconditions:
   effects:
     may_write:
     - "@generated_readers"
+- class: Example109::AssociationNotFoundError
+  method: initialize
+  effects:
+    may_write:
+    - "@association_name"
+    - "@record"
+- class: Example109::Associations::Association
+  method: initialize
+  effects:
+    may_write:
+    - "@owner"
+    - "@reflection"
 - class: Example109::Associations::Builder::Association
   method: extensions=
   effects:
     may_write:
     - "@extensions"
-- class: Example109::Associations::HasManyAssociation
+- class: Example109::Associations::CollectionAssociation
+  method: reader
+  effects:
+    may_write:
+    - "@proxy"
+- class: Example109::Base
   method: initialize
   effects:
     may_write:
-    - "@name"
-    - "@owner"
+    - "@association_cache"
 - class: Example109::Core::ClassMethods
   method: generated_relation_methods
   effects:
@@ -655,15 +671,36 @@ postconditions:
     - "@foreign_type"
     - "@join_table"
     - "@type"
+- class: Example109::Reflection::ClassMethods
+  method: clear_reflections_cache
+  effects:
+    may_write:
+    - "@__reflections"
+- class: Example109::Reflection::MacroReflection
+  method: class_name
+  effects:
+    may_write:
+    - "@class_name"
 - class: Example109::Reflection::MacroReflection
   method: initialize
+  unconditional:
+    ivars:
+      "@klass": nil
+    self: "::Example109::Reflection::MacroReflection & ::Example109::Reflection::MacroReflection::AfterInitialize"
   effects:
     may_write:
     - "@active_record"
+    - "@klass"
     - "@name"
     - "@options"
     - "@plural_name"
     - "@scope"
+- class: Example109::Reflection::MacroReflection
+  method: klass
+  effects:
+    may_write:
+    - "@class_name"
+    - "@klass"
 - class: Example109::Reflection::ThroughReflection
   method: initialize
   effects:

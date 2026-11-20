@@ -9,8 +9,15 @@ class Example108::Settings
 end
 
 class Example109::Base
+  def self.__class_attr__reflections: () -> {  }
+  def self.__class_attr__reflections=: (untyped new_value) -> untyped
   def self.__class_attr_pluralize_table_names: () -> ::TrueClass
   def self.__class_attr_pluralize_table_names=: (untyped new_value) -> untyped
+end
+
+class Example109::Post
+  def self.__class_attr__reflections: () -> { :comments => ::Example109::Reflection::HasManyReflection }
+  def self.__class_attr__reflections=: (untyped new_value) -> untyped
 end
 
 class Example110::Options
