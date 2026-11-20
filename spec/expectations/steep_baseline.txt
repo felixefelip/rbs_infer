@@ -4,9 +4,19 @@ app/models/concerns/test/filtrable.rb:16:13: [error] Type `(::Post & ::Test::Fil
 app/models/concerns/test/filtrable.rb:16:4: [error] Type `(::Post & ::Test::Filtrable)` does not have method `asdasd`
 app/models/eval_reopen.rb:61:6: [warning] Method `::Object#by_instance_eval` is not declared in RBS
 app/models/example103.rb:54:10: [error] Cannot allow method body have type `:a` because declared as type `:x`
-app/models/example109.rb:204:39: [warning] The method cannot be called with a block
-app/models/example109.rb:214:33: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^ [self: self] -> U(_)`
-app/models/example109.rb:282:35: [warning] Cannot pass a value of type `^(*untyped) -> untyped` as a block-pass-argument of type `(^(::Module) [self: ::Module] -> void | nil)`
+app/models/example108.rb:27:8: [error] Cannot allow method body have type `(::TrueClass | ::Hash[untyped, untyped])` because declared as type `::TrueClass`
+app/models/example108.rb:27:8: [error] Cannot allow method body have type `(::TrueClass | ::Hash[untyped, untyped])` because declared as type `{  }`
+app/models/example108.rb:27:8: [error] Cannot allow method body have type `(::TrueClass | ::Hash[untyped, untyped])` because declared as type `{ :comments => ::Example109::Reflection::HasManyReflection }`
+app/models/example109.rb:155:24: [error] Type `(::String | nil)` does not have method `match?`
+app/models/example109.rb:262:44: [error] Cannot pass a value of type `self` as an argument of type `singleton(::Example109::Base)`
+app/models/example109.rb:263:34: [error] Cannot pass a value of type `self` as an argument of type `singleton(::Example109::Base)`
+app/models/example109.rb:299:49: [error] Cannot pass a value of type `self` as an argument of type `::Example109::Associations::HasManyAssociation`
+app/models/example109.rb:30:62: [error] Cannot pass a value of type `::Hash[:comments, ::Example109::Reflection::HasManyReflection]` as an argument of type `::hash[bot, bot]`
+app/models/example109.rb:331:39: [warning] The method cannot be called with a block
+app/models/example109.rb:341:33: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^ [self: self] -> U(_)`
+app/models/example109.rb:409:35: [warning] Cannot pass a value of type `^(*untyped) -> untyped` as a block-pass-argument of type `(^(::Module) [self: ::Module] -> void | nil)`
+app/models/example109.rb:484:91: [warning] Empty hash doesn't have type annotation
+app/models/example109.rb:502:25: [warning] Empty array doesn't have type annotation
 app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
 app/models/example21.rb:96:29: [error] Type `(::Example21::Ticket | nil)` does not have method `holder`
@@ -78,7 +88,8 @@ sig/generated/steep_activesupport_runtime/i18n.rb:194:47: [error] Unexpected pos
 sig/generated/steep_activesupport_runtime/i18n.rb:194:75: [error] Type `(::Array[::String] | nil)` does not have method `join`
 sig/generated/steep_activesupport_runtime/i18n.rb:200:46: [error] `parents` requires `self.parent` to be non-nil here
 sig/generated/steep_activesupport_runtime/i18n.rb:205:55: [error] Type `(::I18n::Locale::Tag::Simple | nil)` does not have method `parents`
-sig/generated/steep_activesupport_runtime/inflector.rb:325:57: [error] Type `(::String | nil)` does not have method `capitalize!`
+sig/generated/steep_activesupport_runtime/inflector.rb:326:57: [error] Type `(::String | nil)` does not have method `capitalize!`
+sig/generated/steep_activesupport_runtime/inflector.rb:354:53: [error] Type `::LoadError` does not have method `original_message`
 sig/generated/steep_concurrent_runtime/concurrent/collection/map/non_concurrent_map_backend.rb:22:8: [error] Type `::Concurrent::Collection::NonConcurrentMapBackend` does not have method `validate_options_hash!`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:19:26: [warning] Cannot find the declaration of constant: `JRubyMapBackend`
 sig/generated/steep_concurrent_runtime/concurrent/map.rb:249:12: [warning] Empty array doesn't have type annotation
@@ -107,3 +118,4 @@ sig/generated/steep_string_evals/app/models/post.rb:12:42: [error] Type `(::User
 sig/generated/steep_string_evals/app/models/post.rb:13:22: [error] Type `::Post` does not have method `tag`
 sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:148: [warning] Cannot find the declaration of constant: `DelegationError`
 sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:42: [error] Type `(::User | nil)` does not have method `updated_at`
+sig/rbs_infer/app/models/example109.rbs:44:19: [error] Instance variable cannot have different type with parents: ("Comment" | nil) <=> nil

@@ -73,13 +73,27 @@ app/models/example109.rb:
   - anchor: ClassMethods
     annotations:
     - "# @type instance: singleton(Example109::Base)"
+  - anchor: ClassMethods
+    annotations:
+    - "# @type instance: singleton(Example109::Base)"
   - anchor: MacroReflection
     defs:
       initialize: Example109::Reflection::AssociationReflection
+      class_name: Example109::Reflection::HasManyReflection
+      klass: Example109::Reflection::HasManyReflection
+      _klass: Example109::Reflection::HasManyReflection
+      compute_class: Example109::Reflection::HasManyReflection
+      derive_class_name: Example109::Reflection::HasManyReflection
       normalize_options: Example109::Reflection::AssociationReflection
+  - anchor: AssociationReflection
+    defs:
+      compute_class: Example109::Reflection::HasManyReflection
+      derive_class_name: Example109::Reflection::HasManyReflection
   - anchor: Base
     defs:
       association: Example109::Post
+      association_instance_get: Example109::Post
+      association_instance_set: Example109::Post
 app/models/example109/core.rb:
   modules:
   - anchor: ClassMethods

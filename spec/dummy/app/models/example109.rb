@@ -24,6 +24,12 @@
 module Example109
   module Reflection
     class << self
+      def add_reflection(ar, name, reflection)
+        ar.clear_reflections_cache
+        name = name.to_sym
+        ar._reflections = ar._reflections.except(name).merge!(name => reflection)
+      end
+
       def create(macro, name, scope, options, ar)
         reflection = reflection_class_for(macro).new(name, scope, options, ar)
         options[:through] ? ThroughReflection.new(reflection) : reflection
@@ -44,6 +50,16 @@ module Example109
             raise "Unsupported Macro: #{macro}"
           end
         end
+    end
+
+    module ClassMethods
+      def _reflect_on_association(association)
+        _reflections[association.to_sym]
+      end
+
+      def clear_reflections_cache
+        @__reflections = nil
+      end
     end
 
     class AbstractReflection
@@ -78,7 +94,31 @@ module Example109
                             name.to_s.pluralize : name.to_s
       end
 
+      def class_name
+        @class_name ||= -(options[:class_name] || derive_class_name).to_s
+      end
+
+      def klass
+        @klass ||= _klass(class_name)
+      end
+
+      def _klass(class_name)
+        if active_record.name.demodulize == class_name
+          return compute_class("::#{class_name}") rescue NameError
+        end
+
+        compute_class(class_name)
+      end
+
+      def compute_class(name)
+        name.constantize
+      end
+
       private
+        def derive_class_name
+          name.to_s.camelize
+        end
+
         def normalize_options(options)
           counter_cache = options.delete(:counter_cache)
 
@@ -104,6 +144,30 @@ module Example109
     end
 
     class AssociationReflection < MacroReflection
+      def compute_class(name)
+        if polymorphic?
+          raise ArgumentError, "Polymorphic associations do not support computing the class."
+        end
+
+        begin
+          klass = active_record.send(:compute_type, name)
+        rescue NameError => error
+          if error.name.match?(/(?:\A|::)#{name}\z/)
+            message = "Missing model class #{name} for the #{active_record}##{self.name} association."
+            message += " You can specify a different model class with the :class_name option." unless options[:class_name]
+            raise NameError.new(message, name)
+          else
+            raise
+          end
+        end
+
+        unless klass < Base
+          raise ArgumentError, "The #{name} model class for the #{active_record}##{self.name} association is not an ActiveRecord::Base subclass."
+        end
+
+        klass
+      end
+
       attr_reader :type, :foreign_type
 
       def initialize(name, scope, options, active_record)
@@ -122,11 +186,25 @@ module Example109
         ensure_option_not_given_as_class!(:class_name)
       end
 
+      def collection?
+        false
+      end
+
+      def polymorphic?
+        options[:polymorphic]
+      end
+
       private
         def ensure_option_not_given_as_class!(option_name)
           if options[option_name] && options[option_name].class == Class
             raise ArgumentError, "A class was passed to `:#{option_name}` but we are expecting a string."
           end
+        end
+
+        def derive_class_name
+          class_name = name.to_s
+          class_name = class_name.singularize if collection?
+          class_name.camelize
         end
     end
 
@@ -134,6 +212,10 @@ module Example109
       def macro; :has_many; end
 
       def collection?; true; end
+
+      def association_class
+        Associations::HasManyAssociation
+      end
     end
 
     class HasOneReflection < AssociationReflection
@@ -160,20 +242,65 @@ module Example109
     end
   end
 
+  class AssociationNotFoundError < StandardError
+    attr_reader :record, :association_name
+
+    def initialize(record = nil, association_name = nil)
+      @record           = record
+      @association_name = association_name
+      if record && association_name
+        super("Association named '#{association_name}' was not found on #{record.class.name}; perhaps you misspelled it?")
+      else
+        super("Association was not found.")
+      end
+    end
+  end
+
   module Associations
     module ClassMethods
       def has_records(name, scope = nil, **options, &extension)
-        Builder::HasMany.build(self, name, scope, options, &extension)
+        reflection = Builder::HasMany.build(self, name, scope, options, &extension)
+        Reflection.add_reflection self, name, reflection
       end
     end
 
-    class HasManyAssociation
-      def initialize(owner, name)
-        @owner = owner
-        @name = name
+    class CollectionProxy
+      def self.create(klass, association)
+        new(klass, association)
       end
 
-      def reader; end
+      def initialize(klass, association)
+        @klass = klass
+        @association = association
+      end
+    end
+
+    class Association
+      attr_reader :reflection
+
+      def initialize(owner, reflection)
+        @owner, @reflection = owner, reflection
+      end
+
+      def klass
+        reflection.klass
+      end
+
+      private
+        def ensure_klass_exists!
+          klass
+        end
+    end
+
+    class CollectionAssociation < Association
+      def reader
+        ensure_klass_exists!
+
+        @proxy ||= CollectionProxy.create(klass, self)
+      end
+    end
+
+    class HasManyAssociation < CollectionAssociation
 
       def writer(records); end
 
@@ -344,17 +471,87 @@ module Example109
 
   class Base
     extend Core::ClassMethods
+    extend Reflection::ClassMethods
     extend Associations::ClassMethods
 
     def self.pluralize_table_names = __class_attr_pluralize_table_names
     ::Example108::ClassAttribute.redefine(self, :pluralize_table_names, :__class_attr_pluralize_table_names, true)
 
-    def association(name)
-      Associations::HasManyAssociation.new(self, name)
+    def self._reflections = __class_attr__reflections
+    def self._reflections=(value)
+      self.__class_attr__reflections = value
     end
+    ::Example108::ClassAttribute.redefine(self, :_reflections, :__class_attr__reflections, {})
+
+    class << self
+      def inherited(subclass)
+        super
+        subclass.instance_variable_set(:@_type_candidates_cache, Concurrent::Map.new)
+      end
+
+      protected
+        def compute_type(type_name)
+          if type_name.start_with?("::")
+            type_name.constantize
+          else
+            type_candidate = @_type_candidates_cache[type_name]
+            if type_candidate && type_constant = type_candidate.safe_constantize
+              return type_constant
+            end
+
+            candidates = []
+            name.scan(/::|$/) { candidates.unshift "#{$`}::#{type_name}" }
+            candidates << type_name
+
+            candidates.each do |candidate|
+              constant = candidate.safe_constantize
+              if candidate == constant.to_s
+                @_type_candidates_cache[type_name] = candidate
+                return constant
+              end
+            end
+
+            raise NameError.new("uninitialized constant #{candidates.first}", candidates.first)
+          end
+        end
+    end
+
+    def initialize
+      @association_cache = {}
+    end
+
+    def association(name)
+      association = association_instance_get(name)
+
+      if association.nil?
+        unless reflection = self.class._reflect_on_association(name)
+          raise AssociationNotFoundError.new(self, name)
+        end
+        association = reflection.association_class.new(self, reflection)
+        association_instance_set(name, association)
+      end
+
+      association
+    end
+
+    private
+      def association_instance_get(name)
+        @association_cache[name]
+      end
+
+      def association_instance_set(name, association)
+        @association_cache[name] = association
+      end
+  end
+
+  class Comment < Base
   end
 
   class Post < Base
     has_records :comments
+  end
+
+  class Feed
+    def self.comments = Post.new.comments
   end
 end
