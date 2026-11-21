@@ -118,4 +118,3 @@ sig/generated/steep_string_evals/app/models/post.rb:12:42: [error] Type `(::User
 sig/generated/steep_string_evals/app/models/post.rb:13:22: [error] Type `::Post` does not have method `tag`
 sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:148: [warning] Cannot find the declaration of constant: `DelegationError`
 sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:42: [error] Type `(::User | nil)` does not have method `updated_at`
-sig/rbs_infer/app/models/example109.rbs:44:19: [error] Instance variable cannot have different type with parents: ("Comment" | nil) <=> nil

@@ -9,7 +9,7 @@ end
 
 module Example103
   class MriBackend
-    @entries: Hash[untyped, untyped]
+    @entries: Hash[:a, :x]
 
     def initialize: () -> void
     def []: (:a key) -> :x

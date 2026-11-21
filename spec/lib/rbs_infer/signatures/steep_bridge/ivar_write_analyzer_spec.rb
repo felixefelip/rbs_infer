@@ -347,18 +347,39 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::IvarWriteAnalyzer, :dummy_app 
       expect(hash_types(code, singleton: false)["entries"]).to eq("Hash[untyped, untyped]")
     end
 
-    it "leaves a hash the project does not track untyped" do
-      code = <<~RUBY
+    def instance_registry(extra = "", outside = "")
+      <<~RUBY
         class Registry
           def initialize
             @entries = {}
           end
 
-          def add
-            @entries[:a] = 1
-          end
+          def get(name) = @entries[name]
+          def add = @entries[:a] = 1
+          #{extra}
         end
+        #{outside}
       RUBY
+    end
+
+    it "types an instance's hash by the stores its instance methods make" do
+      expect(hash_types(instance_registry, singleton: false)["entries"]).to eq("Hash[Symbol, Integer]")
+    end
+
+    it "reads the class's ivar of the same name as another variable" do
+      code = instance_registry("def self.entries = @entries")
+
+      expect(hash_types(code, singleton: false)["entries"]).to eq("Hash[Symbol, Integer]")
+    end
+
+    it "leaves an instance's hash untyped when it is named by reflection" do
+      code = instance_registry("", "Registry.new.instance_variable_get(:@entries)")
+
+      expect(hash_types(code, singleton: false)["entries"]).to eq("Hash[untyped, untyped]")
+    end
+
+    it "leaves an instance's hash untyped when an instance method hands it on" do
+      code = instance_registry("def leak = Other.take(@entries)")
 
       expect(hash_types(code, singleton: false)["entries"]).to eq("Hash[untyped, untyped]")
     end
