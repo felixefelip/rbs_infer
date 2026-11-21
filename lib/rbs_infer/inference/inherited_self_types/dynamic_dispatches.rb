@@ -31,9 +31,11 @@ module RbsInfer
           return written.flatten if written.all?
 
           types = @steep_bridge.all_expression_types(entry.source, file:)
-          arguments.zip(written).flat_map do |argument, names|
-            names || literal_names_of(types[RbsInfer::Signatures::SteepBridge.prism_expression_key(argument.location)])
-          end
+          arguments.zip(written).flat_map { |argument, names| names || typed_names(types, argument) }
+        end
+
+        def typed_names(types, argument)
+          literal_names_of(types[RbsInfer::Signatures::SteepBridge.prism_expression_key(argument.location)])
         end
 
         def name_arguments(root)
