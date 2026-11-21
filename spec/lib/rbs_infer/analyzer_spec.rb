@@ -638,6 +638,37 @@ RSpec.describe RbsInfer::Analyzer do
       end
     end
 
+    it "re-reads a body its previous declaration claims more of than the checker knows" do
+      files = {
+        "box.rb" => <<~RUBY,
+          class Box
+            def value
+              flag ? 1 : unknown
+            end
+
+            def flag = [true, false].sample
+
+            def unknown = Kernel.const_get(gets.to_s)
+          end
+        RUBY
+        "sig/box.rbs" => <<~RBS
+          class Box
+            def value: () -> 1
+            def flag: () -> bool
+            def unknown: () -> untyped
+          end
+        RBS
+      }
+
+      with_temp_files(files) do |dir, paths|
+        Dir.chdir(dir) do
+          rbs = described_class.new(target_file: paths.first, source_files: paths).generate_rbs
+
+          expect(rbs).to include("def value: () -> (Integer | untyped)")
+        end
+      end
+    end
+
     it "resolve tipos inter-procedurais via method chain (receiver.method)" do
       dto_src = <<~RUBY
         class Dto

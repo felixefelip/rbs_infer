@@ -7,7 +7,7 @@ class Example68
   def matched_and_stamped?: () -> bool
   def matched_via_local?: () -> bool
   def matched_interpolated?: (untyped suffix) -> bool
-  def matched_untyped_link?: (untyped suffix) -> bool
+  def matched_untyped_link?: (untyped suffix) -> (untyped | true | false)
   def last_post: () -> (Post & Post::Validated)?
   def matched_on_a_record?: (untyped suffix) -> bool
 

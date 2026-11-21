@@ -77,7 +77,11 @@ module RbsInfer::Inference
       # collapses to it, which is why the pass below distrusts it too.
       return false if steep_type == "nil"
 
-      @steep_bridge.accepts?(declared, steep_type) == false
+      drops_untyped?(declared, steep_type) || @steep_bridge.accepts?(declared, steep_type) == false
+    end
+
+    def drops_untyped?(declared, steep_type)
+      TypeUnion.flatten_union(steep_type).include?("untyped") && !TypeUnion.flatten_union(declared).include?("untyped")
     end
 
     # name+singleton? => how many defs the WHOLE file writes under it. Flat on
