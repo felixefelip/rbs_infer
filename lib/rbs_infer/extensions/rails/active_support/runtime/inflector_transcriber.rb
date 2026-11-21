@@ -26,7 +26,9 @@ module RbsInfer
           # nothing calls yet.
           module InflectorTranscriber
             INFLECTOR = "ActiveSupport::Inflector"
-            INFLECTOR_METHODS = %i[singularize pluralize camelize demodulize constantize safe_constantize apply_inflections const_regexp].freeze
+            INFLECTOR_METHODS = %i[
+              singularize pluralize camelize demodulize constantize safe_constantize apply_inflections const_regexp
+            ].freeze
             STRING_METHODS = %i[singularize camelize demodulize constantize safe_constantize].freeze
             RULES_FEATURE = "active_support/inflections"
 

@@ -160,23 +160,18 @@ methods:
       true) on singleton(::ActiveSupport::ClassAttribute)"
     : '"__class_attr_plural_labels="'
   ActiveSupport::ClassAttribute.redefine_method:
-    "((singleton(::Example110::Options) | ::Class), ::Symbol) &-> (true | untyped | nil)": nil
-    "((singleton(::Example110::Options) | ::Class), ::Symbol, private: true) &-> (true | untyped | nil)": "::Symbol"
-    '(::Class, "__class_attr_plural_labels=", private: true) &-> (untyped | ::String)': '"__class_attr_plural_labels="'
-    "(::Class, ::String, private: true) &-> (untyped | ::String)": "::String"
-    "(::Class, ::Symbol, private: true) &-> (::TrueClass | untyped | nil)": "::Symbol"
-    "(::Class, ::Symbol, private: true) &-> (true | untyped | nil)": "::Symbol"
-    "(::Class, :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
+    "((singleton(::Example110::Options) | ::Class), ::Symbol) &-> untyped": nil
+    "((singleton(::Example110::Options) | ::Class), ::Symbol, private: true) &-> untyped": "::Symbol"
+    '(::Class, "__class_attr_plural_labels=", private: true) &-> untyped': '"__class_attr_plural_labels="'
+    "(::Class, ::String, private: true) &-> untyped": "::String"
+    "(::Class, ::Symbol, private: true) &-> untyped": "::Symbol"
     "(::Class, :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
-    "(self, :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
     "(self, :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
-    "(self, :plural_labels) &-> true": nil
     "(self, :plural_labels) &-> untyped": nil
-    "(singleton(::Example110::Options), :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
-    "(singleton(::Example110::Options), :plural_labels) &-> true": nil
-    '(singleton_class(::Example110::Options), "__class_attr_plural_labels=", private: true) &-> (untyped | ::String)': '"__class_attr_plural_labels="'
-    "(singleton_class(::Example110::Options), :__class_attr_plural_labels, private: true) &-> ::TrueClass": "::Symbol"
-    "(singleton_class(::Example110::Options), :__class_attr_plural_labels, private: true) &-> true": "::Symbol"
+    "(singleton(::Example110::Options), :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
+    "(singleton(::Example110::Options), :plural_labels) &-> untyped": nil
+    '(singleton_class(::Example110::Options), "__class_attr_plural_labels=", private: true) &-> untyped': '"__class_attr_plural_labels="'
+    "(singleton_class(::Example110::Options), :__class_attr_plural_labels, private: true) &-> untyped": "::Symbol"
   ActiveSupport::Concern#class_methods:
     "() &-> :declare": ":declare"
     "() &-> :default_values": ":default_values"
@@ -8040,84 +8035,42 @@ methods:
   Example108::ClassAttribute.redefine_method:
     ? "((singleton(::Example109::Post) | singleton(::Example108::Settings) | singleton(::Example109::Base)),
       (:__class_attr_plural_names | :__class_attr_pluralize_table_names | :__class_attr__reflections),
-      private: true) &-> (true | ::Hash[untyped, untyped])"
+      private: true) &-> untyped"
     : "::Symbol"
-    ? "((singleton(::Example109::Post) | singleton(::Example108::Settings) | singleton(::Example109::Base)),
-      (:plural_names | :pluralize_table_names | :_reflections)) &-> (true | ::Hash[untyped,
-      untyped])"
-    : nil
-    '(::Class, "__class_attr__reflections=", private: true) &-> (untyped | ::interned | nil)': '"__class_attr__reflections="'
-    '(::Class, "__class_attr_plural_names=", private: true) &-> (untyped | ::interned | nil)': '"__class_attr_plural_names="'
-    '(::Class, "__class_attr_pluralize_table_names=", private: true) &-> (untyped | ::interned | nil)': '"__class_attr_pluralize_table_names="'
+    '(::Class, "__class_attr__reflections=", private: true) &-> untyped': '"__class_attr__reflections="'
+    '(::Class, "__class_attr_plural_names=", private: true) &-> untyped': '"__class_attr_plural_names="'
+    '(::Class, "__class_attr_pluralize_table_names=", private: true) &-> untyped': '"__class_attr_pluralize_table_names="'
     ? '(::Class, ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names="
-      | "__class_attr__reflections="), private: true) &-> (untyped | ::interned |
-      nil)'
+      | "__class_attr__reflections="), private: true) &-> untyped'
     : ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=" | "__class_attr__reflections=")
     ? "(::Class, (:__class_attr_plural_names | :__class_attr_pluralize_table_names
-      | :__class_attr__reflections), private: true) &-> (true | ::Hash[untyped, untyped])"
+      | :__class_attr__reflections), private: true) &-> untyped"
     : "::Symbol"
-    "(::Class, :__class_attr__reflections, private: true) &-> ::Hash[:comments, ::Example109::Reflection::HasManyReflection]": "::Symbol"
     "(::Class, :__class_attr__reflections, private: true) &-> untyped": "::Symbol"
     "(::Class, :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
     "(::Class, :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
-    "(self, :__class_attr__reflections, private: true) &-> ::Hash[:comments, ::Example109::Reflection::HasManyReflection]": "::Symbol"
     "(self, :__class_attr__reflections, private: true) &-> untyped": "::Symbol"
     "(self, :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
     "(self, :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
-    "(self, :_reflections) &-> ::Hash[:comments, ::Example109::Reflection::HasManyReflection]": nil
     "(self, :_reflections) &-> untyped": nil
     "(self, :plural_names) &-> untyped": nil
     "(self, :pluralize_table_names) &-> untyped": nil
-    "(singleton(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
-    "(singleton(::Example108::Settings), :plural_names) &-> true": nil
-    "(singleton(::Example109::Base), :__class_attr__reflections, private: true) &-> {  }": "::Symbol"
-    "(singleton(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
-    "(singleton(::Example109::Base), :_reflections) &-> {  }": nil
-    "(singleton(::Example109::Base), :pluralize_table_names) &-> true": nil
-    ? "(singleton(::Example109::Post), :__class_attr__reflections, private: true)
-      &-> { :comments => ::Example109::Reflection::HasManyReflection{@association_foreign_key:
-      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
-      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
-      @klass: nil, @name: :comments, @options: {  }} }"
-    : "::Symbol"
-    ? "(singleton(::Example109::Post), :_reflections) &-> { :comments => ::Example109::Reflection::HasManyReflection{@association_foreign_key:
-      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
-      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
-      @klass: nil, @name: :comments, @options: {  }} }"
-    : nil
-    '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private: true) &-> (untyped | ::interned | nil)': '"__class_attr_plural_names="'
-    "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> ::TrueClass": "::Symbol"
-    "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> true": "::Symbol"
-    '(singleton_class(::Example109::Base), "__class_attr__reflections=", private: true) &-> (untyped | ::interned | nil)': '"__class_attr__reflections="'
-    ? '(singleton_class(::Example109::Base), "__class_attr__reflections=", private:
-      true) &-> ({ :comments => ::Example109::Reflection::HasManyReflection } | ::interned
-      | nil)'
-    : '"__class_attr__reflections="'
-    ? '(singleton_class(::Example109::Base), "__class_attr__reflections=", private:
-      true) &-> ({ :comments => ::Example109::Reflection::HasManyReflection{@association_foreign_key:
-      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
-      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
-      @klass: nil, @name: :comments, @options: {  }} } | ::interned | nil)'
-    : '"__class_attr__reflections="'
-    ? '(singleton_class(::Example109::Base), "__class_attr__reflections=", private:
-      true) &-> ({ :comments => ::Example109::Reflection::HasManyReflection{@name:
-      :comments} } | ::interned | nil)'
-    : '"__class_attr__reflections="'
-    '(singleton_class(::Example109::Base), "__class_attr_pluralize_table_names=", private: true) &-> (untyped | ::interned | nil)': '"__class_attr_pluralize_table_names="'
-    "(singleton_class(::Example109::Base), :__class_attr__reflections, private: true) &-> {  }": "::Symbol"
-    "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> ::TrueClass": "::Symbol"
-    "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> true": "::Symbol"
-    '(singleton_class(::Example109::Post), "__class_attr__reflections=", private: true) &-> (untyped | ::interned | nil)': '"__class_attr__reflections="'
-    ? "(singleton_class(::Example109::Post), :__class_attr__reflections, private:
-      true) &-> { :comments => ::Example109::Reflection::HasManyReflection{@association_foreign_key:
-      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
-      nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: ::FalseClass, @join_table:
-      nil, @klass: nil, @name: ::Symbol, @options: {  }} }"
-    : "::Symbol"
+    "(singleton(::Example108::Settings), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
+    "(singleton(::Example108::Settings), :plural_names) &-> untyped": nil
+    "(singleton(::Example109::Base), :__class_attr__reflections, private: true) &-> untyped": "::Symbol"
+    "(singleton(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
+    "(singleton(::Example109::Base), :_reflections) &-> untyped": nil
+    "(singleton(::Example109::Base), :pluralize_table_names) &-> untyped": nil
+    "(singleton(::Example109::Post), :__class_attr__reflections, private: true) &-> untyped": "::Symbol"
+    "(singleton(::Example109::Post), :_reflections) &-> untyped": nil
+    '(singleton_class(::Example108::Settings), "__class_attr_plural_names=", private: true) &-> untyped': '"__class_attr_plural_names="'
+    "(singleton_class(::Example108::Settings), :__class_attr_plural_names, private: true) &-> untyped": "::Symbol"
+    '(singleton_class(::Example109::Base), "__class_attr__reflections=", private: true) &-> untyped': '"__class_attr__reflections="'
+    '(singleton_class(::Example109::Base), "__class_attr_pluralize_table_names=", private: true) &-> untyped': '"__class_attr_pluralize_table_names="'
+    "(singleton_class(::Example109::Base), :__class_attr__reflections, private: true) &-> untyped": "::Symbol"
+    "(singleton_class(::Example109::Base), :__class_attr_pluralize_table_names, private: true) &-> untyped": "::Symbol"
+    '(singleton_class(::Example109::Post), "__class_attr__reflections=", private: true) &-> untyped': '"__class_attr__reflections="'
+    "(singleton_class(::Example109::Post), :__class_attr__reflections, private: true) &-> untyped": "::Symbol"
   Example108::Settings.__class_attr_plural_names:
     "()": "::TrueClass"
     "() with {@generated_readers: nil}": "::TrueClass"
@@ -9733,20 +9686,20 @@ methods:
     "() with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}": "{
       \ }"
   Example109::Base.__class_attr__reflections=:
-    "({ :comments => ::Example109::Reflection::HasManyReflection })": "({ :comments
-      => ::Example109::Reflection::HasManyReflection } | ::String)"
+    "({ :comments => ::Example109::Reflection::HasManyReflection })": ({ :comments
+      => ::Example109::Reflection::HasManyReflection } | "__class_attr__reflections=")
     ? "({ :comments => ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @klass: nil, @name: :comments, @options: {  }} }) with {@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}"
-    : "({ :comments => ::Example109::Reflection::HasManyReflection } | ::interned
-      | nil)"
+    : ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr_plural_names="
+      | "__class_attr_pluralize_table_names=" | "__class_attr__reflections=")
     ? "({ :comments => ::Example109::Reflection::HasManyReflection{@name: :comments}
       }) with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}"
-    : "({ :comments => ::Example109::Reflection::HasManyReflection } | ::interned
-      | nil)"
+    : ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr_plural_names="
+      | "__class_attr_pluralize_table_names=" | "__class_attr__reflections=")
   Example109::Base.__class_attr_pluralize_table_names:
     "()": "::TrueClass"
     ? "() with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
@@ -9813,20 +9766,20 @@ methods:
     "() with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}": "{
       :comments => ::Example109::Reflection::HasManyReflection }"
   Example109::Post.__class_attr__reflections=:
-    "({ :comments => ::Example109::Reflection::HasManyReflection })": "({ :comments
-      => ::Example109::Reflection::HasManyReflection } | ::String)"
+    "({ :comments => ::Example109::Reflection::HasManyReflection })": ({ :comments
+      => ::Example109::Reflection::HasManyReflection } | "__class_attr__reflections=")
     ? "({ :comments => ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @klass: nil, @name: :comments, @options: {  }} }) with {@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}"
-    : "({ :comments => ::Example109::Reflection::HasManyReflection } | ::interned
-      | nil)"
+    : ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr_plural_names="
+      | "__class_attr_pluralize_table_names=" | "__class_attr__reflections=")
     ? "({ :comments => ::Example109::Reflection::HasManyReflection{@name: :comments}
       }) with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}"
-    : "({ :comments => ::Example109::Reflection::HasManyReflection } | ::interned
-      | nil)"
+    : ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr_plural_names="
+      | "__class_attr_pluralize_table_names=" | "__class_attr__reflections=")
   Example109::Reflection.add_reflection:
     ? "(singleton(::Example109::Post), :comments, ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
@@ -31594,102 +31547,6 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
     ? "((^(self, ::Hash::_Key) -> untyped | nil)) with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
-      nil}, ::Thread{@__rbs_infer__main: nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-    ? '((^(self, untyped) -> untyped | nil)) with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}'
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-              "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-    ? '((^(self, untyped) -> untyped | nil)) with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
-      }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}'
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-              "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-    ? "((^(self, untyped) -> untyped | nil)) with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
       nil}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}

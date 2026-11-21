@@ -45,7 +45,7 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::TypeFormatter, :dummy_app do
         described_class.format_type(
           Steep::AST::Types::Union.build(types: [Steep::AST::Builtin::Object.instance_type, variable])
         )
-      ).to eq("untyped")
+      ).to eq("(Object | untyped)")
     end
 
     # A type RBS cannot spell is written as the one it can, nested or not. Its
