@@ -55,10 +55,11 @@ module RbsInfer::Inference
       # Flatten into components — union of unions is associative, so this
       # preserves every component and keeps the emission stable across
       # generations (fixpoint). This is NOT the semantic simplification
-      # forbidden by steep#16 (`(A & B) | A → A`).
+      # forbidden by steep#16 (`(A & B) | A → A`). A write typed `untyped`
+      # alone says nothing and is dropped; an `untyped` member of a union is
+      # what the checker knows of that write and stays.
       if (components = parse_union_components(type_str))
-        components.each { |c| add(c) }
-        return
+        return add_components(components)
       end
 
       add_unique(type_str)
@@ -104,6 +105,10 @@ module RbsInfer::Inference
       end
     rescue RBS::ParsingError, RBS::BaseError
       nil
+    end
+
+    def add_components(components)
+      components.each { |c| c == "untyped" ? add_unique(c) : add(c) }
     end
 
     def add_unique(type_str)

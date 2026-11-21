@@ -40,7 +40,7 @@ end
 module Example109
   module Reflection
     class MacroReflection < AbstractReflection
-      @klass: singleton(::Comment)?
+      @klass: (singleton(::Comment) | untyped)?
       @class_name: "Comment"?
 
       attr_reader name: :comments
