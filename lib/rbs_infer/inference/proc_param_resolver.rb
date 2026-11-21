@@ -6,8 +6,9 @@ module RbsInfer
     # the calls the body makes on it: `default_proc.call(self, key)` turns the
     # `^(*untyped) -> untyped` its call sites gave into `^(self, untyped) -> untyped`.
     #
-    # Only a proc whose parameters the call sites left open is touched. A parameter
-    # the call sites did not type as a proc may hold any object answering `call`.
+    # Only what the call sites left open is filled in: the whole list, or a
+    # parameter they typed `untyped`. A parameter the call sites did not type as a
+    # proc may hold any object answering `call`.
     class ProcParamResolver
       OPEN_PROC = /\A(?<open>\(?)\^\(\*untyped\) -> untyped(?<close>\)?\??)\z/
 
@@ -37,9 +38,33 @@ module RbsInfer
       end
 
       def with_params(type, params)
-        match = OPEN_PROC.match(type) or return type
+        match = OPEN_PROC.match(type)
+        return "#{match[:open]}^(#{params.join(", ")}) -> untyped#{match[:close]}" if match
 
-        "#{match[:open]}^(#{params.join(", ")}) -> untyped#{match[:close]}"
+        with_open_params(type, params)
+      end
+
+      def with_open_params(type, params)
+        parsed = RBS::Parser.parse_type(type)
+        proc_type = parsed.is_a?(RBS::Types::Optional) ? parsed.type : parsed
+        return type unless plain_proc?(proc_type, params.size)
+
+        filled = filled(proc_type.type.required_positionals, params)
+        proc_rbs = "^(#{filled.join(", ")}) -> #{proc_type.type.return_type}"
+        parsed.is_a?(RBS::Types::Optional) ? "(#{proc_rbs})?" : proc_rbs
+      rescue RBS::ParsingError, RBS::BaseError
+        type
+      end
+
+      def filled(declared, params)
+        declared.zip(params).map { |param, body| param.type.is_a?(RBS::Types::Bases::Any) ? body : param.type.to_s }
+      end
+
+      def plain_proc?(type, arity)
+        return false unless type.is_a?(RBS::Types::Proc) && type.block.nil? && type.self_type.nil?
+
+        function = type.type
+        function.required_positionals.size == arity && function.param_to_s == function.required_positionals.join(", ")
       end
 
       # Every call has to be typed: one the checker could not answer may have

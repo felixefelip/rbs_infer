@@ -53,6 +53,36 @@ RSpec.describe "a block handed on as an ordinary argument" do
     expect(generate(target)).to include("def install: ((^(self, Time) -> untyped)? fallback)")
   end
 
+  it "fills a proc parameter the call sites typed untyped with what the body passes" do
+    target = write("app/store.rb", store_source)
+    write("sig/generated/store.rbs", <<~RBS)
+      class Store
+        def initialize: () ?{ (self, untyped) -> untyped } -> void
+
+        private
+
+        def install: ((^(self, untyped) -> untyped)? fallback) -> untyped
+      end
+    RBS
+
+    expect(generate(target)).to include("def install: ((^(self, Time) -> untyped)? fallback)")
+  end
+
+  it "keeps a proc parameter the call sites typed" do
+    target = write("app/store.rb", store_source)
+    write("sig/generated/store.rbs", <<~RBS)
+      class Store
+        def initialize: () ?{ (self, Integer) -> untyped } -> void
+
+        private
+
+        def install: ((^(self, Integer) -> untyped)? fallback) -> untyped
+      end
+    RBS
+
+    expect(generate(target)).to include("def install: ((^(self, Integer) -> untyped)? fallback)")
+  end
+
   it "gives the block the parameters of the proc it is handed to" do
     target = write("app/store.rb", store_source)
     write("sig/generated/store.rbs", <<~RBS)

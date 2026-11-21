@@ -1,7 +1,7 @@
 module Concurrent
   module Collection
     class NonConcurrentMapBackend
-      @default_proc: (^(self, untyped) -> untyped)?
+      @default_proc: (^(self, ::Hash::_Key) -> untyped)?
       @backend: ::Hash[untyped, untyped]
 
       def initialize: (?untyped options) ?{ (self, ::Hash::_Key) -> untyped } -> void
@@ -24,7 +24,7 @@ module Concurrent
 
       private
 
-      def set_backend: ((^(self, untyped) -> untyped)? default_proc) -> ::Hash[untyped, untyped]
+      def set_backend: ((^(self, ::Hash::_Key) -> untyped)? default_proc) -> ::Hash[untyped, untyped]
       def initialize_copy: ((untyped | instance) other) -> self
       def dupped_backend: () -> ::Hash[untyped, untyped]
       def pair?: (untyped key, untyped expected_value) -> (bool | untyped)
