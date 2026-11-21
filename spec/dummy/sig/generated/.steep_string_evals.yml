@@ -124,6 +124,9 @@ call_sites:
   -
   -
   -
+  -
+  -
+  -
   app/models/example109.rb:364:10:
   - source: |2
                   def comments=(value)
@@ -131,6 +134,9 @@ call_sites:
                   end
     target: "::Example109::Post::GeneratedRelationMethods"
     kind: module
+  -
+  -
+  -
   -
   -
   -
@@ -182,8 +188,6 @@ call_sites:
     target: "::Example109::Post::GeneratedRelationMethods"
     kind: module
   app/models/example109.rb:555:24:
-  -
-  -
   -
   -
   -
@@ -456,11 +460,23 @@ call_sites:
   -
   sig/generated/steep_activesupport_runtime/inflector.rb:318:28:
   -
+  -
+  -
+  -
   sig/generated/steep_activesupport_runtime/inflector.rb:320:15:
+  -
+  -
+  -
   -
   sig/generated/steep_activesupport_runtime/inflector.rb:322:51:
   -
+  -
+  -
+  -
   sig/generated/steep_activesupport_runtime/inflector.rb:326:22:
+  -
+  -
+  -
   -
   sig/generated/steep_activesupport_runtime/inflector.rb:364:24:
   -
@@ -611,15 +627,6 @@ call_sites:
   sig/generated/steep_string_evals/app/models/example109.rb:17:4:
   -
   -
-  -
-  -
-  sig/generated/steep_string_evals/app/models/example109.rb:21:4:
-  -
-  -
-  sig/generated/steep_string_evals/app/models/example109.rb:25:4:
-  -
-  -
-  sig/generated/steep_string_evals/app/models/example109.rb:29:4:
   -
   -
 folded:

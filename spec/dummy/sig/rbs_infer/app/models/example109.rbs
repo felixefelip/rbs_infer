@@ -238,7 +238,7 @@ end
 
 module Example109
   class Base
-    @association_cache: Hash[untyped, untyped]
+    @association_cache: Hash[:comments, Example109::Associations::HasManyAssociation]
 
     extend Core::ClassMethods
     extend Reflection::ClassMethods
@@ -255,7 +255,7 @@ module Example109
 
     private
 
-    def association_instance_get: (:comments name) -> untyped
+    def association_instance_get: (:comments name) -> Example109::Associations::HasManyAssociation
     def association_instance_set: (:comments name, Example109::Associations::HasManyAssociation association) -> Associations::HasManyAssociation
   end
 end

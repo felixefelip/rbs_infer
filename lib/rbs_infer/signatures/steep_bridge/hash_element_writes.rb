@@ -24,6 +24,7 @@ module RbsInfer
 
         def initialize(source_node, target_class:, singleton:, constructor_bindings:, literal_methods:)
           @constructor_bindings = constructor_bindings
+          @singleton = singleton
           @literal_methods = literal_methods
           @holders = holders(source_node, target_class, singleton)
           @elements = Hash.new { |h, k| h[k] = [RbsInfer::Inference::IvarTypeSet.new, RbsInfer::Inference::IvarTypeSet.new] }
@@ -103,12 +104,16 @@ module RbsInfer
 
         def confined?(ivar)
           names = [:"@#{ivar}", *@holders.filter_map { |name, held| name if held == ivar }]
-          uses = names.flat_map { |name| @constructor_bindings.uses_of(name) }
+          uses = names.flat_map { |name| uses_of(name) }
           Steep::HashMutation.confined?(@literal_methods, uses) && stores_seen(names) == @stores[ivar]
         end
 
         def stores_seen(names)
-          names.sum { |name| @constructor_bindings.uses_of(name).count { |use| STORES.include?(use.called) } }
+          names.sum { |name| uses_of(name).count { |use| STORES.include?(use.called) } }
+        end
+
+        def uses_of(name)
+          @singleton ? @constructor_bindings.uses_of(name) : @constructor_bindings.instance_uses_of(name)
         end
 
         def stored(node)
