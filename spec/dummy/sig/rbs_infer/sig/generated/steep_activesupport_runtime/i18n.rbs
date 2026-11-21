@@ -1,5 +1,5 @@
 module I18n
-  @@fallbacks: I18n::Locale::Fallbacks?
+  @@fallbacks: (I18n::Locale::Fallbacks | untyped)?
 
   module Locale
   end

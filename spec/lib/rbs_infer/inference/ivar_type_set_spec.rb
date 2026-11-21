@@ -71,6 +71,12 @@ RSpec.describe RbsInfer::Inference::IvarTypeSet do
       expect(set.emit).to eq("Foo")
     end
 
+    it "keeps the untyped member of a union a write was typed with" do
+      set.add("nil")
+      set.add("(singleton(::Comment) | untyped)")
+      expect(set.emit).to eq("(singleton(::Comment) | untyped)?")
+    end
+
     it "ignores blank, whitespace-only, and nil inputs" do
       set.add(nil)
       set.add("")
