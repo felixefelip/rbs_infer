@@ -1,7 +1,7 @@
 module Example109
   module Reflection
-    def self.add_reflection: ((singleton(Example109::Base)) ar, :comments name, Example109::Reflection::HasManyReflection reflection) -> { comments: Example109::Reflection::HasManyReflection }
-    def self.create: (untyped macro, :comments name, Proc scope, {  } options, singleton(Example109::Base) ar) -> Example109::Reflection::HasManyReflection
+    def self.add_reflection: (singleton(Example109::Post) ar, :comments name, Example109::Reflection::HasManyReflection reflection) -> { comments: Example109::Reflection::HasManyReflection }
+    def self.create: (untyped macro, :comments name, Proc scope, {  } options, singleton(Example109::Post) ar) -> Example109::Reflection::HasManyReflection
     def self.reflection_class_for: (untyped macro) -> singleton(Example109::Reflection::HasManyReflection)
   end
 
@@ -46,10 +46,10 @@ module Example109
       attr_reader name: :comments
       attr_reader scope: Proc
       attr_reader options: {  }
-      attr_reader active_record: singleton(Example109::Base)
+      attr_reader active_record: singleton(Example109::Post)
       attr_reader plural_name: String
 
-      def initialize: (:comments name, Proc scope, {  } options, singleton(Example109::Base) active_record) -> void
+      def initialize: (:comments name, Proc scope, {  } options, singleton(Example109::Post) active_record) -> void
       def class_name: () -> "Comment"
       def klass: () -> (singleton(::Comment) | untyped)
       def _klass: ("Comment" class_name) -> (singleton(::Comment) | untyped)
@@ -82,7 +82,7 @@ module Example109
       attr_reader foreign_type: "comments_type"
 
       def compute_class: (String name) -> untyped
-      def initialize: (:comments name, Proc scope, {  } options, singleton(Example109::Base) active_record) -> void
+      def initialize: (:comments name, Proc scope, {  } options, singleton(Example109::Post) active_record) -> void
       def collection?: () -> false
       def polymorphic?: () -> nil
 
@@ -192,17 +192,17 @@ module Example109
   module Associations
     module Builder
       class Association
-        def self.build: ((singleton(Example109::Base)) model, :comments name, untyped scope, {  } options) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
-        def self.create_reflection: (singleton(Example109::Base) model, :comments name, untyped scope, {  } options) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
+        def self.build: (singleton(Example109::Post) model, :comments name, untyped scope, {  } options) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
+        def self.create_reflection: (singleton(Example109::Post) model, :comments name, untyped scope, {  } options) ?{ (*untyped) -> untyped } -> Example109::Reflection::HasManyReflection
         def self.build_scope: (Proc scope) -> Proc
         def self.macro: () -> untyped
-        def self.define_extensions: (singleton(Example109::Base) model, :comments name) -> nil
-        def self.define_callbacks: (singleton(Example109::Base) model, Example109::Reflection::HasManyReflection reflection) -> untyped
-        def self.define_accessors: (singleton(Example109::Base) model, Example109::Reflection::HasManyReflection reflection) -> :comment_ids=
+        def self.define_extensions: (singleton(Example109::Post) model, :comments name) -> nil
+        def self.define_callbacks: (singleton(Example109::Post) model, Example109::Reflection::HasManyReflection reflection) -> untyped
+        def self.define_accessors: (singleton(Example109::Post) model, Example109::Reflection::HasManyReflection reflection) -> :comment_ids=
         def self.define_readers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, :comments name) -> :comments
         def self.define_writers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, :comments name) -> :comments=
-        def self.define_validations: (singleton(Example109::Base) model, Example109::Reflection::HasManyReflection reflection) -> nil
-        def self.define_change_tracking_methods: (singleton(Example109::Base) model, Example109::Reflection::HasManyReflection reflection) -> nil
+        def self.define_validations: (singleton(Example109::Post) model, Example109::Reflection::HasManyReflection reflection) -> nil
+        def self.define_change_tracking_methods: (singleton(Example109::Post) model, Example109::Reflection::HasManyReflection reflection) -> nil
 
         attr_accessor self.extensions: untyped
       end
@@ -216,9 +216,9 @@ module Example109
       class CollectionAssociation < Association
         CALLBACKS: Array[(:before_add | :after_add | :before_remove | :after_remove)]
 
-        def self.define_callbacks: (singleton(Example109::Base) model, Example109::Reflection::HasManyReflection reflection) -> Array[(:before_add | :after_add | :before_remove | :after_remove)]
-        def self.define_extensions: (singleton(Example109::Base) model, :comments name) ?{ (*untyped) -> untyped } -> Module?
-        def self.define_callback: (singleton(Example109::Base) model, (:before_add | :after_add | :before_remove | :after_remove) callback_name, :comments name, {  } options) -> untyped
+        def self.define_callbacks: (singleton(Example109::Post) model, Example109::Reflection::HasManyReflection reflection) -> Array[(:before_add | :after_add | :before_remove | :after_remove)]
+        def self.define_extensions: (singleton(Example109::Post) model, :comments name) ?{ (*untyped) -> untyped } -> Module?
+        def self.define_callback: (singleton(Example109::Post) model, (:before_add | :after_add | :before_remove | :after_remove) callback_name, :comments name, {  } options) -> untyped
         def self.define_readers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, :comments name) -> :comment_ids
         def self.define_writers: (singleton(Example109::Post::GeneratedRelationMethods) mixin, :comments name) -> :comment_ids=
       end

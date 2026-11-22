@@ -160,8 +160,8 @@ methods:
       true) on singleton(::ActiveSupport::ClassAttribute)"
     : '"__class_attr_plural_labels="'
   ActiveSupport::ClassAttribute.redefine_method:
-    "((singleton(::Example110::Options) | ::Class), ::Symbol) &-> untyped": nil
-    "((singleton(::Example110::Options) | ::Class), ::Symbol, private: true) &-> untyped": "::Symbol"
+    "((singleton(::Example110::Options) | singleton(::Example109::Post)), ::Symbol) &-> untyped": nil
+    "((singleton(::Example110::Options) | singleton(::Example109::Post)), ::Symbol, private: true) &-> untyped": "::Symbol"
     '(::Class, "__class_attr_plural_labels=", private: true) &-> untyped': '"__class_attr_plural_labels="'
     "(::Class, ::String, private: true) &-> untyped": "::String"
     "(::Class, ::Symbol, private: true) &-> untyped": "::Symbol"
@@ -661,132 +661,6 @@ methods:
     : "::String"
     "(singleton(::ActiveSupport::Inflector), untyped, :en) with {::Thread{@__rbs_infer__main: nil}}": "::String"
   ActiveSupport::Inflector#camelize:
-    ? '("ActiveSupport::Inflector", false) on singleton(::ActiveSupport::Inflector)
-      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : "::String"
-    ? '("ActiveSupport::Inflector", false) with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : "::String"
-    ? '("ActiveSupport::Inflector", true) on singleton(::ActiveSupport::Inflector)
-      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : "::String"
-    ? '("ActiveSupport::Inflector", true) with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : "::String"
     ("comment", false): "::String"
     ("comment", false) on singleton(::ActiveSupport::Inflector): "::String"
     ? '("comment", false) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
@@ -1433,16 +1307,16 @@ methods:
     ("Example109::::Comment"): ("Example109" | "" | "Comment" | nil | "Example109::::Comment")
     ("Example109::::Comment") on singleton(::ActiveSupport::Inflector): ("Example109"
       | "" | "Comment" | nil | "Example109::::Comment")
-    ("Example109::Base::::Comment"): ("Example109" | "Base" | "" | "Comment" | nil
-      | "Example109::Base::::Comment")
-    ("Example109::Base::::Comment") on singleton(::ActiveSupport::Inflector): ("Example109"
-      | "Base" | "" | "Comment" | nil | "Example109::Base::::Comment")
-    ("Example109::Base::Comment"): ("Example109" | "Base" | "Comment" | nil | "Example109::Base::Comment")
-    ("Example109::Base::Comment") on singleton(::ActiveSupport::Inflector): ("Example109"
-      | "Base" | "Comment" | nil | "Example109::Base::Comment")
     ("Example109::Comment"): ("Example109" | "Comment" | nil | "Example109::Comment")
     ("Example109::Comment") on singleton(::ActiveSupport::Inflector): ("Example109"
       | "Comment" | nil | "Example109::Comment")
+    ("Example109::Post::::Comment"): ("Example109" | "Post" | "" | "Comment" | nil
+      | "Example109::Post::::Comment")
+    ("Example109::Post::::Comment") on singleton(::ActiveSupport::Inflector): ("Example109"
+      | "Post" | "" | "Comment" | nil | "Example109::Post::::Comment")
+    ("Example109::Post::Comment"): ("Example109" | "Post" | "Comment" | nil | "Example109::Post::Comment")
+    ("Example109::Post::Comment") on singleton(::ActiveSupport::Inflector): ("Example109"
+      | "Post" | "Comment" | nil | "Example109::Post::Comment")
     ("Example81::Shelf"): ("Example81" | "Shelf" | nil | "Example81::Shelf")
     ("Example81::Shelf") on singleton(::ActiveSupport::Inflector): ("Example81" |
       "Shelf" | nil | "Example81::Shelf")
@@ -1454,7 +1328,7 @@ methods:
     ("Example109::Comment"): singleton(::Example109::Comment)
     ("Example81::Shelf"): singleton(::Example81::Shelf)
   ActiveSupport::Inflector#demodulize:
-    ("Example109::Base"): '"Base"'
+    ("Example109::Post"): '"Post"'
   ActiveSupport::Inflector#inflections:
     "() on singleton(::ActiveSupport::Inflector)": "(::ActiveSupport::Inflector::Inflections
       | untyped)"
@@ -1950,14 +1824,14 @@ methods:
     ("Comment") on singleton(::ActiveSupport::Inflector): singleton(::Comment)
     '("Comment") on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}': singleton(::Comment)
     '("Comment") with {::Thread{@__rbs_infer__main: nil}}': singleton(::Comment)
-    ("Example109::Base::Comment"): nil
-    ("Example109::Base::Comment") on singleton(::ActiveSupport::Inflector): nil
-    '("Example109::Base::Comment") on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}': nil
-    '("Example109::Base::Comment") with {::Thread{@__rbs_infer__main: nil}}': nil
     ("Example109::Comment"): singleton(::Example109::Comment)
     ("Example109::Comment") on singleton(::ActiveSupport::Inflector): singleton(::Example109::Comment)
     '("Example109::Comment") on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}': singleton(::Example109::Comment)
     '("Example109::Comment") with {::Thread{@__rbs_infer__main: nil}}': singleton(::Example109::Comment)
+    ("Example109::Post::Comment"): nil
+    ("Example109::Post::Comment") on singleton(::ActiveSupport::Inflector): nil
+    '("Example109::Post::Comment") on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}': nil
+    '("Example109::Post::Comment") with {::Thread{@__rbs_infer__main: nil}}': nil
     ("Example81::Shelf"): singleton(::Example81::Shelf)
     ("Example81::Shelf") on singleton(::ActiveSupport::Inflector): singleton(::Example81::Shelf)
     '("Example81::Shelf") on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}': singleton(::Example81::Shelf)
@@ -7554,7 +7428,6 @@ methods:
           "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
   Concurrent::Collection::NonConcurrentMapBackend#[]=:
     "(::Symbol, ::ActiveSupport::Inflector::Inflections) on ::Concurrent::Map[untyped, untyped]": "::ActiveSupport::Inflector::Inflections"
-    "(::Symbol, ::Example104::Rules) on ::Concurrent::Map[untyped, untyped]": "::Example104::Rules"
     "(:en, ::ActiveSupport::Inflector::Inflections)": "::ActiveSupport::Inflector::Inflections"
     "(:en, ::ActiveSupport::Inflector::Inflections) on ::Concurrent::Map[untyped, untyped]": "::ActiveSupport::Inflector::Inflections"
     ? "(:en, ::ActiveSupport::Inflector::Inflections{@acronyms: {  }, @plurals: [],
@@ -8263,7 +8136,6 @@ methods:
     '(singleton_class(::Example109::Post), "__class_attr__reflections=", private: true) &-> untyped': '"__class_attr__reflections="'
     "(singleton_class(::Example109::Post), :__class_attr__reflections, private: true) &-> untyped": "::Symbol"
   Example108::Settings.__class_attr_plural_names:
-    "()": "::TrueClass"
     "() with {@generated_readers: nil}": "::TrueClass"
   Example108::Settings.generated_readers:
     "() on singleton(::Example108::Gauge)": singleton(::Example108::Gauge::GeneratedReaders)
@@ -9261,6 +9133,10 @@ methods:
       untyped]{}, @generated_relation_methods: nil}, ::Thread{@__rbs_infer__main:
       nil}}"
     : ":comment_ids="
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::HasMany) with {::Example109::Post{@generated_relation_methods:
+      nil}, ::Thread{@__rbs_infer__main: nil}}"
+    : ":comment_ids="
     ? '(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -9438,18 +9314,6 @@ methods:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @klass: nil, @name: :comments, @options: {  }}) on singleton(::Example109::Associations::Builder::HasMany)
       with {::Thread{@__rbs_infer__main: nil}}"
-    : ":comment_ids="
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) on singleton(::Example109::Associations::Builder::HasMany) with
-      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{}, @generated_relation_methods: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ":comment_ids="
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) on singleton(::Example109::Associations::Builder::HasMany) with
-      {::Example109::Post{@generated_relation_methods: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
     : ":comment_ids="
   Example109::Associations::Builder::CollectionAssociation.define_extensions:
     "(self, :comments)": nil
@@ -9879,16 +9743,15 @@ methods:
   Example109::Base.__class_attr__reflections=:
     "({ :comments => ::Example109::Reflection::HasManyReflection })": ({ :comments
       => ::Example109::Reflection::HasManyReflection } | "__class_attr__reflections=")
+    ? "({ :comments => ::Example109::Reflection::HasManyReflection }) with {@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}"
+    : ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr__reflections=")
     ? "({ :comments => ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @klass: nil, @name: :comments, @options: {  }} }) with {@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}"
-    : ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr_plural_names="
-      | "__class_attr_pluralize_table_names=" | "__class_attr__reflections=")
-    ? "({ :comments => ::Example109::Reflection::HasManyReflection{@name: :comments}
-      }) with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}"
     : ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr_plural_names="
       | "__class_attr_pluralize_table_names=" | "__class_attr__reflections=")
   Example109::Base.__class_attr_pluralize_table_names:
@@ -9918,16 +9781,10 @@ methods:
       @klass: nil, @name: :comments, @options: {  }} }) with {@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}"
     : "{ :comments => ::Example109::Reflection::HasManyReflection }"
-    ? "({ :comments => ::Example109::Reflection::HasManyReflection{@name: :comments}
-      }) on singleton(::Example109::Post) with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}"
-    : "{ :comments => ::Example109::Reflection::HasManyReflection }"
-    ? "({ :comments => ::Example109::Reflection::HasManyReflection{@name: :comments}
-      }) with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}"
-    : "{ :comments => ::Example109::Reflection::HasManyReflection }"
   Example109::Base.compute_type:
     ("::Comment"): singleton(::Comment)
-    ("::Comment") on singleton(::Example109::Base): singleton(::Comment)
-    '("::Comment") on singleton(::Example109::Base) with {::Thread{@__rbs_infer__main: nil}}': singleton(::Comment)
+    ("::Comment") on singleton(::Example109::Post): singleton(::Comment)
+    '("::Comment") on singleton(::Example109::Post) with {::Thread{@__rbs_infer__main: nil}}': singleton(::Comment)
     '("::Comment") with {::Thread{@__rbs_infer__main: nil}}': singleton(::Comment)
   Example109::Base.inherited:
     "(singleton(::Example109::Comment)) with {::Example109::Comment{@generated_relation_methods: nil}}":
@@ -9959,16 +9816,15 @@ methods:
   Example109::Post.__class_attr__reflections=:
     "({ :comments => ::Example109::Reflection::HasManyReflection })": ({ :comments
       => ::Example109::Reflection::HasManyReflection } | "__class_attr__reflections=")
+    ? "({ :comments => ::Example109::Reflection::HasManyReflection }) with {@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}"
+    : ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr__reflections=")
     ? "({ :comments => ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @klass: nil, @name: :comments, @options: {  }} }) with {@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}"
-    : ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr_plural_names="
-      | "__class_attr_pluralize_table_names=" | "__class_attr__reflections=")
-    ? "({ :comments => ::Example109::Reflection::HasManyReflection{@name: :comments}
-      }) with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}"
     : ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr_plural_names="
       | "__class_attr_pluralize_table_names=" | "__class_attr__reflections=")
   Example109::Reflection.add_reflection:
@@ -9978,9 +9834,6 @@ methods:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @klass: nil, @name: :comments, @options: {  }}) with {::Example109::Post{@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}}"
-    : "{ :comments => ::Example109::Reflection::HasManyReflection }"
-    ? "(singleton(::Example109::Post), :comments, ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
     : "{ :comments => ::Example109::Reflection::HasManyReflection }"
   Example109::Reflection.create:
     "(:has_many, :comments, ::Proc, {  }, singleton(::Example109::Post))":
@@ -10112,10 +9965,6 @@ methods:
         "@name": ":comments"
         "@options": "{  }"
     "(untyped, :comments, ::Proc, ::Hash[untyped, untyped], self)": "(::Example109::Reflection::ThroughReflection
-      | ::Example109::Reflection::HasManyReflection)"
-    "(untyped, :comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Base))": "(::Example109::Reflection::ThroughReflection
-      | ::Example109::Reflection::HasManyReflection)"
-    "(untyped, :comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Base)) on singleton(::Example109::Reflection)": "(::Example109::Reflection::ThroughReflection
       | ::Example109::Reflection::HasManyReflection)"
     "(untyped, :comments, ::Proc, {  }, singleton(::Example109::Post))":
       class: "::Example109::Reflection::HasManyReflection"
@@ -10259,7 +10108,7 @@ methods:
         "@options": nil
         "@plural_name": nil
         "@scope": nil
-    "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Base))":
+    "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))":
       class: "::Example109::Reflection::AssociationReflection"
       ivars:
         "@active_record": nil
@@ -10422,14 +10271,14 @@ methods:
       nil}}'
     : "::String"
   Example109::Reflection::MacroReflection#normalize_options:
-    ? "(({ :extend => ::Array[::Module] } | {  })) with {@active_record: singleton(::Example109::Base),
+    ? "(({ :extend => ::Array[::Module] } | {  })) with {@active_record: singleton(::Example109::Post),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
       @options: {  }}"
     : "({ :extend => ::Array[::Module] } | {  })"
     "(::Hash[untyped, untyped]) with {::Thread{@__rbs_infer__main: nil}}": "::Hash[untyped,
       untyped]"
-    ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Base),
+    ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Post),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
       @options: {  }}"
@@ -10504,7 +10353,6 @@ methods:
           block: "{ |_map, key| key.to_s }"
   Example116#[]:
     "(:title) with {@backend: ::Hash[untyped, untyped]{@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}}": '"title"'
-    "(:title) with {@backend: ::Hash[untyped, untyped]{[]: {  }}}": "(untyped | nil)"
   Example116.new:
     "()":
       class: "::Example116"
@@ -10671,25 +10519,25 @@ methods:
     "(singleton(::Example33::BarOther)) on singleton(::Example33::BazOther)": "(:age
       | :name_upcase | nil)"
   Example34::Foo#included:
-    "() &-> :age": "^(*untyped) [self: (singleton(::Example34::Bar) | singleton(::Example34::Baz)
-      | ::Module)] -> :age"
-    "() &-> nil": "^(*untyped) [self: (singleton(::Example34::Bar) | singleton(::Example34::Baz)
-      | ::Module)] -> nil"
+    "() &-> :age": "^(*untyped) [self: (singleton(::Example34::Bar) | ::Module)] ->
+      :age"
+    "() &-> nil": "^(*untyped) [self: (singleton(::Example34::Bar) | ::Module)] ->
+      nil"
     "() on singleton(::Example34::Baz) &-> :age": "^(*untyped) [self: (singleton(::Example34::Bar)
-      | singleton(::Example34::Baz) | ::Module)] -> :age"
+      | ::Module)] -> :age"
     "(singleton(::Example34::Bar)) on singleton(::Example34::Baz)": "(:age | nil)"
   Example35::Foo.bazinga:
     "(singleton(::Example35::Baz)) on singleton(::Example35::Bar)": "(:age | nil)"
   Example35::Foo.bazingado:
-    "() &-> :age": "^(*untyped) [self: singleton(::Example35::Foo)] -> :age"
-    "() &-> nil": "^(*untyped) [self: singleton(::Example35::Foo)] -> nil"
-    "() on singleton(::Example35::Baz) &-> :age": "^(*untyped) [self: singleton(::Example35::Foo)]
+    "() &-> :age": "^(*untyped) [self: singleton(::Example35::Bar)] -> :age"
+    "() &-> nil": "^(*untyped) [self: singleton(::Example35::Bar)] -> nil"
+    "() on singleton(::Example35::Baz) &-> :age": "^(*untyped) [self: singleton(::Example35::Bar)]
       -> :age"
     "(singleton(::Example35::Bar)) on singleton(::Example35::Baz)": "(:age | nil)"
   Example36::Foo.bazingado:
-    "() &-> :age": "^(*untyped) [self: singleton(::Example36::Foo)] -> :age"
-    "() &-> nil": "^(*untyped) [self: singleton(::Example36::Foo)] -> nil"
-    "() on singleton(::Example36::Baz) &-> :age": "^(*untyped) [self: singleton(::Example36::Foo)]
+    "() &-> :age": "^(*untyped) [self: singleton(::Example36::Bar)] -> :age"
+    "() &-> nil": "^(*untyped) [self: singleton(::Example36::Bar)] -> nil"
+    "() on singleton(::Example36::Baz) &-> :age": "^(*untyped) [self: singleton(::Example36::Bar)]
       -> :age"
     "(singleton(::Example36::Bar)) on singleton(::Example36::Baz)": "(:age | nil)"
   Example37::Foo#bazingado:
@@ -11881,37 +11729,6 @@ methods:
     ("a", "b", "c"): '"stamped: a"'
     ("post"): '"stamped: post"'
   String#camelize:
-    ? '() on "ActiveSupport::Inflector" with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : "::String"
     ? '() on "comment" with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -12096,17 +11913,50 @@ methods:
   String#constantize:
     () on "::Comment": singleton(::Comment)
     () on "Comment": singleton(::Comment)
+  String#demodulize:
+    () on "Example109::Post": '"Post"'
   String#safe_constantize:
     () on "::Comment": singleton(::Comment)
     '() on "::Comment" with {::Thread{@__rbs_infer__main: nil}}': singleton(::Comment)
     () on "Comment": singleton(::Comment)
     '() on "Comment" with {::Thread{@__rbs_infer__main: nil}}': singleton(::Comment)
-    () on "Example109::Base::Comment": nil
-    '() on "Example109::Base::Comment" with {::Thread{@__rbs_infer__main: nil}}': nil
     () on "Example109::Comment": singleton(::Example109::Comment)
     '() on "Example109::Comment" with {::Thread{@__rbs_infer__main: nil}}': singleton(::Example109::Comment)
+    () on "Example109::Post::Comment": nil
+    '() on "Example109::Post::Comment" with {::Thread{@__rbs_infer__main: nil}}': nil
   String#singularize:
     () on "comments": "::String"
+    ? '() on "comments" with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
+    : '"comment"'
     ? '() on "comments" with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -12351,7 +12201,7 @@ methods:
 declarations:
   ActiveJob::Base.perform_later: "(::AuthorDigestJob | ::AvatarThumbnailJob)"
   ActiveSupport::Inflector#camelize: (::String | "Comments" | "Comment")
-  ActiveSupport::Inflector#demodulize: '"Base"'
+  ActiveSupport::Inflector#demodulize: '"Post"'
   ActiveSupport::Inflector#inflections: "(::ActiveSupport::Inflector::Inflections
     | untyped | ::ActiveSupport::Inflector::Inflections::Uncountables[untyped])"
   ActiveSupport::Inflector#singularize: '"comment"'
@@ -12382,7 +12232,6 @@ declarations:
   Example107::Canvas#draw: "(5 | 15 | 20)"
   Example108::Settings.__class_attr_plural_names: "::TrueClass"
   Example108::Settings.generated_readers: singleton(::Example108::Gauge::GeneratedReaders)
-  Example109::Associations::Builder::Association.create_reflection: "::Example109::Reflection::HasManyReflection"
   Example109::Associations::Builder::Association.define_accessors: ":comment_ids="
   Example109::Associations::Builder::CollectionAssociation.define_extensions: nil
   Example109::Base.__class_attr__reflections: "{  }"
@@ -12415,9 +12264,9 @@ declarations:
   Example33::Foo#bazingado: "(:age | :name_upcase | nil | ^(*untyped) [self: (singleton(::Example33::Bar)
     | singleton(::Example33::BarOther))] -> (:age | :name_upcase))"
   Example35::Foo.bazinga: "(:age | nil)"
-  Example35::Foo.bazingado: "(:age | nil | ^(*untyped) [self: singleton(::Example35::Foo)]
+  Example35::Foo.bazingado: "(:age | nil | ^(*untyped) [self: singleton(::Example35::Bar)]
     -> :age)"
-  Example36::Foo.bazingado: "(:age | nil | ^(*untyped) [self: singleton(::Example36::Foo)]
+  Example36::Foo.bazingado: "(:age | nil | ^(*untyped) [self: singleton(::Example36::Bar)]
     -> :age)"
   Example37::Foo#bazingado: "(:age | nil | ^(*untyped) [self: singleton(::Example37::Bar)]
     -> :age)"
@@ -12465,10 +12314,758 @@ declarations:
   PostsController#__rbs_infer__run_publish: "(true | nil)"
   PostsController#__rbs_infer__run_update: "(true | nil)"
   String#camelize: (::String | "Comments" | "Comment")
+  String#demodulize: '"Post"'
   String#singularize: '"comment"'
   Thread#[]: nil
   Users::AvatarsController#__rbs_infer__run_update: "(true | nil)"
   UsersController#__rbs_infer__run_featured_post: "(true | nil)"
+selves:
+  ActionController::Base#performed?:
+  - "::DashboardController"
+  - "::Posts::AssignmentsController"
+  - "::PostsController"
+  - "::Users::AvatarsController"
+  - "::UsersController"
+  ActionController::HttpAuthentication::Token#authenticate:
+  - singleton(::ActionController::HttpAuthentication::Token)
+  ActionController::HttpAuthentication::Token#authentication_request:
+  - singleton(::ActionController::HttpAuthentication::Token)
+  ActionText::Attribute::ClassMethods#has_rich_text:
+  - singleton(::Article)
+  ActiveJob::Base.perform_later:
+  - singleton(::AuthorDigestJob)
+  - singleton(::AvatarThumbnailJob)
+  ActiveSupport::Concern#class_methods:
+  - singleton(::ActionText::Attribute)
+  - singleton(::Example101::Assoc)
+  - singleton(::Example58::Defaults)
+  - singleton(::Example59::Naming)
+  - singleton(::Example60::Labels)
+  - singleton(::Post::Taggable)
+  - singleton(::Vault::Totaled)
+  ActiveSupport::Inflector#camelize:
+  - singleton(::ActiveSupport::Inflector)
+  ActiveSupport::Inflector#const_regexp:
+  - singleton(::ActiveSupport::Inflector)
+  ActiveSupport::Inflector#constantize:
+  - singleton(::ActiveSupport::Inflector)
+  ActiveSupport::Inflector#demodulize:
+  - singleton(::ActiveSupport::Inflector)
+  ActiveSupport::Inflector#safe_constantize:
+  - singleton(::ActiveSupport::Inflector)
+  ActiveSupport::Inflector#singularize:
+  - singleton(::ActiveSupport::Inflector)
+  ActiveSupport::Inflector::Inflections::Uncountables#add:
+  - "::ActiveSupport::Inflector::Inflections::Uncountables[T]"
+  - "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
+  ActiveSupport::Inflector::Inflections::Uncountables#delete:
+  - "::ActiveSupport::Inflector::Inflections::Uncountables[untyped]"
+  - "::Array[untyped]"
+  ActiveSupport::Inflector::Inflections::Uncountables#to_regex:
+  - "::ActiveSupport::Inflector::Inflections::Uncountables[T]"
+  ApplicationController#authenticate_user:
+  - "::DashboardController"
+  - "::Posts::AssignmentsController"
+  - "::PostsController"
+  - "::Users::AvatarsController"
+  - "::UsersController"
+  ApplicationController#current_user_present?:
+  - "::DashboardController"
+  - "::Posts::AssignmentsController"
+  - "::PostsController"
+  - "::Users::AvatarsController"
+  - "::UsersController"
+  ApplicationController#log_user_author_name:
+  - "::DashboardController"
+  - "::Posts::AssignmentsController"
+  - "::PostsController"
+  - "::Users::AvatarsController"
+  - "::UsersController"
+  Class#class_attribute:
+  - singleton(::Example109::Post)
+  - singleton(::Example110::Options)
+  Class#inherited:
+  - "::Class"
+  - singleton(::Example109::Base)
+  - singleton(::Example116Base)
+  Concurrent::Collection::MriMapBackend#compute_if_absent:
+  - "::Concurrent::Map[K, V]"
+  Concurrent::Collection::NonConcurrentMapBackend#[]=:
+  - "::Concurrent::Collection::MriMapBackend"
+  Concurrent::Collection::NonConcurrentMapBackend#clear:
+  - "::Concurrent::Collection::MriMapBackend"
+  Concurrent::Collection::NonConcurrentMapBackend#compute_if_absent:
+  - "::Concurrent::Collection::MriMapBackend"
+  Concurrent::Collection::NonConcurrentMapBackend#delete_pair:
+  - "::Concurrent::Collection::MriMapBackend"
+  Concurrent::Collection::NonConcurrentMapBackend#each_pair:
+  - "::Concurrent::Map[K, V]"
+  Concurrent::Collection::NonConcurrentMapBackend#get_and_set:
+  - "::Concurrent::Collection::MriMapBackend"
+  Concurrent::Collection::NonConcurrentMapBackend#get_or_default:
+  - "::Concurrent::Collection::NonConcurrentMapBackend"
+  - "::Concurrent::Map[K, V]"
+  Concurrent::Collection::NonConcurrentMapBackend#initialize_copy:
+  - "::Concurrent::Map[K, V]"
+  Concurrent::Collection::NonConcurrentMapBackend#merge_pair:
+  - "::Concurrent::Collection::MriMapBackend"
+  Concurrent::Collection::NonConcurrentMapBackend#replace_if_exists:
+  - "::Concurrent::Collection::MriMapBackend"
+  Concurrent::Collection::NonConcurrentMapBackend#replace_pair:
+  - "::Concurrent::Collection::MriMapBackend"
+  Concurrent::Collection::NonConcurrentMapBackend#set_backend:
+  - "::Concurrent::Collection::NonConcurrentMapBackend"
+  - "::Concurrent::Map"
+  Concurrent::Map#each_pair:
+  - "::Concurrent::Map[K, V]"
+  Concurrent::Map#fetch:
+  - "::Concurrent::Map[K, V]"
+  Concurrent::Map#populate_from:
+  - "::Concurrent::Map[K, V]"
+  Concurrent::Map#raise_fetch_no_key:
+  - "::Concurrent::Map[K, V]"
+  Concurrent::Map#validate_options_hash!:
+  - "::Concurrent::Map[K, V]"
+  Concurrent::Utility::EngineDetector#on_cruby?:
+  - singleton(::Concurrent)
+  Concurrent::Utility::EngineDetector#on_jruby?:
+  - singleton(::Concurrent)
+  Concurrent::Utility::EngineDetector#on_truffleruby?:
+  - singleton(::Concurrent)
+  Current::GeneratedAttributeMethods#account=:
+  - "::Current"
+  Current::GeneratedAttributeMethods#author_name=:
+  - "::Current"
+  Current::GeneratedAttributeMethods#user=:
+  - "::Current"
+  Current::GeneratedAttributeMethods#viewer_name=:
+  - "::Current"
+  DeviseScopedHelpers#authenticate_account!:
+  - "::DashboardController"
+  DeviseScopedHelpers#current_account:
+  - "::ActionController::Base"
+  - "::DashboardController"
+  EvalReopen::Slots#slot:
+  - "::EvalReopen"
+  EvalReopen::Slots#slot=:
+  - "::EvalReopen"
+  Example100::Base.accept_nested:
+  - singleton(::Example100::Article)
+  Example100::Base.associate:
+  - singleton(::Example100::Article)
+  Example100::Base.association_reflections:
+  - singleton(::Example100::Article)
+  Example100::Base.reflect_on:
+  - singleton(::Example100::Article)
+  Example101::Assoc::ClassMethods#declare:
+  - singleton(::Example101::Post)
+  Example105::Animal#introduce:
+  - "::Example105Cat"
+  - "::Example105Dog"
+  Example106::Leaf#weight:
+  - "::Example106Counter"
+  - "::Example106Printer"
+  Example106::Visitor#visit:
+  - "::Example106Printer"
+  Example108::Settings.__class_attr_plural_names:
+  - singleton(::Example108::Gauge)
+  Example108::Settings.define_setting_reader:
+  - singleton(::Example108::Gauge)
+  Example108::Settings.generated_readers:
+  - singleton(::Example108::Gauge)
+  Example108::Settings.plural_names:
+  - singleton(::Example108::Gauge)
+  Example109::Associations::Association#ensure_klass_exists!:
+  - "::Example109::Associations::HasManyAssociation"
+  Example109::Associations::Association#klass:
+  - "::Example109::Associations::Association"
+  - "::Example109::Associations::HasManyAssociation"
+  Example109::Associations::Builder::Association.build:
+  - singleton(::Example109::Associations::Builder::HasMany)
+  Example109::Associations::Builder::Association.create_reflection:
+  - singleton(::Example109::Associations::Builder::HasMany)
+  Example109::Associations::Builder::Association.define_accessors:
+  - singleton(::Example109::Associations::Builder::HasMany)
+  Example109::Associations::Builder::Association.define_callbacks:
+  - singleton(::Example109::Associations::Builder::HasMany)
+  Example109::Associations::Builder::Association.define_change_tracking_methods:
+  - singleton(::Example109::Associations::Builder::HasMany)
+  Example109::Associations::Builder::Association.define_readers:
+  - singleton(::Example109::Associations::Builder::CollectionAssociation)
+  Example109::Associations::Builder::Association.define_validations:
+  - singleton(::Example109::Associations::Builder::HasMany)
+  Example109::Associations::Builder::CollectionAssociation.define_callback:
+  - singleton(::Example109::Associations::Builder::HasMany)
+  Example109::Associations::Builder::CollectionAssociation.define_callbacks:
+  - singleton(::Example109::Associations::Builder::HasMany)
+  Example109::Associations::Builder::CollectionAssociation.define_extensions:
+  - singleton(::Example109::Associations::Builder::HasMany)
+  Example109::Associations::Builder::CollectionAssociation.define_readers:
+  - singleton(::Example109::Associations::Builder::HasMany)
+  Example109::Associations::Builder::CollectionAssociation.define_writers:
+  - singleton(::Example109::Associations::Builder::HasMany)
+  Example109::Associations::ClassMethods#has_records:
+  - singleton(::Example109::Post)
+  Example109::Associations::CollectionAssociation#reader:
+  - "::Example109::Associations::HasManyAssociation"
+  Example109::Base#association_instance_get:
+  - "::Example109::Post"
+  Example109::Base#association_instance_set:
+  - "::Example109::Post"
+  Example109::Base.__class_attr__reflections:
+  - singleton(::Example109::Post)
+  Example109::Base.__class_attr__reflections=:
+  - singleton(::Example109::Post)
+  Example109::Base.__class_attr_pluralize_table_names:
+  - singleton(::Example109::Post)
+  Example109::Base._reflections:
+  - singleton(::Example109::Post)
+  Example109::Base._reflections=:
+  - singleton(::Example109::Post)
+  Example109::Base.compute_type:
+  - singleton(::Example109::Post)
+  Example109::Base.pluralize_table_names:
+  - singleton(::Example109::Post)
+  Example109::Core::ClassMethods#generated_relation_methods:
+  - singleton(::Example109::Post)
+  Example109::Post::GeneratedRelationMethods#comments:
+  - "::Example109::Post"
+  Example109::Reflection::AssociationReflection#compute_class:
+  - "::Example109::Reflection::HasManyReflection"
+  Example109::Reflection::AssociationReflection#derive_class_name:
+  - "::Example109::Reflection::HasManyReflection"
+  Example109::Reflection::AssociationReflection#polymorphic?:
+  - "::Example109::Reflection::HasManyReflection"
+  Example109::Reflection::ClassMethods#_reflect_on_association:
+  - singleton(::Example109::Post)
+  Example109::Reflection::ClassMethods#clear_reflections_cache:
+  - singleton(::Example109::Post)
+  Example109::Reflection::MacroReflection#_klass:
+  - "::Example109::Reflection::HasManyReflection"
+  Example109::Reflection::MacroReflection#class_name:
+  - "::Example109::Reflection::HasManyReflection"
+  Example109::Reflection::MacroReflection#klass:
+  - "::Example109::Reflection::HasManyReflection"
+  Example109::Reflection::MacroReflection#normalize_options:
+  - "::Example109::Reflection::AssociationReflection"
+  Example110::Options.__class_attr_plural_labels:
+  - singleton(::Example110::Dial)
+  - singleton(::Example110::Options)
+  Example110::Options.define_option_reader:
+  - singleton(::Example110::Dial)
+  Example110::Options.generated_option_readers:
+  - singleton(::Example110::Dial)
+  Example110::Options.plural_labels:
+  - singleton(::Example110::Dial)
+  - singleton(::Example110::Options)
+  Example116Base.label_for:
+  - singleton(::Example116Child)
+  Example116Base.labeled:
+  - singleton(::Example116Child)
+  Example19#halt:
+  - singleton(::Example19::Responder)
+  Example19#record:
+  - singleton(::Example19::Responder)
+  Example20#halt:
+  - singleton(::Example20::Responder)
+  Example20#record:
+  - singleton(::Example20::Responder)
+  Example22::Foo#bazingado:
+  - singleton(::Example22::Bar)
+  Example23::Foo#bazinga:
+  - singleton(::Example23::Bar)
+  - singleton(::Example23::BarOther)
+  Example24::Foo#bazinga:
+  - singleton(::Example24::Bar)
+  - singleton(::Example24::BarOther)
+  Example24::Foo#bazingado:
+  - singleton(::Example24::Baz)
+  Example25::Foo#bazinga:
+  - singleton(::Example25::Bar)
+  - singleton(::Example25::BarOther)
+  Example25::Foo#bazingado:
+  - singleton(::Example25::Baz)
+  - singleton(::Example25::BazOther)
+  Example26::Foo#bazinga:
+  - singleton(::Example26::Bar)
+  - singleton(::Example26::BarOther)
+  Example27::Foo#bazinga:
+  - singleton(::Example27::Bar)
+  Example27::Foo#bazingado:
+  - singleton(::Example27::Baz)
+  Example28::Foo#bazinga:
+  - singleton(::Example28::Bar)
+  Example28::Foo#bazingado:
+  - singleton(::Example28::Baz)
+  Example29::Foo#bazinga:
+  - singleton(::Example29::Bar)
+  - singleton(::Example29::BarOther)
+  Example29::Foo#bazingado:
+  - singleton(::Example29::Baz)
+  - singleton(::Example29::BazOther)
+  Example31::Age#age:
+  - "::Example31::Bar"
+  Example31::Foo#bazinga:
+  - singleton(::Example31::Bar)
+  Example31::Foo#bazingado:
+  - singleton(::Example31::Baz)
+  Example32::Foo#bazinga:
+  - singleton(::Example32::Bar)
+  Example32::Foo#bazingado:
+  - singleton(::Example32::Baz)
+  Example33::Foo#bazinga:
+  - singleton(::Example33::Bar)
+  - singleton(::Example33::BarOther)
+  Example33::Foo#bazingado:
+  - singleton(::Example33::Baz)
+  - singleton(::Example33::BazOther)
+  Example34::Foo#include:
+  - singleton(::Example34::Bar)
+  Example35::Foo.bazinga:
+  - singleton(::Example35::Bar)
+  Example35::Foo.bazingado:
+  - singleton(::Example35::Baz)
+  Example36::Foo.bazinga:
+  - singleton(::Example36::Bar)
+  Example36::Foo.bazingado:
+  - singleton(::Example36::Baz)
+  Example37::Foo#bazinga:
+  - singleton(::Example37::Bar)
+  Example37::Foo#bazingado:
+  - singleton(::Example37::Baz)
+  Example38::Foo#bazinga:
+  - singleton(::Example38::Bar)
+  Example39::Foo#bananed:
+  - singleton(::Example39::Baz)
+  Example40::Foo#bazinga:
+  - singleton(::Example40::Bar)
+  Example42::Foo#bazinga:
+  - singleton(::Example42::Bar)
+  - singleton(::Example42::BarOther)
+  Example42::Foo#bazingado:
+  - singleton(::Example42::Baz)
+  Example43::Foo#bazinga:
+  - singleton(::Example43::Bar)
+  - singleton(::Example43::BarOther)
+  - singleton(::Example43::BarOther2)
+  Example45::Foo#banana_class_method:
+  - singleton(::Example45::Baz)
+  Example47::Baz::BananaMethods#age:
+  - singleton(::Example47::Bar)
+  Example47::Baz::BananaMethods#color:
+  - singleton(::Example47::Bar)
+  Example47::Foo#banana_class_method:
+  - singleton(::Example47::Baz)
+  Example48::Baz::BananaMethods#age:
+  - singleton(::Example48::Bar)
+  Example49::Baz#age:
+  - singleton(::Example49::Bar)
+  Example49::Baz#color:
+  - singleton(::Example49::Bar)
+  Example50::Baz::BananaMethods#age:
+  - singleton(::Example50::Bar)
+  Example50::Baz::BananaMethods#color:
+  - singleton(::Example50::Bar)
+  Example50::Foo#banana_class_method:
+  - singleton(::Example50::Baz)
+  Example51::Foo#banana_class_method:
+  - singleton(::Example51::Baz)
+  Example52::Baz::BananaMethods#age:
+  - singleton(::Example52::Bar)
+  Example52::Foo#banana_class_method:
+  - singleton(::Example52::Baz)
+  Example53::Baz::BananaMethods#age:
+  - singleton(::Example53::Bar)
+  Example53::Foo#banana_class_method:
+  - singleton(::Example53::Baz)
+  Example54::Baz::BananaMethods#age:
+  - singleton(::Example54::Bar)
+  Example54::Foo#banana_class_method:
+  - singleton(::Example54::Baz)
+  Example55::Baz::BananaMethods#age:
+  - singleton(::Example55::Bar)
+  Example55::Foo#banana_class_method:
+  - singleton(::Example55::Baz)
+  Example58::Defaults#default_indexed_by:
+  - "::Example58"
+  Example59::Naming::ClassMethods#human_name:
+  - singleton(::Example59)
+  Example62::Deferring#keep:
+  - singleton(::Example62::Shared)
+  Example62::Slots#hallmark:
+  - "::Example62"
+  Example62::Slots#hallmark=:
+  - "::Example62"
+  Example65::Dispatcher.dispatch:
+  - singleton(::Example65Adder)
+  - singleton(::Example65CsvReporter)
+  - singleton(::Example65Greeter)
+  Example65::Rival.dispatch:
+  - singleton(::Example65Impostor)
+  Example67Source#window_size:
+  - "::Example67Source"
+  - singleton(::Example67Window)
+  Example71::Base.writes:
+  - singleton(::Example71::Child)
+  Example71::Writes#writes_mixed:
+  - singleton(::Example71::Mixed)
+  Example77::Peel.banana_delegate:
+  - singleton(::Example77::Peel)
+  - singleton(::Example77::Rind)
+  Example80::Forwarding.forward:
+  - singleton(::Example80::Account)
+  - singleton(::Example80::Order)
+  Example88::Base.has_many_like:
+  - singleton(::Example88::Post)
+  Example89::Base.define_reader:
+  - singleton(::Example89::Widget)
+  Example89::Base.define_reader_on_self:
+  - singleton(::Example89::Widget)
+  Example89::Base.generated_methods:
+  - singleton(::Example89::Widget)
+  Example89::Widget::GeneratedMethods#size:
+  - "::Example89::Widget"
+  Example89::Widget::GeneratedMethods#weight:
+  - "::Example89::Widget"
+  Example90::Base.has_reader:
+  - singleton(::Example90::Post)
+  Example90::Core::ClassMethods#generated_association_methods:
+  - singleton(::Example90::Post)
+  Example90::Post::GeneratedAssociationMethods#comments:
+  - "::Example90::Post"
+  Example90::Post::GeneratedAssociationMethods#tags:
+  - "::Example90::Post"
+  Example91::Base.has_reader:
+  - singleton(::Example91::Post)
+  Example91::Core::ClassMethods#generated_association_methods:
+  - singleton(::Example91::Post)
+  Example91::Post::GeneratedAssociationMethods#comments:
+  - "::Example91::Post"
+  Example91::Post::GeneratedAssociationMethods#tags:
+  - "::Example91::Post"
+  Example94::Base.describe:
+  - singleton(::Example94::Car)
+  - singleton(::Example94::Truck)
+  Example94::Base.lookup:
+  - singleton(::Example94::Car)
+  - singleton(::Example94::Truck)
+  Example94::Base.register:
+  - singleton(::Example94::Car)
+  - singleton(::Example94::Truck)
+  Example94::Base.registry:
+  - singleton(::Example94::Car)
+  - singleton(::Example94::Truck)
+  FilterConfiguration#configure_filter:
+  - "::PostsController"
+  I18n::Locale::Fallbacks#empty?:
+  - "::Hash[untyped, untyped]"
+  I18n::Locale::Fallbacks#inspect:
+  - "::Hash[untyped, untyped]"
+  I18n::Locale::Tag::Parents#parent:
+  - "::I18n::Locale::Tag::Simple"
+  I18n::Locale::Tag::Parents#parents:
+  - "::I18n::Locale::Tag::Simple"
+  IncludedHook::Slots#badge=:
+  - "::IncludedHook"
+  IncludedHook::Slots#slot:
+  - "::IncludedHook"
+  IncludedHook::Slots#slot=:
+  - "::IncludedHook"
+  IncludedHook::Slots#stamp=:
+  - "::IncludedHook"
+  Module#__rbs_infer__include_module:
+  - "::Module"
+  - ":append_features"
+  - singleton(::ActionController::Base)
+  - singleton(::ActiveRecord::Base)
+  - singleton(::Current)
+  - singleton(::ERBDashboardShow)
+  - singleton(::ERBLayoutsApplication)
+  - singleton(::ERBPartialPostsComment)
+  - singleton(::ERBPartialPostsForm)
+  - singleton(::ERBPartialPostsSummary)
+  - singleton(::ERBPostsEdit)
+  - singleton(::ERBPostsIndex)
+  - singleton(::ERBPostsNew)
+  - singleton(::ERBPostsShow)
+  - singleton(::ERBUsersAvatarsEdit)
+  - singleton(::ERBUsersShow)
+  - singleton(::EvalReopen)
+  - singleton(::Example101::Post)
+  - singleton(::Example108::Gauge)
+  - singleton(::Example109::Post)
+  - singleton(::Example110::Dial)
+  - singleton(::Example13::Registry)
+  - singleton(::Example31::Bar)
+  - singleton(::Example3::Foo)
+  - singleton(::Example41::Bar)
+  - singleton(::Example44::Bar)
+  - singleton(::Example44::BarOther)
+  - singleton(::Example45::Bar)
+  - singleton(::Example45::BarOther)
+  - singleton(::Example48::Bar)
+  - singleton(::Example52::Bar)
+  - singleton(::Example53::Bar)
+  - singleton(::Example54::Bar)
+  - singleton(::Example55::Bar)
+  - singleton(::Example57)
+  - singleton(::Example57::Inner)
+  - singleton(::Example58)
+  - singleton(::Example59)
+  - singleton(::Example60)
+  - singleton(::Example62)
+  - singleton(::Example62::Middle)
+  - singleton(::Example64)
+  - singleton(::Example66)
+  - singleton(::Example89::Widget)
+  - singleton(::Example90::Post)
+  - singleton(::Example91::Post)
+  - singleton(::I18n::Locale::Tag::Simple)
+  - singleton(::IncludedHook)
+  - singleton(::IncludedHookFirst)
+  - singleton(::IncludedHookSecond)
+  - singleton(::Notification)
+  - singleton(::Post)
+  - singleton(::Post::Commentable)
+  - singleton(::Post::GeneratedRelationMethods)
+  - singleton(::PostsController)
+  - singleton(::User)
+  - singleton(::Widget)
+  Module#include:
+  - "::Module"
+  - singleton(::ActionController::Base)
+  - singleton(::ActiveRecord::Base)
+  - singleton(::Current)
+  - singleton(::ERBDashboardShow)
+  - singleton(::ERBLayoutsApplication)
+  - singleton(::ERBPartialPostsComment)
+  - singleton(::ERBPartialPostsForm)
+  - singleton(::ERBPartialPostsSummary)
+  - singleton(::ERBPostsEdit)
+  - singleton(::ERBPostsIndex)
+  - singleton(::ERBPostsNew)
+  - singleton(::ERBPostsShow)
+  - singleton(::ERBUsersAvatarsEdit)
+  - singleton(::ERBUsersShow)
+  - singleton(::EvalReopen)
+  - singleton(::Example101::Post)
+  - singleton(::Example108::Gauge)
+  - singleton(::Example109::Post)
+  - singleton(::Example110::Dial)
+  - singleton(::Example13::Registry)
+  - singleton(::Example31::Bar)
+  - singleton(::Example3::Foo)
+  - singleton(::Example41::Bar)
+  - singleton(::Example44::Bar)
+  - singleton(::Example44::BarOther)
+  - singleton(::Example45::Bar)
+  - singleton(::Example45::BarOther)
+  - singleton(::Example48::Bar)
+  - singleton(::Example52::Bar)
+  - singleton(::Example53::Bar)
+  - singleton(::Example54::Bar)
+  - singleton(::Example55::Bar)
+  - singleton(::Example57)
+  - singleton(::Example57::Inner)
+  - singleton(::Example58)
+  - singleton(::Example59)
+  - singleton(::Example60)
+  - singleton(::Example62)
+  - singleton(::Example62::Middle)
+  - singleton(::Example64)
+  - singleton(::Example66)
+  - singleton(::Example89::Widget)
+  - singleton(::Example90::Post)
+  - singleton(::Example91::Post)
+  - singleton(::I18n::Locale::Tag::Simple)
+  - singleton(::IncludedHook)
+  - singleton(::IncludedHookFirst)
+  - singleton(::IncludedHookSecond)
+  - singleton(::Notification)
+  - singleton(::Post)
+  - singleton(::Post::Commentable)
+  - singleton(::Post::GeneratedRelationMethods)
+  - singleton(::PostsController)
+  - singleton(::User)
+  - singleton(::Widget)
+  Notification::GeneratedStoreAccessors#channel:
+  - "::Notification"
+  Object#extend:
+  - singleton(::ActionController::Base)
+  - singleton(::ActionText::Attribute)
+  - singleton(::ActiveRecord::Base)
+  - singleton(::ActiveSupport::Inflector)
+  - singleton(::Commentable)
+  - singleton(::Concurrent)
+  - singleton(::Current)
+  - singleton(::ERBDashboardShow)
+  - singleton(::ERBLayoutsApplication)
+  - singleton(::ERBPartialPostsComment)
+  - singleton(::ERBPartialPostsForm)
+  - singleton(::ERBPartialPostsSummary)
+  - singleton(::ERBPostsEdit)
+  - singleton(::ERBPostsIndex)
+  - singleton(::ERBPostsNew)
+  - singleton(::ERBPostsShow)
+  - singleton(::ERBUsersAvatarsEdit)
+  - singleton(::ERBUsersShow)
+  - singleton(::EvalReopen)
+  - singleton(::Eventable)
+  - singleton(::Example101::Assoc)
+  - singleton(::Example101::Post)
+  - singleton(::Example108::Gauge)
+  - singleton(::Example109::Base)
+  - singleton(::Example109::Post)
+  - singleton(::Example110::Dial)
+  - singleton(::Example13::Registry)
+  - singleton(::Example22::Bar)
+  - singleton(::Example23::Bar)
+  - singleton(::Example23::BarOther)
+  - singleton(::Example23::Baz)
+  - singleton(::Example24::Bar)
+  - singleton(::Example24::BarOther)
+  - singleton(::Example24::Baz)
+  - singleton(::Example25::Bar)
+  - singleton(::Example25::BarOther)
+  - singleton(::Example25::Baz)
+  - singleton(::Example25::BazOther)
+  - singleton(::Example26::Bar)
+  - singleton(::Example26::BarOther)
+  - singleton(::Example26::Baz)
+  - singleton(::Example26::BazOther)
+  - singleton(::Example27::Bar)
+  - singleton(::Example27::Baz)
+  - singleton(::Example28::Bar)
+  - singleton(::Example28::Baz)
+  - singleton(::Example29::Bar)
+  - singleton(::Example29::BarOther)
+  - singleton(::Example29::Baz)
+  - singleton(::Example29::BazOther)
+  - singleton(::Example31::Bar)
+  - singleton(::Example31::Baz)
+  - singleton(::Example32::Bar)
+  - singleton(::Example32::Baz)
+  - singleton(::Example33::Bar)
+  - singleton(::Example33::BarOther)
+  - singleton(::Example33::Baz)
+  - singleton(::Example33::BazOther)
+  - singleton(::Example34::Bar)
+  - singleton(::Example34::Baz)
+  - singleton(::Example37::Bar)
+  - singleton(::Example37::Baz)
+  - singleton(::Example38::Bar)
+  - singleton(::Example38::Baz)
+  - singleton(::Example38::BazOther)
+  - singleton(::Example39::Bar)
+  - singleton(::Example39::Baz)
+  - singleton(::Example3::Foo)
+  - singleton(::Example40::Bar)
+  - singleton(::Example40::Baz)
+  - singleton(::Example40::BazOther)
+  - singleton(::Example41::Bar)
+  - singleton(::Example41::Baz)
+  - singleton(::Example42::Bar)
+  - singleton(::Example42::BarOther)
+  - singleton(::Example42::Baz)
+  - singleton(::Example43::Bar)
+  - singleton(::Example43::BarOther)
+  - singleton(::Example43::BarOther2)
+  - singleton(::Example43::Baz)
+  - singleton(::Example43::BazOther)
+  - singleton(::Example44::Bar)
+  - singleton(::Example44::BarOther)
+  - singleton(::Example44::Baz)
+  - singleton(::Example45::Bar)
+  - singleton(::Example45::BarOther)
+  - singleton(::Example45::Baz)
+  - singleton(::Example47::Bar)
+  - singleton(::Example47::Baz)
+  - singleton(::Example48::Bar)
+  - singleton(::Example48::Baz)
+  - singleton(::Example49::Bar)
+  - singleton(::Example50::Bar)
+  - singleton(::Example50::Baz)
+  - singleton(::Example51::Baz)
+  - singleton(::Example52::Bar)
+  - singleton(::Example52::Baz)
+  - singleton(::Example53::Bar)
+  - singleton(::Example53::Baz)
+  - singleton(::Example54::Bar)
+  - singleton(::Example54::Baz)
+  - singleton(::Example55::Bar)
+  - singleton(::Example55::Baz)
+  - singleton(::Example57)
+  - singleton(::Example57::Fields)
+  - singleton(::Example57::Inner)
+  - singleton(::Example57Windowed)
+  - singleton(::Example58)
+  - singleton(::Example58::Defaults)
+  - singleton(::Example59)
+  - singleton(::Example59::Naming)
+  - singleton(::Example60)
+  - singleton(::Example60::Labels)
+  - singleton(::Example62)
+  - singleton(::Example62::Middle)
+  - singleton(::Example62::Shared)
+  - singleton(::Example64)
+  - singleton(::Example66)
+  - singleton(::Example66Override)
+  - singleton(::Example71::Mixed)
+  - singleton(::Example89::Widget)
+  - singleton(::Example90::Base)
+  - singleton(::Example90::Post)
+  - singleton(::Example91::Base)
+  - singleton(::Example91::Post)
+  - singleton(::FilterConfiguration)
+  - singleton(::I18n::Locale::Tag::Simple)
+  - singleton(::IncludedHook)
+  - singleton(::IncludedHook::Homespun)
+  - singleton(::IncludedHook::Sugared)
+  - singleton(::IncludedHookFirst)
+  - singleton(::IncludedHookSecond)
+  - singleton(::Notification)
+  - singleton(::Post)
+  - singleton(::Post::Commentable)
+  - singleton(::Post::Exportable)
+  - singleton(::Post::GeneratedRelationMethods)
+  - singleton(::Post::Notifiable)
+  - singleton(::Post::Taggable)
+  - singleton(::PostsController)
+  - singleton(::Test::Filtrable)
+  - singleton(::User)
+  - singleton(::User::Displayable)
+  - singleton(::User::Notifiable)
+  - singleton(::User::Recoverable)
+  - singleton(::Vault::Totaled)
+  - singleton(::Widget)
+  - singleton(::Widget::Closeable)
+  - singleton(::Widget::Publishable)
+  Post::Notifiable#notification_title:
+  - "::Post"
+  Post::Taggable#tag_names:
+  - singleton(::Post::TagDigest)
+  Post::Taggable::ClassMethods#known_tag?:
+  - "::User_Post::ActiveRecord_Associations_CollectionProxy"
+  String#camelize:
+  - '"comment"'
+  - '"comments"'
+  - "::String"
+  String#constantize:
+  - '"::Comment"'
+  - '"Comment"'
+  - "::String"
+  String#demodulize:
+  - '"Example109::Post"'
+  String#singularize:
+  - '"comments"'
+  Tag::GeneratedRelationMethods#default_limit:
+  - "::Post_Tag::ActiveRecord_Associations_CollectionProxy"
+  Tag::GeneratedRelationMethods#named:
+  - "::Post_Tag::ActiveRecord_Associations_CollectionProxy"
+  Tag::GeneratedRelationMethods#popular:
+  - "::Post_Tag::ActiveRecord_Associations_CollectionProxy"
+  Vault::Totaled::ClassMethods#vault_key:
+  - singleton(::Example64)
 receivers:
   app/controllers/application_controller.rb:13:28:
   - untyped
@@ -12981,9 +13578,9 @@ receivers:
   app/models/example109.rb:106:11:
   - "::Example109::Reflection::HasManyReflection"
   app/models/example109.rb:106:25:
-  - singleton(::Example109::Base)
+  - singleton(::Example109::Post)
   app/models/example109.rb:106:30:
-  - '"Example109::Base"'
+  - '"Example109::Post"'
   app/models/example109.rb:107:17:
   - "::Example109::Reflection::HasManyReflection"
   app/models/example109.rb:110:8:
@@ -13093,7 +13690,7 @@ receivers:
   app/models/example109.rb:286:8:
   - "::Example109::Associations::Association"
   app/models/example109.rb:28:11:
-  - singleton(::Example109::Base)
+  - singleton(::Example109::Post)
   app/models/example109.rb:291:10:
   - "::Example109::Associations::Association"
   app/models/example109.rb:297:8:
@@ -13133,7 +13730,7 @@ receivers:
   app/models/example109.rb:35:46:
   - singleton(::Example109::Reflection::ThroughReflection)
   app/models/example109.rb:361:24:
-  - singleton(::Example109::Base)
+  - singleton(::Example109::Post)
   app/models/example109.rb:362:28:
   - "::Example109::Reflection::HasManyReflection"
   app/models/example109.rb:363:10:
@@ -13165,7 +13762,7 @@ receivers:
   app/models/example109.rb:420:36:
   - "[]"
   app/models/example109.rb:423:18:
-  - singleton(::Example109::Base)
+  - singleton(::Example109::Post)
   app/models/example109.rb:426:38:
   - "[]"
   app/models/example109.rb:431:51:
@@ -14291,7 +14888,56 @@ receivers:
   app/models/example61_caller.rb:6:14:
   - singleton(::Example61)
   app/models/example62.rb:34:11:
-  - "::Object"
+  - "(singleton(::ActionController::Base) | singleton(::ActionText::Attribute) | singleton(::ActiveRecord::Base)
+    | singleton(::ActiveSupport::Inflector) | singleton(::Commentable) | singleton(::Concurrent)
+    | singleton(::Current) | singleton(::ERBDashboardShow) | singleton(::ERBLayoutsApplication)
+    | singleton(::ERBPartialPostsComment) | singleton(::ERBPartialPostsForm) | singleton(::ERBPartialPostsSummary)
+    | singleton(::ERBPostsEdit) | singleton(::ERBPostsIndex) | singleton(::ERBPostsNew)
+    | singleton(::ERBPostsShow) | singleton(::ERBUsersAvatarsEdit) | singleton(::ERBUsersShow)
+    | singleton(::EvalReopen) | singleton(::Eventable) | singleton(::Example101::Assoc)
+    | singleton(::Example101::Post) | singleton(::Example108::Gauge) | singleton(::Example109::Base)
+    | singleton(::Example109::Post) | singleton(::Example110::Dial) | singleton(::Example13::Registry)
+    | singleton(::Example22::Bar) | singleton(::Example23::Bar) | singleton(::Example23::BarOther)
+    | singleton(::Example23::Baz) | singleton(::Example24::Bar) | singleton(::Example24::BarOther)
+    | singleton(::Example24::Baz) | singleton(::Example25::Bar) | singleton(::Example25::BarOther)
+    | singleton(::Example25::Baz) | singleton(::Example25::BazOther) | singleton(::Example26::Bar)
+    | singleton(::Example26::BarOther) | singleton(::Example26::Baz) | singleton(::Example26::BazOther)
+    | singleton(::Example27::Bar) | singleton(::Example27::Baz) | singleton(::Example28::Bar)
+    | singleton(::Example28::Baz) | singleton(::Example29::Bar) | singleton(::Example29::BarOther)
+    | singleton(::Example29::Baz) | singleton(::Example29::BazOther) | singleton(::Example31::Bar)
+    | singleton(::Example31::Baz) | singleton(::Example32::Bar) | singleton(::Example32::Baz)
+    | singleton(::Example33::Bar) | singleton(::Example33::BarOther) | singleton(::Example33::Baz)
+    | singleton(::Example33::BazOther) | singleton(::Example34::Bar) | singleton(::Example34::Baz)
+    | singleton(::Example37::Bar) | singleton(::Example37::Baz) | singleton(::Example38::Bar)
+    | singleton(::Example38::Baz) | singleton(::Example38::BazOther) | singleton(::Example39::Bar)
+    | singleton(::Example39::Baz) | singleton(::Example3::Foo) | singleton(::Example40::Bar)
+    | singleton(::Example40::Baz) | singleton(::Example40::BazOther) | singleton(::Example41::Bar)
+    | singleton(::Example41::Baz) | singleton(::Example42::Bar) | singleton(::Example42::BarOther)
+    | singleton(::Example42::Baz) | singleton(::Example43::Bar) | singleton(::Example43::BarOther)
+    | singleton(::Example43::BarOther2) | singleton(::Example43::Baz) | singleton(::Example43::BazOther)
+    | singleton(::Example44::Bar) | singleton(::Example44::BarOther) | singleton(::Example44::Baz)
+    | singleton(::Example45::Bar) | singleton(::Example45::BarOther) | singleton(::Example45::Baz)
+    | singleton(::Example47::Bar) | singleton(::Example47::Baz) | singleton(::Example48::Bar)
+    | singleton(::Example48::Baz) | singleton(::Example49::Bar) | singleton(::Example50::Bar)
+    | singleton(::Example50::Baz) | singleton(::Example51::Baz) | singleton(::Example52::Bar)
+    | singleton(::Example52::Baz) | singleton(::Example53::Bar) | singleton(::Example53::Baz)
+    | singleton(::Example54::Bar) | singleton(::Example54::Baz) | singleton(::Example55::Bar)
+    | singleton(::Example55::Baz) | singleton(::Example57) | singleton(::Example57::Fields)
+    | singleton(::Example57::Inner) | singleton(::Example57Windowed) | singleton(::Example58)
+    | singleton(::Example58::Defaults) | singleton(::Example59) | singleton(::Example59::Naming)
+    | singleton(::Example60) | singleton(::Example60::Labels) | singleton(::Example62)
+    | singleton(::Example62::Middle) | singleton(::Example62::Shared) | singleton(::Example64)
+    | singleton(::Example66) | singleton(::Example66Override) | singleton(::Example71::Mixed)
+    | singleton(::Example89::Widget) | singleton(::Example90::Base) | singleton(::Example90::Post)
+    | singleton(::Example91::Base) | singleton(::Example91::Post) | singleton(::FilterConfiguration)
+    | singleton(::I18n::Locale::Tag::Simple) | singleton(::IncludedHook) | singleton(::IncludedHook::Homespun)
+    | singleton(::IncludedHook::Sugared) | singleton(::IncludedHookFirst) | singleton(::IncludedHookSecond)
+    | singleton(::Notification) | singleton(::Post) | singleton(::Post::Commentable)
+    | singleton(::Post::Exportable) | singleton(::Post::GeneratedRelationMethods)
+    | singleton(::Post::Notifiable) | singleton(::Post::Taggable) | singleton(::PostsController)
+    | singleton(::Test::Filtrable) | singleton(::User) | singleton(::User::Displayable)
+    | singleton(::User::Notifiable) | singleton(::User::Recoverable) | singleton(::Vault::Totaled)
+    | singleton(::Widget) | singleton(::Widget::Closeable) | singleton(::Widget::Publishable))"
   app/models/example62.rb:34:51:
   - singleton(::Array)
   app/models/example62.rb:48:18:
@@ -14877,7 +15523,7 @@ receivers:
   app/models/example91.rb:26:8:
   - singleton(::Example91::Builder::HasReader)
   app/models/example91.rb:30:22:
-  - singleton(::Example91::Base)
+  - singleton(::Example91::Post)
   app/models/example91.rb:31:8:
   - singleton(::Example91::Builder::HasReader)
   app/models/example91.rb:41:4:
@@ -16110,7 +16756,6 @@ receivers:
   - untyped
   - "{  }"
   sig/generated/steep_activesupport_runtime/inflector.rb:322:24:
-  - '"ActiveSupport::Inflector"'
   - '"comment"'
   - '"comments"'
   - "::String"
@@ -16133,7 +16778,7 @@ receivers:
   - untyped
   - "{  }"
   sig/generated/steep_activesupport_runtime/inflector.rb:334:18:
-  - "(::String | untyped)"
+  - ("Example109::Post" | untyped)
   sig/generated/steep_activesupport_runtime/inflector.rb:336:12:
   - untyped
   sig/generated/steep_activesupport_runtime/inflector.rb:351:17:
@@ -16157,9 +16802,9 @@ receivers:
   sig/generated/steep_activesupport_runtime/inflector.rb:355:6:
   - "(::Object & ::ActiveSupport::Inflector)"
   sig/generated/steep_activesupport_runtime/inflector.rb:362:20:
-  - "(::String | untyped)"
+  - ("comments" | untyped)
   sig/generated/steep_activesupport_runtime/inflector.rb:364:14:
-  - "(::String | untyped)"
+  - ("comments" | untyped)
   sig/generated/steep_activesupport_runtime/inflector.rb:364:24:
   - "(::Object & ::ActiveSupport::Inflector)"
   sig/generated/steep_activesupport_runtime/inflector.rb:364:44:
@@ -16327,7 +16972,57 @@ receivers:
   sig/generated/steep_activesupport_runtime/inflector.rb:98:8:
   - "::ActiveSupport::Inflector::Inflections"
   sig/generated/steep_ar_runtime/active_support/concern.rb:18:11:
-  - "(::Object | untyped)"
+  - "(singleton(::ActionController::Base) | singleton(::ActionText::Attribute) | singleton(::ActiveRecord::Base)
+    | singleton(::ActiveSupport::Inflector) | singleton(::Commentable) | singleton(::Concurrent)
+    | singleton(::Current) | singleton(::ERBDashboardShow) | singleton(::ERBLayoutsApplication)
+    | singleton(::ERBPartialPostsComment) | singleton(::ERBPartialPostsForm) | singleton(::ERBPartialPostsSummary)
+    | singleton(::ERBPostsEdit) | singleton(::ERBPostsIndex) | singleton(::ERBPostsNew)
+    | singleton(::ERBPostsShow) | singleton(::ERBUsersAvatarsEdit) | singleton(::ERBUsersShow)
+    | singleton(::EvalReopen) | singleton(::Eventable) | singleton(::Example101::Assoc)
+    | singleton(::Example101::Post) | singleton(::Example108::Gauge) | singleton(::Example109::Base)
+    | singleton(::Example109::Post) | singleton(::Example110::Dial) | singleton(::Example13::Registry)
+    | singleton(::Example22::Bar) | singleton(::Example23::Bar) | singleton(::Example23::BarOther)
+    | singleton(::Example23::Baz) | singleton(::Example24::Bar) | singleton(::Example24::BarOther)
+    | singleton(::Example24::Baz) | singleton(::Example25::Bar) | singleton(::Example25::BarOther)
+    | singleton(::Example25::Baz) | singleton(::Example25::BazOther) | singleton(::Example26::Bar)
+    | singleton(::Example26::BarOther) | singleton(::Example26::Baz) | singleton(::Example26::BazOther)
+    | singleton(::Example27::Bar) | singleton(::Example27::Baz) | singleton(::Example28::Bar)
+    | singleton(::Example28::Baz) | singleton(::Example29::Bar) | singleton(::Example29::BarOther)
+    | singleton(::Example29::Baz) | singleton(::Example29::BazOther) | singleton(::Example31::Bar)
+    | singleton(::Example31::Baz) | singleton(::Example32::Bar) | singleton(::Example32::Baz)
+    | singleton(::Example33::Bar) | singleton(::Example33::BarOther) | singleton(::Example33::Baz)
+    | singleton(::Example33::BazOther) | singleton(::Example34::Bar) | singleton(::Example34::Baz)
+    | singleton(::Example37::Bar) | singleton(::Example37::Baz) | singleton(::Example38::Bar)
+    | singleton(::Example38::Baz) | singleton(::Example38::BazOther) | singleton(::Example39::Bar)
+    | singleton(::Example39::Baz) | singleton(::Example3::Foo) | singleton(::Example40::Bar)
+    | singleton(::Example40::Baz) | singleton(::Example40::BazOther) | singleton(::Example41::Bar)
+    | singleton(::Example41::Baz) | singleton(::Example42::Bar) | singleton(::Example42::BarOther)
+    | singleton(::Example42::Baz) | singleton(::Example43::Bar) | singleton(::Example43::BarOther)
+    | singleton(::Example43::BarOther2) | singleton(::Example43::Baz) | singleton(::Example43::BazOther)
+    | singleton(::Example44::Bar) | singleton(::Example44::BarOther) | singleton(::Example44::Baz)
+    | singleton(::Example45::Bar) | singleton(::Example45::BarOther) | singleton(::Example45::Baz)
+    | singleton(::Example47::Bar) | singleton(::Example47::Baz) | singleton(::Example48::Bar)
+    | singleton(::Example48::Baz) | singleton(::Example49::Bar) | singleton(::Example50::Bar)
+    | singleton(::Example50::Baz) | singleton(::Example51::Baz) | singleton(::Example52::Bar)
+    | singleton(::Example52::Baz) | singleton(::Example53::Bar) | singleton(::Example53::Baz)
+    | singleton(::Example54::Bar) | singleton(::Example54::Baz) | singleton(::Example55::Bar)
+    | singleton(::Example55::Baz) | singleton(::Example57) | singleton(::Example57::Fields)
+    | singleton(::Example57::Inner) | singleton(::Example57Windowed) | singleton(::Example58)
+    | singleton(::Example58::Defaults) | singleton(::Example59) | singleton(::Example59::Naming)
+    | singleton(::Example60) | singleton(::Example60::Labels) | singleton(::Example62)
+    | singleton(::Example62::Middle) | singleton(::Example62::Shared) | singleton(::Example64)
+    | singleton(::Example66) | singleton(::Example66Override) | singleton(::Example71::Mixed)
+    | singleton(::Example89::Widget) | singleton(::Example90::Base) | singleton(::Example90::Post)
+    | singleton(::Example91::Base) | singleton(::Example91::Post) | singleton(::FilterConfiguration)
+    | singleton(::I18n::Locale::Tag::Simple) | singleton(::IncludedHook) | singleton(::IncludedHook::Homespun)
+    | singleton(::IncludedHook::Sugared) | singleton(::IncludedHookFirst) | singleton(::IncludedHookSecond)
+    | singleton(::Notification) | singleton(::Post) | singleton(::Post::Commentable)
+    | singleton(::Post::Exportable) | singleton(::Post::GeneratedRelationMethods)
+    | singleton(::Post::Notifiable) | singleton(::Post::Taggable) | singleton(::PostsController)
+    | singleton(::Test::Filtrable) | singleton(::User) | singleton(::User::Displayable)
+    | singleton(::User::Notifiable) | singleton(::User::Recoverable) | singleton(::Vault::Totaled)
+    | singleton(::Widget) | singleton(::Widget::Closeable) | singleton(::Widget::Publishable)
+    | untyped)"
   sig/generated/steep_ar_runtime/active_support/concern.rb:18:56:
   - singleton(::Array)
   sig/generated/steep_ar_runtime/active_support/concern.rb:29:52:
@@ -18519,7 +19214,7 @@ exits:
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
-    "((::String | untyped), untyped, ::Symbol) with {::Thread{@__rbs_infer__main: nil}}":
+    '(("comments" | untyped), untyped, ::Symbol) with {::Thread{@__rbs_infer__main: nil}}':
       ivars: {}
       classes:
         "::Thread":
@@ -18902,168 +19597,6 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
   ActiveSupport::Inflector#camelize:
-    ? '("ActiveSupport::Inflector", false) on singleton(::ActiveSupport::Inflector)
-      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : ivars: {}
-      classes:
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-              "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-    ? '("ActiveSupport::Inflector", false) with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : ivars: {}
-      classes:
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-              "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-    ? '("ActiveSupport::Inflector", true) on singleton(::ActiveSupport::Inflector)
-      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : ivars: {}
-      classes:
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-              "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-    ? '("ActiveSupport::Inflector", true) with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : ivars: {}
-      classes:
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-              "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
     ? '("comment", false) on singleton(::ActiveSupport::Inflector) with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -20235,12 +20768,12 @@ exits:
     ("Comment"):
       ivars: {}
       name_error: resolves
-    ("Example109::Base::Comment"):
-      ivars: {}
-      name_error: raises
     ("Example109::Comment"):
       ivars: {}
       name_error: resolves
+    ("Example109::Post::Comment"):
+      ivars: {}
+      name_error: raises
     ("Example81::Shelf"):
       ivars: {}
       name_error: resolves
@@ -20692,32 +21225,32 @@ exits:
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
-    '("Example109::Base::::Comment") on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}':
-      ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-    '("Example109::Base::::Comment") with {::Thread{@__rbs_infer__main: nil}}':
-      ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-    '("Example109::Base::Comment") on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}':
-      ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-    '("Example109::Base::Comment") with {::Thread{@__rbs_infer__main: nil}}':
-      ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
     '("Example109::Comment") on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}':
       ivars: {}
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
     '("Example109::Comment") with {::Thread{@__rbs_infer__main: nil}}':
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    '("Example109::Post::::Comment") on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}':
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    '("Example109::Post::::Comment") with {::Thread{@__rbs_infer__main: nil}}':
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    '("Example109::Post::Comment") on singleton(::ActiveSupport::Inflector) with {::Thread{@__rbs_infer__main: nil}}':
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    '("Example109::Post::Comment") with {::Thread{@__rbs_infer__main: nil}}':
       ivars: {}
       classes:
         "::Thread":
@@ -30842,13 +31375,6 @@ exits:
   Class#class_attribute:
     ? '(("before_add_for_comments" | "after_add_for_comments" | "before_remove_for_comments"
       | "after_remove_for_comments"), instance_accessor: false, instance_predicate:
-      false) on singleton(::Example109::Base) with {::Thread{@__rbs_infer__main: nil}}'
-    : ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-    ? '(("before_add_for_comments" | "after_add_for_comments" | "before_remove_for_comments"
-      | "after_remove_for_comments"), instance_accessor: false, instance_predicate:
       false) on singleton(::Example109::Post) with {::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -33995,29 +34521,6 @@ exits:
       params:
         '3': "{  }"
   Example109::Associations::Builder::Association.define_accessors:
-    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
-      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
-      with {::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
       on singleton(::Example109::Associations::Builder::HasMany) with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
@@ -34032,6 +34535,15 @@ exits:
           "@__instance__":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::HasMany) with {::Example109::Post{@generated_relation_methods:
+      nil}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
         "::Thread":
           "@__rbs_infer__main": nil
         "::Example109::Post":
@@ -34108,6 +34620,24 @@ exits:
             ivars: {}
         "::Thread":
           "@__rbs_infer__main": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::Example109::Post{@generated_relation_methods: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
     ? '(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -34610,72 +35140,8 @@ exits:
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) on singleton(::Example109::Associations::Builder::HasMany) with
-      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{}, @generated_relation_methods: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) on singleton(::Example109::Associations::Builder::HasMany) with
-      {::Example109::Post{@generated_relation_methods: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{}, @generated_relation_methods: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) with {::Example109::Post{@generated_relation_methods: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Associations::Builder::Association.define_callbacks:
-    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
-      on singleton(::Example109::Associations::Builder::Association) with {::Example102::Locales{@fallback_chains:
-      nil}, ::Thread{@__rbs_infer__main: nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
-    ? '(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
+    ? '(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
       on singleton(::Example109::Associations::Builder::CollectionAssociation) with
       {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
@@ -34718,188 +35184,6 @@ exits:
             ivars:
               "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
               "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
-    ? '(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
-      on singleton(::Example109::Associations::Builder::CollectionAssociation) with
-      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
-      }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}'
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-              "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
-    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
-      on singleton(::Example109::Associations::Builder::CollectionAssociation) with
-      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
-    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
-      on singleton(::Example109::Associations::Builder::CollectionAssociation) with
-      {::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
-    ? '(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
-      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}'
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-              "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
-    ? '(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
-      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
-      }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}'
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-              "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
-    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
-      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
-    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
-      with {::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
         "::Thread":
           "@__rbs_infer__main": nil
       keeps_self: true
@@ -34980,6 +35264,28 @@ exits:
             ivars: {}
         "::Thread":
           "@__rbs_infer__main": nil
+      keeps_self: true
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::CollectionAssociation) with
+      {::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::CollectionAssociation) with
+      {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)},
+      ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
       keeps_self: true
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
       on singleton(::Example109::Associations::Builder::HasMany) with {::ActiveSupport::Inflector::Inflections{@__instance__:
@@ -34999,6 +35305,62 @@ exits:
         "::Example109::Post":
           "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
       keeps_self: true
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::HasMany) with {::Example109::Post{@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+      keeps_self: true
+    ? '(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::ActiveSupport::Inflector::Inflections":
+          "@__instance__":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
+              "@default_proc": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
     ? '(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
@@ -35073,6 +35435,26 @@ exits:
             ivars: {}
         "::Thread":
           "@__rbs_infer__main": nil
+      keeps_self: true
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)},
+      ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
       keeps_self: true
     ? '(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
@@ -35854,94 +36236,6 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
       keeps_self: true
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) on singleton(::Example109::Associations::Builder::CollectionAssociation)
-      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
-      singleton(::Example109::Post::GeneratedRelationMethods)}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-      keeps_self: true
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) on singleton(::Example109::Associations::Builder::CollectionAssociation)
-      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)},
-      ::Thread{@__rbs_infer__main: nil}}"
-    : ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-      keeps_self: true
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) on singleton(::Example109::Associations::Builder::HasMany) with
-      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
-      singleton(::Example109::Post::GeneratedRelationMethods)}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-      keeps_self: true
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) on singleton(::Example109::Associations::Builder::HasMany) with
-      {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)},
-      ::Thread{@__rbs_infer__main: nil}}"
-    : ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-      keeps_self: true
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
-      singleton(::Example109::Post::GeneratedRelationMethods)}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-      keeps_self: true
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)},
-      ::Thread{@__rbs_infer__main: nil}}"
-    : ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-      keeps_self: true
   Example109::Associations::Builder::Association.define_change_tracking_methods:
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
       with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
@@ -35955,12 +36249,6 @@ exits:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @klass: nil, @name: :comments, @options: {  }}) with {::Example109::Post{@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}}"
-    : ivars: {}
-      classes:
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
     : ivars: {}
       classes:
         "::Example109::Post":
@@ -36009,125 +36297,7 @@ exits:
       classes:
         "::Example109::Post":
           "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
-    : ivars: {}
-      classes:
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Associations::Builder::CollectionAssociation.define_callback:
-    ? '(singleton(::Example109::Base), (:before_add | :after_add | :before_remove
-      | :after_remove), :comments, ::Hash[untyped, untyped]) with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}'
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-              "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
-    ? '(singleton(::Example109::Base), (:before_add | :after_add | :before_remove
-      | :after_remove), :comments, ::Hash[untyped, untyped]) with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
-      }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}'
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-              "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
-    ? "(singleton(::Example109::Base), (:before_add | :after_add | :before_remove
-      | :after_remove), :comments, ::Hash[untyped, untyped]) with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
-      nil}, ::Thread{@__rbs_infer__main: nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
-    ? "(singleton(::Example109::Base), (:before_add | :after_add | :before_remove
-      | :after_remove), :comments, ::Hash[untyped, untyped]) with {::Example102::Locales{@fallback_chains:
-      nil}, ::Thread{@__rbs_infer__main: nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
-      keeps_self: true
     ? '(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
       | :after_remove), :comments, ::Hash[untyped, untyped]) on singleton(::Example109::Associations::Builder::HasMany)
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
@@ -36573,6 +36743,16 @@ exits:
           "@__rbs_infer__main": nil
       keeps_self: true
     ? "(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
+      | :after_remove), :comments, ::Hash[untyped, untyped]) with {::Example102::Locales{@fallback_chains:
+      nil}, ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+      keeps_self: true
+    ? "(singleton(::Example109::Post), (:before_add | :after_add | :before_remove
       | :after_remove), :comments, ::Hash[untyped, untyped]) with {::Example109::Post{@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}, ::Thread{@__rbs_infer__main:
       nil}}"
@@ -36591,29 +36771,6 @@ exits:
           "@__rbs_infer__main": nil
       keeps_self: true
   Example109::Associations::Builder::CollectionAssociation.define_callbacks:
-    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
-      with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-    ? "(singleton(::Example109::Base), ::Example109::Reflection::HasManyReflection)
-      with {::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
       on singleton(::Example109::Associations::Builder::HasMany) with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
@@ -36627,6 +36784,16 @@ exits:
           "@__instance__":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars: {}
+        "::Thread":
+          "@__rbs_infer__main": nil
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      on singleton(::Example109::Associations::Builder::HasMany) with {::Example109::Post{@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
         "::Thread":
           "@__rbs_infer__main": nil
         "::Example109::Post":
@@ -36703,6 +36870,24 @@ exits:
             ivars: {}
         "::Thread":
           "@__rbs_infer__main": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::Example102::Locales{@fallback_chains: nil}, ::Thread{@__rbs_infer__main:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example102::Locales":
+          "@fallback_chains": nil
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection)
+      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)},
+      ::Thread{@__rbs_infer__main: nil}}"
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
     ? '(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -37205,60 +37390,6 @@ exits:
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) on singleton(::Example109::Associations::Builder::HasMany) with
-      {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
-      singleton(::Example109::Post::GeneratedRelationMethods)}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) on singleton(::Example109::Associations::Builder::HasMany) with
-      {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)},
-      ::Thread{@__rbs_infer__main: nil}}"
-    : ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
-      singleton(::Example109::Post::GeneratedRelationMethods)}, ::Thread{@__rbs_infer__main:
-      nil}}"
-    : ivars: {}
-      classes:
-        "::Example102::Locales":
-          "@fallback_chains": nil
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
-    ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)},
-      ::Thread{@__rbs_infer__main: nil}}"
-    : ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-        "::Example109::Post":
-          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Associations::Builder::CollectionAssociation.define_extensions:
     ? '(singleton(::Example109::Post), :comments) on singleton(::Example109::Associations::Builder::HasMany)
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
@@ -38526,15 +38657,15 @@ exits:
       ivars:
         "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Base.__class_attr__reflections=:
+    ? "({ :comments => ::Example109::Reflection::HasManyReflection }) with {@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}"
+    : ivars: {}
     ? "({ :comments => ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @klass: nil, @name: :comments, @options: {  }} }) with {@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}"
-    : ivars: {}
-    ? "({ :comments => ::Example109::Reflection::HasManyReflection{@name: :comments}
-      }) with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}"
     : ivars: {}
   Example109::Base.__class_attr_pluralize_table_names:
     ? "() with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
@@ -38561,6 +38692,12 @@ exits:
     "() with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}":
       ivars: {}
   Example109::Base._reflections=:
+    ? "({ :comments => ::Example109::Reflection::HasManyReflection }) on singleton(::Example109::Post)
+      with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}"
+    : ivars: {}
+    ? "({ :comments => ::Example109::Reflection::HasManyReflection }) with {@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}"
+    : ivars: {}
     ? "({ :comments => ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -38575,14 +38712,8 @@ exits:
       @klass: nil, @name: :comments, @options: {  }} }) with {@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}"
     : ivars: {}
-    ? "({ :comments => ::Example109::Reflection::HasManyReflection{@name: :comments}
-      }) on singleton(::Example109::Post) with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}"
-    : ivars: {}
-    ? "({ :comments => ::Example109::Reflection::HasManyReflection{@name: :comments}
-      }) with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}"
-    : ivars: {}
   Example109::Base.compute_type:
-    '("::Comment") on singleton(::Example109::Base) with {::Thread{@__rbs_infer__main: nil}}':
+    '("::Comment") on singleton(::Example109::Post) with {::Thread{@__rbs_infer__main: nil}}':
       ivars: {}
       classes:
         "::Thread":
@@ -38594,7 +38725,7 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
       keeps_self: true
-    '("Comment") on singleton(::Example109::Base) with {::Thread{@__rbs_infer__main: nil}}':
+    '("Comment") on singleton(::Example109::Post) with {::Thread{@__rbs_infer__main: nil}}':
       ivars: {}
       classes:
         "::Thread":
@@ -38604,7 +38735,7 @@ exits:
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
-    "(::String) on singleton(::Example109::Base) with {::Thread{@__rbs_infer__main: nil}}":
+    "(::String) on singleton(::Example109::Post) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
         "::Thread":
@@ -38697,15 +38828,15 @@ exits:
       ivars:
         "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Post.__class_attr__reflections=:
+    ? "({ :comments => ::Example109::Reflection::HasManyReflection }) with {@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}"
+    : ivars: {}
     ? "({ :comments => ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @klass: nil, @name: :comments, @options: {  }} }) with {@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}"
-    : ivars: {}
-    ? "({ :comments => ::Example109::Reflection::HasManyReflection{@name: :comments}
-      }) with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}"
     : ivars: {}
   Example109::Post::GeneratedRelationMethods#comments:
     ? '() on ::Example109::Post with {::ActiveSupport::Inflector::Inflections{@__instance__:
@@ -38912,11 +39043,6 @@ exits:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
       @klass: nil, @name: :comments, @options: {  }}) with {::Example109::Post{@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}}"
-    : ivars: {}
-      classes:
-        "::Example109::Post": {}
-    ? "(singleton(::Example109::Post), :comments, ::Example109::Reflection::HasManyReflection{@name:
-      :comments}) with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
     : ivars: {}
       classes:
         "::Example109::Post": {}
@@ -39662,8 +39788,8 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
         "@options": "{  }"
-        "@active_record": singleton(::Example109::Base)
-    ? '(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Base))
+        "@active_record": singleton(::Example109::Post)
+    ? '(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -39704,7 +39830,7 @@ exits:
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
-    ? '(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Base))
+    ? '(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -39742,7 +39868,7 @@ exits:
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
-    ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Base))
+    ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
       with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars: {}
@@ -39753,7 +39879,7 @@ exits:
             ivars: {}
         "::Thread":
           "@__rbs_infer__main": nil
-    ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Base))
+    ? "(:comments, ::Proc, ::Hash[untyped, untyped], singleton(::Example109::Post))
       with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
       nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
       nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
@@ -39767,7 +39893,7 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
         "@options": "{  }"
-        "@active_record": singleton(::Example109::Base)
+        "@active_record": singleton(::Example109::Post)
     ? "(:comments, ::Proc, {  }, singleton(::Example109::Post)) with {::Example109::Post{@_type_candidates_cache:
       ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
       nil}}"
@@ -40068,7 +40194,7 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
   Example109::Reflection::MacroReflection#normalize_options:
-    ? "(({ :extend => ::Array[::Module] } | {  })) with {@active_record: singleton(::Example109::Base),
+    ? "(({ :extend => ::Array[::Module] } | {  })) with {@active_record: singleton(::Example109::Post),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
       @options: {  }}"
@@ -40080,13 +40206,13 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
         "@options": "{  }"
-        "@active_record": singleton(::Example109::Base)
+        "@active_record": singleton(::Example109::Post)
     "(::Hash[untyped, untyped]) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
-    ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Base),
+    ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Post),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
       @options: {  }}"
@@ -40098,12 +40224,12 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
         "@options": "{  }"
-        "@active_record": singleton(::Example109::Base)
+        "@active_record": singleton(::Example109::Post)
     "({  })":
       ivars: {}
       params:
         '0': "{  }"
-    ? "({  }) with {@active_record: singleton(::Example109::Base), @association_foreign_key:
+    ? "({  }) with {@active_record: singleton(::Example109::Post), @association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
@@ -40116,14 +40242,14 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
         "@options": "{  }"
-        "@active_record": singleton(::Example109::Base)
+        "@active_record": singleton(::Example109::Post)
         "@join_table": nil
         "@foreign_key": nil
         "@association_foreign_key": nil
         "@association_primary_key": nil
       params:
         '0': "{  }"
-    ? "({  }) with {@active_record: singleton(::Example109::Base), @class_name: nil,
+    ? "({  }) with {@active_record: singleton(::Example109::Post), @class_name: nil,
       @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
       @options: {  }}"
@@ -40135,7 +40261,7 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@name": ":comments"
         "@options": "{  }"
-        "@active_record": singleton(::Example109::Base)
+        "@active_record": singleton(::Example109::Post)
       params:
         '0': "{  }"
   Example110::Options.__class_attr_plural_labels:
@@ -40314,8 +40440,6 @@ exits:
   Example116#[]:
     "(:title) with {@backend: ::Hash[untyped, untyped]{@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}}":
       ivars: {}
-    "(:title) with {@backend: ::Hash[untyped, untyped]{[]: {  }}}":
-      ivars: {}
   Example116.new:
     "()":
       ivars:
@@ -40347,13 +40471,9 @@ exits:
       ::Hash[untyped, untyped]{@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}),
       []: {  }}}}"
     : ivars: {}
-    "(:title) on singleton(::Example116Child) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{[]: {  }}}}":
-      ivars: {}
     ? "(:title) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{@__rbs_infer__default_proc:
       proc(&{939eb0f200ceb408}), []: {  }}}}"
     : ivars: {}
-    "(:title) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{[]: {  }}}}":
-      ivars: {}
   Example116Base.labeled:
     ? "(:title) on singleton(::Example116Child) with {@example116_labels: ::Example116{@backend:
       ::Hash[untyped, untyped]{@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}),
@@ -40369,15 +40489,6 @@ exits:
                   proc: "^(instance, ::Hash::_Key) -> V"
                   block: "{ |_hash, key| key.to_s }"
               contents: "{  }"
-    "(:title) on singleton(::Example116Child) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{[]: {  }}}}":
-      ivars:
-        "@example116_labels":
-          class: "::Example116"
-          ivars:
-            "@backend":
-              class: "::Hash[untyped, untyped]"
-              ivars: {}
-              contents: "{  }"
     ? "(:title) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{@__rbs_infer__default_proc:
       proc(&{939eb0f200ceb408}), []: {  }}}}"
     : ivars:
@@ -40390,15 +40501,6 @@ exits:
                 "@__rbs_infer__default_proc":
                   proc: "^(instance, ::Hash::_Key) -> V"
                   block: "{ |_hash, key| key.to_s }"
-              contents: "{  }"
-    "(:title) with {@example116_labels: ::Example116{@backend: ::Hash[untyped, untyped]{[]: {  }}}}":
-      ivars:
-        "@example116_labels":
-          class: "::Example116"
-          ivars:
-            "@backend":
-              class: "::Hash[untyped, untyped]"
-              ivars: {}
               contents: "{  }"
   Example13::Guarded#act_block_halt:
     "() with {::Thread{@__rbs_infer__main: nil}}":
@@ -43384,11 +43486,6 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
   Example87::MacroReflection#initialize:
-    ? "((:posts | :comments), ::Hash[untyped, untyped]) on singleton(::Example87::HasManyReflection)
-      with {@collection: nil, @name: nil, @options: nil}"
-    : ivars:
-        "@name": "(:posts | :comments)"
-        "@collection": nil
     "(:comments, ::Hash[untyped, untyped]) with {@collection: nil, @name: nil, @options: nil}":
       ivars:
         "@name": ":comments"
@@ -43610,15 +43707,13 @@ exits:
       ivars:
         "@generated_association_methods": singleton(::Example91::Post::GeneratedAssociationMethods)
     "(:comments) with {@generated_association_methods: nil}":
-      ivars:
-        "@generated_association_methods": nil
+      ivars: {}
     ? "(:tags) on singleton(::Example91::Post) with {@generated_association_methods:
       singleton(::Example91::Post::GeneratedAssociationMethods)}"
     : ivars:
         "@generated_association_methods": singleton(::Example91::Post::GeneratedAssociationMethods)
     "(:tags) with {@generated_association_methods: singleton(::Example91::Post::GeneratedAssociationMethods)}":
-      ivars:
-        "@generated_association_methods": singleton(::Example91::Post::GeneratedAssociationMethods)
+      ivars: {}
   Example91::Builder::HasReader.build:
     "(self, :comments) with {::Example91::Base{@generated_association_methods: nil}}":
       ivars: {}
@@ -44333,11 +44428,7 @@ exits:
       ivars: {}
     "(:title) on ::Hash[untyped, untyped] with {@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}":
       ivars: {}
-    "(:title) on ::Hash[untyped, untyped] with {[]: {  }}":
-      ivars: {}
     "(:title) with {@__rbs_infer__default_proc: proc(&{939eb0f200ceb408}), []: {  }}":
-      ivars: {}
-    "(:title) with {[]: {  }}":
       ivars: {}
   Hash.new:
     "()":
@@ -46607,46 +46698,6 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
   String#camelize:
-    ? '() on "ActiveSupport::Inflector" with {::ActiveSupport::Inflector::Inflections{@__instance__:
-      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
-      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
-      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
-      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
-      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
-      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
-      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
-      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
-      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
-      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
-      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
-      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
-      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
-      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
-      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
-      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
-      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
-      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
-      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
-      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
-      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
-      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
-      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
-      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
-      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
-      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
-      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
-      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Thread{@__rbs_infer__main: nil}}'
-    : ivars: {}
-      classes:
-        "::ActiveSupport::Inflector::Inflections":
-          "@__instance__":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
-              "@default_proc": nil
-        "::Thread":
-          "@__rbs_infer__main": nil
     ? '() on "comment" with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
@@ -46941,17 +46992,17 @@ exits:
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
-    '() on "Example109::Base::::Comment" with {::Thread{@__rbs_infer__main: nil}}':
-      ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
-    '() on "Example109::Base::Comment" with {::Thread{@__rbs_infer__main: nil}}':
-      ivars: {}
-      classes:
-        "::Thread":
-          "@__rbs_infer__main": nil
     '() on "Example109::Comment" with {::Thread{@__rbs_infer__main: nil}}':
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    '() on "Example109::Post::::Comment" with {::Thread{@__rbs_infer__main: nil}}':
+      ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    '() on "Example109::Post::Comment" with {::Thread{@__rbs_infer__main: nil}}':
       ivars: {}
       classes:
         "::Thread":
