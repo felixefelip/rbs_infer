@@ -638,6 +638,48 @@ RSpec.describe RbsInfer::Analyzer do
       end
     end
 
+    it "types a self handed on by the selves every call of its method runs it on" do
+      files = {
+        "base.rb" => <<~RUBY,
+          class Base
+            def self.register(name)
+              Entry.new(name, self)
+            end
+          end
+
+          class Post < Base
+            register :comments
+          end
+
+          class Entry
+            def initialize(name, owner)
+              @owner = owner
+            end
+          end
+        RUBY
+        "sig/base.rbs" => <<~RBS,
+          class Base
+            def self.register: (Symbol name) -> Entry
+          end
+          class Post < Base
+          end
+        RBS
+        "sig/generated/.steep_specializations.yml" => <<~YAML
+          selves:
+            Base.register:
+            - singleton(::Post)
+        YAML
+      }
+
+      with_temp_files(files) do |dir, paths|
+        Dir.chdir(dir) do
+          rbs = described_class.new(target_class: "Entry", target_file: paths.first, source_files: [paths.first]).generate_rbs
+
+          expect(rbs).to include("singleton(Post) owner")
+        end
+      end
+    end
+
     it "re-reads a body its previous declaration claims more of than the checker knows" do
       files = {
         "box.rb" => <<~RUBY,

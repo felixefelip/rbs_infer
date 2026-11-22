@@ -357,7 +357,7 @@ module RbsInfer::Signatures
         result[key] = type_str
       end
 
-      result.merge(CallSelves.types(typing))
+      result.merge(CallSelves.types(typing, specializations: specializations_store, factory: steep_subtyping.factory))
     end
 
     # Returns `{ "method_name" => "Self & Self::Validated" }` for `class_name`,

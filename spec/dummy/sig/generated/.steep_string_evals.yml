@@ -56,9 +56,6 @@ call_sites:
   - def post_ids; []; end
   app/models/example104.rb:44:2:
   - def category_ids; []; end
-  app/models/example108.rb:60:6:
-  -
-  -
   app/models/example108.rb:65:4:
   - |-
     module GeneratedReaders
@@ -82,6 +79,8 @@ call_sites:
   app/models/example109.rb:206:23:
   -
   -
+  app/models/example109.rb:207:10:
+  -
   app/models/example109.rb:286:8:
   -
   -
@@ -94,55 +93,7 @@ call_sites:
   app/models/example109.rb:299:42:
   -
   -
-  app/models/example109.rb:321:10:
-  -
-  -
-  - source: |2
-                  def comments
-                    association(:comments).reader
-                  end
-    target: "::Example109::Post::GeneratedRelationMethods"
-    kind: module
-  - source: |2
-                  def comments=(value)
-                    association(:comments).writer(value)
-                  end
-    target: "::Example109::Post::GeneratedRelationMethods"
-    kind: module
-  app/models/example109.rb:336:10:
-  -
-  app/models/example109.rb:361:18:
-  -
-  -
-  app/models/example109.rb:363:10:
-  - source: |2
-                  def comments
-                    association(:comments).reader
-                  end
-    target: "::Example109::Post::GeneratedRelationMethods"
-    kind: module
-  -
-  -
-  -
-  -
-  -
-  -
-  app/models/example109.rb:364:10:
-  - source: |2
-                  def comments=(value)
-                    association(:comments).writer(value)
-                  end
-    target: "::Example109::Post::GeneratedRelationMethods"
-    kind: module
-  -
-  -
-  -
-  -
-  -
-  -
   app/models/example109.rb:402:12:
-  -
-  app/models/example109.rb:408:39:
   -
   app/models/example109.rb:423:12:
   -
@@ -202,9 +153,6 @@ call_sites:
     plural_labels?; !!self.plural_labels; end;end;silence_redefinition_of_method def
     plural_labels;  if defined?(@plural_labels);    @plural_labels;  else;    self.class.plural_labels;  end;end;;silence_redefinition_of_method
     def plural_labels?; !!self.plural_labels; end
-  app/models/example110.rb:26:6:
-  -
-  -
   app/models/example110.rb:31:4:
   - |-
     module GeneratedOptionReaders
@@ -333,9 +281,6 @@ call_sites:
   - def comment_ids; []; end
   app/models/example88.rb:48:4:
   - def category_ids; []; end
-  app/models/example89.rb:31:6:
-  -
-  -
   app/models/example89.rb:40:4:
   - |-
     module GeneratedMethods
@@ -352,9 +297,6 @@ call_sites:
   - def color; 1; end
   app/models/example89.rb:43:4:
   - def shape; 1; end
-  app/models/example90.rb:28:6:
-  -
-  -
   app/models/example90.rb:33:4:
   - |-
     module GeneratedAssociationMethods
@@ -367,15 +309,6 @@ call_sites:
   - source: def tags; 1; end
     target: "::Example90::Post::GeneratedAssociationMethods"
     kind: module
-  app/models/example91.rb:26:8:
-  -
-  -
-  -
-  app/models/example91.rb:30:16:
-  -
-  -
-  app/models/example91.rb:31:8:
-  -
   app/models/example91.rb:49:4:
   - source: |-
       module GeneratedAssociationMethods
@@ -635,6 +568,8 @@ folded:
 - app/models/example108.rb:60:24
 - app/models/example109.rb:368:16
 - app/models/example109.rb:376:16
+- app/models/example109.rb:442:16
+- app/models/example109.rb:452:16
 - app/models/example110.rb:26:31
 - app/models/example116.rb:22:4
 - app/models/example71.rb:101:11
@@ -657,6 +592,7 @@ folded:
 - app/models/example89.rb:31:24
 - app/models/example89.rb:35:6
 - app/models/example90.rb:28:36
+- app/models/example91.rb:35:14
 - app/models/example92.rb:45:6
 - app/models/example93.rb:55:6
 - app/models/example94.rb:48:6

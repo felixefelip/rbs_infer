@@ -1,9 +1,9 @@
 class Example36
   class Foo
-    self.@_bazingado_block: (^(*untyped) [self: singleton(Example36::Foo)] -> :age)?
+    self.@_bazingado_block: (^(*untyped) [self: singleton(Example36::Bar)] -> :age)?
 
     def self.bazinga: (*singleton(::Example36::Baz) modules) -> Array[singleton(Example36::Baz)]
-    def self.bazingado: (?singleton(Example36::Foo)? base) ?{ (*untyped) [self: singleton(Example36::Foo)] -> :age } -> (^(*untyped) [self: singleton(Example36::Foo)] -> :age | nil | :age)
+    def self.bazingado: (?singleton(Example36::Bar)? base) ?{ (*untyped) [self: singleton(Example36::Bar)] -> :age } -> (:age | nil | ^(*untyped) [self: singleton(Example36::Bar)] -> :age)
   end
 end
 
