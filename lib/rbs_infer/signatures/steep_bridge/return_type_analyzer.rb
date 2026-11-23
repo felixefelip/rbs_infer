@@ -107,6 +107,8 @@ class RbsInfer::Signatures::SteepBridge
 
       unreachable = Set.new.compare_by_identity
       typing.errors.each { |error| unreachable << error.node if UNREACHABLE.include?(error.class) }
+      definition_keys = {}.compare_by_identity
+      Steep::Specializations::Collector.definitions(typing.source).each { |key, def_node| definition_keys[def_node] ||= key }
 
       typing.each_typing do |node, _type|
         next unless %i[def defs].include?(node.type)
@@ -124,7 +126,8 @@ class RbsInfer::Signatures::SteepBridge
           next
         end
 
-        body_type = returned_type(typing, body, unreachable)
+        answered = (key = definition_keys[node]) && @steep_bridge.declaration_type(key)
+        body_type = answered ? typing.type_of(node: body) : returned_type(typing, body, unreachable)
         type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(body_type)
 
         # When Steep can't resolve generic type params in block calls,

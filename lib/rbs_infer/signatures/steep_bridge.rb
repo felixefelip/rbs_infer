@@ -118,9 +118,7 @@ module RbsInfer::Signatures
 
     def block_analyzer = BlockAnalyzer.new(steep_bridge: self)
 
-    def method_return_types(source_code, file:)
-      return_type_analyzer.method_return_types(source_code, file:)
-    end
+    def method_return_types(source_code, file:) = return_type_analyzer.method_return_types(source_code, file:)
 
     def method_return_types_by_kind(source_code, file:)
       return_type_analyzer.method_return_types_by_kind(source_code, file:)
@@ -512,6 +510,10 @@ module RbsInfer::Signatures
     # `"Class#method"` for each method a class body defines only in a branch
     # the checker found it never takes (felixefelip/steep#378).
     def unreached_definitions = postconditions_store&.unreached_definitions || Set[]
+
+    # What every call of `method_key` returned together, which the checker
+    # answers that method's whole body with (`CallSiteUnions.body_answer`).
+    def declaration_type(key) = specializations_store.declaration_type(key, factory: steep_subtyping.factory)
 
     private
 
