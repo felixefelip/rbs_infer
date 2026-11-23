@@ -11708,6 +11708,11 @@ methods:
       class: "::Example124::Catalog"
       ivars:
         "@lookups": "{  }"
+  Example125::Catalog.new:
+    "()":
+      class: "::Example125::Catalog"
+      ivars:
+        "@lookups": "{  }"
   Example13::Guarded#with_format:
     "() &-> true": 'true'
     ? '() &-> true with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
@@ -15446,6 +15451,26 @@ receivers:
   - "::Example124::Admin"
   app/models/example124.rb:57:21:
   - "::Example124::Reader"
+  app/models/example125.rb:15:22:
+  - "::Hash[untyped, untyped]"
+  app/models/example125.rb:19:14:
+  - "::Hash[untyped, untyped]"
+  app/models/example125.rb:25:14:
+  - "::Hash[untyped, untyped]"
+  app/models/example125.rb:36:25:
+  - "::Example125::Catalog"
+  app/models/example125.rb:46:25:
+  - "::Example125::Catalog"
+  app/models/example125.rb:52:24:
+  - singleton(::Example125::Catalog)
+  app/models/example125.rb:54:13:
+  - "::Array[untyped]"
+  app/models/example125.rb:54:22:
+  - singleton(::Example125::Admin)
+  app/models/example125.rb:56:13:
+  - singleton(::Example125::Reader)
+  app/models/example125.rb:56:26:
+  - "::Example125::Reader"
   app/models/example13.rb:100:6:
   - "::Example13::Guarded"
   app/models/example13.rb:104:15:
