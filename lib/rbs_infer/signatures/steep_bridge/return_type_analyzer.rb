@@ -11,6 +11,8 @@ class RbsInfer::Signatures::SteepBridge
 
     BLOCK_GENERIC_METHODS = %w[map collect].freeze
 
+    UNREACHABLE = [Steep::Diagnostic::Ruby::UnreachableBranch, Steep::Diagnostic::Ruby::UnreachableValueBranch].freeze
+
     # What Steep gave each method's body, for one receiver kind, keyed by the
     # module that owns the `def` as well as by its name.
     #
@@ -103,6 +105,9 @@ class RbsInfer::Signatures::SteepBridge
       singleton_class_defs = singleton_class_def_ids(typing.source.node)
       owners = def_owners(typing.source.node)
 
+      unreachable = Set.new.compare_by_identity
+      typing.errors.each { |error| unreachable << error.node if UNREACHABLE.include?(error.class) }
+
       typing.each_typing do |node, _type|
         next unless %i[def defs].include?(node.type)
 
@@ -119,7 +124,7 @@ class RbsInfer::Signatures::SteepBridge
           next
         end
 
-        body_type = returned_type(typing, body)
+        body_type = returned_type(typing, body, unreachable)
         type_str = RbsInfer::Signatures::SteepBridge::TypeFormatter.format_type(body_type)
 
         # When Steep can't resolve generic type params in block calls,
@@ -152,10 +157,11 @@ class RbsInfer::Signatures::SteepBridge
     #
     # A bare `return` is left out on purpose: `nil` is added once, over the
     # finished signature, by `ReturnTypeResolver#apply_early_return_nilability`.
-    def returned_type(typing, body)
+    # So is one in a branch the checker reports unreachable.
+    def returned_type(typing, body, unreachable)
       types = [typing.type_of(node: body)]
 
-      each_return(body) do |value|
+      each_return(body, unreachable) do |value|
         types << typing.type_of(node: value) if value && typing.has_type?(value)
       end
 
@@ -164,16 +170,16 @@ class RbsInfer::Signatures::SteepBridge
 
     # Every `return` that leaves THIS method: through a block, which returns
     # from the method around it, but not into a body of its own.
-    def each_return(node, &block)
+    def each_return(node, unreachable, &block)
       return unless node.is_a?(::Parser::AST::Node)
-      return if SCOPES.include?(node.type)
+      return if SCOPES.include?(node.type) || unreachable.include?(node)
 
       if node.type == :return
         yield node.children[0]
         return
       end
 
-      node.children.each { |child| each_return(child, &block) }
+      node.children.each { |child| each_return(child, unreachable, &block) }
     end
 
     # `{ def node id => owning module path }`, from the `class`/`module` bodies
