@@ -2,12 +2,12 @@ module Example117
   class Catalog
     self.@lookups: Hash[untyped, untyped]
 
-    def self.lookup: ("Item" entry) -> (String | untyped)
+    def self.lookup: ("Item" entry) -> "Catalog::Item"
   end
 end
 
 module Example117
   class Reader
-    def self.label: () -> (String | untyped)
+    def self.label: () -> "Catalog::Item"
   end
 end
