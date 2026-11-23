@@ -840,6 +840,21 @@ postconditions:
   effects:
     may_write:
     - "@catalog"
+- class: Example125::Admin
+  method: initialize
+  effects:
+    may_write:
+    - "@catalog"
+- class: Example125::Catalog
+  method: initialize
+  effects:
+    may_write:
+    - "@lookups"
+- class: Example125::Reader
+  method: initialize
+  effects:
+    may_write:
+    - "@catalog"
 - class: Example13
   method: run
   unconditional:
