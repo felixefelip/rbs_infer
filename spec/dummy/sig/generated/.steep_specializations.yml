@@ -10273,15 +10273,15 @@ methods:
   Example109::Reflection::MacroReflection#normalize_options:
     ? "(({ :extend => ::Array[::Module] } | {  })) with {@active_record: singleton(::Example109::Post),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
-      @options: {  }}"
+      nil, @inverse_which_updates_counter_cache_defined: false, @klass: nil, @name:
+      :comments, @options: {  }}"
     : "({ :extend => ::Array[::Module] } | {  })"
     "(::Hash[untyped, untyped]) with {::Thread{@__rbs_infer__main: nil}}": "::Hash[untyped,
       untyped]"
     ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Post),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
-      @options: {  }}"
+      nil, @inverse_which_updates_counter_cache_defined: false, @klass: nil, @name:
+      :comments, @options: {  }}"
     : "::Hash[untyped, untyped]"
   Example109::Reflection::ThroughReflection.new:
     "(::Example109::Reflection::HasManyReflection{@name: :comments})":
@@ -39786,6 +39786,7 @@ exits:
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
@@ -39891,6 +39892,7 @@ exits:
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
@@ -40196,14 +40198,15 @@ exits:
   Example109::Reflection::MacroReflection#normalize_options:
     ? "(({ :extend => ::Array[::Module] } | {  })) with {@active_record: singleton(::Example109::Post),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
-      @options: {  }}"
+      nil, @inverse_which_updates_counter_cache_defined: false, @klass: nil, @name:
+      :comments, @options: {  }}"
     : ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@class_name": nil
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
@@ -40214,14 +40217,15 @@ exits:
           "@__rbs_infer__main": nil
     ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Post),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
-      @options: {  }}"
+      nil, @inverse_which_updates_counter_cache_defined: false, @klass: nil, @name:
+      :comments, @options: {  }}"
     : ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@class_name": nil
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
@@ -40233,13 +40237,14 @@ exits:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
-      @name: :comments, @options: {  }}"
+      @klass: nil, @name: :comments, @options: {  }}"
     : ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@class_name": nil
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
@@ -40251,14 +40256,15 @@ exits:
         '0': "{  }"
     ? "({  }) with {@active_record: singleton(::Example109::Post), @class_name: nil,
       @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
-      @options: {  }}"
+      nil, @inverse_which_updates_counter_cache_defined: false, @klass: nil, @name:
+      :comments, @options: {  }}"
     : ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@class_name": nil
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)

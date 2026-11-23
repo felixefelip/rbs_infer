@@ -114,6 +114,21 @@ RSpec.describe RbsInfer::Signatures::SteepBridge::ReturnTypeAnalyzer, :dummy_app
       end
     end
 
+    it "leaves out a return in a branch the checker finds unreachable" do
+      code = <<~RUBY
+        class Fruit
+          def color
+            if "banana" == "apple"
+              return 1
+            end
+            :red
+          end
+        end
+      RUBY
+
+      expect(bridge.method_return_types(code, file: nil)["color"]).to eq("Symbol")
+    end
+
     it "returns empty hash for unparseable code" do
       result = bridge.method_return_types("!!!invalid ruby", file: nil)
       expect(result).to eq({})
