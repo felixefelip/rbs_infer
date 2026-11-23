@@ -1,0 +1,13 @@
+module Example117
+  class Catalog
+    self.@lookups: Hash[untyped, untyped]
+
+    def self.lookup: ("Item" entry) -> (String | untyped)
+  end
+end
+
+module Example117
+  class Reader
+    def self.label: () -> (String | untyped)
+  end
+end

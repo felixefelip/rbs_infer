@@ -1,0 +1,26 @@
+module Example121
+  class Catalog
+    self.@lookups: Hash[untyped, untyped]
+
+    def self.lookup: ("Item" entry) -> (String | untyped)
+    def self.reset: ("Item" entry) -> :reset
+  end
+end
+
+module Example121
+  class Admin
+    def self.clear: () -> :reset
+  end
+end
+
+module Example121
+  class Reader
+    def self.label: () -> (String | untyped)
+  end
+end
+
+module Example121
+  class App
+    def self.run: () -> (String | untyped)
+  end
+end
