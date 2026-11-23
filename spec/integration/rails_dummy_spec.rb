@@ -766,6 +766,38 @@ RSpec.describe "Rails dummy app integration", :dummy_app do
     assert_snapshot("models/example116", target_file: "app/models/example116.rb")
   end
 
+  it "example117 (a class cache only the method reading it writes, read when the app runs) matches expected RBS" do
+    assert_snapshot("models/example117", target_file: "app/models/example117.rb")
+  end
+
+  it "example118 (example117 with a second writer the app runs before the read) matches expected RBS" do
+    assert_snapshot("models/example118", target_file: "app/models/example118.rb")
+  end
+
+  it "example119 (example117 with the cache on an instance) matches expected RBS" do
+    assert_snapshot("models/example119", target_file: "app/models/example119.rb")
+  end
+
+  it "example120 (example119 with a second writer the app runs before the read) matches expected RBS" do
+    assert_snapshot("models/example120", target_file: "app/models/example120.rb")
+  end
+
+  it "example121 (example118 with the read before the second writer) matches expected RBS" do
+    assert_snapshot("models/example121", target_file: "app/models/example121.rb")
+  end
+
+  it "example122 (example120 with the read before the second writer) matches expected RBS" do
+    assert_snapshot("models/example122", target_file: "app/models/example122.rb")
+  end
+
+  it "example123 (a class cache read, cleared by a second writer, and read again) matches expected RBS" do
+    assert_snapshot("models/example123", target_file: "app/models/example123.rb")
+  end
+
+  it "example124 (example123 with the cache on an instance) matches expected RBS" do
+    assert_snapshot("models/example124", target_file: "app/models/example124.rb")
+  end
+
   # `send` with a literal symbol reaching a PRIVATE method — how MRI itself invokes the
   # mixin hooks (`rb_funcall` ignores visibility, and `included`/`append_features` are
   # private on `Module`), which is why the `Module#include` pseudo-code spells them that
