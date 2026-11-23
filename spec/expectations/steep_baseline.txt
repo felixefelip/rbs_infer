@@ -13,12 +13,6 @@ app/models/example109.rb:341:33: [warning] Cannot pass a value of type `::Proc` 
 app/models/example109.rb:409:35: [warning] Cannot pass a value of type `^(*untyped) -> untyped` as a block-pass-argument of type `(^(::Module) [self: ::Module] -> void | nil)`
 app/models/example109.rb:484:91: [warning] Empty hash doesn't have type annotation
 app/models/example109.rb:502:25: [warning] Empty array doesn't have type annotation
-app/models/example118.rb:21:13: [error] Cannot allow method body have type `::Symbol` because declared as type `:reset`
-app/models/example120.rb:24:8: [error] Cannot allow method body have type `::Symbol` because declared as type `:reset`
-app/models/example121.rb:21:13: [error] Cannot allow method body have type `::Symbol` because declared as type `:reset`
-app/models/example122.rb:25:8: [error] Cannot allow method body have type `::Symbol` because declared as type `:reset`
-app/models/example123.rb:22:13: [error] Cannot allow method body have type `::Symbol` because declared as type `:reset`
-app/models/example124.rb:25:8: [error] Cannot allow method body have type `::Symbol` because declared as type `:reset`
 app/models/example14.rb:15:17: [error] Type `(::Example14::User | nil)` does not have method `name`
 app/models/example21.rb:105:31: [error] Type `(::Example21::Holder | nil)` does not have method `name`
 app/models/example21.rb:96:29: [error] Type `(::Example21::Ticket | nil)` does not have method `holder`
