@@ -2,7 +2,7 @@ module Example118
   class Catalog
     self.@lookups: Hash[untyped, untyped]
 
-    def self.lookup: ("Item" entry) -> (String | untyped)
+    def self.lookup: ("Item" entry) -> :reset
     def self.reset: ("Item" entry) -> :reset
   end
 end
@@ -15,12 +15,12 @@ end
 
 module Example118
   class Reader
-    def self.label: () -> (String | untyped)
+    def self.label: () -> :reset
   end
 end
 
 module Example118
   class App
-    def self.run: () -> (String | untyped)
+    def self.run: () -> :reset
   end
 end

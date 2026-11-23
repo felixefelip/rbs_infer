@@ -1,6 +1,23 @@
 ---
 version: 1
 methods:
+  ActiveSupport::Inflector#camelize:
+    requires:
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: inflections
+    - kind: not_nil
+      expr:
+        kind: send
+        receiver:
+          kind: self
+        method: inflections
+        chain:
+        - acronyms
+    enforced: false
   Assignment#log_post_user_name:
     requires:
     - kind: not_nil
