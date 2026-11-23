@@ -4,7 +4,7 @@ module Example110
     def self.plural_labels=: (untyped value) -> untyped
     def self.plural_labels?: () -> bool
 
-    def plural_labels: () -> TrueClass
+    def plural_labels: () -> (untyped | TrueClass)
     def plural_labels?: () -> bool
   end
 end
