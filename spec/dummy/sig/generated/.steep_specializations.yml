@@ -11682,19 +11682,55 @@ methods:
   Example12#show:
     "(:age)": '42'
     "(:name)": '"JOHN DOE"'
+  Example120::Admin.new:
+    "(::Example120::Catalog{@lookups: {  }})":
+      class: "::Example120::Admin"
+      ivars:
+        "@catalog":
+          class: "::Example120::Catalog"
+          ivars:
+            "@lookups": "{  }"
+  Example120::Catalog#lookup:
+    '("Item") with {@lookups: { "Item" => :reset }}': ":reset"
   Example120::Catalog.new:
     "()":
       class: "::Example120::Catalog"
       ivars:
         "@lookups": "{  }"
+  Example120::Reader.new:
+    '(::Example120::Catalog{@lookups: { "Item" => :reset }})':
+      class: "::Example120::Reader"
+      ivars:
+        "@catalog":
+          class: "::Example120::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => :reset }'
   Example121::Catalog.lookup:
     '("Item") on singleton(::Example121::Catalog) with {@lookups: {  }}': '"Catalog::Item"'
+    '("Item") with {@lookups: {  }}': '"Catalog::Item"'
+  Example122::Admin.new:
+    '(::Example122::Catalog{@lookups: { "Item" => ::String }})':
+      class: "::Example122::Admin"
+      ivars:
+        "@catalog":
+          class: "::Example122::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => ::String }'
+  Example122::Catalog#lookup:
     '("Item") with {@lookups: {  }}': '"Catalog::Item"'
   Example122::Catalog.new:
     "()":
       class: "::Example122::Catalog"
       ivars:
         "@lookups": "{  }"
+  Example122::Reader.new:
+    "(::Example122::Catalog{@lookups: {  }})":
+      class: "::Example122::Reader"
+      ivars:
+        "@catalog":
+          class: "::Example122::Catalog"
+          ivars:
+            "@lookups": "{  }"
   Example123::Catalog.lookup:
     '("Item") on singleton(::Example123::Catalog) with {@lookups: {  }}': '"Catalog::Item"'
     '("Item") on singleton(::Example123::Catalog) with {@lookups: { "Item" => :reset }}': ":reset"
@@ -11703,11 +11739,43 @@ methods:
   Example123::Reader.label:
     "() with {::Example123::Catalog{@lookups: {  }}}": '"Catalog::Item"'
     '() with {::Example123::Catalog{@lookups: { "Item" => :reset }}}': ":reset"
+  Example124::Admin.new:
+    '(::Example124::Catalog{@lookups: { "Item" => ::String }})':
+      class: "::Example124::Admin"
+      ivars:
+        "@catalog":
+          class: "::Example124::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => ::String }'
+  Example124::Catalog#lookup:
+    '("Item") with {@lookups: {  }}': '"Catalog::Item"'
+    '("Item") with {@lookups: { "Item" => ::String }}': "::String"
+    '("Item") with {@lookups: { "Item" => :reset }}': ":reset"
   Example124::Catalog.new:
     "()":
       class: "::Example124::Catalog"
       ivars:
         "@lookups": "{  }"
+  Example124::Reader#label:
+    "() with {@catalog: ::Example124::Catalog{@lookups: {  }}}": '"Catalog::Item"'
+    '() with {@catalog: ::Example124::Catalog{@lookups: { "Item" => ::String }}}': "::String"
+    '() with {@catalog: ::Example124::Catalog{@lookups: { "Item" => :reset }}}': ":reset"
+  Example124::Reader.new:
+    "(::Example124::Catalog{@lookups: {  }})":
+      class: "::Example124::Reader"
+      ivars:
+        "@catalog":
+          class: "::Example124::Catalog"
+          ivars:
+            "@lookups": "{  }"
+  Example125::Admin.new:
+    "(::Example125::Catalog{@lookups: {  }})":
+      class: "::Example125::Admin"
+      ivars:
+        "@catalog":
+          class: "::Example125::Catalog"
+          ivars:
+            "@lookups": "{  }"
   Example125::Catalog.new:
     "()":
       class: "::Example125::Catalog"
@@ -13642,9 +13710,12 @@ declarations:
   Example117::Catalog.lookup: '"Catalog::Item"'
   Example118::Catalog.lookup: ":reset"
   Example119::Catalog#lookup: '"Catalog::Item"'
+  Example120::Catalog#lookup: ":reset"
   Example121::Catalog.lookup: '"Catalog::Item"'
+  Example122::Catalog#lookup: '"Catalog::Item"'
   Example123::Catalog.lookup: ("Catalog::Item" | :reset)
   Example123::Reader.label: ("Catalog::Item" | :reset)
+  Example124::Catalog#lookup: ("Catalog::Item" | :reset)
   Example13::Guarded#with_format: 'true'
   Example19#record: '"denied"'
   Example20#record: '"denied"'
@@ -45592,6 +45663,28 @@ exits:
     '("Item") with {@lookups: {  }}':
       ivars:
         "@lookups": '{ "Item" => ::String }'
+  Example120::Admin#clear:
+    "() with {@catalog: ::Example120::Catalog{@lookups: {  }}}":
+      ivars:
+        "@catalog":
+          class: "::Example120::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => :reset }'
+  Example120::Catalog#lookup:
+    '("Item") with {@lookups: { "Item" => :reset }}':
+      ivars:
+        "@lookups": '{ "Item" => :reset }'
+  Example120::Catalog#reset:
+    '("Item") with {@lookups: {  }}':
+      ivars:
+        "@lookups": '{ "Item" => :reset }'
+  Example120::Reader#label:
+    '() with {@catalog: ::Example120::Catalog{@lookups: { "Item" => :reset }}}':
+      ivars:
+        "@catalog":
+          class: "::Example120::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => :reset }'
   Example121::Admin.clear:
     '() with {::Example121::Catalog{@lookups: { "Item" => ::String }}}':
       ivars: {}
@@ -45624,6 +45717,28 @@ exits:
       classes:
         "::Example121::Catalog":
           "@lookups": '{ "Item" => ::String }'
+  Example122::Admin#clear:
+    '() with {@catalog: ::Example122::Catalog{@lookups: { "Item" => ::String }}}':
+      ivars:
+        "@catalog":
+          class: "::Example122::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => :reset }'
+  Example122::Catalog#lookup:
+    '("Item") with {@lookups: {  }}':
+      ivars:
+        "@lookups": '{ "Item" => ::String }'
+  Example122::Catalog#reset:
+    '("Item") with {@lookups: { "Item" => ::String }}':
+      ivars:
+        "@lookups": '{ "Item" => :reset }'
+  Example122::Reader#label:
+    "() with {@catalog: ::Example122::Catalog{@lookups: {  }}}":
+      ivars:
+        "@catalog":
+          class: "::Example122::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => ::String }'
   Example123::Admin.clear:
     '() with {::Example123::Catalog{@lookups: { "Item" => ::String }}}':
       ivars: {}
@@ -45667,6 +45782,46 @@ exits:
       classes:
         "::Example123::Catalog":
           "@lookups": '{ "Item" => :reset }'
+  Example124::Admin#clear:
+    '() with {@catalog: ::Example124::Catalog{@lookups: { "Item" => ::String }}}':
+      ivars:
+        "@catalog":
+          class: "::Example124::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => :reset }'
+  Example124::Catalog#lookup:
+    '("Item") with {@lookups: {  }}':
+      ivars:
+        "@lookups": '{ "Item" => ::String }'
+    '("Item") with {@lookups: { "Item" => ::String }}':
+      ivars:
+        "@lookups": '{ "Item" => ::String }'
+    '("Item") with {@lookups: { "Item" => :reset }}':
+      ivars:
+        "@lookups": '{ "Item" => :reset }'
+  Example124::Catalog#reset:
+    '("Item") with {@lookups: { "Item" => ::String }}':
+      ivars:
+        "@lookups": '{ "Item" => :reset }'
+  Example124::Reader#label:
+    "() with {@catalog: ::Example124::Catalog{@lookups: {  }}}":
+      ivars:
+        "@catalog":
+          class: "::Example124::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => ::String }'
+    '() with {@catalog: ::Example124::Catalog{@lookups: { "Item" => ::String }}}':
+      ivars:
+        "@catalog":
+          class: "::Example124::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => ::String }'
+    '() with {@catalog: ::Example124::Catalog{@lookups: { "Item" => :reset }}}':
+      ivars:
+        "@catalog":
+          class: "::Example124::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => :reset }'
   Example13::Guarded#act_block_halt:
     "() with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
