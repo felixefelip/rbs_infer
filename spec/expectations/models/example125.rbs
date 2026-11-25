@@ -3,7 +3,7 @@ module Example125
     @lookups: Hash[untyped, untyped]
 
     def initialize: () -> void
-    def lookup: ("Item" entry) -> (String | untyped)
+    def lookup: ("Item" entry) -> :reset
     def reset: ("Item" entry) -> :reset
   end
 end
@@ -22,12 +22,12 @@ module Example125
     @catalog: Example125::Catalog
 
     def initialize: (Example125::Catalog catalog) -> void
-    def label: () -> (String | untyped)
+    def label: () -> :reset
   end
 end
 
 module Example125
   class App
-    def self.run: () -> (String | untyped)
+    def self.run: () -> :reset
   end
 end

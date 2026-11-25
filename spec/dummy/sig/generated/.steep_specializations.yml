@@ -11749,7 +11749,6 @@ methods:
             "@lookups": '{ "Item" => ::String }'
   Example124::Catalog#lookup:
     '("Item") with {@lookups: {  }}': '"Catalog::Item"'
-    '("Item") with {@lookups: { "Item" => ::String }}': "::String"
     '("Item") with {@lookups: { "Item" => :reset }}': ":reset"
   Example124::Catalog.new:
     "()":
@@ -11758,7 +11757,6 @@ methods:
         "@lookups": "{  }"
   Example124::Reader#label:
     "() with {@catalog: ::Example124::Catalog{@lookups: {  }}}": '"Catalog::Item"'
-    '() with {@catalog: ::Example124::Catalog{@lookups: { "Item" => ::String }}}': "::String"
     '() with {@catalog: ::Example124::Catalog{@lookups: { "Item" => :reset }}}': ":reset"
   Example124::Reader.new:
     "(::Example124::Catalog{@lookups: {  }})":
@@ -11776,11 +11774,21 @@ methods:
           class: "::Example125::Catalog"
           ivars:
             "@lookups": "{  }"
+  Example125::Catalog#lookup:
+    '("Item") with {@lookups: { "Item" => :reset }}': ":reset"
   Example125::Catalog.new:
     "()":
       class: "::Example125::Catalog"
       ivars:
         "@lookups": "{  }"
+  Example125::Reader.new:
+    '(::Example125::Catalog{@lookups: { "Item" => :reset }})':
+      class: "::Example125::Reader"
+      ivars:
+        "@catalog":
+          class: "::Example125::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => :reset }'
   Example13::Guarded#with_format:
     "() &-> true": 'true'
     ? '() &-> true with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
@@ -13716,6 +13724,7 @@ declarations:
   Example123::Catalog.lookup: ("Catalog::Item" | :reset)
   Example123::Reader.label: ("Catalog::Item" | :reset)
   Example124::Catalog#lookup: ("Catalog::Item" | :reset)
+  Example125::Catalog#lookup: ":reset"
   Example13::Guarded#with_format: 'true'
   Example19#record: '"denied"'
   Example20#record: '"denied"'
@@ -45793,9 +45802,6 @@ exits:
     '("Item") with {@lookups: {  }}':
       ivars:
         "@lookups": '{ "Item" => ::String }'
-    '("Item") with {@lookups: { "Item" => ::String }}':
-      ivars:
-        "@lookups": '{ "Item" => ::String }'
     '("Item") with {@lookups: { "Item" => :reset }}':
       ivars:
         "@lookups": '{ "Item" => :reset }'
@@ -45810,16 +45816,34 @@ exits:
           class: "::Example124::Catalog"
           ivars:
             "@lookups": '{ "Item" => ::String }'
-    '() with {@catalog: ::Example124::Catalog{@lookups: { "Item" => ::String }}}':
-      ivars:
-        "@catalog":
-          class: "::Example124::Catalog"
-          ivars:
-            "@lookups": '{ "Item" => ::String }'
     '() with {@catalog: ::Example124::Catalog{@lookups: { "Item" => :reset }}}':
       ivars:
         "@catalog":
           class: "::Example124::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => :reset }'
+    "() with {@catalog: ::Example124::Catalog}":
+      ivars: {}
+  Example125::Admin#clear:
+    "() with {@catalog: ::Example125::Catalog{@lookups: {  }}}":
+      ivars:
+        "@catalog":
+          class: "::Example125::Catalog"
+          ivars:
+            "@lookups": '{ "Item" => :reset }'
+  Example125::Catalog#lookup:
+    '("Item") with {@lookups: { "Item" => :reset }}':
+      ivars:
+        "@lookups": '{ "Item" => :reset }'
+  Example125::Catalog#reset:
+    '("Item") with {@lookups: {  }}':
+      ivars:
+        "@lookups": '{ "Item" => :reset }'
+  Example125::Reader#label:
+    '() with {@catalog: ::Example125::Catalog{@lookups: { "Item" => :reset }}}':
+      ivars:
+        "@catalog":
+          class: "::Example125::Catalog"
           ivars:
             "@lookups": '{ "Item" => :reset }'
   Example13::Guarded#act_block_halt:
