@@ -39,8 +39,7 @@ class RbsInfer::Inference::NewCallCollector < Prism::Visitor
 
     def in_class(node)
       @declaration_kinds.push(:class)
-      segment = RbsInfer::Analyzer.extract_constant_path(node.constant_path)
-      full_name = (@class_name_stack.empty? ? segment : "#{@class_name_stack.last}::#{segment}") if segment
+      full_name = lexical_name_for(node) if RbsInfer::Analyzer.extract_constant_path(node.constant_path)
       @class_name_stack.push(full_name) if full_name
       @lexical_names.push(lexical_name_for(node))
       @class_body_defs.push(RbsInfer::Inference::InheritedReach.body_defs(node, :instance).to_set)

@@ -3,8 +3,8 @@ module Example124
     @lookups: Hash[untyped, untyped]
 
     def initialize: () -> void
-    def lookup: (untyped entry) -> ("Catalog::Item" | :reset)
-    def reset: (untyped entry) -> :reset
+    def lookup: ("Item" entry) -> ("Catalog::Item" | :reset)
+    def reset: ("Item" entry) -> :reset
   end
 end
 
