@@ -1,0 +1,28 @@
+module Example126
+  class Base
+    def self.inherited: (untyped subclass) -> Hash[untyped, untyped]
+    def self.lookup: ("Comment" name) -> "Example126::Comment"
+
+    def reflection: () -> Reflection
+  end
+end
+
+module Example126
+  class Reflection
+    @owner: singleton(Example126::Post)
+
+    def initialize: (singleton(Example126::Post) owner) -> void
+    def klass: () -> "Example126::Comment"
+  end
+end
+
+module Example126
+  class Post < Base
+  end
+end
+
+module Example126
+  class App
+    def self.run: () -> "Example126::Comment"
+  end
+end

@@ -99,6 +99,11 @@ app/models/example109/core.rb:
   - anchor: ClassMethods
     annotations:
     - "# @type instance: singleton(Example109::Base)"
+app/models/example126.rb:
+  modules:
+  - anchor: Base
+    defs:
+      reflection: Example126::Post
 app/models/example13.rb:
   modules:
   - anchor: GeneratedAttributes
