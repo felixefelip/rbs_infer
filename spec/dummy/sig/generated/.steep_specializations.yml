@@ -12431,7 +12431,8 @@ methods:
       @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
+      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
       nil}, ::Thread{@__rbs_infer__main: nil}}'
     : ":comment_ids="
     ? '(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
@@ -12465,7 +12466,8 @@ methods:
       [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
       [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
-      }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
+      }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
       nil}, ::Thread{@__rbs_infer__main: nil}}'
     : "(:comments_ids= | :comment_ids=)"
     ? "(singleton(::Example109::Post), ::Example109::Reflection::HasManyReflection{@association_foreign_key:
@@ -13087,6 +13089,9 @@ methods:
   Example109::Core::ClassMethods#generated_relation_methods:
     "() on singleton(::Example109::Post)": singleton(::Example109::Post::GeneratedRelationMethods)
     ? "() on singleton(::Example109::Post) with {@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods: nil}"
+    : singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "() on singleton(::Example109::Post) with {@_type_candidates_cache: ::Concurrent::Map[untyped,
       untyped]{}, @generated_relation_methods: nil}"
     : singleton(::Example109::Post::GeneratedRelationMethods)
     "() on singleton(::Example109::Post) with {@generated_relation_methods: nil}": singleton(::Example109::Post::GeneratedRelationMethods)
@@ -13594,6 +13599,37 @@ methods:
       @options: {  }}"
     : "::Hash[untyped, untyped]"
   Example109::Reflection::ThroughReflection.new:
+    ? "(::Example109::Reflection::HasManyReflection{@association_foreign_key: nil,
+      @association_primary_key: nil, @class_name: nil, @counter_cache_column: nil,
+      @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @klass: nil, @name: :comments, @options: {  }, @type: nil}) with {::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
+      nil}}"
+    : class: "::Example109::Reflection::ThroughReflection"
+      ivars:
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@delegate_reflection":
+          class: "::Example109::Reflection::HasManyReflection"
+          ivars:
+            "@association_foreign_key": nil
+            "@association_primary_key": nil
+            "@class_name": nil
+            "@counter_cache_column": nil
+            "@foreign_key": nil
+            "@foreign_type": nil
+            "@inverse_of": nil
+            "@inverse_which_updates_counter_cache": nil
+            "@inverse_which_updates_counter_cache_defined": 'false'
+            "@join_table": nil
+            "@klass": nil
+            "@name": ":comments"
+            "@options": "{  }"
+            "@type": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@inverse_which_updates_counter_cache_defined": 'false'
     ? "(::Example109::Reflection::HasManyReflection{@association_foreign_key: nil,
       @association_primary_key: nil, @class_name: nil, @counter_cache_column: nil,
       @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -47084,6 +47120,11 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
         "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
           "@generated_relation_methods": nil
       params:
         '3': "{  }"
@@ -47171,6 +47212,11 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
         "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
           "@generated_relation_methods": nil
       params:
         '3': "{  }"
@@ -47604,7 +47650,8 @@ exits:
       @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
+      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
       nil}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -47651,7 +47698,8 @@ exits:
       [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
       [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
-      }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
+      }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
       nil}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -47762,7 +47810,8 @@ exits:
       @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
-      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
+      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
       nil}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -47808,7 +47857,8 @@ exits:
       [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
       [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
       [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]]}
-      }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@generated_relation_methods:
+      }, @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
       nil}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -53042,12 +53092,19 @@ exits:
         "@generated_relation_methods": nil
   Example109::Core::ClassMethods#generated_relation_methods:
     ? "() on singleton(::Example109::Post) with {@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods: nil}"
+    : ivars:
+        "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "() on singleton(::Example109::Post) with {@_type_candidates_cache: ::Concurrent::Map[untyped,
       untyped]{}, @generated_relation_methods: nil}"
     : ivars:
         "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
     "() on singleton(::Example109::Post) with {@generated_relation_methods: nil}":
       ivars:
         "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "() with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
+      {  }, @default_proc: nil}, @generated_relation_methods: nil}"
+    : ivars: {}
     "() with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{}, @generated_relation_methods: nil}":
       ivars: {}
     "() with {@generated_relation_methods: nil}":
@@ -53331,6 +53388,11 @@ exits:
     : ivars: {}
       classes:
         "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
           "@generated_relation_methods": nil
       params:
         '3': "{  }"
@@ -53360,6 +53422,11 @@ exits:
     : ivars: {}
       classes:
         "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
           "@generated_relation_methods": nil
       params:
         '3': "{  }"
@@ -53411,11 +53478,6 @@ exits:
             ivars:
               "@backend": "{  }"
               "@default_proc": nil
-          "@generated_relation_methods": nil
-    "() with {::Example109::Post{@generated_relation_methods: nil}}":
-      ivars: {}
-      classes:
-        "::Example109::Post":
           "@generated_relation_methods": nil
     ? "() with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
       nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
@@ -53517,6 +53579,25 @@ exits:
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+    ? "() with {@class_name: nil, @counter_cache_column: nil, @delegate_reflection:
+      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
+      nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods: nil}}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@delegate_reflection": nil
+      classes:
+        "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+          "@generated_relation_methods": nil
     ? "() with {@class_name: nil, @counter_cache_column: nil, @delegate_reflection:
       nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @inverse_which_updates_counter_cache_defined:
       nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
@@ -53776,6 +53857,11 @@ exits:
     : ivars: {}
       classes:
         "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
           "@generated_relation_methods": nil
       keeps_self: true
     ? "(:class_name) with {@active_record: nil, @association_foreign_key: nil, @association_primary_key:
@@ -53849,6 +53935,11 @@ exits:
         "@foreign_type": nil
       classes:
         "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
           "@generated_relation_methods": nil
       keeps_self: true
     ? "(:class_name) with {@active_record: singleton(::Example109::Post), @association_foreign_key:
@@ -53987,6 +54078,11 @@ exits:
         "@foreign_type": nil
       classes:
         "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
           "@generated_relation_methods": nil
       params:
         '2': "{  }"
@@ -54873,6 +54969,44 @@ exits:
       params:
         '0': "{  }"
   Example109::Reflection::ThroughReflection.new:
+    ? "(::Example109::Reflection::HasManyReflection{@association_foreign_key: nil,
+      @association_primary_key: nil, @class_name: nil, @counter_cache_column: nil,
+      @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @inverse_which_updates_counter_cache_defined: false, @join_table: nil,
+      @klass: nil, @name: :comments, @options: {  }, @type: nil}) with {::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
+      nil}}"
+    : ivars:
+        "@inverse_which_updates_counter_cache_defined": 'false'
+        "@class_name": nil
+        "@counter_cache_column": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@delegate_reflection":
+          class: "::Example109::Reflection::HasManyReflection"
+          ivars:
+            "@association_foreign_key": nil
+            "@association_primary_key": nil
+            "@class_name": nil
+            "@counter_cache_column": nil
+            "@foreign_key": nil
+            "@foreign_type": nil
+            "@inverse_of": nil
+            "@inverse_which_updates_counter_cache": nil
+            "@inverse_which_updates_counter_cache_defined": 'false'
+            "@join_table": nil
+            "@klass": nil
+            "@name": ":comments"
+            "@options": "{  }"
+            "@type": nil
+      classes:
+        "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+          "@generated_relation_methods": nil
     ? "(::Example109::Reflection::HasManyReflection{@association_foreign_key: nil,
       @association_primary_key: nil, @class_name: nil, @counter_cache_column: nil,
       @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
