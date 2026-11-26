@@ -74,6 +74,15 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
     end
   end
 
+  it "emits `Module#private_constant`, public, answering the module and running nothing" do
+    Dir.mktmpdir do |dir|
+      source = source_of(dir, "module.rb")
+
+      expect(source).to match(/# @rbs_infer \|\.\.\.\n\s+def private_constant\(\*names\)\n\s+self\n\s+end/)
+      expect(source.index("  def private_constant(*names)\n")).to be < source.index("  private\n")
+    end
+  end
+
   # The pair `extend` reaches, and they are on `Module` for the same reason the
   # `include` pair is — measured: `Module.instance_method(:extended).owner` is
   # `Module`, and both are private there.
