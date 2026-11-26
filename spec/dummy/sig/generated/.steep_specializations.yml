@@ -15029,6 +15029,10 @@ methods:
     "(singleton(::Example90::Base)) with {::Example90::Base{@generated_association_methods: nil}}": singleton(::Example90::Base)
     "(singleton(::Example91::Base)) with {::Example91::Base{@generated_association_methods: nil}}": singleton(::Example91::Base)
   Module#include:
+    ? "(::Module) with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
+      {  }, @default_proc: nil}, @generated_relation_methods: nil}"
+    : self
+    "(::Module) with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{}, @generated_relation_methods: nil}": self
     "(::Module) with {@generated_association_methods: nil}": self
     "(::Module) with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}": self
     "(::Module) with {@generated_association_methods: singleton(::Example91::Post::GeneratedAssociationMethods)}": self
@@ -15036,10 +15040,30 @@ methods:
     "(::Module) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}": self
     "(::Module) with {@generated_option_readers: nil}": self
     "(::Module) with {@generated_readers: nil}": self
+    "(::Module) with {@generated_relation_methods: nil}": self
     "(singleton(::Current::GeneratedAttributeMethods)) on singleton(::Current) with {@__rbs_infer_instance: nil}": self
     "(singleton(::Current::GeneratedAttributeMethods)) with {@__rbs_infer_instance: nil}": self
     "(singleton(::Example108::Gauge::GeneratedReaders)) on singleton(::Example108::Gauge) with {@generated_readers: nil}": self
     "(singleton(::Example108::Gauge::GeneratedReaders)) with {@generated_readers: nil}": self
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods)) on singleton(::Example109::Post)
+      with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
+      {  }, @default_proc: nil}, @generated_relation_methods: nil}"
+    : self
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods)) on singleton(::Example109::Post)
+      with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{}, @generated_relation_methods:
+      nil}"
+    : self
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods)) on singleton(::Example109::Post)
+      with {@generated_relation_methods: nil}"
+    : self
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods)) with {@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
+      nil}"
+    : self
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods)) with {@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{}, @generated_relation_methods: nil}"
+    : self
+    "(singleton(::Example109::Post::GeneratedRelationMethods)) with {@generated_relation_methods: nil}": self
     "(singleton(::Example110::Dial::GeneratedOptionReaders)) on singleton(::Example110::Dial) with {@generated_option_readers: nil}": self
     "(singleton(::Example110::Dial::GeneratedOptionReaders)) with {@generated_option_readers: nil}": self
     "(singleton(::Example13::Registry::GeneratedAttributes)) on singleton(::Example13::Registry) with {@registry_instance: nil}": self
@@ -15072,6 +15096,22 @@ methods:
     ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) with {@generated_association_methods:
       singleton(::Example91::Post::GeneratedAssociationMethods)}"
     : self
+  Module#private_constant:
+    ? "(:GeneratedRelationMethods) on singleton(::Example109::Post) with {@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
+      nil}"
+    : self
+    ? "(:GeneratedRelationMethods) on singleton(::Example109::Post) with {@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{}, @generated_relation_methods: nil}"
+    : self
+    "(:GeneratedRelationMethods) on singleton(::Example109::Post) with {@generated_relation_methods: nil}": self
+    ? "(:GeneratedRelationMethods) with {@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods: nil}"
+    : self
+    ? "(:GeneratedRelationMethods) with {@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}, @generated_relation_methods: nil}"
+    : self
+    "(:GeneratedRelationMethods) with {@generated_relation_methods: nil}": self
   Notification::GeneratedStoreAccessors#channel=:
     ("none"): '"none"'
   Object#extend:
@@ -16555,6 +16595,8 @@ selves:
   - singleton(::PostsController)
   - singleton(::User)
   - singleton(::Widget)
+  Module#private_constant:
+  - singleton(::Example109::Post)
   Notification::GeneratedStoreAccessors#channel:
   - "::Notification"
   Object#extend:
@@ -21500,6 +21542,8 @@ receivers:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_ruby_runtime/hash.rb:27:26:
   - "::Proc"
+  sig/generated/steep_ruby_runtime/module.rb:103:24:
+  - untyped
   sig/generated/steep_ruby_runtime/module.rb:14:4:
   - "::Module"
   sig/generated/steep_ruby_runtime/module.rb:14:87:
@@ -21531,12 +21575,10 @@ receivers:
   - "::Module"
   sig/generated/steep_ruby_runtime/module.rb:29:87:
   - "::Array[(untyped | ::Module)]"
-  sig/generated/steep_ruby_runtime/module.rb:53:4:
+  sig/generated/steep_ruby_runtime/module.rb:62:4:
   - "::Module"
-  sig/generated/steep_ruby_runtime/module.rb:64:4:
+  sig/generated/steep_ruby_runtime/module.rb:73:4:
   - "::Module"
-  sig/generated/steep_ruby_runtime/module.rb:94:24:
-  - untyped
   sig/generated/steep_ruby_runtime/object.rb:23:4:
   - "::Object"
   sig/generated/steep_ruby_runtime/object.rb:23:87:
@@ -60778,6 +60820,13 @@ exits:
         "::Example91::Base":
           "@generated_association_methods": nil
   Module#include:
+    ? "(::Module) with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
+      {  }, @default_proc: nil}, @generated_relation_methods: nil}"
+    : ivars:
+        "@generated_relation_methods": nil
+    "(::Module) with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{}, @generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
     "(::Module) with {@generated_association_methods: nil}":
       ivars:
         "@generated_association_methods": nil
@@ -60796,6 +60845,9 @@ exits:
     "(::Module) with {@generated_readers: nil}":
       ivars:
         "@generated_readers": nil
+    "(::Module) with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
     "(singleton(::Current::GeneratedAttributeMethods)) on singleton(::Current) with {@__rbs_infer_instance: nil}":
       ivars: {}
     "(singleton(::Current::GeneratedAttributeMethods)) with {@__rbs_infer_instance: nil}":
@@ -60806,6 +60858,29 @@ exits:
     "(singleton(::Example108::Gauge::GeneratedReaders)) with {@generated_readers: nil}":
       ivars:
         "@generated_readers": nil
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods)) on singleton(::Example109::Post)
+      with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
+      {  }, @default_proc: nil}, @generated_relation_methods: nil}"
+    : ivars: {}
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods)) on singleton(::Example109::Post)
+      with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{}, @generated_relation_methods:
+      nil}"
+    : ivars: {}
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods)) on singleton(::Example109::Post)
+      with {@generated_relation_methods: nil}"
+    : ivars: {}
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods)) with {@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
+      nil}"
+    : ivars:
+        "@generated_relation_methods": nil
+    ? "(singleton(::Example109::Post::GeneratedRelationMethods)) with {@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{}, @generated_relation_methods: nil}"
+    : ivars:
+        "@generated_relation_methods": nil
+    "(singleton(::Example109::Post::GeneratedRelationMethods)) with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
     "(singleton(::Example110::Dial::GeneratedOptionReaders)) on singleton(::Example110::Dial) with {@generated_option_readers: nil}":
       ivars: {}
     "(singleton(::Example110::Dial::GeneratedOptionReaders)) with {@generated_option_readers: nil}":
@@ -60855,6 +60930,46 @@ exits:
     ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) with {@generated_association_methods:
       singleton(::Example91::Post::GeneratedAssociationMethods)}"
     : ivars: {}
+  Module#private_constant:
+    ? "(:GeneratedRelationMethods) on singleton(::Example109::Post) with {@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
+      nil}"
+    : ivars:
+        "@_type_candidates_cache":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{  }"
+            "@default_proc": nil
+        "@generated_relation_methods": nil
+    ? "(:GeneratedRelationMethods) on singleton(::Example109::Post) with {@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{}, @generated_relation_methods: nil}"
+    : ivars:
+        "@_type_candidates_cache":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars: {}
+        "@generated_relation_methods": nil
+    "(:GeneratedRelationMethods) on singleton(::Example109::Post) with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
+    ? "(:GeneratedRelationMethods) with {@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods: nil}"
+    : ivars:
+        "@_type_candidates_cache":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{  }"
+            "@default_proc": nil
+        "@generated_relation_methods": nil
+    ? "(:GeneratedRelationMethods) with {@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}, @generated_relation_methods: nil}"
+    : ivars:
+        "@_type_candidates_cache":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars: {}
+        "@generated_relation_methods": nil
+    "(:GeneratedRelationMethods) with {@generated_relation_methods: nil}":
+      ivars:
+        "@generated_relation_methods": nil
   Object#extend:
     "(singleton(::Example90::Core::ClassMethods)) on singleton(::Example90::Base) with {@generated_association_methods: nil}":
       ivars: {}

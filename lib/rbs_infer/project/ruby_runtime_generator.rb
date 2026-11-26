@@ -98,6 +98,15 @@ module RbsInfer::Project
           self
         end
 
+        # What `private_constant :X` runs — `rb_mod_private_constant` in MRI's
+        # variable.c, written in C: it marks each named constant private, raising
+        # `NameError` for one not defined, and answers the module. Marking is C no
+        # Ruby spells, and it runs no method, so no hook of the project's either.
+        # @rbs_infer |...
+        def private_constant(*names)
+          self
+        end
+
         private
 
         # What `include` delegates the actual work to — `rb_mod_append_features` in eval.c:
