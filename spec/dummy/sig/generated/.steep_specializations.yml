@@ -11281,6 +11281,10 @@ methods:
   Example107::Square#area:
     "(5)": '20'
   Example108::ClassAttribute.redefine:
+    ? "(self, (:plural_names | :pluralize_table_names | :_reflections), (:__class_attr_plural_names
+      | :__class_attr_pluralize_table_names | :__class_attr__reflections), untyped)
+      with {::Example108::Settings{@generated_readers: nil}}"
+    : ("__class_attr_plural_names=" | "__class_attr_pluralize_table_names=" | "__class_attr__reflections=")
     "(self, :_reflections, :__class_attr__reflections, ::Hash[:comments, ::Example109::Reflection::HasManyReflection])": '"__class_attr__reflections="'
     ? "(self, :_reflections, :__class_attr__reflections, ::Hash[:comments, ::Example109::Reflection::HasManyReflection])
       with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
@@ -13113,8 +13117,7 @@ methods:
       @klass: nil, @name: :comments, @options: {  }, @type: nil} }) with {@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods), ::Example109::Post{@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}}"
-    : ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr_plural_names="
-      | "__class_attr_pluralize_table_names=" | "__class_attr__reflections=")
+    : ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr__reflections=")
   Example109::Reflection.add_reflection:
     ? "(singleton(::Example109::Post), :comments, ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
@@ -15026,6 +15029,13 @@ methods:
     "(singleton(::Example90::Base)) with {::Example90::Base{@generated_association_methods: nil}}": singleton(::Example90::Base)
     "(singleton(::Example91::Base)) with {::Example91::Base{@generated_association_methods: nil}}": singleton(::Example91::Base)
   Module#include:
+    "(::Module) with {@generated_association_methods: nil}": self
+    "(::Module) with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}": self
+    "(::Module) with {@generated_association_methods: singleton(::Example91::Post::GeneratedAssociationMethods)}": self
+    "(::Module) with {@generated_methods: nil}": self
+    "(::Module) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}": self
+    "(::Module) with {@generated_option_readers: nil}": self
+    "(::Module) with {@generated_readers: nil}": self
     "(singleton(::Current::GeneratedAttributeMethods)) on singleton(::Current) with {@__rbs_infer_instance: nil}": self
     "(singleton(::Current::GeneratedAttributeMethods)) with {@__rbs_infer_instance: nil}": self
     "(singleton(::Example108::Gauge::GeneratedReaders)) on singleton(::Example108::Gauge) with {@generated_readers: nil}": self
@@ -15037,15 +15047,31 @@ methods:
     "(singleton(::Example3::Foo::GeneratedAttributes)) on singleton(::Example3::Foo) with {@foo_instance: nil}": self
     "(singleton(::Example3::Foo::GeneratedAttributes)) with {@foo_instance: nil}": self
     "(singleton(::Example89::Widget::GeneratedMethods)) on singleton(::Example89::Widget) with {@generated_methods: nil}": self
+    ? "(singleton(::Example89::Widget::GeneratedMethods)) on singleton(::Example89::Widget)
+      with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}"
+    : self
     "(singleton(::Example89::Widget::GeneratedMethods)) with {@generated_methods: nil}": self
+    "(singleton(::Example89::Widget::GeneratedMethods)) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}": self
     ? "(singleton(::Example90::Post::GeneratedAssociationMethods)) on singleton(::Example90::Post)
       with {@generated_association_methods: nil}"
     : self
+    ? "(singleton(::Example90::Post::GeneratedAssociationMethods)) on singleton(::Example90::Post)
+      with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}"
+    : self
     "(singleton(::Example90::Post::GeneratedAssociationMethods)) with {@generated_association_methods: nil}": self
+    ? "(singleton(::Example90::Post::GeneratedAssociationMethods)) with {@generated_association_methods:
+      singleton(::Example90::Post::GeneratedAssociationMethods)}"
+    : self
     ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) on singleton(::Example91::Post)
       with {@generated_association_methods: nil}"
     : self
+    ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) on singleton(::Example91::Post)
+      with {@generated_association_methods: singleton(::Example91::Post::GeneratedAssociationMethods)}"
+    : self
     "(singleton(::Example91::Post::GeneratedAssociationMethods)) with {@generated_association_methods: nil}": self
+    ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) with {@generated_association_methods:
+      singleton(::Example91::Post::GeneratedAssociationMethods)}"
+    : self
   Notification::GeneratedStoreAccessors#channel=:
     ("none"): '"none"'
   Object#extend:
@@ -22715,6 +22741,25 @@ exits:
           "@lookups": "{  }"
         "::Thread":
           "@__rbs_infer__main": nil
+  ActiveSupport::ClassAttribute.redefine:
+    ? "(singleton(::Example109::Post), (:before_add_for_comments | :after_add_for_comments
+      | :before_remove_for_comments | :after_remove_for_comments), (:__class_attr_before_add_for_comments
+      | :__class_attr_after_add_for_comments | :__class_attr_before_remove_for_comments
+      | :__class_attr_after_remove_for_comments), nil) on singleton(::ActiveSupport::ClassAttribute)
+      with {::Example109::Post{@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
+    ? "(singleton(::Example109::Post), (:before_add_for_comments | :after_add_for_comments
+      | :before_remove_for_comments | :after_remove_for_comments), (:__class_attr_before_add_for_comments
+      | :__class_attr_after_add_for_comments | :__class_attr_before_remove_for_comments
+      | :__class_attr_after_remove_for_comments), nil) with {::Example109::Post{@generated_relation_methods:
+      singleton(::Example109::Post::GeneratedRelationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
   ActiveSupport::Delegation.generate:
     ? "(self, ::Array[(:human_name | :stamp | :full_name | :fetch | :updated_at |
       :email | :created_at | :name | untyped)], allow_nil: (true | nil | untyped),
@@ -41659,7 +41704,23 @@ exits:
           "@__rbs_infer__main": nil
     ? '(("before_add_for_comments" | "after_add_for_comments" | "before_remove_for_comments"
       | "after_remove_for_comments"), instance_accessor: false, instance_predicate:
+      false) on singleton(::Example109::Post) with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods),
+      ::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '(("before_add_for_comments" | "after_add_for_comments" | "before_remove_for_comments"
+      | "after_remove_for_comments"), instance_accessor: false, instance_predicate:
       false) with {::Thread{@__rbs_infer__main: nil}}'
+    : ivars: {}
+      classes:
+        "::Thread":
+          "@__rbs_infer__main": nil
+    ? '(("before_add_for_comments" | "after_add_for_comments" | "before_remove_for_comments"
+      | "after_remove_for_comments"), instance_accessor: false, instance_predicate:
+      false) with {@generated_relation_methods: singleton(::Example109::Post::GeneratedRelationMethods),
+      ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
         "::Thread":
@@ -46238,6 +46299,21 @@ exits:
       ivars:
         "@singulars": '[[::Regexp, ""]]'
   Example108::ClassAttribute.redefine:
+    ? "(self, (:plural_names | :pluralize_table_names | :_reflections), (:__class_attr_plural_names
+      | :__class_attr_pluralize_table_names | :__class_attr__reflections), untyped)
+      on singleton(::Example108::ClassAttribute) with {::Example108::Settings{@generated_readers:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example108::Settings":
+          "@generated_readers": nil
+    ? "(self, (:plural_names | :pluralize_table_names | :_reflections), (:__class_attr_plural_names
+      | :__class_attr_pluralize_table_names | :__class_attr__reflections), untyped)
+      with {::Example108::Settings{@generated_readers: nil}}"
+    : ivars: {}
+      classes:
+        "::Example108::Settings":
+          "@generated_readers": nil
     ? "(self, :_reflections, :__class_attr__reflections, ::Hash[:comments, ::Example109::Reflection::HasManyReflection])
       on singleton(::Example108::ClassAttribute) with {::Example109::Post{@generated_relation_methods:
       singleton(::Example109::Post::GeneratedRelationMethods)}}"
@@ -46276,12 +46352,14 @@ exits:
       nil}}"
     : ivars: {}
       classes:
-        "::Example108::Settings": {}
+        "::Example108::Settings":
+          "@generated_readers": nil
     ? "(singleton(::Example108::Settings), :plural_names, :__class_attr_plural_names,
       true) with {::Example108::Settings{@generated_readers: nil}}"
     : ivars: {}
       classes:
-        "::Example108::Settings": {}
+        "::Example108::Settings":
+          "@generated_readers": nil
   Example108::Settings.__class_attr_plural_names:
     "() with {@generated_readers: nil}":
       ivars:
@@ -53119,7 +53197,8 @@ exits:
       singleton(::Example109::Post::GeneratedRelationMethods)}}"
     : ivars: {}
       classes:
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
     ? "({ :comments => ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
@@ -53129,7 +53208,8 @@ exits:
       singleton(::Example109::Post::GeneratedRelationMethods)}}"
     : ivars: {}
       classes:
-        "::Example109::Post": {}
+        "::Example109::Post":
+          "@generated_relation_methods": singleton(::Example109::Post::GeneratedRelationMethods)
   Example109::Post::GeneratedRelationMethods#comments:
     ? '() on ::Example109::Post with {@association_cache: {  }, ::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
@@ -60690,15 +60770,32 @@ exits:
     "(singleton(::Example90::Base)) with {::Example90::Base{@generated_association_methods: nil}}":
       ivars: {}
       classes:
-        "::Example90::Base": {}
+        "::Example90::Base":
+          "@generated_association_methods": nil
     "(singleton(::Example91::Base)) with {::Example91::Base{@generated_association_methods: nil}}":
       ivars: {}
       classes:
-        "::Example91::Base": {}
+        "::Example91::Base":
+          "@generated_association_methods": nil
   Module#include:
+    "(::Module) with {@generated_association_methods: nil}":
+      ivars:
+        "@generated_association_methods": nil
+    "(::Module) with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}":
+      ivars: {}
+    "(::Module) with {@generated_association_methods: singleton(::Example91::Post::GeneratedAssociationMethods)}":
+      ivars: {}
     "(::Module) with {@generated_methods: nil}":
       ivars:
         "@generated_methods": nil
+    "(::Module) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}":
+      ivars: {}
+    "(::Module) with {@generated_option_readers: nil}":
+      ivars:
+        "@generated_option_readers": nil
+    "(::Module) with {@generated_readers: nil}":
+      ivars:
+        "@generated_readers": nil
     "(singleton(::Current::GeneratedAttributeMethods)) on singleton(::Current) with {@__rbs_infer_instance: nil}":
       ivars: {}
     "(singleton(::Current::GeneratedAttributeMethods)) with {@__rbs_infer_instance: nil}":
@@ -60726,21 +60823,38 @@ exits:
         "@foo_instance": nil
     "(singleton(::Example89::Widget::GeneratedMethods)) on singleton(::Example89::Widget) with {@generated_methods: nil}":
       ivars: {}
+    ? "(singleton(::Example89::Widget::GeneratedMethods)) on singleton(::Example89::Widget)
+      with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}"
+    : ivars: {}
     "(singleton(::Example89::Widget::GeneratedMethods)) with {@generated_methods: nil}":
       ivars:
         "@generated_methods": nil
+    "(singleton(::Example89::Widget::GeneratedMethods)) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}":
+      ivars: {}
     ? "(singleton(::Example90::Post::GeneratedAssociationMethods)) on singleton(::Example90::Post)
       with {@generated_association_methods: nil}"
+    : ivars: {}
+    ? "(singleton(::Example90::Post::GeneratedAssociationMethods)) on singleton(::Example90::Post)
+      with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}"
     : ivars: {}
     "(singleton(::Example90::Post::GeneratedAssociationMethods)) with {@generated_association_methods: nil}":
       ivars:
         "@generated_association_methods": nil
+    ? "(singleton(::Example90::Post::GeneratedAssociationMethods)) with {@generated_association_methods:
+      singleton(::Example90::Post::GeneratedAssociationMethods)}"
+    : ivars: {}
     ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) on singleton(::Example91::Post)
       with {@generated_association_methods: nil}"
+    : ivars: {}
+    ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) on singleton(::Example91::Post)
+      with {@generated_association_methods: singleton(::Example91::Post::GeneratedAssociationMethods)}"
     : ivars: {}
     "(singleton(::Example91::Post::GeneratedAssociationMethods)) with {@generated_association_methods: nil}":
       ivars:
         "@generated_association_methods": nil
+    ? "(singleton(::Example91::Post::GeneratedAssociationMethods)) with {@generated_association_methods:
+      singleton(::Example91::Post::GeneratedAssociationMethods)}"
+    : ivars: {}
   Object#extend:
     "(singleton(::Example90::Core::ClassMethods)) on singleton(::Example90::Base) with {@generated_association_methods: nil}":
       ivars: {}
