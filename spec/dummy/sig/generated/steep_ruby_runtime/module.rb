@@ -56,11 +56,11 @@ class Module
   # The splice itself is `rb_include_module`, and no Ruby spells it — so the body says
   # the two things it CAN say: the type check, and that the answer is the module. A
   # module that overrides this (`ActiveSupport::Concern` does) now has a `super` to
-  # resolve against.
+  # resolve against. The check is a test of the object's type tag, which dispatches
+  # nothing (`__rbs_infer__check_type`).
   # @rbs_infer |...
   def append_features(mod)
-    raise TypeError, "wrong argument type (expected Class or Module)" unless mod.is_a?(Module)
-
+    __rbs_infer__check_type(mod)
     mod.send(:__rbs_infer__include_module, self)
     self
   end
@@ -70,8 +70,7 @@ class Module
 
   # @rbs_infer |...
   def prepend_features(mod)
-    raise TypeError, "wrong argument type (expected Class or Module)" unless mod.is_a?(Module)
-
+    __rbs_infer__check_type(mod)
     mod.send(:__rbs_infer__include_module, self)
     self
   end

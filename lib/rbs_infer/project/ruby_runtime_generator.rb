@@ -118,11 +118,11 @@ module RbsInfer::Project
         # The splice itself is `rb_include_module`, and no Ruby spells it — so the body says
         # the two things it CAN say: the type check, and that the answer is the module. A
         # module that overrides this (`ActiveSupport::Concern` does) now has a `super` to
-        # resolve against.
+        # resolve against. The check is a test of the object's type tag, which dispatches
+        # nothing (`__rbs_infer__check_type`).
         # @rbs_infer |...
         def append_features(mod)
-          raise TypeError, "wrong argument type (expected Class or Module)" unless mod.is_a?(Module)
-
+          __rbs_infer__check_type(mod)
           mod.send(:__rbs_infer__include_module, self)
           self
         end
@@ -132,8 +132,7 @@ module RbsInfer::Project
 
         # @rbs_infer |...
         def prepend_features(mod)
-          raise TypeError, "wrong argument type (expected Class or Module)" unless mod.is_a?(Module)
-
+          __rbs_infer__check_type(mod)
           mod.send(:__rbs_infer__include_module, self)
           self
         end
@@ -212,9 +211,7 @@ module RbsInfer::Project
           # before ANY hook runs, which is where this parts company with `include` —
           # there the check lives inside `append_features`, so `include Foo, 1` can
           # already have notified `Foo`.
-          modules.each do |mod|
-            raise TypeError, "wrong argument type (expected Module)" unless mod.is_a?(Module)
-          end
+          modules.each { |mod| __rbs_infer__check_type(mod) }
 
           # `while (argc--)`: backwards, as in `include`. `send` because `rb_funcall`
           # dispatches by name ignoring visibility, and both of these are private on
@@ -225,6 +222,14 @@ module RbsInfer::Project
           end
 
           self
+        end
+
+        private
+
+        # `Check_Type` and `CLASS_OR_MODULE_P`: a test of the object's type tag, which
+        # raises `TypeError` and calls no method. Any test Ruby spells dispatches one, so
+        # the body is empty, like `__rbs_infer__include_module`.
+        def __rbs_infer__check_type(value)
         end
       end
     RUBY

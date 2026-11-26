@@ -16481,7 +16481,6 @@ selves:
   IncludedHook::Slots#stamp=:
   - "::IncludedHook"
   Module#__rbs_infer__include_module:
-  - "::Module"
   - ":append_features"
   - singleton(::ActionController::Base)
   - singleton(::ActiveRecord::Base)
@@ -16599,6 +16598,157 @@ selves:
   - singleton(::Example109::Post)
   Notification::GeneratedStoreAccessors#channel:
   - "::Notification"
+  Object#__rbs_infer__check_type:
+  - "::Module"
+  - singleton(::ActionController::Base)
+  - singleton(::ActionText::Attribute)
+  - singleton(::ActiveRecord::Base)
+  - singleton(::ActiveSupport::Inflector)
+  - singleton(::Commentable)
+  - singleton(::Concurrent)
+  - singleton(::Current)
+  - singleton(::ERBDashboardShow)
+  - singleton(::ERBLayoutsApplication)
+  - singleton(::ERBPartialPostsComment)
+  - singleton(::ERBPartialPostsForm)
+  - singleton(::ERBPartialPostsSummary)
+  - singleton(::ERBPostsEdit)
+  - singleton(::ERBPostsIndex)
+  - singleton(::ERBPostsNew)
+  - singleton(::ERBPostsShow)
+  - singleton(::ERBUsersAvatarsEdit)
+  - singleton(::ERBUsersShow)
+  - singleton(::EvalReopen)
+  - singleton(::Eventable)
+  - singleton(::Example101::Assoc)
+  - singleton(::Example101::Post)
+  - singleton(::Example108::Gauge)
+  - singleton(::Example109::Base)
+  - singleton(::Example109::Post)
+  - singleton(::Example110::Dial)
+  - singleton(::Example13::Registry)
+  - singleton(::Example22::Bar)
+  - singleton(::Example23::Bar)
+  - singleton(::Example23::BarOther)
+  - singleton(::Example23::Baz)
+  - singleton(::Example24::Bar)
+  - singleton(::Example24::BarOther)
+  - singleton(::Example24::Baz)
+  - singleton(::Example25::Bar)
+  - singleton(::Example25::BarOther)
+  - singleton(::Example25::Baz)
+  - singleton(::Example25::BazOther)
+  - singleton(::Example26::Bar)
+  - singleton(::Example26::BarOther)
+  - singleton(::Example26::Baz)
+  - singleton(::Example26::BazOther)
+  - singleton(::Example27::Bar)
+  - singleton(::Example27::Baz)
+  - singleton(::Example28::Bar)
+  - singleton(::Example28::Baz)
+  - singleton(::Example29::Bar)
+  - singleton(::Example29::BarOther)
+  - singleton(::Example29::Baz)
+  - singleton(::Example29::BazOther)
+  - singleton(::Example31::Bar)
+  - singleton(::Example31::Baz)
+  - singleton(::Example32::Bar)
+  - singleton(::Example32::Baz)
+  - singleton(::Example33::Bar)
+  - singleton(::Example33::BarOther)
+  - singleton(::Example33::Baz)
+  - singleton(::Example33::BazOther)
+  - singleton(::Example34::Bar)
+  - singleton(::Example34::Baz)
+  - singleton(::Example37::Bar)
+  - singleton(::Example37::Baz)
+  - singleton(::Example38::Bar)
+  - singleton(::Example38::Baz)
+  - singleton(::Example38::BazOther)
+  - singleton(::Example39::Bar)
+  - singleton(::Example39::Baz)
+  - singleton(::Example3::Foo)
+  - singleton(::Example40::Bar)
+  - singleton(::Example40::Baz)
+  - singleton(::Example40::BazOther)
+  - singleton(::Example41::Bar)
+  - singleton(::Example41::Baz)
+  - singleton(::Example42::Bar)
+  - singleton(::Example42::BarOther)
+  - singleton(::Example42::Baz)
+  - singleton(::Example43::Bar)
+  - singleton(::Example43::BarOther)
+  - singleton(::Example43::BarOther2)
+  - singleton(::Example43::Baz)
+  - singleton(::Example43::BazOther)
+  - singleton(::Example44::Bar)
+  - singleton(::Example44::BarOther)
+  - singleton(::Example44::Baz)
+  - singleton(::Example45::Bar)
+  - singleton(::Example45::BarOther)
+  - singleton(::Example45::Baz)
+  - singleton(::Example47::Bar)
+  - singleton(::Example47::Baz)
+  - singleton(::Example48::Bar)
+  - singleton(::Example48::Baz)
+  - singleton(::Example49::Bar)
+  - singleton(::Example50::Bar)
+  - singleton(::Example50::Baz)
+  - singleton(::Example51::Baz)
+  - singleton(::Example52::Bar)
+  - singleton(::Example52::Baz)
+  - singleton(::Example53::Bar)
+  - singleton(::Example53::Baz)
+  - singleton(::Example54::Bar)
+  - singleton(::Example54::Baz)
+  - singleton(::Example55::Bar)
+  - singleton(::Example55::Baz)
+  - singleton(::Example57)
+  - singleton(::Example57::Fields)
+  - singleton(::Example57::Inner)
+  - singleton(::Example57Windowed)
+  - singleton(::Example58)
+  - singleton(::Example58::Defaults)
+  - singleton(::Example59)
+  - singleton(::Example59::Naming)
+  - singleton(::Example60)
+  - singleton(::Example60::Labels)
+  - singleton(::Example62)
+  - singleton(::Example62::Middle)
+  - singleton(::Example62::Shared)
+  - singleton(::Example64)
+  - singleton(::Example66)
+  - singleton(::Example66Override)
+  - singleton(::Example71::Mixed)
+  - singleton(::Example89::Widget)
+  - singleton(::Example90::Base)
+  - singleton(::Example90::Post)
+  - singleton(::Example91::Base)
+  - singleton(::Example91::Post)
+  - singleton(::FilterConfiguration)
+  - singleton(::I18n::Locale::Tag::Simple)
+  - singleton(::IncludedHook)
+  - singleton(::IncludedHook::Homespun)
+  - singleton(::IncludedHook::Sugared)
+  - singleton(::IncludedHookFirst)
+  - singleton(::IncludedHookSecond)
+  - singleton(::Notification)
+  - singleton(::Post)
+  - singleton(::Post::Commentable)
+  - singleton(::Post::Exportable)
+  - singleton(::Post::GeneratedRelationMethods)
+  - singleton(::Post::Notifiable)
+  - singleton(::Post::Taggable)
+  - singleton(::PostsController)
+  - singleton(::Test::Filtrable)
+  - singleton(::User)
+  - singleton(::User::Displayable)
+  - singleton(::User::Notifiable)
+  - singleton(::User::Recoverable)
+  - singleton(::Vault::Totaled)
+  - singleton(::Widget)
+  - singleton(::Widget::Closeable)
+  - singleton(::Widget::Publishable)
   Object#extend:
   - singleton(::ActionController::Base)
   - singleton(::ActionText::Attribute)
@@ -21542,7 +21692,7 @@ receivers:
   - "::Hash[untyped, untyped]"
   sig/generated/steep_ruby_runtime/hash.rb:27:26:
   - "::Proc"
-  sig/generated/steep_ruby_runtime/module.rb:103:24:
+  sig/generated/steep_ruby_runtime/module.rb:102:24:
   - untyped
   sig/generated/steep_ruby_runtime/module.rb:14:4:
   - "::Module"
@@ -21575,10 +21725,6 @@ receivers:
   - "::Module"
   sig/generated/steep_ruby_runtime/module.rb:29:87:
   - "::Array[(untyped | ::Module)]"
-  sig/generated/steep_ruby_runtime/module.rb:62:4:
-  - "::Module"
-  sig/generated/steep_ruby_runtime/module.rb:73:4:
-  - "::Module"
   sig/generated/steep_ruby_runtime/object.rb:23:4:
   - "::Object"
   sig/generated/steep_ruby_runtime/object.rb:23:87:
@@ -21599,26 +21745,6 @@ receivers:
     | singleton(::Example90::Core::ClassMethods) | singleton(::Example91::Core::ClassMethods)
     | singleton(::IncludedHook::HomeMade) | singleton(::Enumerize) | singleton(::Concurrent::Utility::EngineDetector)
     | ::Module)]"
-  sig/generated/steep_ruby_runtime/object.rb:29:12:
-  - "::Array[(singleton(::ActiveSupport::Concern) | singleton(::ActiveSupport::Inflector)
-    | singleton(::Example48::Foo) | singleton(::Example52::Foo) | singleton(::Example53::Foo)
-    | singleton(::Example54::Foo) | singleton(::Example109::Core::ClassMethods) |
-    singleton(::Example109::Reflection::ClassMethods) | singleton(::Example109::Associations::ClassMethods)
-    | singleton(::Example22::Foo) | singleton(::Example23::Foo) | singleton(::Example24::Foo)
-    | singleton(::Example25::Foo) | singleton(::Example26::Foo) | singleton(::Example27::Foo)
-    | singleton(::Example28::Foo) | singleton(::Example29::Foo) | singleton(::Example31::Foo)
-    | singleton(::Example32::Foo) | singleton(::Example33::Foo) | singleton(::Example34::Foo)
-    | singleton(::Example37::Foo) | singleton(::Example38::Foo) | singleton(::Example39::Foo)
-    | singleton(::Example40::Foo) | singleton(::Example41::Foo) | singleton(::Example42::Foo)
-    | singleton(::Example43::Foo) | singleton(::Example44::Foo) | singleton(::Example45::Foo)
-    | singleton(::Example47::Foo) | singleton(::Example47::Baz::BananaMethods) | singleton(::Example49::Baz)
-    | singleton(::Example50::Foo) | singleton(::Example50::Baz::BananaMethods) | singleton(::Example51::Foo)
-    | singleton(::Example55::Foo) | singleton(::Example62::Deferring) | singleton(::Example71::Writes)
-    | singleton(::Example90::Core::ClassMethods) | singleton(::Example91::Core::ClassMethods)
-    | singleton(::IncludedHook::HomeMade) | singleton(::Enumerize) | singleton(::Concurrent::Utility::EngineDetector)
-    | ::Module)]"
-  sig/generated/steep_ruby_runtime/object.rb:30:6:
-  - "::Object"
   sig/generated/steep_ruby_runtime/thread.rb:10:27:
   - singleton(::Thread)
   sig/generated/steep_ruby_runtime/thread.rb:20:27:
@@ -60687,6 +60813,46 @@ exits:
     "() with {@tag: :en}":
       ivars:
         "@tag": ":en"
+  Module#__rbs_infer__include_module:
+    "(self) with {@__rbs_infer_instance: nil}":
+      ivars:
+        "@__rbs_infer_instance": nil
+    ? "(self) with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
+      {  }, @default_proc: nil}, @generated_relation_methods: nil}"
+    : ivars:
+        "@_type_candidates_cache":
+          class: "::Concurrent::Map[untyped, untyped]"
+          ivars:
+            "@backend": "{  }"
+            "@default_proc": nil
+        "@generated_relation_methods": nil
+    "(self) with {@foo_instance: nil}":
+      ivars:
+        "@foo_instance": nil
+    "(self) with {@generated_association_methods: nil}":
+      ivars:
+        "@generated_association_methods": nil
+    "(self) with {@generated_association_methods: singleton(::Example90::Post::GeneratedAssociationMethods)}":
+      ivars:
+        "@generated_association_methods": singleton(::Example90::Post::GeneratedAssociationMethods)
+    "(self) with {@generated_association_methods: singleton(::Example91::Post::GeneratedAssociationMethods)}":
+      ivars:
+        "@generated_association_methods": singleton(::Example91::Post::GeneratedAssociationMethods)
+    "(self) with {@generated_methods: nil}":
+      ivars:
+        "@generated_methods": nil
+    "(self) with {@generated_methods: singleton(::Example89::Widget::GeneratedMethods)}":
+      ivars:
+        "@generated_methods": singleton(::Example89::Widget::GeneratedMethods)
+    "(self) with {@generated_option_readers: nil}":
+      ivars:
+        "@generated_option_readers": nil
+    "(self) with {@generated_readers: nil}":
+      ivars:
+        "@generated_readers": nil
+    "(self) with {@registry_instance: nil}":
+      ivars:
+        "@registry_instance": nil
   Module#delegate:
     "(:created_at, prefix: true, to: :user) on singleton(::Post) with {::Thread{@__rbs_infer__main: nil}}":
       ivars: {}
@@ -60970,6 +61136,97 @@ exits:
     "(:GeneratedRelationMethods) with {@generated_relation_methods: nil}":
       ivars:
         "@generated_relation_methods": nil
+  Object#__rbs_infer__check_type:
+    ? "((singleton(::ActiveSupport::Concern) | singleton(::ActiveSupport::Inflector)
+      | singleton(::Example48::Foo) | singleton(::Example52::Foo) | singleton(::Example53::Foo)
+      | singleton(::Example54::Foo) | singleton(::Example109::Core::ClassMethods)
+      | singleton(::Example109::Reflection::ClassMethods) | singleton(::Example109::Associations::ClassMethods)
+      | singleton(::Example22::Foo) | singleton(::Example23::Foo) | singleton(::Example24::Foo)
+      | singleton(::Example25::Foo) | singleton(::Example26::Foo) | singleton(::Example27::Foo)
+      | singleton(::Example28::Foo) | singleton(::Example29::Foo) | singleton(::Example31::Foo)
+      | singleton(::Example32::Foo) | singleton(::Example33::Foo) | singleton(::Example34::Foo)
+      | singleton(::Example37::Foo) | singleton(::Example38::Foo) | singleton(::Example39::Foo)
+      | singleton(::Example40::Foo) | singleton(::Example41::Foo) | singleton(::Example42::Foo)
+      | singleton(::Example43::Foo) | singleton(::Example44::Foo) | singleton(::Example45::Foo)
+      | singleton(::Example47::Foo) | singleton(::Example47::Baz::BananaMethods) |
+      singleton(::Example49::Baz) | singleton(::Example50::Foo) | singleton(::Example50::Baz::BananaMethods)
+      | singleton(::Example51::Foo) | singleton(::Example55::Foo) | singleton(::Example62::Deferring)
+      | singleton(::Example71::Writes) | singleton(::Example90::Core::ClassMethods)
+      | singleton(::Example91::Core::ClassMethods) | singleton(::IncludedHook::HomeMade)
+      | singleton(::Enumerize) | singleton(::Concurrent::Utility::EngineDetector)
+      | ::Module)) with {@generated_association_methods: nil}"
+    : ivars:
+        "@generated_association_methods": nil
+    "(singleton(::Current)) with {::Current{@__rbs_infer_instance: nil}}":
+      ivars: {}
+      classes:
+        "::Current":
+          "@__rbs_infer_instance": nil
+    "(singleton(::Example108::Gauge)) with {::Example108::Gauge{@generated_readers: nil}}":
+      ivars: {}
+      classes:
+        "::Example108::Gauge":
+          "@generated_readers": nil
+    ? "(singleton(::Example109::Post)) with {::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
+      nil}}"
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+          "@generated_relation_methods": nil
+    "(singleton(::Example110::Dial)) with {::Example110::Dial{@generated_option_readers: nil}}":
+      ivars: {}
+      classes:
+        "::Example110::Dial":
+          "@generated_option_readers": nil
+    "(singleton(::Example13::Registry)) with {::Example13::Registry{@registry_instance: nil}}":
+      ivars: {}
+      classes:
+        "::Example13::Registry":
+          "@registry_instance": nil
+    "(singleton(::Example3::Foo)) with {::Example3::Foo{@foo_instance: nil}}":
+      ivars: {}
+      classes:
+        "::Example3::Foo":
+          "@foo_instance": nil
+    "(singleton(::Example89::Widget)) with {::Example89::Widget{@generated_methods: nil}}":
+      ivars: {}
+      classes:
+        "::Example89::Widget":
+          "@generated_methods": nil
+    ? "(singleton(::Example89::Widget)) with {::Example89::Widget{@generated_methods:
+      singleton(::Example89::Widget::GeneratedMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example89::Widget":
+          "@generated_methods": singleton(::Example89::Widget::GeneratedMethods)
+    "(singleton(::Example90::Post)) with {::Example90::Post{@generated_association_methods: nil}}":
+      ivars: {}
+      classes:
+        "::Example90::Post":
+          "@generated_association_methods": nil
+    ? "(singleton(::Example90::Post)) with {::Example90::Post{@generated_association_methods:
+      singleton(::Example90::Post::GeneratedAssociationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example90::Post":
+          "@generated_association_methods": singleton(::Example90::Post::GeneratedAssociationMethods)
+    "(singleton(::Example91::Post)) with {::Example91::Post{@generated_association_methods: nil}}":
+      ivars: {}
+      classes:
+        "::Example91::Post":
+          "@generated_association_methods": nil
+    ? "(singleton(::Example91::Post)) with {::Example91::Post{@generated_association_methods:
+      singleton(::Example91::Post::GeneratedAssociationMethods)}}"
+    : ivars: {}
+      classes:
+        "::Example91::Post":
+          "@generated_association_methods": singleton(::Example91::Post::GeneratedAssociationMethods)
   Object#extend:
     "(singleton(::Example90::Core::ClassMethods)) on singleton(::Example90::Base) with {@generated_association_methods: nil}":
       ivars: {}

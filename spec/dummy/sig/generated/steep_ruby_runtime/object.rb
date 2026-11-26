@@ -26,9 +26,7 @@ class Object
     # before ANY hook runs, which is where this parts company with `include` —
     # there the check lives inside `append_features`, so `include Foo, 1` can
     # already have notified `Foo`.
-    modules.each do |mod|
-      raise TypeError, "wrong argument type (expected Module)" unless mod.is_a?(Module)
-    end
+    modules.each { |mod| __rbs_infer__check_type(mod) }
 
     # `while (argc--)`: backwards, as in `include`. `send` because `rb_funcall`
     # dispatches by name ignoring visibility, and both of these are private on
@@ -39,5 +37,13 @@ class Object
     end
 
     self
+  end
+
+  private
+
+  # `Check_Type` and `CLASS_OR_MODULE_P`: a test of the object's type tag, which
+  # raises `TypeError` and calls no method. Any test Ruby spells dispatches one, so
+  # the body is empty, like `__rbs_infer__include_module`.
+  def __rbs_infer__check_type(value)
   end
 end
