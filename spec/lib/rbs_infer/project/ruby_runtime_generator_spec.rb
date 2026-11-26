@@ -47,10 +47,12 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
       end
     end
 
-    # `rb_mod_append_features` type-checks its argument before splicing.
-    it "keeps append_features' type check" do
+    it "keeps append_features' type check, as a test that dispatches nothing" do
       Dir.mktmpdir do |dir|
-        expect(build_in(dir).first.source).to include("raise TypeError")
+        source = build_in(dir).first.source
+
+        expect(source).to match(/def append_features\(mod\)\n\s+__rbs_infer__check_type\(mod\)\n/)
+        expect(source).not_to include("is_a?")
       end
     end
 
@@ -145,8 +147,10 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
 
     it "reaches the same splice `append_features` reaches" do
       Dir.mktmpdir do |dir|
-        expect(source_of(dir, "module.rb"))
-          .to match(/def prepend_features\(mod\)\n.*\n\n    mod\.send\(:__rbs_infer__include_module, self\)/)
+        expect(source_of(dir, "module.rb")).to include(
+          "  def prepend_features(mod)\n    __rbs_infer__check_type(mod)\n    " \
+          "mod.send(:__rbs_infer__include_module, self)\n"
+        )
       end
     end
 
@@ -211,7 +215,8 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
       Dir.mktmpdir do |dir|
         source = source_of(dir, "object.rb")
 
-        expect(source).to include("raise TypeError")
+        expect(source).to include("modules.each { |mod| __rbs_infer__check_type(mod) }")
+        expect(source).not_to include("is_a?")
         expect(source.index("modules.each")).to be < source.index("modules.reverse_each")
       end
     end
@@ -223,7 +228,7 @@ RSpec.describe RbsInfer::Project::RubyRuntimeGenerator do
         source = source_of(dir, "object.rb")
 
         expect(source).to include("raise ArgumentError")
-        expect(source).to match(/    self\n  end\nend\n\z/)
+        expect(source).to match(/def extend\(\*modules\).*?\n    self\n  end\n/m)
       end
     end
 
