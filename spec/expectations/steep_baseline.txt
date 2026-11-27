@@ -9,6 +9,7 @@ app/models/example108.rb:27:8: [error] Cannot allow method body have type `(::Tr
 app/models/example108.rb:27:8: [error] Cannot allow method body have type `(::TrueClass | ::Hash[untyped, untyped])` because declared as type `{ :comments => ::Example109::Reflection::HasManyReflection }`
 app/models/example109.rb:107:10: [error] The method cannot return a value of type `singleton(::Example109::Base)` because declared as type `singleton(::Comment)`
 app/models/example109.rb:155:24: [error] Type `(::String | nil)` does not have method `match?`
+app/models/example109.rb:299:49: [error] Cannot pass a value of type `self` as an argument of type `::Example109::Associations::HasManyAssociation`
 app/models/example109.rb:30:62: [error] Cannot pass a value of type `::Hash[:comments, ::Example109::Reflection::HasManyReflection]` as an argument of type `::hash[bot, bot]`
 app/models/example109.rb:341:33: [warning] Cannot pass a value of type `::Proc` as a block-pass-argument of type `^ [self: self] -> U(_)`
 app/models/example109.rb:409:35: [warning] Cannot pass a value of type `^(*untyped) -> untyped` as a block-pass-argument of type `(^(::Module) [self: ::Module] -> void | nil)`

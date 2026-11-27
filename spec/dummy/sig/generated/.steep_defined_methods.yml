@@ -15,7 +15,7 @@ methods:
     block: app/models/example108.rb:27:8
   Example109::Base.__class_attr__reflections=:
     params: "(untyped new_value)"
-    returns: untyped
+    returns: "({ :comments => ::Example109::Reflection::HasManyReflection } | ::String)"
     block: app/models/example108.rb:29:8
   Example109::Base.__class_attr_pluralize_table_names:
     params: "()"
@@ -31,7 +31,7 @@ methods:
     block: app/models/example108.rb:27:8
   Example109::Post.__class_attr__reflections=:
     params: "(untyped new_value)"
-    returns: untyped
+    returns: ({ :comments => ::Example109::Reflection::HasManyReflection } | "__class_attr__reflections=")
     block: app/models/example108.rb:29:8
   Example110::Options.__class_attr_plural_labels:
     params: "()"
