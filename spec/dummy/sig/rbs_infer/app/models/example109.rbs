@@ -40,8 +40,8 @@ end
 module Example109
   module Reflection
     class MacroReflection < AbstractReflection
-      @klass: singleton(::Comment)?
       @class_name: "Comment"?
+      @klass: nil
 
       attr_reader name: :comments
       attr_reader scope: Proc
@@ -51,8 +51,8 @@ module Example109
 
       def initialize: (:comments name, Proc scope, {  } options, singleton(Example109::Post) active_record) -> void
       def class_name: () -> "Comment"
-      def klass: () -> singleton(::Comment)
-      def _klass: ("Comment" class_name) -> singleton(::Comment)
+      def klass: () -> singleton(Example109::Comment)
+      def _klass: ("Comment" class_name) -> untyped
       def compute_class: (String name) -> untyped
 
       private
@@ -144,7 +144,7 @@ end
 module Example109
   module Associations
     class CollectionProxy
-      def self.create: (singleton(::Comment) klass, Example109::Associations::HasManyAssociation association) -> Example109::Associations::CollectionProxy
+      def self.create: (singleton(Example109::Comment) klass, Example109::Associations::HasManyAssociation association) -> Example109::Associations::CollectionProxy
 
       def initialize: (untyped klass, untyped association) -> void
     end
@@ -159,11 +159,11 @@ module Example109
       attr_reader reflection: Example109::Reflection::HasManyReflection
 
       def initialize: (Example109::Post owner, Example109::Reflection::HasManyReflection reflection) -> void
-      def klass: () -> singleton(::Comment)
+      def klass: () -> singleton(Example109::Comment)
 
       private
 
-      def ensure_klass_exists!: () -> singleton(::Comment)
+      def ensure_klass_exists!: () -> singleton(Example109::Comment)
     end
   end
 end

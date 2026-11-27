@@ -679,10 +679,6 @@ postconditions:
     - "@class_name"
 - class: Example109::Reflection::MacroReflection
   method: initialize
-  unconditional:
-    ivars:
-      "@klass": nil
-    self: "::Example109::Reflection::MacroReflection & ::Example109::Reflection::MacroReflection::AfterInitialize"
   effects:
     may_write:
     - "@active_record"

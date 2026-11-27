@@ -7,7 +7,6 @@ app/models/example103.rb:54:10: [error] Cannot allow method body have type `:a` 
 app/models/example108.rb:27:8: [error] Cannot allow method body have type `(::TrueClass | ::Hash[untyped, untyped])` because declared as type `::TrueClass`
 app/models/example108.rb:27:8: [error] Cannot allow method body have type `(::TrueClass | ::Hash[untyped, untyped])` because declared as type `{  }`
 app/models/example108.rb:27:8: [error] Cannot allow method body have type `(::TrueClass | ::Hash[untyped, untyped])` because declared as type `{ :comments => ::Example109::Reflection::HasManyReflection }`
-app/models/example109.rb:107:10: [error] The method cannot return a value of type `singleton(::Example109::Base)` because declared as type `singleton(::Comment)`
 app/models/example109.rb:155:24: [error] Type `(::String | nil)` does not have method `match?`
 app/models/example109.rb:299:49: [error] Cannot pass a value of type `self` as an argument of type `::Example109::Associations::HasManyAssociation`
 app/models/example109.rb:30:62: [error] Cannot pass a value of type `::Hash[:comments, ::Example109::Reflection::HasManyReflection]` as an argument of type `::hash[bot, bot]`
@@ -125,4 +124,4 @@ sig/generated/steep_string_evals/app/models/post.rb:12:42: [error] Type `(::User
 sig/generated/steep_string_evals/app/models/post.rb:13:22: [error] Type `::Post` does not have method `tag`
 sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:148: [warning] Cannot find the declaration of constant: `DelegationError`
 sig/generated/steep_string_evals/app/models/post/notifiable.rb:10:42: [error] Type `(::User | nil)` does not have method `updated_at`
-sig/rbs_infer/app/models/example109.rbs:44:19: [error] Instance variable cannot have different type with parents: ("Comment" | nil) <=> nil
+sig/rbs_infer/app/models/example109.rbs:43:19: [error] Instance variable cannot have different type with parents: ("Comment" | nil) <=> nil
