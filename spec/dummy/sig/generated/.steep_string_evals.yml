@@ -76,6 +76,8 @@ call_sites:
   -
   app/models/example109.rb:119:10:
   -
+  app/models/example109.rb:153:18:
+  -
   app/models/example109.rb:206:23:
   -
   -
@@ -139,6 +141,8 @@ call_sites:
     target: "::Example109::Post::GeneratedRelationMethods"
     kind: module
   app/models/example109.rb:555:24:
+  -
+  -
   -
   -
   -
