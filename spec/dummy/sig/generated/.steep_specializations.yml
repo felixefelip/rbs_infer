@@ -9130,8 +9130,9 @@ methods:
         "@default_proc": nil
   Concurrent::Collection::NonConcurrentMapBackend#[]:
     '("::Comment") with {@backend: {  }, @default_proc: nil}': nil
-    '("::Comment") with {@backend: { "Comment" => untyped }, @default_proc: nil}': nil
+    '("::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}': nil
     '("Comment") with {@backend: {  }, @default_proc: nil}': nil
+    '("Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}': "::String"
     ? '(::Symbol) with {@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
@@ -9632,18 +9633,48 @@ methods:
           [::Regexp, "\\1fe"], [::Regexp, "\\1sis"], [::Regexp, "\\1sis"], [::Regexp,
           "\\1um"], [::Regexp, "\\1ews"], [::Regexp, "\\1"], [::Regexp, ""]]'
   Concurrent::Collection::NonConcurrentMapBackend#[]=:
-    ("::Comment", ::String): "::String"
-    ("::Comment", ::String) on ::Concurrent::Map[untyped, untyped]: "::String"
-    '("::Comment", ::String) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}': "::String"
-    '("::Comment", ::String) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => untyped }, @default_proc: nil}': "::String"
-    '("::Comment", ::String) with {@backend: {  }, @default_proc: nil}': "::String"
-    '("::Comment", ::String) with {@backend: { "Comment" => untyped }, @default_proc: nil}': "::String"
-    ("Comment", ::String): "::String"
-    ("Comment", ::String) on ::Concurrent::Map[untyped, untyped]: "::String"
-    '("Comment", ::String) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}': "::String"
-    '("Comment", ::String) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => untyped }, @default_proc: nil}': "::String"
-    '("Comment", ::String) with {@backend: {  }, @default_proc: nil}': "::String"
-    '("Comment", ::String) with {@backend: { "Comment" => untyped }, @default_proc: nil}': "::String"
+    ("::Comment", "::Comment"): '"::Comment"'
+    ("::Comment", "::Comment") on ::Concurrent::Map[untyped, untyped]: '"::Comment"'
+    '("::Comment", "::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}': '"::Comment"'
+    '("::Comment", "::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => ::String }, @default_proc: nil}': '"::Comment"'
+    '("::Comment", "::Comment") with {@backend: {  }, @default_proc: nil}': '"::Comment"'
+    '("::Comment", "::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}': '"::Comment"'
+    ("::Comment", "Example109::::Comment"): '"Example109::::Comment"'
+    ("::Comment", "Example109::::Comment") on ::Concurrent::Map[untyped, untyped]: '"Example109::::Comment"'
+    '("::Comment", "Example109::::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}': '"Example109::::Comment"'
+    ? '("::Comment", "Example109::::Comment") on ::Concurrent::Map[untyped, untyped]
+      with {@backend: { "Comment" => ::String }, @default_proc: nil}'
+    : '"Example109::::Comment"'
+    '("::Comment", "Example109::::Comment") with {@backend: {  }, @default_proc: nil}': '"Example109::::Comment"'
+    '("::Comment", "Example109::::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}': '"Example109::::Comment"'
+    ("::Comment", "Example109::Post::::Comment"): '"Example109::Post::::Comment"'
+    ("::Comment", "Example109::Post::::Comment") on ::Concurrent::Map[untyped, untyped]: '"Example109::Post::::Comment"'
+    '("::Comment", "Example109::Post::::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}': '"Example109::Post::::Comment"'
+    ? '("::Comment", "Example109::Post::::Comment") on ::Concurrent::Map[untyped,
+      untyped] with {@backend: { "Comment" => ::String }, @default_proc: nil}'
+    : '"Example109::Post::::Comment"'
+    '("::Comment", "Example109::Post::::Comment") with {@backend: {  }, @default_proc: nil}': '"Example109::Post::::Comment"'
+    '("::Comment", "Example109::Post::::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}': '"Example109::Post::::Comment"'
+    ("Comment", "Comment"): '"Comment"'
+    ("Comment", "Comment") on ::Concurrent::Map[untyped, untyped]: '"Comment"'
+    '("Comment", "Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}': '"Comment"'
+    '("Comment", "Comment") with {@backend: {  }, @default_proc: nil}': '"Comment"'
+    ("Comment", "Example109::Comment"): '"Example109::Comment"'
+    ("Comment", "Example109::Comment") on ::Concurrent::Map[untyped, untyped]: '"Example109::Comment"'
+    '("Comment", "Example109::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}': '"Example109::Comment"'
+    ? '("Comment", "Example109::Comment") on ::Concurrent::Map[untyped, untyped] with
+      {@backend: { "Comment" => ::String }, @default_proc: nil}'
+    : '"Example109::Comment"'
+    '("Comment", "Example109::Comment") with {@backend: {  }, @default_proc: nil}': '"Example109::Comment"'
+    '("Comment", "Example109::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}': '"Example109::Comment"'
+    ("Comment", "Example109::Post::Comment"): '"Example109::Post::Comment"'
+    ("Comment", "Example109::Post::Comment") on ::Concurrent::Map[untyped, untyped]: '"Example109::Post::Comment"'
+    '("Comment", "Example109::Post::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}': '"Example109::Post::Comment"'
+    ? '("Comment", "Example109::Post::Comment") on ::Concurrent::Map[untyped, untyped]
+      with {@backend: { "Comment" => ::String }, @default_proc: nil}'
+    : '"Example109::Post::Comment"'
+    '("Comment", "Example109::Post::Comment") with {@backend: {  }, @default_proc: nil}': '"Example109::Post::Comment"'
+    '("Comment", "Example109::Post::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}': '"Example109::Post::Comment"'
     "(::Symbol, ::ActiveSupport::Inflector::Inflections) on ::Concurrent::Map[untyped, untyped]": "::ActiveSupport::Inflector::Inflections"
     ? '(::Symbol, ::ActiveSupport::Inflector::Inflections) on ::Concurrent::Map[untyped,
       untyped] with {@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
@@ -13940,7 +13971,7 @@ methods:
       nil}}'
     : singleton(::Comment)
     ? '("::Comment") on singleton(::Example109::Post) with {@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}, ::Thread{@__rbs_infer__main: nil}}'
     : singleton(::Comment)
     ? '("::Comment") on singleton(::Example109::Post) with {@_type_candidates_cache:
@@ -13950,10 +13981,14 @@ methods:
       {  }, @default_proc: nil}, ::Thread{@__rbs_infer__main: nil}}'
     : singleton(::Comment)
     ? '("::Comment") with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
-      { "Comment" => untyped }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
+      { "Comment" => ::String }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
       nil}}'
     : singleton(::Comment)
     '("::Comment") with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{}, ::Thread{@__rbs_infer__main: nil}}': singleton(::Comment)
+    ? '("Comment") on singleton(::Example109::Post) with {@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
   Example109::Base.inherited:
     "(singleton(::Example109::Comment)) with {::Example109::Comment{@generated_relation_methods: nil}}":
       class: "::Concurrent::Map[untyped, untyped]"
@@ -14271,7 +14306,7 @@ methods:
       nil}}'
     : singleton(::Example109::Base)
     ? '("::Comment") on ::Example109::Reflection::HasManyReflection with {::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : singleton(::Example109::Base)
     ? '("::Comment") on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
@@ -14291,17 +14326,16 @@ methods:
     ? '("::Comment") on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
-      nil}}'
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
+      nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : singleton(::Example109::Base)
     ? '("::Comment") with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
       untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
       nil}}'
     : singleton(::Example109::Base)
     ? '("::Comment") with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
       nil}}'
     : singleton(::Example109::Base)
     ? '("::Comment") with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
@@ -14323,11 +14357,47 @@ methods:
     : singleton(::Example109::Base)
     ? '("::Comment") with {@association_foreign_key: nil, @association_primary_key:
       nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type: nil, @inverse_of:
-      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: singleton(::Comment),
+      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: nil,
       @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
       nil}}'
     : singleton(::Example109::Base)
+    ? '("Comment") on ::Example109::Reflection::HasManyReflection with {::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
+    ? '("Comment") on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
+    ? '("Comment") on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
+      nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
+      nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
+    ? '("Comment") with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
+    ? '("Comment") with {@association_foreign_key: nil, @association_primary_key:
+      nil, @class_name: nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type:
+      nil, @inverse_of: nil, @inverse_which_updates_counter_cache: nil, @join_table:
+      nil, @klass: nil, @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
+    ? '("Comment") with {@association_foreign_key: nil, @association_primary_key:
+      nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: nil,
+      @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
   Example109::Reflection::AssociationReflection#derive_class_name:
     ? '() on ::Example109::Reflection::HasManyReflection with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
@@ -14392,7 +14462,7 @@ methods:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : '"Comment"'
     ? '() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
@@ -14434,9 +14504,8 @@ methods:
     ? '() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -14465,7 +14534,7 @@ methods:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : '"Comment"'
     ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
@@ -14531,7 +14600,7 @@ methods:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : '"Comment"'
     ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @class_name:
@@ -14572,9 +14641,8 @@ methods:
     : '"Comment"'
     ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -14603,7 +14671,7 @@ methods:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : '"Comment"'
   Example109::Reflection::AssociationReflection.new:
@@ -14828,6 +14896,29 @@ methods:
         "@options": "{  }"
         "@type": nil
     "(:comments) with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}": nil
+  Example109::Reflection::MacroReflection#_klass:
+    ? '("Comment") on ::Example109::Reflection::HasManyReflection with {::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
+    ? '("Comment") on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
+      nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
+      nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
+    ? '("Comment") with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
+    ? '("Comment") with {@association_foreign_key: nil, @association_primary_key:
+      nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: nil,
+      @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
   Example109::Reflection::MacroReflection#class_name:
     ? '() on ::Example109::Reflection::HasManyReflection with {::ActiveSupport::Inflector::Inflections{@__instance__:
       ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
@@ -14908,9 +14999,8 @@ methods:
     ? '() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -14942,10 +15032,10 @@ methods:
     ? "() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : "::String"
     ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
       untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
@@ -15020,9 +15110,8 @@ methods:
     : "::String"
     ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -15053,16 +15142,155 @@ methods:
     : "::String"
     ? "() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : "::String"
+  Example109::Reflection::MacroReflection#klass:
+    ? '() on ::Example109::Reflection::HasManyReflection with {::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
+    ? '() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
+      nil, @association_primary_key: nil, @class_name: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
+    ? '() with {::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
+      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
+    ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @class_name:
+      nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type: nil, @inverse_of:
+      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: nil,
+      @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
+      [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
+      [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
+      [/(m)en$/i, "\\1en"], [/(m)an$/i, "\\1en"], [/(p)eople$/i, "\\1eople"], [/(p)erson$/i,
+      "\\1eople"], [/(quiz)$/i, "\\1zes"], [/^(oxen)$/i, "\\1"], [/^(ox)$/i, "\\1en"],
+      [/^(m|l)ice$/i, "\\1ice"], [/^(m|l)ouse$/i, "\\1ice"], [/(matr|vert|ind)(?:ix|ex)$/i,
+      "\\1ices"], [/(x|ch|ss|sh)$/i, "\\1es"], [/([^aeiouy]|qu)y$/i, "\\1ies"], [/(hive)$/i,
+      "\\1s"], [/(?:([^f])fe|([lr])f)$/i, "\\1\\2ves"], [/sis$/i, "ses"], [/([ti])a$/i,
+      "\\1a"], [/([ti])um$/i, "\\1a"], [/(buffal|tomat)o$/i, "\\1oes"], [/(bu)s$/i,
+      "\\1ses"], [/(alias|status)$/i, "\\1es"], [/(octop|vir)i$/i, "\\1i"], [/(octop|vir)us$/i,
+      "\\1i"], [/^(ax|test)is$/i, "\\1es"], [/s$/i, "s"], [/$/, "s"]], @singulars:
+      [[/(z)ombies$/i, "\\1ombie"], [/(z)ombie$/i, "\\1ombie"], [/(m)oves$/i, "\\1ove"],
+      [/(m)ove$/i, "\\1ove"], [/(s)exes$/i, "\\1ex"], [/(s)ex$/i, "\\1ex"], [/(c)hildren$/i,
+      "\\1hild"], [/(c)hild$/i, "\\1hild"], [/(m)en$/i, "\\1an"], [/(m)an$/i, "\\1an"],
+      [/(p)eople$/i, "\\1erson"], [/(p)erson$/i, "\\1erson"], [/(database)s$/i, "\\1"],
+      [/(quiz)zes$/i, "\\1"], [/(matr)ices$/i, "\\1ix"], [/(vert|ind)ices$/i, "\\1ex"],
+      [/^(ox)en/i, "\\1"], [/(alias|status)(es)?$/i, "\\1"], [/(octop|vir)(us|i)$/i,
+      "\\1us"], [/^(a)x[ie]s$/i, "\\1xis"], [/(cris|test)(is|es)$/i, "\\1is"], [/(shoe)s$/i,
+      "\\1"], [/(o)es$/i, "\\1"], [/(bus)(es)?$/i, "\\1"], [/^(m|l)ice$/i, "\\1ouse"],
+      [/(x|ch|ss|sh)es$/i, "\\1"], [/(m)ovies$/i, "\\1ovie"], [/(s)eries$/i, "\\1eries"],
+      [/([^aeiouy]|qu)ies$/i, "\\1y"], [/([lr])ves$/i, "\\1f"], [/(tive)s$/i, "\\1"],
+      [/(hive)s$/i, "\\1"], [/([^f])ves$/i, "\\1fe"], [/(^analy)(sis|ses)$/i, "\\1sis"],
+      [/((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)(sis|ses)$/i, "\\1sis"],
+      [/([ti])a$/i, "\\1um"], [/(n)ews$/i, "\\1ews"], [/(ss)$/i, "\\1"], [/s$/i, ""]],
+      @uncountables: ::ActiveSupport::Inflector::Inflections::Uncountables[untyped]{@regex_array:
+      [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
+      /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
+      @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      nil}}'
+    : singleton(::Example109::Comment)
   Example109::Reflection::MacroReflection#normalize_options:
     ? "(({ :extend => ::Array[::Module] } | {  })) with {@active_record: singleton(::Example109::Post),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
-      @options: {  }}"
+      nil, @inverse_which_updates_counter_cache_defined: false, @klass: nil, @name:
+      :comments, @options: {  }}"
     : "({ :extend => ::Array[::Module] } | {  })"
     ? "(::Hash[untyped, untyped]) with {::Example109::Post{@_type_candidates_cache:
       ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
@@ -15079,8 +15307,8 @@ methods:
     : "::Hash[untyped, untyped]"
     ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Post),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
-      @options: {  }}"
+      nil, @inverse_which_updates_counter_cache_defined: false, @klass: nil, @name:
+      :comments, @options: {  }}"
     : "::Hash[untyped, untyped]"
   Example109::Reflection::ThroughReflection.new:
     ? "(::Example109::Reflection::HasManyReflection{@association_foreign_key: nil,
@@ -19689,6 +19917,7 @@ receivers:
   - "::Concurrent::Map[untyped, untyped]"
   - untyped
   app/models/example109.rb:498:64:
+  - "::String"
   - nil
   - untyped
   app/models/example109.rb:503:12:
@@ -45287,51 +45516,107 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
   Concurrent::Collection::MriMapBackend#[]=:
-    '("::Comment", ::String) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
+    '("::Comment", "::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": '{ "::Comment" => ::String }'
         "@default_proc": nil
-    '("::Comment", ::String) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("::Comment", "::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
-        "@backend": '{ "::Comment" => ::String, "Comment" => untyped }'
+        "@backend": '{ "::Comment" => ::String, "Comment" => ::String }'
         "@default_proc": nil
-    '("::Comment", ::String) with {@backend: {  }, @default_proc: nil}':
+    '("::Comment", "::Comment") with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": '{ "::Comment" => ::String }'
         "@default_proc": nil
-    '("::Comment", ::String) with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("::Comment", "::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
-        "@backend": '{ "::Comment" => ::String, "Comment" => untyped }'
+        "@backend": '{ "::Comment" => ::String, "Comment" => ::String }'
+        "@default_proc": nil
+    '("::Comment", "Example109::::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "::Comment" => ::String }'
+        "@default_proc": nil
+    ? '("::Comment", "Example109::::Comment") on ::Concurrent::Map[untyped, untyped]
+      with {@backend: { "Comment" => ::String }, @default_proc: nil}'
+    : ivars:
+        "@backend": '{ "::Comment" => ::String, "Comment" => ::String }'
+        "@default_proc": nil
+    '("::Comment", "Example109::::Comment") with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "::Comment" => ::String }'
+        "@default_proc": nil
+    '("::Comment", "Example109::::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "::Comment" => ::String, "Comment" => ::String }'
+        "@default_proc": nil
+    '("::Comment", "Example109::Post::::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "::Comment" => ::String }'
+        "@default_proc": nil
+    ? '("::Comment", "Example109::Post::::Comment") on ::Concurrent::Map[untyped,
+      untyped] with {@backend: { "Comment" => ::String }, @default_proc: nil}'
+    : ivars:
+        "@backend": '{ "::Comment" => ::String, "Comment" => ::String }'
+        "@default_proc": nil
+    '("::Comment", "Example109::Post::::Comment") with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "::Comment" => ::String }'
+        "@default_proc": nil
+    '("::Comment", "Example109::Post::::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "::Comment" => ::String, "Comment" => ::String }'
         "@default_proc": nil
     '("::Comment", untyped) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": '{ "::Comment" => untyped }'
         "@default_proc": nil
-    '("::Comment", untyped) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("::Comment", untyped) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
-        "@backend": '{ "::Comment" => untyped, "Comment" => untyped }'
+        "@backend": '{ "::Comment" => untyped, "Comment" => ::String }'
         "@default_proc": nil
     '("::Comment", untyped) with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": '{ "::Comment" => untyped }'
         "@default_proc": nil
-    '("::Comment", untyped) with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("::Comment", untyped) with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
-        "@backend": '{ "::Comment" => untyped, "Comment" => untyped }'
+        "@backend": '{ "::Comment" => untyped, "Comment" => ::String }'
         "@default_proc": nil
-    '("Comment", ::String) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
-      ivars:
-        "@backend": '{ "Comment" => ::String }'
-        "@default_proc": nil
-    '("Comment", ::String) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("Comment", "Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": '{ "Comment" => ::String }'
         "@default_proc": nil
-    '("Comment", ::String) with {@backend: {  }, @default_proc: nil}':
+    '("Comment", "Comment") with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": '{ "Comment" => ::String }'
         "@default_proc": nil
-    '("Comment", ::String) with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("Comment", "Example109::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    ? '("Comment", "Example109::Comment") on ::Concurrent::Map[untyped, untyped] with
+      {@backend: { "Comment" => ::String }, @default_proc: nil}'
+    : ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    '("Comment", "Example109::Comment") with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    '("Comment", "Example109::Post::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    ? '("Comment", "Example109::Post::Comment") on ::Concurrent::Map[untyped, untyped]
+      with {@backend: { "Comment" => ::String }, @default_proc: nil}'
+    : ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    '("Comment", "Example109::Post::Comment") with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    '("Comment", "Example109::Post::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
         "@backend": '{ "Comment" => ::String }'
         "@default_proc": nil
@@ -45339,7 +45624,7 @@ exits:
       ivars:
         "@backend": '{ "Comment" => untyped }'
         "@default_proc": nil
-    '("Comment", untyped) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("Comment", untyped) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
         "@backend": '{ "Comment" => untyped }'
         "@default_proc": nil
@@ -45347,7 +45632,7 @@ exits:
       ivars:
         "@backend": '{ "Comment" => untyped }'
         "@default_proc": nil
-    '("Comment", untyped) with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("Comment", untyped) with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
         "@backend": '{ "Comment" => untyped }'
         "@default_proc": nil
@@ -46401,17 +46686,17 @@ exits:
       ivars:
         "@backend": "{  }"
         "@default_proc": nil
-    '("::Comment") with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
-        "@backend": '{ "Comment" => untyped }'
+        "@backend": '{ "Comment" => ::String }'
         "@default_proc": nil
     '("Comment") with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": "{  }"
         "@default_proc": nil
-    '("Comment") with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
-        "@backend": '{ "Comment" => untyped }'
+        "@backend": '{ "Comment" => ::String }'
         "@default_proc": nil
     "(::String) with {@backend: {  }, @default_proc: nil}":
       ivars: {}
@@ -46828,51 +47113,111 @@ exits:
               "@backend": "{ :en => ::ActiveSupport::Inflector::Inflections }"
               "@default_proc": nil
   Concurrent::Collection::NonConcurrentMapBackend#[]=:
-    '("::Comment", ::String) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
+    '("::Comment", "::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": '{ "::Comment" => ::String }'
         "@default_proc": nil
-    '("::Comment", ::String) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("::Comment", "::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
-        "@backend": '{ "::Comment" => ::String, "Comment" => untyped }'
+        "@backend": '{ "::Comment" => ::String, "Comment" => ::String }'
         "@default_proc": nil
-    '("::Comment", ::String) with {@backend: {  }, @default_proc: nil}':
+    '("::Comment", "::Comment") with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": '{ "::Comment" => ::String }'
         "@default_proc": nil
-    '("::Comment", ::String) with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("::Comment", "::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
-        "@backend": '{ "::Comment" => ::String, "Comment" => untyped }'
+        "@backend": '{ "::Comment" => ::String, "Comment" => ::String }'
+        "@default_proc": nil
+    '("::Comment", "Example109::::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "::Comment" => ::String }'
+        "@default_proc": nil
+    ? '("::Comment", "Example109::::Comment") on ::Concurrent::Map[untyped, untyped]
+      with {@backend: { "Comment" => ::String }, @default_proc: nil}'
+    : ivars:
+        "@backend": '{ "::Comment" => ::String, "Comment" => ::String }'
+        "@default_proc": nil
+    '("::Comment", "Example109::::Comment") with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "::Comment" => ::String }'
+        "@default_proc": nil
+    '("::Comment", "Example109::::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "::Comment" => ::String, "Comment" => ::String }'
+        "@default_proc": nil
+    '("::Comment", "Example109::Post::::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "::Comment" => ::String }'
+        "@default_proc": nil
+    ? '("::Comment", "Example109::Post::::Comment") on ::Concurrent::Map[untyped,
+      untyped] with {@backend: { "Comment" => ::String }, @default_proc: nil}'
+    : ivars:
+        "@backend": '{ "::Comment" => ::String, "Comment" => ::String }'
+        "@default_proc": nil
+    '("::Comment", "Example109::Post::::Comment") with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "::Comment" => ::String }'
+        "@default_proc": nil
+    '("::Comment", "Example109::Post::::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "::Comment" => ::String, "Comment" => ::String }'
         "@default_proc": nil
     '("::Comment", untyped) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": '{ "::Comment" => untyped }'
         "@default_proc": nil
-    '("::Comment", untyped) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("::Comment", untyped) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
-        "@backend": '{ "::Comment" => untyped, "Comment" => untyped }'
+        "@backend": '{ "::Comment" => untyped, "Comment" => ::String }'
         "@default_proc": nil
     '("::Comment", untyped) with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": '{ "::Comment" => untyped }'
         "@default_proc": nil
-    '("::Comment", untyped) with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("::Comment", untyped) with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
-        "@backend": '{ "::Comment" => untyped, "Comment" => untyped }'
+        "@backend": '{ "::Comment" => untyped, "Comment" => ::String }'
         "@default_proc": nil
-    '("Comment", ::String) on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
-      ivars:
-        "@backend": '{ "Comment" => ::String }'
-        "@default_proc": nil
-    '("Comment", ::String) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("Comment", "Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": '{ "Comment" => ::String }'
         "@default_proc": nil
-    '("Comment", ::String) with {@backend: {  }, @default_proc: nil}':
+    '("Comment", "Comment") with {@backend: {  }, @default_proc: nil}':
       ivars:
         "@backend": '{ "Comment" => ::String }'
         "@default_proc": nil
-    '("Comment", ::String) with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("Comment", "Example109::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    ? '("Comment", "Example109::Comment") on ::Concurrent::Map[untyped, untyped] with
+      {@backend: { "Comment" => ::String }, @default_proc: nil}'
+    : ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    '("Comment", "Example109::Comment") with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    '("Comment", "Example109::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    '("Comment", "Example109::Post::Comment") on ::Concurrent::Map[untyped, untyped] with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    ? '("Comment", "Example109::Post::Comment") on ::Concurrent::Map[untyped, untyped]
+      with {@backend: { "Comment" => ::String }, @default_proc: nil}'
+    : ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    '("Comment", "Example109::Post::Comment") with {@backend: {  }, @default_proc: nil}':
+      ivars:
+        "@backend": '{ "Comment" => ::String }'
+        "@default_proc": nil
+    '("Comment", "Example109::Post::Comment") with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
         "@backend": '{ "Comment" => ::String }'
         "@default_proc": nil
@@ -46880,7 +47225,7 @@ exits:
       ivars:
         "@backend": '{ "Comment" => untyped }'
         "@default_proc": nil
-    '("Comment", untyped) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("Comment", untyped) on ::Concurrent::Map[untyped, untyped] with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
         "@backend": '{ "Comment" => untyped }'
         "@default_proc": nil
@@ -46888,7 +47233,7 @@ exits:
       ivars:
         "@backend": '{ "Comment" => untyped }'
         "@default_proc": nil
-    '("Comment", untyped) with {@backend: { "Comment" => untyped }, @default_proc: nil}':
+    '("Comment", untyped) with {@backend: { "Comment" => ::String }, @default_proc: nil}':
       ivars:
         "@backend": '{ "Comment" => untyped }'
         "@default_proc": nil
@@ -51005,7 +51350,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -51126,7 +51471,7 @@ exits:
             "@inverse_of": nil
             "@inverse_which_updates_counter_cache": nil
             "@join_table": nil
-            "@klass": singleton(::Comment)
+            "@klass": nil
             "@options": "{  }"
             "@type": nil
       classes:
@@ -51136,7 +51481,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -51190,7 +51535,7 @@ exits:
             "@inverse_of": nil
             "@inverse_which_updates_counter_cache": nil
             "@join_table": nil
-            "@klass": singleton(::Comment)
+            "@klass": nil
             "@options": "{  }"
             "@type": nil
       classes:
@@ -51229,7 +51574,7 @@ exits:
             "@inverse_of": nil
             "@inverse_which_updates_counter_cache": nil
             "@join_table": nil
-            "@klass": singleton(::Comment)
+            "@klass": nil
             "@options": "{  }"
             "@type": nil
       classes:
@@ -51286,7 +51631,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -51326,7 +51671,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -51336,7 +51681,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -51457,7 +51802,7 @@ exits:
             "@inverse_of": nil
             "@inverse_which_updates_counter_cache": nil
             "@join_table": nil
-            "@klass": singleton(::Comment)
+            "@klass": nil
             "@options": "{  }"
             "@type": nil
       classes:
@@ -51467,7 +51812,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -51521,7 +51866,7 @@ exits:
             "@inverse_of": nil
             "@inverse_which_updates_counter_cache": nil
             "@join_table": nil
-            "@klass": singleton(::Comment)
+            "@klass": nil
             "@options": "{  }"
             "@type": nil
       classes:
@@ -51560,7 +51905,7 @@ exits:
             "@inverse_of": nil
             "@inverse_which_updates_counter_cache": nil
             "@join_table": nil
-            "@klass": singleton(::Comment)
+            "@klass": nil
             "@options": "{  }"
             "@type": nil
       classes:
@@ -51579,9 +51924,8 @@ exits:
     ? '() with {@reflection: ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil}, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil}, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -51610,7 +51954,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars:
         "@reflection":
@@ -51624,7 +51968,7 @@ exits:
             "@inverse_of": nil
             "@inverse_which_updates_counter_cache": nil
             "@join_table": nil
-            "@klass": singleton(::Comment)
+            "@klass": nil
             "@options": "{  }"
             "@type": nil
       classes:
@@ -51634,7 +51978,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -51647,9 +51991,8 @@ exits:
     ? '() with {@reflection: ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil}, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil}, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -51689,7 +52032,7 @@ exits:
             "@inverse_of": nil
             "@inverse_which_updates_counter_cache": nil
             "@join_table": nil
-            "@klass": singleton(::Comment)
+            "@klass": nil
             "@options": "{  }"
             "@type": nil
       classes:
@@ -51712,10 +52055,10 @@ exits:
     ? "() with {@reflection: ::Example109::Reflection::HasManyReflection{@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil}, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil}, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars:
         "@reflection":
           class: "::Example109::Reflection::HasManyReflection"
@@ -51728,7 +52071,7 @@ exits:
             "@inverse_of": nil
             "@inverse_which_updates_counter_cache": nil
             "@join_table": nil
-            "@klass": singleton(::Comment)
+            "@klass": nil
             "@options": "{  }"
             "@type": nil
       classes:
@@ -60087,7 +60430,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -60205,7 +60548,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -60326,7 +60669,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -60443,7 +60786,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -60525,8 +60868,8 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
   Example109::Associations::CollectionProxy.create:
-    ? "(singleton(::Comment), ::Example109::Associations::HasManyAssociation{}) on
-      singleton(::Example109::Associations::CollectionProxy) with {::Example109::Post{@_type_candidates_cache:
+    ? "(singleton(::Example109::Comment), ::Example109::Associations::HasManyAssociation{})
+      on singleton(::Example109::Associations::CollectionProxy) with {::Example109::Post{@_type_candidates_cache:
       ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
     : ivars: {}
       classes:
@@ -60536,9 +60879,9 @@ exits:
             ivars:
               "@backend": "{  }"
               "@default_proc": nil
-    ? '(singleton(::Comment), ::Example109::Associations::HasManyAssociation{}) on
-      singleton(::Example109::Associations::CollectionProxy) with {::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+    ? '(singleton(::Example109::Comment), ::Example109::Associations::HasManyAssociation{})
+      on singleton(::Example109::Associations::CollectionProxy) with {::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}}'
     : ivars: {}
       classes:
@@ -60546,10 +60889,10 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
-    ? "(singleton(::Comment), ::Example109::Associations::HasManyAssociation{}) on
-      singleton(::Example109::Associations::CollectionProxy) with {::Example109::Post{@_type_candidates_cache:
+    ? "(singleton(::Example109::Comment), ::Example109::Associations::HasManyAssociation{})
+      on singleton(::Example109::Associations::CollectionProxy) with {::Example109::Post{@_type_candidates_cache:
       ::Concurrent::Map[untyped, untyped]{}}}"
     : ivars: {}
       classes:
@@ -60557,9 +60900,9 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars: {}
-    ? "(singleton(::Comment), ::Example109::Associations::HasManyAssociation{}) with
-      {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
-      {  }, @default_proc: nil}}}"
+    ? "(singleton(::Example109::Comment), ::Example109::Associations::HasManyAssociation{})
+      with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}}"
     : ivars: {}
       classes:
         "::Example109::Post":
@@ -60568,26 +60911,76 @@ exits:
             ivars:
               "@backend": "{  }"
               "@default_proc": nil
-    ? '(singleton(::Comment), ::Example109::Associations::HasManyAssociation{}) with
-      {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
-      { "Comment" => untyped }, @default_proc: nil}}}'
+    ? '(singleton(::Example109::Comment), ::Example109::Associations::HasManyAssociation{})
+      with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}}'
     : ivars: {}
       classes:
         "::Example109::Post":
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
-    ? "(singleton(::Comment), ::Example109::Associations::HasManyAssociation{}) with
-      {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{}}}"
+    ? "(singleton(::Example109::Comment), ::Example109::Associations::HasManyAssociation{})
+      with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}}}"
     : ivars: {}
       classes:
         "::Example109::Post":
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars: {}
-    ? "(singleton(::Comment), self) with {::Example109::Post{@_type_candidates_cache:
+    ? "(singleton(::Example109::Comment), self) with {::Example109::Comment{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
+      nil}, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::Example109::Comment":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+          "@generated_relation_methods": nil
+        "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? '(singleton(::Example109::Comment), self) with {::Example109::Comment{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
+      nil}, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}}'
+    : ivars: {}
+      classes:
+        "::Example109::Comment":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+          "@generated_relation_methods": nil
+        "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": '{ "Comment" => ::String }'
+              "@default_proc": nil
+    ? "(singleton(::Example109::Comment), self) with {::Example109::Comment{@generated_relation_methods:
+      nil}, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}}}"
+    : ivars: {}
+      classes:
+        "::Example109::Comment":
+          "@generated_relation_methods": nil
+        "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Comment), self) with {::Example109::Post{@_type_candidates_cache:
       ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
     : ivars: {}
       classes:
@@ -60597,8 +60990,8 @@ exits:
             ivars:
               "@backend": "{  }"
               "@default_proc": nil
-    ? '(singleton(::Comment), self) with {::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+    ? '(singleton(::Example109::Comment), self) with {::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}}'
     : ivars: {}
       classes:
@@ -60606,19 +60999,51 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
-    "(singleton(::Comment), self) with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{}}}":
-      ivars: {}
+    ? "(singleton(::Example109::Comment), self) with {::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{}}}"
+    : ivars: {}
       classes:
         "::Example109::Post":
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars: {}
   Example109::Associations::CollectionProxy.new:
-    ? "(singleton(::Comment), ::Example109::Associations::HasManyAssociation) with
-      {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
+    ? "(singleton(::Example109::Comment), ::Example109::Associations::HasManyAssociation)
+      with {::Example109::Comment{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods: nil},
+      ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
       {  }, @default_proc: nil}}}"
+    : ivars: {}
+      classes:
+        "::Example109::Comment":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+          "@generated_relation_methods": nil
+        "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": "{  }"
+              "@default_proc": nil
+    ? "(singleton(::Example109::Comment), ::Example109::Associations::HasManyAssociation)
+      with {::Example109::Comment{@generated_relation_methods: nil}, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{}}}"
+    : ivars: {}
+      classes:
+        "::Example109::Comment":
+          "@generated_relation_methods": nil
+        "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars: {}
+    ? "(singleton(::Example109::Comment), ::Example109::Associations::HasManyAssociation{})
+      with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}}}"
     : ivars: {}
       classes:
         "::Example109::Post":
@@ -60627,44 +61052,55 @@ exits:
             ivars:
               "@backend": "{  }"
               "@default_proc": nil
-    ? "(singleton(::Comment), ::Example109::Associations::HasManyAssociation) with
-      {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{}}}"
+    ? '(singleton(::Example109::Comment), ::Example109::Associations::HasManyAssociation{})
+      with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}}'
+    : ivars: {}
+      classes:
+        "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": '{ "Comment" => ::String }'
+              "@default_proc": nil
+    ? "(singleton(::Example109::Comment), ::Example109::Associations::HasManyAssociation{})
+      with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}}}"
     : ivars: {}
       classes:
         "::Example109::Post":
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars: {}
-    ? "(singleton(::Comment), ::Example109::Associations::HasManyAssociation{}) with
-      {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
-      {  }, @default_proc: nil}}}"
+    ? "(singleton(::Example109::Comment), self) with {::Example109::Comment{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods:
+      nil}}"
     : ivars: {}
       classes:
-        "::Example109::Post":
+        "::Example109::Comment":
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
               "@backend": "{  }"
               "@default_proc": nil
-    ? '(singleton(::Comment), ::Example109::Associations::HasManyAssociation{}) with
-      {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
-      { "Comment" => untyped }, @default_proc: nil}}}'
+          "@generated_relation_methods": nil
+    "(singleton(::Example109::Comment), self) with {::Example109::Comment{@generated_relation_methods: nil}}":
+      ivars: {}
+      classes:
+        "::Example109::Comment":
+          "@generated_relation_methods": nil
+    ? "(singleton(::Example109::Comment), singleton(::Example109::Associations::CollectionProxy))
+      with {::Example109::Comment{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{@backend: {  }, @default_proc: nil}, @generated_relation_methods: nil}}"
     : ivars: {}
       classes:
-        "::Example109::Post":
+        "::Example109::Comment":
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": "{  }"
               "@default_proc": nil
-    ? "(singleton(::Comment), ::Example109::Associations::HasManyAssociation{}) with
-      {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{}}}"
-    : ivars: {}
-      classes:
-        "::Example109::Post":
-          "@_type_candidates_cache":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars: {}
+          "@generated_relation_methods": nil
   Example109::Associations::HasManyAssociation#ids_reader:
     "() with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}":
       ivars: {}
@@ -61248,13 +61684,13 @@ exits:
           "@__rbs_infer__main": nil
       keeps_self: true
     ? '("::Comment") on singleton(::Example109::Post) with {@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars:
         "@_type_candidates_cache":
           class: "::Concurrent::Map[untyped, untyped]"
           ivars:
-            "@backend": '{ "Comment" => untyped }'
+            "@backend": '{ "Comment" => ::String }'
             "@default_proc": nil
       classes:
         "::Thread":
@@ -61283,13 +61719,13 @@ exits:
           "@__rbs_infer__main": nil
       keeps_self: true
     ? '("::Comment") with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
-      { "Comment" => untyped }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
+      { "Comment" => ::String }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
       nil}}'
     : ivars:
         "@_type_candidates_cache":
           class: "::Concurrent::Map[untyped, untyped]"
           ivars:
-            "@backend": '{ "Comment" => untyped }'
+            "@backend": '{ "Comment" => ::String }'
             "@default_proc": nil
       classes:
         "::Thread":
@@ -61311,19 +61747,19 @@ exits:
         "@_type_candidates_cache":
           class: "::Concurrent::Map[untyped, untyped]"
           ivars:
-            "@backend": '{ "Comment" => untyped }'
+            "@backend": '{ "Comment" => ::String }'
             "@default_proc": nil
       classes:
         "::Thread":
           "@__rbs_infer__main": nil
     ? '("Comment") on singleton(::Example109::Post) with {@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars:
         "@_type_candidates_cache":
           class: "::Concurrent::Map[untyped, untyped]"
           ivars:
-            "@backend": '{ "Comment" => untyped }'
+            "@backend": '{ "Comment" => ::String }'
             "@default_proc": nil
       classes:
         "::Thread":
@@ -61341,7 +61777,7 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
     ? '("Comment") with {@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{@backend:
-      { "Comment" => untyped }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
+      { "Comment" => ::String }, @default_proc: nil}, ::Thread{@__rbs_infer__main:
       nil}}'
     : ivars: {}
       classes:
@@ -61709,7 +62145,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -61824,7 +62260,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -62361,7 +62797,7 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
     ? '("::Comment") on ::Example109::Reflection::HasManyReflection with {::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -62369,7 +62805,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -62431,10 +62867,9 @@ exits:
     ? '("::Comment") on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
-      nil}}'
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
+      nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars:
         "@association_foreign_key": nil
         "@association_primary_key": nil
@@ -62444,7 +62879,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -62452,7 +62887,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -62470,7 +62905,7 @@ exits:
         "::Thread":
           "@__rbs_infer__main": nil
     ? '("::Comment") with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
       nil}}'
     : ivars: {}
       classes:
@@ -62478,7 +62913,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -62549,9 +62984,9 @@ exits:
           "@__rbs_infer__main": nil
     ? '("::Comment") with {@association_foreign_key: nil, @association_primary_key:
       nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type: nil, @inverse_of:
-      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: singleton(::Comment),
+      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: nil,
       @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
       nil}}'
     : ivars:
         "@association_foreign_key": nil
@@ -62562,7 +62997,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -62570,7 +63005,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -62583,12 +63018,12 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
     ? '("Comment") on ::Example109::Reflection::HasManyReflection with {::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -62596,7 +63031,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -62624,7 +63059,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -62651,17 +63086,16 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
     ? '("Comment") on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
-      nil}}'
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
+      nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars:
         "@association_foreign_key": nil
         "@association_primary_key": nil
@@ -62671,7 +63105,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -62679,7 +63113,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -62692,12 +63126,12 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
     ? '("Comment") with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
       nil}}'
     : ivars: {}
       classes:
@@ -62705,7 +63139,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -62740,7 +63174,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -62767,15 +63201,15 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
     ? '("Comment") with {@association_foreign_key: nil, @association_primary_key:
       nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type: nil, @inverse_of:
-      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: singleton(::Comment),
+      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: nil,
       @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
       nil}}'
     : ivars:
         "@association_foreign_key": nil
@@ -62786,7 +63220,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -62794,7 +63228,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -62812,22 +63246,6 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
         "@klass": nil
-        "@options": "{  }"
-        "@type": nil
-    ? "(::String) with {@association_foreign_key: nil, @association_primary_key: nil,
-      @counter_cache_column: nil, @foreign_key: nil, @foreign_type: nil, @inverse_of:
-      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: singleton(::Comment),
-      @options: {  }, @type: nil}"
-    : ivars:
-        "@association_foreign_key": nil
-        "@association_primary_key": nil
-        "@counter_cache_column": nil
-        "@foreign_key": nil
-        "@foreign_type": nil
-        "@inverse_of": nil
-        "@inverse_which_updates_counter_cache": nil
-        "@join_table": nil
-        "@klass": singleton(::Comment)
         "@options": "{  }"
         "@type": nil
   Example109::Reflection::AssociationReflection#derive_class_name:
@@ -62911,7 +63329,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -62921,7 +63339,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -63159,9 +63577,8 @@ exits:
     ? '() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -63190,7 +63607,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars:
         "@association_foreign_key": nil
@@ -63201,7 +63618,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -63211,7 +63628,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -63224,9 +63641,8 @@ exits:
     ? '() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -63263,7 +63679,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -63286,10 +63702,10 @@ exits:
     ? "() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars:
         "@association_foreign_key": nil
         "@association_primary_key": nil
@@ -63299,7 +63715,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -63395,7 +63811,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -63405,7 +63821,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -63641,9 +64057,8 @@ exits:
           "@__rbs_infer__main": nil
     ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -63672,7 +64087,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars:
         "@association_foreign_key": nil
@@ -63683,7 +64098,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -63693,7 +64108,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -63705,9 +64120,8 @@ exits:
           "@__rbs_infer__main": nil
     ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -63744,7 +64158,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -63766,10 +64180,10 @@ exits:
           "@__rbs_infer__main": nil
     ? "() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars:
         "@association_foreign_key": nil
         "@association_primary_key": nil
@@ -63779,7 +64193,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -64013,14 +64427,14 @@ exits:
               "@backend": "{  }"
               "@default_proc": nil
     ? '() with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}}'
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}}'
     : ivars: {}
       classes:
         "::Example109::Post":
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
     "() with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{}}}":
       ivars: {}
@@ -64077,6 +64491,30 @@ exits:
             ivars:
               "@backend": "{  }"
               "@default_proc": nil
+    ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
+      nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
+      nil}}}'
+    : ivars:
+        "@association_foreign_key": nil
+        "@association_primary_key": nil
+        "@counter_cache_column": nil
+        "@foreign_key": nil
+        "@foreign_type": nil
+        "@inverse_of": nil
+        "@inverse_which_updates_counter_cache": nil
+        "@join_table": nil
+        "@klass": nil
+        "@options": "{  }"
+        "@type": nil
+      classes:
+        "::Example109::Post":
+          "@_type_candidates_cache":
+            class: "::Concurrent::Map[untyped, untyped]"
+            ivars:
+              "@backend": '{ "Comment" => ::String }'
+              "@default_proc": nil
     ? "() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
       nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil}"
@@ -64090,46 +64528,6 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
         "@klass": nil
-        "@options": "{  }"
-        "@type": nil
-    ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
-      nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}}'
-    : ivars:
-        "@association_foreign_key": nil
-        "@association_primary_key": nil
-        "@counter_cache_column": nil
-        "@foreign_key": nil
-        "@foreign_type": nil
-        "@inverse_of": nil
-        "@inverse_which_updates_counter_cache": nil
-        "@join_table": nil
-        "@klass": singleton(::Comment)
-        "@options": "{  }"
-        "@type": nil
-      classes:
-        "::Example109::Post":
-          "@_type_candidates_cache":
-            class: "::Concurrent::Map[untyped, untyped]"
-            ivars:
-              "@backend": '{ "Comment" => untyped }'
-              "@default_proc": nil
-    ? "() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
-      nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil}"
-    : ivars:
-        "@association_foreign_key": nil
-        "@association_primary_key": nil
-        "@counter_cache_column": nil
-        "@foreign_key": nil
-        "@foreign_type": nil
-        "@inverse_of": nil
-        "@inverse_which_updates_counter_cache": nil
-        "@join_table": nil
-        "@klass": singleton(::Comment)
         "@options": "{  }"
         "@type": nil
   Example109::Reflection::AssociationReflection.new:
@@ -64432,14 +64830,14 @@ exits:
               "@backend": "{  }"
               "@default_proc": nil
     ? '() with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}}'
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}}'
     : ivars: {}
       classes:
         "::Example109::Post":
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
     "() with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped, untyped]{}}}":
       ivars: {}
@@ -64498,9 +64896,8 @@ exits:
             ivars: {}
     ? "() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: {  }, @default_proc: nil}}}"
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: {  }, @default_proc: nil}}}"
     : ivars:
         "@association_foreign_key": nil
         "@association_primary_key": nil
@@ -64510,7 +64907,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -64522,9 +64919,9 @@ exits:
               "@default_proc": nil
     ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}}'
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
+      nil}}}'
     : ivars:
         "@association_foreign_key": nil
         "@association_primary_key": nil
@@ -64534,7 +64931,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -64542,13 +64939,12 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
     ? "() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{}}}"
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{}}}"
     : ivars:
         "@association_foreign_key": nil
         "@association_primary_key": nil
@@ -64558,7 +64954,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -64576,12 +64972,12 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
     ? '("Comment") on ::Example109::Reflection::HasManyReflection with {::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -64589,7 +64985,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -64617,7 +65013,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -64644,17 +65040,16 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
     ? '("Comment") on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
-      nil}}'
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
+      nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars:
         "@association_foreign_key": nil
         "@association_primary_key": nil
@@ -64664,7 +65059,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -64672,7 +65067,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -64685,12 +65080,12 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
     ? '("Comment") with {::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
       nil}}'
     : ivars: {}
       classes:
@@ -64698,7 +65093,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -64736,7 +65131,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -64763,15 +65158,15 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
     ? '("Comment") with {@association_foreign_key: nil, @association_primary_key:
       nil, @counter_cache_column: nil, @foreign_key: nil, @foreign_type: nil, @inverse_of:
-      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: singleton(::Comment),
+      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: nil,
       @options: {  }, @type: nil, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
-      untyped]{@backend: { "Comment" => untyped }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
+      untyped]{@backend: { "Comment" => ::String }, @default_proc: nil}}, ::Thread{@__rbs_infer__main:
       nil}}'
     : ivars:
         "@association_foreign_key": nil
@@ -64782,7 +65177,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -64790,7 +65185,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::Thread":
           "@__rbs_infer__main": nil
@@ -64808,22 +65203,6 @@ exits:
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
         "@klass": nil
-        "@options": "{  }"
-        "@type": nil
-    ? "(::String) with {@association_foreign_key: nil, @association_primary_key: nil,
-      @counter_cache_column: nil, @foreign_key: nil, @foreign_type: nil, @inverse_of:
-      nil, @inverse_which_updates_counter_cache: nil, @join_table: nil, @klass: singleton(::Comment),
-      @options: {  }, @type: nil}"
-    : ivars:
-        "@association_foreign_key": nil
-        "@association_primary_key": nil
-        "@counter_cache_column": nil
-        "@foreign_key": nil
-        "@foreign_type": nil
-        "@inverse_of": nil
-        "@inverse_which_updates_counter_cache": nil
-        "@join_table": nil
-        "@klass": singleton(::Comment)
         "@options": "{  }"
         "@type": nil
   Example109::Reflection::MacroReflection#class_name:
@@ -64907,7 +65286,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -64917,7 +65296,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -65152,9 +65531,8 @@ exits:
     ? '() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -65183,7 +65561,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars:
         "@association_foreign_key": nil
@@ -65194,7 +65572,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -65204,7 +65582,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -65217,9 +65595,8 @@ exits:
     ? '() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -65256,7 +65633,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -65279,10 +65656,10 @@ exits:
     ? "() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars:
         "@association_foreign_key": nil
         "@association_primary_key": nil
@@ -65292,7 +65669,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -65388,7 +65765,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -65398,7 +65775,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -65631,9 +66008,8 @@ exits:
           "@__rbs_infer__main": nil
     ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -65662,7 +66038,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars:
         "@association_foreign_key": nil
@@ -65673,7 +66049,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -65683,7 +66059,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -65695,9 +66071,8 @@ exits:
           "@__rbs_infer__main": nil
     ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -65734,7 +66109,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -65756,10 +66131,10 @@ exits:
           "@__rbs_infer__main": nil
     ? "() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars:
         "@association_foreign_key": nil
         "@association_primary_key": nil
@@ -65769,7 +66144,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -65814,6 +66189,7 @@ exits:
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
@@ -65941,6 +66317,7 @@ exits:
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
@@ -65970,6 +66347,7 @@ exits:
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
@@ -65996,6 +66374,7 @@ exits:
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
@@ -66164,7 +66543,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -66204,7 +66583,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -66214,7 +66593,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -66333,7 +66712,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -66343,7 +66722,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -66394,7 +66773,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -66430,7 +66809,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -66449,9 +66828,8 @@ exits:
     ? '() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -66480,7 +66858,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars:
         "@association_foreign_key": nil
@@ -66491,7 +66869,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -66501,7 +66879,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -66514,9 +66892,8 @@ exits:
     ? '() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -66553,7 +66930,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -66576,10 +66953,10 @@ exits:
     ? "() on ::Example109::Reflection::HasManyReflection with {@association_foreign_key:
       nil, @association_primary_key: nil, @counter_cache_column: nil, @foreign_key:
       nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars:
         "@association_foreign_key": nil
         "@association_primary_key": nil
@@ -66589,7 +66966,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -66645,7 +67022,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -66685,7 +67062,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars: {}
       classes:
@@ -66695,7 +67072,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -66813,7 +67190,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -66823,7 +67200,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -66874,7 +67251,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -66910,7 +67287,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -66928,9 +67305,8 @@ exits:
           "@__rbs_infer__main": nil
     ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -66959,7 +67335,7 @@ exits:
       [/\bequipment\Z/i, /\binformation\Z/i, /\brice\Z/i, /\bmoney\Z/i, /\bspecies\Z/i,
       /\bseries\Z/i, /\bfish\Z/i, /\bsheep\Z/i, /\bjeans\Z/i, /\bpolice\Z/i]}} },
       @default_proc: nil}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => untyped }, @default_proc:
+      ::Concurrent::Map[untyped, untyped]{@backend: { "Comment" => ::String }, @default_proc:
       nil}}, ::Thread{@__rbs_infer__main: nil}}'
     : ivars:
         "@association_foreign_key": nil
@@ -66970,7 +67346,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -66980,7 +67356,7 @@ exits:
           "@_type_candidates_cache":
             class: "::Concurrent::Map[untyped, untyped]"
             ivars:
-              "@backend": '{ "Comment" => untyped }'
+              "@backend": '{ "Comment" => ::String }'
               "@default_proc": nil
         "::ActiveSupport::Inflector::Inflections":
           "@__instance__":
@@ -66992,9 +67368,8 @@ exits:
           "@__rbs_infer__main": nil
     ? '() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{@backend: { :en => ::ActiveSupport::Inflector::Inflections{@acronyms:
       {  }, @humans: [], @plurals: [[/(z)ombies$/i, "\\1ombies"], [/(z)ombie$/i, "\\1ombies"],
       [/(m)oves$/i, "\\1oves"], [/(m)ove$/i, "\\1oves"], [/(s)exes$/i, "\\1exes"],
       [/(s)ex$/i, "\\1exes"], [/(c)hildren$/i, "\\1hildren"], [/(c)hild$/i, "\\1hildren"],
@@ -67031,7 +67406,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -67053,10 +67428,10 @@ exits:
           "@__rbs_infer__main": nil
     ? "() with {@association_foreign_key: nil, @association_primary_key: nil, @counter_cache_column:
       nil, @foreign_key: nil, @foreign_type: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @join_table: nil, @klass: singleton(::Comment), @options: {  }, @type:
-      nil, ::ActiveSupport::Inflector::Inflections{@__instance__: ::Concurrent::Map[untyped,
-      untyped]{}}, ::Example102::Locales{@fallback_chains: nil}, ::Example109::Post{@_type_candidates_cache:
-      ::Concurrent::Map[untyped, untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
+      nil, @join_table: nil, @klass: nil, @options: {  }, @type: nil, ::ActiveSupport::Inflector::Inflections{@__instance__:
+      ::Concurrent::Map[untyped, untyped]{}}, ::Example102::Locales{@fallback_chains:
+      nil}, ::Example109::Post{@_type_candidates_cache: ::Concurrent::Map[untyped,
+      untyped]{}}, ::Thread{@__rbs_infer__main: nil}}"
     : ivars:
         "@association_foreign_key": nil
         "@association_primary_key": nil
@@ -67066,7 +67441,7 @@ exits:
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
         "@join_table": nil
-        "@klass": singleton(::Comment)
+        "@klass": nil
         "@options": "{  }"
         "@type": nil
       classes:
@@ -67085,14 +67460,15 @@ exits:
   Example109::Reflection::MacroReflection#normalize_options:
     ? "(({ :extend => ::Array[::Module] } | {  })) with {@active_record: singleton(::Example109::Post),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
-      @options: {  }}"
+      nil, @inverse_which_updates_counter_cache_defined: false, @klass: nil, @name:
+      :comments, @options: {  }}"
     : ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@class_name": nil
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
@@ -67143,14 +67519,15 @@ exits:
         "@foreign_type": nil
     ? "(::Hash[untyped, untyped]) with {@active_record: singleton(::Example109::Post),
       @class_name: nil, @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
-      @options: {  }}"
+      nil, @inverse_which_updates_counter_cache_defined: false, @klass: nil, @name:
+      :comments, @options: {  }}"
     : ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@class_name": nil
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
@@ -67260,14 +67637,15 @@ exits:
         '0': "{  }"
     ? "({  }) with {@active_record: singleton(::Example109::Post), @class_name: nil,
       @counter_cache_column: nil, @inverse_of: nil, @inverse_which_updates_counter_cache:
-      nil, @inverse_which_updates_counter_cache_defined: false, @name: :comments,
-      @options: {  }}"
+      nil, @inverse_which_updates_counter_cache_defined: false, @klass: nil, @name:
+      :comments, @options: {  }}"
     : ivars:
         "@inverse_which_updates_counter_cache_defined": 'false'
         "@class_name": nil
         "@counter_cache_column": nil
         "@inverse_of": nil
         "@inverse_which_updates_counter_cache": nil
+        "@klass": nil
         "@name": ":comments"
         "@options": "{  }"
         "@active_record": singleton(::Example109::Post)
